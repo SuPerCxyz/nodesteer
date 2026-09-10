@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -106,6 +107,93 @@ func TestFileTransferUploadAndDelivery(t *testing.T) {
 	}
 	if final.Status != models.FileTransferSuccess || final.Targets[0].Status != models.FileTargetSuccess {
 		t.Fatalf("unexpected final state: %+v", final)
+	}
+}
+
+func TestFileTransferAllTargetsSuccess(t *testing.T) {
+	ctx := context.Background()
+	st, err := store.OpenInMemory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+
+	nm := NewNodeManager(st, NewRevisionManager(st))
+	source, sourceCred, _, err := nm.RegisterOrUpdate(ctx, "source-agent", "source", "10.0.0.1", "linux", "amd64", "1", models.DeploymentModeNative, false, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	targetA, _, _, err := nm.RegisterOrUpdate(ctx, "target-a", "target-a", "10.0.0.2", "linux", "amd64", "1", models.DeploymentModeNative, false, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	targetB, _, _, err := nm.RegisterOrUpdate(ctx, "target-b", "target-b", "10.0.0.3", "linux", "amd64", "1", models.DeploymentModeNative, false, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sessions := NewSessionManager()
+	sourceConn := &transferTestConn{nodeID: source.ID, sent: make(chan protocol.Envelope, 2)}
+	targetAConn := &transferTestConn{nodeID: targetA.ID, sent: make(chan protocol.Envelope, 1)}
+	targetBConn := &transferTestConn{nodeID: targetB.ID, sent: make(chan protocol.Envelope, 1)}
+	sessions.Register(sourceConn)
+	sessions.Register(targetAConn)
+	sessions.Register(targetBConn)
+	m, err := NewFileTransferManager(st, t.TempDir(), "http://hub:8443", sessions, nm, slog.Default())
+	if err != nil {
+		t.Fatal(err)
+	}
+	item, err := m.Create(ctx, source.ID, "/source", []FileTransferTargetRequest{
+		{NodeID: targetA.ID, DestinationPath: "/target-a"},
+		{NodeID: targetB.ID, DestinationPath: "/target-b"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	<-sourceConn.sent
+
+	body := []byte("relay")
+	req := httptest.NewRequest(http.MethodPost, "/agent/transfers/"+item.ID+"/upload", bytesReader(body))
+	req.Header.Set("X-Cadentra-Agent-ID", source.AgentID)
+	req.Header.Set("X-Cadentra-Agent-Token", sourceCred)
+	req.Header.Set("X-Cadentra-File-Size", "5")
+	req.ContentLength = int64(len(body))
+	rec := httptest.NewRecorder()
+	m.HandleAgentHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("upload status %d: %s", rec.Code, rec.Body.String())
+	}
+	<-targetAConn.sent
+	<-targetBConn.sent
+
+	var wg sync.WaitGroup
+	errs := make(chan error, 2)
+	for _, result := range []struct {
+		nodeID string
+		result protocol.FileDeliveryResultPayload
+	}{
+		{nodeID: targetA.ID, result: protocol.FileDeliveryResultPayload{TransferID: item.ID, OK: true}},
+		{nodeID: targetB.ID, result: protocol.FileDeliveryResultPayload{TransferID: item.ID, OK: true}},
+	} {
+		wg.Add(1)
+		go func(nodeID string, result protocol.FileDeliveryResultPayload) {
+			defer wg.Done()
+			errs <- m.HandleDeliveryResult(ctx, nodeID, result)
+		}(result.nodeID, result.result)
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	state, err := m.Get(ctx, item.ID)
+	if err != nil || state.Status != models.FileTransferSuccess {
+		t.Fatalf("expected all-success aggregate, err=%v state=%+v", err, state)
+	}
+	if targetStatus(state, targetA.ID) != models.FileTargetSuccess || targetStatus(state, targetB.ID) != models.FileTargetSuccess {
+		t.Fatalf("expected both targets successful, state=%+v", state)
 	}
 }
 

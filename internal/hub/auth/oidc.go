@@ -45,6 +45,7 @@ func DefaultOIDCConfig() OIDCConfig {
 // oidcState 一次授权请求的 state + PKCE verifier
 type oidcState struct {
 	verifier string
+	nonce    string
 	expires  time.Time
 }
 
@@ -77,6 +78,14 @@ func NewOIDC(ctx context.Context, cfg OIDCConfig, baseURL string) (*OIDC, error)
 	}
 	if cfg.DefaultRole == "" {
 		cfg.DefaultRole = models.RoleViewer
+	}
+	if !ValidRole(cfg.DefaultRole) {
+		return nil, fmt.Errorf("oidc default_role is invalid")
+	}
+	for group, role := range cfg.RoleMappings {
+		if !ValidRole(role) {
+			return nil, fmt.Errorf("oidc role mapping %q is invalid", group)
+		}
 	}
 	if len(cfg.Scopes) == 0 {
 		cfg.Scopes = []string{"openid", "profile", "email"}
@@ -116,12 +125,16 @@ func (o *OIDC) AuthCodeURL() (string, error) {
 		return "", err
 	}
 	verifier := oauth2.GenerateVerifier()
+	nonce, err := randomToken()
+	if err != nil {
+		return "", err
+	}
 	o.mu.Lock()
-	o.states[state] = &oidcState{verifier: verifier, expires: time.Now().Add(oidcStateTTL)}
+	o.states[state] = &oidcState{verifier: verifier, nonce: nonce, expires: time.Now().Add(oidcStateTTL)}
 	o.mu.Unlock()
 	// 清理过期 state
 	go o.cleanup()
-	return o.oauthCfg.AuthCodeURL(state, oauth2.S256ChallengeOption(verifier)), nil
+	return o.oauthCfg.AuthCodeURL(state, oauth2.S256ChallengeOption(verifier), oauth2.SetAuthURLParam("nonce", nonce)), nil
 }
 
 // Exchange 处理 callback：校验 state、交换 token、验证 ID Token、提取用户与角色
@@ -134,6 +147,7 @@ func (o *OIDC) Exchange(ctx context.Context, state, code string) (username, role
 	}
 	delete(o.states, state)
 	verifier := st.verifier
+	nonce := st.nonce
 	o.mu.Unlock()
 
 	raw, err := o.oauthCfg.Exchange(ctx, code, oauth2.VerifierOption(verifier))
@@ -152,6 +166,10 @@ func (o *OIDC) Exchange(ctx context.Context, state, code string) (username, role
 	var claims map[string]any
 	if err := verified.Claims(&claims); err != nil {
 		return "", "", fmt.Errorf("oidc claims: %w", err)
+	}
+	claimNonce, ok := claims["nonce"].(string)
+	if !ok || claimNonce == "" || claimNonce != nonce {
+		return "", "", errors.New("oidc nonce validation failed")
 	}
 	username = o.extractUsername(claims)
 	if username == "" {

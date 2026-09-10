@@ -27,6 +27,7 @@ export default defineConfig({
   test: {
     silent: 'passed-only',
     unstubEnvs: true,
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
     browser: {
       enabled: true,
       provider: playwright(),

@@ -48,12 +48,17 @@ export function getSidebarData(t: TFunction): SidebarData {
         items: [
           { title: t('nav.scripts'), url: '/scripts', icon: FileCode2 },
           { title: t('nav.groups'), url: '/groups', icon: Layers3 },
+        ],
+      },
+      {
+        title: t('nav.sections.delivery'),
+        items: [
+          { title: t('nav.artifacts'), url: '/artifacts', icon: Package },
           {
             title: t('nav.applications'),
             url: '/applications',
             icon: AppWindow,
           },
-          { title: t('nav.artifacts'), url: '/artifacts', icon: Package },
         ],
       },
       {

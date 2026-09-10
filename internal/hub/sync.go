@@ -224,6 +224,11 @@ func (sm *SyncManager) NotifyAll(ctx context.Context) {
 	}
 }
 
+// NotifyNodeStatus 将维护/禁用状态即时下发给指定 Agent；Revision 对账仍负责最终收敛。
+func (sm *SyncManager) NotifyNodeStatus(ctx context.Context, nodeID, status string) {
+	sm.sessions.Notify(nodeID, protocol.NewEnvelope(protocol.MsgNodeStatus, "", protocol.NodeStatusPayload{Status: status}))
+}
+
 // BuildSyncResponse 构建同步响应
 func (sm *SyncManager) BuildSyncResponse(ctx context.Context, nodeID string, since int64) (*protocol.SyncResponsePayload, error) {
 	// 检查 Change Log 窗口（运行期从 settings 读取，支持动态调整）

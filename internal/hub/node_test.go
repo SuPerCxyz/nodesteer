@@ -3,6 +3,7 @@ package hub
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/cadentra/cadentra/internal/models"
 	"github.com/cadentra/cadentra/internal/store"
@@ -76,5 +77,71 @@ func TestTargetMutationAdvancesRevision(t *testing.T) {
 	changes, err := st.GetChangesSince(ctx, 0)
 	if err != nil || len(changes) != 2 {
 		t.Fatalf("expected two target changes, got %d err=%v", len(changes), err)
+	}
+}
+
+func TestPreparedEnrollmentReusesNodeOnFirstHello(t *testing.T) {
+	ctx := context.Background()
+	st, err := store.OpenInMemory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	nm := NewNodeManager(st, NewRevisionManager(st))
+
+	pending, err := nm.PrepareEnrollment(ctx, "pending-node", "10.0.0.10", models.DeploymentModeNative)
+	if err != nil {
+		t.Fatalf("prepare enrollment: %v", err)
+	}
+	if pending.Status != models.NodeStatusOffline || pending.AgentID == "" ||
+		pending.AgentVersion != "" || pending.Arch != "" || pending.DeploymentMode != "" {
+		t.Fatalf("unexpected pending node: %+v", pending)
+	}
+
+	registered, credential, isNew, err := nm.RegisterOrUpdate(ctx, pending.AgentID, "real-node", "10.0.0.10", "linux", "amd64", "1.0", models.DeploymentModeNative, false, nil)
+	if err != nil {
+		t.Fatalf("register prepared node: %v", err)
+	}
+	if isNew || registered.ID != pending.ID || registered.Status != models.NodeStatusOnline || credential == "" {
+		t.Fatalf("prepared node was not reused: node=%+v isNew=%t credential=%q", registered, isNew, credential)
+	}
+	nodes, err := nm.ListNodes(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(nodes) != 1 {
+		t.Fatalf("expected one node after first hello, got %d", len(nodes))
+	}
+}
+
+func TestHeartbeatRestoresOfflineButPreservesMaintenance(t *testing.T) {
+	ctx := context.Background()
+	st, err := store.OpenInMemory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	nm := NewNodeManager(st, NewRevisionManager(st))
+	n := &models.Node{ID: "node-heartbeat", AgentID: "agent-heartbeat", Hostname: "host", Status: models.NodeStatusOffline}
+	if err := st.UpsertNode(ctx, n); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := nm.UpdateHeartbeat(ctx, n.ID, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	got, err := nm.GetNode(ctx, n.ID)
+	if err != nil || got.Status != models.NodeStatusOnline {
+		t.Fatalf("heartbeat should restore offline node, err=%v node=%+v", err, got)
+	}
+	if err := nm.SetNodeStatus(ctx, n.ID, models.NodeStatusMaintenance); err != nil {
+		t.Fatal(err)
+	}
+	if err := nm.UpdateHeartbeat(ctx, n.ID, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	got, err = nm.GetNode(ctx, n.ID)
+	if err != nil || got.Status != models.NodeStatusMaintenance {
+		t.Fatalf("heartbeat should preserve maintenance, err=%v node=%+v", err, got)
 	}
 }

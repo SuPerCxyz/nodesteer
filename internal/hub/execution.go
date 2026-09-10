@@ -428,16 +428,26 @@ func (em *ExecutionManager) HandleDeployResult(ctx context.Context, nodeID strin
 		if !p.OK {
 			status = models.ExecStatusFailed
 		}
+		taskID := p.TaskID
+		if taskID == "" {
+			taskID = p.AppID
+		}
+		trigger := p.TriggerType
+		if trigger == "" {
+			trigger = models.TriggerSchedule
+		}
 		newEx := &models.Execution{
-			ID:          p.ExecutionID,
-			TaskID:      p.AppID,
-			NodeID:      nodeID,
-			TriggerType: models.TriggerSchedule,
-			Status:      status,
-			EndTime:     time.Now(),
-			BlockReason: p.Error,
-			Offline:     false,
-			Synced:      true,
+			ID:            p.ExecutionID,
+			TaskID:        taskID,
+			TaskRevision:  p.TaskRevision,
+			NodeID:        nodeID,
+			TriggerType:   trigger,
+			ScheduledTime: parseRFC3339OrZero(p.ScheduledTime),
+			Status:        status,
+			EndTime:       time.Now(),
+			BlockReason:   p.Error,
+			Offline:       false,
+			Synced:        true,
 		}
 		if p.StartTime != "" {
 			newEx.StartTime = parseRFC3339(p.StartTime)
@@ -592,6 +602,13 @@ func parseRFC3339OrNow(s string) time.Time {
 		return time.Now()
 	}
 	return t
+}
+
+func parseRFC3339OrZero(s string) time.Time {
+	if s == "" {
+		return time.Time{}
+	}
+	return parseRFC3339(s)
 }
 
 // parseRFC3339 解析时间

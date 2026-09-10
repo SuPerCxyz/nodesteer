@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -17,6 +17,7 @@ import {
   type Task,
   type Target,
 } from '@/lib/api'
+import { useCanRun, useCanWrite } from '@/lib/permissions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -108,6 +109,8 @@ function TargetDetails({ target }: { target: Target }) {
 export function Tasks() {
   const { t } = useTranslation()
   const client = useQueryClient()
+  const canRun = useCanRun()
+  const canWrite = useCanWrite()
   const query = useQuery({
     queryKey: ['tasks'],
     queryFn: () => api.get<Task[]>('/tasks'),
@@ -234,13 +237,15 @@ export function Tasks() {
         cell: ({ row }) => (
           <TaskRowActions
             task={row.original}
+            canRun={canRun}
+            canWrite={canWrite}
             toggleTask={toggleTask}
             removeTask={removeTask}
           />
         ),
       },
     ],
-    [removeTask, t, toggleTask]
+    [canRun, canWrite, removeTask, t, toggleTask]
   )
 
   return (
@@ -249,9 +254,11 @@ export function Tasks() {
         title={t('tasks.title')}
         description={t('tasks.description')}
         action={
-          <Button asChild>
-            <Link to='/tasks/new'>{t('tasks.newTask')}</Link>
-          </Button>
+          canWrite ? (
+            <Button asChild>
+              <Link to='/tasks/new'>{t('tasks.newTask')}</Link>
+            </Button>
+          ) : null
         }
       />
       <Main fluid className='flex flex-1 flex-col gap-6'>
@@ -271,6 +278,8 @@ export function Tasks() {
 
 export function TaskDetail() {
   const { t } = useTranslation()
+  const canRun = useCanRun()
+  const canWrite = useCanWrite()
   const id = window.location.pathname.split('/')[2] || ''
   const task = useQuery({
     queryKey: ['task', id],
@@ -317,17 +326,23 @@ export function TaskDetail() {
         title={item.name}
         description={`${item.type} · r${item.revision}`}
         action={
-          <div className='flex items-center gap-2'>
-            <Button asChild>
-              <a href={`/tasks/${id}/run`}>
-                <Play className='me-1 size-4' />
-                {t('tasks.runNow')}
-              </a>
-            </Button>
-            <Button asChild variant='outline'>
-              <a href={`/tasks/${id}/edit`}>{t('common.edit')}</a>
-            </Button>
-          </div>
+          canRun || canWrite ? (
+            <div className='flex items-center gap-2'>
+              {canRun ? (
+                <Button asChild>
+                  <a href={`/tasks/${id}/run`}>
+                    <Play className='me-1 size-4' />
+                    {t('tasks.runNow')}
+                  </a>
+                </Button>
+              ) : null}
+              {canWrite ? (
+                <Button asChild variant='outline'>
+                  <a href={`/tasks/${id}/edit`}>{t('common.edit')}</a>
+                </Button>
+              ) : null}
+            </div>
+          ) : null
         }
       />
       <Main className='flex flex-1 flex-col gap-6'>
@@ -531,6 +546,7 @@ function ExecutionHistory({ executions }: { executions: Execution[] }) {
 
 export function TaskEditor() {
   const { t } = useTranslation()
+  const canWrite = useCanWrite()
   const id = window.location.pathname.split('/')[2] || ''
   const editing = id !== 'new'
   const client = useQueryClient()
@@ -590,22 +606,58 @@ export function TaskEditor() {
     metric: 'cpu_usage',
     operator: '>',
     value: '',
+    path: '',
+    command: '',
   })
   const [remoteCondition, setRemoteCondition] = useState({
     node_id: '',
     property: 'online',
     task_id: '',
     operator: '==',
-    value: 'ONLINE',
+    value: 'online',
   })
+  const [andConditions, setAndConditions] = useState(false)
+  useEffect(() => {
+    if (!current.data || draft) return
+    const condition = current.data.condition
+    const items = condition?.type === 'and' ? condition.and || [] : condition ? [condition] : []
+    const local = items.find((item) => item.local)?.local
+    const remote = items.find((item) => item.remote)?.remote
+    // The editor controls are local draft state hydrated once the async query resolves.
+    if (local)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLocalCondition({
+        metric: local.metric,
+        operator: local.operator,
+        value: local.value,
+        path: local.path || '',
+        command: local.command || '',
+      })
+    if (remote)
+      setRemoteCondition({
+        node_id: remote.node_id,
+        property: remote.property,
+        task_id: remote.task_id || '',
+        operator: remote.operator,
+        value: remote.value,
+      })
+    setAndConditions(items.length > 1)
+  }, [current.data, draft])
   const setTarget = (target: Target) =>
     setForm((previous) => ({ ...previous, target }))
   const save = async () => {
-    if (!form.name) return
-    if (editing) await api.put(`/tasks/${id}`, form)
-    else await api.post('/tasks', form)
-    await client.invalidateQueries({ queryKey: ['tasks'] })
-    window.location.assign('/tasks')
+    if (!form.name) {
+      toast.error(t('common.name'))
+      return
+    }
+    try {
+      if (editing) await api.put(`/tasks/${id}`, form)
+      else await api.post('/tasks', form)
+      await client.invalidateQueries({ queryKey: ['tasks'] })
+      window.location.assign('/tasks')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('common.noData'))
+    }
   }
   const selectedNodes = form.target?.node_ids || []
   const toggleNode = (nodeId: string) =>
@@ -624,18 +676,30 @@ export function TaskEditor() {
     }))
     setParameter({ name: '', type: 'string', required: false, default: '' })
   }
+  const mergeCondition = (candidate: NonNullable<Task['condition']>) =>
+    setForm((previous) => {
+      if (!andConditions) return { ...previous, condition: candidate }
+      const currentItems =
+        previous.condition?.type === 'and'
+          ? previous.condition.and || []
+          : previous.condition
+            ? [previous.condition]
+            : []
+      const items = currentItems.filter((item) => item.type !== candidate.type)
+      return { ...previous, condition: { type: 'and', and: [...items, candidate] } }
+    })
   const setLocal = () =>
-    setForm((previous) => ({
-      ...previous,
-      condition: { type: 'local', local: localCondition },
-    }))
+    mergeCondition({ type: 'local', local: localCondition })
   const setRemote = () => {
     if (!remoteCondition.node_id) return
-    setForm((previous) => ({
-      ...previous,
-      condition: { type: 'remote', remote: remoteCondition },
-    }))
+    mergeCondition({ type: 'remote', remote: remoteCondition })
   }
+  const clearCondition = (type: 'local' | 'remote') =>
+    setForm((previous) => {
+      if (previous.condition?.type !== 'and') return { ...previous, condition: undefined }
+      const remaining = (previous.condition.and || []).filter((item) => item.type !== type)
+      return { ...previous, condition: remaining.length === 1 ? remaining[0] : remaining.length ? { type: 'and', and: remaining } : undefined }
+    })
   return (
     <>
       <CadentraHeader
@@ -950,7 +1014,7 @@ export function TaskEditor() {
             <CardTitle className='text-base'>{t('tasks.parameters')}</CardTitle>
           </CardHeader>
           <CardContent className='grid gap-4'>
-            <div className='grid gap-3 sm:grid-cols-[1fr_140px_1fr_auto]'>
+            <div className='grid gap-3 sm:grid-cols-[1fr_140px_1fr_auto_auto]'>
               <Input
                 placeholder={t('tasks.paramName')}
                 value={parameter.name}
@@ -982,6 +1046,15 @@ export function TaskEditor() {
                   setParameter({ ...parameter, default: event.target.value })
                 }
               />
+              <label className='flex items-center gap-2 text-sm font-medium'>
+                <Checkbox
+                  checked={parameter.required}
+                  onCheckedChange={(checked) =>
+                    setParameter({ ...parameter, required: checked === true })
+                  }
+                />
+                {t('tasks.required')}
+              </label>
               <Button type='button' variant='outline' onClick={addParameter}>
                 {t('tasks.addParam')}
               </Button>
@@ -995,6 +1068,9 @@ export function TaskEditor() {
                   >
                     <span className='font-mono'>{item.name}</span>
                     <span className='text-muted-foreground'>{item.type}</span>
+                    {item.required && (
+                      <span className='text-destructive'>{t('tasks.required')}</span>
+                    )}
                     <span className='text-muted-foreground'>
                       {item.default || '-'}
                     </span>
@@ -1027,6 +1103,13 @@ export function TaskEditor() {
             </CardTitle>
           </CardHeader>
           <CardContent className='grid gap-3 sm:grid-cols-[1fr_120px_1fr_auto]'>
+            <label className='flex items-center gap-2 text-sm font-medium sm:col-span-4'>
+              <Checkbox
+                checked={andConditions}
+                onCheckedChange={(checked) => setAndConditions(checked === true)}
+              />
+              {t('tasks.andConditions')}
+            </label>
             <Select
               value={localCondition.metric}
               onValueChange={(value) =>
@@ -1080,6 +1163,28 @@ export function TaskEditor() {
                 })
               }
             />
+            {(localCondition.metric === 'disk_usage' ||
+              localCondition.metric === 'file_exists' ||
+              localCondition.metric === 'dir_exists' ||
+              localCondition.metric === 'process_exists' ||
+              localCondition.metric === 'port_listening') && (
+              <Input
+                placeholder={t('tasks.conditionPath')}
+                value={localCondition.path}
+                onChange={(event) =>
+                  setLocalCondition({ ...localCondition, path: event.target.value })
+                }
+              />
+            )}
+            {localCondition.metric === 'command_result' && (
+              <Input
+                placeholder={t('tasks.conditionCommand')}
+                value={localCondition.command}
+                onChange={(event) =>
+                  setLocalCondition({ ...localCondition, command: event.target.value })
+                }
+              />
+            )}
             <div className='flex items-center gap-2'>
               <Button type='button' variant='outline' onClick={setLocal}>
                 {t('tasks.setCondition')}
@@ -1088,7 +1193,7 @@ export function TaskEditor() {
                 <Button
                   type='button'
                   variant='ghost'
-                  onClick={() => setForm({ ...form, condition: undefined })}
+                  onClick={() => clearCondition('local')}
                 >
                   {t('tasks.clear')}
                 </Button>
@@ -1191,7 +1296,9 @@ export function TaskEditor() {
           </CardContent>
         </Card>
         <div className='flex items-center gap-2'>
-          <Button onClick={save}>{t('common.save')}</Button>
+          {canWrite ? (
+            <Button onClick={save}>{t('common.save')}</Button>
+          ) : null}
           <Button asChild variant='outline'>
             <Link to='/tasks'>{t('common.cancel')}</Link>
           </Button>
@@ -1203,6 +1310,7 @@ export function TaskEditor() {
 
 export function RunTask() {
   const { t } = useTranslation()
+  const canRun = useCanRun()
   const id = window.location.pathname.split('/')[2] || ''
   const task = useQuery({
     queryKey: ['task', id],
@@ -1210,10 +1318,28 @@ export function RunTask() {
   })
   const [running, setRunning] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [params, setParams] = useState<Record<string, string>>({})
+  useEffect(() => {
+    if (!task.data) return
+    const defaults: Record<string, string> = {}
+    for (const parameter of task.data.parameters || []) {
+      defaults[parameter.name] = parameter.default || ''
+    }
+    // Hydrate parameter controls from the task definition after the async query resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setParams(defaults)
+  }, [task.data])
   const run = async () => {
+    const missing = (task.data?.parameters || []).find(
+      (parameter) => parameter.required && !params[parameter.name]
+    )
+    if (missing) {
+      toast.error(`${missing.name} ${t('tasks.required')}`)
+      return
+    }
     setRunning(true)
     try {
-      await api.post(`/tasks/${id}/run`, {})
+      await api.post(`/tasks/${id}/run`, { params })
       window.location.assign('/executions')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('common.noData'))
@@ -1235,26 +1361,50 @@ export function RunTask() {
             <p className='text-sm text-muted-foreground'>
               {task.data ? targetText(task.data, t) : t('common.loading')}
             </p>
+            {task.data?.parameters?.length ? (
+              <div className='grid gap-3'>
+                {task.data.parameters.map((parameter) => (
+                  <label key={parameter.name} className='grid gap-2 text-sm font-medium'>
+                    {parameter.name}
+                    <Input
+                      type={parameter.type === 'secret' ? 'password' : 'text'}
+                      required={parameter.required}
+                      value={params[parameter.name] || ''}
+                      onChange={(event) =>
+                        setParams({ ...params, [parameter.name]: event.target.value })
+                      }
+                    />
+                  </label>
+                ))}
+              </div>
+            ) : null}
             <div className='flex items-center gap-2'>
-              <Button onClick={() => setConfirmOpen(true)} disabled={running}>
-                {running ? t('tasks.running') : t('tasks.runNow')}
-              </Button>
+              {canRun ? (
+                <Button
+                  onClick={() => setConfirmOpen(true)}
+                  disabled={running}
+                >
+                  {running ? t('tasks.running') : t('tasks.runNow')}
+                </Button>
+              ) : null}
               <Button asChild variant='outline'>
                 <a href={`/tasks/${id}`}>{t('common.cancel')}</a>
               </Button>
             </div>
           </CardContent>
         </Card>
-        <ConfirmDialog
-          open={confirmOpen}
-          onOpenChange={setConfirmOpen}
-          title={t('tasks.confirmRun', { name: task.data?.name || id })}
-          desc={t('tasks.runDescription')}
-          cancelBtnText={t('common.cancel')}
-          confirmText={t('tasks.runNow')}
-          handleConfirm={run}
-          isLoading={running}
-        />
+        {canRun ? (
+          <ConfirmDialog
+            open={confirmOpen}
+            onOpenChange={setConfirmOpen}
+            title={t('tasks.confirmRun', { name: task.data?.name || id })}
+            desc={t('tasks.runDescription')}
+            cancelBtnText={t('common.cancel')}
+            confirmText={t('tasks.runNow')}
+            handleConfirm={run}
+            isLoading={running}
+          />
+        ) : null}
       </Main>
     </>
   )
@@ -1262,10 +1412,14 @@ export function RunTask() {
 
 function TaskRowActions({
   task,
+  canRun,
+  canWrite,
   toggleTask,
   removeTask,
 }: {
   task: Task
+  canRun: boolean
+  canWrite: boolean
   toggleTask: (task: Task) => void
   removeTask: (id: string) => void
 }) {
@@ -1273,18 +1427,21 @@ function TaskRowActions({
   const [deleteOpen, setDeleteOpen] = useState(false)
   return (
     <div className='flex items-center justify-end gap-1'>
-      <Button
-        asChild
-        variant='ghost'
-        size='icon'
-        className='size-8'
-        aria-label={t('tasks.runNow')}
-      >
-        <a href={`/tasks/${task.id}/run`}>
-          <Play className='size-4' />
-        </a>
-      </Button>
-      <DropdownMenu>
+      {canRun ? (
+        <Button
+          asChild
+          variant='ghost'
+          size='icon'
+          className='size-8'
+          aria-label={t('tasks.runNow')}
+        >
+          <a href={`/tasks/${task.id}/run`}>
+            <Play className='size-4' />
+          </a>
+        </Button>
+      ) : null}
+      {canWrite ? (
+        <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant='ghost'
@@ -1312,20 +1469,23 @@ function TaskRowActions({
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
-      </DropdownMenu>
-      <ConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title={`${t('common.delete')}: ${task.name}`}
-        desc={t('common.confirmAction')}
-        cancelBtnText={t('common.cancel')}
-        confirmText={t('common.delete')}
-        destructive
-        handleConfirm={() => {
-          removeTask(task.id)
-          setDeleteOpen(false)
-        }}
-      />
+        </DropdownMenu>
+      ) : null}
+      {canWrite ? (
+        <ConfirmDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          title={`${t('common.delete')}: ${task.name}`}
+          desc={t('tasks.confirmDelete')}
+          cancelBtnText={t('common.cancel')}
+          confirmText={t('common.delete')}
+          destructive
+          handleConfirm={() => {
+            removeTask(task.id)
+            setDeleteOpen(false)
+          }}
+        />
+      ) : null}
     </div>
   )
 }

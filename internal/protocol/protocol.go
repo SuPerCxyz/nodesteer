@@ -30,6 +30,7 @@ const (
 	MsgDeployResult        = "DEPLOY_RESULT"
 	MsgExecutionAck        = "EXECUTION_ACK"
 	MsgSettings            = "SETTINGS"
+	MsgNodeStatus          = "NODE_STATUS"
 	MsgRemoteState         = "REMOTE_STATE"
 	MsgRemoteStateReq      = "REMOTE_STATE_REQ"
 	MsgInventory           = "INVENTORY"
@@ -90,6 +91,7 @@ type HelloAckPayload struct {
 	DesiredGlobalRev int64             `json:"desired_global_rev"`
 	Settings         map[string]string `json:"settings,omitempty"`
 	Message          string            `json:"message,omitempty"`
+	NodeStatus       string            `json:"node_status,omitempty"`
 }
 
 // HeartbeatPayload 心跳
@@ -225,6 +227,11 @@ type SettingsPayload struct {
 	MaxLogBytes      int `json:"max_log_bytes,omitempty"`
 }
 
+// NodeStatusPayload Hub 下发的节点生命周期状态。
+type NodeStatusPayload struct {
+	Status string `json:"status"`
+}
+
 // LogChunkPayload 日志分片
 type LogChunkPayload struct {
 	ExecutionID string `json:"execution_id"`
@@ -299,15 +306,19 @@ type DeployRequestPayload struct {
 
 // DeployResultPayload 部署结果
 type DeployResultPayload struct {
-	AppID       string `json:"app_id"`
-	ExecutionID string `json:"execution_id,omitempty"`
-	Version     string `json:"version,omitempty"`
-	StartTime   string `json:"start_time,omitempty"`
-	Operation   string `json:"operation"`
-	OK          bool   `json:"ok"`
-	Health      string `json:"health,omitempty"` // healthy | unhealthy
-	Rollback    bool   `json:"rollback,omitempty"`
-	Error       string `json:"error,omitempty"`
+	AppID         string `json:"app_id"`
+	ExecutionID   string `json:"execution_id,omitempty"`
+	TaskID        string `json:"task_id,omitempty"`
+	TaskRevision  int64  `json:"task_revision,omitempty"`
+	TriggerType   string `json:"trigger_type,omitempty"`
+	ScheduledTime string `json:"scheduled_time,omitempty"`
+	Version       string `json:"version,omitempty"`
+	StartTime     string `json:"start_time,omitempty"`
+	Operation     string `json:"operation"`
+	OK            bool   `json:"ok"`
+	Health        string `json:"health,omitempty"` // healthy | unhealthy | stopped
+	Rollback      bool   `json:"rollback,omitempty"`
+	Error         string `json:"error,omitempty"`
 }
 
 // RemoteStateUnknown 远程状态不可解析标记

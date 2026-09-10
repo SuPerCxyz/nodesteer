@@ -91,6 +91,8 @@ export interface Node {
 }
 
 export interface NodeEnrollment {
+  node_id?: string
+  agent_id?: string
   gateway_url: string
   gateway_base_url: string
   agent_image: string

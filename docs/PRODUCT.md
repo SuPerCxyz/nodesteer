@@ -200,6 +200,8 @@ docker compose up -d
 
 Native 模式支持完整宿主机管理能力。
 
+节点纳管向导不要求手动选择架构。Native 命令在目标机通过 `uname -m` 判断 x86/amd64 或 ARM/arm64，从 Hub 的公开只读二进制端点下载对应 Agent，校验 SHA256 后安装并启动；首次注册仍使用命令生成的 Registration Token。标准 Hub 构建把 Agent payload 直接打包进 Hub 可执行文件，未打包的本地开发构建才使用配置的固定路径；目标架构 payload 缺失时命令执行失败并给出错误。
+
 ### 5.2 Docker Mode
 
 Agent 支持 Docker / Docker Compose 正式部署。
@@ -922,6 +924,8 @@ Hub 离线不影响本地日志。
 
 ## 33. Artifact
 
+中文 UI 术语：发布包。
+
 Artifact 是不可变对象。
 
 字段：
@@ -983,6 +987,8 @@ Hub 可提前发送 PREFETCH，让 Agent 在真正执行前下载并校验 Artif
 ---
 
 ## 35. Managed Application
+
+中文 UI 术语：托管应用。
 
 Managed Application 是由 Cadentra 主动部署并负责生命周期的 Linux 二进制应用。
 

@@ -782,3 +782,9 @@ func (s *LocalStore) IsUnitRegistered(ctx context.Context, applicationID, unitNa
 	}
 	return stored == unitName, nil
 }
+
+// DeleteUnit 移除受管控应用的 Unit 登记。
+func (s *LocalStore) DeleteUnit(ctx context.Context, applicationID string) error {
+	_, err := s.execContext(ctx, `DELETE FROM unit_registry WHERE application_id = ?`, applicationID)
+	return err
+}

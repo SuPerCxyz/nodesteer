@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 
 	"github.com/cadentra/cadentra/internal/models"
 	"github.com/cadentra/cadentra/internal/store"
@@ -88,6 +89,15 @@ func (m *ScriptManager) Update(ctx context.Context, s *models.Script) error {
 
 // Delete 删除脚本
 func (m *ScriptManager) Delete(ctx context.Context, id string) error {
+	tasks, err := m.store.ListTasks(ctx)
+	if err != nil {
+		return err
+	}
+	for _, task := range tasks {
+		if task.ScriptID == id {
+			return fmt.Errorf("script %s is referenced by task %s", id, task.ID)
+		}
+	}
 	var rev int64
 	if err := runMutationTx(ctx, m.store, func(txctx context.Context) error {
 		if err := m.store.DeleteScript(txctx, id); err != nil {
@@ -169,12 +179,40 @@ func (m *TaskManager) Validate(ctx context.Context, t *models.Task) error {
 		if t.Command == "" {
 			return store.ErrInvalidTask("command task requires command")
 		}
+	case "":
+		return store.ErrInvalidTask("type is required")
+	default:
+		return store.ErrInvalidTask("unknown task type")
+	}
+	if err := validateTarget(ctx, m.store, t.Target); err != nil {
+		return err
 	}
 	if t.Timeout == 0 {
 		t.Timeout = 300
 	}
 	if t.OfflinePolicy == "" {
 		t.OfflinePolicy = models.OfflinePolicyHubOnlineRequired
+	}
+	if t.OfflinePolicy != models.OfflinePolicyHubOnlineRequired && t.OfflinePolicy != models.OfflinePolicyAllowOffline {
+		return store.ErrInvalidTask("invalid offline_policy")
+	}
+	if t.Retry < 0 {
+		return store.ErrInvalidTask("retry cannot be negative")
+	}
+	if t.Type == models.TaskTypeAppDeploy || t.Type == models.TaskTypeAppOperation {
+		if t.AppOperation == "" {
+			if t.Type == models.TaskTypeAppDeploy {
+				t.AppOperation = "deploy"
+			} else {
+				t.AppOperation = "start"
+			}
+		}
+		if t.Type == models.TaskTypeAppDeploy && t.AppOperation != "deploy" && t.AppOperation != "upgrade" {
+			return store.ErrInvalidTask("app_deploy operation must be deploy or upgrade")
+		}
+		if t.Type == models.TaskTypeAppOperation && !validApplicationOperation(t.AppOperation) {
+			return store.ErrInvalidTask("invalid application operation")
+		}
 	}
 	// 条件类型归一化：远程/本地条件必须带正确 type，
 	// 否则 Agent 评估会走 default 分支直接放行（Bug E）。
@@ -185,7 +223,19 @@ func (m *TaskManager) Validate(ctx context.Context, t *models.Task) error {
 			t.Condition.Type = "local"
 		}
 	}
+	if err := validateCondition(ctx, m.store, t.Condition); err != nil {
+		return err
+	}
 	return nil
+}
+
+func validApplicationOperation(op string) bool {
+	switch op {
+	case "start", "stop", "restart", "upgrade":
+		return true
+	default:
+		return false
+	}
 }
 
 // Create 创建任务
@@ -252,6 +302,15 @@ func (m *TaskManager) Update(ctx context.Context, t *models.Task) error {
 
 // Delete 删除任务
 func (m *TaskManager) Delete(ctx context.Context, id string) error {
+	schedules, err := m.store.ListSchedules(ctx)
+	if err != nil {
+		return err
+	}
+	for _, schedule := range schedules {
+		if schedule.TaskID == id {
+			return fmt.Errorf("task %s is referenced by schedule %s", id, schedule.ID)
+		}
+	}
 	var rev int64
 	if err := runMutationTx(ctx, m.store, func(txctx context.Context) error {
 		if err := m.store.DeleteTask(txctx, id); err != nil {

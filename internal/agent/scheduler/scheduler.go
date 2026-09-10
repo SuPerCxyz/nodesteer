@@ -23,7 +23,9 @@ type Scheduler struct {
 	cronParser cron.Parser
 	lastFire   map[string]time.Time // 各 Schedule 上次触发时间
 	lastRun    map[string]time.Time // slot 幂等 key（保留）
-	mu         chan struct{}        // 简单互斥
+	paused     bool
+	online     func() bool
+	mu         chan struct{} // 简单互斥
 }
 
 // New 创建调度器
@@ -38,8 +40,27 @@ func New(exec Executor, logger *slog.Logger) *Scheduler {
 		cronParser: parser,
 		lastFire:   map[string]time.Time{},
 		lastRun:    map[string]time.Time{},
+		online:     func() bool { return true },
 		mu:         make(chan struct{}, 1),
 	}
+}
+
+// SetOnlineFunc 注入 Hub 连接状态，用于执行 owner=agent 且要求 Hub 在线的调度。
+func (s *Scheduler) SetOnlineFunc(fn func() bool) {
+	s.mu <- struct{}{}
+	if fn == nil {
+		s.online = func() bool { return true }
+	} else {
+		s.online = fn
+	}
+	<-s.mu
+}
+
+// SetPaused 在节点维护/禁用期间暂停 Agent-owned 调度。
+func (s *Scheduler) SetPaused(paused bool) {
+	s.mu <- struct{}{}
+	s.paused = paused
+	<-s.mu
 }
 
 // UpdateSchedules 替换本地调度表
@@ -106,6 +127,13 @@ func (s *Scheduler) checkDue(ctx context.Context, now time.Time) {
 		if sch.ExecutionOwner != models.ExecutionOwnerAgent {
 			continue
 		}
+		s.mu <- struct{}{}
+		paused := s.paused
+		online := s.online()
+		<-s.mu
+		if paused || (sch.OfflinePolicy == models.OfflinePolicyHubOnlineRequired && !online) {
+			continue
+		}
 		scheduledAt, due, err := s.nextRun(sch, now)
 		if err != nil {
 			continue
@@ -136,7 +164,9 @@ func (s *Scheduler) checkDue(ctx context.Context, now time.Time) {
 
 // intervalAnchor 返回 interval 调度的当前 anchor（上次触发或创建时刻）
 func intervalAnchor(s *Scheduler, sch *models.Schedule, now time.Time) time.Time {
+	s.mu <- struct{}{}
 	anchor := s.lastFire[sch.ID]
+	<-s.mu
 	if anchor.IsZero() {
 		anchor = sch.CreatedAt
 	}
@@ -160,7 +190,9 @@ func (s *Scheduler) nextRun(sch *models.Schedule, now time.Time) (time.Time, boo
 			return time.Time{}, false, err
 		}
 		// 基于上次触发时间判断本次是否到点
+		s.mu <- struct{}{}
 		last := s.lastFire[sch.ID]
+		<-s.mu
 		if last.IsZero() {
 			last = sch.CreatedAt.In(loc)
 			if last.IsZero() {
@@ -207,10 +239,19 @@ func (s *Scheduler) nextRun(sch *models.Schedule, now time.Time) (time.Time, boo
 			return time.Time{}, false, nil
 		}
 		t := sch.RunAt.In(loc)
+		s.mu <- struct{}{}
+		alreadyFired := !s.lastFire[sch.ID].IsZero()
+		<-s.mu
+		if alreadyFired {
+			return t, false, nil
+		}
 		if now.After(t) {
 			if sch.MisfirePolicy == models.MisfirePolicyRunOnce {
 				return t, true, nil
 			}
+			s.mu <- struct{}{}
+			s.lastFire[sch.ID] = now
+			<-s.mu
 			return time.Time{}, false, nil
 		}
 		return t, false, nil

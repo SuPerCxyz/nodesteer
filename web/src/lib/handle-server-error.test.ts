@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiError } from './api'
 import { handleServerError } from './handle-server-error'
 
 const toastError = vi.hoisted(() => vi.fn())
@@ -25,6 +26,12 @@ describe('handleServerError', () => {
     handleServerError({ status: 204 })
 
     expect(toastError).toHaveBeenCalledWith('No content.')
+  })
+
+  it('shows the API error message for the native API client error', () => {
+    handleServerError(new ApiError(400, 'node_ip must be valid'))
+
+    expect(toastError).toHaveBeenCalledWith('node_ip must be valid')
   })
 
   it('prefers the API title when the error is an Axios error with response data', () => {

@@ -2,7 +2,9 @@ package hub
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -136,6 +138,9 @@ func (g *Gateway) handle(w http.ResponseWriter, r *http.Request) {
 		}
 		conn.meta.lastSeen = time.Now()
 		if err := g.dispatch(ctx, conn, env); err != nil {
+			if g.dropOrphanSession(ctx, conn.meta.nodeID, env.Type, err) {
+				return
+			}
 			g.logger.Warn("dispatch error", "type", env.Type, "error", err)
 			// 协议错误则关闭
 			if env.Type == protocol.MsgHello {
@@ -155,7 +160,7 @@ func (g *Gateway) handleDisconnect(nodeID string, conn AgentConn) {
 	cur, ok := g.sessions.Get(nodeID)
 	if !ok {
 		// 会话已不存在（例如已被 heartbeat checker 清理），确保状态标记为 offline
-		if err := g.nodes.SetNodeStatus(context.Background(), nodeID, "offline"); err != nil {
+		if err := g.markDisconnected(context.Background(), nodeID); err != nil {
 			g.logger.Warn("mark offline on disconnect failed", "node", nodeID, "error", err)
 		}
 		return
@@ -165,9 +170,45 @@ func (g *Gateway) handleDisconnect(nodeID string, conn AgentConn) {
 		return
 	}
 	g.sessions.Unregister(nodeID)
-	if err := g.nodes.SetNodeStatus(context.Background(), nodeID, "offline"); err != nil {
+	if err := g.markDisconnected(context.Background(), nodeID); err != nil {
 		g.logger.Warn("mark offline on disconnect failed", "node", nodeID, "error", err)
 	}
+}
+
+func (g *Gateway) markDisconnected(ctx context.Context, nodeID string) error {
+	node, err := g.nodes.GetNode(ctx, nodeID)
+	if err != nil {
+		// 节点记录已被删除时无需再标记状态，避免删除后产生无意义告警。
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+	if node.Status == models.NodeStatusMaintenance || node.Status == models.NodeStatusDisabled {
+		return nil
+	}
+	return g.nodes.SetNodeStatus(ctx, nodeID, models.NodeStatusOffline)
+}
+
+// nodeMissing 判定节点的记录是否已不存在。
+func (g *Gateway) nodeMissing(ctx context.Context, nodeID string) bool {
+	if nodeID == "" {
+		return false
+	}
+	_, err := g.nodes.GetNode(ctx, nodeID)
+	return errors.Is(err, sql.ErrNoRows)
+}
+
+// dropOrphanSession 回收“节点记录已删除但会话仍存活”的遗留会话。
+// 这类会话若不复用，Agent 每个上报周期都会查询已删除节点并重复报错。
+// 返回 true 表示该错误已按会话回收处理，调用方无需再记录通用 dispatch error。
+func (g *Gateway) dropOrphanSession(ctx context.Context, nodeID, envType string, err error) bool {
+	if !errors.Is(err, sql.ErrNoRows) || !g.nodeMissing(ctx, nodeID) {
+		return false
+	}
+	g.logger.Warn("drop session for deleted node", "node", nodeID, "type", envType)
+	g.sessions.Unregister(nodeID)
+	return true
 }
 
 func (g *Gateway) dispatch(ctx context.Context, conn *wsConn, env protocol.Envelope) error {
@@ -256,6 +297,9 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 			return fmt.Errorf("invalid credential")
 		}
 		node = &NodeWithCred{Node: existing, Cred: p.AgentCredential}
+		if err := g.nodes.UpdateHeartbeat(ctx, existing.ID, time.Now()); err != nil {
+			return err
+		}
 	} else {
 		// 首次注册
 		if p.RegistrationKey == "" || p.RegistrationKey != g.cfg.RegistrationToken {
@@ -286,6 +330,7 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 		AgentCredential:  node.Cred,
 		DesiredGlobalRev: cur,
 		Settings:         g.settings(ctx),
+		NodeStatus:       node.Node.Status,
 	}))
 	if g.onAgentConn != nil {
 		g.onAgentConn(node.Node.ID)
@@ -298,9 +343,7 @@ func (g *Gateway) handleHeartbeat(ctx context.Context, conn *wsConn, env protoco
 	if err := json.Unmarshal(env.Payload, &p); err != nil {
 		return err
 	}
-	if p.NodeID == "" {
-		p.NodeID = conn.meta.nodeID
-	}
+	p.NodeID = conn.meta.nodeID
 	if err := g.nodes.UpdateHeartbeat(ctx, p.NodeID, time.Now()); err != nil {
 		return err
 	}
@@ -348,9 +391,7 @@ func (g *Gateway) handleRevisionCheck(ctx context.Context, conn *wsConn, env pro
 	if err != nil {
 		return err
 	}
-	if p.NodeID == "" {
-		p.NodeID = conn.meta.nodeID
-	}
+	p.NodeID = conn.meta.nodeID
 	syncStatus := "synced"
 	if p.GlobalRev < cur {
 		syncStatus = "outdated"
@@ -437,7 +478,11 @@ func (g *Gateway) handleRemoteState(ctx context.Context, conn *wsConn, env proto
 	if err := json.Unmarshal(env.Payload, &p); err != nil {
 		return err
 	}
-	return g.nodes.store.SetRemoteState(ctx, p.NodeID, p.Property, p.Value, time.Now(), p.TTL)
+	if p.Property != "online" && p.Property != "last_execution" {
+		return fmt.Errorf("unsupported remote state property: %s", p.Property)
+	}
+	// Agent 上报的 NodeID 不能跨节点伪造，以连接握手身份为准。
+	return g.nodes.store.SetRemoteState(ctx, conn.meta.nodeID, p.Property, p.Value, time.Now(), p.TTL)
 }
 
 // handleRemoteStateReq 处理 Agent 对远程节点状态的查询（Remote Node Condition）
@@ -472,7 +517,7 @@ func (g *Gateway) resolveRemoteState(ctx context.Context, p protocol.RemoteState
 		if err != nil {
 			return protocol.RemoteStateUnknown, now, 60
 		}
-		return node.Status, now, 60
+		return strings.ToLower(node.Status), now, 60
 	case "last_execution":
 		if p.TaskID == "" {
 			return protocol.RemoteStateUnknown, now, 60

@@ -17,6 +17,7 @@ import (
 type Config struct {
 	HubURL            string   `yaml:"hub_url"`
 	RegistrationToken string   `yaml:"registration_token"`
+	AgentID           string   `yaml:"agent_id"`
 	NodeName          string   `yaml:"node_name"`
 	NodeIP            string   `yaml:"node_ip"`
 	DeploymentMode    string   `yaml:"deployment_mode"`
@@ -76,6 +77,7 @@ func main() {
 	a, err := agent.New(agent.Config{
 		HubURL:            cfg.HubURL,
 		RegistrationToken: cfg.RegistrationToken,
+		AgentID:           cfg.AgentID,
 		NodeName:          cfg.NodeName,
 		NodeIP:            cfg.NodeIP,
 		DeploymentMode:    cfg.DeploymentMode,
@@ -121,6 +123,9 @@ func applyEnv(cfg *Config) {
 	}
 	if v := os.Getenv("CADENTRA_REGISTRATION_TOKEN"); v != "" {
 		cfg.RegistrationToken = v
+	}
+	if v := os.Getenv("CADENTRA_AGENT_ID"); v != "" {
+		cfg.AgentID = v
 	}
 	if v := os.Getenv("CADENTRA_NODE_NAME"); v != "" {
 		cfg.NodeName = v

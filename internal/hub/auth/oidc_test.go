@@ -24,6 +24,7 @@ type mockIdP struct {
 	claims   map[string]any
 	username string
 	role     string
+	nonce    string
 }
 
 func newMockIdP(t *testing.T) *mockIdP {
@@ -97,6 +98,7 @@ func (m *mockIdP) signIDToken() (string, error) {
 		"iss":   m.issuer,
 		"sub":   "sub-123",
 		"aud":   "test-client",
+		"nonce": m.nonce,
 		"iat":   now.Unix(),
 		"exp":   now.Add(1 * time.Hour).Unix(),
 		"email": "alice@example.com",
@@ -139,7 +141,7 @@ func newTestOIDC(t *testing.T, idp *mockIdP, mutate func(*OIDCConfig)) *OIDC {
 }
 
 // authCodeURLHelper 从授权 URL 提取 state 与 code_challenge
-func parseAuthURL(t *testing.T, raw string) (state, verifier string) {
+func parseAuthURL(t *testing.T, raw string) (state, verifier, nonce string) {
 	t.Helper()
 	u, err := url.Parse(raw)
 	if err != nil {
@@ -152,7 +154,10 @@ func parseAuthURL(t *testing.T, raw string) (state, verifier string) {
 	if q.Get("code_challenge") == "" || q.Get("code_challenge_method") != "S256" {
 		t.Fatalf("missing/invalid code_challenge: %s %s", q.Get("code_challenge"), q.Get("code_challenge_method"))
 	}
-	return q.Get("state"), q.Get("code_challenge")
+	if q.Get("nonce") == "" {
+		t.Fatal("missing nonce")
+	}
+	return q.Get("state"), q.Get("code_challenge"), q.Get("nonce")
 }
 
 func TestOIDCDisabled(t *testing.T) {
@@ -177,7 +182,8 @@ func TestOIDCExchangeSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	state, _ := parseAuthURL(t, authURL)
+	state, _, nonce := parseAuthURL(t, authURL)
+	idp.nonce = nonce
 
 	username, role, err := o.Exchange(context.Background(), state, "mock-code")
 	if err != nil {
@@ -199,7 +205,8 @@ func TestOIDCExchangeRoleDefault(t *testing.T) {
 
 	o := newTestOIDC(t, idp, nil)
 	authURL, _ := o.AuthCodeURL()
-	state, _ := parseAuthURL(t, authURL)
+	state, _, nonce := parseAuthURL(t, authURL)
+	idp.nonce = nonce
 
 	_, role, err := o.Exchange(context.Background(), state, "mock-code")
 	if err != nil {
@@ -218,7 +225,8 @@ func TestOIDCExchangeUsernameFallback(t *testing.T) {
 
 	o := newTestOIDC(t, idp, nil)
 	authURL, _ := o.AuthCodeURL()
-	state, _ := parseAuthURL(t, authURL)
+	state, _, nonce := parseAuthURL(t, authURL)
+	idp.nonce = nonce
 
 	username, _, err := o.Exchange(context.Background(), state, "mock-code")
 	if err != nil {
@@ -240,7 +248,8 @@ func TestOIDCExchangeCustomClaims(t *testing.T) {
 		c.RoleClaim = "roles"
 	})
 	authURL, _ := o.AuthCodeURL()
-	state, _ := parseAuthURL(t, authURL)
+	state, _, nonce := parseAuthURL(t, authURL)
+	idp.nonce = nonce
 
 	username, role, err := o.Exchange(context.Background(), state, "mock-code")
 	if err != nil {
@@ -268,7 +277,8 @@ func TestOIDCExchangeReplayState(t *testing.T) {
 	defer idp.Close()
 	o := newTestOIDC(t, idp, nil)
 	authURL, _ := o.AuthCodeURL()
-	state, _ := parseAuthURL(t, authURL)
+	state, _, nonce := parseAuthURL(t, authURL)
+	idp.nonce = nonce
 	if _, _, err := o.Exchange(context.Background(), state, "mock-code"); err != nil {
 		t.Fatal(err)
 	}

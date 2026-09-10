@@ -132,6 +132,9 @@ func (m *Manager) Logout(token string) {
 
 // SSOLogin 通过 OIDC 建立会话：不存在则自动创建本地用户
 func (m *Manager) SSOLogin(ctx context.Context, username, role string) (*Session, error) {
+	if username == "" || !ValidRole(role) {
+		return nil, ErrInvalidCredentials
+	}
 	u, err := m.store.GetUserByUsername(ctx, username)
 	if err != nil {
 		// 自动创建
@@ -160,6 +163,16 @@ func (m *Manager) SSOLogin(ctx context.Context, username, role string) (*Session
 	m.sessions[s.Token] = s
 	m.mu.Unlock()
 	return s, nil
+}
+
+// ValidRole 仅允许产品定义的三种角色，SSO 映射异常时 Fail Closed。
+func ValidRole(role string) bool {
+	switch role {
+	case models.RoleAdministrator, models.RoleOperator, models.RoleViewer:
+		return true
+	default:
+		return false
+	}
 }
 
 // HasPermission 判断角色权限

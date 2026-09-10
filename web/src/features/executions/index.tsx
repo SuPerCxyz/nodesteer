@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { api, type Execution, type Task } from '@/lib/api'
 import { copyText } from '@/lib/clipboard'
+import { useCanRun } from '@/lib/permissions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -69,7 +70,12 @@ export function Executions() {
   )
   const update = (key: 'q' | 'status' | 'trigger', value: string) =>
     navigate({
-      search: (previous) => ({ ...previous, [key]: value || undefined }),
+      search: (previous) => {
+        const next = { ...previous }
+        if (value) next[key] = value
+        else delete next[key]
+        return next
+      },
     })
   const visible = useMemo(
     () =>
@@ -278,6 +284,7 @@ export function Executions() {
 
 export function ExecutionDetail() {
   const { t, i18n } = useTranslation()
+  const canRun = useCanRun()
   const id = window.location.pathname.split('/').pop() || ''
   const client = useQueryClient()
   const [tab, setTab] = useState('overview')
@@ -349,7 +356,7 @@ export function ExecutionDetail() {
         title={taskName}
         description={`${t('executions.executionTitle')} · ${trigger}`}
         action={
-          exec.status === 'RUNNING' ? (
+          exec.status === 'RUNNING' && canRun ? (
             <Button
               variant='destructive'
               onClick={() => setStopOpen(true)}
@@ -567,8 +574,10 @@ function LogViewer({
   }, [filtered, follow])
   const copy = async () => {
     try {
-      await copyText(filtered)
-      toast.success(t('common.copied'))
+      const copied = await copyText(filtered)
+      toast[copied ? 'success' : 'info'](
+        copied ? t('common.copied') : t('common.copyManual')
+      )
     } catch {
       toast.error(t('common.copyFailed'))
     }

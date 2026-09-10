@@ -1,10 +1,12 @@
 package hubserver
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -102,7 +104,7 @@ func TestAPILifecycle(t *testing.T) {
 	do("GET", "/api/scripts/"+script.ID+"/revisions/1", "", 200)
 
 	// Task CRUD
-	tk := do("POST", "/api/tasks", `{"name":"test-task","type":"script","script_id":"`+script.ID+`","target":{"type":"label"},"enabled":true,"timeout":30}`, 200)
+	tk := do("POST", "/api/tasks", `{"name":"test-task","type":"script","script_id":"`+script.ID+`","target":{"type":"label","label_key":"env","label_value":"test"},"enabled":true,"timeout":30}`, 200)
 	var task struct {
 		ID string `json:"id"`
 	}
@@ -112,7 +114,54 @@ func TestAPILifecycle(t *testing.T) {
 	do("POST", "/api/tasks", `{"name":"bad","type":"script","script_id":"nonexistent","enabled":true}`, 400)
 
 	// Schedules
-	do("POST", "/api/schedules", `{"task_id":"`+task.ID+`","type":"interval","interval_sec":60,"timezone":"UTC","execution_owner":"agent","enabled":true}`, 200)
+	schBody := do("POST", "/api/schedules", `{"task_id":"`+task.ID+`","type":"interval","interval_sec":60,"timezone":"UTC","execution_owner":"agent","enabled":true}`, 200)
+	var schedule struct {
+		ID string `json:"id"`
+	}
+	json.Unmarshal([]byte(schBody), &schedule)
+
+	// Artifact DELETE must be idempotent for client retries.
+	var artifactForm bytes.Buffer
+	form := multipart.NewWriter(&artifactForm)
+	if err := form.WriteField("name", "api-test-artifact"); err != nil {
+		t.Fatalf("artifact name: %v", err)
+	}
+	if err := form.WriteField("version", "1.0.0"); err != nil {
+		t.Fatalf("artifact version: %v", err)
+	}
+	part, err := form.CreateFormFile("file", "api-test-artifact.sh")
+	if err != nil {
+		t.Fatalf("artifact file: %v", err)
+	}
+	if _, err := part.Write([]byte("#!/bin/sh\necho api-test\n")); err != nil {
+		t.Fatalf("artifact content: %v", err)
+	}
+	if err := form.Close(); err != nil {
+		t.Fatalf("artifact form: %v", err)
+	}
+	uploadReq, err := http.NewRequest(http.MethodPost, base+"/api/artifacts", &artifactForm)
+	if err != nil {
+		t.Fatalf("artifact upload request: %v", err)
+	}
+	uploadReq.Header.Set("Authorization", "Bearer "+loginBody.Token)
+	uploadReq.Header.Set("Content-Type", form.FormDataContentType())
+	uploadResp, err := http.DefaultClient.Do(uploadReq)
+	if err != nil {
+		t.Fatalf("artifact upload: %v", err)
+	}
+	var artifact struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(uploadResp.Body).Decode(&artifact); err != nil {
+		uploadResp.Body.Close()
+		t.Fatalf("artifact upload response: %v", err)
+	}
+	uploadResp.Body.Close()
+	if uploadResp.StatusCode != http.StatusOK || artifact.ID == "" {
+		t.Fatalf("artifact upload: expected 200 and id, got %d/%q", uploadResp.StatusCode, artifact.ID)
+	}
+	do("DELETE", "/api/artifacts/"+artifact.ID, "", 200)
+	do("DELETE", "/api/artifacts/"+artifact.ID, "", 200)
 
 	// Settings
 	do("GET", "/api/settings", "", 200)
@@ -143,6 +192,7 @@ func TestAPILifecycle(t *testing.T) {
 	}
 
 	// 删除
+	do("DELETE", "/api/schedules/"+schedule.ID, "", 200)
 	do("DELETE", "/api/tasks/"+task.ID, "", 200)
 	do("DELETE", "/api/scripts/"+script.ID, "", 200)
 	do("DELETE", "/api/applications/"+application.ID, "", 200)

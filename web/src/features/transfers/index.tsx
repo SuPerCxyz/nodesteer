@@ -5,6 +5,7 @@ import { Plus, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { api, type FileTransfer, type Node } from '@/lib/api'
+import { useCanWrite } from '@/lib/permissions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -32,6 +33,7 @@ type TargetDraft = { node_id: string; destination_path: string }
 
 export function FileTransfers() {
   const { t } = useTranslation()
+  const canWrite = useCanWrite()
   const client = useQueryClient()
   const [sourceNodeID, setSourceNodeID] = useState('')
   const [sourcePath, setSourcePath] = useState('')
@@ -168,27 +170,30 @@ export function FileTransfers() {
         size: 72,
         minSize: 64,
         meta: { align: 'end' },
-        cell: ({ row }: { row: { original: FileTransfer } }) => (
-          <MoreMenu>
-            {row.original.status === 'FAILED' && (
-              <DropdownMenuItem onSelect={() => retryTransfer(row.original.id)}>
-                {t('transfers.retry')}
-              </DropdownMenuItem>
-            )}
-            {['PENDING', 'UPLOADING', 'DELIVERING'].includes(
-              row.original.status
-            ) && (
-              <DropdownMenuItem
-                onSelect={() => cancelTransfer(row.original.id)}
-              >
-                {t('transfers.cancel')}
-              </DropdownMenuItem>
-            )}
-          </MoreMenu>
-        ),
+        cell: ({ row }: { row: { original: FileTransfer } }) =>
+          canWrite ? (
+            <MoreMenu>
+              {row.original.status === 'FAILED' && (
+                <DropdownMenuItem
+                  onSelect={() => retryTransfer(row.original.id)}
+                >
+                  {t('transfers.retry')}
+                </DropdownMenuItem>
+              )}
+              {['PENDING', 'UPLOADING', 'DELIVERING'].includes(
+                row.original.status
+              ) && (
+                <DropdownMenuItem
+                  onSelect={() => cancelTransfer(row.original.id)}
+                >
+                  {t('transfers.cancel')}
+                </DropdownMenuItem>
+              )}
+            </MoreMenu>
+          ) : null,
       },
     ],
-    [cancelTransfer, nodeNames, retryTransfer, t]
+    [canWrite, cancelTransfer, nodeNames, retryTransfer, t]
   )
   const addTarget = () => {
     if (
@@ -212,128 +217,130 @@ export function FileTransfers() {
         description={t('transfers.description')}
       />
       <Main fluid className='flex flex-1 flex-col gap-6'>
-        <Card className='w-full'>
-          <CardHeader>
-            <CardTitle className='text-sm'>
-              {t('transfers.newTransfer')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className='space-y-4'>
-            <div className='grid gap-4 md:grid-cols-[minmax(180px,1fr)_minmax(0,2fr)_108px]'>
-              <label className='grid gap-2 text-sm'>
-                {t('transfers.source')}
-                <Select value={sourceNodeID} onValueChange={setSourceNodeID}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('transfers.selectSource')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(nodes.data || []).map((node) => (
-                      <SelectItem key={node.id} value={node.id}>
-                        {node.hostname}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </label>
-              <label className='grid gap-2 text-sm'>
-                {t('transfers.sourcePath')}
-                <Input
-                  value={sourcePath}
-                  onChange={(event) => setSourcePath(event.target.value)}
-                  placeholder='/var/lib/app/config.yaml'
-                  className='font-mono'
-                />
-              </label>
-              <div className='hidden md:block' aria-hidden='true' />
-            </div>
-            <div className='grid gap-4 md:grid-cols-[minmax(180px,1fr)_minmax(0,2fr)_108px]'>
-              <label className='grid gap-2 text-sm'>
-                {t('transfers.target')}
-                <Select value={targetNodeID} onValueChange={setTargetNodeID}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('transfers.selectTarget')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(nodes.data || [])
-                      .filter((node) => node.id !== sourceNodeID)
-                      .map((node) => (
+        {canWrite ? (
+          <Card className='w-full'>
+            <CardHeader>
+              <CardTitle className='text-sm'>
+                {t('transfers.newTransfer')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              <div className='grid gap-4 md:grid-cols-[minmax(180px,1fr)_minmax(0,2fr)_108px]'>
+                <label className='grid gap-2 text-sm'>
+                  {t('transfers.source')}
+                  <Select value={sourceNodeID} onValueChange={setSourceNodeID}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('transfers.selectSource')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(nodes.data || []).map((node) => (
                         <SelectItem key={node.id} value={node.id}>
                           {node.hostname}
                         </SelectItem>
                       ))}
-                  </SelectContent>
-                </Select>
-              </label>
-              <label className='grid gap-2 text-sm'>
-                {t('transfers.destinationPath')}
-                <Input
-                  value={destinationPath}
-                  onChange={(event) => setDestinationPath(event.target.value)}
-                  placeholder='/var/lib/app/config.yaml'
-                  className='font-mono'
-                />
-              </label>
-              <Button
-                type='button'
-                variant='outline'
-                className='w-full self-end'
-                onClick={addTarget}
-                disabled={!targetNodeID || !destinationPath}
-              >
-                <Plus className='size-4' />
-                {t('transfers.addTarget')}
-              </Button>
-            </div>
-            {targets.length > 0 && (
-              <div className='grid gap-2 text-sm'>
-                {targets.map((target) => (
-                  <div
-                    key={target.node_id}
-                    className='flex items-center justify-between rounded-md border px-3 py-2'
-                  >
-                    <span>
-                      <span className='font-medium'>
-                        {nodeNames.get(target.node_id) || target.node_id}
-                      </span>
-                      <span className='ms-3 font-mono text-xs text-muted-foreground'>
-                        {target.destination_path}
-                      </span>
-                    </span>
-                    <Button
-                      type='button'
-                      variant='ghost'
-                      size='icon'
-                      className='size-8'
-                      onClick={() =>
-                        setTargets((current) =>
-                          current.filter(
-                            (item) => item.node_id !== target.node_id
-                          )
-                        )
-                      }
-                      aria-label={t('common.remove')}
-                    >
-                      <X className='size-4' />
-                    </Button>
-                  </div>
-                ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+                <label className='grid gap-2 text-sm'>
+                  {t('transfers.sourcePath')}
+                  <Input
+                    value={sourcePath}
+                    onChange={(event) => setSourcePath(event.target.value)}
+                    placeholder='/var/lib/app/config.yaml'
+                    className='font-mono'
+                  />
+                </label>
+                <div className='hidden md:block' aria-hidden='true' />
               </div>
-            )}
-            <Button
-              onClick={() => create.mutate()}
-              disabled={
-                !source ||
-                !sourcePath ||
-                targets.length === 0 ||
-                create.isPending
-              }
-            >
-              {create.isPending
-                ? t('transfers.creating')
-                : t('transfers.start')}
-            </Button>
-          </CardContent>
-        </Card>
+              <div className='grid gap-4 md:grid-cols-[minmax(180px,1fr)_minmax(0,2fr)_108px]'>
+                <label className='grid gap-2 text-sm'>
+                  {t('transfers.target')}
+                  <Select value={targetNodeID} onValueChange={setTargetNodeID}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('transfers.selectTarget')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(nodes.data || [])
+                        .filter((node) => node.id !== sourceNodeID)
+                        .map((node) => (
+                          <SelectItem key={node.id} value={node.id}>
+                            {node.hostname}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+                <label className='grid gap-2 text-sm'>
+                  {t('transfers.destinationPath')}
+                  <Input
+                    value={destinationPath}
+                    onChange={(event) => setDestinationPath(event.target.value)}
+                    placeholder='/var/lib/app/config.yaml'
+                    className='font-mono'
+                  />
+                </label>
+                <Button
+                  type='button'
+                  variant='outline'
+                  className='w-full self-end'
+                  onClick={addTarget}
+                  disabled={!targetNodeID || !destinationPath}
+                >
+                  <Plus className='size-4' />
+                  {t('transfers.addTarget')}
+                </Button>
+              </div>
+              {targets.length > 0 && (
+                <div className='grid gap-2 text-sm'>
+                  {targets.map((target) => (
+                    <div
+                      key={target.node_id}
+                      className='flex items-center justify-between rounded-md border px-3 py-2'
+                    >
+                      <span>
+                        <span className='font-medium'>
+                          {nodeNames.get(target.node_id) || target.node_id}
+                        </span>
+                        <span className='ms-3 font-mono text-xs text-muted-foreground'>
+                          {target.destination_path}
+                        </span>
+                      </span>
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='icon'
+                        className='size-8'
+                        onClick={() =>
+                          setTargets((current) =>
+                            current.filter(
+                              (item) => item.node_id !== target.node_id
+                            )
+                          )
+                        }
+                        aria-label={t('common.remove')}
+                      >
+                        <X className='size-4' />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Button
+                onClick={() => create.mutate()}
+                disabled={
+                  !source ||
+                  !sourcePath ||
+                  targets.length === 0 ||
+                  create.isPending
+                }
+              >
+                {create.isPending
+                  ? t('transfers.creating')
+                  : t('transfers.start')}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : null}
         {transfers.isError ? (
           <ErrorState
             error={transfers.error}

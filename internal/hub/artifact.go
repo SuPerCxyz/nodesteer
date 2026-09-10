@@ -3,7 +3,9 @@ package hub
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -103,7 +105,19 @@ func (am *ArtifactManager) Get(ctx context.Context, id string) (*models.Artifact
 func (am *ArtifactManager) Delete(ctx context.Context, id string) error {
 	a, err := am.store.GetArtifact(ctx, id)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
 		return err
+	}
+	apps, err := am.store.ListApplications(ctx)
+	if err != nil {
+		return err
+	}
+	for _, app := range apps {
+		if app.ArtifactID == id {
+			return fmt.Errorf("artifact %s is referenced by application %s", id, app.ID)
+		}
 	}
 	if err := am.store.DeleteArtifact(ctx, id); err != nil {
 		return err

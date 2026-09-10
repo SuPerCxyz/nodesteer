@@ -91,7 +91,7 @@ func (s *SQLiteStore) UpsertNode(ctx context.Context, n *models.Node) error {
 			capabilities_json=excluded.capabilities_json, labels_json=excluded.labels_json`,
 		n.ID, n.AgentID, n.Hostname, n.IP, n.OS, n.Arch, n.AgentVersion, n.DeploymentMode,
 		boolToInt(n.HostIntegration), n.Status, n.GlobalRevision, n.SyncStatus,
-		nullStr(n.LastSeen.Format(time.RFC3339Nano)), nullStr(n.FirstSeen.Format(time.RFC3339Nano)),
+		timeToDB(n.LastSeen), timeToDB(n.FirstSeen),
 		string(inv), string(caps), string(labels))
 	return err
 }
@@ -188,6 +188,24 @@ func (s *SQLiteStore) SetNodeLabels(ctx context.Context, id string, labels map[s
 	return err
 }
 
+// DeleteNode 删除节点本身及其可安全清理的运行态关联；执行历史保留用于审计。
+func (s *SQLiteStore) DeleteNode(ctx context.Context, id string) error {
+	execer := s.execer(ctx)
+	for _, query := range []string{
+		`DELETE FROM node_group_members WHERE node_id = ?`,
+		`DELETE FROM application_assignments WHERE node_id = ?`,
+		`DELETE FROM application_node_state WHERE node_id = ?`,
+		`DELETE FROM agent_sync_state WHERE node_id = ?`,
+		`DELETE FROM remote_state WHERE node_id = ?`,
+		`DELETE FROM nodes WHERE id = ?`,
+	} {
+		if _, err := execer.ExecContext(ctx, query, id); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // ---------- Groups ----------
 
 func (s *SQLiteStore) CreateGroup(ctx context.Context, g *models.Group) error {
@@ -232,7 +250,7 @@ func (s *SQLiteStore) GetGroup(ctx context.Context, id string) (*models.Group, e
 		return nil, err
 	}
 	g.CreatedAt = parseTime(created)
-	members, err := s.GroupMemberIDs(ctx, g.ID)
+	members, err := s.groupMemberIDsForDisplay(ctx, &g)
 	if err != nil {
 		return nil, err
 	}
@@ -258,13 +276,30 @@ func (s *SQLiteStore) ListGroups(ctx context.Context) ([]*models.Group, error) {
 		out = append(out, &g)
 	}
 	for _, g := range out {
-		members, err := s.GroupMemberIDs(ctx, g.ID)
+		members, err := s.groupMemberIDsForDisplay(ctx, g)
 		if err != nil {
 			return nil, err
 		}
 		g.Members = members
 	}
 	return out, rows.Err()
+}
+
+func (s *SQLiteStore) groupMemberIDsForDisplay(ctx context.Context, g *models.Group) ([]string, error) {
+	if g.Type != "label" {
+		return s.GroupMemberIDs(ctx, g.ID)
+	}
+	nodes, err := s.ListNodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var members []string
+	for _, node := range nodes {
+		if value, ok := node.Labels[g.LabelKey]; ok && (g.LabelValue == "" || value == g.LabelValue) {
+			members = append(members, node.ID)
+		}
+	}
+	return members, nil
 }
 
 func (s *SQLiteStore) UpdateGroup(ctx context.Context, g *models.Group) error {

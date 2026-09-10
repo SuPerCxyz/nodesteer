@@ -354,6 +354,7 @@ func (m *FileTransferManager) completeUpload(ctx context.Context, t *models.File
 	}
 	t.Size, t.SHA256, t.Status, t.Error = total, sha, models.FileTransferDelivering, ""
 	if err := m.store.UpdateFileTransfer(ctx, t); err != nil {
+		_ = os.Rename(blob, part)
 		return err
 	}
 	for _, target := range t.Targets {
@@ -363,6 +364,8 @@ func (m *FileTransferManager) completeUpload(ctx context.Context, t *models.File
 }
 
 func (m *FileTransferManager) handleDownload(w http.ResponseWriter, r *http.Request, id, nodeID string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	t, err := m.store.GetFileTransfer(r.Context(), id)
 	if err != nil || t.SHA256 == "" {
 		writeTransferJSON(w, http.StatusNotFound, map[string]string{"error": "staged transfer not found"})
@@ -393,6 +396,8 @@ func (m *FileTransferManager) handleDownload(w http.ResponseWriter, r *http.Requ
 
 // HandleUploadResult records a source Agent error when the HTTP upload failed.
 func (m *FileTransferManager) HandleUploadResult(ctx context.Context, nodeID string, p protocol.FileUploadResultPayload) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if p.OK {
 		return nil
 	}
@@ -409,6 +414,9 @@ func (m *FileTransferManager) HandleUploadResult(ctx context.Context, nodeID str
 
 // HandleDeliveryResult records one target result and updates aggregate state.
 func (m *FileTransferManager) HandleDeliveryResult(ctx context.Context, nodeID string, p protocol.FileDeliveryResultPayload) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	t, err := m.store.GetFileTransfer(ctx, p.TransferID)
 	if err != nil {
 		return err
@@ -451,11 +459,19 @@ func (m *FileTransferManager) HandleDeliveryResult(ctx context.Context, nodeID s
 	} else {
 		t.Status = models.FileTransferDelivering
 	}
-	return m.store.UpdateFileTransfer(ctx, t)
+	if err := m.store.UpdateFileTransfer(ctx, t); err != nil {
+		return err
+	}
+	if t.Status == models.FileTransferSuccess {
+		m.cleanupFiles(t.ID)
+	}
+	return nil
 }
 
 // Retry resets failed targets, or restarts an incomplete source upload.
 func (m *FileTransferManager) Retry(ctx context.Context, id, targetID string) (*models.FileTransfer, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	t, err := m.store.GetFileTransfer(ctx, id)
 	if err != nil {
 		return nil, err
@@ -491,6 +507,8 @@ func (m *FileTransferManager) Retry(ctx context.Context, id, targetID string) (*
 
 // Cancel cancels pending work and notifies active Agents.
 func (m *FileTransferManager) Cancel(ctx context.Context, id string) (*models.FileTransfer, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	t, err := m.store.GetFileTransfer(ctx, id)
 	if err != nil {
 		return nil, err
@@ -511,7 +529,13 @@ func (m *FileTransferManager) Cancel(ctx context.Context, id string) (*models.Fi
 	if conn, ok := m.sessions.Get(t.SourceNodeID); ok {
 		_ = conn.Send(protocol.NewEnvelope(protocol.MsgFileTransferCancel, id, protocol.FileTransferCancelPayload{TransferID: id}))
 	}
+	m.cleanupFiles(id)
 	return m.store.GetFileTransfer(ctx, id)
+}
+
+func (m *FileTransferManager) cleanupFiles(id string) {
+	_ = os.Remove(m.partPath(id))
+	_ = os.Remove(m.blobPath(id))
 }
 
 func (m *FileTransferManager) partPath(id string) string {

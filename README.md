@@ -31,7 +31,7 @@ Hub 是 Desired State 的唯一权威源；Agent 主动连接 Hub，缓存已同
 
 ## 核心能力
 
-- **Hub 控制平面**：Web 管理、REST API、节点/分组/标签、脚本、任务、调度、制品、应用、执行记录、日志、RBAC 和审计。
+- **Hub 控制平面**：Web 管理、REST API、节点/分组/标签、脚本、任务、调度、发布包、托管应用、执行记录、日志、RBAC 和审计。
 - **Agent 执行平面**：主动连接、注册认证、Heartbeat、Inventory、脚本/命令执行、Local Scheduler、离线执行、Execution Journal 和 Health Check。
 - **可靠同步**：长连接实时通知、Revision 周期校验、Reconnect Reconciliation 和 Tombstone 删除同步。
 - **可靠执行**：Execution 幂等、执行前 Journal 持久化、实时/离线日志和断线后的结果回传。
@@ -122,13 +122,13 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Compose 默认同时提供 Hub 和一个 Docker Agent。Agent 数据保存在 agent-data 卷，Hub 数据和制品保存在 hub-data 卷。
+Compose 默认同时提供 Hub 和一个 Docker Agent。Agent 数据保存在 agent-data 卷，Hub 数据和发布包保存在 hub-data 卷。
 
 如需从其他网络接入 Agent，将 HUB_GATEWAY_BASE_URL 设置为 Agent 可访问的 Gateway 地址。节点页面可以生成 Native、docker run 和 Docker Compose 纳管命令，并携带节点身份和 Registration Token；节点地址支持 IPv4、IPv6 或 DNS 主机名。
 
 ### CI 构建产物
 
-推送到 `master` 或版本标签后，GitHub Actions 会构建 Linux amd64 的 Hub/Agent 二进制并上传为构建制品，同时发布以下 GHCR 镜像：
+推送到 `master` 或版本标签后，GitHub Actions 会构建 Linux amd64/arm64 的 Hub/Agent 二进制并上传为构建制品，同时发布包含 `linux/amd64` 和 `linux/arm64` 的 GHCR 多架构镜像：
 
 ```text
 ghcr.io/supercxyz/cadentra-hub:latest
@@ -138,12 +138,15 @@ ghcr.io/supercxyz/cadentra-agent:latest
 ### systemd
 
 ```bash
+install bin/cadentra-agent /usr/local/bin/cadentra-agent
 install packaging/systemd/cadentra-hub.service /etc/systemd/system/
 install packaging/systemd/cadentra-agent.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now cadentra-hub
 systemctl enable --now cadentra-agent
 ```
+
+Hub 的节点纳管页面不要求手动选择架构。Native 安装命令会在目标机通过 `uname -m` 判断 x86/amd64 或 ARM/arm64，从 Hub 公开二进制端点下载并校验 SHA256。标准构建会把 Agent payload 直接打包进 Hub 可执行文件；`agent_binary_amd64_path` 和 `agent_binary_arm64_path` 仅作为未打包本地开发构建的回退路径。Docker Hub 镜像和 CI 发布镜像使用内置 payload 提供 amd64/arm64 Agent。
 
 ### Agent 部署模式
 

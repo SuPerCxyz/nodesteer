@@ -1,7 +1,10 @@
 package api
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -44,6 +48,10 @@ type Server struct {
 	sessions          *hub.SessionManager
 	transfers         *hub.FileTransferManager
 	gatewayBaseURL    string
+	baseURL           string
+	agentBinaryPaths  map[string]string
+	agentBinaryData   map[string][]byte
+	readyCheck        func(context.Context) error
 }
 
 // SetMetrics 注入指标收集器
@@ -67,6 +75,25 @@ func (s *Server) SetEnrollmentConfig(registrationToken, gatewayBaseURL string) {
 	s.gatewayBaseURL = gatewayBaseURL
 }
 
+// SetBaseURL 设置 Web/API 基址，供生成的二进制下载命令使用。
+func (s *Server) SetBaseURL(baseURL string) { s.baseURL = strings.TrimRight(baseURL, "/") }
+
+// SetAgentBinaryPaths 设置不同架构的 Agent 二进制路径。
+func (s *Server) SetAgentBinaryPaths(amd64Path, arm64Path string) {
+	s.agentBinaryPaths = map[string]string{
+		"amd64": amd64Path,
+		"arm64": arm64Path,
+	}
+}
+
+// SetAgentBinaryPayloads 设置嵌入 Hub 可执行文件的 Agent 二进制。
+func (s *Server) SetAgentBinaryPayloads(payloads map[string][]byte) {
+	s.agentBinaryData = payloads
+}
+
+// SetReadyCheck 注入运行时就绪检查；未注入时用于纯 API 测试，默认就绪。
+func (s *Server) SetReadyCheck(check func(context.Context) error) { s.readyCheck = check }
+
 // New 创建 API 服务器
 func New(st store.Store, am *auth.Manager, nm *hub.NodeManager, sm *hub.ScriptManager,
 	tm *hub.TaskManager, scm *hub.ScheduleManager, artm *hub.ArtifactManager,
@@ -74,6 +101,8 @@ func New(st store.Store, am *auth.Manager, nm *hub.NodeManager, sm *hub.ScriptMa
 	return &Server{
 		store: st, auth: am, nodes: nm, scripts: sm, tasks: tm,
 		schedules: scm, artifacts: artm, apps: appm, execs: exm, logger: logger,
+		agentBinaryPaths: map[string]string{},
+		agentBinaryData:  map[string][]byte{},
 	}
 }
 
@@ -95,6 +124,9 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/nodes/enrollment", s.withAuth(s.handleNodeEnrollment, "read"))
 	mux.HandleFunc("/api/nodes", s.withAuth(s.handleNodes, "read"))
 	mux.HandleFunc("/api/nodes/", s.withAuth(s.handleNodeByID, "read"))
+
+	// Public Agent binary payload used by generated enrollment commands.
+	mux.HandleFunc("/api/agent/binary", s.handleAgentBinary)
 
 	// File transfers
 	mux.HandleFunc("/api/transfers", s.withAuth(s.handleTransfers, "read"))
@@ -145,6 +177,12 @@ func (s *Server) Routes() http.Handler {
 		w.Write([]byte("ok"))
 	})
 	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		if s.readyCheck != nil {
+			if err := s.readyCheck(r.Context()); err != nil {
+				writeErr(w, http.StatusServiceUnavailable, "not ready")
+				return
+			}
+		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ready"))
 	})
@@ -305,11 +343,19 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 
 // handleOIDCState 返回 OIDC 是否启用
 func (s *Server) handleOIDCState(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]bool{"enabled": s.oidc != nil && s.oidc.Enabled()})
 }
 
 // handleOIDCLogin 生成授权跳转 URL
 func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
 	if s.oidc == nil || !s.oidc.Enabled() {
 		writeErr(w, http.StatusNotFound, "oidc not enabled")
 		return
@@ -325,6 +371,10 @@ func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 
 // handleOIDCCallback 处理 IdP 回调：验证并建立会话
 func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
 	if s.oidc == nil || !s.oidc.Enabled() {
 		writeErr(w, http.StatusNotFound, "oidc not enabled")
 		return
@@ -332,19 +382,19 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
 	code := r.URL.Query().Get("code")
 	if state == "" || code == "" {
-		writeErr(w, http.StatusBadRequest, "missing state or code")
+		http.Redirect(w, r, oidcFailureURL(s.oidc), http.StatusFound)
 		return
 	}
 	username, role, err := s.oidc.Exchange(r.Context(), state, code)
 	if err != nil {
 		s.logger.Error("oidc exchange", "error", err)
-		http.Redirect(w, r, s.oidc.BaseURL()+"/login?error=oidc_failed", http.StatusFound)
+		http.Redirect(w, r, oidcFailureURL(s.oidc), http.StatusFound)
 		return
 	}
 	sess, err := s.auth.SSOLogin(r.Context(), username, role)
 	if err != nil {
 		s.logger.Error("oidc sso login", "user", username, "error", err)
-		http.Redirect(w, r, s.oidc.BaseURL()+"/login?error=oidc_failed", http.StatusFound)
+		http.Redirect(w, r, oidcFailureURL(s.oidc), http.StatusFound)
 		return
 	}
 	s.store.AddAudit(r.Context(), &models.AuditLog{
@@ -353,12 +403,19 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 	})
 	// 返回内嵌 JS 的 HTML：将 token 写入 localStorage 后跳转前端（token 不进 URL，避免日志泄露）
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	tokenJSON, _ := json.Marshal(sess.Token)
+	baseJSON, _ := json.Marshal(s.oidc.BaseURL())
+	w.Header().Set("Cache-Control", "no-store")
 	fmt.Fprintf(w, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sign in</title></head>
 <body><script>
-localStorage.setItem('cadentra_token', %q);
-window.location.replace(%q);
+localStorage.setItem('cadentra_token', %s);
+window.location.replace(%s);
 </script><p>Signing in...</p></body></html>`,
-		sess.Token, s.oidc.BaseURL())
+		tokenJSON, baseJSON)
+}
+
+func oidcFailureURL(o *auth.OIDC) string {
+	return strings.TrimRight(o.BaseURL(), "/") + "/sign-in?error=oidc_failed"
 }
 
 // ---------- Nodes ----------
@@ -410,7 +467,7 @@ func (s *Server) handleNodes(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleNodeEnrollment(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+	if r.Method != http.MethodGet && r.Method != http.MethodPost {
 		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
@@ -427,6 +484,16 @@ func (s *Server) handleNodeEnrollment(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	nodeID, agentID := "", ""
+	if r.Method == http.MethodPost {
+		node, err := s.nodes.PrepareEnrollment(r.Context(), nodeName, nodeIP, models.DeploymentModeNative)
+		if err != nil {
+			writeErr(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		nodeID = node.ID
+		agentID = node.AgentID
+	}
 	base := strings.TrimRight(s.gatewayBaseURL, "/")
 	if hubAddress != "" {
 		base = hub.ResolveGatewayBaseURL("", hubAddress, configuredGatewayAddr(s.gatewayBaseURL))
@@ -437,18 +504,147 @@ func (s *Server) handleNodeEnrollment(w http.ResponseWriter, r *http.Request) {
 	} else if strings.HasPrefix(wsURL, "http://") {
 		wsURL = "ws://" + strings.TrimPrefix(wsURL, "http://")
 	}
-	config := fmt.Sprintf("hub_url: %q\nregistration_token: %q\nnode_name: %q\nnode_ip: %q\ndeployment_mode: native\nhost_integration: false\ndata_dir: /var/lib/cadentra\nagent_version: 0.1.0\n", wsURL, s.RegistrationToken, nodeName, nodeIP)
-	native := "sudo install -d /etc/cadentra && sudo install -m 0755 ./cadentra-agent /usr/local/bin/cadentra-agent && sudo install -m 0644 ./cadentra-agent.service /etc/systemd/system/cadentra-agent.service && sudo sh -c 'cat > /etc/cadentra/agent.yaml' <<'EOF'\n" + config + "EOF\nsudo systemctl daemon-reload && sudo systemctl enable --now cadentra-agent"
-	dockerRun := fmt.Sprintf("docker run -d --name cadentra-agent --restart unless-stopped -e CADENTRA_HUB_URL=%s -e CADENTRA_REGISTRATION_TOKEN=%s -e CADENTRA_NODE_NAME=%s -e CADENTRA_NODE_IP=%s -e CADENTRA_DEPLOYMENT_MODE=docker -v cadentra-agent-data:/var/lib/cadentra cadentra/agent:latest", shellQuote(wsURL), shellQuote(s.RegistrationToken), shellQuote(nodeName), shellQuote(nodeIP))
-	compose := fmt.Sprintf("services:\n  cadentra-agent:\n    image: cadentra/agent:latest\n    restart: unless-stopped\n    environment:\n      CADENTRA_HUB_URL: %q\n      CADENTRA_REGISTRATION_TOKEN: %q\n      CADENTRA_NODE_NAME: %q\n      CADENTRA_NODE_IP: %q\n      CADENTRA_DEPLOYMENT_MODE: docker\n    volumes:\n      - cadentra-agent-data:/var/lib/cadentra\n\nvolumes:\n  cadentra-agent-data:\n", wsURL, s.RegistrationToken, nodeName, nodeIP)
+	downloadBase := strings.TrimRight(hubAddress, "/")
+	if downloadBase == "" {
+		downloadBase = s.baseURL
+	}
+	if downloadBase == "" {
+		writeErr(w, http.StatusServiceUnavailable, "Hub web base URL is not configured")
+		return
+	}
+	binaryURLBase := fmt.Sprintf("%s/api/agent/binary?architecture=", downloadBase)
+	agentIDConfig := ""
+	if agentID != "" {
+		agentIDConfig = fmt.Sprintf("agent_id: %q\n", agentID)
+	}
+	config := fmt.Sprintf("hub_url: %q\nregistration_token: %q\n%snode_name: %q\nnode_ip: %q\ndeployment_mode: native\nhost_integration: false\ndata_dir: /var/lib/cadentra\nagent_version: 0.1.0\n", wsURL, s.RegistrationToken, agentIDConfig, nodeName, nodeIP)
+	native := fmt.Sprintf(`set -eu
+case "$(uname -m)" in
+  x86_64|amd64) detected_arch=amd64 ;;
+  aarch64|arm64) detected_arch=arm64 ;;
+  *) echo "unsupported Linux architecture: $(uname -m)" >&2; exit 1 ;;
+esac
+command -v curl >/dev/null || { echo "curl is required" >&2; exit 1; }
+command -v sha256sum >/dev/null || { echo "sha256sum is required" >&2; exit 1; }
+agent_tmp=$(mktemp)
+header_tmp=$(mktemp)
+trap 'rm -f "$agent_tmp" "$header_tmp"' EXIT
+binary_url=%s"$detected_arch"
+curl --fail --silent --show-error --location --retry 3 --dump-header "$header_tmp" --output "$agent_tmp" "$binary_url"
+binary_sha256=$(awk 'tolower($1) == "x-agent-binary-sha256:" {print $2}' "$header_tmp" | tr -d '\r' | tail -n 1)
+test -n "$binary_sha256" || { echo "Hub did not provide Agent binary SHA256" >&2; exit 1; }
+printf '%%s  %%s\n' "$binary_sha256" "$agent_tmp" | sha256sum -c -
+sudo install -d /etc/cadentra
+sudo install -m 0755 "$agent_tmp" /usr/local/bin/cadentra-agent
+sudo sh -c 'cat > /etc/systemd/system/cadentra-agent.service' <<'EOF'
+%sEOF
+sudo sh -c 'cat > /etc/cadentra/agent.yaml' <<'EOF'
+%sEOF
+sudo systemctl daemon-reload && sudo systemctl enable --now cadentra-agent`,
+		shellQuote(binaryURLBase), agentServiceUnit, config)
+	agentImage := "ghcr.io/supercxyz/cadentra-agent:latest"
+	agentIDEnv := ""
+	if agentID != "" {
+		agentIDEnv = fmt.Sprintf(" -e CADENTRA_AGENT_ID=%s", shellQuote(agentID))
+	}
+	dockerRun := fmt.Sprintf("docker run -d --name cadentra-agent --restart unless-stopped -e CADENTRA_HUB_URL=%s -e CADENTRA_REGISTRATION_TOKEN=%s -e CADENTRA_NODE_NAME=%s -e CADENTRA_NODE_IP=%s%s -e CADENTRA_DEPLOYMENT_MODE=docker -v cadentra-agent-data:/var/lib/cadentra %s", shellQuote(wsURL), shellQuote(s.RegistrationToken), shellQuote(nodeName), shellQuote(nodeIP), agentIDEnv, agentImage)
+	agentIDCompose := ""
+	if agentID != "" {
+		agentIDCompose = fmt.Sprintf("      CADENTRA_AGENT_ID: %q\n", agentID)
+	}
+	compose := fmt.Sprintf("services:\n  cadentra-agent:\n    image: %s\n    restart: unless-stopped\n    environment:\n      CADENTRA_HUB_URL: %q\n      CADENTRA_REGISTRATION_TOKEN: %q\n      CADENTRA_NODE_NAME: %q\n      CADENTRA_NODE_IP: %q\n%s      CADENTRA_DEPLOYMENT_MODE: docker\n    volumes:\n      - cadentra-agent-data:/var/lib/cadentra\n\nvolumes:\n  cadentra-agent-data:\n", agentImage, wsURL, s.RegistrationToken, nodeName, nodeIP, agentIDCompose)
 	writeJSON(w, http.StatusOK, map[string]any{
-		"gateway_url": wsURL, "gateway_base_url": base, "agent_image": "cadentra/agent:latest",
+		"gateway_url": wsURL, "gateway_base_url": base, "agent_image": agentImage, "node_id": nodeID, "agent_id": agentID,
 		"native": native, "docker_run": dockerRun, "docker_compose": compose,
 	})
 }
 
+const agentServiceUnit = `[Unit]
+Description=Cadentra Agent
+Documentation=file:///usr/share/doc/cadentra
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/cadentra-agent --config /etc/cadentra/agent.yaml
+Restart=on-failure
+RestartSec=5
+StateDirectory=cadentra
+StateDirectoryMode=0750
+NoNewPrivileges=false
+
+[Install]
+WantedBy=multi-user.target
+`
+
+func (s *Server) handleAgentBinary(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	architecture, err := normalizeArchitecture(r.URL.Query().Get("architecture"))
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	data, digest, err := s.agentBinaryDataFor(architecture)
+	if err != nil {
+		writeErr(w, http.StatusServiceUnavailable, fmt.Sprintf("agent binary for %s is unavailable", architecture))
+		return
+	}
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
+	w.Header().Set("X-Agent-Binary-SHA256", digest)
+	http.ServeContent(w, r, "cadentra-agent-"+architecture, time.Time{}, bytes.NewReader(data))
+}
+
+func (s *Server) agentBinaryDataFor(architecture string) ([]byte, string, error) {
+	if data := s.agentBinaryData[architecture]; len(data) > 0 {
+		digest := sha256.Sum256(data)
+		return data, hex.EncodeToString(digest[:]), nil
+	}
+	path := s.agentBinaryPaths[architecture]
+	if path == "" {
+		return nil, "", os.ErrNotExist
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, "", err
+	}
+	hash := sha256.New()
+	_, _ = hash.Write(data)
+	return data, hex.EncodeToString(hash.Sum(nil)), nil
+}
+
+func normalizeArchitecture(value string) (string, error) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "amd64":
+		return "amd64", nil
+	case "arm64":
+		return "arm64", nil
+	default:
+		return "", errors.New("architecture must be amd64 or arm64")
+	}
+}
+
 func parseEnrollmentOptions(r *http.Request) (string, string, string, error) {
 	nodeName := strings.TrimSpace(r.URL.Query().Get("node_name"))
+	nodeIP := strings.TrimSpace(r.URL.Query().Get("node_ip"))
+	hubAddress := strings.TrimSpace(r.URL.Query().Get("hub_address"))
+	if r.Method == http.MethodPost {
+		var req struct {
+			NodeName   string `json:"node_name"`
+			NodeIP     string `json:"node_ip"`
+			HubAddress string `json:"hub_address"`
+		}
+		if err := readJSON(r, &req); err != nil {
+			return "", "", "", errors.New("invalid request")
+		}
+		nodeName = strings.TrimSpace(req.NodeName)
+		nodeIP = strings.TrimSpace(req.NodeIP)
+		hubAddress = strings.TrimSpace(req.HubAddress)
+	}
 	if nodeName == "" || len(nodeName) > 128 {
 		return "", "", "", errors.New("node_name is required and must be at most 128 characters")
 	}
@@ -458,11 +654,9 @@ func parseEnrollmentOptions(r *http.Request) (string, string, string, error) {
 			return "", "", "", errors.New("node_name may contain only letters, numbers, '-', '_' and '.'")
 		}
 	}
-	nodeIP := strings.TrimSpace(r.URL.Query().Get("node_ip"))
 	if !validNodeAddress(nodeIP) {
 		return "", "", "", errors.New("node_ip must be a valid IP address or DNS hostname")
 	}
-	hubAddress := strings.TrimSpace(r.URL.Query().Get("hub_address"))
 	if hubAddress != "" {
 		u, err := url.Parse(hubAddress)
 		if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") {
@@ -523,7 +717,7 @@ func (s *Server) handleNodeByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.nodes.RevokeCredential(r.Context(), id); err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			writeErr(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		s.audit(r, "node", id, "revoke_credential")
@@ -538,6 +732,17 @@ func (s *Server) handleNodeByID(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		writeJSON(w, http.StatusOK, node)
+	case http.MethodDelete:
+		if !s.canAdmin(r) {
+			writeErr(w, http.StatusForbidden, "permission denied")
+			return
+		}
+		if err := s.nodes.Delete(r.Context(), id); err != nil {
+			writeErr(w, http.StatusConflict, err.Error())
+			return
+		}
+		s.audit(r, "node", id, "delete")
+		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 	case http.MethodPost, http.MethodPut:
 		if !s.canWrite(r) {
 			writeErr(w, http.StatusForbidden, "permission denied")
@@ -553,7 +758,7 @@ func (s *Server) handleNodeByID(w http.ResponseWriter, r *http.Request) {
 		}
 		if req.Status != "" {
 			if err := s.nodes.SetNodeStatus(r.Context(), id, req.Status); err != nil {
-				writeErr(w, http.StatusInternalServerError, err.Error())
+				writeErr(w, http.StatusBadRequest, err.Error())
 				return
 			}
 		}
@@ -722,7 +927,7 @@ func (s *Server) handleGroupByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.nodes.DeleteGroup(r.Context(), id); err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			writeErr(w, http.StatusConflict, err.Error())
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
@@ -827,7 +1032,7 @@ func (s *Server) handleScriptByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.scripts.Delete(r.Context(), id); err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			writeErr(w, http.StatusConflict, err.Error())
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
@@ -916,7 +1121,7 @@ func (s *Server) handleTaskByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.tasks.Delete(r.Context(), id); err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			writeErr(w, http.StatusConflict, err.Error())
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
@@ -932,7 +1137,10 @@ func (s *Server) handleRunNow(w http.ResponseWriter, r *http.Request, taskID str
 		Params  map[string]string `json:"params"`
 		All     bool              `json:"all"`
 	}
-	_ = readJSON(r, &req)
+	if err := readJSON(r, &req); err != nil && err != io.EOF {
+		writeErr(w, http.StatusBadRequest, "invalid request")
+		return
+	}
 
 	task, err := s.tasks.Get(r.Context(), taskID)
 	if err != nil {
@@ -967,7 +1175,7 @@ func (s *Server) handleRunNow(w http.ResponseWriter, r *http.Request, taskID str
 		if op == "" {
 			op = "deploy"
 		}
-		execs, err := s.apps.Deploy(r.Context(), task.ApplicationID, nodeIDs, op)
+		execs, err := s.apps.DeployTask(r.Context(), task, nodeIDs, op)
 		if err != nil {
 			writeErr(w, http.StatusBadRequest, err.Error())
 			return
@@ -1058,7 +1266,7 @@ func (s *Server) handleScheduleByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.schedules.Delete(r.Context(), id); err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			writeErr(w, http.StatusConflict, err.Error())
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
@@ -1130,7 +1338,7 @@ func (s *Server) handleArtifactByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.artifacts.Delete(r.Context(), id); err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			writeErr(w, http.StatusConflict, err.Error())
 			return
 		}
 		s.audit(r, "artifact", id, "delete")
@@ -1323,7 +1531,7 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.apps.Delete(r.Context(), id); err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			writeErr(w, http.StatusConflict, err.Error())
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
@@ -1484,6 +1692,10 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 			writeErr(w, http.StatusBadRequest, "invalid request")
 			return
 		}
+		if err := validateSettings(body); err != nil {
+			writeErr(w, http.StatusBadRequest, err.Error())
+			return
+		}
 		for k, v := range body {
 			if err := s.store.SetSetting(r.Context(), k, v); err != nil {
 				writeErr(w, http.StatusInternalServerError, err.Error())
@@ -1495,6 +1707,41 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 	default:
 		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
+}
+
+func validateSettings(values map[string]string) error {
+	for key, value := range values {
+		switch key {
+		case "heartbeat_interval_sec":
+			n, err := strconv.Atoi(value)
+			if err != nil || n < 1 || n > 86400 {
+				return fmt.Errorf("heartbeat_interval_sec must be between 1 and 86400")
+			}
+		case "revision_check_interval_sec":
+			n, err := strconv.Atoi(value)
+			if err != nil || n < 5 || n > 86400 {
+				return fmt.Errorf("revision_check_interval_sec must be between 5 and 86400")
+			}
+		case "changelog_window":
+			n, err := strconv.ParseInt(value, 10, 64)
+			if err != nil || n < 1 || n > 1000000000 {
+				return fmt.Errorf("changelog_window must be between 1 and 1000000000")
+			}
+		case "max_log_bytes":
+			n, err := strconv.ParseInt(value, 10, 64)
+			if err != nil || n < 1024 || n > 1<<34 {
+				return fmt.Errorf("max_log_bytes must be between 1024 and 17179869184")
+			}
+		case "agent_gateway_base_url":
+			u, err := url.Parse(value)
+			if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") {
+				return fmt.Errorf("agent_gateway_base_url must be an http or https URL")
+			}
+		default:
+			return fmt.Errorf("unsupported setting: %s", key)
+		}
+	}
+	return nil
 }
 
 func (s *Server) notifySettings() {

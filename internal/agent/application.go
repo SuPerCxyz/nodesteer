@@ -94,6 +94,43 @@ func (am *ApplicationManager) HandleRunOperation(ctx context.Context, p protocol
 	am.operate(req, op, cb)
 }
 
+// CleanupApplication 删除 Hub Desired State 中已移除应用对应的受管控资源。
+// 只有登记过的 Unit 才允许被清理，避免误删宿主机上的非 Cadentra 服务。
+func (am *ApplicationManager) CleanupApplication(ctx context.Context, appID string) error {
+	def := am.loadApplication(appID)
+	if len(def) == 0 {
+		return nil
+	}
+	var app models.Application
+	if err := json.Unmarshal(def, &app); err != nil {
+		return err
+	}
+	unit := app.UnitName
+	if unit == "" {
+		unit = "cadentra-" + app.ID + ".service"
+	}
+	if !strings.HasSuffix(unit, ".service") {
+		unit += ".service"
+	}
+	registered, err := am.store.IsUnitRegistered(ctx, app.ID, unit)
+	if err != nil || !registered {
+		return err
+	}
+	_ = am.host.StopService(ctx, unit)
+	_ = am.host.DisableService(ctx, unit)
+	_ = am.host.Remove(ctx, "/etc/systemd/system/"+unit)
+	if app.BinaryPath != "" {
+		_ = am.host.Remove(ctx, app.BinaryPath)
+	}
+	configPath := app.ConfigPath
+	if configPath == "" {
+		configPath = "/etc/" + strings.TrimSuffix(unit, ".service") + ".conf"
+	}
+	_ = am.host.Remove(ctx, configPath)
+	_ = am.host.DaemonReload(ctx)
+	return am.store.DeleteUnit(ctx, app.ID)
+}
+
 // handleDeployOperation 从本地应用定义构造部署请求并执行（支持 Agent-owned 调度触发）
 func (am *ApplicationManager) handleDeployOperation(ctx context.Context, p protocol.RunExecutionPayload, ex *LocalExecution, op string, cb func(protocol.DeployResultPayload)) {
 	res := protocol.DeployResultPayload{AppID: p.AppID, Operation: op}
@@ -215,7 +252,11 @@ func (am *ApplicationManager) operate(p protocol.DeployRequestPayload, op string
 		}
 	}
 	if res.OK {
-		res.Health = "healthy"
+		if op == "stop" {
+			res.Health = "stopped"
+		} else {
+			res.Health = "healthy"
+		}
 	} else {
 		res.Health = "unhealthy"
 	}
@@ -229,11 +270,15 @@ func (am *ApplicationManager) deploy(ctx context.Context, p protocol.DeployReque
 	deploymentID := uuid.NewString()
 	res := protocol.DeployResultPayload{AppID: p.AppID, Operation: p.Operation}
 	res.Version = p.AppVersion
+	var app models.Application
+	if len(appDef) > 0 {
+		_ = json.Unmarshal(appDef, &app)
+	}
 
 	// 写 Deployment Journal
 	now := time.Now().UTC().Format(time.RFC3339Nano)
 	if err := am.store.CreateDeployment(ctx, &DeploymentRow{
-		ID: deploymentID, ApplicationID: p.AppID, FromVersion: "", ToVersion: p.AppVersion,
+		ID: deploymentID, ApplicationID: p.AppID, FromVersion: app.Version, ToVersion: p.AppVersion,
 		Phase: PhasePreparing, StartedAt: now, UpdatedAt: now,
 	}); err != nil {
 		res.OK = false
@@ -242,17 +287,11 @@ func (am *ApplicationManager) deploy(ctx context.Context, p protocol.DeployReque
 		return
 	}
 
-	// 解析应用定义
-	var app models.Application
-	if len(appDef) > 0 {
-		json.Unmarshal(appDef, &app)
-	}
-
 	// 下载 Artifact
 	artifactPath := ""
 	if p.ArtifactURL != "" {
 		if p.ArtifactSHA256 == "" || am.artifact == nil {
-			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseRollingBack, "")
+			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, "")
 			res.OK = false
 			res.Error = "artifact sha256/cache is missing"
 			cb(res)
@@ -260,7 +299,7 @@ func (am *ApplicationManager) deploy(ctx context.Context, p protocol.DeployReque
 		}
 		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhasePreparing, "")
 		if err := am.artifact.Prefetch(ctx, p.ArtifactURL, p.ArtifactSHA256); err != nil {
-			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseRollingBack, "")
+			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, "")
 			res.OK = false
 			res.Error = "artifact download failed: " + err.Error()
 			cb(res)
@@ -278,7 +317,7 @@ func (am *ApplicationManager) deploy(ctx context.Context, p protocol.DeployReque
 		unitName += ".service"
 	}
 	if err := validateUnitName(unitName); err != nil {
-		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseRollingBack, "")
+		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, "")
 		res.Error = err.Error()
 		cb(res)
 		return
@@ -293,7 +332,7 @@ func (am *ApplicationManager) deploy(ctx context.Context, p protocol.DeployReque
 		binaryPath = app.BinaryPath
 	}
 	if binaryPath == "" {
-		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseRollingBack, "")
+		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, "")
 		res.Error = "binary path is required"
 		cb(res)
 		return
@@ -303,54 +342,114 @@ func (am *ApplicationManager) deploy(ctx context.Context, p protocol.DeployReque
 		configPath = "/etc/" + strings.TrimSuffix(unitName, ".service") + ".conf"
 	}
 	p.ConfigPath = configPath
-	if binaryPath != "" {
-		if _, err := am.host.Stat(ctx, binaryPath); err == nil {
-			backupPath = filepath.Join(am.store.Dir(), "applications", "backup-"+uuid.NewString()+filepath.Ext(binaryPath))
-			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseStopped, backupPath)
-			if data, err := am.host.ReadFile(ctx, binaryPath); err == nil {
-				os.MkdirAll(filepath.Dir(backupPath), 0o755)
-				os.WriteFile(backupPath, data, 0o755)
-			}
-			// 备份旧 config 文件
-			if _, err := am.host.Stat(ctx, configPath); err == nil {
-				if data, err := am.host.ReadFile(ctx, configPath); err == nil {
-					backupConfigPath = backupPath + ".conf"
-					os.WriteFile(backupConfigPath, data, 0o644)
-				}
-			}
-			// 备份旧 unit 内容
-			unitPath := "/etc/systemd/system/" + unitName
-			if _, err := am.host.Stat(ctx, unitPath); err == nil {
-				if data, err := am.host.ReadFile(ctx, unitPath); err == nil {
-					backupUnitPath = backupPath + ".unit"
-					os.WriteFile(backupUnitPath, data, 0o644)
-				}
-			}
-			// 升级/重新部署场景：先停止已运行服务，确保替换后新进程生效
-			if _, err := am.host.ServiceStatus(ctx, unitName); err == nil {
-				am.host.StopService(ctx, unitName)
-				am.logger.Info("stopped service before replace", "unit", unitName)
-			}
-			// 记录备份路径（供 RecoverDeployments 使用）
-			if backupConfigPath != "" || backupUnitPath != "" {
-				am.store.SetDeploymentBackups(ctx, deploymentID, backupPath, backupConfigPath, backupUnitPath)
-			}
+	if err := am.host.ValidatePath(binaryPath); err != nil {
+		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, "")
+		res.OK = false
+		res.Error = "invalid binary path: " + err.Error()
+		cb(res)
+		return
+	}
+	if err := am.host.ValidatePath(configPath); err != nil {
+		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, "")
+		res.OK = false
+		res.Error = "invalid config path: " + err.Error()
+		cb(res)
+		return
+	}
+	backupRoot := filepath.Join(am.store.Dir(), "applications", "backup-"+uuid.NewString())
+	if err := os.MkdirAll(filepath.Dir(backupRoot), 0o755); err != nil {
+		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, "")
+		res.OK = false
+		res.Error = "create backup directory failed: " + err.Error()
+		cb(res)
+		return
+	}
+	if _, err := am.host.Stat(ctx, binaryPath); err == nil {
+		data, readErr := am.host.ReadFile(ctx, binaryPath)
+		if readErr != nil {
+			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, "")
+			res.OK = false
+			res.Error = "backup binary failed: " + readErr.Error()
+			cb(res)
+			return
 		}
+		backupPath = backupRoot + filepath.Ext(binaryPath)
+		if err := os.MkdirAll(filepath.Dir(backupPath), 0o755); err != nil {
+			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, "")
+			res.OK = false
+			res.Error = "create backup directory failed: " + err.Error()
+			cb(res)
+			return
+		}
+		if err := os.WriteFile(backupPath, data, 0o755); err != nil {
+			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, "")
+			res.OK = false
+			res.Error = "backup binary failed: " + err.Error()
+			cb(res)
+			return
+		}
+	}
+	// config/unit 即使没有旧二进制也要分别记录，避免首次部署回滚时误删旧文件。
+	if _, err := am.host.Stat(ctx, configPath); err == nil {
+		data, readErr := am.host.ReadFile(ctx, configPath)
+		if readErr != nil {
+			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, backupPath)
+			res.OK = false
+			res.Error = "backup config failed: " + readErr.Error()
+			cb(res)
+			return
+		}
+		backupConfigPath = backupRoot + ".conf"
+		if err := os.WriteFile(backupConfigPath, data, 0o644); err != nil {
+			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, backupPath)
+			res.OK = false
+			res.Error = "backup config failed: " + err.Error()
+			cb(res)
+			return
+		}
+	}
+	unitPath := "/etc/systemd/system/" + unitName
+	if _, err := am.host.Stat(ctx, unitPath); err == nil {
+		data, readErr := am.host.ReadFile(ctx, unitPath)
+		if readErr != nil {
+			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, backupPath)
+			res.OK = false
+			res.Error = "backup unit failed: " + readErr.Error()
+			cb(res)
+			return
+		}
+		backupUnitPath = backupRoot + ".unit"
+		if err := os.WriteFile(backupUnitPath, data, 0o644); err != nil {
+			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, backupPath)
+			res.OK = false
+			res.Error = "backup unit failed: " + err.Error()
+			cb(res)
+			return
+		}
+	}
+	// 升级/重新部署场景：先停止已运行服务，确保替换后新进程生效。
+	if _, err := am.host.ServiceStatus(ctx, unitName); err == nil {
+		am.host.StopService(ctx, unitName)
+		am.logger.Info("stopped service before replace", "unit", unitName)
+	}
+	if backupPath != "" || backupConfigPath != "" || backupUnitPath != "" {
+		am.store.SetDeploymentBackups(ctx, deploymentID, backupPath, backupConfigPath, backupUnitPath)
 	}
 
 	// 安装新二进制
 	if artifactPath != "" && binaryPath != "" {
 		data, err := os.ReadFile(artifactPath)
 		if err != nil {
-			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseRollingBack, backupPath)
+			am.rollback(ctx, binaryPath, backupPath, unitName, configPath, backupConfigPath, backupUnitPath, models.HealthCheck{})
+			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, backupPath)
 			res.OK = false
 			res.Error = "read artifact failed: " + err.Error()
 			cb(res)
 			return
 		}
 		if err := am.host.AtomicReplace(ctx, binaryPath, data, 0o755); err != nil {
-			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseRollingBack, backupPath)
 			am.rollback(ctx, binaryPath, backupPath, unitName, configPath, backupConfigPath, backupUnitPath, models.HealthCheck{})
+			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, backupPath)
 			res.OK = false
 			res.Error = "install binary failed: " + err.Error()
 			cb(res)
@@ -362,8 +461,8 @@ func (am *ApplicationManager) deploy(ctx context.Context, p protocol.DeployReque
 	// 配置
 	if p.Config != "" {
 		if err := am.host.AtomicReplace(ctx, configPath, []byte(p.Config), 0o644); err != nil {
-			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseRollingBack, backupPath)
 			am.rollback(ctx, binaryPath, backupPath, unitName, configPath, backupConfigPath, backupUnitPath, models.HealthCheck{})
+			am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, backupPath)
 			res.OK = false
 			res.Error = "config write failed: " + err.Error()
 			cb(res)
@@ -374,24 +473,24 @@ func (am *ApplicationManager) deploy(ctx context.Context, p protocol.DeployReque
 	// systemd Unit
 	unitContent := am.buildUnit(unitName, p, binaryPath)
 	if err := am.host.InstallUnit(ctx, unitName, unitContent); err != nil {
-		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseRollingBack, backupPath)
 		am.rollback(ctx, binaryPath, backupPath, unitName, configPath, backupConfigPath, backupUnitPath, models.HealthCheck{})
+		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, backupPath)
 		res.OK = false
 		res.Error = "install unit failed: " + err.Error()
 		cb(res)
 		return
 	}
 	if err := am.host.DaemonReload(ctx); err != nil {
-		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseRollingBack, backupPath)
 		am.rollback(ctx, binaryPath, backupPath, unitName, configPath, backupConfigPath, backupUnitPath, models.HealthCheck{})
+		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, backupPath)
 		res.OK = false
 		res.Error = "daemon reload failed: " + err.Error()
 		cb(res)
 		return
 	}
 	if err := am.host.EnableService(ctx, unitName); err != nil {
-		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseRollingBack, backupPath)
 		am.rollback(ctx, binaryPath, backupPath, unitName, configPath, backupConfigPath, backupUnitPath, models.HealthCheck{})
+		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, backupPath)
 		res.OK = false
 		res.Error = "enable service failed: " + err.Error()
 		cb(res)
@@ -401,8 +500,8 @@ func (am *ApplicationManager) deploy(ctx context.Context, p protocol.DeployReque
 	// Start + Health Check
 	am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseStarted, backupPath)
 	if err := am.host.StartService(ctx, unitName); err != nil {
-		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseRollingBack, backupPath)
 		am.rollback(ctx, binaryPath, backupPath, unitName, configPath, backupConfigPath, backupUnitPath, models.HealthCheck{})
+		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, backupPath)
 		res.OK = false
 		res.Error = "start service failed: " + err.Error()
 		cb(res)
@@ -430,6 +529,7 @@ func (am *ApplicationManager) deploy(ctx context.Context, p protocol.DeployReque
 		if !rollbackHealthy {
 			res.Error += " (rollback health check also failed)"
 		}
+		am.store.UpdateDeploymentPhase(ctx, deploymentID, PhaseDone, backupPath)
 		cb(res)
 		return
 	}
@@ -509,6 +609,20 @@ func (am *ApplicationManager) checkOnce(ctx context.Context, hc models.HealthChe
 	switch hc.Type {
 	case models.HealthTypeSystemd:
 		status, err := am.host.ServiceStatus(ctx, unitName)
+		if err != nil || status != "active" {
+			return false
+		}
+		// systemctl start may return while a restart-on-failure unit is only
+		// briefly active. Confirm the service remains running before declaring
+		// a deployment healthy.
+		timer := time.NewTimer(250 * time.Millisecond)
+		defer timer.Stop()
+		select {
+		case <-ctx.Done():
+			return false
+		case <-timer.C:
+		}
+		status, err = am.host.ServiceStatus(ctx, unitName)
 		return err == nil && status == "active"
 	case models.HealthTypeTCP:
 		conn, err := net.DialTimeout("tcp", hc.Target, timeout)
@@ -534,17 +648,26 @@ func (am *ApplicationManager) checkOnce(ctx context.Context, hc models.HealthChe
 
 // rollback 回滚：恢复二进制 + config + unit，daemon-reload 后启动并做 Health Check
 func (am *ApplicationManager) rollback(ctx context.Context, binaryPath, backupPath, unitName, configPath, backupConfigPath, backupUnitPath string, hc models.HealthCheck) bool {
-	if backupPath == "" {
-		am.host.StopService(ctx, unitName)
-		return false
-	}
 	// 先停止当前运行的新版本进程，避免其继续占用端口
 	am.host.StopService(ctx, unitName)
+	cleaned := true
+	// 首次部署没有备份：删除本次创建的二进制，不能把失败的新文件留下。
+	if backupPath == "" && binaryPath != "" {
+		if err := am.host.Remove(ctx, binaryPath); err != nil && !os.IsNotExist(err) {
+			cleaned = false
+		}
+	}
 	// 恢复二进制
 	restoredBinary := false
-	if data, err := os.ReadFile(backupPath); err == nil && binaryPath != "" {
-		if err := am.host.AtomicReplace(ctx, binaryPath, data, 0o755); err == nil {
-			restoredBinary = true
+	if backupPath != "" {
+		if data, err := os.ReadFile(backupPath); err == nil && binaryPath != "" {
+			if err := am.host.AtomicReplace(ctx, binaryPath, data, 0o755); err == nil {
+				restoredBinary = true
+			} else {
+				cleaned = false
+			}
+		} else {
+			cleaned = false
 		}
 	}
 	// 恢复 config
@@ -552,7 +675,14 @@ func (am *ApplicationManager) rollback(ctx context.Context, binaryPath, backupPa
 		if data, err := os.ReadFile(backupConfigPath); err == nil {
 			if err := am.host.AtomicReplace(ctx, configPath, data, 0o644); err != nil {
 				am.logger.Warn("rollback config failed", "path", configPath, "error", err)
+				cleaned = false
 			}
+		} else {
+			cleaned = false
+		}
+	} else if configPath != "" {
+		if err := am.host.Remove(ctx, configPath); err != nil && !os.IsNotExist(err) {
+			cleaned = false
 		}
 	}
 	// 恢复 unit 内容
@@ -560,7 +690,16 @@ func (am *ApplicationManager) rollback(ctx context.Context, binaryPath, backupPa
 		if data, err := os.ReadFile(backupUnitPath); err == nil {
 			if err := am.host.InstallUnit(ctx, unitName, string(data)); err != nil {
 				am.logger.Warn("rollback unit failed", "unit", unitName, "error", err)
+				cleaned = false
 			}
+		} else {
+			cleaned = false
+		}
+	} else if unitName != "" {
+		_ = am.host.DisableService(ctx, unitName)
+		unitPath := "/etc/systemd/system/" + unitName
+		if err := am.host.Remove(ctx, unitPath); err != nil && !os.IsNotExist(err) {
+			cleaned = false
 		}
 	}
 	am.host.DaemonReload(ctx)
@@ -571,7 +710,7 @@ func (am *ApplicationManager) rollback(ctx context.Context, binaryPath, backupPa
 	if hc.Type != "" {
 		return am.checkHealth(ctx, hc, unitName)
 	}
-	return true
+	return cleaned
 }
 
 // RecoverDeployments 启动恢复半完成部署
@@ -581,7 +720,7 @@ func (am *ApplicationManager) RecoverDeployments(ctx context.Context) {
 		return
 	}
 	for _, d := range active {
-		if d.Phase == PhaseDone || d.Phase == PhaseRollingBack {
+		if d.Phase == PhaseDone {
 			continue
 		}
 		// 半完成部署 → 回滚
@@ -604,7 +743,7 @@ func (am *ApplicationManager) RecoverDeployments(ctx context.Context) {
 			configPath = "/etc/" + strings.TrimSuffix(unitName, ".service") + ".conf"
 		}
 		am.rollback(ctx, app.BinaryPath, d.BackupPath, unitName, configPath, d.BackupConfigPath, d.BackupUnitPath, hc)
-		am.store.UpdateDeploymentPhase(ctx, d.ID, PhaseRollingBack, d.BackupPath)
+		am.store.UpdateDeploymentPhase(ctx, d.ID, PhaseDone, d.BackupPath)
 	}
 }
 

@@ -1,0 +1,73 @@
+import { test, expect } from 'playwright/test'
+import { TEST_URLS, TEST_USER } from './fixtures'
+
+test.describe('P01 登录页', () => {
+  test('P01-01 正常登录', async ({ page }) => {
+    await page.goto(TEST_URLS.login)
+    await page.getByLabel(/username|用户名/i).fill(TEST_USER.username)
+    await page.getByLabel(/password|密码/i).fill(TEST_USER.password)
+    await page.getByRole('button', { name: /sign in|登录/i }).click()
+    await page.waitForURL(TEST_URLS.dashboard, { timeout: 15_000 })
+    await expect(page).toHaveURL(TEST_URLS.dashboard)
+  })
+
+  test('P01-02 密码错误', async ({ page }) => {
+    await page.goto(TEST_URLS.login)
+    await page.getByLabel(/username|用户名/i).fill(TEST_USER.username)
+    await page.getByLabel(/password|密码/i).fill('wrongpassword')
+    await page.getByRole('button', { name: /sign in|登录/i }).click()
+    await page.waitForTimeout(2000)
+    await expect(page).toHaveURL(TEST_URLS.login)
+  })
+
+  test('P01-03 空提交', async ({ page }) => {
+    await page.goto(TEST_URLS.login)
+    await page.getByRole('button', { name: /sign in|登录/i }).click()
+    await page.waitForTimeout(1000)
+    await expect(page).toHaveURL(TEST_URLS.login)
+  })
+
+  test('P01-04 中文/EN 切换', async ({ page }) => {
+    await page.goto(TEST_URLS.login)
+    const langBtn = page.getByRole('button', { name: /语言|language/i })
+    await expect(langBtn).toBeVisible()
+    await langBtn.click()
+    await page.waitForTimeout(500)
+    const stored = await page.evaluate(() => localStorage.getItem('cadentra_lang'))
+    expect(stored).toBeTruthy()
+  })
+
+  test('P01-06 直接访问未登录页重定向', async ({ page }) => {
+    const routes = ['/', '/nodes', '/scripts', '/tasks', '/executions']
+    for (const route of routes) {
+      await page.goto(route)
+      await expect(page).toHaveURL(new RegExp(TEST_URLS.login))
+    }
+  })
+
+  test('P01-07 OIDC 开启后仅显示 SSO 入口', async ({ page }) => {
+    await page.route('**/api/oidc/state', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ enabled: true }),
+      })
+    })
+    await page.goto(TEST_URLS.login)
+    await expect(page.getByRole('button', { name: /sign in with sso|使用 sso/i })).toBeVisible()
+    await expect(page.getByLabel(/username|用户名/i)).toHaveCount(0)
+    await expect(page.getByLabel(/password|密码/i)).toHaveCount(0)
+  })
+})
+
+test.describe('P01 登录后回跳', () => {
+  test('P01-05 登录后回跳到目标页', async ({ page }) => {
+    await page.goto(TEST_URLS.nodes)
+    await expect(page).toHaveURL(new RegExp(TEST_URLS.login))
+    await page.getByLabel(/username|用户名/i).fill(TEST_USER.username)
+    await page.getByLabel(/password|密码/i).fill(TEST_USER.password)
+    await page.getByRole('button', { name: /sign in|登录/i }).click()
+    await page.waitForURL(TEST_URLS.nodes, { timeout: 15_000 })
+    await expect(page).toHaveURL(TEST_URLS.nodes)
+  })
+})

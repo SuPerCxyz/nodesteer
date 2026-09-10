@@ -48,6 +48,9 @@ func (m *AppManager) Create(ctx context.Context, a *models.Application) error {
 	if a.UnitName == "" {
 		a.UnitName = "cadentra-" + a.Name + ".service"
 	}
+	if err := validateApplicationDefinition(a); err != nil {
+		return err
+	}
 	a.Revision = 1
 	var globalRev int64
 	if err := runMutationTx(ctx, m.store, func(txctx context.Context) error {
@@ -70,6 +73,12 @@ func (m *AppManager) Update(ctx context.Context, a *models.Application) error {
 	if err != nil {
 		return err
 	}
+	if a.UnitName == "" {
+		a.UnitName = existing.UnitName
+	}
+	if err := validateApplicationDefinition(a); err != nil {
+		return err
+	}
 	a.Revision = existing.Revision + 1
 	a.CreatedAt = existing.CreatedAt
 	var globalRev int64
@@ -89,6 +98,15 @@ func (m *AppManager) Update(ctx context.Context, a *models.Application) error {
 
 // Delete 删除应用
 func (m *AppManager) Delete(ctx context.Context, id string) error {
+	tasks, err := m.store.ListTasks(ctx)
+	if err != nil {
+		return err
+	}
+	for _, task := range tasks {
+		if task.ApplicationID == id {
+			return fmt.Errorf("application %s is referenced by task %s", id, task.ID)
+		}
+	}
 	var rev int64
 	if err := runMutationTx(ctx, m.store, func(txctx context.Context) error {
 		if err := m.store.DeleteApplication(txctx, id); err != nil {
@@ -135,11 +153,21 @@ func (m *AppManager) Assign(ctx context.Context, appID string, nodeIDs []string,
 	if err != nil {
 		return err
 	}
+	for _, nodeID := range nodeIDs {
+		if _, err := m.store.GetNode(ctx, nodeID); err != nil {
+			return fmt.Errorf("node %s not found", nodeID)
+		}
+	}
 	var rev int64
 	if err := runMutationTx(ctx, m.store, func(txctx context.Context) error {
 		for _, nid := range nodeIDs {
 			if err := m.store.SetApplicationAssignment(txctx, appID, nid, assigned); err != nil {
 				return err
+			}
+			if !assigned {
+				if err := m.store.DeleteApplicationNodeState(txctx, appID, nid); err != nil {
+					return err
+				}
 			}
 		}
 		var err error
@@ -175,6 +203,9 @@ func (m *AppManager) GetNodes(ctx context.Context, appID string) ([]string, erro
 
 // Deploy 触发部署（应用 Task 执行）
 func (m *AppManager) Deploy(ctx context.Context, appID string, nodeIDs []string, operation string) ([]*models.Execution, error) {
+	if !validApplicationOperation(operation) && operation != "deploy" {
+		return nil, fmt.Errorf("invalid application operation: %s", operation)
+	}
 	app, err := m.store.GetApplication(ctx, appID)
 	if err != nil {
 		return nil, err
@@ -221,6 +252,54 @@ func (m *AppManager) Deploy(ctx context.Context, appID string, nodeIDs []string,
 			ex.EndTime = time.Now()
 			ex.BlockReason = err.Error()
 			m.store.UpdateExecution(ctx, ex)
+			return out, err
+		}
+		out = append(out, ex)
+	}
+	return out, nil
+}
+
+// DeployTask 通过任务执行链路触发应用操作，确保 Execution.TaskID 指向真实 Task。
+func (m *AppManager) DeployTask(ctx context.Context, task *models.Task, nodeIDs []string, operation string) ([]*models.Execution, error) {
+	if task == nil || task.ApplicationID == "" {
+		return nil, fmt.Errorf("application task requires application_id")
+	}
+	if !validApplicationOperation(operation) && operation != "deploy" {
+		return nil, fmt.Errorf("invalid application operation: %s", operation)
+	}
+	app, err := m.store.GetApplication(ctx, task.ApplicationID)
+	if err != nil {
+		return nil, err
+	}
+	if operation == "deploy" || operation == "upgrade" {
+		if app.ArtifactID != "" {
+			if _, err := m.store.GetArtifact(ctx, app.ArtifactID); err != nil {
+				return nil, fmt.Errorf("artifact %s not found", app.ArtifactID)
+			}
+		}
+	}
+	var out []*models.Execution
+	for _, nodeID := range nodeIDs {
+		node, err := m.store.GetNode(ctx, nodeID)
+		if err != nil {
+			return out, err
+		}
+		if node.Status != models.NodeStatusOnline {
+			return out, fmt.Errorf("node %s is not online (status=%s)", nodeID, node.Status)
+		}
+		if !node.Capabilities[models.CapApplicationDeploy] {
+			return out, fmt.Errorf("node %s lacks capability %s", nodeID, models.CapApplicationDeploy)
+		}
+		ex := &models.Execution{ID: uuid.NewString(), TaskID: task.ID, TaskRevision: task.Revision,
+			NodeID: nodeID, TriggerType: models.TriggerManual, Status: models.ExecStatusPending}
+		if err := m.store.CreateExecution(ctx, ex); err != nil {
+			return out, err
+		}
+		if err := m.dispatchDeploy(ctx, ex, app, nodeID, operation); err != nil {
+			ex.Status = models.ExecStatusFailed
+			ex.EndTime = time.Now()
+			ex.BlockReason = err.Error()
+			_ = m.store.UpdateExecution(ctx, ex)
 			return out, err
 		}
 		out = append(out, ex)
@@ -275,5 +354,5 @@ func (m *AppManager) OperationTask(ctx context.Context, task *models.Task, nodeI
 	if op == "" {
 		op = "start"
 	}
-	return m.Deploy(ctx, task.ApplicationID, nodeIDs, op)
+	return m.DeployTask(ctx, task, nodeIDs, op)
 }

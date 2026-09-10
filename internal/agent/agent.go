@@ -32,6 +32,7 @@ import (
 type Config struct {
 	HubURL            string
 	RegistrationToken string
+	AgentID           string
 	NodeName          string
 	NodeIP            string
 	DeploymentMode    string
@@ -93,6 +94,9 @@ func New(cfg Config, logger *slog.Logger) (*Agent, error) {
 	}
 	// 加载身份
 	a.agentID, _ = store.GetIdentity("agent_id")
+	if a.agentID == "" {
+		a.agentID = cfg.AgentID
+	}
 	a.nodeID, _ = store.GetIdentity("node_id")
 	a.credential, _ = store.GetIdentity("credential")
 
@@ -114,6 +118,7 @@ func New(cfg Config, logger *slog.Logger) (*Agent, error) {
 
 	// 调度器
 	a.sch = scheduler.New(a, logger)
+	a.sch.SetOnlineFunc(a.conn.IsConnected)
 	a.cond.Remote = a.queryRemoteCondition
 
 	return a, nil
@@ -169,6 +174,7 @@ func (a *Agent) helloFn() *protocol.HelloPayload {
 	}
 	return &protocol.HelloPayload{
 		ProtocolVersion: protocol.ProtocolVersion,
+		AgentID:         a.agentID,
 		AgentVersion:    a.cfg.AgentVersion,
 		DeploymentMode:  a.cfg.DeploymentMode,
 		HostIntegration: a.cfg.HostIntegration,
@@ -320,6 +326,7 @@ func (a *Agent) OnHelloAck(env protocol.Envelope) {
 		a.nodeID = p.NodeID
 		a.store.SetIdentity("node_id", p.NodeID)
 	}
+	a.sch.SetPaused(p.NodeStatus == models.NodeStatusMaintenance || p.NodeStatus == models.NodeStatusDisabled)
 	if p.AgentID != "" {
 		a.agentID = p.AgentID
 		a.store.SetIdentity("agent_id", p.AgentID)
@@ -423,6 +430,15 @@ func (a *Agent) OnSettings(env protocol.Envelope) {
 	if json.Unmarshal(env.Payload, &p) == nil {
 		a.applySettings(p)
 	}
+}
+
+// OnNodeStatus 应用 Hub 下发的节点维护/禁用状态。
+func (a *Agent) OnNodeStatus(env protocol.Envelope) {
+	var p protocol.NodeStatusPayload
+	if err := json.Unmarshal(env.Payload, &p); err != nil {
+		return
+	}
+	a.sch.SetPaused(p.Status == models.NodeStatusMaintenance || p.Status == models.NodeStatusDisabled)
 }
 
 // reloadSchedulerSchedules 从本地存储加载调度到调度器
@@ -544,6 +560,9 @@ func (a *Agent) OnSyncResponse(env protocol.Envelope) {
 		a.logger.Error("bad sync response", "error", err)
 		return
 	}
+	if p.Snapshot || p.FullResync {
+		a.cleanupPrunedApplications(p.Apps)
+	}
 	if err := a.applySync(&p); err != nil {
 		a.logger.Error("apply sync failed", "error", err)
 		a.conn.Send(protocol.NewEnvelope(protocol.MsgSyncAck, env.ID, protocol.SyncAckPayload{
@@ -557,6 +576,27 @@ func (a *Agent) OnSyncResponse(env protocol.Envelope) {
 	}))
 	// 对账完成，进入 READY 状态
 	a.ready = true
+}
+
+func (a *Agent) cleanupPrunedApplications(entries []protocol.ObjectEntry) {
+	desired := make(map[string]bool, len(entries))
+	for _, entry := range entries {
+		if !entry.Deleted {
+			desired[entry.ID] = true
+		}
+	}
+	defs, err := a.store.ListApplications(a.ctx)
+	if err != nil {
+		return
+	}
+	for _, def := range defs {
+		var app models.Application
+		if json.Unmarshal(def, &app) == nil && app.ID != "" && !desired[app.ID] {
+			if err := a.appMgr.CleanupApplication(a.ctx, app.ID); err != nil {
+				a.logger.Warn("cleanup pruned application failed", "app", app.ID, "error", err)
+			}
+		}
+	}
 }
 
 // applySync 原子应用同步结果
@@ -628,6 +668,9 @@ func (a *Agent) applySync(p *protocol.SyncResponsePayload) (err error) {
 	if p.Apps != nil {
 		for _, entry := range p.Apps {
 			if entry.Deleted {
+				if err := a.appMgr.CleanupApplication(a.ctx, entry.ID); err != nil {
+					a.logger.Warn("cleanup removed application failed", "app", entry.ID, "error", err)
+				}
 				a.store.DeleteApplication(a.ctx, entry.ID)
 				continue
 			}
@@ -673,6 +716,7 @@ func (a *Agent) applySync(p *protocol.SyncResponsePayload) (err error) {
 			a.store.DeleteSchedule(a.ctx, ts.ObjectID)
 			a.sch.RemoveSchedule(ts.ObjectID)
 		case models.ObjectApplication:
+			a.appMgr.CleanupApplication(a.ctx, ts.ObjectID)
 			a.store.DeleteApplication(a.ctx, ts.ObjectID)
 		}
 	}
@@ -1220,6 +1264,10 @@ func (a *Agent) deployResultCallback(execID string) func(p protocol.DeployResult
 		p.ExecutionID = execID
 		if ex, err := a.store.GetExecution(a.ctx, execID); err == nil && ex != nil {
 			p.StartTime = ex.StartTime
+			p.TaskID = ex.TaskID
+			p.TaskRevision = ex.TaskRevision
+			p.TriggerType = ex.TriggerType
+			p.ScheduledTime = ex.ScheduledTime
 			ex.ApplicationID = p.AppID
 			ex.ApplicationVersion = p.Version
 			ex.ApplicationOperation = p.Operation

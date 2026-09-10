@@ -2,6 +2,7 @@ package condition
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -92,6 +93,10 @@ func (OSProvider) ProcessExists(process string) (bool, error) {
 }
 
 func (OSProvider) PortListening(port string) (bool, error) {
+	n, err := strconv.Atoi(port)
+	if err != nil || n < 1 || n > 65535 {
+		return false, fmt.Errorf("invalid port: %s", port)
+	}
 	return commandExists("sh", "-c", "ss -ltn | grep -q ':"+port+" '")
 }
 
@@ -132,6 +137,11 @@ func (e *Engine) Evaluate(ctx context.Context, c *models.Condition) (bool, bool,
 			if err != nil {
 				return false, ev, err
 			}
+			if !ev {
+				// AND 中任一子条件未知，整体必须保持 UNKNOWN，不能被当成
+				// 已评估的 SKIPPED/通过，否则会绕过 Fail Closed。
+				return false, false, nil
+			}
 			if !ok {
 				return false, true, nil
 			}
@@ -146,15 +156,22 @@ func (e *Engine) Evaluate(ctx context.Context, c *models.Condition) (bool, bool,
 			// 未知 → Fail Closed
 			return false, false, err
 		}
-		return compare(val, c.Remote.Operator, c.Remote.Value), true, nil
+		expected := c.Remote.Value
+		if c.Remote.Property == "online" {
+			val, expected = strings.ToLower(val), strings.ToLower(expected)
+		}
+		return compare(val, c.Remote.Operator, expected), true, nil
 	case "local":
 		return e.evalLocal(ctx, c.Local)
 	default:
-		return true, true, nil
+		return false, false, nil
 	}
 }
 
 func (e *Engine) evalLocal(ctx context.Context, lc *models.LocalCondition) (bool, bool, error) {
+	if lc == nil || e.provider == nil {
+		return false, false, nil
+	}
 	var actual string
 	switch lc.Metric {
 	case "cpu_usage":

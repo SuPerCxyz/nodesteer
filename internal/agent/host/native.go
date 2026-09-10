@@ -27,6 +27,9 @@ func (a *NativeHostAdapter) ValidatePath(p string) error {
 }
 
 func (a *NativeHostAdapter) WriteFile(ctx context.Context, p string, data []byte, mode os.FileMode) error {
+	if err := a.ValidatePath(p); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
 		return err
 	}
@@ -34,6 +37,12 @@ func (a *NativeHostAdapter) WriteFile(ctx context.Context, p string, data []byte
 }
 
 func (a *NativeHostAdapter) AtomicReplace(ctx context.Context, p string, data []byte, mode os.FileMode) error {
+	if err := a.ValidatePath(p); err != nil {
+		return err
+	}
+	if existing, err := os.Lstat(p); err == nil && existing.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("destination is a symlink: %s", p)
+	}
 	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
 		return err
 	}
@@ -61,18 +70,30 @@ func (a *NativeHostAdapter) AtomicReplace(ctx context.Context, p string, data []
 }
 
 func (a *NativeHostAdapter) Chmod(ctx context.Context, p string, mode os.FileMode) error {
+	if err := a.ValidatePath(p); err != nil {
+		return err
+	}
 	return os.Chmod(p, mode)
 }
 
 func (a *NativeHostAdapter) Chown(ctx context.Context, p, user, group string) error {
+	if err := a.ValidatePath(p); err != nil {
+		return err
+	}
 	return chown(p, user, group)
 }
 
 func (a *NativeHostAdapter) MkdirAll(ctx context.Context, p string, mode os.FileMode) error {
+	if err := a.ValidatePath(p); err != nil {
+		return err
+	}
 	return os.MkdirAll(p, mode)
 }
 
 func (a *NativeHostAdapter) Remove(ctx context.Context, p string) error {
+	if err := a.ValidatePath(p); err != nil {
+		return err
+	}
 	return os.Remove(p)
 }
 
@@ -134,6 +155,9 @@ func (a *NativeHostAdapter) AtomicReplaceReader(ctx context.Context, p string, r
 }
 
 func (a *NativeHostAdapter) Stat(ctx context.Context, p string) (os.FileInfo, error) {
+	if err := a.ValidatePath(p); err != nil {
+		return nil, err
+	}
 	return os.Stat(p)
 }
 

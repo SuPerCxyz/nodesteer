@@ -18,6 +18,9 @@ func newTestScheduleManager(t *testing.T) *ScheduleManager {
 	}
 	t.Cleanup(func() { st.Close() })
 	revisions := NewRevisionManager(st)
+	if err := st.CreateTask(context.Background(), &models.Task{ID: "task-1", Name: "task", Type: models.TaskTypeCommand, Command: "echo", Target: models.Target{Type: "label", LabelKey: "env"}, Enabled: true}); err != nil {
+		t.Fatalf("create task: %v", err)
+	}
 	return NewScheduleManager(st, revisions, NewSyncManager(st, revisions, NewSessionManager(), NewNodeManager(st, revisions)), NewNodeManager(st, revisions), nil)
 }
 
@@ -80,6 +83,9 @@ func TestValidateNormalizesConditionType(t *testing.T) {
 	t.Cleanup(func() { st.Close() })
 	revisions := NewRevisionManager(st)
 	tm := &TaskManager{store: st, revisions: revisions}
+	if err := st.UpsertNode(ctx, &models.Node{ID: "n1", AgentID: "a1", Hostname: "n1", Status: models.NodeStatusOnline}); err != nil {
+		t.Fatalf("create node: %v", err)
+	}
 
 	cases := []struct {
 		name      string
@@ -88,13 +94,13 @@ func TestValidateNormalizesConditionType(t *testing.T) {
 	}{
 		{"remote empty type", &models.Condition{Remote: &models.RemoteCondition{NodeID: "n1", Property: "online", Operator: "==", Value: "ONLINE"}}, "remote"},
 		{"local empty type", &models.Condition{Local: &models.LocalCondition{Metric: "cpu_usage", Operator: ">", Value: "50"}}, "local"},
-		{"already typed", &models.Condition{Type: "and"}, "and"},
+		{"already typed", &models.Condition{Type: "and", And: []models.Condition{{Type: "local", Local: &models.LocalCondition{Metric: "cpu_usage", Operator: ">", Value: "50"}}}}, "and"},
 		{"nil condition", nil, ""},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			task := &models.Task{ID: "t1", Name: "x", Type: models.TaskTypeCommand, Command: "echo", Condition: tc.condition}
+			task := &models.Task{ID: "t1", Name: "x", Type: models.TaskTypeCommand, Command: "echo", Target: models.Target{Type: "node", NodeIDs: []string{"n1"}}, Condition: tc.condition}
 			if err := tm.Validate(ctx, task); err != nil {
 				t.Fatalf("validate: %v", err)
 			}

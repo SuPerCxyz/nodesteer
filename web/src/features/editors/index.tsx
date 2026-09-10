@@ -17,6 +17,7 @@ import {
   type Script,
   type Task,
 } from '@/lib/api'
+import { useCanRun, useCanWrite } from '@/lib/permissions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -32,7 +33,44 @@ import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { CadentraHeader } from '@/components/layout/cadentra-header'
 import { Main } from '@/components/layout/main'
-import { ErrorState } from '@/features/shared/ui'
+import { ErrorState, StatusBadge } from '@/features/shared/ui'
+
+function zonedDateTimeValue(value: string, timezone: string) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  let parts: Intl.DateTimeFormatPart[]
+  try {
+    parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone || 'UTC',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).formatToParts(date)
+  } catch {
+    return ''
+  }
+  const get = (type: string) => parts.find((part) => part.type === type)?.value || ''
+  return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`
+}
+
+function zonedDateTimeToISO(value: string, timezone: string) {
+  const [datePart, timePart] = value.split('T')
+  const [year, month, day] = datePart.split('-').map(Number)
+  const [hour, minute] = timePart.split(':').map(Number)
+  const guess = new Date(Date.UTC(year, month - 1, day, hour, minute))
+  let parts: Intl.DateTimeFormatPart[]
+  try {
+    parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone || 'UTC', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+    }).formatToParts(guess)
+  } catch {
+    return guess.toISOString()
+  }
+  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value || 0)
+  const asZonedUTC = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'))
+  return new Date(guess.getTime() - (asZonedUTC - guess.getTime())).toISOString()
+}
 
 function EditorShell({
   title,
@@ -55,6 +93,7 @@ function EditorShell({
 
 export function ScheduleEditor() {
   const { t } = useTranslation()
+  const canWrite = useCanWrite()
   const id = window.location.pathname.split('/')[2] || ''
   const editing = id !== 'new'
   const tasks = useQuery({
@@ -83,10 +122,31 @@ export function ScheduleEditor() {
   const form = draft || current.data || defaultForm
   const setForm = (next: Partial<Schedule>) => setDraft(next)
   const save = async () => {
-    if (!form.task_id) return
+    setError('')
+    if (!form.task_id) {
+      setError(t('schedules.taskRequired'))
+      return
+    }
+    if (form.type === 'cron' && !form.expression?.trim()) {
+      setError(t('schedules.cronRequired'))
+      return
+    }
+    if (
+      form.type === 'interval' &&
+      (!Number.isFinite(form.interval_sec) || (form.interval_sec || 0) < 1)
+    ) {
+      setError(t('schedules.intervalInvalid'))
+      return
+    }
+    if (form.type === 'one_time' && !form.run_at) {
+      setError(t('schedules.runAtRequired'))
+      return
+    }
+    const payload = { ...form }
+    if (payload.type !== 'one_time') delete payload.run_at
     try {
-      if (editing) await api.put(`/schedules/${id}`, form)
-      else await api.post('/schedules', form)
+      if (editing) await api.put(`/schedules/${id}`, payload)
+      else await api.post('/schedules', payload)
       window.location.assign('/schedules')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('common.noData'))
@@ -168,12 +228,12 @@ export function ScheduleEditor() {
               {t('schedules.runAt')}
               <Input
                 type='datetime-local'
-                value={form.run_at ? form.run_at.slice(0, 16) : ''}
+                value={form.run_at ? zonedDateTimeValue(form.run_at, form.timezone || 'UTC') : ''}
                 onChange={(event) =>
                   setForm({
                     ...form,
                     run_at: event.target.value
-                      ? new Date(event.target.value).toISOString()
+                      ? zonedDateTimeToISO(event.target.value, form.timezone || 'UTC')
                       : '',
                   })
                 }
@@ -260,7 +320,9 @@ export function ScheduleEditor() {
           </label>
           <Separator />
           <div className='flex items-center gap-2'>
-            <Button onClick={save}>{t('common.save')}</Button>
+            {canWrite ? (
+              <Button onClick={save}>{t('common.save')}</Button>
+            ) : null}
             <Button asChild variant='outline'>
               <Link to='/schedules'>{t('common.cancel')}</Link>
             </Button>
@@ -273,6 +335,7 @@ export function ScheduleEditor() {
 
 export function ScriptEditor() {
   const { t } = useTranslation()
+  const canWrite = useCanWrite()
   const id = window.location.pathname.split('/')[2] || ''
   const editing = id !== 'new'
   const current = useQuery({
@@ -315,11 +378,20 @@ export function ScriptEditor() {
     default: '',
   })
   const [environment, setEnvironment] = useState({ key: '', value: '' })
+  const [error, setError] = useState('')
   const save = async () => {
-    if (!form.name) return
-    if (editing) await api.put(`/scripts/${id}`, form)
-    else await api.post('/scripts', form)
-    window.location.assign('/scripts')
+    setError('')
+    if (!form.name) {
+      setError(t('common.name'))
+      return
+    }
+    try {
+      if (editing) await api.put(`/scripts/${id}`, form)
+      else await api.post('/scripts', form)
+      window.location.assign('/scripts')
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t('common.noData'))
+    }
   }
   const addParameter = () => {
     if (!parameter.name) return
@@ -348,6 +420,7 @@ export function ScriptEditor() {
             <CardTitle className='text-base'>{t('scripts.title')}</CardTitle>
           </CardHeader>
           <CardContent className='grid gap-5'>
+            {error && <ErrorState error={error} />}
             <label className='grid gap-2 text-sm font-medium'>
               {t('common.name')}
               <Input
@@ -569,7 +642,9 @@ export function ScriptEditor() {
         </Card>
         <Separator />
         <div className='flex items-center gap-2'>
-          <Button onClick={save}>{t('common.save')}</Button>
+            {canWrite ? (
+              <Button onClick={save}>{t('common.save')}</Button>
+            ) : null}
           <Button asChild variant='outline'>
             <Link to='/scripts'>{t('common.cancel')}</Link>
           </Button>
@@ -613,6 +688,7 @@ export function ScriptEditor() {
 
 export function GroupEditor() {
   const { t } = useTranslation()
+  const canWrite = useCanWrite()
   const id = window.location.pathname.split('/')[2] || ''
   const editing = id !== 'new'
   const current = useQuery({
@@ -633,11 +709,20 @@ export function GroupEditor() {
   const [draft, setDraft] = useState<Partial<Group> | null>(null)
   const form = draft || current.data || defaultForm
   const setForm = (next: Partial<Group>) => setDraft(next)
+  const [error, setError] = useState('')
   const save = async () => {
-    if (!form.name) return
-    if (editing) await api.put(`/groups/${id}`, form)
-    else await api.post('/groups', form)
-    window.location.assign('/groups')
+    setError('')
+    if (!form.name) {
+      setError(t('common.name'))
+      return
+    }
+    try {
+      if (editing) await api.put(`/groups/${id}`, form)
+      else await api.post('/groups', form)
+      window.location.assign('/groups')
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t('common.noData'))
+    }
   }
   const members = form.members || []
   return (
@@ -648,6 +733,7 @@ export function GroupEditor() {
       <div className='grid max-w-4xl gap-5'>
         <Card>
           <CardContent className='grid gap-5 pt-6'>
+            {error && <ErrorState error={error} />}
             <label className='grid gap-2 text-sm font-medium'>
               {t('common.name')}
               <Input
@@ -735,7 +821,9 @@ export function GroupEditor() {
               </div>
             )}
             <div className='flex items-center gap-2'>
-              <Button onClick={save}>{t('common.save')}</Button>
+              {canWrite ? (
+                <Button onClick={save}>{t('common.save')}</Button>
+              ) : null}
               <Button asChild variant='outline'>
                 <Link to='/groups'>{t('common.cancel')}</Link>
               </Button>
@@ -749,6 +837,8 @@ export function GroupEditor() {
 
 export function ApplicationEditor() {
   const { t } = useTranslation()
+  const canRun = useCanRun()
+  const canWrite = useCanWrite()
   const id = window.location.pathname.split('/')[2] || ''
   const editing = id !== 'new'
   const current = useQuery({
@@ -817,36 +907,50 @@ export function ApplicationEditor() {
   const selectedNodes = selectedNodesDraft || assignedNodes.data || []
   const setSelectedNodes = (next: string[]) => setSelectedNodesDraft(next)
   const [operation, setOperation] = useState('deploy')
+  const [error, setError] = useState('')
   const save = async () => {
-    if (!form.name) return
-    const saved = editing
-      ? await api.put<Application>(`/applications/${id}`, form)
-      : await api.post<Application>('/applications', form)
-    const applicationId = saved.id
-    if (selectedNodes.length)
-      await api.post(`/applications/${applicationId}/assign`, {
-        node_ids: selectedNodes,
-      })
-    if (editing && assignedNodes.data) {
-      const removed = assignedNodes.data.filter(
-        (nodeId) => !selectedNodes.includes(nodeId)
-      )
-      if (removed.length)
-        await api.post(`/applications/${applicationId}/assign`, {
-          node_ids: removed,
-          remove: true,
-        })
+    setError('')
+    if (!form.name) {
+      setError(t('common.name'))
+      return
     }
-    window.location.assign(`/applications/${applicationId}`)
+    try {
+      const saved = editing
+        ? await api.put<Application>(`/applications/${id}`, form)
+        : await api.post<Application>('/applications', form)
+      const applicationId = saved.id
+      if (selectedNodes.length)
+        await api.post(`/applications/${applicationId}/assign`, {
+          node_ids: selectedNodes,
+        })
+      if (editing && assignedNodes.data) {
+        const removed = assignedNodes.data.filter(
+          (nodeId) => !selectedNodes.includes(nodeId)
+        )
+        if (removed.length)
+          await api.post(`/applications/${applicationId}/assign`, {
+            node_ids: removed,
+            remove: true,
+          })
+      }
+      window.location.assign(`/applications/${applicationId}`)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t('common.noData'))
+    }
   }
   const deploy = async () => {
     if (!editing || !selectedNodes.length) return
-    await api.post(`/applications/${id}/deploy`, {
-      node_ids: selectedNodes,
-      operation,
-    })
-    await states.refetch()
-    await executions.refetch()
+    setError('')
+    try {
+      await api.post(`/applications/${id}/deploy`, {
+        node_ids: selectedNodes,
+        operation,
+      })
+      await states.refetch()
+      await executions.refetch()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t('common.noData'))
+    }
   }
   const addArg = () => {
     if (!arg.trim()) return
@@ -879,6 +983,7 @@ export function ApplicationEditor() {
             <CardTitle className='text-base'>{t('apps.title')}</CardTitle>
           </CardHeader>
           <CardContent className='grid gap-5'>
+            {error && <ErrorState error={error} />}
             <div className='grid gap-4 sm:grid-cols-2'>
               <label className='grid gap-2 text-sm font-medium'>
                 {t('common.name')}
@@ -1153,7 +1258,9 @@ export function ApplicationEditor() {
               </label>
             </div>
             <div className='flex items-center gap-2'>
-              <Button onClick={save}>{t('common.save')}</Button>
+              {canWrite ? (
+                <Button onClick={save}>{t('common.save')}</Button>
+              ) : null}
               <Button asChild variant='outline'>
                 <Link to='/applications'>{t('common.cancel')}</Link>
               </Button>
@@ -1172,6 +1279,7 @@ export function ApplicationEditor() {
               >
                 <Checkbox
                   checked={selectedNodes.includes(node.id)}
+                  disabled={!canWrite}
                   onCheckedChange={(checked) =>
                     setSelectedNodes(
                       checked
@@ -1190,12 +1298,17 @@ export function ApplicationEditor() {
         </Card>
         {editing && (
           <>
-            <Card>
+            {canRun ? (
+              <Card>
               <CardHeader>
                 <CardTitle className='text-base'>{t('apps.deploy')}</CardTitle>
               </CardHeader>
               <CardContent className='flex flex-wrap gap-2'>
-                <Select value={operation} onValueChange={setOperation}>
+                <Select
+                  value={operation}
+                  onValueChange={setOperation}
+                  disabled={!canRun}
+                >
                   <SelectTrigger className='w-40'>
                     <SelectValue />
                   </SelectTrigger>
@@ -1209,11 +1322,15 @@ export function ApplicationEditor() {
                     )}
                   </SelectContent>
                 </Select>
-                <Button onClick={deploy} disabled={!selectedNodes.length}>
+                <Button
+                  onClick={deploy}
+                  disabled={!canRun || !selectedNodes.length}
+                >
                   {t('apps.deploy')}
                 </Button>
               </CardContent>
-            </Card>
+              </Card>
+            ) : null}
             <Card>
               <CardHeader>
                 <CardTitle className='text-base'>{t('apps.health')}</CardTitle>
@@ -1229,7 +1346,7 @@ export function ApplicationEditor() {
                         <span className='font-mono text-xs'>
                           {state.node_id}
                         </span>
-                        <StatusText value={state.health} />
+                        <StatusBadge status={state.health} />
                         <span className='text-xs text-muted-foreground'>
                           {state.error || state.operation}
                         </span>
@@ -1321,6 +1438,7 @@ function StatusText({ value }: { value: string }) {
 
 export function ArtifactEditor() {
   const { t } = useTranslation()
+  const canWrite = useCanWrite()
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [fileName, setFileName] = useState('')
@@ -1394,9 +1512,11 @@ export function ArtifactEditor() {
               />
             </label>
             <div className='flex items-center gap-2'>
-              <Button type='submit' disabled={uploading}>
-                {uploading ? t('common.uploading') : t('common.upload')}
-              </Button>
+              {canWrite ? (
+                <Button type='submit' disabled={uploading}>
+                  {uploading ? t('common.uploading') : t('common.upload')}
+                </Button>
+              ) : null}
               <Button asChild variant='outline'>
                 <Link to='/artifacts'>{t('common.cancel')}</Link>
               </Button>

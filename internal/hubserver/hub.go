@@ -29,6 +29,9 @@ type Config struct {
 	RegistrationToken    string
 	DataDir              string
 	ArtifactDir          string
+	AgentBinaryAMD64Path string
+	AgentBinaryARM64Path string
+	AgentBinaryPayloads  map[string][]byte
 	BaseURL              string
 	HeartbeatTimeout     time.Duration
 	AdminUsername        string
@@ -82,6 +85,7 @@ func New(cfg Config, logger *slog.Logger) (*Hub, error) {
 	if cfg.OIDC.Issuer != "" {
 		oidcClient, err := auth.NewOIDC(context.Background(), cfg.OIDC, cfg.BaseURL)
 		if err != nil {
+			_ = st.Close()
 			return nil, fmt.Errorf("init oidc: %w", err)
 		}
 		authMgr.SetOIDC(oidcClient)
@@ -90,6 +94,7 @@ func New(cfg Config, logger *slog.Logger) (*Hub, error) {
 	revisions := hub.NewRevisionManager(st)
 	sessions := hub.NewSessionManager()
 	nodes := hub.NewNodeManager(st, revisions)
+	nodes.SetSessionManager(sessions)
 	syncMgr := hub.NewSyncManager(st, revisions, sessions, nodes)
 	nodes.SetSyncManager(syncMgr)
 	syncMgr.SetBaseURL(cfg.BaseURL)
@@ -125,9 +130,16 @@ func New(cfg Config, logger *slog.Logger) (*Hub, error) {
 	apiServer := api.New(st, authMgr, nodes, scripts, tasks, schedules, artifacts, apps, execMgr, logger)
 	apiServer.SetFileTransfers(transfers)
 	apiServer.SetEnrollmentConfig(cfg.RegistrationToken, gatewayBaseURL)
+	apiServer.SetBaseURL(cfg.BaseURL)
+	apiServer.SetAgentBinaryPaths(cfg.AgentBinaryAMD64Path, cfg.AgentBinaryARM64Path)
+	apiServer.SetAgentBinaryPayloads(cfg.AgentBinaryPayloads)
 	apiServer.SetMetrics(m)
 	apiServer.SetRegistrationToken(cfg.RegistrationToken)
 	apiServer.SetSessions(sessions)
+	apiServer.SetReadyCheck(func(ctx context.Context) error {
+		_, err := st.CurrentGlobalRevision(ctx)
+		return err
+	})
 	if oidcClient := authMgr.OIDC(); oidcClient != nil {
 		apiServer.SetOIDC(oidcClient)
 	}

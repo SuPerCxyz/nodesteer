@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Check, Copy, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
 import {
   api,
   getToken,
@@ -20,7 +21,8 @@ import {
   type Task,
   type User,
 } from '@/lib/api'
-import { copyText } from '@/lib/clipboard'
+import { copyText, selectText } from '@/lib/clipboard'
+import { useCanWrite } from '@/lib/permissions'
 import { useTheme } from '@/context/theme-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -68,6 +70,7 @@ import {
 export function Agents() {
   const { t } = useTranslation()
   const client = useQueryClient()
+  const canWrite = useCanWrite()
   const [enrollmentOpen, setEnrollmentOpen] = useState(false)
   const query = useQuery({
     queryKey: ['nodes'],
@@ -76,6 +79,17 @@ export function Agents() {
   const { mutate: updateNodeStatus } = useMutation({
     mutationFn: ({ node, status }: { node: Node; status: string }) =>
       api.post(`/nodes/${node.id}`, { status }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ['nodes'] }),
+    onError: (error) => toast.error(error.message),
+  })
+  const { mutate: revokeNode } = useMutation({
+    mutationFn: (node: Node) =>
+      api.post(`/nodes/${node.id}/revoke-credential`, {}),
+    onSuccess: () => client.invalidateQueries({ queryKey: ['nodes'] }),
+    onError: (error) => toast.error(error.message),
+  })
+  const { mutate: deleteNode } = useMutation({
+    mutationFn: (node: Node) => api.del(`/nodes/${node.id}`),
     onSuccess: () => client.invalidateQueries({ queryKey: ['nodes'] }),
     onError: (error) => toast.error(error.message),
   })
@@ -162,35 +176,66 @@ export function Agents() {
         size: 72,
         minSize: 64,
         meta: { align: 'end' },
-        cell: ({ row }: { row: { original: Node } }) => (
-          <MoreMenu>
-            <DropdownMenuItem
-              onSelect={() =>
-                updateNodeStatus({
-                  node: row.original,
-                  status:
-                    row.original.status === 'maintenance'
-                      ? 'online'
-                      : 'maintenance',
-                })
-              }
-            >
-              {row.original.status === 'maintenance'
-                ? t('nodes.resume')
-                : t('nodes.maintenance')}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() =>
-                updateNodeStatus({ node: row.original, status: 'online' })
-              }
-            >
-              {t('nodes.setOnline')}
-            </DropdownMenuItem>
-          </MoreMenu>
-        ),
+        cell: ({ row }: { row: { original: Node } }) =>
+          canWrite ? (
+            <MoreMenu>
+              <DropdownMenuItem
+                onSelect={() =>
+                  updateNodeStatus({
+                    node: row.original,
+                    status:
+                      row.original.status === 'maintenance' ||
+                      row.original.status === 'disabled'
+                        ? 'online'
+                        : 'maintenance',
+                  })
+                }
+              >
+                {row.original.status === 'maintenance' ||
+                row.original.status === 'disabled'
+                  ? t('nodes.resume')
+                  : t('nodes.maintenance')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() =>
+                  updateNodeStatus({
+                    node: row.original,
+                    status:
+                      row.original.status === 'disabled'
+                        ? 'online'
+                        : 'disabled',
+                  })
+                }
+              >
+                {row.original.status === 'disabled'
+                  ? t('nodes.enable')
+                  : t('nodes.disable')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() =>
+                  updateNodeStatus({ node: row.original, status: 'online' })
+                }
+              >
+                {t('nodes.setOnline')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  if (window.confirm(t('nodes.confirmRevoke')))
+                    revokeNode(row.original)
+                }}
+              >
+                {t('nodes.revokeCredential')}
+              </DropdownMenuItem>
+              <DangerMenuItem
+                title={t('nodes.deleteTitle')}
+                description={t('nodes.confirmDelete')}
+                onSelect={() => deleteNode(row.original)}
+              />
+            </MoreMenu>
+          ) : null,
       },
     ],
-    [t, updateNodeStatus]
+    [canWrite, deleteNode, revokeNode, t, updateNodeStatus]
   )
   return (
     <>
@@ -202,10 +247,12 @@ export function Agents() {
         data={query.data || []}
         searchPlaceholder={t('nodes.searchPlaceholder')}
         action={
-          <Button onClick={() => setEnrollmentOpen(true)}>
-            <Plus className='size-4' />
-            {t('nodes.addNode')}
-          </Button>
+          canWrite ? (
+            <Button onClick={() => setEnrollmentOpen(true)}>
+              <Plus className='size-4' />
+              {t('nodes.addNode')}
+            </Button>
+          ) : null
         }
       />
       <NodeEnrollmentDialog
@@ -224,6 +271,7 @@ function NodeEnrollmentDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const { t } = useTranslation()
+  const client = useQueryClient()
   const [method, setMethod] = useState<
     'native' | 'docker_run' | 'docker_compose'
   >('native')
@@ -238,33 +286,55 @@ function NodeEnrollmentDialog({
     hubAddress: string
   } | null>(null)
   const [copied, setCopied] = useState(false)
-  const query = useQuery({
-    queryKey: ['node-enrollment', request],
-    queryFn: () => {
-      if (!request) throw new Error('enrollment input is required')
-      const params = new URLSearchParams({
-        node_name: request.nodeName,
-        node_ip: request.nodeIP,
-        hub_address: request.hubAddress,
-      })
-      return api.get<NodeEnrollment>(`/nodes/enrollment?${params}`)
+  const commandRef = useRef<HTMLPreElement>(null)
+  const enrollment = useMutation({
+    mutationFn: (value: NonNullable<typeof request>) =>
+      api.post<NodeEnrollment>('/nodes/enrollment', {
+        node_name: value.nodeName,
+        node_ip: value.nodeIP,
+        hub_address: value.hubAddress,
+      }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['nodes'] })
     },
-    enabled: open && request !== null,
-    retry: false,
   })
-  const command = query.data?.[method] || ''
+  const clearEnrollment = () => {
+    setRequest(null)
+    setCopied(false)
+    enrollment.reset()
+  }
+  const resetEnrollment = () => {
+    clearEnrollment()
+    setMethod('native')
+    setNodeName('')
+    setNodeAddress('')
+    setHubAddress(typeof window === 'undefined' ? '' : window.location.origin)
+  }
+  const command = enrollment.data?.[method] || ''
   const copy = async () => {
     if (!command) return
     try {
-      await copyText(command)
+      const copiedToClipboard = await copyText(command)
+      if (!copiedToClipboard) {
+        selectText(commandRef.current)
+        toast.info(t('common.copyManual'))
+        return
+      }
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1500)
     } catch {
+      selectText(commandRef.current)
       toast.error(t('common.copyFailed'))
     }
   }
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) resetEnrollment()
+        onOpenChange(nextOpen)
+      }}
+    >
       <DialogContent className='max-w-3xl'>
         <DialogHeader>
           <DialogTitle>{t('nodes.addNode')}</DialogTitle>
@@ -277,11 +347,13 @@ function NodeEnrollmentDialog({
           onSubmit={(event) => {
             event.preventDefault()
             setCopied(false)
-            setRequest({
+            const nextRequest = {
               nodeName: nodeName.trim(),
               nodeIP: nodeAddress.trim(),
               hubAddress: hubAddress.trim(),
-            })
+            }
+            setRequest(nextRequest)
+            enrollment.mutate(nextRequest)
           }}
         >
           <div className='grid gap-2 text-sm font-medium'>
@@ -291,7 +363,7 @@ function NodeEnrollmentDialog({
               value={nodeName}
               onChange={(event) => {
                 setNodeName(event.target.value)
-                setRequest(null)
+                clearEnrollment()
               }}
               placeholder='node-01'
               required
@@ -304,7 +376,7 @@ function NodeEnrollmentDialog({
               value={nodeAddress}
               onChange={(event) => {
                 setNodeAddress(event.target.value)
-                setRequest(null)
+                clearEnrollment()
               }}
               placeholder={t('nodes.nodeAddressPlaceholder')}
               required
@@ -320,25 +392,55 @@ function NodeEnrollmentDialog({
               value={hubAddress}
               onChange={(event) => {
                 setHubAddress(event.target.value)
-                setRequest(null)
+                clearEnrollment()
               }}
               placeholder='http://hub.example.com:8080'
               required
             />
           </div>
-          <Button type='submit' className='w-fit sm:col-span-2'>
-            {t('nodes.generateCommand')}
-          </Button>
+          <div className='flex flex-wrap items-center gap-2 sm:col-span-2'>
+            <Button
+              type='submit'
+              className='w-fit'
+              disabled={enrollment.isPending}
+            >
+              {t('nodes.generateCommand')}
+            </Button>
+            {enrollment.data ? (
+              <Button
+                type='button'
+                variant='outline'
+                className='ml-auto'
+                onClick={() => void copy()}
+                aria-label={t('common.copy')}
+              >
+                {enrollment.data && copied ? (
+                  <Check className='size-4' />
+                ) : (
+                  <Copy className='size-4' />
+                )}
+                {copied ? t('common.copied') : t('common.copy')}
+              </Button>
+            ) : null}
+          </div>
         </form>
-        {query.isLoading ? (
+        {enrollment.isPending ? (
           <Skeleton className='h-40 w-full' />
-        ) : query.isError ? (
-          <ErrorState error={query.error} onRetry={() => query.refetch()} />
-        ) : query.data ? (
+        ) : enrollment.isError ? (
+          <ErrorState
+            error={enrollment.error}
+            onRetry={() => {
+              if (request) enrollment.mutate(request)
+            }}
+          />
+        ) : enrollment.data ? (
           <div className='space-y-4'>
             <Tabs
               value={method}
-              onValueChange={(value) => setMethod(value as typeof method)}
+              onValueChange={(value) => {
+                setMethod(value as typeof method)
+                setCopied(false)
+              }}
             >
               <TabsList>
                 <TabsTrigger value='native'>{t('nodes.native')}</TabsTrigger>
@@ -347,28 +449,16 @@ function NodeEnrollmentDialog({
               </TabsList>
             </Tabs>
             <div className='space-y-2'>
-              <div className='flex justify-end'>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() => void copy()}
-                  aria-label={t('common.copy')}
-                >
-                  {copied ? (
-                    <Check className='size-4' />
-                  ) : (
-                    <Copy className='size-4' />
-                  )}
-                  {copied ? t('common.copied') : t('common.copy')}
-                </Button>
-              </div>
-              <pre className='max-h-80 overflow-auto rounded-md border bg-muted/30 p-4 font-mono text-xs leading-5 whitespace-pre-wrap'>
+              <pre
+                ref={commandRef}
+                className='max-h-80 overflow-auto rounded-md border bg-muted/30 p-4 font-mono text-xs leading-5 break-all whitespace-pre-wrap select-text'
+              >
                 {command}
               </pre>
             </div>
             <p className='text-xs text-muted-foreground'>
               {t('nodes.enrollmentGateway')}:{' '}
-              <span className='font-mono'>{query.data.gateway_url}</span>
+              <span className='font-mono'>{enrollment.data.gateway_url}</span>
             </p>
           </div>
         ) : null}
@@ -381,6 +471,7 @@ export function AgentDetail() {
   const { t } = useTranslation()
   const id = window.location.pathname.split('/').pop() || ''
   const client = useQueryClient()
+  const canWrite = useCanWrite()
   const [labelKey, setLabelKey] = useState('')
   const [labelValue, setLabelValue] = useState('')
   const node = useQuery({
@@ -585,30 +676,36 @@ export function AgentDetail() {
                           </span>
                         )}
                       </div>
-                      <div className='flex flex-wrap gap-2'>
-                        <Input
-                          className='h-8 w-32 font-mono text-xs'
-                          placeholder='key'
-                          value={labelKey}
-                          onChange={(event) => setLabelKey(event.target.value)}
-                        />
-                        <Input
-                          className='h-8 w-32 font-mono text-xs'
-                          placeholder='value'
-                          value={labelValue}
-                          onChange={(event) =>
-                            setLabelValue(event.target.value)
-                          }
-                        />
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          onClick={() => updateLabels.mutate()}
-                          disabled={!labelKey.trim() || updateLabels.isPending}
-                        >
-                          {t('nodes.addLabel')}
-                        </Button>
-                      </div>
+                      {canWrite ? (
+                        <div className='flex flex-wrap gap-2'>
+                          <Input
+                            className='h-8 w-32 font-mono text-xs'
+                            placeholder='key'
+                            value={labelKey}
+                            onChange={(event) =>
+                              setLabelKey(event.target.value)
+                            }
+                          />
+                          <Input
+                            className='h-8 w-32 font-mono text-xs'
+                            placeholder='value'
+                            value={labelValue}
+                            onChange={(event) =>
+                              setLabelValue(event.target.value)
+                            }
+                          />
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            onClick={() => updateLabels.mutate()}
+                            disabled={
+                              !labelKey.trim() || updateLabels.isPending
+                            }
+                          >
+                            {t('nodes.addLabel')}
+                          </Button>
+                        </div>
+                      ) : null}
                     </section>
                   </CardContent>
                 </Card>
@@ -919,6 +1016,7 @@ function taskTargetsNode(task: Task, node: Node | undefined, groups: Group[]) {
 export function Schedules() {
   const { t, i18n } = useTranslation()
   const client = useQueryClient()
+  const canWrite = useCanWrite()
   const schedules = useQuery({
     queryKey: ['schedules'],
     queryFn: () => api.get<Schedule[]>('/schedules'),
@@ -1045,23 +1143,27 @@ export function Schedules() {
         size: 72,
         minSize: 64,
         meta: { align: 'end' },
-        cell: ({ row }: { row: { original: Schedule } }) => (
-          <MoreMenu>
-            <DropdownMenuItem asChild>
-              <a href={`/schedules/${row.original.id}`}>{t('common.edit')}</a>
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => toggleSchedule(row.original)}>
-              {row.original.enabled ? t('common.disable') : t('common.enable')}
-            </DropdownMenuItem>
-            <DangerMenuItem
-              onSelect={() => removeSchedule(row.original)}
-              title={`${t('common.delete')}: ${row.original.id}`}
-            />
-          </MoreMenu>
-        ),
+        cell: ({ row }: { row: { original: Schedule } }) =>
+          canWrite ? (
+            <MoreMenu>
+              <DropdownMenuItem asChild>
+                <a href={`/schedules/${row.original.id}`}>{t('common.edit')}</a>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => toggleSchedule(row.original)}>
+                {row.original.enabled
+                  ? t('common.disable')
+                  : t('common.enable')}
+              </DropdownMenuItem>
+              <DangerMenuItem
+                onSelect={() => removeSchedule(row.original)}
+                title={`${t('common.delete')}: ${row.original.id}`}
+                description={t('schedules.confirmDelete')}
+              />
+            </MoreMenu>
+          ) : null,
       },
     ],
-    [i18n.language, t, tasks.data, toggleSchedule, removeSchedule]
+    [canWrite, i18n.language, t, tasks.data, toggleSchedule, removeSchedule]
   )
   return (
     <ListLayout
@@ -1072,12 +1174,14 @@ export function Schedules() {
       data={schedules.data || []}
       searchPlaceholder={t('schedules.searchPlaceholder')}
       action={
-        <Button asChild>
-          <Link to='/schedules/new'>
-            <Plus className='me-1 size-4' />
-            {t('schedules.newSchedule')}
-          </Link>
-        </Button>
+        canWrite ? (
+          <Button asChild>
+            <Link to='/schedules/new'>
+              <Plus className='me-1 size-4' />
+              {t('schedules.newSchedule')}
+            </Link>
+          </Button>
+        ) : null
       }
     />
   )
@@ -1086,6 +1190,7 @@ export function Schedules() {
 export function Scripts() {
   const { t } = useTranslation()
   const client = useQueryClient()
+  const canWrite = useCanWrite()
   const query = useQuery({
     queryKey: ['scripts'],
     queryFn: () => api.get<Script[]>('/scripts'),
@@ -1214,26 +1319,30 @@ export function Scripts() {
         size: 72,
         minSize: 64,
         meta: { align: 'end' },
-        cell: ({ row }: { row: { original: Script } }) => (
-          <MoreMenu>
-            <DropdownMenuItem asChild>
-              <a href={`/scripts/${row.original.id}`}>{t('common.edit')}</a>
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => toggleScript(row.original)}>
-              {row.original.enabled ? t('common.disable') : t('common.enable')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => cloneScript(row.original)}>
-              {t('scripts.clone')}
-            </DropdownMenuItem>
-            <DangerMenuItem
-              onSelect={() => removeScript(row.original)}
-              title={`${t('common.delete')}: ${row.original.name}`}
-            />
-          </MoreMenu>
-        ),
+        cell: ({ row }: { row: { original: Script } }) =>
+          canWrite ? (
+            <MoreMenu>
+              <DropdownMenuItem asChild>
+                <a href={`/scripts/${row.original.id}`}>{t('common.edit')}</a>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => toggleScript(row.original)}>
+                {row.original.enabled
+                  ? t('common.disable')
+                  : t('common.enable')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => cloneScript(row.original)}>
+                {t('scripts.clone')}
+              </DropdownMenuItem>
+              <DangerMenuItem
+                onSelect={() => removeScript(row.original)}
+                title={`${t('common.delete')}: ${row.original.name}`}
+                description={t('scripts.confirmDelete')}
+              />
+            </MoreMenu>
+          ) : null,
       },
     ],
-    [cloneScript, removeScript, t, toggleScript]
+    [canWrite, cloneScript, removeScript, t, toggleScript]
   )
   return (
     <ListLayout
@@ -1244,12 +1353,14 @@ export function Scripts() {
       data={query.data || []}
       searchPlaceholder={t('scripts.searchPlaceholder')}
       action={
-        <Button asChild>
-          <Link to='/scripts/new'>
-            <Plus className='me-1 size-4' />
-            {t('scripts.newScript')}
-          </Link>
-        </Button>
+        canWrite ? (
+          <Button asChild>
+            <Link to='/scripts/new'>
+              <Plus className='me-1 size-4' />
+              {t('scripts.newScript')}
+            </Link>
+          </Button>
+        ) : null
       }
     />
   )
@@ -1258,9 +1369,14 @@ export function Scripts() {
 export function Groups() {
   const { t } = useTranslation()
   const client = useQueryClient()
+  const canWrite = useCanWrite()
   const query = useQuery({
     queryKey: ['groups'],
     queryFn: () => api.get<Group[]>('/groups'),
+  })
+  const nodes = useQuery({
+    queryKey: ['nodes'],
+    queryFn: () => api.get<Node[]>('/nodes'),
   })
   const { mutate: removeGroup } = useMutation({
     mutationFn: (group: Group) => api.del(`/groups/${group.id}`),
@@ -1300,13 +1416,24 @@ export function Groups() {
       },
       {
         id: 'members',
-        accessorFn: (row: Group) => row.members?.length || 0,
+        accessorFn: (row: Group) =>
+          row.type === 'label'
+            ? (nodes.data || []).filter(
+                (node) => node.labels?.[row.label_key] === row.label_value
+              ).length
+            : row.members?.length || 0,
         header: t('groups.members'),
         size: 90,
         minSize: 72,
         meta: { align: 'end' },
         cell: ({ row }: { row: { original: Group } }) =>
-          row.original.members?.length || 0,
+          row.original.type === 'label'
+            ? (nodes.data || []).filter(
+                (node) =>
+                  node.labels?.[row.original.label_key] ===
+                  row.original.label_value
+              ).length
+            : row.original.members?.length || 0,
       },
       {
         id: 'actions',
@@ -1315,20 +1442,22 @@ export function Groups() {
         size: 72,
         minSize: 64,
         meta: { align: 'end' },
-        cell: ({ row }: { row: { original: Group } }) => (
-          <MoreMenu>
-            <DropdownMenuItem asChild>
-              <a href={`/groups/${row.original.id}`}>{t('common.edit')}</a>
-            </DropdownMenuItem>
-            <DangerMenuItem
-              onSelect={() => removeGroup(row.original)}
-              title={`${t('common.delete')}: ${row.original.name}`}
-            />
-          </MoreMenu>
-        ),
+        cell: ({ row }: { row: { original: Group } }) =>
+          canWrite ? (
+            <MoreMenu>
+              <DropdownMenuItem asChild>
+                <a href={`/groups/${row.original.id}`}>{t('common.edit')}</a>
+              </DropdownMenuItem>
+              <DangerMenuItem
+                onSelect={() => removeGroup(row.original)}
+                title={`${t('common.delete')}: ${row.original.name}`}
+                description={t('groups.confirmDelete')}
+              />
+            </MoreMenu>
+          ) : null,
       },
     ],
-    [removeGroup, t]
+    [canWrite, nodes.data, removeGroup, t]
   )
   return (
     <ListLayout
@@ -1339,12 +1468,14 @@ export function Groups() {
       data={query.data || []}
       searchPlaceholder={t('groups.searchPlaceholder')}
       action={
-        <Button asChild>
-          <Link to='/groups/new'>
-            <Plus className='me-1 size-4' />
-            {t('groups.newGroup')}
-          </Link>
-        </Button>
+        canWrite ? (
+          <Button asChild>
+            <Link to='/groups/new'>
+              <Plus className='me-1 size-4' />
+              {t('groups.newGroup')}
+            </Link>
+          </Button>
+        ) : null
       }
     />
   )
@@ -1353,6 +1484,7 @@ export function Groups() {
 export function Applications() {
   const { t } = useTranslation()
   const client = useQueryClient()
+  const canWrite = useCanWrite()
   const query = useQuery({
     queryKey: ['applications'],
     queryFn: () => api.get<Application[]>('/applications'),
@@ -1436,22 +1568,24 @@ export function Applications() {
         size: 72,
         minSize: 64,
         meta: { align: 'end' },
-        cell: ({ row }: { row: { original: Application } }) => (
-          <MoreMenu>
-            <DropdownMenuItem asChild>
-              <a href={`/applications/${row.original.id}`}>
-                {t('common.edit')}
-              </a>
-            </DropdownMenuItem>
-            <DangerMenuItem
-              onSelect={() => removeApplication(row.original)}
-              title={`${t('common.delete')}: ${row.original.name}`}
-            />
-          </MoreMenu>
-        ),
+        cell: ({ row }: { row: { original: Application } }) =>
+          canWrite ? (
+            <MoreMenu>
+              <DropdownMenuItem asChild>
+                <a href={`/applications/${row.original.id}`}>
+                  {t('common.edit')}
+                </a>
+              </DropdownMenuItem>
+              <DangerMenuItem
+                onSelect={() => removeApplication(row.original)}
+                title={`${t('common.delete')}: ${row.original.name}`}
+                description={t('apps.confirmDelete')}
+              />
+            </MoreMenu>
+          ) : null,
       },
     ],
-    [removeApplication, t]
+    [canWrite, removeApplication, t]
   )
   return (
     <ListLayout
@@ -1462,12 +1596,14 @@ export function Applications() {
       data={query.data || []}
       searchPlaceholder={t('apps.searchPlaceholder')}
       action={
-        <Button asChild>
-          <Link to='/applications/new'>
-            <Plus className='me-1 size-4' />
-            {t('apps.newApp')}
-          </Link>
-        </Button>
+        canWrite ? (
+          <Button asChild>
+            <Link to='/applications/new'>
+              <Plus className='me-1 size-4' />
+              {t('apps.newApp')}
+            </Link>
+          </Button>
+        ) : null
       }
     />
   )
@@ -1476,6 +1612,7 @@ export function Applications() {
 export function Artifacts() {
   const { t } = useTranslation()
   const client = useQueryClient()
+  const canWrite = useCanWrite()
   const query = useQuery({
     queryKey: ['artifacts'],
     queryFn: () => api.get<Artifact[]>('/artifacts'),
@@ -1630,15 +1767,18 @@ export function Artifacts() {
             >
               {t('artifacts.download')}
             </DropdownMenuItem>
-            <DangerMenuItem
-              onSelect={() => removeArtifact(row.original)}
-              title={`${t('common.delete')}: ${row.original.name}`}
-            />
+            {canWrite ? (
+              <DangerMenuItem
+                onSelect={() => removeArtifact(row.original)}
+                title={`${t('common.delete')}: ${row.original.name}`}
+                description={t('artifacts.confirmDelete')}
+              />
+            ) : null}
           </MoreMenu>
         ),
       },
     ],
-    [applications.data, downloadArtifact, removeArtifact, t]
+    [applications.data, canWrite, downloadArtifact, removeArtifact, t]
   )
   return (
     <ListLayout
@@ -1649,12 +1789,14 @@ export function Artifacts() {
       data={query.data || []}
       searchPlaceholder={t('artifacts.searchPlaceholder')}
       action={
-        <Button asChild>
-          <Link to='/artifacts/new'>
-            <Plus className='me-1 size-4' />
-            {t('common.upload')}
-          </Link>
-        </Button>
+        canWrite ? (
+          <Button asChild>
+            <Link to='/artifacts/new'>
+              <Plus className='me-1 size-4' />
+              {t('common.upload')}
+            </Link>
+          </Button>
+        ) : null
       }
     />
   )
@@ -1719,6 +1861,9 @@ export function Audit() {
 export function Users() {
   const { t } = useTranslation()
   const client = useQueryClient()
+  const isAdministrator = useAuthStore(
+    (state) => state.auth.user?.role.includes('administrator') ?? false
+  )
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
     username: '',
@@ -1728,6 +1873,7 @@ export function Users() {
   const query = useQuery({
     queryKey: ['users'],
     queryFn: () => api.get<User[]>('/users'),
+    enabled: isAdministrator,
   })
   const create = useMutation({
     mutationFn: () => api.post<User>('/users', form),
@@ -1793,6 +1939,19 @@ export function Users() {
     ],
     [setUserRole, t]
   )
+  if (!isAdministrator) {
+    return (
+      <>
+        <CadentraHeader
+          title={t('misc.usersTitle')}
+          description={t('misc.usersDescription')}
+        />
+        <Main>
+          <ErrorState error={new Error(t('misc.adminOnly'))} />
+        </Main>
+      </>
+    )
+  }
   return (
     <ListLayout
       title={t('misc.usersTitle')}
@@ -1867,6 +2026,7 @@ export function Users() {
 export function Settings() {
   const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
+  const canWrite = useCanWrite()
   const [section, setSection] = useState<'runtime' | 'appearance'>('runtime')
   const query = useQuery({
     queryKey: ['settings'],
@@ -1941,6 +2101,7 @@ export function Settings() {
                             defaultValue: key,
                           })}
                           value={value}
+                          disabled={!canWrite}
                           onChange={(event) =>
                             setValues({
                               ...settings,
@@ -1951,13 +2112,15 @@ export function Settings() {
                       </label>
                     ))
                   )}
-                  <Button
-                    className='w-fit'
-                    onClick={() => save.mutate()}
-                    disabled={save.isPending}
-                  >
-                    {t('common.save')}
-                  </Button>
+                  {canWrite ? (
+                    <Button
+                      className='w-fit'
+                      onClick={() => save.mutate()}
+                      disabled={save.isPending}
+                    >
+                      {t('common.save')}
+                    </Button>
+                  ) : null}
                 </CardContent>
               </Card>
             ) : (

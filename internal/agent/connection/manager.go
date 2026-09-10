@@ -35,6 +35,7 @@ type Handler interface {
 	OnDeployRequest(msg protocol.Envelope)
 	OnExecutionAck(msg protocol.Envelope)
 	OnSettings(msg protocol.Envelope)
+	OnNodeStatus(msg protocol.Envelope)
 	OnRemoteState(msg protocol.Envelope)
 	OnError(msg protocol.Envelope)
 }
@@ -302,6 +303,8 @@ func (m *Manager) dispatch(env protocol.Envelope) {
 		m.handler.OnExecutionAck(env)
 	case protocol.MsgSettings:
 		m.handler.OnSettings(env)
+	case protocol.MsgNodeStatus:
+		m.handler.OnNodeStatus(env)
 	case protocol.MsgRemoteState:
 		m.handler.OnRemoteState(env)
 	case protocol.MsgError:

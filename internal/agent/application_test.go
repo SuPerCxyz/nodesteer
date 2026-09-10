@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cadentra/cadentra/internal/agent/host"
 	"github.com/cadentra/cadentra/internal/models"
@@ -23,6 +24,19 @@ import (
 type testHost struct {
 	root   string
 	active bool
+}
+
+type transientStatusHost struct {
+	testHost
+	calls int
+}
+
+func (h *transientStatusHost) ServiceStatus(context.Context, string) (string, error) {
+	h.calls++
+	if h.calls == 1 {
+		return "active", nil
+	}
+	return "activating", nil
 }
 
 func (h *testHost) HostRoot() string        { return h.root }
@@ -144,5 +158,59 @@ func TestApplicationDeploymentRollsBackPreviousFiles(t *testing.T) {
 	config, err := h.ReadFile(ctx, "/etc/cadentra-app.conf")
 	if err != nil || string(config) != "old" {
 		t.Fatalf("previous config not restored: %q err=%v", config, err)
+	}
+}
+
+func TestSystemdHealthRequiresStableActiveState(t *testing.T) {
+	h := &transientStatusHost{testHost: testHost{root: t.TempDir()}}
+	am := &ApplicationManager{host: h}
+
+	if am.checkOnce(context.Background(), models.HealthCheck{
+		Type: models.HealthTypeSystemd,
+	}, "cadentra-test.service", time.Second) {
+		t.Fatal("transient active state must not pass health check")
+	}
+	if h.calls != 2 {
+		t.Fatalf("health check calls = %d, want 2", h.calls)
+	}
+}
+
+func TestFirstDeploymentFailureCleansManagedFiles(t *testing.T) {
+	ctx := context.Background()
+	st := newTestAgentStore(t)
+	h := &testHost{root: t.TempDir()}
+	cache := NewArtifactCache(filepath.Join(t.TempDir(), "artifacts"), st, slog.New(slog.NewTextHandler(io.Discard, nil)), "")
+	am := NewApplicationManager(st, h, cache, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	app := models.Application{ID: "first-failure", Name: "first", Version: "1.0", BinaryPath: "/usr/local/bin/first", UnitName: "cadentra-first.service"}
+	def, _ := json.Marshal(app)
+	artifact := []byte("new-version")
+	sum := sha256.Sum256(artifact)
+	sha := hex.EncodeToString(sum[:])
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write(artifact) }))
+	defer server.Close()
+	var result protocol.DeployResultPayload
+	am.deploy(ctx, protocol.DeployRequestPayload{
+		AppID: app.ID, AppVersion: app.Version, ArtifactURL: server.URL, ArtifactSHA256: sha,
+		BinaryPath: app.BinaryPath, UnitName: app.UnitName, Config: "new-config",
+		HealthCheck: []byte(`{"type":"command","target":"false"}`), Operation: "deploy",
+	}, def, "first-failure-exec", func(p protocol.DeployResultPayload) { result = p })
+	if result.OK || !result.Rollback {
+		t.Fatalf("expected failed deployment with rollback, got %+v", result)
+	}
+	if _, err := h.Stat(ctx, app.BinaryPath); !os.IsNotExist(err) {
+		t.Fatalf("failed first deployment left binary, err=%v", err)
+	}
+	if _, err := h.Stat(ctx, "/etc/cadentra-first.conf"); !os.IsNotExist(err) {
+		t.Fatalf("failed first deployment left config, err=%v", err)
+	}
+	if _, err := h.Stat(ctx, "/etc/systemd/system/"+app.UnitName); !os.IsNotExist(err) {
+		t.Fatalf("failed first deployment left unit, err=%v", err)
+	}
+	deployments, err := st.GetActiveDeployments(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(deployments) != 0 {
+		t.Fatalf("failed deployment journal did not converge: %+v", deployments)
 	}
 }

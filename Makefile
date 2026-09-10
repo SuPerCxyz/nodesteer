@@ -1,10 +1,11 @@
 .PHONY: build build-hub build-agent web web-build test lint docker docker-hub docker-agent clean
 
 # 构建二进制
-build: build-hub build-agent
+build: build-agent build-hub
 
-build-hub:
-	go build -buildvcs=false -o bin/cadentra-hub ./cmd/hub
+build-hub: build-agent
+	go build -buildvcs=false -o bin/cadentra-hub.unbundled ./cmd/hub
+	sh packaging/bundle-agent.sh bin/cadentra-hub bin/cadentra-hub.unbundled amd64 bin/cadentra-agent
 
 build-agent:
 	go build -buildvcs=false -o bin/cadentra-agent ./cmd/agent

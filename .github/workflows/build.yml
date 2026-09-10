@@ -68,14 +68,20 @@ jobs:
       - name: Build Linux binaries
         run: |
           mkdir -p dist
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -ldflags='-s -w' -o dist/cadentra-hub-linux-amd64 ./cmd/hub
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -ldflags='-s -w' -o dist/cadentra-agent-linux-amd64 ./cmd/agent
+          for arch in amd64 arm64; do
+            CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -buildvcs=false -ldflags='-s -w' -o dist/cadentra-agent-linux-$arch ./cmd/agent
+          done
+          for arch in amd64 arm64; do
+            CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -buildvcs=false -ldflags='-s -w' -o dist/cadentra-hub-linux-$arch.unbundled ./cmd/hub
+            sh packaging/bundle-agent.sh dist/cadentra-hub-linux-$arch dist/cadentra-hub-linux-$arch.unbundled amd64 dist/cadentra-agent-linux-amd64 arm64 dist/cadentra-agent-linux-arm64
+            rm dist/cadentra-hub-linux-$arch.unbundled
+          done
           sha256sum dist/cadentra-*
 
       - name: Upload binaries
         uses: actions/upload-artifact@v7
         with:
-          name: cadentra-linux-amd64-binaries
+          name: cadentra-linux-binaries
           path: dist/
           if-no-files-found: error
 
@@ -102,6 +108,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
@@ -126,6 +135,7 @@ jobs:
           context: .
           file: ${{ matrix.dockerfile }}
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.component }}

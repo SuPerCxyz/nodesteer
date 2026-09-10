@@ -20,6 +20,7 @@ export default {
       operations: 'Operations',
       definitions: 'Definitions',
       resources: 'Resources',
+      delivery: 'Delivery',
       system: 'System',
     },
   },
@@ -66,6 +67,8 @@ export default {
     copy: 'Copy',
     copied: 'Copied',
     copyFailed: 'Copy failed. Copy the command manually.',
+    copyManual:
+      'This page cannot write to the clipboard automatically. Press Ctrl+C to copy.',
     retry: 'Retry',
     searchAgents: 'Search agents...',
     selected: 'selected',
@@ -171,6 +174,13 @@ export default {
     maintenance: 'Maintenance',
     resume: 'Resume',
     setOnline: 'Set Online',
+    disable: 'Disable',
+    enable: 'Enable',
+    revokeCredential: 'Revoke credential',
+    confirmRevoke:
+      'Revoke this node credential? The Agent must be enrolled again.',
+    deleteTitle: 'Delete node',
+    confirmDelete: 'Delete this node record? References must be removed first.',
     noNodes:
       'No nodes registered. Deploy an agent with the registration token.',
     detail: 'Detail',
@@ -249,6 +259,7 @@ export default {
     confirmDelete:
       'Delete this group? Tasks referencing it will lose their target.',
     newGroup: 'New Group',
+    editTitle: 'Edit Group',
     noGroups: 'No groups',
     types: {
       static: 'Static',
@@ -350,8 +361,12 @@ export default {
     hubOnlineRequired: 'Hub Online Required',
     allowOffline: 'Allow Offline',
     parameters: 'Parameters',
+    required: 'Required',
     localCondition: 'Local Condition',
     remoteCondition: 'Remote Condition',
+    andConditions: 'Require all conditions (AND)',
+    conditionPath: 'path or port',
+    conditionCommand: 'command to evaluate',
     selectNode: 'Select node...',
     lastExecution: 'last_execution',
     setRemote: 'Set Remote',
@@ -407,6 +422,10 @@ export default {
     cronExpression: 'Cron Expression',
     intervalSec: 'Interval (seconds)',
     runAt: 'Run At',
+    taskRequired: 'Select a task',
+    cronRequired: 'Enter a Cron expression',
+    intervalInvalid: 'Interval must be greater than 0 seconds',
+    runAtRequired: 'Select a run time',
     executionOwner: 'Execution Owner',
     agent: 'Agent',
     hub: 'Hub',
@@ -478,7 +497,7 @@ export default {
     executionHistory: 'Execution History',
     noExecutions: 'No application executions',
   },
-  // 制品
+  // 发布包
   artifacts: {
     title: 'Artifacts',
     description:
@@ -548,6 +567,7 @@ export default {
     resourceId: 'Resource ID',
     usersTitle: 'Users',
     usersDescription: 'Manage local users and roles with access to Cadentra.',
+    adminOnly: 'Only administrators can manage users.',
     newUser: 'New User',
     username: 'Username',
     password: 'Password',

@@ -32,6 +32,7 @@ type Store interface {
 	UpdateNodeSyncState(ctx context.Context, id string, rev int64, syncStatus string) error
 	UpdateNodeHeartbeat(ctx context.Context, id string, lastSeen time.Time) error
 	SetNodeLabels(ctx context.Context, id string, labels map[string]string) error
+	DeleteNode(ctx context.Context, id string) error
 
 	// Groups
 	CreateGroup(ctx context.Context, g *models.Group) error
@@ -89,6 +90,7 @@ type Store interface {
 	SetApplicationAssignment(ctx context.Context, appID, nodeID string, assigned bool) error
 	GetApplicationNodes(ctx context.Context, appID string) ([]string, error)
 	SetApplicationNodeState(ctx context.Context, state *models.ApplicationNodeState) error
+	DeleteApplicationNodeState(ctx context.Context, appID, nodeID string) error
 	ListApplicationNodeStates(ctx context.Context, appID string) ([]*models.ApplicationNodeState, error)
 
 	// Executions

@@ -1,4 +1,10 @@
-import { useEffect, useState } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react'
 import {
   Check,
   Clipboard,
@@ -61,6 +67,7 @@ export function StatusBadge({ status }: { status: string }) {
     unhealthy: { zh: '不健康', en: 'Unhealthy' },
     enabled: { zh: '已启用', en: 'Enabled' },
     disabled: { zh: '已禁用', en: 'Disabled' },
+    stopped: { zh: '已停止', en: 'Stopped' },
     pending: { zh: '等待中', en: 'Pending' },
     running: { zh: '运行中', en: 'Running' },
     success: { zh: '成功', en: 'Success' },
@@ -222,22 +229,63 @@ export function SectionCard({
 
 export function MoreMenu({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const [confirmation, setConfirmation] = useState<{
+    title?: string
+    description?: string
+    onSelect: () => void
+  } | null>(null)
+  const requestConfirmation = useCallback(
+    (next: NonNullable<typeof confirmation>) => {
+      setOpen(false)
+      // Let Radix finish closing the menu before mounting the alert dialog.
+      window.setTimeout(() => setConfirmation(next), 0)
+    },
+    []
+  )
+  const confirm = () => {
+    const action = confirmation?.onSelect
+    setConfirmation(null)
+    action?.()
+  }
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant='ghost'
-          size='icon'
-          className='size-8'
-          aria-label={t('common.actions')}
-        >
-          <MoreHorizontal className='size-4' />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align='end'>{children}</DropdownMenuContent>
-    </DropdownMenu>
+    <MoreMenuContext.Provider value={{ requestConfirmation }}>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant='ghost'
+            size='icon'
+            className='size-8'
+            aria-label={t('common.actions')}
+          >
+            <MoreHorizontal className='size-4' />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align='end'>{children}</DropdownMenuContent>
+      </DropdownMenu>
+      <ConfirmDialog
+        open={confirmation !== null}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setConfirmation(null)
+        }}
+        title={confirmation?.title || t('common.delete')}
+        desc={confirmation?.description || t('common.confirmAction')}
+        cancelBtnText={t('common.cancel')}
+        confirmText={t('common.delete')}
+        destructive
+        handleConfirm={confirm}
+      />
+    </MoreMenuContext.Provider>
   )
 }
+
+const MoreMenuContext = createContext<{
+  requestConfirmation: (confirmation: {
+    title?: string
+    description?: string
+    onSelect: () => void
+  }) => void
+} | null>(null)
 
 export function DangerMenuItem({
   onSelect,
@@ -249,6 +297,7 @@ export function DangerMenuItem({
   description?: string
 }) {
   const { t } = useTranslation()
+  const moreMenu = useContext(MoreMenuContext)
   const [open, setOpen] = useState(false)
   return (
     <>
@@ -256,24 +305,30 @@ export function DangerMenuItem({
         variant='destructive'
         onSelect={(event) => {
           event.preventDefault()
-          setOpen(true)
+          if (moreMenu) {
+            moreMenu.requestConfirmation({ title, description, onSelect })
+          } else {
+            setOpen(true)
+          }
         }}
       >
         {t('common.delete')}
       </DropdownMenuItem>
-      <ConfirmDialog
-        open={open}
-        onOpenChange={setOpen}
-        title={title || t('common.delete')}
-        desc={description || t('common.confirmAction')}
-        cancelBtnText={t('common.cancel')}
-        confirmText={t('common.delete')}
-        destructive
-        handleConfirm={() => {
-          onSelect()
-          setOpen(false)
-        }}
-      />
+      {!moreMenu ? (
+        <ConfirmDialog
+          open={open}
+          onOpenChange={setOpen}
+          title={title || t('common.delete')}
+          desc={description || t('common.confirmAction')}
+          cancelBtnText={t('common.cancel')}
+          confirmText={t('common.delete')}
+          destructive
+          handleConfirm={() => {
+            onSelect()
+            setOpen(false)
+          }}
+        />
+      ) : null}
     </>
   )
 }
@@ -292,10 +347,14 @@ export function Copyable({
   if (!value) return <span className='text-muted-foreground'>-</span>
   const copy = async () => {
     try {
-      await copyText(value)
-      setCopied(true)
-      toast.success(t('common.copied'))
-      window.setTimeout(() => setCopied(false), 1200)
+      const copied = await copyText(value)
+      if (copied) {
+        setCopied(true)
+        toast.success(t('common.copied'))
+        window.setTimeout(() => setCopied(false), 1200)
+      } else {
+        toast.info(t('common.copyManual'))
+      }
     } catch {
       toast.error(t('common.copyFailed'))
     }
@@ -336,7 +395,7 @@ export function TimeValue({
   const locale = i18n.language === 'en' ? 'en-US' : 'zh-CN'
   const full = date.toLocaleString(locale)
   const relative = relativeTime(date, i18n.language === 'en')
-  return Number.isNaN(date.getTime()) ? (
+  return Number.isNaN(date.getTime()) || date.getUTCFullYear() === 1 ? (
     <span className='text-muted-foreground'>-</span>
   ) : (
     <time title={full}>{absolute ? full : relative}</time>

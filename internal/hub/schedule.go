@@ -2,7 +2,9 @@ package hub
 
 import (
 	"context"
+	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/cadentra/cadentra/internal/models"
@@ -18,6 +20,7 @@ type ScheduleManager struct {
 	nodes     *NodeManager
 	execMgr   *ExecutionManager
 	lastFire  map[string]time.Time
+	mu        sync.Mutex
 }
 
 // NewScheduleManager 创建调度管理器
@@ -48,6 +51,12 @@ func (sm *ScheduleManager) Create(ctx context.Context, s *models.Schedule) error
 	}
 	if s.Timezone == "" {
 		s.Timezone = "UTC"
+	}
+	if _, err := sm.store.GetTask(ctx, s.TaskID); err != nil {
+		return fmt.Errorf("referenced task not found")
+	}
+	if err := validateSchedule(s); err != nil {
+		return err
 	}
 	var rev int64
 	if err := runMutationTx(ctx, sm.store, func(txctx context.Context) error {
@@ -105,6 +114,12 @@ func (sm *ScheduleManager) Update(ctx context.Context, s *models.Schedule) error
 	if s.MisfirePolicy == "" {
 		s.MisfirePolicy = existing.MisfirePolicy
 	}
+	if _, err := sm.store.GetTask(ctx, s.TaskID); err != nil {
+		return fmt.Errorf("referenced task not found")
+	}
+	if err := validateSchedule(s); err != nil {
+		return err
+	}
 	s.Revision = existing.Revision + 1
 	s.CreatedAt = existing.CreatedAt
 	s.UpdatedAt = time.Now()
@@ -151,7 +166,9 @@ func (sm *ScheduleManager) Delete(ctx context.Context, id string) error {
 	}); err != nil {
 		return err
 	}
+	sm.mu.Lock()
 	delete(sm.lastFire, id)
+	sm.mu.Unlock()
 	sm.syncMgr.NotifyChange(ctx, models.ObjectSchedule, id, 0, rev)
 	return nil
 }
@@ -194,7 +211,9 @@ func (sm *ScheduleManager) RunDueHUB(ctx context.Context, now time.Time) error {
 		if _, err := sm.execMgr.RunScheduledHub(ctx, task, nodeIDs, next); err != nil {
 			// 幂等冲突忽略
 		}
+		sm.mu.Lock()
 		sm.lastFire[s.ID] = now
+		sm.mu.Unlock()
 	}
 	return nil
 }
@@ -239,7 +258,12 @@ func (sm *ScheduleManager) computeNextRun(s *models.Schedule, now time.Time) (ne
 	now = now.In(loc)
 	switch s.Type {
 	case models.ScheduleTypeInterval:
-		anchor := s.CreatedAt.In(loc)
+		sm.mu.Lock()
+		anchor := sm.lastFire[s.ID]
+		sm.mu.Unlock()
+		if anchor.IsZero() {
+			anchor = s.CreatedAt.In(loc)
+		}
 		if anchor.IsZero() {
 			anchor = now
 		}
@@ -256,23 +280,45 @@ func (sm *ScheduleManager) computeNextRun(s *models.Schedule, now time.Time) (ne
 		next = anchor.Add((count + 1) * period)
 		if count >= 1 {
 			// 存在错过的触发点：SKIP 则跳过，RUN_ONCE 则补跑最近一次
-			if s.MisfirePolicy == models.MisfirePolicySkip {
+			if count > 1 && s.MisfirePolicy == models.MisfirePolicySkip {
+				sm.mu.Lock()
+				sm.lastFire[s.ID] = now
+				sm.mu.Unlock()
 				return next, false, nil
 			}
 			return lastDue, true, nil
 		}
 		return next, false, nil
 	case models.ScheduleTypeCron:
-		return nextCronRun(s.Expression, loc, sm.lastFire[s.ID], s.CreatedAt, now)
+		sm.mu.Lock()
+		lastFire := sm.lastFire[s.ID]
+		sm.mu.Unlock()
+		next, due, err := nextCronRun(s.Expression, loc, lastFire, s.CreatedAt, now)
+		if due && s.MisfirePolicy == models.MisfirePolicySkip && next.Before(now) {
+			sm.mu.Lock()
+			sm.lastFire[s.ID] = now
+			sm.mu.Unlock()
+			return next, false, err
+		}
+		return next, due, err
 	case models.ScheduleTypeOneTime:
 		if s.RunAt.IsZero() {
 			return time.Time{}, false, nil
 		}
 		t := s.RunAt.In(loc)
+		sm.mu.Lock()
+		alreadyFired := !sm.lastFire[s.ID].IsZero()
+		sm.mu.Unlock()
+		if alreadyFired {
+			return t, false, nil
+		}
 		if now.After(t) {
 			if s.MisfirePolicy == models.MisfirePolicyRunOnce {
 				return t, true, nil
 			}
+			sm.mu.Lock()
+			sm.lastFire[s.ID] = now
+			sm.mu.Unlock()
 			return time.Time{}, false, nil
 		}
 		return t, false, nil

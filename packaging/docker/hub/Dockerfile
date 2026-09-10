@@ -17,7 +17,11 @@ RUN go mod download
 
 COPY . .
 COPY --from=web-builder /src/web/dist ./web/dist
-RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/cadentra-hub ./cmd/hub
+ARG TARGETARCH
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -ldflags="-s -w" -o /out/cadentra-hub.unbundled ./cmd/hub \
+    && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /out/cadentra-agent-amd64 ./cmd/agent \
+    && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o /out/cadentra-agent-arm64 ./cmd/agent \
+    && sh packaging/bundle-agent.sh /out/cadentra-hub /out/cadentra-hub.unbundled amd64 /out/cadentra-agent-amd64 arm64 /out/cadentra-agent-arm64
 
 # Runtime
 FROM alpine:3.20

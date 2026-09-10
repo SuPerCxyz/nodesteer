@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cadentra/cadentra/internal/hub/agentbundle"
 	"github.com/cadentra/cadentra/internal/hub/auth"
 	"github.com/cadentra/cadentra/internal/hubserver"
 	"github.com/cadentra/cadentra/web"
@@ -30,6 +31,8 @@ type Config struct {
 	RegistrationToken    string          `yaml:"registration_token"`
 	DataDir              string          `yaml:"data_dir"`
 	ArtifactDir          string          `yaml:"artifact_dir"`
+	AgentBinaryAMD64Path string          `yaml:"agent_binary_amd64_path"`
+	AgentBinaryARM64Path string          `yaml:"agent_binary_arm64_path"`
 	BaseURL              string          `yaml:"base_url"`
 	AdminUsername        string          `yaml:"admin_username"`
 	AdminPassword        string          `yaml:"admin_password"`
@@ -49,9 +52,10 @@ func DefaultConfig() Config {
 		GatewayBaseURL:       "",
 		DataDir:              "/var/lib/cadentra-hub",
 		ArtifactDir:          "/var/lib/cadentra-hub/artifacts",
+		AgentBinaryAMD64Path: "/usr/local/bin/cadentra-agent",
 		BaseURL:              "http://localhost:8080",
 		AdminUsername:        "admin",
-		AdminPassword:        "admin123",
+		AdminPassword:        "",
 		SessionTTL:           24 * time.Hour,
 		RevisionCheckSec:     30,
 		ChangelogWindow:      5000,
@@ -79,6 +83,10 @@ func main() {
 	}
 	// 环境变量覆盖
 	applyEnv(&cfg)
+	if err := validateAdminCredentials(cfg); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 	// OIDC 空字段回填默认值
 	defOIDC := auth.DefaultOIDCConfig()
 	if len(cfg.OIDC.Scopes) == 0 {
@@ -96,6 +104,11 @@ func main() {
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
+	bundledAgentPayloads, err := agentbundle.LoadExecutable()
+	if err != nil {
+		logger.Warn("load bundled agent payloads failed", "error", err)
+		bundledAgentPayloads = nil
+	}
 
 	os.MkdirAll(cfg.DataDir, 0o755)
 	os.MkdirAll(cfg.ArtifactDir, 0o755)
@@ -111,6 +124,9 @@ func main() {
 		RegistrationToken:    cfg.RegistrationToken,
 		DataDir:              cfg.DataDir,
 		ArtifactDir:          cfg.ArtifactDir,
+		AgentBinaryAMD64Path: cfg.AgentBinaryAMD64Path,
+		AgentBinaryARM64Path: cfg.AgentBinaryARM64Path,
+		AgentBinaryPayloads:  bundledAgentPayloads,
 		BaseURL:              cfg.BaseURL,
 		HeartbeatTimeout:     cfg.HeartbeatTimeout,
 		AdminUsername:        cfg.AdminUsername,
@@ -153,6 +169,13 @@ func main() {
 	logger.Info("cadentra hub stopping")
 }
 
+func validateAdminCredentials(cfg Config) error {
+	if cfg.AdminUsername == "" || cfg.AdminPassword == "" {
+		return fmt.Errorf("admin username and password must be configured")
+	}
+	return nil
+}
+
 func applyEnv(cfg *Config) {
 	if v := os.Getenv("CADENTRA_WEB_ADDR"); v != "" {
 		cfg.WebAddr = v
@@ -183,6 +206,12 @@ func applyEnv(cfg *Config) {
 	}
 	if v := os.Getenv("CADENTRA_ARTIFACT_DIR"); v != "" {
 		cfg.ArtifactDir = v
+	}
+	if v := os.Getenv("CADENTRA_AGENT_BINARY_AMD64_PATH"); v != "" {
+		cfg.AgentBinaryAMD64Path = v
+	}
+	if v := os.Getenv("CADENTRA_AGENT_BINARY_ARM64_PATH"); v != "" {
+		cfg.AgentBinaryARM64Path = v
 	}
 	if v := os.Getenv("CADENTRA_BASE_URL"); v != "" {
 		cfg.BaseURL = v

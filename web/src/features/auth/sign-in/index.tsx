@@ -35,6 +35,8 @@ export function SignIn() {
     queryKey: ['oidc-state'],
     queryFn: () => api.get<{ enabled: boolean }>('/oidc/state'),
   })
+  const oidcEnabled = oidc.data?.enabled === true
+  const oidcFailed = new URLSearchParams(window.location.search).get('error') === 'oidc_failed'
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { username: '', password: '' },
@@ -67,8 +69,25 @@ export function SignIn() {
         </h2>
         <p className='text-sm text-muted-foreground'>{t('login.subtitle')}</p>
       </div>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className='grid gap-4'>
+      {oidcEnabled ? (
+        <div className='grid gap-4'>
+          {oidcFailed && (
+            <p role='alert' className='text-sm text-destructive'>
+              {t('login.oidcFailed')}
+            </p>
+          )}
+          <p className='text-sm text-muted-foreground'>{t('login.sso')}</p>
+          <Button
+            type='button'
+            onClick={() => window.location.assign('/api/oidc/login')}
+          >
+            <LogIn />
+            {t('login.sso')}
+          </Button>
+        </div>
+      ) : (
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className='grid gap-4'>
           <FormField
             control={form.control}
             name='username'
@@ -110,16 +129,8 @@ export function SignIn() {
               ? t('common.loggingIn')
               : t('common.login')}
           </Button>
-        </form>
-      </Form>
-      {oidc.data?.enabled && (
-        <Button
-          type='button'
-          variant='outline'
-          onClick={() => window.location.assign('/api/oidc/login')}
-        >
-          {t('login.sso')}
-        </Button>
+          </form>
+        </Form>
       )}
     </AuthLayout>
   )

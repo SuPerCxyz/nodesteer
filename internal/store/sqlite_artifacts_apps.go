@@ -274,6 +274,12 @@ func (s *SQLiteStore) SetApplicationNodeState(ctx context.Context, state *models
 	return err
 }
 
+func (s *SQLiteStore) DeleteApplicationNodeState(ctx context.Context, appID, nodeID string) error {
+	_, err := s.execer(ctx).ExecContext(ctx,
+		`DELETE FROM application_node_state WHERE application_id = ? AND node_id = ?`, appID, nodeID)
+	return err
+}
+
 // ListApplicationNodeStates 查询应用的节点状态。
 func (s *SQLiteStore) ListApplicationNodeStates(ctx context.Context, appID string) ([]*models.ApplicationNodeState, error) {
 	rows, err := s.db.QueryContext(ctx, `

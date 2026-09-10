@@ -3,6 +3,7 @@ package hub
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/cadentra/cadentra/internal/models"
@@ -18,10 +19,14 @@ type NodeManager struct {
 	store     store.Store
 	revisions *RevisionManager
 	syncMgr   *SyncManager
+	sessions  *SessionManager
 }
 
 // SetSyncManager 注入同步管理器，供节点目标变化触发全局收敛。
 func (nm *NodeManager) SetSyncManager(sm *SyncManager) { nm.syncMgr = sm }
+
+// SetSessionManager 注入会话管理器，供节点删除时回收 Agent 连接。
+func (nm *NodeManager) SetSessionManager(sm *SessionManager) { nm.sessions = sm }
 
 // NewNodeManager 创建节点管理器
 func NewNodeManager(st store.Store, rm *RevisionManager) *NodeManager {
@@ -30,12 +35,21 @@ func NewNodeManager(st store.Store, rm *RevisionManager) *NodeManager {
 
 // RegisterAgent 注册新 Agent（返回 node/agent id 与凭证）
 func (nm *NodeManager) RegisterAgent(ctx context.Context, hostname, ip, os, arch, agentVersion, mode string, hostInt bool, caps map[string]bool) (*models.Node, string, error) {
-	nodeID := uuid.NewString()
-	agentID := "agent-" + uuid.NewString()
-	cred := "cred-" + uuid.NewString()
+	return nm.createNode(ctx, hostname, ip, os, arch, agentVersion, mode, hostInt, caps, models.NodeStatusOnline, "outdated")
+}
+
+// PrepareEnrollment 创建待接入节点，并预分配 Agent 身份供首次 HELLO 绑定。
+// 版本、架构和部署模式必须等首次 HELLO 后再以 Agent 实际上报值为准。
+func (nm *NodeManager) PrepareEnrollment(ctx context.Context, hostname, ip string, _ string) (*models.Node, error) {
+	n, _, err := nm.createNode(ctx, hostname, ip, "", "", "", "", false, nil, models.NodeStatusOffline, "pending")
+	return n, err
+}
+
+func (nm *NodeManager) createNode(ctx context.Context, hostname, ip, os, arch, agentVersion, mode string, hostInt bool, caps map[string]bool, status, syncStatus string) (*models.Node, string, error) {
+	now := time.Now()
 	n := &models.Node{
-		ID:              nodeID,
-		AgentID:         agentID,
+		ID:              uuid.NewString(),
+		AgentID:         "agent-" + uuid.NewString(),
 		Hostname:        hostname,
 		IP:              ip,
 		OS:              os,
@@ -43,17 +57,22 @@ func (nm *NodeManager) RegisterAgent(ctx context.Context, hostname, ip, os, arch
 		AgentVersion:    agentVersion,
 		DeploymentMode:  mode,
 		HostIntegration: hostInt,
-		Status:          models.NodeStatusOnline,
+		Status:          status,
 		Labels:          map[string]string{},
 		Capabilities:    caps,
-		LastSeen:        time.Now(),
-		FirstSeen:       time.Now(),
-		SyncStatus:      "outdated",
+		FirstSeen:       now,
+		SyncStatus:      syncStatus,
+	}
+	if status == models.NodeStatusOnline {
+		n.LastSeen = now
 	}
 	if err := nm.store.UpsertNode(ctx, n); err != nil {
 		return nil, "", err
 	}
-	nm.store.SetSetting(ctx, "cred:"+nodeID, cred)
+	cred := "cred-" + uuid.NewString()
+	if err := nm.store.SetSetting(ctx, "cred:"+n.ID, cred); err != nil {
+		return nil, "", err
+	}
 	return n, cred, nil
 }
 
@@ -70,6 +89,9 @@ func (nm *NodeManager) AuthenticateAgent(ctx context.Context, nodeID, cred strin
 func (nm *NodeManager) RegisterOrUpdate(ctx context.Context, agentID, hostname, ip, os, arch, agentVersion, mode string, hostInt bool, caps map[string]bool) (*models.Node, string, bool, error) {
 	existing, err := nm.store.GetNodeByAgentID(ctx, agentID)
 	if err == nil {
+		if revoked, _ := nm.store.GetSetting(ctx, "revoked:"+existing.ID); revoked == "true" {
+			return nil, "", false, errors.New("node credential revoked; re-enrollment required")
+		}
 		existing.Hostname = hostname
 		existing.IP = ip
 		existing.OS = os
@@ -105,7 +127,28 @@ func (nm *NodeManager) ListNodes(ctx context.Context) ([]*models.Node, error) {
 
 // SetNodeStatus 设置节点状态
 func (nm *NodeManager) SetNodeStatus(ctx context.Context, id, status string) error {
-	return nm.store.UpdateNodeStatus(ctx, id, status)
+	if !validNodeStatus(status) {
+		return fmt.Errorf("invalid node status: %s", status)
+	}
+	if _, err := nm.store.GetNode(ctx, id); err != nil {
+		return err
+	}
+	if err := nm.store.UpdateNodeStatus(ctx, id, status); err != nil {
+		return err
+	}
+	if nm.syncMgr != nil {
+		nm.syncMgr.NotifyNodeStatus(ctx, id, status)
+	}
+	return nil
+}
+
+func validNodeStatus(status string) bool {
+	switch status {
+	case models.NodeStatusOnline, models.NodeStatusOffline, models.NodeStatusMaintenance, models.NodeStatusDisabled:
+		return true
+	default:
+		return false
+	}
 }
 
 // UpdateHeartbeat 心跳更新
@@ -180,6 +223,19 @@ func (nm *NodeManager) UpdateGroup(ctx context.Context, g *models.Group) error {
 
 // DeleteGroup 删除节点组并推进 Desired State Revision。
 func (nm *NodeManager) DeleteGroup(ctx context.Context, id string) error {
+	tasks, err := nm.store.ListTasks(ctx)
+	if err != nil {
+		return err
+	}
+	for _, task := range tasks {
+		if task.Target.Type == "group" {
+			for _, groupID := range task.Target.GroupIDs {
+				if groupID == id {
+					return fmt.Errorf("group %s is referenced by task %s", id, task.ID)
+				}
+			}
+		}
+	}
 	var rev int64
 	if err := runMutationTx(ctx, nm.store, func(txctx context.Context) error {
 		if err := nm.store.DeleteGroup(txctx, id); err != nil {
@@ -217,7 +273,89 @@ func (nm *NodeManager) recordTargetChange(ctx context.Context, objectType, objec
 
 // RevokeCredential 撤销节点当前 Agent Credential。
 func (nm *NodeManager) RevokeCredential(ctx context.Context, nodeID string) error {
-	return nm.store.DeleteSetting(ctx, "cred:"+nodeID)
+	if _, err := nm.store.GetNode(ctx, nodeID); err != nil {
+		return err
+	}
+	if err := nm.store.DeleteSetting(ctx, "cred:"+nodeID); err != nil {
+		return err
+	}
+	if err := nm.store.SetSetting(ctx, "revoked:"+nodeID, "true"); err != nil {
+		return err
+	}
+	return nm.SetNodeStatus(ctx, nodeID, models.NodeStatusDisabled)
+}
+
+// Delete 删除节点记录。运行中的任务、应用分配、组成员或文件传输存在时拒绝，避免悬空引用。
+func (nm *NodeManager) Delete(ctx context.Context, nodeID string) error {
+	if _, err := nm.store.GetNode(ctx, nodeID); err != nil {
+		return err
+	}
+	groups, err := nm.store.ListGroups(ctx)
+	if err != nil {
+		return err
+	}
+	for _, g := range groups {
+		for _, member := range g.Members {
+			if g.Type == "static" && member == nodeID {
+				return fmt.Errorf("node %s is referenced by group %s", nodeID, g.ID)
+			}
+		}
+	}
+	apps, err := nm.store.ListApplications(ctx)
+	if err != nil {
+		return err
+	}
+	for _, app := range apps {
+		nodes, err := nm.store.GetApplicationNodes(ctx, app.ID)
+		if err != nil {
+			return err
+		}
+		for _, id := range nodes {
+			if id == nodeID {
+				return fmt.Errorf("node %s is assigned to application %s", nodeID, app.ID)
+			}
+		}
+	}
+	transfers, err := nm.store.ListFileTransfers(ctx)
+	if err != nil {
+		return err
+	}
+	for _, transfer := range transfers {
+		if transfer.Status != models.FileTransferSuccess && transfer.Status != models.FileTransferFailed && transfer.Status != models.FileTransferCanceled && transfer.SourceNodeID == nodeID {
+			return fmt.Errorf("node %s has active file transfer %s", nodeID, transfer.ID)
+		}
+		for _, target := range transfer.Targets {
+			if target.NodeID == nodeID && target.Status != models.FileTargetSuccess && target.Status != models.FileTargetFailed && target.Status != models.FileTargetCanceled {
+				return fmt.Errorf("node %s has active file transfer %s", nodeID, transfer.ID)
+			}
+		}
+	}
+	if err := nm.store.DeleteNode(ctx, nodeID); err != nil {
+		return err
+	}
+	_ = nm.store.DeleteSetting(ctx, "cred:"+nodeID)
+	_ = nm.store.DeleteSetting(ctx, "revoked:"+nodeID)
+	// 节点记录已删除，必须立即回收其 Agent 会话。
+	// 否则会话仍持有 nodeID，Agent 继续周期性上报时查询已删除节点，会持续产生 dispatch error。
+	nm.dropSession(nodeID)
+	if nm.syncMgr != nil {
+		nm.syncMgr.NotifyAll(ctx)
+	}
+	return nil
+}
+
+// dropSession 移除并关闭节点会话（无会话时为空操作）。
+func (nm *NodeManager) dropSession(nodeID string) {
+	if nm.sessions == nil || nodeID == "" {
+		return
+	}
+	conn, ok := nm.sessions.Get(nodeID)
+	if !ok {
+		return
+	}
+	// 先注销再关闭：连接退出时的 handleDisconnect 会走“会话已不存在”分支。
+	nm.sessions.Unregister(nodeID)
+	_ = conn.Close()
 }
 
 // ResolveTarget 解析任务目标为节点 ID 集合

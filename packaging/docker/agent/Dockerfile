@@ -7,7 +7,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/cadentra-agent ./cmd/agent
+ARG TARGETARCH
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -ldflags="-s -w" -o /out/cadentra-agent ./cmd/agent
 
 # Runtime
 FROM alpine:3.20
