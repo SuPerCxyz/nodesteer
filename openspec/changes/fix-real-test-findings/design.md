@@ -31,4 +31,4 @@ CLI DefaultConfig 不再提供管理员密码。应用配置和环境覆盖完�
 
 ## 7. Docker Verification
 
-先刷新 KVM2 模板泛化、目标域/磁盘、资源、QGA、IPv4、SSH 和 Docker 状态。只在独立目标域和持久卷满足条件时执行 Docker Agent enrollment/restart/recreate；不修改源模板和现有 Cadentra VM。
+先刷新 KVM2 模板泛化、目标域/磁盘、资源、QGA、IPv4、SSH 和 Docker 状态。只在独立目标域和持久卷满足条件时执行 Docker Agent enrollment/restart/recreate；不修改源模板和现有 NodeSteer VM。

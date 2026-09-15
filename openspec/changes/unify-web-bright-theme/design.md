@@ -1,8 +1,8 @@
-# Design — Cadentra Bright Theme Web UI 视觉统一
+# Design — NodeSteer Bright Theme Web UI 视觉统一
 
 ## Context
 
-Cadentra Web UI（`web/`）当前为 React 19 + Vite + react-router + i18next，纯手写全局 CSS（`src/index.css`，深色主题）。无 Tailwind / shadcn / 图标库。所有页面使用统一 class 体系（`.layout/.sidebar/.card/.table/.btn/.badge/.form-grid/.dl/.log-view/.empty` 等），基础结构一致，适合整体换肤与组件层升级。
+NodeSteer Web UI（`web/`）当前为 React 19 + Vite + react-router + i18next，纯手写全局 CSS（`src/index.css`，深色主题）。无 Tailwind / shadcn / 图标库。所有页面使用统一 class 体系（`.layout/.sidebar/.card/.table/.btn/.badge/.form-grid/.dl/.log-view/.empty` 等），基础结构一致，适合整体换肤与组件层升级。
 
 需求与验收见 proposal.md 与 `specs/web-ui/theme/spec.md`。本设计只描述实现路径与关键技术决策。
 
@@ -10,7 +10,7 @@ Cadentra Web UI（`web/`）当前为 React 19 + Vite + react-router + i18next，
 
 **Goals**
 - 在现有 React 页面结构与业务逻辑不变的前提下，将呈现层升级为 Tailwind + shadcn/ui 组件体系。
-- 建立 Cadentra Bright Theme 全局 Design Tokens，单一来源控制颜色/圆角/阴影/焦点。
+- 建立 NodeSteer Bright Theme 全局 Design Tokens，单一来源控制颜色/圆角/阴影/焦点。
 - 统一 lucide 图标，替换全部 emoji/Unicode 图标。
 - 保持信息密度与现有页面信息架构不变。
 

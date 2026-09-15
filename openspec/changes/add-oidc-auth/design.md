@@ -16,7 +16,7 @@ type OIDCConfig struct {
     Scopes        []string
     UsernameClaim string   // 默认 preferred_username
     RoleClaim     string   // 默认 groups
-    RoleMappings  map[string]string // {组名: Cadentra角色}
+    RoleMappings  map[string]string // {组名: NodeSteer角色}
     DefaultRole   string   // 默认 viewer
 }
 

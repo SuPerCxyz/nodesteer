@@ -1,8 +1,8 @@
-# Cadentra Project Rules
+# NodeSteer Project Rules
 
-Cadentra 是一个轻量级 Linux Hub-Agent 自动化控制平台。
+NodeSteer 是一个轻量级 Linux Hub-Agent 自动化控制平台。
 
-本文件仅补充 Cadentra 项目特有规则。
+本文件仅补充 NodeSteer 项目特有规则。
 通用开发、测试、Git、代码质量和 Agent 工作流遵循全局 `AGENTS.md`。
 
 ## 必读文档
@@ -45,7 +45,7 @@ Cadentra 是一个轻量级 Linux Hub-Agent 自动化控制平台。
 - Remote State 过期或未知时默认 Fail Closed。
 - Artifact 校验失败禁止安装。
 - Managed Application 更新必须支持明确的失败恢复/回滚。
-- systemd 只管理 Cadentra Managed Application。
+- systemd 只管理 NodeSteer Managed Application。
 - Native Agent 与 Docker Agent 共用 Agent Core。
 - Native/Docker 宿主机差异通过 Host Adapter 隔离。
 - Docker Agent 的 Revision、Schedule、Journal 等状态必须持久化。

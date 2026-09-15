@@ -1,4 +1,4 @@
-# Cadentra 完整产品功能文档
+# NodeSteer 完整产品功能文档
 
 版本：v1.1
 文档类型：产品功能设计基线
@@ -6,7 +6,7 @@
 
 ## 1. 产品定位
 
-Cadentra 是一套面向 Linux 服务器的轻量级 Hub-Agent 自动化管理、任务调度与二进制应用部署平台。
+NodeSteer 是一套面向 Linux 服务器的轻量级 Hub-Agent 自动化管理、任务调度与二进制应用部署平台。
 
 系统由 Hub 和 Agent 两部分组成。
 
@@ -142,9 +142,9 @@ UNKNOWN → BLOCKED
 
 ### 3.6 systemd 管理边界
 
-Cadentra 不是通用 systemd 管理器。
+NodeSteer 不是通用 systemd 管理器。
 
-只管理由 Cadentra Managed Application 创建、登记并托管的 systemd Unit。
+只管理由 NodeSteer Managed Application 创建、登记并托管的 systemd Unit。
 
 外部 systemd 服务仅可通过普通 Command 或 Condition Probe 查询。
 
@@ -698,7 +698,7 @@ Execute
 
 必须保存 IANA Timezone。
 
-Local Scheduler 由 Cadentra Agent 内置实现，不依赖 `/etc/cron.d`、crontab 或 systemd timer。
+Local Scheduler 由 NodeSteer Agent 内置实现，不依赖 `/etc/cron.d`、crontab 或 systemd timer。
 
 ---
 
@@ -990,7 +990,7 @@ Hub 可提前发送 PREFETCH，让 Agent 在真正执行前下载并校验 Artif
 
 中文 UI 术语：托管应用。
 
-Managed Application 是由 Cadentra 主动部署并负责生命周期的 Linux 二进制应用。
+Managed Application 是由 NodeSteer 主动部署并负责生命周期的 Linux 二进制应用。
 
 包含：
 - Name
@@ -1465,7 +1465,7 @@ Heartbeat / Revision Check / Inventory 需避免形成高频负载。
 10. Remote State 未知/过期默认 Fail Closed。
 11. Artifact 校验失败禁止安装。
 12. Managed Application 更新必须可恢复。
-13. systemd 只管理 Cadentra Managed Application。
+13. systemd 只管理 NodeSteer Managed Application。
 14. Native 与 Docker 共用 Agent Core。
 15. 宿主机差异必须通过 Host Adapter 隔离。
 16. Docker Agent 状态必须持久化。
@@ -1515,6 +1515,6 @@ Health Check
 Rollback
 ```
 
-Cadentra 一期的核心价值：
+NodeSteer 一期的核心价值：
 
 > 以轻量 Hub-Agent 模型集中管理 Linux 自动化，同时兼顾实时控制、最终一致性、Agent 离线自治，以及平台托管二进制应用的安全生命周期管理。

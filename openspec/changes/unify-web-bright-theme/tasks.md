@@ -1,4 +1,4 @@
-# Tasks — Cadentra Bright Theme Web UI 视觉统一
+# Tasks — NodeSteer Bright Theme Web UI 视觉统一
 
 ## 1. 依赖与基础设施
 

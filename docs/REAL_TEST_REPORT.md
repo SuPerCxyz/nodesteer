@@ -1,4 +1,4 @@
-# Cadentra 真实功能测试与失败项复验报告
+# NodeSteer 真实功能测试与失败项复验报告
 
 测试日期：2026-09-07  
 测试环境：KVM2 Hub `192.168.100.249`，Web/API `8080`，Agent Gateway `8443`；Native Agent 节点 `192.168.100.212`。完整用例、页面关系和按钮清单见 [TEST_PLAN.md](./TEST_PLAN.md)。

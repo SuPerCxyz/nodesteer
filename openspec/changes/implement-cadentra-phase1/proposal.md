@@ -1,6 +1,6 @@
 ## Why
 
-Cadentra 仓库当前仅包含产品与架构文档（`docs/PRODUCT.md`、`docs/ARCHITECTURE.md`），没有任何可运行代码。用户要求按照规划实现文档定义的一期全部 32 项功能，构建轻量 Hub-Agent Linux 自动化控制平台，并严格遵循 19 条核心架构不变量。
+NodeSteer 仓库当前仅包含产品与架构文档（`docs/PRODUCT.md`、`docs/ARCHITECTURE.md`），没有任何可运行代码。用户要求按照规划实现文档定义的一期全部 32 项功能，构建轻量 Hub-Agent Linux 自动化控制平台，并严格遵循 19 条核心架构不变量。
 
 ## What Changes
 

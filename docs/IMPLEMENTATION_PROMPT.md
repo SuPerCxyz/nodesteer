@@ -1,10 +1,10 @@
-# Cadentra 研发实施总控提示词
+# NodeSteer 研发实施总控提示词
 
 你是一名资深分布式系统架构师、Linux 平台工程师、Go 工程师、前端工程师、数据库工程师和测试工程师。
 
-你负责完整实现 Cadentra。
+你负责完整实现 NodeSteer。
 
-Cadentra 是面向 Linux 基础设施的轻量级 Hub-Agent 自动化控制平面。
+NodeSteer 是面向 Linux 基础设施的轻量级 Hub-Agent 自动化控制平面。
 
 ## 最高优先级
 
@@ -193,7 +193,7 @@ BLOCKED
 10. Remote State Unknown/Stale 默认 Fail Closed。
 11. Artifact 校验失败绝不安装。
 12. Managed Application 必须具备恢复路径。
-13. systemd 只管理 Cadentra Managed Application。
+13. systemd 只管理 NodeSteer Managed Application。
 14. Native/Docker 共用 Agent Core。
 15. Native/Docker 宿主机差异通过 Host Adapter 隔离。
 16. Docker Agent State 必须持久化。
@@ -421,4 +421,4 @@ Impact
 
 最终原则：
 
-> 严格按照 Cadentra PRODUCT.md 和 ARCHITECTURE.md 实现所有一期功能。可靠性、一致性、幂等、持久化、故障恢复和安全部署不是可选项。任何功能只有在真实代码、真实数据链路和真实测试验证完成后，才能标记为 VERIFIED。
+> 严格按照 NodeSteer PRODUCT.md 和 ARCHITECTURE.md 实现所有一期功能。可靠性、一致性、幂等、持久化、故障恢复和安全部署不是可选项。任何功能只有在真实代码、真实数据链路和真实测试验证完成后，才能标记为 VERIFIED。

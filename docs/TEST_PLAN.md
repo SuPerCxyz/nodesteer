@@ -1,10 +1,10 @@
-# Cadentra 完整功能真实测试计划
+# NodeSteer 完整功能真实测试计划
 
 版本：v2.0
 
 更新时间：2026-09-07
 
-适用对象：Cadentra Hub、Web UI、Native Agent、Docker Agent、Docker Host Integration。
+适用对象：NodeSteer Hub、Web UI、Native Agent、Docker Agent、Docker Host Integration。
 
 本计划以实际代码、`docs/PRODUCT.md`、`docs/ARCHITECTURE.md`、REST API、Agent Gateway 协议和真实 Linux/KVM 环境为依据。测试结论必须来自真实操作及证据，不以控件存在、接口注册或静态代码代替业务效果。
 

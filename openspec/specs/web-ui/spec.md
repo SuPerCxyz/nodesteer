@@ -49,7 +49,7 @@ Authenticated pages SHALL render their title, description, and page-level action
 
 ### Requirement: Complete page presentation
 
-The Web UI SHALL present every registered Cadentra page and state with consistent shadcn-admin layout primitives, localized user-facing labels, readable technical values, and usable Light/Dark responsive behavior.
+The Web UI SHALL present every registered NodeSteer page and state with consistent shadcn-admin layout primitives, localized user-facing labels, readable technical values, and usable Light/Dark responsive behavior.
 
 #### Scenario: Authenticated page presentation
 

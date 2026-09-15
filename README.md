@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="web/public/images/cadentra-logo-original.png" alt="Cadentra" width="280">
+  <img src="web/public/images/cadentra-logo-original.png" alt="NodeSteer" width="280">
 </p>
 
-<h1 align="center">Cadentra</h1>
+<h1 align="center">NodeSteer</h1>
 
 <p align="center">轻量级 Linux Hub-Agent 自动化控制平台</p>
 
@@ -25,9 +25,11 @@
 
 ## 项目简介
 
-Cadentra 面向 Linux 服务器提供 Hub-Agent 自动化管理、任务调度、远程执行和二进制应用部署能力。
+NodeSteer 面向 Linux 服务器提供 Hub-Agent 自动化管理、任务调度、远程执行和二进制应用部署能力。
 
 Hub 是 Desired State 的唯一权威源；Agent 主动连接 Hub，缓存已同步配置并负责本地调度与执行。Hub 暂时不可用时，已同步且明确允许离线执行的任务仍可安全运行，恢复连接后由 Agent 完成状态收敛。
+
+> 项目品牌已统一为 NodeSteer。当前代码、二进制、服务、路径和镜像仍沿用 `cadentra-*` 等技术标识，后续将单独迁移。
 
 ## 核心能力
 
@@ -51,7 +53,7 @@ Hub 是 Desired State 的唯一权威源；Agent 主动连接 Hub，缓存已同
                            │ REST API
                            ▼
                 ┌────────────────────┐
-                │    Cadentra Hub    │
+                │    NodeSteer Hub    │
                 │ API / Sync / Tasks │
                 │ Gateway / Artifact │
                 └─────────┬──────────┘

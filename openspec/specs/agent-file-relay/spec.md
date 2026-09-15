@@ -1,7 +1,7 @@
 # agent-file-relay Specification
 
 ## Purpose
-Provide a durable, authenticated Hub-mediated way to move a regular file from one Cadentra Agent to selected target Agents without requiring direct Agent-to-Agent connectivity.
+Provide a durable, authenticated Hub-mediated way to move a regular file from one NodeSteer Agent to selected target Agents without requiring direct Agent-to-Agent connectivity.
 ## Requirements
 ### Requirement: Create a file transfer
 

@@ -1,12 +1,12 @@
 ## Why
 
-Cadentra 前端当前为传统深色运维后台（`#0f1419` 背景、`#4f9cf9` accent、emoji 图标、手写 CSS），视觉偏暗、色彩平淡、组件状态不完整，与产品的轻量现代定位不符。需要一个统一的 Bright Theme，在保留 satnaing/shadcn-admin 的布局骨架与信息密度基础上，建立更明亮、干净、有活力的视觉体系。
+NodeSteer 前端当前为传统深色运维后台（`#0f1419` 背景、`#4f9cf9` accent、emoji 图标、手写 CSS），视觉偏暗、色彩平淡、组件状态不完整，与产品的轻量现代定位不符。需要一个统一的 Bright Theme，在保留 satnaing/shadcn-admin 的布局骨架与信息密度基础上，建立更明亮、干净、有活力的视觉体系。
 
 ## What Changes
 
 - 引入 Tailwind CSS + shadcn/ui 组件体系，替换手写 CSS 全局样式。
 - 引入 lucide-react 统一图标集，替换导航/按钮中的 emoji/Unicode 字符图标。
-- 建立 Cadentra Bright Theme Design Tokens（CSS Variables + Tailwind Theme）：Primary Blue `#3B82F6`、Accent Cyan `#06B6D4`、语义色 soft-tint 体系、明亮中性色、radius/shadow/focus-ring 统一。
+- 建立 NodeSteer Bright Theme Design Tokens（CSS Variables + Tailwind Theme）：Primary Blue `#3B82F6`、Accent Cyan `#06B6D4`、语义色 soft-tint 体系、明亮中性色、radius/shadow/focus-ring 统一。
 - 以 Light Mode 为唯一主题（不实现 Dark Mode），仅保留 Terminal/Log Viewer 深色例外。
 - 统一 App Shell（Sidebar + Header/Topbar + Main + Page Header）、Card、Data Table、Button、Input/Select、Badge、Tabs、Dialog、Dropdown、Empty/Loading/Error 等基础组件与全部状态。
 - 巡检全部页面与 Overlay 组件，清理旧主题残留，修复对齐、长文本换行、Overflow 与响应式问题。
@@ -16,7 +16,7 @@ Cadentra 前端当前为传统深色运维后台（`#0f1419` 背景、`#4f9cf9` 
 
 ### New Capabilities
 
-- `web-ui/theme`: Cadentra Bright Theme 视觉规格——设计 Token、颜色策略、Sidebar/Header/Card/Table/Form 等组件视觉、组件状态、Overlay 一致性、图标与排版要求，以及"不得修改产品功能"的边界。
+- `web-ui/theme`: NodeSteer Bright Theme 视觉规格——设计 Token、颜色策略、Sidebar/Header/Card/Table/Form 等组件视觉、组件状态、Overlay 一致性、图标与排版要求，以及"不得修改产品功能"的边界。
 
 ### Modified Capabilities
 

@@ -1,4 +1,4 @@
-# Cadentra 系统架构设计文档
+# NodeSteer 系统架构设计文档
 
 版本：v1.1
 文档类型：系统架构基线
@@ -6,7 +6,7 @@
 
 ## 1. 架构目标
 
-Cadentra 架构重点保证：
+NodeSteer 架构重点保证：
 
 - Lightweight
 - Hub Central Control
@@ -36,7 +36,7 @@ Cadentra 架构重点保证：
                            │
                            ▼
                 ┌────────────────────┐
-                │    Cadentra Hub    │
+                │    NodeSteer Hub    │
                 │                    │
                 │ REST API           │
                 │ Agent Gateway      │
@@ -1159,7 +1159,7 @@ unit_name
 
 systemd Adapter 只能操作已登记 Unit。
 
-Cadentra 不做通用 systemd 控制平台。
+NodeSteer 不做通用 systemd 控制平台。
 
 ---
 
@@ -1468,7 +1468,7 @@ Agent：
 - Execution Logs
 - Sync Logs
 
-Cadentra 不建设完整监控平台。
+NodeSteer 不建设完整监控平台。
 
 ---
 
@@ -1713,7 +1713,7 @@ Sync
 9. Unknown Remote State 默认 Fail Closed。
 10. Artifact 校验失败禁止安装。
 11. Managed Application 必须存在恢复路径。
-12. systemd 只管理 Cadentra Managed Application。
+12. systemd 只管理 NodeSteer Managed Application。
 13. Native 与 Docker 共享 Agent Core。
 14. Native/Docker 差异必须进入 Host Adapter。
 15. Docker Agent state 必须 Persistent。

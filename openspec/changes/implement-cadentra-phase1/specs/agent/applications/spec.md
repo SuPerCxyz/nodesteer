@@ -31,7 +31,7 @@ Agent 应用管理能力：Artifact Cache、Host Adapter（Native/Container）�
 - **THEN** ContainerHostAdapter 以 HOST_ROOT=/host 映射为 /host/usr/local/bin/foo 操作
 
 ### Requirement: Managed systemd
-系统 SHALL 通过 Managed Unit Registry（application_id→unit_name）约束，只允许操作由 Cadentra 创建并登记的 Unit；支持 Install/Update Unit、daemon-reload、enable/disable/start/stop/restart/status。
+系统 SHALL 通过 Managed Unit Registry（application_id→unit_name）约束，只允许操作由 NodeSteer 创建并登记的 Unit；支持 Install/Update Unit、daemon-reload、enable/disable/start/stop/restart/status。
 
 #### Scenario: 操作已登记 Unit
 - **WHEN** Application API 操作已登记的 Unit

@@ -1,4 +1,4 @@
-# Cadentra Web E2E 覆盖说明
+# NodeSteer Web E2E 覆盖说明
 
 完整用例以 [docs/TEST_PLAN.md](../../docs/TEST_PLAN.md) 为唯一来源。本文件只记录自动化分层、运行方式和真实覆盖边界，不能用“脚本执行成功”替代业务验收。
 

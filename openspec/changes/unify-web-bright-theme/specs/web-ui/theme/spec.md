@@ -1,6 +1,6 @@
 ## Purpose
 
-定义 Cadentra Web UI 的 Bright Theme 视觉规格。本规格只约束前端呈现方式（颜色、布局、组件、状态、排版、图标与一致性），不改变任何产品功能、业务流程、数据与权限。
+定义 NodeSteer Web UI 的 Bright Theme 视觉规格。本规格只约束前端呈现方式（颜色、布局、组件、状态、排版、图标与一致性），不改变任何产品功能、业务流程、数据与权限。
 
 ## ADDED Requirements
 

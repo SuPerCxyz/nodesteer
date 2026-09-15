@@ -1,4 +1,4 @@
-# Cadentra Web E2E 测试
+# NodeSteer Web E2E 测试
 
 完整测试计划、页面关系、API/RBAC、Agent、故障恢复和验收标准见 [docs/TEST_PLAN.md](../../docs/TEST_PLAN.md)。自动化覆盖说明见 [TEST_COVERAGE.md](./TEST_COVERAGE.md)。
 

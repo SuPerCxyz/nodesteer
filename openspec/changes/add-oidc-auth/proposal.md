@@ -2,7 +2,7 @@
 
 ## Why
 
-Cadentra Hub 目前仅支持本地用户名/密码登录（`internal/hub/auth`，bcrypt + 内存 session）。`docs/PRODUCT.md` 将 LDAP/OIDC/SSO 列为后续规划能力，且架构承诺"不得阻碍未来加入这些能力"。用户要求实现 OIDC 认证，使 Hub Web UI 支持标准 OIDC Authorization Code Flow + PKCE 单点登录，同时保留现有 RBAC 与用户模型。
+NodeSteer Hub 目前仅支持本地用户名/密码登录（`internal/hub/auth`，bcrypt + 内存 session）。`docs/PRODUCT.md` 将 LDAP/OIDC/SSO 列为后续规划能力，且架构承诺"不得阻碍未来加入这些能力"。用户要求实现 OIDC 认证，使 Hub Web UI 支持标准 OIDC Authorization Code Flow + PKCE 单点登录，同时保留现有 RBAC 与用户模型。
 
 ## What Changes
 
