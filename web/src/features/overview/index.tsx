@@ -104,6 +104,10 @@ export function Dashboard() {
     () => new Map((data?.tasks || []).map((task) => [task.id, task.name])),
     [data?.tasks]
   )
+  const nodeName = useMemo(
+    () => new Map((data?.nodes || []).map((node) => [node.id, node.hostname])),
+    [data?.nodes]
+  )
   const failed = (data?.executions || []).filter((execution) =>
     ['FAILED', 'TIMED_OUT'].includes(execution.status)
   ).length
@@ -231,10 +235,11 @@ export function Dashboard() {
                         <span className='min-w-0 flex-1'>
                           <span className='block truncate text-sm font-medium'>
                             {taskName.get(execution.task_id) ||
-                              execution.task_id}
+                              t('common.unknownTask')}
                           </span>
-                          <span className='font-mono text-xs text-muted-foreground'>
-                            {execution.node_id.slice(0, 8)}
+                          <span className='truncate text-xs text-muted-foreground'>
+                            {nodeName.get(execution.node_id) ||
+                              t('common.unknownNode')}
                           </span>
                         </span>
                         <DurationValue start={execution.start_time} running />
@@ -402,14 +407,12 @@ export function Dashboard() {
                               href={`/executions/${execution.id}`}
                             >
                               {taskName.get(execution.task_id) ||
-                                execution.task_id}
+                                t('common.unknownTask')}
                             </a>
-                            <span className='block font-mono text-xs text-muted-foreground'>
-                              {execution.id.slice(0, 10)}…
-                            </span>
                           </TableCell>
-                          <TableCell className='font-mono text-xs'>
-                            {execution.node_id.slice(0, 8)}
+                          <TableCell className='truncate text-xs'>
+                            {nodeName.get(execution.node_id) ||
+                              t('common.unknownNode')}
                           </TableCell>
                           <TableCell className='text-center'>
                             <StatusBadge status={execution.status} />
@@ -462,7 +465,8 @@ export function Dashboard() {
                         <CalendarClock className='size-4 shrink-0 text-muted-foreground' />
                         <span className='min-w-0 flex-1'>
                           <span className='block truncate text-sm font-medium'>
-                            {taskName.get(schedule.task_id) || schedule.task_id}
+                            {taskName.get(schedule.task_id) ||
+                              t('common.unknownTask')}
                           </span>
                           <span className='font-mono text-xs text-muted-foreground'>
                             {schedule.type === 'interval'

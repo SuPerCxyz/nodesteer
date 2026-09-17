@@ -1,0 +1,2282 @@
+{
+  "schema_version": 1,
+  "features": [
+    {
+      "id": "auth.login",
+      "page": "page.sign_in",
+      "component": "SignInPage",
+      "action": "login",
+      "description": "Administrator signs in and reaches dashboard",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/auth/sign-in/index.tsx"
+      ],
+      "entry_conditions": [
+        "logged_out"
+      ],
+      "inputs": [
+        "username",
+        "password"
+      ],
+      "expected_effects": [
+        "authenticated"
+      ],
+      "observable_results": [
+        "dashboard renders",
+        "token stored"
+      ],
+      "possible_next_actions": [
+        "auth.logout",
+        "dashboard.navigation_links"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:login-dashboard"
+      ]
+    },
+    {
+      "id": "auth.invalid_login",
+      "page": "page.sign_in",
+      "component": "SignInPage",
+      "action": "login",
+      "description": "Invalid credentials are rejected",
+      "priority": "P0",
+      "risk": "medium",
+      "source_locations": [
+        "web/src/features/auth/sign-in/index.tsx"
+      ],
+      "entry_conditions": [
+        "logged_out"
+      ],
+      "inputs": [
+        "invalid_password"
+      ],
+      "expected_effects": [
+        "remain_logged_out"
+      ],
+      "observable_results": [
+        "error feedback",
+        "still on sign-in"
+      ],
+      "possible_next_actions": [
+        "auth.login"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:invalid-credentials"
+      ]
+    },
+    {
+      "id": "auth.logout",
+      "page": "page.dashboard",
+      "component": "UserMenu",
+      "action": "logout",
+      "description": "Authenticated user logs out",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/components/layout/nav-user.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated"
+      ],
+      "inputs": [],
+      "expected_effects": [
+        "logged_out"
+      ],
+      "observable_results": [
+        "redirect to sign-in",
+        "protected route denied"
+      ],
+      "possible_next_actions": [
+        "auth.login"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:logout-sign-in-redirect"
+      ]
+    },
+    {
+      "id": "auth.language_switch",
+      "page": "page.sign_in",
+      "component": "LanguageSwitcher",
+      "action": "switch",
+      "description": "Switch Chinese/English UI language",
+      "priority": "P1",
+      "risk": "low",
+      "source_locations": [
+        "web/src/features/auth/sign-in/index.tsx"
+      ],
+      "entry_conditions": [
+        "logged_out"
+      ],
+      "inputs": [
+        "language"
+      ],
+      "expected_effects": [
+        "locale_changed"
+      ],
+      "observable_results": [
+        "labels change",
+        "preference persists"
+      ],
+      "possible_next_actions": [
+        "auth.login"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:language-menu-english-chinese"
+      ]
+    },
+    {
+      "id": "dashboard.summary",
+      "page": "page.dashboard",
+      "component": "Dashboard",
+      "action": "view",
+      "description": "Dashboard loads summary cards and recent activity",
+      "priority": "P0",
+      "risk": "medium",
+      "source_locations": [
+        "web/src/features/overview/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated"
+      ],
+      "inputs": [],
+      "expected_effects": [
+        "summary_loaded"
+      ],
+      "observable_results": [
+        "cards",
+        "recent executions",
+        "health"
+      ],
+      "possible_next_actions": [
+        "dashboard.navigation_links",
+        "agent.list",
+        "execution.list"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/initial-dashboard.png"
+      ]
+    },
+    {
+      "id": "dashboard.navigation_links",
+      "page": "page.dashboard",
+      "component": "Dashboard",
+      "action": "navigate",
+      "description": "Dashboard View All links reach canonical resource pages",
+      "priority": "P1",
+      "risk": "medium",
+      "source_locations": [
+        "web/src/features/overview/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "dashboard_loaded"
+      ],
+      "inputs": [],
+      "expected_effects": [
+        "route_changed"
+      ],
+      "observable_results": [
+        "correct target page"
+      ],
+      "possible_next_actions": [
+        "resource.list"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/agents.png",
+        "evidence/screenshots/tasks.png",
+        "evidence/screenshots/executions.png"
+      ]
+    },
+    {
+      "id": "agent.list",
+      "page": "page.agents",
+      "component": "NodeCatalog",
+      "action": "list",
+      "description": "List nodes with status, IP, labels, capabilities and actions",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated"
+      ],
+      "inputs": [
+        "search",
+        "status_filter"
+      ],
+      "expected_effects": [
+        "nodes_loaded"
+      ],
+      "observable_results": [
+        "table",
+        "empty/error/loading states"
+      ],
+      "possible_next_actions": [
+        "agent.search",
+        "agent.detail",
+        "agent.enroll"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/agents.png"
+      ]
+    },
+    {
+      "id": "agent.search",
+      "page": "page.agents",
+      "component": "NodeCatalog",
+      "action": "search",
+      "description": "Search nodes by visible fields",
+      "priority": "P1",
+      "risk": "medium",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "nodes_loaded"
+      ],
+      "inputs": [
+        "query"
+      ],
+      "expected_effects": [
+        "filtered_nodes"
+      ],
+      "observable_results": [
+        "matching rows",
+        "no-result state"
+      ],
+      "possible_next_actions": [
+        "agent.detail",
+        "agent.search"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": false,
+      "last_result": null,
+      "evidence": []
+    },
+    {
+      "id": "agent.enroll",
+      "page": "page.agents",
+      "component": "NodeEnrollmentDialog",
+      "action": "create",
+      "description": "Create pending node enrollment instructions",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "administrator_or_operator"
+      ],
+      "inputs": [
+        "hostname",
+        "metadata"
+      ],
+      "expected_effects": [
+        "pending_node"
+      ],
+      "observable_results": [
+        "pending record",
+        "command/copy actions"
+      ],
+      "possible_next_actions": [
+        "agent.detail",
+        "agent.status"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": false,
+      "last_result": null,
+      "evidence": []
+    },
+    {
+      "id": "agent.detail",
+      "page": "page.agents",
+      "component": "NodeDetail",
+      "action": "view",
+      "description": "View node identity, inventory, tasks, groups, schedules and applications",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "node_exists"
+      ],
+      "inputs": [
+        "node_id"
+      ],
+      "expected_effects": [
+        "detail_loaded"
+      ],
+      "observable_results": [
+        "tabs",
+        "cross-links",
+        "identity"
+      ],
+      "possible_next_actions": [
+        "agent.status",
+        "task.list",
+        "group.members"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:agent-detail-ubuntu2604"
+      ]
+    },
+    {
+      "id": "agent.status",
+      "page": "page.agents",
+      "component": "NodeDetail",
+      "action": "status_mutation",
+      "description": "Enable/disable/revoke node credential or status",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "node_exists"
+      ],
+      "inputs": [
+        "status"
+      ],
+      "expected_effects": [
+        "node_state_changed"
+      ],
+      "observable_results": [
+        "list/detail/refresh consistency"
+      ],
+      "possible_next_actions": [
+        "agent.detail",
+        "task.run"
+      ],
+      "destructive": true,
+      "reversible": true,
+      "discovered": true,
+      "tested": false,
+      "last_result": null,
+      "evidence": []
+    },
+    {
+      "id": "agent.revoke",
+      "page": "page.agents",
+      "component": "NodeCatalog",
+      "action": "revoke",
+      "description": "Revoke node credential with confirmation",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "node_exists"
+      ],
+      "inputs": [
+        "confirmation"
+      ],
+      "expected_effects": [
+        "credential_revoked"
+      ],
+      "observable_results": [
+        "confirmation cancel/confirm",
+        "status update"
+      ],
+      "possible_next_actions": [
+        "agent.detail"
+      ],
+      "destructive": true,
+      "reversible": false,
+      "discovered": true,
+      "tested": false,
+      "last_result": null,
+      "evidence": []
+    },
+    {
+      "id": "script.list",
+      "page": "page.scripts",
+      "component": "ScriptCatalog",
+      "action": "list",
+      "description": "List scripts and revisions",
+      "priority": "P0",
+      "risk": "medium",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated"
+      ],
+      "inputs": [
+        "search"
+      ],
+      "expected_effects": [
+        "scripts_loaded"
+      ],
+      "observable_results": [
+        "table",
+        "actions"
+      ],
+      "possible_next_actions": [
+        "script.create",
+        "script.edit",
+        "script.enable",
+        "script.delete"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/scripts.png"
+      ]
+    },
+    {
+      "id": "script.create",
+      "page": "page.scripts",
+      "component": "ScriptEditor",
+      "action": "create",
+      "description": "Create a script with interpreter, content, parameters and environment",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/editors/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated"
+      ],
+      "inputs": [
+        "name",
+        "content",
+        "interpreter",
+        "parameters",
+        "environment"
+      ],
+      "expected_effects": [
+        "script_exists",
+        "revision_created"
+      ],
+      "observable_results": [
+        "list row",
+        "detail",
+        "revision"
+      ],
+      "possible_next_actions": [
+        "script.edit",
+        "task.create",
+        "script.delete",
+        "script.create"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/script-new-filled.png"
+      ]
+    },
+    {
+      "id": "script.edit",
+      "page": "page.scripts",
+      "component": "ScriptEditor",
+      "action": "update",
+      "description": "Edit script and verify revision/persistence",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/editors/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "script_exists"
+      ],
+      "inputs": [
+        "name",
+        "content"
+      ],
+      "expected_effects": [
+        "script_updated",
+        "revision_created"
+      ],
+      "observable_results": [
+        "list/detail/refresh"
+      ],
+      "possible_next_actions": [
+        "script.revisions",
+        "task.run",
+        "script.delete"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:revision-r1-to-r2"
+      ]
+    },
+    {
+      "id": "script.enable",
+      "page": "page.scripts",
+      "component": "ScriptCatalog",
+      "action": "toggle",
+      "description": "Enable or disable a script",
+      "priority": "P1",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "script_exists"
+      ],
+      "inputs": [
+        "enabled"
+      ],
+      "expected_effects": [
+        "script_state_changed"
+      ],
+      "observable_results": [
+        "status",
+        "refresh"
+      ],
+      "possible_next_actions": [
+        "task.run",
+        "script.enable"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": false,
+      "last_result": null,
+      "evidence": []
+    },
+    {
+      "id": "script.delete",
+      "page": "page.scripts",
+      "component": "ScriptCatalog",
+      "action": "delete",
+      "description": "Delete script with confirmation and tombstone semantics",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "script_exists"
+      ],
+      "inputs": [
+        "confirmation"
+      ],
+      "expected_effects": [
+        "script_removed"
+      ],
+      "observable_results": [
+        "cancel/confirm",
+        "list/search/detail behavior"
+      ],
+      "possible_next_actions": [
+        "script.search",
+        "script.open_deleted_url"
+      ],
+      "destructive": true,
+      "reversible": false,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:delete-confirm-cancel-confirm"
+      ]
+    },
+    {
+      "id": "script.revisions",
+      "page": "page.scripts",
+      "component": "ScriptDetail",
+      "action": "view",
+      "description": "View script revision history",
+      "priority": "P1",
+      "risk": "medium",
+      "source_locations": [
+        "web/src/features/editors/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "script_exists"
+      ],
+      "inputs": [],
+      "expected_effects": [
+        "revisions_loaded"
+      ],
+      "observable_results": [
+        "revision list",
+        "content"
+      ],
+      "possible_next_actions": [
+        "script.edit"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "partial",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:revision-increment-only"
+      ]
+    },
+    {
+      "id": "task.list",
+      "page": "page.tasks",
+      "component": "TaskCatalog",
+      "action": "list",
+      "description": "List tasks with target, condition, retry and offline settings",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/tasks/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated"
+      ],
+      "inputs": [
+        "search",
+        "enabled_filter"
+      ],
+      "expected_effects": [
+        "tasks_loaded"
+      ],
+      "observable_results": [
+        "table",
+        "actions"
+      ],
+      "possible_next_actions": [
+        "task.create",
+        "task.edit",
+        "task.run",
+        "task.delete"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/tasks.png"
+      ]
+    },
+    {
+      "id": "task.create",
+      "page": "page.tasks",
+      "component": "TaskEditor",
+      "action": "create",
+      "description": "Create a task for node/group/label targets",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/tasks/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "script_exists"
+      ],
+      "inputs": [
+        "name",
+        "script",
+        "target",
+        "parameters",
+        "retry",
+        "offline",
+        "condition"
+      ],
+      "expected_effects": [
+        "task_exists",
+        "revision_created"
+      ],
+      "observable_results": [
+        "list",
+        "detail",
+        "target"
+      ],
+      "possible_next_actions": [
+        "task.edit",
+        "task.run",
+        "task.delete",
+        "task.search"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:e2e-task-created"
+      ]
+    },
+    {
+      "id": "task.edit",
+      "page": "page.tasks",
+      "component": "TaskEditor",
+      "action": "update",
+      "description": "Edit task configuration and verify persistence",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/tasks/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "task_exists"
+      ],
+      "inputs": [
+        "task_fields"
+      ],
+      "expected_effects": [
+        "task_updated"
+      ],
+      "observable_results": [
+        "list/detail/refresh"
+      ],
+      "possible_next_actions": [
+        "task.run",
+        "task.delete"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": false,
+      "last_result": null,
+      "evidence": []
+    },
+    {
+      "id": "task.enable",
+      "page": "page.tasks",
+      "component": "TaskCatalog",
+      "action": "toggle",
+      "description": "Enable or disable a task",
+      "priority": "P1",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/tasks/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "task_exists"
+      ],
+      "inputs": [
+        "enabled"
+      ],
+      "expected_effects": [
+        "task_state_changed"
+      ],
+      "observable_results": [
+        "status",
+        "refresh"
+      ],
+      "possible_next_actions": [
+        "task.run",
+        "schedule.list"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": false,
+      "last_result": null,
+      "evidence": []
+    },
+    {
+      "id": "task.run",
+      "page": "page.tasks",
+      "component": "TaskRun",
+      "action": "manual_run",
+      "description": "Run task now and observe execution result",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/tasks/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "task_exists",
+        "target_online"
+      ],
+      "inputs": [
+        "parameters"
+      ],
+      "expected_effects": [
+        "execution_created",
+        "agent_effect"
+      ],
+      "observable_results": [
+        "pending→success/failed",
+        "logs",
+        "execution detail"
+      ],
+      "possible_next_actions": [
+        "execution.detail",
+        "execution.cancel",
+        "task.run"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/task-run-confirm.png",
+        "evidence/screenshots/execution-log.png"
+      ]
+    },
+    {
+      "id": "task.delete",
+      "page": "page.tasks",
+      "component": "TaskCatalog",
+      "action": "delete",
+      "description": "Delete task with confirmation",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/tasks/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "task_exists"
+      ],
+      "inputs": [
+        "confirmation"
+      ],
+      "expected_effects": [
+        "task_removed"
+      ],
+      "observable_results": [
+        "list/search/detail behavior"
+      ],
+      "possible_next_actions": [
+        "task.search",
+        "task.open_deleted_url"
+      ],
+      "destructive": true,
+      "reversible": false,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:delete-confirm-cancel-confirm"
+      ]
+    },
+    {
+      "id": "schedule.list",
+      "page": "page.schedules",
+      "component": "ScheduleCatalog",
+      "action": "list",
+      "description": "List schedules and owners",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated"
+      ],
+      "inputs": [
+        "search",
+        "enabled_filter"
+      ],
+      "expected_effects": [
+        "schedules_loaded"
+      ],
+      "observable_results": [
+        "table",
+        "status"
+      ],
+      "possible_next_actions": [
+        "schedule.create",
+        "schedule.edit",
+        "schedule.enable",
+        "schedule.delete"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/schedules.png"
+      ]
+    },
+    {
+      "id": "schedule.create",
+      "page": "page.schedules",
+      "component": "ScheduleEditor",
+      "action": "create",
+      "description": "Create cron, interval or one-time schedule",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/editors/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "task_exists"
+      ],
+      "inputs": [
+        "task",
+        "type",
+        "cron_or_interval",
+        "timezone",
+        "owner",
+        "misfire"
+      ],
+      "expected_effects": [
+        "schedule_exists"
+      ],
+      "observable_results": [
+        "list",
+        "owner",
+        "status"
+      ],
+      "possible_next_actions": [
+        "schedule.edit",
+        "schedule.enable",
+        "schedule.delete"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:cron-created"
+      ]
+    },
+    {
+      "id": "schedule.edit",
+      "page": "page.schedules",
+      "component": "ScheduleEditor",
+      "action": "update",
+      "description": "Edit schedule and verify persistence",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/editors/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "schedule_exists"
+      ],
+      "inputs": [
+        "schedule_fields"
+      ],
+      "expected_effects": [
+        "schedule_updated"
+      ],
+      "observable_results": [
+        "list/detail/refresh"
+      ],
+      "possible_next_actions": [
+        "schedule.enable",
+        "schedule.delete"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:cron-updated"
+      ]
+    },
+    {
+      "id": "schedule.enable",
+      "page": "page.schedules",
+      "component": "ScheduleCatalog",
+      "action": "toggle",
+      "description": "Enable or disable schedule",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "schedule_exists"
+      ],
+      "inputs": [
+        "enabled"
+      ],
+      "expected_effects": [
+        "schedule_state_changed"
+      ],
+      "observable_results": [
+        "status",
+        "refresh",
+        "future execution"
+      ],
+      "possible_next_actions": [
+        "execution.list",
+        "schedule.delete"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:enabled-to-disabled"
+      ]
+    },
+    {
+      "id": "schedule.delete",
+      "page": "page.schedules",
+      "component": "ScheduleCatalog",
+      "action": "delete",
+      "description": "Delete schedule with confirmation",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "schedule_exists"
+      ],
+      "inputs": [
+        "confirmation"
+      ],
+      "expected_effects": [
+        "schedule_removed"
+      ],
+      "observable_results": [
+        "list",
+        "future trigger stopped"
+      ],
+      "possible_next_actions": [
+        "schedule.search",
+        "schedule.open_deleted_url"
+      ],
+      "destructive": true,
+      "reversible": false,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/schedule-delete-confirm-uuid.png",
+        "runtime:delete-confirm-cancel-confirm"
+      ],
+      "ui_review": {
+        "status": "passed",
+        "checked_at": "2026-09-17T08:25:00+08:00",
+        "evidence": [".e2e/ui-review/evidence/screenshots/schedule-delete-confirm-fixed.png"]
+      }
+    },
+    {
+      "id": "group.list",
+      "page": "page.groups",
+      "component": "GroupCatalog",
+      "action": "list",
+      "description": "List groups and member counts",
+      "priority": "P1",
+      "risk": "medium",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated"
+      ],
+      "inputs": [
+        "search"
+      ],
+      "expected_effects": [
+        "groups_loaded"
+      ],
+      "observable_results": [
+        "table",
+        "members"
+      ],
+      "possible_next_actions": [
+        "group.create",
+        "group.edit",
+        "group.delete",
+        "group.members"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/groups.png"
+      ]
+    },
+    {
+      "id": "group.create",
+      "page": "page.groups",
+      "component": "GroupEditor",
+      "action": "create",
+      "description": "Create group with node membership",
+      "priority": "P1",
+      "risk": "medium",
+      "source_locations": [
+        "web/src/features/editors/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "node_exists"
+      ],
+      "inputs": [
+        "name",
+        "description",
+        "nodes"
+      ],
+      "expected_effects": [
+        "group_exists"
+      ],
+      "observable_results": [
+        "list",
+        "members",
+        "target resolution"
+      ],
+      "possible_next_actions": [
+        "group.edit",
+        "task.create",
+        "group.delete"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:static-group-created"
+      ]
+    },
+    {
+      "id": "group.edit",
+      "page": "page.groups",
+      "component": "GroupEditor",
+      "action": "update",
+      "description": "Edit group membership",
+      "priority": "P1",
+      "risk": "medium",
+      "source_locations": [
+        "web/src/features/editors/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "group_exists"
+      ],
+      "inputs": [
+        "group_fields",
+        "nodes"
+      ],
+      "expected_effects": [
+        "group_updated"
+      ],
+      "observable_results": [
+        "list/detail/task targets"
+      ],
+      "possible_next_actions": [
+        "task.create",
+        "group.delete"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:membership-and-description-updated"
+      ]
+    },
+    {
+      "id": "group.delete",
+      "page": "page.groups",
+      "component": "GroupCatalog",
+      "action": "delete",
+      "description": "Delete group with confirmation",
+      "priority": "P1",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "group_exists"
+      ],
+      "inputs": [
+        "confirmation"
+      ],
+      "expected_effects": [
+        "group_removed"
+      ],
+      "observable_results": [
+        "list",
+        "task target behavior"
+      ],
+      "possible_next_actions": [
+        "group.search",
+        "task.list"
+      ],
+      "destructive": true,
+      "reversible": false,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:delete-confirm-cancel-confirm"
+      ]
+    },
+    {
+      "id": "artifact.list",
+      "page": "page.artifacts",
+      "component": "ArtifactCatalog",
+      "action": "list",
+      "description": "List artifacts with architecture and usage",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated"
+      ],
+      "inputs": [
+        "search"
+      ],
+      "expected_effects": [
+        "artifacts_loaded"
+      ],
+      "observable_results": [
+        "table",
+        "usage"
+      ],
+      "possible_next_actions": [
+        "artifact.upload",
+        "artifact.download",
+        "artifact.delete"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/artifacts.png"
+      ]
+    },
+    {
+      "id": "artifact.upload",
+      "page": "page.artifacts",
+      "component": "ArtifactEditor",
+      "action": "upload",
+      "description": "Upload artifact with required metadata and SHA validation",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/editors/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "administrator_or_operator"
+      ],
+      "inputs": [
+        "file",
+        "name",
+        "version",
+        "arch",
+        "sha256"
+      ],
+      "expected_effects": [
+        "artifact_exists"
+      ],
+      "observable_results": [
+        "list",
+        "download",
+        "usage"
+      ],
+      "possible_next_actions": [
+        "artifact.download",
+        "application.create",
+        "artifact.delete"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:artifact-upload-200"
+      ]
+    },
+    {
+      "id": "artifact.download",
+      "page": "page.artifacts",
+      "component": "ArtifactCatalog",
+      "action": "download",
+      "description": "Download artifact and verify file response",
+      "priority": "P1",
+      "risk": "medium",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "artifact_exists"
+      ],
+      "inputs": [],
+      "expected_effects": [
+        "file_downloaded"
+      ],
+      "observable_results": [
+        "download",
+        "filename"
+      ],
+      "possible_next_actions": [
+        "application.create",
+        "artifact.delete"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/e2e-artifact-download.sh"
+      ]
+    },
+    {
+      "id": "artifact.delete",
+      "page": "page.artifacts",
+      "component": "ArtifactCatalog",
+      "action": "delete",
+      "description": "Delete artifact with usage/confirmation behavior",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "artifact_exists"
+      ],
+      "inputs": [
+        "confirmation"
+      ],
+      "expected_effects": [
+        "artifact_removed"
+      ],
+      "observable_results": [
+        "usage guard",
+        "list removal"
+      ],
+      "possible_next_actions": [
+        "artifact.search",
+        "application.list"
+      ],
+      "destructive": true,
+      "reversible": false,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:delete-confirm-cancel-confirm"
+      ]
+    },
+    {
+      "id": "application.list",
+      "page": "page.applications",
+      "component": "ApplicationCatalog",
+      "action": "list",
+      "description": "List managed applications and lifecycle state",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated"
+      ],
+      "inputs": [
+        "search"
+      ],
+      "expected_effects": [
+        "applications_loaded"
+      ],
+      "observable_results": [
+        "table",
+        "state"
+      ],
+      "possible_next_actions": [
+        "application.create",
+        "application.detail",
+        "application.delete"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/applications.png"
+      ]
+    },
+    {
+      "id": "application.create",
+      "page": "page.applications",
+      "component": "ApplicationEditor",
+      "action": "create",
+      "description": "Create managed application from artifact",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/editors/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "artifact_exists"
+      ],
+      "inputs": [
+        "name",
+        "artifact",
+        "install_path",
+        "unit",
+        "health_check"
+      ],
+      "expected_effects": [
+        "application_exists"
+      ],
+      "observable_results": [
+        "list",
+        "detail",
+        "revision"
+      ],
+      "possible_next_actions": [
+        "application.assign",
+        "application.deploy",
+        "application.delete"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": false,
+      "last_result": null,
+      "evidence": []
+    },
+    {
+      "id": "application.assign",
+      "page": "page.applications",
+      "component": "ApplicationEditor",
+      "action": "assign",
+      "description": "Assign or unassign application nodes",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/editors/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "application_exists",
+        "node_exists"
+      ],
+      "inputs": [
+        "nodes"
+      ],
+      "expected_effects": [
+        "assignment_changed"
+      ],
+      "observable_results": [
+        "node detail",
+        "application nodes"
+      ],
+      "possible_next_actions": [
+        "application.deploy",
+        "agent.detail"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": false,
+      "last_result": null,
+      "evidence": []
+    },
+    {
+      "id": "application.deploy",
+      "page": "page.applications",
+      "component": "ApplicationDetail",
+      "action": "deploy",
+      "description": "Deploy application and observe health/rollback state",
+      "priority": "P0",
+      "risk": "critical",
+      "source_locations": [
+        "web/src/features/editors/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "application_exists",
+        "assignment_exists",
+        "artifact_exists"
+      ],
+      "inputs": [
+        "node",
+        "operation"
+      ],
+      "expected_effects": [
+        "deployment_execution",
+        "managed_state"
+      ],
+      "observable_results": [
+        "execution",
+        "health",
+        "node state"
+      ],
+      "possible_next_actions": [
+        "execution.detail",
+        "application.rollback"
+      ],
+      "destructive": true,
+      "reversible": true,
+      "discovered": true,
+      "tested": false,
+      "last_result": null,
+      "evidence": []
+    },
+    {
+      "id": "application.delete",
+      "page": "page.applications",
+      "component": "ApplicationCatalog",
+      "action": "delete",
+      "description": "Delete managed application with confirmation",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "application_exists"
+      ],
+      "inputs": [
+        "confirmation"
+      ],
+      "expected_effects": [
+        "application_removed"
+      ],
+      "observable_results": [
+        "list",
+        "node state"
+      ],
+      "possible_next_actions": [
+        "application.search",
+        "artifact.list"
+      ],
+      "destructive": true,
+      "reversible": false,
+      "discovered": true,
+      "tested": false,
+      "last_result": null,
+      "evidence": []
+    },
+    {
+      "id": "execution.list",
+      "page": "page.executions",
+      "component": "ExecutionCatalog",
+      "action": "list",
+      "description": "List executions with filters and links",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/executions/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated"
+      ],
+      "inputs": [
+        "status",
+        "trigger",
+        "task",
+        "node"
+      ],
+      "expected_effects": [
+        "executions_loaded"
+      ],
+      "observable_results": [
+        "table",
+        "filters",
+        "links"
+      ],
+      "possible_next_actions": [
+        "execution.detail",
+        "execution.filter"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/executions.png"
+      ]
+    },
+    {
+      "id": "execution.detail",
+      "page": "page.executions",
+      "component": "ExecutionDetail",
+      "action": "view",
+      "description": "View execution state, logs and cross-links",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/executions/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "execution_exists"
+      ],
+      "inputs": [
+        "execution_id"
+      ],
+      "expected_effects": [
+        "detail_loaded"
+      ],
+      "observable_results": [
+        "status",
+        "logs",
+        "task/node links"
+      ],
+      "possible_next_actions": [
+        "execution.logs",
+        "execution.cancel"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:execution-detail"
+      ],
+      "ui_review": {
+        "status": "passed",
+        "checked_at": "2026-09-17T08:25:00+08:00",
+        "evidence": [
+          ".e2e/ui-review/evidence/screenshots/execution-detail-desktop-fixed.png",
+          ".e2e/ui-review/evidence/screenshots/execution-detail-mobile-fixed.png"
+        ]
+      }
+    },
+    {
+      "id": "execution.logs",
+      "page": "page.executions",
+      "component": "ExecutionDetail",
+      "action": "logs",
+      "description": "View/search/copy/follow execution logs",
+      "priority": "P0",
+      "risk": "medium",
+      "source_locations": [
+        "web/src/features/executions/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "execution_exists"
+      ],
+      "inputs": [
+        "search",
+        "wrap",
+        "follow"
+      ],
+      "expected_effects": [
+        "logs_loaded"
+      ],
+      "observable_results": [
+        "log text",
+        "stream state"
+      ],
+      "possible_next_actions": [
+        "execution.detail"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/execution-log.png"
+      ]
+    },
+    {
+      "id": "execution.cancel",
+      "page": "page.executions",
+      "component": "ExecutionDetail",
+      "action": "cancel",
+      "description": "Cancel a running execution",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/executions/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "execution_running"
+      ],
+      "inputs": [
+        "confirmation"
+      ],
+      "expected_effects": [
+        "execution_cancelled"
+      ],
+      "observable_results": [
+        "status",
+        "agent effect"
+      ],
+      "possible_next_actions": [
+        "execution.detail",
+        "execution.list"
+      ],
+      "destructive": true,
+      "reversible": false,
+      "discovered": true,
+      "tested": false,
+      "last_result": null,
+      "evidence": []
+    },
+    {
+      "id": "transfer.create",
+      "page": "page.transfers",
+      "component": "TransferForm",
+      "action": "create",
+      "description": "Create multi-target file transfer",
+      "priority": "P0",
+      "risk": "critical",
+      "source_locations": [
+        "web/src/features/transfers/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "source_and_target_nodes"
+      ],
+      "inputs": [
+        "source",
+        "source_path",
+        "targets",
+        "destination_path"
+      ],
+      "expected_effects": [
+        "transfer_created",
+        "files_copied"
+      ],
+      "observable_results": [
+        "status",
+        "path",
+        "sha"
+      ],
+      "possible_next_actions": [
+        "transfer.retry",
+        "transfer.cancel",
+        "transfer.detail"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "partial",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:negative-missing-source-failed"
+      ]
+    },
+    {
+      "id": "transfer.retry",
+      "page": "page.transfers",
+      "component": "TransferCatalog",
+      "action": "retry",
+      "description": "Retry failed/partial transfer",
+      "priority": "P1",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/transfers/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "transfer_failed"
+      ],
+      "inputs": [],
+      "expected_effects": [
+        "transfer_retried"
+      ],
+      "observable_results": [
+        "status",
+        "file result"
+      ],
+      "possible_next_actions": [
+        "transfer.detail"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:failed-transfer-retry"
+      ]
+    },
+    {
+      "id": "transfer.cancel",
+      "page": "page.transfers",
+      "component": "TransferCatalog",
+      "action": "cancel",
+      "description": "Cancel in-progress transfer",
+      "priority": "P1",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/transfers/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "transfer_running"
+      ],
+      "inputs": [
+        "confirmation"
+      ],
+      "expected_effects": [
+        "transfer_cancelled"
+      ],
+      "observable_results": [
+        "status",
+        "partial file handling"
+      ],
+      "possible_next_actions": [
+        "transfer.detail"
+      ],
+      "destructive": true,
+      "reversible": false,
+      "discovered": true,
+      "tested": false,
+      "last_result": null,
+      "evidence": []
+    },
+    {
+      "id": "audit.list",
+      "page": "page.audit",
+      "component": "AuditCatalog",
+      "action": "list",
+      "description": "View audit records for mutations and operations",
+      "priority": "P1",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "administrator_or_operator"
+      ],
+      "inputs": [
+        "filters"
+      ],
+      "expected_effects": [
+        "audit_loaded"
+      ],
+      "observable_results": [
+        "actor/action/resource/time"
+      ],
+      "possible_next_actions": [
+        "audit.filter"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/audit.png"
+      ]
+    },
+    {
+      "id": "user.list",
+      "page": "page.users",
+      "component": "UserCatalog",
+      "action": "list",
+      "description": "List users and roles",
+      "priority": "P0",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "administrator"
+      ],
+      "inputs": [],
+      "expected_effects": [
+        "users_loaded"
+      ],
+      "observable_results": [
+        "table",
+        "role"
+      ],
+      "possible_next_actions": [
+        "user.create",
+        "user.change_role"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/users.png"
+      ]
+    },
+    {
+      "id": "user.create",
+      "page": "page.users",
+      "component": "UserCatalog",
+      "action": "create",
+      "description": "Create user with role and password",
+      "priority": "P0",
+      "risk": "critical",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "administrator"
+      ],
+      "inputs": [
+        "username",
+        "password",
+        "role"
+      ],
+      "expected_effects": [
+        "user_exists",
+        "audit_record"
+      ],
+      "observable_results": [
+        "list",
+        "role",
+        "login behavior"
+      ],
+      "possible_next_actions": [
+        "user.change_role",
+        "auth.login"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": false,
+      "last_result": null,
+      "evidence": []
+    },
+    {
+      "id": "user.change_role",
+      "page": "page.users",
+      "component": "UserCatalog",
+      "action": "change_role",
+      "description": "Change user role and verify permission visibility",
+      "priority": "P0",
+      "risk": "critical",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "administrator",
+        "user_exists"
+      ],
+      "inputs": [
+        "role"
+      ],
+      "expected_effects": [
+        "role_changed"
+      ],
+      "observable_results": [
+        "list",
+        "RBAC UI/API after relogin"
+      ],
+      "possible_next_actions": [
+        "auth.logout",
+        "auth.login"
+      ],
+      "destructive": true,
+      "reversible": true,
+      "discovered": true,
+      "tested": false,
+      "last_result": null,
+      "evidence": []
+    },
+    {
+      "id": "settings.runtime",
+      "page": "page.settings",
+      "component": "SettingsPage",
+      "action": "view",
+      "description": "View runtime settings",
+      "priority": "P1",
+      "risk": "medium",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "administrator"
+      ],
+      "inputs": [],
+      "expected_effects": [
+        "settings_loaded"
+      ],
+      "observable_results": [
+        "runtime fields"
+      ],
+      "possible_next_actions": [
+        "settings.save"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "evidence/screenshots/settings.png"
+      ]
+    },
+    {
+      "id": "settings.appearance",
+      "page": "page.settings",
+      "component": "SettingsPage",
+      "action": "appearance",
+      "description": "Change theme/appearance preferences",
+      "priority": "P2",
+      "risk": "low",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated"
+      ],
+      "inputs": [
+        "theme",
+        "language"
+      ],
+      "expected_effects": [
+        "appearance_changed"
+      ],
+      "observable_results": [
+        "theme persists"
+      ],
+      "possible_next_actions": [
+        "settings.save"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": false,
+      "last_result": null,
+      "evidence": []
+    },
+    {
+      "id": "settings.save",
+      "page": "page.settings",
+      "component": "SettingsPage",
+      "action": "update",
+      "description": "Save runtime settings and verify persistence",
+      "priority": "P1",
+      "risk": "high",
+      "source_locations": [
+        "web/src/features/catalog/index.tsx"
+      ],
+      "entry_conditions": [
+        "authenticated",
+        "administrator"
+      ],
+      "inputs": [
+        "runtime_settings"
+      ],
+      "expected_effects": [
+        "settings_updated",
+        "audit_record"
+      ],
+      "observable_results": [
+        "success feedback",
+        "refresh",
+        "agent consumption if applicable"
+      ],
+      "possible_next_actions": [
+        "settings.runtime",
+        "agent.detail"
+      ],
+      "destructive": false,
+      "reversible": true,
+      "discovered": true,
+      "tested": true,
+      "last_result": {
+        "status": "passed",
+        "checked_at": "2026-09-16T22:55:00+08:00"
+      },
+      "evidence": [
+        "runtime:31-refresh-30-restore"
+      ]
+    }
+  ]
+}

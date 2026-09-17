@@ -1,5 +1,9 @@
 export default {
   // 导航
+  brand: {
+    name: 'NodeSteer',
+    subtitle: 'Linux Infrastructure Automation Console',
+  },
   nav: {
     dashboard: 'Dashboard',
     nodes: 'Nodes',
@@ -83,6 +87,12 @@ export default {
     toggleColumns: 'Toggle columns',
     noResults: 'No results.',
     noResultsFound: 'No results found.',
+    viewDetails: 'View details',
+    unknownTask: 'Unknown task',
+    unknownNode: 'Unknown node',
+    scrollTable: 'Scroll horizontally',
+    unknownScript: 'Unknown script',
+    unknownApplication: 'Unknown application',
     clearFilters: 'Clear filters',
     page: 'Page',
     of: 'of',
@@ -96,7 +106,7 @@ export default {
   },
   // 登录页
   login: {
-    subtitle: 'Hub-Agent Automation Control Platform',
+    subtitle: 'Linux Infrastructure Automation Console',
     sso: 'Sign in with SSO',
     username: 'Username',
     password: 'Password',
@@ -405,7 +415,7 @@ export default {
     title: 'Schedules',
     description: 'Manage recurring task execution and offline policies.',
     searchPlaceholder: 'Search task, cron expression, or timezone',
-    confirmDelete: 'Delete this schedule?',
+    confirmDelete: 'Delete schedule “{{name}}”?',
     formDescription:
       'Configure the task, cron/interval expression, owner, and misfire policy.',
     newSchedule: 'New Schedule',
@@ -457,7 +467,10 @@ export default {
     description:
       'Manage managed applications, assignments, and deployment state.',
     searchPlaceholder: 'Search application, version, or unit',
-    confirmDelete: 'Delete this application?',
+    confirmDelete:
+      'Delete this application? If tasks reference it, delete or update those tasks first.',
+    deleteBlocked:
+      'Delete blocked: this application is still referenced by a task. Delete or update the related task, then try again.',
     formDescription:
       'Configure the release, runtime, health check, and target agents.',
     operationTitle: 'Run application operation',
@@ -566,7 +579,7 @@ export default {
     resource: 'Resource',
     resourceId: 'Resource ID',
     usersTitle: 'Users',
-    usersDescription: 'Manage local users and roles with access to Cadentra.',
+    usersDescription: 'Manage local users and roles with access to NodeSteer.',
     adminOnly: 'Only administrators can manage users.',
     newUser: 'New User',
     username: 'Username',

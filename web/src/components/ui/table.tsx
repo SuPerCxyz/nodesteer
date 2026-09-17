@@ -1,12 +1,56 @@
 import * as React from 'react'
+import { ChevronsLeftRight } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 
 function Table({ className, ...props }: React.ComponentProps<'table'>) {
+  const { t } = useTranslation()
+  const containerRef = React.useRef<HTMLDivElement>(null)
+  const [showScrollHint, setShowScrollHint] = React.useState(false)
+
+  React.useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const updateScrollHint = () => {
+      const maxScroll = container.scrollWidth - container.clientWidth
+      setShowScrollHint(maxScroll > 1 && container.scrollLeft < maxScroll - 1)
+    }
+
+    updateScrollHint()
+    container.addEventListener('scroll', updateScrollHint, { passive: true })
+    window.addEventListener('resize', updateScrollHint)
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(updateScrollHint)
+    observer?.observe(container)
+    if (container.firstElementChild) {
+      observer?.observe(container.firstElementChild)
+    }
+
+    return () => {
+      container.removeEventListener('scroll', updateScrollHint)
+      window.removeEventListener('resize', updateScrollHint)
+      observer?.disconnect()
+    }
+  }, [])
+
   return (
     <div
+      ref={containerRef}
       data-slot='table-container'
       className='relative w-full overflow-x-auto'
     >
+      {showScrollHint && (
+        <div
+          className='pointer-events-none absolute end-1 bottom-1 z-10 inline-flex items-center gap-1 rounded-md border bg-background/95 px-1.5 py-1 text-[10px] text-muted-foreground shadow-sm'
+          aria-hidden='true'
+        >
+          <ChevronsLeftRight className='size-3.5' />
+          {t('common.scrollTable')}
+        </div>
+      )}
       <table
         data-slot='table'
         className={cn('w-full caption-bottom text-sm', className)}

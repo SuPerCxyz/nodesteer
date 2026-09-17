@@ -33,7 +33,7 @@ import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { CadentraHeader } from '@/components/layout/cadentra-header'
 import { Main } from '@/components/layout/main'
-import { ErrorState, StatusBadge } from '@/features/shared/ui'
+import { ErrorState, StatusBadge, TimeValue } from '@/features/shared/ui'
 
 function zonedDateTimeValue(value: string, timezone: string) {
   if (!value) return ''
@@ -854,6 +854,9 @@ export function ApplicationEditor() {
     queryKey: ['nodes'],
     queryFn: () => api.get<Node[]>('/nodes'),
   })
+  const nodeNames = new Map(
+    (nodes.data || []).map((node) => [node.id, node.hostname])
+  )
   const states = useQuery({
     queryKey: ['application-state', id],
     queryFn: () => api.get<ApplicationNodeState[]>(`/applications/${id}/state`),
@@ -1343,8 +1346,9 @@ export function ApplicationEditor() {
                         className='grid grid-cols-[1fr_auto] gap-2 py-2 text-sm'
                         key={state.node_id}
                       >
-                        <span className='font-mono text-xs'>
-                          {state.node_id}
+                        <span className='text-sm'>
+                          {nodeNames.get(state.node_id) ||
+                            t('common.unknownNode')}
                         </span>
                         <StatusBadge status={state.health} />
                         <span className='text-xs text-muted-foreground'>
@@ -1374,12 +1378,14 @@ export function ApplicationEditor() {
                         className='grid grid-cols-[1fr_auto] gap-2 py-2 text-sm'
                         key={execution.id}
                       >
-                        <span className='font-mono text-xs'>
-                          {execution.id.slice(0, 12)}…
+                        <span className='text-sm'>
+                          {t('executions.executionTitle')}
                         </span>
                         <StatusText value={execution.status} />
                         <span className='text-xs text-muted-foreground'>
-                          {execution.node_id}
+                          {nodeNames.get(execution.node_id) ||
+                            t('common.unknownNode')}{' '}
+                          <TimeValue value={execution.start_time} />
                         </span>
                       </div>
                     ))}

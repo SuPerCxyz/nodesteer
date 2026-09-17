@@ -5,7 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ChevronLeft, Clipboard, Loader2, StopCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { api, type Execution, type Task } from '@/lib/api'
+import { api, type Execution, type Node, type Task } from '@/lib/api'
 import { copyText } from '@/lib/clipboard'
 import { useCanRun } from '@/lib/permissions'
 import { Button } from '@/components/ui/button'
@@ -64,9 +64,17 @@ export function Executions() {
     queryKey: ['tasks'],
     queryFn: () => api.get<Task[]>('/tasks'),
   })
+  const nodes = useQuery({
+    queryKey: ['nodes'],
+    queryFn: () => api.get<Node[]>('/nodes'),
+  })
   const taskNames = useMemo(
     () => new Map((tasks.data || []).map((task) => [task.id, task.name])),
     [tasks.data]
+  )
+  const nodeNames = useMemo(
+    () => new Map((nodes.data || []).map((node) => [node.id, node.hostname])),
+    [nodes.data]
   )
   const update = (key: 'q' | 'status' | 'trigger', value: string) =>
     navigate({
@@ -120,46 +128,54 @@ export function Executions() {
       },
       {
         id: 'task',
-        accessorFn: (row) => taskNames.get(row.task_id) || row.task_id,
+        accessorFn: (row) =>
+          `${taskNames.get(row.task_id) || ''} ${row.task_id}`,
         header: t('dashboard.task'),
         size: 300,
         minSize: 220,
         maxSize: 380,
-        cell: ({ row }) => (
-          <div className='min-w-0'>
-            <a
-              href={`/tasks/${row.original.task_id}`}
-              className='block truncate font-medium hover:underline'
-              title={
-                taskNames.get(row.original.task_id) || row.original.task_id
-              }
-            >
-              {taskNames.get(row.original.task_id) || row.original.task_id}
-            </a>
-            <a
-              className='block truncate font-mono text-xs text-muted-foreground hover:underline'
-              href={`/executions/${row.original.id}`}
-              title={row.original.id}
-            >
-              {row.original.id.slice(0, 10)}…
-            </a>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const name = taskNames.get(row.original.task_id)
+          return (
+            <div className='min-w-0'>
+              {name ? (
+                <a
+                  href={`/tasks/${row.original.task_id}`}
+                  className='block truncate font-medium hover:underline'
+                  title={name}
+                >
+                  {name}
+                </a>
+              ) : (
+                <span className='block truncate font-medium'>
+                  {t('common.unknownTask')}
+                </span>
+              )}
+            </div>
+          )
+        },
       },
       {
-        accessorKey: 'node_id',
+        id: 'node',
+        accessorFn: (row) =>
+          `${nodeNames.get(row.node_id) || ''} ${row.node_id}`,
         header: t('dashboard.node'),
         size: 150,
         minSize: 120,
-        cell: ({ row }) => (
-          <a
-            href={`/agents/${row.original.node_id}`}
-            className='block truncate font-mono text-xs hover:underline'
-            title={row.original.node_id}
-          >
-            {row.original.node_id.slice(0, 12)}
-          </a>
-        ),
+        cell: ({ row }) => {
+          const name = nodeNames.get(row.original.node_id)
+          return name ? (
+            <a
+              href={`/agents/${row.original.node_id}`}
+              className='block truncate hover:underline'
+              title={name}
+            >
+              {name}
+            </a>
+          ) : (
+            <span className='block truncate'>{t('common.unknownNode')}</span>
+          )
+        },
       },
       {
         accessorKey: 'trigger_type',
@@ -203,8 +219,24 @@ export function Executions() {
           </span>
         ),
       },
+      {
+        id: 'actions',
+        header: '',
+        enableHiding: false,
+        size: 100,
+        minSize: 88,
+        meta: { align: 'end' },
+        cell: ({ row }) => (
+          <a
+            className='text-sm text-primary hover:underline'
+            href={`/executions/${row.original.id}`}
+          >
+            {t('common.viewDetails')}
+          </a>
+        ),
+      },
     ],
-    [labels, t, taskNames]
+    [labels, nodeNames, t, taskNames]
   )
 
   return (
@@ -300,6 +332,11 @@ export function ExecutionDetail() {
     queryFn: () => api.get<Task>(`/tasks/${execution.data?.task_id}`),
     enabled: Boolean(execution.data?.task_id),
   })
+  const node = useQuery({
+    queryKey: ['node', execution.data?.node_id],
+    queryFn: () => api.get<Node>(`/nodes/${execution.data?.node_id}`),
+    enabled: Boolean(execution.data?.node_id),
+  })
   const logs = useQuery({
     queryKey: ['execution-logs', id],
     queryFn: () =>
@@ -340,7 +377,8 @@ export function ExecutionDetail() {
       </>
     )
   const exec = execution.data
-  const taskName = task.data?.name || exec.task_id
+  const taskName = task.data?.name || t('common.unknownTask')
+  const nodeName = node.data?.hostname || t('common.unknownNode')
   const exitCode = exec.exit_code ?? '-'
   const trigger =
     i18n.language === 'en'
@@ -354,7 +392,7 @@ export function ExecutionDetail() {
     <>
       <CadentraHeader
         title={taskName}
-        description={`${t('executions.executionTitle')} · ${trigger}`}
+        description={`${nodeName} · ${trigger}`}
         action={
           exec.status === 'RUNNING' && canRun ? (
             <Button
@@ -394,7 +432,9 @@ export function ExecutionDetail() {
           }}
         />
         <div className='flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-muted-foreground'>
-          <span>{exec.id}</span>
+          <span>
+            {t('executions.id')}: {exec.id}
+          </span>
           <span>r{exec.task_revision || '-'}</span>
           <TimeValue value={exec.start_time} absolute />
         </div>
@@ -403,12 +443,17 @@ export function ExecutionDetail() {
             ['status', <StatusBadge status={exec.status} />],
             [
               'node',
-              <a
-                className='font-mono text-xs hover:underline'
-                href={`/agents/${exec.node_id}`}
-              >
-                {exec.node_id.slice(0, 12)}
-              </a>,
+              node.data ? (
+                <a
+                  className='truncate hover:underline'
+                  href={`/agents/${exec.node_id}`}
+                  title={node.data.hostname}
+                >
+                  {nodeName}
+                </a>
+              ) : (
+                <span>{nodeName}</span>
+              ),
             ],
             ['start', <TimeValue value={exec.start_time} absolute />],
             [
@@ -459,12 +504,16 @@ export function ExecutionDetail() {
                     {t('dashboard.task')}
                   </dt>
                   <dd>
-                    <a
-                      className='hover:underline'
-                      href={`/tasks/${exec.task_id}`}
-                    >
-                      {taskName}
-                    </a>
+                    {task.data ? (
+                      <a
+                        className='hover:underline'
+                        href={`/tasks/${exec.task_id}`}
+                      >
+                        {taskName}
+                      </a>
+                    ) : (
+                      <span>{taskName}</span>
+                    )}
                   </dd>
                   <dt className='text-muted-foreground'>
                     {t('executions.taskRevision')}

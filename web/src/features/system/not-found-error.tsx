@@ -6,7 +6,7 @@ export function NotFoundError() {
     <div className='container flex min-h-svh flex-col items-center justify-center gap-4 text-center'>
       <h1 className='text-3xl font-semibold'>Page not found</h1>
       <p className='text-muted-foreground'>
-        The requested Cadentra page does not exist.
+        The requested NodeSteer page does not exist.
       </p>
       <Button asChild>
         <Link to='/'>Back to overview</Link>

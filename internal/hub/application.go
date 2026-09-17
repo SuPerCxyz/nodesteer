@@ -104,7 +104,7 @@ func (m *AppManager) Delete(ctx context.Context, id string) error {
 	}
 	for _, task := range tasks {
 		if task.ApplicationID == id {
-			return fmt.Errorf("application %s is referenced by task %s", id, task.ID)
+			return fmt.Errorf("application %s is referenced by task %s; delete or update the task first", id, task.ID)
 		}
 	}
 	var rev int64

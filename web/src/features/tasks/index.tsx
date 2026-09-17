@@ -68,8 +68,18 @@ function targetText(task: Task, translate: (key: string) => string) {
     : task.target.type
 }
 
-function TargetDetails({ target }: { target: Target }) {
+function TargetDetails({
+  target,
+  nodes,
+  groups,
+}: {
+  target: Target
+  nodes: Node[]
+  groups: Group[]
+}) {
   const { t } = useTranslation()
+  const nodeNames = new Map(nodes.map((node) => [node.id, node.hostname]))
+  const groupNames = new Map(groups.map((group) => [group.id, group.name]))
   return (
     <dl className='grid gap-x-8 gap-y-3 text-sm sm:grid-cols-[160px_minmax(0,1fr)]'>
       <dt className='text-muted-foreground'>{t('tasks.targetType')}</dt>
@@ -81,16 +91,20 @@ function TargetDetails({ target }: { target: Target }) {
       {target.node_ids?.length ? (
         <>
           <dt className='text-muted-foreground'>{t('tasks.nodes')}</dt>
-          <dd className='font-mono text-xs break-all'>
-            {target.node_ids.join(', ')}
+          <dd className='break-words'>
+            {target.node_ids
+              .map((id) => nodeNames.get(id) || t('common.unknownNode'))
+              .join(', ')}
           </dd>
         </>
       ) : null}
       {target.group_ids?.length ? (
         <>
           <dt className='text-muted-foreground'>{t('tasks.groups')}</dt>
-          <dd className='font-mono text-xs break-all'>
-            {target.group_ids.join(', ')}
+          <dd className='break-words'>
+            {target.group_ids
+              .map((id) => groupNames.get(id) || t('common.noData'))
+              .join(', ')}
           </dd>
         </>
       ) : null}
@@ -132,7 +146,8 @@ export function Tasks() {
   const columns = useMemo<ColumnDef<Task>[]>(
     () => [
       {
-        accessorKey: 'name',
+        id: 'name',
+        accessorFn: (row) => `${row.name} ${row.id}`,
         header: t('common.name'),
         size: 280,
         minSize: 220,
@@ -146,12 +161,6 @@ export function Tasks() {
             >
               {row.original.name}
             </a>
-            <span
-              className='block truncate text-xs text-muted-foreground'
-              title={row.original.id}
-            >
-              {row.original.id}
-            </span>
           </div>
         ),
       },
@@ -301,6 +310,18 @@ export function TaskDetail() {
     queryFn: () => api.get<Script>(`/scripts/${task.data?.script_id}`),
     enabled: Boolean(task.data?.script_id),
   })
+  const nodes = useQuery({
+    queryKey: ['nodes'],
+    queryFn: () => api.get<Node[]>('/nodes'),
+  })
+  const groups = useQuery({
+    queryKey: ['groups'],
+    queryFn: () => api.get<Group[]>('/groups'),
+  })
+  const applications = useQuery({
+    queryKey: ['applications'],
+    queryFn: () => api.get<Application[]>('/applications'),
+  })
   if (task.isLoading)
     return (
       <>
@@ -417,7 +438,7 @@ export function TaskDetail() {
                       className='font-medium hover:underline'
                       href={`/scripts/${item.script_id}`}
                     >
-                      {script.data?.name || item.script_id}
+                      {script.data?.name || t('common.unknownScript')}
                     </a>
                     <span className='font-mono text-xs text-muted-foreground'>
                       {script.data?.interpreter || 'script'}
@@ -425,7 +446,12 @@ export function TaskDetail() {
                   </div>
                 ) : (
                   <div className='text-sm text-muted-foreground'>
-                    {item.application_id || '-'}
+                    {applications.data?.find(
+                      (application) => application.id === item.application_id
+                    )?.name ||
+                      (item.application_id
+                        ? t('common.unknownApplication')
+                        : '-')}
                   </div>
                 )}
               </CardContent>
@@ -439,7 +465,11 @@ export function TaskDetail() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <TargetDetails target={item.target} />
+                <TargetDetails
+                  target={item.target}
+                  nodes={nodes.data || []}
+                  groups={groups.data || []}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -506,35 +536,35 @@ function ExecutionHistory({ executions }: { executions: Execution[] }) {
     )
   return (
     <TableCard>
-      <Table className='min-w-[520px] table-fixed'>
+      <Table className='min-w-[460px] table-fixed'>
         <colgroup>
+          <col className='w-[30%]' />
           <col className='w-[55%]' />
-          <col className='w-[20%]' />
-          <col className='w-[25%]' />
+          <col className='w-[15%]' />
         </colgroup>
         <TableHeader>
           <TableRow>
-            <TableHead>{t('executions.id')}</TableHead>
             <TableHead className='text-center'>{t('common.status')}</TableHead>
             <TableHead>{t('executions.start')}</TableHead>
+            <TableHead />
           </TableRow>
         </TableHeader>
         <TableBody>
           {executions.map((execution) => (
             <TableRow key={execution.id}>
-              <TableCell className='font-mono text-xs'>
-                <a
-                  className='hover:underline'
-                  href={`/executions/${execution.id}`}
-                >
-                  {execution.id.slice(0, 12)}…
-                </a>
-              </TableCell>
               <TableCell className='text-center'>
                 <StatusBadge status={execution.status} />
               </TableCell>
               <TableCell>
                 <TimeValue value={execution.start_time} />
+              </TableCell>
+              <TableCell className='text-end'>
+                <a
+                  className='text-sm text-primary hover:underline'
+                  href={`/executions/${execution.id}`}
+                >
+                  {t('common.viewDetails')}
+                </a>
               </TableCell>
             </TableRow>
           ))}
@@ -660,6 +690,9 @@ export function TaskEditor() {
     }
   }
   const selectedNodes = form.target?.node_ids || []
+  const nodeNames = new Map(
+    (nodes.data || []).map((node) => [node.id, node.hostname])
+  )
   const toggleNode = (nodeId: string) =>
     setTarget({
       ...(form.target as Target),
@@ -1289,7 +1322,9 @@ export function TaskEditor() {
             </Button>
             {form.condition?.remote && (
               <p className='font-mono text-xs text-muted-foreground sm:col-span-5'>
-                {form.condition.remote.node_id}.{form.condition.remote.property}{' '}
+                {nodeNames.get(form.condition.remote.node_id) ||
+                  t('common.unknownNode')}
+                .{form.condition.remote.property}{' '}
                 {form.condition.remote.operator} {form.condition.remote.value}
               </p>
             )}

@@ -19,7 +19,7 @@ import type { SidebarData } from '../types'
 export function getSidebarData(t: TFunction): SidebarData {
   return {
     user: {
-      name: 'Cadentra User',
+      name: 'NodeSteer User',
       email: 'admin',
       avatar: '/images/cadentra-logo-square.png',
     },

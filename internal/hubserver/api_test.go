@@ -173,6 +173,15 @@ func TestAPILifecycle(t *testing.T) {
 	json.Unmarshal([]byte(app), &application)
 	do("GET", "/api/applications/"+application.ID+"/state", "", 200)
 	do("GET", "/api/applications/"+application.ID+"/executions", "", 200)
+	appTask := do("POST", "/api/tasks", `{"name":"application-reference","type":"app_operation","application_id":"`+application.ID+`","app_operation":"stop","target":{"type":"label","label_key":"env"},"enabled":true}`, 200)
+	var applicationTask struct {
+		ID string `json:"id"`
+	}
+	json.Unmarshal([]byte(appTask), &applicationTask)
+	conflict := do("DELETE", "/api/applications/"+application.ID, "", 409)
+	if !strings.Contains(conflict, "delete or update the task first") {
+		t.Fatalf("application delete conflict should explain the next action: %s", conflict)
+	}
 
 	// Audit
 	do("GET", "/api/audit", "", 200)
@@ -194,6 +203,7 @@ func TestAPILifecycle(t *testing.T) {
 	// 删除
 	do("DELETE", "/api/schedules/"+schedule.ID, "", 200)
 	do("DELETE", "/api/tasks/"+task.ID, "", 200)
+	do("DELETE", "/api/tasks/"+applicationTask.ID, "", 200)
 	do("DELETE", "/api/scripts/"+script.ID, "", 200)
 	do("DELETE", "/api/applications/"+application.ID, "", 200)
 }

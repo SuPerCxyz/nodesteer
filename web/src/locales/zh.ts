@@ -1,5 +1,9 @@
 export default {
   // 导航
+  brand: {
+    name: 'NodeSteer',
+    subtitle: 'Linux 节点自动化控制台',
+  },
   nav: {
     dashboard: '仪表盘',
     nodes: '节点',
@@ -82,6 +86,12 @@ export default {
     toggleColumns: '切换列',
     noResults: '没有结果。',
     noResultsFound: '没有找到结果。',
+    viewDetails: '查看详情',
+    unknownTask: '未知任务',
+    unknownNode: '未知节点',
+    scrollTable: '左右滑动查看更多',
+    unknownScript: '未知脚本',
+    unknownApplication: '未知应用',
     clearFilters: '清除筛选',
     page: '第',
     of: '页，共',
@@ -95,7 +105,7 @@ export default {
   },
   // 登录页
   login: {
-    subtitle: 'Hub-Agent 自动化控制平台',
+    subtitle: 'Linux 节点自动化控制台',
     sso: '使用 SSO 登录',
     username: '用户名',
     password: '密码',
@@ -395,7 +405,7 @@ export default {
     title: '调度',
     description: '管理周期性任务执行和离线策略。',
     searchPlaceholder: '搜索任务、Cron 表达式或时区',
-    confirmDelete: '确定删除这个调度吗？',
+    confirmDelete: '确定删除调度“{{name}}”吗？',
     formDescription: '配置任务、Cron/间隔表达式、执行方和补跑策略。',
     newSchedule: '新建调度',
     noSchedules: '暂无调度',
@@ -445,7 +455,10 @@ export default {
     title: '托管应用',
     description: '管理托管应用、节点分配和部署状态。',
     searchPlaceholder: '搜索托管应用、版本或 Unit',
-    confirmDelete: '确定删除这个托管应用吗？',
+    confirmDelete:
+      '确定删除这个托管应用吗？如果有任务引用它，请先删除或修改相关任务。',
+    deleteBlocked:
+      '删除被阻止：该托管应用仍被任务引用。请先删除或修改相关任务，然后重试。',
     formDescription: '配置发布包、运行参数、健康检查和目标 Agent。',
     operationTitle: '执行托管应用操作',
     operationDescription: '选择要对“{{name}}”执行操作的目标 Agent。',
@@ -550,7 +563,7 @@ export default {
     resource: '资源',
     resourceId: '资源 ID',
     usersTitle: '用户',
-    usersDescription: '管理可访问 Cadentra 的本地用户和角色。',
+    usersDescription: '管理可访问 NodeSteer 的本地用户和角色。',
     adminOnly: '只有管理员可以管理用户。',
     newUser: '新建用户',
     username: '用户名',

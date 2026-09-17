@@ -1,0 +1,257 @@
+{
+  "schema_version": 1,
+  "workflows": [
+    {
+      "id": "workflow.auth.guard.001",
+      "name": "Unauthenticated route guard and login",
+      "priority": "P0",
+      "type": "critical_path",
+      "status": "completed",
+      "preconditions": [],
+      "steps": [
+        "auth.logout",
+        "auth.login",
+        "dashboard.summary",
+        "auth.logout",
+        "auth.login"
+      ],
+      "covered_features": [
+        "auth.login",
+        "auth.invalid_login",
+        "auth.logout",
+        "auth.language_switch"
+      ],
+      "covered_transitions": [],
+      "test_data_refs": [],
+      "started_at": "2026-09-16T21:50:00+08:00",
+      "finished_at": "2026-09-16T22:55:00+08:00",
+      "result": "passed",
+      "failure_ids": [],
+      "evidence": []
+    },
+    {
+      "id": "workflow.script.task.lifecycle.001",
+      "name": "Script to task to execution lifecycle",
+      "priority": "P0",
+      "type": "crud_lifecycle",
+      "status": "partial",
+      "preconditions": [
+        "authenticated",
+        "node_online"
+      ],
+      "steps": [
+        "script.create",
+        "script.edit",
+        "script.revisions",
+        "task.create",
+        "task.edit",
+        "task.run",
+        "execution.detail",
+        "execution.logs",
+        "task.delete",
+        "script.delete"
+      ],
+      "covered_features": [
+        "script.create",
+        "script.edit",
+        "task.create",
+        "task.run",
+        "execution.detail",
+        "execution.logs",
+        "task.delete",
+        "script.delete"
+      ],
+      "covered_transitions": [],
+      "test_data_refs": [],
+      "started_at": "2026-09-16T21:50:00+08:00",
+      "finished_at": "2026-09-16T22:55:00+08:00",
+      "result": "partial",
+      "failure_ids": [],
+      "evidence": []
+    },
+    {
+      "id": "workflow.schedule.persistence.001",
+      "name": "Schedule create edit enable refresh",
+      "priority": "P0",
+      "type": "state_mutation",
+      "status": "completed",
+      "preconditions": [
+        "authenticated",
+        "task_exists"
+      ],
+      "steps": [
+        "schedule.create",
+        "schedule.edit",
+        "schedule.enable",
+        "schedule.list",
+        "schedule.delete"
+      ],
+      "covered_features": [
+        "schedule.create",
+        "schedule.edit",
+        "schedule.enable",
+        "schedule.delete"
+      ],
+      "covered_transitions": [],
+      "test_data_refs": [],
+      "started_at": "2026-09-16T21:50:00+08:00",
+      "finished_at": "2026-09-16T22:55:00+08:00",
+      "result": "passed",
+      "failure_ids": [],
+      "evidence": []
+    },
+    {
+      "id": "workflow.node.group.target.001",
+      "name": "Node group target continuity",
+      "priority": "P1",
+      "type": "pairwise_transition",
+      "status": "partial",
+      "preconditions": [
+        "authenticated",
+        "node_exists"
+      ],
+      "steps": [
+        "agent.list",
+        "agent.detail",
+        "group.create",
+        "group.edit",
+        "task.create",
+        "group.delete"
+      ],
+      "covered_features": [
+        "agent.list",
+        "agent.detail",
+        "group.create",
+        "group.edit",
+        "group.delete"
+      ],
+      "covered_transitions": [],
+      "test_data_refs": [],
+      "started_at": "2026-09-16T21:50:00+08:00",
+      "finished_at": "2026-09-16T22:55:00+08:00",
+      "result": "partial",
+      "failure_ids": [],
+      "evidence": []
+    },
+    {
+      "id": "workflow.artifact.application.deploy.001",
+      "name": "Artifact application deployment lifecycle",
+      "priority": "P0",
+      "type": "critical_path",
+      "status": "blocked",
+      "preconditions": [
+        "authenticated",
+        "node_online"
+      ],
+      "steps": [
+        "artifact.upload",
+        "artifact.download",
+        "application.create",
+        "application.assign",
+        "application.deploy",
+        "execution.detail",
+        "application.delete",
+        "artifact.delete"
+      ],
+      "covered_features": [
+        "artifact.upload",
+        "artifact.download",
+        "artifact.delete"
+      ],
+      "covered_transitions": [],
+      "test_data_refs": [],
+      "started_at": "2026-09-16T21:50:00+08:00",
+      "finished_at": "2026-09-16T22:55:00+08:00",
+      "result": "blocked",
+      "failure_ids": [],
+      "evidence": []
+    },
+    {
+      "id": "workflow.transfer.retry.001",
+      "name": "Multi-target transfer and retry/cancel",
+      "priority": "P0",
+      "type": "critical_path",
+      "status": "completed",
+      "preconditions": [
+        "authenticated",
+        "source_and_target_nodes"
+      ],
+      "steps": [
+        "transfer.create",
+        "transfer.detail",
+        "transfer.retry",
+        "transfer.cancel"
+      ],
+      "covered_features": [
+        "transfer.create",
+        "transfer.retry"
+      ],
+      "covered_transitions": [],
+      "test_data_refs": [],
+      "started_at": "2026-09-16T21:50:00+08:00",
+      "finished_at": "2026-09-16T22:55:00+08:00",
+      "result": "passed",
+      "failure_ids": [],
+      "evidence": []
+    },
+    {
+      "id": "workflow.rbac.roles.001",
+      "name": "Role visibility and protected actions",
+      "priority": "P0",
+      "type": "permission_flow",
+      "status": "blocked",
+      "preconditions": [
+        "operator_and_viewer_credentials"
+      ],
+      "steps": [
+        "user.create",
+        "user.change_role",
+        "auth.logout",
+        "auth.login",
+        "task.create",
+        "application.deploy",
+        "settings.save"
+      ],
+      "covered_features": [],
+      "covered_transitions": [],
+      "test_data_refs": [],
+      "started_at": "2026-09-16T21:50:00+08:00",
+      "finished_at": "2026-09-16T22:55:00+08:00",
+      "result": "blocked",
+      "failure_ids": [],
+      "evidence": []
+    },
+    {
+      "id": "workflow.navigation.persistence.001",
+      "name": "List search detail back refresh persistence",
+      "priority": "P1",
+      "type": "navigation_continuity",
+      "status": "partial",
+      "preconditions": [
+        "authenticated",
+        "resource_exists"
+      ],
+      "steps": [
+        "script.list",
+        "script.search",
+        "script.edit",
+        "dashboard.navigation_links",
+        "script.list",
+        "script.revisions"
+      ],
+      "covered_features": [
+        "script.list",
+        "script.search",
+        "script.edit",
+        "script.revisions"
+      ],
+      "covered_transitions": [],
+      "test_data_refs": [],
+      "started_at": "2026-09-16T21:50:00+08:00",
+      "finished_at": "2026-09-16T22:55:00+08:00",
+      "result": "partial",
+      "failure_ids": [],
+      "evidence": []
+    }
+  ]
+}

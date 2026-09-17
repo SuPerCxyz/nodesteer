@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { Menu, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Logo } from '@/assets/logo'
 import { cn } from '@/lib/utils'
 import {
@@ -12,6 +13,7 @@ import { Button } from '../ui/button'
 
 export function AppTitle() {
   const { setOpenMobile } = useSidebar()
+  const { t } = useTranslation()
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -28,9 +30,9 @@ export function AppTitle() {
             >
               <span className='flex items-center gap-2 truncate font-bold'>
                 <Logo className='size-5 text-primary' />
-                Cadentra
+                {t('brand.name')}
               </span>
-              <span className='truncate text-xs'>Hub · Agent</span>
+              <span className='truncate text-xs'>{t('brand.subtitle')}</span>
             </Link>
             <ToggleSidebar />
           </div>

@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 
 export function Logo({
   className,
-  alt = 'Cadentra',
+  alt = 'NodeSteer',
   ...props
 }: ImgHTMLAttributes<HTMLImageElement>) {
   return (

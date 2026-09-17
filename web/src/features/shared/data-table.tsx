@@ -84,7 +84,9 @@ export function DataTable<TData>({
                       header.column.columnDef.meta?.align === 'center' &&
                         'text-center',
                       header.column.columnDef.meta?.align === 'end' &&
-                        'text-end'
+                        'text-end',
+                      header.column.id === 'actions' &&
+                        'sticky end-0 z-10 bg-background shadow-sm'
                     )}
                   >
                     {header.isPlaceholder
@@ -115,7 +117,9 @@ export function DataTable<TData>({
                         cell.column.columnDef.meta?.align === 'center' &&
                           'text-center',
                         cell.column.columnDef.meta?.align === 'end' &&
-                          'text-end'
+                          'text-end',
+                        cell.column.id === 'actions' &&
+                          'sticky end-0 z-10 bg-background shadow-sm'
                       )}
                     >
                       {flexRender(

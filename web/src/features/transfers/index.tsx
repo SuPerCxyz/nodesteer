@@ -83,27 +83,14 @@ export function FileTransfers() {
   const columns = useMemo<ColumnDef<FileTransfer>[]>(
     () => [
       {
-        accessorKey: 'id',
-        header: t('transfers.id'),
-        size: 180,
-        minSize: 160,
-        cell: ({ row }: { row: { original: FileTransfer } }) => (
-          <span
-            className='block truncate font-mono text-xs'
-            title={row.original.id}
-          >
-            {row.original.id.slice(0, 12)}...
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'source_node_id',
+        id: 'source',
+        accessorFn: (row: FileTransfer) =>
+          `${nodeNames.get(row.source_node_id) || ''} ${row.id}`,
         header: t('transfers.source'),
         size: 120,
         minSize: 110,
         cell: ({ row }: { row: { original: FileTransfer } }) =>
-          nodeNames.get(row.original.source_node_id) ||
-          row.original.source_node_id,
+          nodeNames.get(row.original.source_node_id) || t('common.unknownNode'),
       },
       {
         accessorKey: 'source_path',
@@ -144,9 +131,11 @@ export function FileTransfers() {
               >
                 <span
                   className='max-w-40 truncate'
-                  title={nodeNames.get(target.node_id) || target.node_id}
+                  title={
+                    nodeNames.get(target.node_id) || t('common.unknownNode')
+                  }
                 >
-                  {nodeNames.get(target.node_id) || target.node_id}
+                  {nodeNames.get(target.node_id) || t('common.unknownNode')}
                 </span>
                 <StatusBadge status={target.status} />
               </span>
@@ -299,7 +288,8 @@ export function FileTransfers() {
                     >
                       <span>
                         <span className='font-medium'>
-                          {nodeNames.get(target.node_id) || target.node_id}
+                          {nodeNames.get(target.node_id) ||
+                            t('common.unknownNode')}
                         </span>
                         <span className='ms-3 font-mono text-xs text-muted-foreground'>
                           {target.destination_path}

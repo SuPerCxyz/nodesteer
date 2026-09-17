@@ -1,0 +1,2 @@
+#!/bin/sh
+echo E2E_ARTIFACT_20260916_A81C

@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "viewports": [
+    {"id":"desktop","width":1440,"height":900},
+    {"id":"tablet","width":1024,"height":768},
+    {"id":"mobile","width":390,"height":844}
+  ],
+  "post_fix": {
+    "UI-001": {
+      "status":"pass",
+      "checked_routes":["/","/agents","/tasks","/executions","/transfers","/audit","/users"],
+      "checked_viewports":["1440x900","390x844"],
+      "evidence":["evidence/measurements/agents-mobile-fixed.json","evidence/measurements/transfers-mobile-fixed.json","evidence/measurements/executions-mobile-fixed.json"]
+    },
+    "UI-002": {
+      "status":"pass",
+      "checked_viewports":["1440x900","390x844"],
+      "evidence":["evidence/screenshots/execution-detail-desktop-fixed.png","evidence/screenshots/execution-detail-mobile-fixed.png"]
+    },
+    "FAIL-001": {
+      "status":"pass",
+      "verification":"fixture-backed dialog check without creating or deleting a real schedule",
+      "evidence":["evidence/screenshots/schedule-delete-confirm-fixed.png"]
+    }
+  },
+  "pages": [
+    {
+      "id":"page.sign-in",
+      "route":"/sign-in",
+      "scope":"public authentication entry",
+      "viewports":{"desktop":"pass","tablet":"not_run","mobile":"pass"},
+      "evidence":["evidence/screenshots/sign-in-desktop.png","evidence/screenshots/sign-in-mobile.png"],
+      "checks":{"layout":"pass","button_alignment":"pass","icon_center":"pass","body_overflow":"pass"}
+    },
+    {
+      "id":"page.dashboard",
+      "route":"/",
+      "scope":"authenticated dashboard",
+      "viewports":{"desktop":"pass","tablet":"pass","mobile":"issue:UI-001"},
+      "evidence":["evidence/screenshots/dashboard-desktop.png","evidence/screenshots/dashboard-tablet.png","evidence/screenshots/dashboard-mobile.png"],
+      "checks":{"layout":"pass","button_alignment":"pass","icon_center":"pass","body_overflow":"pass","table":"issue:UI-001"}
+    },
+    {
+      "id":"page.agents",
+      "route":"/agents",
+      "scope":"agent list and actions",
+      "viewports":{"desktop":"pass","tablet":"issue:UI-001","mobile":"issue:UI-001"},
+      "evidence":["evidence/screenshots/agents-desktop.png","evidence/screenshots/agents-tablet.png","evidence/screenshots/agents-mobile.png"],
+      "checks":{"layout":"pass","button_alignment":"pass","icon_center":"pass","body_overflow":"pass","table":"issue:UI-001"}
+    },
+    {
+      "id":"page.nodes-alias",
+      "route":"/nodes",
+      "scope":"agent list alias",
+      "viewports":{"desktop":"pass","tablet":"not_run","mobile":"issue:UI-001"},
+      "evidence":["evidence/screenshots/nodes-alias-desktop.png","evidence/screenshots/nodes-alias-mobile.png"],
+      "checks":{"layout":"pass","button_alignment":"pass","icon_center":"pass","body_overflow":"pass","table":"issue:UI-001"}
+    },
+    {
+      "id":"page.tasks",
+      "route":"/tasks",
+      "scope":"task list and actions",
+      "viewports":{"desktop":"pass","tablet":"issue:UI-001","mobile":"issue:UI-001"},
+      "evidence":["evidence/screenshots/tasks-desktop.png","evidence/screenshots/tasks-tablet.png","evidence/screenshots/tasks-mobile.png"],
+      "checks":{"layout":"pass","button_alignment":"pass","icon_center":"pass","body_overflow":"pass","table":"issue:UI-001"}
+    },
+    {
+      "id":"page.executions",
+      "route":"/executions",
+      "scope":"execution list and filters",
+      "viewports":{"desktop":"pass","tablet":"issue:UI-001","mobile":"issue:UI-001"},
+      "evidence":["evidence/screenshots/executions-desktop.png","evidence/screenshots/executions-tablet.png","evidence/screenshots/executions-mobile.png"],
+      "checks":{"layout":"pass","button_alignment":"pass","icon_center":"pass","body_overflow":"pass","table":"issue:UI-001"}
+    },
+    {
+      "id":"page.transfers",
+      "route":"/transfers",
+      "scope":"file transfer form and history",
+      "viewports":{"desktop":"pass","tablet":"issue:UI-001","mobile":"issue:UI-001"},
+      "evidence":["evidence/screenshots/transfers-desktop.png","evidence/screenshots/transfers-tablet.png","evidence/screenshots/transfers-mobile.png"],
+      "checks":{"layout":"pass","button_alignment":"pass","icon_center":"pass","body_overflow":"pass","table":"issue:UI-001"}
+    },
+    {
+      "id":"page.schedules",
+      "route":"/schedules",
+      "scope":"schedule empty state and entry",
+      "viewports":{"desktop":"pass","tablet":"pass","mobile":"pass"},
+      "evidence":["evidence/screenshots/schedules-desktop.png","evidence/screenshots/schedules-tablet.png","evidence/screenshots/schedules-mobile.png"],
+      "checks":{"layout":"pass","button_alignment":"pass","icon_center":"pass","body_overflow":"pass","empty_state":"pass"}
+    },
+    {
+      "id":"page.scripts",
+      "route":"/scripts",
+      "scope":"script empty state and entry",
+      "viewports":{"desktop":"pass","tablet":"pass","mobile":"pass"},
+      "evidence":["evidence/screenshots/scripts-desktop.png","evidence/screenshots/scripts-tablet.png","evidence/screenshots/scripts-mobile.png"],
+      "checks":{"layout":"pass","button_alignment":"pass","icon_center":"pass","body_overflow":"pass","empty_state":"pass"}
+    },
+    {
+      "id":"page.groups",
+      "route":"/groups",
+      "scope":"group empty state and entry",
+      "viewports":{"desktop":"pass","tablet":"pass","mobile":"pass"},
+      "evidence":["evidence/screenshots/groups-desktop.png","evidence/screenshots/groups-tablet.png","evidence/screenshots/groups-mobile.png"],
+      "checks":{"layout":"pass","button_alignment":"pass","icon_center":"pass","body_overflow":"pass","empty_state":"pass"}
+    },
+    {
+      "id":"page.artifacts",
+      "route":"/artifacts",
+      "scope":"artifact empty state and upload entry",
+      "viewports":{"desktop":"pass","tablet":"pass","mobile":"pass"},
+      "evidence":["evidence/screenshots/artifacts-desktop.png","evidence/screenshots/artifacts-tablet.png","evidence/screenshots/artifacts-mobile.png"],
+      "checks":{"layout":"pass","button_alignment":"pass","icon_center":"pass","body_overflow":"pass","empty_state":"pass"}
+    },
+    {
+      "id":"page.applications",
+      "route":"/applications",
+      "scope":"managed application empty state and entry",
+      "viewports":{"desktop":"pass","tablet":"pass","mobile":"pass"},
+      "evidence":["evidence/screenshots/applications-desktop.png","evidence/screenshots/applications-tablet.png","evidence/screenshots/applications-mobile.png"],
+      "checks":{"layout":"pass","button_alignment":"pass","icon_center":"pass","body_overflow":"pass","empty_state":"pass"}
+    },
+    {
+      "id":"page.audit",
+      "route":"/audit",
+      "scope":"audit list and filter",
+      "viewports":{"desktop":"pass","tablet":"issue:UI-001","mobile":"issue:UI-001"},
+      "evidence":["evidence/screenshots/audit-desktop.png","evidence/screenshots/audit-tablet.png","evidence/screenshots/audit-mobile.png"],
+      "checks":{"layout":"pass","button_alignment":"pass","icon_center":"pass","body_overflow":"pass","table":"issue:UI-001"}
+    },
+    {
+      "id":"page.users",
+      "route":"/users",
+      "scope":"user list and role control",
+      "viewports":{"desktop":"pass","tablet":"issue:UI-001","mobile":"issue:UI-001"},
+      "evidence":["evidence/screenshots/users-desktop.png","evidence/screenshots/users-tablet.png","evidence/screenshots/users-mobile.png"],
+      "checks":{"layout":"pass","button_alignment":"pass","icon_center":"pass","body_overflow":"pass","table":"issue:UI-001"}
+    },
+    {
+      "id":"page.settings",
+      "route":"/settings",
+      "scope":"runtime settings",
+      "viewports":{"desktop":"pass","tablet":"pass","mobile":"pass"},
+      "evidence":["evidence/screenshots/settings-desktop.png","evidence/screenshots/settings-tablet.png","evidence/screenshots/settings-mobile.png"],
+      "checks":{"layout":"pass","button_alignment":"pass","icon_center":"pass","body_overflow":"pass"}
+    },
+    {
+      "id":"page.task-new",
+      "route":"/tasks/new",
+      "scope":"task creation form",
+      "viewports":{"desktop":"pass","mobile":"pass"},
+      "evidence":["evidence/screenshots/task-new-desktop.png","evidence/screenshots/task-new-mobile.png"],
+      "checks":{"layout":"pass","form_alignment":"pass","button_alignment":"pass","body_overflow":"pass"}
+    },
+    {
+      "id":"page.script-new",
+      "route":"/scripts/new",
+      "scope":"script creation form",
+      "viewports":{"desktop":"pass","mobile":"pass"},
+      "evidence":["evidence/screenshots/script-new-desktop.png","evidence/screenshots/script-new-mobile.png"],
+      "checks":{"layout":"pass","form_alignment":"pass","button_alignment":"pass","body_overflow":"pass"}
+    },
+    {
+      "id":"page.schedule-new",
+      "route":"/schedules/new",
+      "scope":"schedule creation form",
+      "viewports":{"desktop":"pass","mobile":"pass"},
+      "evidence":["evidence/screenshots/schedule-new-desktop.png","evidence/screenshots/schedule-new-mobile.png"],
+      "checks":{"layout":"pass","form_alignment":"pass","button_alignment":"pass","body_overflow":"pass"}
+    },
+    {
+      "id":"page.group-new",
+      "route":"/groups/new",
+      "scope":"group creation form",
+      "viewports":{"desktop":"pass","mobile":"pass"},
+      "evidence":["evidence/screenshots/group-new-desktop.png","evidence/screenshots/group-new-mobile.png"],
+      "checks":{"layout":"pass","form_alignment":"pass","button_alignment":"pass","body_overflow":"pass"}
+    },
+    {
+      "id":"page.artifact-new",
+      "route":"/artifacts/new",
+      "scope":"artifact upload form",
+      "viewports":{"desktop":"pass","mobile":"pass"},
+      "evidence":["evidence/screenshots/artifact-new-desktop.png","evidence/screenshots/artifact-new-mobile.png"],
+      "checks":{"layout":"pass","form_alignment":"pass","button_alignment":"pass","body_overflow":"pass"}
+    },
+    {
+      "id":"page.application-new",
+      "route":"/applications/new",
+      "scope":"managed application creation form",
+      "viewports":{"desktop":"pass","mobile":"pass"},
+      "evidence":["evidence/screenshots/application-new-desktop.png","evidence/screenshots/application-new-mobile.png"],
+      "checks":{"layout":"pass","form_alignment":"pass","button_alignment":"pass","body_overflow":"pass"}
+    },
+    {
+      "id":"page.agent-add-node",
+      "route":"/agents",
+      "scope":"add-node dialog",
+      "viewports":{"desktop":"pass","mobile":"pass"},
+      "evidence":["evidence/screenshots/agents-add-node-desktop.png","evidence/screenshots/agents-add-node-mobile.png"],
+      "checks":{"dialog_alignment":"pass","button_alignment":"pass","body_overflow":"pass"}
+    },
+    {
+      "id":"page.execution-detail",
+      "route":"/executions/:executionId",
+      "scope":"execution overview",
+      "viewports":{"desktop":"issue:UI-002","mobile":"issue:UI-002"},
+      "evidence":["evidence/screenshots/execution-detail-desktop.png","evidence/screenshots/execution-detail-mobile.png"],
+      "checks":{"layout":"pass","button_alignment":"pass","body_overflow":"pass","identity_display":"issue:UI-002"}
+    },
+    {
+      "id":"page.execution-log",
+      "route":"/executions/:executionId#logs",
+      "scope":"execution log viewer",
+      "viewports":{"desktop":"issue:UI-002"},
+      "evidence":["evidence/screenshots/execution-log-desktop.png"],
+      "checks":{"layout":"pass","control_alignment":"pass","body_overflow":"pass","identity_display":"issue:UI-002"}
+    },
+    {
+      "id":"page.settings-appearance",
+      "route":"/settings",
+      "scope":"appearance settings tab",
+      "viewports":{"mobile":"pass"},
+      "evidence":["evidence/screenshots/settings-appearance-mobile.png"],
+      "checks":{"layout":"pass","control_alignment":"pass","body_overflow":"pass"}
+    }
+  ]
+}

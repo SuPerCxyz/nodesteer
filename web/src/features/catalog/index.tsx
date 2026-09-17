@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import {
   api,
+  ApiError,
   getToken,
   type Application,
   type Artifact,
@@ -96,7 +97,8 @@ export function Agents() {
   const columns = useMemo<ColumnDef<Node>[]>(
     () => [
       {
-        accessorKey: 'hostname',
+        id: 'hostname',
+        accessorFn: (row) => `${row.hostname} ${row.id}`,
         header: t('dashboard.hostname'),
         size: 280,
         minSize: 220,
@@ -110,12 +112,6 @@ export function Agents() {
             >
               {row.original.hostname}
             </a>
-            <span
-              className='block truncate font-mono text-xs text-muted-foreground'
-              title={row.original.id}
-            >
-              {row.original.id}
-            </span>
           </div>
         ),
       },
@@ -795,7 +791,10 @@ export function AgentDetail() {
               </div>
             </TabsContent>
             <TabsContent value='executions' className='mt-4'>
-              <ExecutionRows executions={executions.data || []} />
+              <ExecutionRows
+                executions={executions.data || []}
+                tasks={tasks.data || []}
+              />
             </TabsContent>
             <TabsContent value='tasks' className='mt-4'>
               <div className='grid items-start gap-4 xl:grid-cols-3'>
@@ -859,7 +858,7 @@ export function AgentDetail() {
                             >
                               {tasks.data?.find(
                                 (task) => task.id === schedule.task_id
-                              )?.name || schedule.task_id}
+                              )?.name || t('common.unknownTask')}
                             </a>
                             <span
                               className='max-w-full truncate font-mono text-xs text-muted-foreground'
@@ -932,8 +931,15 @@ type ExecutionLike = {
   exit_code: number
 }
 
-function ExecutionRows({ executions }: { executions: ExecutionLike[] }) {
+function ExecutionRows({
+  executions,
+  tasks,
+}: {
+  executions: ExecutionLike[]
+  tasks: Task[]
+}) {
   const { t } = useTranslation()
+  const taskNames = new Map(tasks.map((task) => [task.id, task.name]))
   if (!executions.length)
     return (
       <Card>
@@ -944,33 +950,35 @@ function ExecutionRows({ executions }: { executions: ExecutionLike[] }) {
     <TableCard>
       <Table className='min-w-[620px] table-fixed'>
         <colgroup>
-          <col className='w-[30%]' />
+          <col className='w-[25%]' />
+          <col className='w-[25%]' />
           <col className='w-[20%]' />
-          <col className='w-[25%]' />
-          <col className='w-[25%]' />
+          <col className='w-[20%]' />
+          <col className='w-[10%]' />
         </colgroup>
         <TableHeader>
           <TableRow>
-            <TableHead>{t('executions.id')}</TableHead>
             <TableHead>{t('dashboard.task')}</TableHead>
             <TableHead className='text-center'>{t('common.status')}</TableHead>
             <TableHead>{t('executions.start')}</TableHead>
             <TableHead>{t('executions.duration')}</TableHead>
+            <TableHead />
           </TableRow>
         </TableHeader>
         <TableBody>
           {executions.map((execution) => (
             <TableRow key={execution.id}>
-              <TableCell className='font-mono text-xs'>
-                {execution.id.slice(0, 12)}…
-              </TableCell>
               <TableCell>
-                <a
-                  href={`/tasks/${execution.task_id}`}
-                  className='font-medium hover:underline'
-                >
-                  {execution.task_id}
-                </a>
+                {taskNames.get(execution.task_id) ? (
+                  <a
+                    href={`/tasks/${execution.task_id}`}
+                    className='font-medium hover:underline'
+                  >
+                    {taskNames.get(execution.task_id)}
+                  </a>
+                ) : (
+                  <span className='font-medium'>{t('common.unknownTask')}</span>
+                )}
               </TableCell>
               <TableCell className='text-center'>
                 <StatusBadge status={execution.status} />
@@ -987,6 +995,14 @@ function ExecutionRows({ executions }: { executions: ExecutionLike[] }) {
                       .toISOString()
                       .slice(11, 19)
                   : '-'}
+              </TableCell>
+              <TableCell className='text-end'>
+                <a
+                  className='text-sm text-primary hover:underline'
+                  href={`/executions/${execution.id}`}
+                >
+                  {t('common.viewDetails')}
+                </a>
               </TableCell>
             </TableRow>
           ))}
@@ -1047,8 +1063,7 @@ export function Schedules() {
       {
         id: 'task',
         accessorFn: (row: Schedule) =>
-          tasks.data?.find((task) => task.id === row.task_id)?.name ||
-          row.task_id,
+          `${tasks.data?.find((task) => task.id === row.task_id)?.name || ''} ${row.task_id}`,
         header: t('schedules.task'),
         size: 260,
         minSize: 220,
@@ -1059,11 +1074,11 @@ export function Schedules() {
             className='block truncate font-medium hover:underline'
             title={
               tasks.data?.find((task) => task.id === row.original.task_id)
-                ?.name || row.original.task_id
+                ?.name || t('common.unknownTask')
             }
           >
             {tasks.data?.find((task) => task.id === row.original.task_id)
-              ?.name || row.original.task_id}
+              ?.name || t('common.unknownTask')}
           </a>
         ),
       },
@@ -1143,24 +1158,34 @@ export function Schedules() {
         size: 72,
         minSize: 64,
         meta: { align: 'end' },
-        cell: ({ row }: { row: { original: Schedule } }) =>
-          canWrite ? (
+        cell: ({ row }: { row: { original: Schedule } }) => {
+          const schedule = row.original
+          const taskName =
+            tasks.data?.find((task) => task.id === schedule.task_id)?.name ||
+            t('common.unknownTask')
+          const expression =
+            schedule.type === 'interval'
+              ? `${i18n.language === 'en' ? 'Every ' : '每 '}${schedule.interval_sec}${i18n.language === 'en' ? 's' : ' 秒'}`
+              : schedule.expression || '-'
+          const scheduleLabel = `${taskName} · ${expression}`
+          return canWrite ? (
             <MoreMenu>
               <DropdownMenuItem asChild>
-                <a href={`/schedules/${row.original.id}`}>{t('common.edit')}</a>
+                <a href={`/schedules/${schedule.id}`}>{t('common.edit')}</a>
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => toggleSchedule(row.original)}>
-                {row.original.enabled
-                  ? t('common.disable')
-                  : t('common.enable')}
+              <DropdownMenuItem onSelect={() => toggleSchedule(schedule)}>
+                {schedule.enabled ? t('common.disable') : t('common.enable')}
               </DropdownMenuItem>
               <DangerMenuItem
-                onSelect={() => removeSchedule(row.original)}
-                title={`${t('common.delete')}: ${row.original.id}`}
-                description={t('schedules.confirmDelete')}
+                onSelect={() => removeSchedule(schedule)}
+                title={`${t('common.delete')}: ${scheduleLabel}`}
+                description={t('schedules.confirmDelete', {
+                  name: scheduleLabel,
+                })}
               />
             </MoreMenu>
-          ) : null,
+          ) : null
+        },
       },
     ],
     [canWrite, i18n.language, t, tasks.data, toggleSchedule, removeSchedule]
@@ -1232,7 +1257,8 @@ export function Scripts() {
   const columns = useMemo<ColumnDef<Script>[]>(
     () => [
       {
-        accessorKey: 'name',
+        id: 'name',
+        accessorFn: (row) => `${row.name} ${row.description || ''} ${row.id}`,
         header: t('common.name'),
         size: 280,
         minSize: 220,
@@ -1245,14 +1271,11 @@ export function Scripts() {
             >
               {row.original.name}
             </a>
-            <span className='block text-xs text-muted-foreground'>
-              <span
-                className='block truncate'
-                title={row.original.description || row.original.id}
-              >
-                {row.original.description || row.original.id}
+            {row.original.description ? (
+              <span className='block truncate text-xs text-muted-foreground'>
+                {row.original.description}
               </span>
-            </span>
+            ) : null}
           </div>
         ),
       },
@@ -1485,6 +1508,7 @@ export function Applications() {
   const { t } = useTranslation()
   const client = useQueryClient()
   const canWrite = useCanWrite()
+  const [deleteError, setDeleteError] = useState('')
   const query = useQuery({
     queryKey: ['applications'],
     queryFn: () => api.get<Application[]>('/applications'),
@@ -1492,11 +1516,20 @@ export function Applications() {
   const { mutate: removeApplication } = useMutation({
     mutationFn: (application: Application) =>
       api.del(`/applications/${application.id}`),
+    onMutate: () => setDeleteError(''),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ['applications'] })
       toast.success(t('common.deleted'))
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => {
+      const message =
+        error instanceof ApiError && error.status === 409
+          ? t('apps.deleteBlocked')
+          : error instanceof Error
+            ? error.message
+            : t('common.noData')
+      setDeleteError(message)
+    },
   })
   const columns = useMemo<ColumnDef<Application>[]>(
     () => [
@@ -1595,6 +1628,7 @@ export function Applications() {
       columns={columns}
       data={query.data || []}
       searchPlaceholder={t('apps.searchPlaceholder')}
+      extra={deleteError ? <ErrorState error={new Error(deleteError)} /> : null}
       action={
         canWrite ? (
           <Button asChild>

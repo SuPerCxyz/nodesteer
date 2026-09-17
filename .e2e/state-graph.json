@@ -1,0 +1,308 @@
+{
+  "schema_version": 1,
+  "states": [
+    {
+      "id": "state.logged_out",
+      "description": "No valid auth token in browser"
+    },
+    {
+      "id": "state.authenticated",
+      "description": "Administrator session is accepted by Hub"
+    },
+    {
+      "id": "state.node_exists",
+      "resource": "node",
+      "description": "At least one node record exists"
+    },
+    {
+      "id": "state.node_online",
+      "resource": "node",
+      "description": "Node is online and reachable"
+    },
+    {
+      "id": "state.script_exists",
+      "resource": "script",
+      "description": "Test script exists with revision"
+    },
+    {
+      "id": "state.task_exists",
+      "resource": "task",
+      "description": "Task exists and references a script/target"
+    },
+    {
+      "id": "state.schedule_exists",
+      "resource": "schedule",
+      "description": "Schedule exists and references a task"
+    },
+    {
+      "id": "state.group_exists",
+      "resource": "group",
+      "description": "Group exists with membership"
+    },
+    {
+      "id": "state.artifact_exists",
+      "resource": "artifact",
+      "description": "Artifact exists with validated metadata"
+    },
+    {
+      "id": "state.application_exists",
+      "resource": "application",
+      "description": "Managed application exists"
+    },
+    {
+      "id": "state.execution_pending",
+      "resource": "execution",
+      "description": "Execution created but not terminal"
+    },
+    {
+      "id": "state.execution_terminal",
+      "resource": "execution",
+      "description": "Execution reached success/failure/cancelled"
+    },
+    {
+      "id": "state.transfer_exists",
+      "resource": "transfer",
+      "description": "File transfer exists"
+    },
+    {
+      "id": "state.loading",
+      "description": "Page or mutation is loading"
+    },
+    {
+      "id": "state.error",
+      "description": "Expected or unexpected error state visible"
+    },
+    {
+      "id": "state.filtered",
+      "description": "List is filtered/search constrained"
+    },
+    {
+      "id": "state.deleted",
+      "resource": "resource",
+      "description": "Previously created test resource no longer exists"
+    }
+  ],
+  "transitions": [
+    {
+      "id": "transition.auth.login",
+      "from": [
+        "state.logged_out"
+      ],
+      "action": "auth.login",
+      "to": [
+        "state.authenticated"
+      ],
+      "preconditions": [],
+      "expected_effects": [
+        "token_stored"
+      ],
+      "tested": true,
+      "last_result": {
+        "status": "passed"
+      }
+    },
+    {
+      "id": "transition.auth.logout",
+      "from": [
+        "state.authenticated"
+      ],
+      "action": "auth.logout",
+      "to": [
+        "state.logged_out"
+      ],
+      "preconditions": [],
+      "expected_effects": [
+        "token_cleared"
+      ],
+      "tested": true,
+      "last_result": {
+        "status": "passed"
+      }
+    },
+    {
+      "id": "transition.agent.enroll",
+      "from": [
+        "state.authenticated"
+      ],
+      "action": "agent.enroll",
+      "to": [
+        "state.node_exists"
+      ],
+      "preconditions": [],
+      "expected_effects": [
+        "pending_node"
+      ],
+      "tested": false,
+      "last_result": null
+    },
+    {
+      "id": "transition.script.create",
+      "from": [
+        "state.authenticated"
+      ],
+      "action": "script.create",
+      "to": [
+        "state.script_exists"
+      ],
+      "preconditions": [],
+      "expected_effects": [
+        "script_created"
+      ],
+      "tested": true,
+      "last_result": {
+        "status": "passed"
+      }
+    },
+    {
+      "id": "transition.task.create",
+      "from": [
+        "state.authenticated",
+        "state.script_exists"
+      ],
+      "action": "task.create",
+      "to": [
+        "state.task_exists"
+      ],
+      "preconditions": [],
+      "expected_effects": [
+        "task_created"
+      ],
+      "tested": true,
+      "last_result": {
+        "status": "passed"
+      }
+    },
+    {
+      "id": "transition.task.run",
+      "from": [
+        "state.authenticated",
+        "state.task_exists",
+        "state.node_online"
+      ],
+      "action": "task.run",
+      "to": [
+        "state.execution_pending",
+        "state.execution_terminal"
+      ],
+      "preconditions": [],
+      "expected_effects": [
+        "execution_created",
+        "agent_effect"
+      ],
+      "tested": true,
+      "last_result": {
+        "status": "passed"
+      }
+    },
+    {
+      "id": "transition.schedule.create",
+      "from": [
+        "state.authenticated",
+        "state.task_exists"
+      ],
+      "action": "schedule.create",
+      "to": [
+        "state.schedule_exists"
+      ],
+      "preconditions": [],
+      "expected_effects": [
+        "schedule_created"
+      ],
+      "tested": true,
+      "last_result": {
+        "status": "passed"
+      }
+    },
+    {
+      "id": "transition.group.create",
+      "from": [
+        "state.authenticated",
+        "state.node_exists"
+      ],
+      "action": "group.create",
+      "to": [
+        "state.group_exists"
+      ],
+      "preconditions": [],
+      "expected_effects": [
+        "group_created"
+      ],
+      "tested": true,
+      "last_result": {
+        "status": "passed"
+      }
+    },
+    {
+      "id": "transition.artifact.upload",
+      "from": [
+        "state.authenticated"
+      ],
+      "action": "artifact.upload",
+      "to": [
+        "state.artifact_exists"
+      ],
+      "preconditions": [],
+      "expected_effects": [
+        "artifact_validated"
+      ],
+      "tested": true,
+      "last_result": {
+        "status": "passed"
+      }
+    },
+    {
+      "id": "transition.application.create",
+      "from": [
+        "state.authenticated",
+        "state.artifact_exists"
+      ],
+      "action": "application.create",
+      "to": [
+        "state.application_exists"
+      ],
+      "preconditions": [],
+      "expected_effects": [
+        "application_created"
+      ],
+      "tested": false,
+      "last_result": null
+    },
+    {
+      "id": "transition.transfer.create",
+      "from": [
+        "state.authenticated",
+        "state.node_exists"
+      ],
+      "action": "transfer.create",
+      "to": [
+        "state.transfer_exists"
+      ],
+      "preconditions": [],
+      "expected_effects": [
+        "file_transferred"
+      ],
+      "tested": false,
+      "last_result": null
+    },
+    {
+      "id": "transition.resource.delete",
+      "from": [
+        "state.authenticated",
+        "state.script_exists"
+      ],
+      "action": "script.delete",
+      "to": [
+        "state.deleted"
+      ],
+      "preconditions": [],
+      "expected_effects": [
+        "tombstone",
+        "history_retained"
+      ],
+      "tested": true,
+      "last_result": {
+        "status": "partial"
+      }
+    }
+  ]
+}

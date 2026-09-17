@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "failures": [
+    {
+      "id": "FAIL-001",
+      "workflow_id": "workflow.schedule.persistence.001",
+      "feature_id": "schedule.delete",
+      "severity": "medium",
+      "status": "resolved",
+      "title": "Delete confirmation exposes raw schedule UUID instead of a human-readable name",
+      "preconditions": ["authenticated", "test schedule exists"],
+      "steps": [
+        "Open /schedules",
+        "Open the schedule action menu",
+        "Choose 删除",
+        "Observe the confirmation dialog title"
+      ],
+      "expected": "Confirmation identifies the schedule by its task/expression or another product-facing label.",
+      "actual": "Dialog title is rendered as 删除: 8f09c288-26e7-45d0-9cc2-26fdb74910b6.",
+      "reproducible": true,
+      "reproduction_count": 2,
+      "console_errors": [],
+      "network_errors": [],
+      "screenshots": [".e2e/evidence/screenshots/schedule-delete-confirm-uuid.png"],
+      "traces": [],
+      "suspected_area": ["web/src/features/catalog/index.tsx", "shared delete confirmation"],
+      "notes": "The prior UUID-hiding requirement was verified for general list rows; this is a separate confirmation-dialog content issue.",
+      "resolved_at": "2026-09-17T08:25:00+08:00",
+      "resolution": "Schedule confirmation now uses the task name plus the Cron/interval expression; UUID is no longer shown in the dialog title.",
+      "retest_result": "passed",
+      "retest_evidence": [".e2e/ui-review/evidence/screenshots/schedule-delete-confirm-fixed.png"]
+    }
+  ]
+}

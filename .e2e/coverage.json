@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "summary": {
+    "features_discovered": 56,
+    "features_tested": 40,
+    "features_passed": 38,
+    "features_failed": 0,
+    "features_blocked": 10,
+    "states_discovered": 17,
+    "transitions_discovered": 12,
+    "transitions_tested": 9,
+    "workflows_generated": 8,
+    "workflows_executed": 6,
+    "crud_lifecycles_expected": 5,
+    "crud_lifecycles_tested": 3,
+    "negative_paths_expected": 8,
+    "negative_paths_tested": 5
+  },
+  "untested_features": [
+    "agent.search",
+    "agent.enroll",
+    "agent.status",
+    "agent.revoke",
+    "script.enable",
+    "task.edit",
+    "task.enable",
+    "application.create",
+    "application.assign",
+    "application.deploy",
+    "application.delete",
+    "execution.cancel",
+    "transfer.cancel",
+    "user.create",
+    "user.change_role",
+    "settings.appearance"
+  ],
+  "untested_transitions": [
+    "transition.agent.enroll",
+    "transition.application.create",
+    "transition.transfer.create"
+  ],
+  "untested_high_risk_features": [
+    "agent.enroll",
+    "agent.status",
+    "agent.revoke",
+    "script.enable",
+    "task.edit",
+    "task.enable",
+    "application.create",
+    "application.assign",
+    "application.deploy",
+    "application.delete",
+    "execution.cancel",
+    "transfer.cancel",
+    "user.create",
+    "user.change_role"
+  ],
+  "untested_mutation_continuity": [
+    "application.deploy",
+    "user.change_role",
+    "agent.status",
+    "execution.cancel"
+  ],
+  "missing_crud_lifecycles": [
+    "managed_application",
+    "file_transfer_positive_path"
+  ],
+  "missing_negative_paths": [
+    "permission_denied_operator",
+    "permission_denied_viewer",
+    "duplicate_submit",
+    "execution_cancel_running"
+  ],
+  "blocked_items": [
+    {
+      "id": "workflow.rbac.roles.001",
+      "reason": "Operator/viewer credentials are not injected in the environment."
+    },
+    {
+      "id": "workflow.artifact.application.deploy.001",
+      "reason": "Deployment would mutate an existing Agent; no isolated enrolled manual node is available."
+    },
+    {
+      "id": "agent.enroll",
+      "reason": "Enrollment was intentionally not performed against the user-requested unmanaged VM."
+    }
+  ],
+  "coverage_gaps": [
+    "Application create/assign/deploy/rollback not executed against an isolated target.",
+    "RBAC operator/viewer and denied-action matrix not executed.",
+    "Node enrollment/revoke/status mutations not executed.",
+    "Positive file relay path did not complete; only missing-source failure and retry were exercised.",
+    "Execution cancellation and running-state log streaming not executed.",
+    "Script revision history UI was not separately opened; revision increment was verified.",
+    "Node label removal has no visible UI affordance; cleanup used authenticated API."
+  ]
+}

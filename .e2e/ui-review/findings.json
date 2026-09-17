@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "findings": [
+    {
+      "id":"UI-001",
+      "severity":"medium",
+      "status":"resolved",
+      "type":"responsive_table_discoverability",
+      "title":"移动端数据表保留宽桌面列，横向滚动入口不明显",
+      "routes":["/","/agents","/nodes","/tasks","/executions","/transfers","/audit","/users"],
+      "viewports":["390x844","1024x768"],
+      "precondition":"在已登录 Hub 中进入带表格的列表页面",
+      "expected":"移动端优先展示关键列，或明确提示/提供稳定的横向滚动；操作列应容易发现和使用",
+      "actual":"表格通过内部 overflow-x:auto 保持完整桌面列宽，但页面没有明显的横向滚动提示；390px 下表格宽度仍为 660-1152px，搜索/首列可见，后续字段和操作列需要用户自行发现并横向滚动。转账页的源 Agent/路径字段尤其拥挤。",
+      "reproducible":true,
+      "evidence":[
+        "evidence/screenshots/transfers-mobile.png",
+        "evidence/screenshots/agents-mobile.png",
+        "evidence/screenshots/tasks-mobile.png",
+        "evidence/screenshots/executions-mobile.png",
+        "evidence/screenshots/audit-mobile.png",
+        "evidence/screenshots/users-mobile.png",
+        "evidence/measurements/transfers-mobile.json",
+        "evidence/measurements/executions-mobile.json",
+        "evidence/measurements/users-mobile.json"
+      ],
+      "measurements":{"agents":1086,"tasks":1096,"executions":1152,"transfers":1068,"audit":1020,"users":660,"dashboard":700},
+      "recommendation":"移动端隐藏低优先级列或改为卡片/详情结构；保留横向表时增加滚动提示、渐变遮罩或固定操作列，并让长路径使用可读的截断与完整值提示。",
+      "resolved_at":"2026-09-17T08:25:00+08:00",
+      "resolution":"共享表格容器现在仅在实际溢出且未滚动到末尾时显示本地化横向滚动提示；DataTable 操作列固定在可视区域末端。",
+      "retest_result":"passed",
+      "retest_evidence":[
+        "evidence/screenshots/transfers-mobile-fixed.png",
+        "evidence/measurements/agents-mobile-fixed.json",
+        "evidence/measurements/tasks-mobile-fixed.json",
+        "evidence/measurements/executions-mobile-fixed.json",
+        "evidence/measurements/transfers-mobile-fixed.json",
+        "evidence/measurements/audit-mobile-fixed.json",
+        "evidence/measurements/users-mobile-fixed.json"
+      ]
+    },
+    {
+      "id":"UI-002",
+      "severity":"medium",
+      "status":"resolved",
+      "type":"product_identity",
+      "title":"执行详情和日志页以 UUID 作为主标题，缺少友好业务标识",
+      "routes":["/executions/:executionId"],
+      "viewports":["1440x900","390x844"],
+      "precondition":"打开已有执行记录的详情或日志页",
+      "expected":"页面主标题优先显示任务名/执行摘要，UUID 作为次要复制或详情字段；节点也应显示主机名而非短 UUID。",
+      "actual":"页面主标题显示完整执行 UUID；移动端只显示截断 UUID。详情中的节点链接显示短 UUID。当前样本因关联任务已删除，列表还显示“未知任务”，进一步降低了可读性。",
+      "reproducible":true,
+      "evidence":[
+        "evidence/screenshots/execution-detail-desktop.png",
+        "evidence/screenshots/execution-detail-mobile.png",
+        "evidence/screenshots/execution-log-desktop.png"
+      ],
+      "recommendation":"主标题使用“任务名 · 节点名 · 状态/触发方式”等业务摘要；在副标题或复制入口保留 execution ID，避免技术 ID 成为首要视觉信息。",
+      "resolved_at":"2026-09-17T08:25:00+08:00",
+      "resolution":"执行详情增加任务/节点友好名称查询；关联资源不存在时使用本地化未知名称，不再把 UUID 作为标题或节点卡片主值，执行 ID 保留为次要技术信息。",
+      "retest_result":"passed",
+      "retest_evidence":[
+        "evidence/screenshots/execution-detail-desktop-fixed.png",
+        "evidence/screenshots/execution-detail-mobile-fixed.png"
+      ]
+    }
+  ]
+}
