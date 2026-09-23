@@ -85,11 +85,16 @@ func New(cfg Config, logger *slog.Logger) (*Hub, error) {
 	if cfg.OIDC.Issuer != "" {
 		oidcClient, err := auth.NewOIDC(context.Background(), cfg.OIDC, cfg.BaseURL)
 		if err != nil {
-			_ = st.Close()
-			return nil, fmt.Errorf("init oidc: %w", err)
+			if !cfg.OIDC.AllowLocalLogin {
+				_ = st.Close()
+				return nil, fmt.Errorf("init oidc: %w", err)
+			}
+			// 本地登录兜底开启时 OIDC 初始化失败降级继续：OIDC 不启用，本地登录可用
+			logger.Warn("oidc init failed, continuing with local login fallback", "error", err, "issuer", cfg.OIDC.Issuer)
+		} else {
+			authMgr.SetOIDC(oidcClient)
+			logger.Info("oidc enabled", "issuer", cfg.OIDC.Issuer, "local_fallback", cfg.OIDC.AllowLocalLogin)
 		}
-		authMgr.SetOIDC(oidcClient)
-		logger.Info("oidc enabled", "issuer", cfg.OIDC.Issuer)
 	}
 	revisions := hub.NewRevisionManager(st)
 	sessions := hub.NewSessionManager()

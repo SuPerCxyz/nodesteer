@@ -124,7 +124,7 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Compose 默认同时提供 Hub 和一个 Docker Agent。Agent 数据保存在 agent-data 卷，Hub 数据和发布包保存在 hub-data 卷。
+Compose 默认同时提供 Hub 和一个 Docker Agent。Agent 数据保存在 agent-data 卷，Hub 数据和发布包保存在 hub-data 卷。**环境变量全表、OIDC 配置与故障恢复、升级备份见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。**
 
 如需从其他网络接入 Agent，将 HUB_GATEWAY_BASE_URL 设置为 Agent 可访问的 Gateway 地址。节点页面可以生成 Native、docker run 和 Docker Compose 纳管命令，并携带节点身份和 Registration Token；节点地址支持 IPv4、IPv6 或 DNS 主机名。
 
@@ -217,6 +217,7 @@ openspec/            变更管理与规格文件
 - [docs/UI_FULL_TEST_REPORT_20260915.md](docs/UI_FULL_TEST_REPORT_20260915.md)：页面全量测试执行报告
 - [docs/IMPLEMENTATION_PROMPT.md](docs/IMPLEMENTATION_PROMPT.md)：研发实施总控提示词
 - [docs/DEV_RULES.md](docs/DEV_RULES.md)：实现原则和项目完成门禁（AGENTS.md 分片）
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)：Docker Compose 部署、环境变量与 OIDC 配置
 
 ## 第三方声明
 

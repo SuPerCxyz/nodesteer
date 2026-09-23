@@ -33,9 +33,13 @@ export function SignIn() {
   const [error, setError] = useState('')
   const oidc = useQuery({
     queryKey: ['oidc-state'],
-    queryFn: () => api.get<{ enabled: boolean }>('/oidc/state'),
+    queryFn: () =>
+      api.get<{ enabled: boolean; local_fallback?: boolean }>('/oidc/state'),
   })
   const oidcEnabled = oidc.data?.enabled === true
+  // local_fallback：OIDC 启用且 allow_local_login 开启（break-glass 本地登录兜底）
+  const localFallback = oidc.data?.local_fallback === true
+  const showLocalForm = !oidcEnabled || localFallback
   const oidcFailed =
     new URLSearchParams(window.location.search).get('error') === 'oidc_failed'
   const form = useForm<z.infer<typeof formSchema>>({
@@ -67,7 +71,7 @@ export function SignIn() {
       <div className='mb-6 text-center'>
         <p className='text-base text-muted-foreground'>{t('login.subtitle')}</p>
       </div>
-      {oidcEnabled ? (
+      {oidcEnabled && (
         <div className='grid gap-4'>
           {oidcFailed && (
             <p role='alert' className='text-sm text-destructive'>
@@ -84,64 +88,72 @@ export function SignIn() {
             {t('login.sso')}
           </Button>
         </div>
-      ) : (
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='grid gap-5'>
-            <FormField
-              control={form.control}
-              name='username'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('login.username')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      autoComplete='username'
-                      className='h-11 md:text-base'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+      )}
+      {showLocalForm && (
+        <>
+          {oidcEnabled && (
+            <p className='my-4 text-center text-sm text-muted-foreground'>
+              {t('login.localFallback')}
+            </p>
+          )}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className='grid gap-5'>
+              <FormField
+                control={form.control}
+                name='username'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('login.username')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        autoComplete='username'
+                        className='h-11 md:text-base'
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='password'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('login.password')}</FormLabel>
+                    <FormControl>
+                      <PasswordInput
+                        autoComplete='current-password'
+                        inputClassName='h-11 md:text-base'
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {error && (
+                <p role='alert' className='text-sm text-destructive'>
+                  {error}
+                </p>
               )}
-            />
-            <FormField
-              control={form.control}
-              name='password'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('login.password')}</FormLabel>
-                  <FormControl>
-                    <PasswordInput
-                      autoComplete='current-password'
-                      inputClassName='h-11 md:text-base'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {error && (
-              <p role='alert' className='text-sm text-destructive'>
-                {error}
-              </p>
-            )}
-            <Button
-              type='submit'
-              className='h-11 text-base'
-              disabled={form.formState.isSubmitting}
-            >
-              {form.formState.isSubmitting ? (
-                <Loader2 className='animate-spin' />
-              ) : (
-                <LogIn />
-              )}
-              {form.formState.isSubmitting
-                ? t('common.loggingIn')
-                : t('common.login')}
-            </Button>
-          </form>
-        </Form>
+              <Button
+                type='submit'
+                className='h-11 text-base'
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? (
+                  <Loader2 className='animate-spin' />
+                ) : (
+                  <LogIn />
+                )}
+                {form.formState.isSubmitting
+                  ? t('common.loggingIn')
+                  : t('common.login')}
+              </Button>
+            </form>
+          </Form>
+        </>
       )}
     </AuthLayout>
   )

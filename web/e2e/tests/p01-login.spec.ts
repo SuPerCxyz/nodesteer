@@ -67,6 +67,22 @@ test.describe('P01 登录页', () => {
     await expect(page.getByLabel(/username|用户名/i)).toHaveCount(0)
     await expect(page.getByLabel(/password|密码/i)).toHaveCount(0)
   })
+
+  test('P01-08 OIDC 兜底开启时 SSO 与本地表单并存', async ({ page }) => {
+    await page.route('**/api/oidc/state', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ enabled: true, local_fallback: true }),
+      })
+    })
+    await page.goto(TEST_URLS.login)
+    // SSO 按钮与本地表单同时可见，含分隔文案
+    await expect(page.getByRole('button', { name: /sign in with sso|使用 sso/i })).toBeVisible()
+    await expect(page.getByLabel(/username|用户名/i)).toBeVisible()
+    await expect(page.getByLabel(/password|密码/i)).toBeVisible()
+    await expect(page.getByText(/or sign in with a local account|或使用本地账号登录/i)).toBeVisible()
+  })
 })
 
 test.describe('P01 登录后回跳', () => {

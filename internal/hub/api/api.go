@@ -349,7 +349,10 @@ func (s *Server) handleOIDCState(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]bool{"enabled": s.oidc != nil && s.oidc.Enabled()})
+	writeJSON(w, http.StatusOK, map[string]bool{
+		"enabled":        s.oidc != nil && s.oidc.Enabled(),
+		"local_fallback": s.oidc != nil && s.oidc.LocalFallback(),
+	})
 }
 
 // handleOIDCLogin 生成授权跳转 URL

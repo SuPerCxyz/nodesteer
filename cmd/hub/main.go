@@ -245,4 +245,9 @@ func applyEnv(cfg *Config) {
 	if v := os.Getenv("CADENTRA_OIDC_DEFAULT_ROLE"); v != "" {
 		cfg.OIDC.DefaultRole = v
 	}
+	if v := os.Getenv("CADENTRA_OIDC_ALLOW_LOCAL_LOGIN"); v != "" {
+		if b, err := strconv.ParseBool(v); err == nil {
+			cfg.OIDC.AllowLocalLogin = b
+		}
+	}
 }

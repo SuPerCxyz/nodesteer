@@ -30,6 +30,9 @@ type OIDCConfig struct {
 	RoleClaim     string            `yaml:"role_claim"`
 	RoleMappings  map[string]string `yaml:"role_mappings"`
 	DefaultRole   string            `yaml:"default_role"`
+	// AllowLocalLogin 本地账号密码登录兜底（break-glass）：OIDC 启用时仍允许本地登录。
+	// 默认 false 保持严格语义（OIDC 启用即禁本地）。
+	AllowLocalLogin bool `yaml:"allow_local_login"`
 }
 
 // DefaultOIDCConfig 返回默认 OIDC 配置
@@ -114,6 +117,11 @@ func NewOIDC(ctx context.Context, cfg OIDCConfig, baseURL string) (*OIDC, error)
 
 // Enabled 是否启用
 func (o *OIDC) Enabled() bool { return o != nil && o.cfg.Issuer != "" }
+
+// LocalFallback 本地登录兜底是否生效（OIDC 启用且 allow_local_login 开启）。nil 安全。
+func (o *OIDC) LocalFallback() bool {
+	return o != nil && o.cfg.Issuer != "" && o.cfg.AllowLocalLogin
+}
 
 // BaseURL 返回回跳基址
 func (o *OIDC) BaseURL() string { return o.baseURL }

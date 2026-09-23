@@ -58,9 +58,10 @@ func (m *Manager) OIDC() *OIDC {
 	return m.oidc
 }
 
-// LocalLoginDisabled OIDC 启用后本地账号密码登录是否禁用
+// LocalLoginDisabled OIDC 启用且未开启本地登录兜底时，本地账号密码登录是否禁用
 func (m *Manager) LocalLoginDisabled() bool {
-	return m.OIDC().Enabled()
+	o := m.OIDC()
+	return o.Enabled() && !o.LocalFallback()
 }
 
 // HashPassword 密码哈希
