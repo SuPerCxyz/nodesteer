@@ -609,7 +609,10 @@ func (s *Server) handleNodeEnrollment(w http.ResponseWriter, r *http.Request) {
 	}
 	base := strings.TrimRight(s.gatewayBaseURL, "/")
 	if hubAddress != "" {
-		base = hub.ResolveGatewayBaseURL("", hubAddress, configuredGatewayAddr(s.gatewayBaseURL))
+		// configured 优先传入已解析的 Gateway 基址：显式配置（或其派生值）优先于请求携带的
+		// hub_address，避免反代部署下 hub_address 把纳管地址改写成错误端口；
+		// 仅 configured 为空时 hub_address 才作为 hostname 来源参与派生。
+		base = hub.ResolveGatewayBaseURL(s.gatewayBaseURL, hubAddress, configuredGatewayAddr(s.gatewayBaseURL))
 	}
 	wsURL := base
 	if strings.HasPrefix(wsURL, "https://") {
@@ -808,10 +811,21 @@ func isHostnameLetterOrDigit(value byte) bool {
 		(value >= '0' && value <= '9')
 }
 
+// configuredGatewayAddr 返回配置的 Gateway 基址对应的端口地址：
+// 显式端口优先；URL 未写端口时按 scheme 补隐式端口（https→:443、http→:80）；
+// 解析失败或无 scheme 时兜底 :8443。
 func configuredGatewayAddr(base string) string {
 	u, err := url.Parse(base)
-	if err == nil && u.Port() != "" {
-		return ":" + u.Port()
+	if err == nil {
+		if u.Port() != "" {
+			return ":" + u.Port()
+		}
+		switch u.Scheme {
+		case "https":
+			return ":443"
+		case "http":
+			return ":80"
+		}
 	}
 	return ":8443"
 }

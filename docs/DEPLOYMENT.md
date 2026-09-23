@@ -25,7 +25,7 @@ Compose 默认同时提供 Hub 和一个 Docker Agent。数据保存在 `hub-dat
 | `HUB_BASE_URL` | **是** | `http://localhost:8080` | 对外可达的 Web/API 地址（Artifact 下载、纳管命令、OIDC 回跳均依赖它） |
 | `HUB_WEB_PORT` | 否 | `8080` | 宿主映射的 Web 端口；单入口模式下 Gateway 同走此端口（对外仅需暴露这一个） |
 | `HUB_GATEWAY_PORT` | 否 | `8443` | **仅双端口模式使用**：单入口模式无独立 Gateway 端口（compose 已注释 8443 映射） |
-| `HUB_GATEWAY_BASE_URL` | 否 | 空（**自动跟随网页地址**） | 通常无需设置：留空即与 `HUB_BASE_URL` 同址；仅 Gateway 使用独立域名时才填 |
+| `HUB_GATEWAY_BASE_URL` | 否（**反代部署必填**） | 空 | **反代部署必填**（对外地址，通常= `HUB_BASE_URL`）；直连且对外端口=容器端口时可空 |
 | `MAX_FILE_TRANSFER_BYTES` | 否 | `10737418240`（10 GiB） | 单文件传输上限 |
 | `OIDC_ISSUER` | 否 | 空 | `OIDC_ALLOW_LOCAL_LOGIN=false` 时**必填**；true 模式下忽略（OIDC 失效），见第 3 节 |
 | `OIDC_CLIENT_ID` | 否 | 空 | SSO 模式（`OIDC_ALLOW_LOCAL_LOGIN=false`）时必填 |

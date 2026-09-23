@@ -145,7 +145,9 @@ func TestNodeEnrollmentMetadata(t *testing.T) {
 	if output, err := shellCheck.CombinedOutput(); err != nil {
 		t.Fatalf("generated native command is invalid: %v: %s", err, output)
 	}
-	if result["gateway_url"] != "ws://public.example:8443" ||
+	// 新语义：configured（此处为 base_url+gateway_addr 的派生值）优先，
+	// 请求携带的 hub_address 不再改写 Gateway 地址（hostname 来自 http://hub.example:8080）。
+	if result["gateway_url"] != "ws://hub.example:8443" ||
 		!strings.Contains(result["native"], "uname -m") ||
 		!strings.Contains(result["native"], "x-agent-binary-sha256") ||
 		!strings.Contains(result["native"], "sha256sum -c") ||
@@ -430,5 +432,130 @@ func TestFileTransferAPI(t *testing.T) {
 	unauth.Body.Close()
 	if unauth.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("expected unauthorized transfer list, got %d", unauth.StatusCode)
+	}
+}
+
+// TestNodeEnrollmentGatewayURLContract 反代部署纳管地址派生契约：
+//  1. 显式配置的 gateway_base_url 优先于请求携带的 hub_address —— 隐式 443 的
+//     https 地址必须生成 wss://host（不得被改写成 :8443 或容器端口 :8080）；
+//  2. 未显式配置时按 base_url + gateway_addr 派生 hostname，不落入硬编码 :8443
+//     （单口/双口端口由 GatewayAddr 派生，本用例按口径不锁定具体端口）。
+func TestNodeEnrollmentGatewayURLContract(t *testing.T) {
+	cases := []struct {
+		name           string
+		gatewayBaseURL string // 空 = 未显式配置（按 base_url + gateway_addr 派生）
+		baseURL        string
+		hubAddress     string
+		wantGatewayURL string // 非空 = gateway_url 精确断言
+		wantPrefix     string // 非空 = gateway_url 前缀断言（不锁定端口）
+		forbidden      []string
+	}{
+		{
+			name:           "配置显式优先_隐式443不回落8443",
+			gatewayBaseURL: "https://nodesteer.soocoo.xyz",
+			baseURL:        "http://hub.example:8080",
+			hubAddress:     "https://nodesteer.soocoo.xyz",
+			wantGatewayURL: "wss://nodesteer.soocoo.xyz",
+			forbidden:      []string{":8443", ":8080"},
+		},
+		{
+			name:           "未配置时按base_url派生hostname_不断言端口",
+			gatewayBaseURL: "",
+			baseURL:        "https://nodesteer.soocoo.xyz",
+			hubAddress:     "https://nodesteer.soocoo.xyz",
+			wantPrefix:     "wss://nodesteer.soocoo.xyz",
+			forbidden:      []string{":8443"},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			agentBinary := testAgentBinary(t, dir)
+			h, err := New(Config{
+				RegistrationToken:    "registration-test",
+				DataDir:              dir,
+				ArtifactDir:          filepath.Join(dir, "artifacts"),
+				AgentBinaryAMD64Path: agentBinary,
+				BaseURL:              tc.baseURL,
+				GatewayBaseURL:       tc.gatewayBaseURL,
+				WebAddr:              ":8080",
+				GatewayAddr:          ":8080",
+				HeartbeatTimeout:     30 * time.Second,
+				AdminUsername:        "admin",
+				AdminPassword:        "admin123",
+				SessionTTL:           time.Hour,
+			}, slog.Default())
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer h.Close()
+			if err := h.EnsureDefaultAdmin(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			ts := httptest.NewServer(h.ServeMux())
+			defer ts.Close()
+
+			login, err := http.Post(ts.URL+"/api/login", "application/json", strings.NewReader(`{"username":"admin","password":"admin123"}`))
+			if err != nil {
+				t.Fatal(err)
+			}
+			var session struct {
+				Token string `json:"token"`
+			}
+			if err := json.NewDecoder(login.Body).Decode(&session); err != nil {
+				login.Body.Close()
+				t.Fatal(err)
+			}
+			login.Body.Close()
+			if session.Token == "" {
+				t.Fatal("empty login token")
+			}
+
+			params := url.Values{
+				"node_name":   {"edge-contract"},
+				"node_ip":     {"203.0.113.30"},
+				"hub_address": {tc.hubAddress},
+			}
+			req, err := http.NewRequest(http.MethodGet, ts.URL+"/api/nodes/enrollment?"+params.Encode(), nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Set("Authorization", "Bearer "+session.Token)
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+			if resp.StatusCode != http.StatusOK {
+				t.Fatalf("enrollment status %d: %s", resp.StatusCode, body)
+			}
+			var result map[string]string
+			if err := json.Unmarshal(body, &result); err != nil {
+				t.Fatal(err)
+			}
+
+			gatewayURL := result["gateway_url"]
+			if tc.wantGatewayURL != "" && gatewayURL != tc.wantGatewayURL {
+				t.Fatalf("gateway_url = %q, want %q", gatewayURL, tc.wantGatewayURL)
+			}
+			wantHubURL := tc.wantGatewayURL
+			if wantHubURL == "" {
+				wantHubURL = tc.wantPrefix
+				if !strings.HasPrefix(gatewayURL, wantHubURL) {
+					t.Fatalf("gateway_url = %q, want prefix %q", gatewayURL, wantHubURL)
+				}
+			}
+			if !strings.Contains(result["native"], `hub_url: "`+wantHubURL) {
+				t.Fatalf("native 配置未使用 %q:\n%s", wantHubURL, result["native"])
+			}
+			for _, field := range []string{"gateway_url", "native", "docker_run", "docker_compose"} {
+				for _, bad := range tc.forbidden {
+					if strings.Contains(result[field], bad) {
+						t.Fatalf("%s 含禁用子串 %q: %s", field, bad, result[field])
+					}
+				}
+			}
+		})
 	}
 }
