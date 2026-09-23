@@ -197,7 +197,6 @@ internal/agent/host Native / Container HostAdapter
 internal/protocol/  Hub-Agent 控制协议
 internal/store/     持久化层
 internal/models/    共享模型
-migrations/         数据库迁移目录（当前为空）
 web/                React + Vite + TypeScript 前端
 packaging/          Docker 与 systemd 部署文件
 docs/               产品、架构和测试文档
