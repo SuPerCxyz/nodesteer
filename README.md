@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="web/public/images/cadentra-logo-original.png" alt="NodeSteer" width="280">
+  <img src="web/public/images/nodesteer-logo-original.png" alt="NodeSteer" width="280">
 </p>
 
 <h1 align="center">NodeSteer</h1>
@@ -28,8 +28,6 @@
 NodeSteer 面向 Linux 服务器提供 Hub-Agent 自动化管理、任务调度、远程执行和二进制应用部署能力。
 
 Hub 是 Desired State 的唯一权威源；Agent 主动连接 Hub，缓存已同步配置并负责本地调度与执行。Hub 暂时不可用时，已同步且明确允许离线执行的任务仍可安全运行，恢复连接后由 Agent 完成状态收敛。
-
-> 项目品牌已统一为 NodeSteer。当前代码、二进制、服务、路径和镜像仍沿用 `cadentra-*` 等技术标识，后续将单独迁移。
 
 ## 核心能力
 
@@ -78,8 +76,8 @@ Hub 是 Desired State 的唯一权威源；Agent 主动连接 Hub，缓存已同
 ### 1. 获取源码并构建
 
 ```bash
-git clone https://github.com/SuPerCxyz/cadentra.git
-cd cadentra
+git clone https://github.com/SuPerCxyz/nodesteer.git
+cd nodesteer
 
 make web         # 安装前端依赖
 make web-build   # 构建 Web 前端
@@ -97,9 +95,9 @@ pnpm run build
 ### 2. 启动 Hub
 
 ```bash
-cp packaging/systemd/hub.yaml.example /etc/cadentra/hub.yaml
+cp packaging/systemd/hub.yaml.example /etc/nodesteer/hub.yaml
 # 编辑 registration_token、admin_password 和 base_url
-./bin/cadentra-hub --config /etc/cadentra/hub.yaml
+./bin/nodesteer-hub --config /etc/nodesteer/hub.yaml
 ```
 
 访问 http://localhost:8080 打开 Web UI。Agent Gateway 默认监听 :8443。
@@ -107,9 +105,9 @@ cp packaging/systemd/hub.yaml.example /etc/cadentra/hub.yaml
 ### 3. 部署 Native Agent
 
 ```bash
-cp packaging/systemd/agent.yaml.example /etc/cadentra/agent.yaml
+cp packaging/systemd/agent.yaml.example /etc/nodesteer/agent.yaml
 # 编辑 hub_url 和 registration_token
-./bin/cadentra-agent --config /etc/cadentra/agent.yaml
+./bin/nodesteer-agent --config /etc/nodesteer/agent.yaml
 ```
 
 Agent 首次连接使用 Registration Token 注册，随后获取并持久化唯一 Agent Credential。
@@ -133,19 +131,19 @@ Compose 默认同时提供 Hub 和一个 Docker Agent。Agent 数据保存在 ag
 推送到 `master` 或版本标签后，GitHub Actions 会构建 Linux amd64/arm64 的 Hub/Agent 二进制并上传为构建制品，同时发布包含 `linux/amd64` 和 `linux/arm64` 的 GHCR 多架构镜像：
 
 ```text
-ghcr.io/supercxyz/cadentra-hub:latest
-ghcr.io/supercxyz/cadentra-agent:latest
+ghcr.io/supercxyz/nodesteer-hub:latest
+ghcr.io/supercxyz/nodesteer-agent:latest
 ```
 
 ### systemd
 
 ```bash
-install bin/cadentra-agent /usr/local/bin/cadentra-agent
-install packaging/systemd/cadentra-hub.service /etc/systemd/system/
-install packaging/systemd/cadentra-agent.service /etc/systemd/system/
+install bin/nodesteer-agent /usr/local/bin/nodesteer-agent
+install packaging/systemd/nodesteer-hub.service /etc/systemd/system/
+install packaging/systemd/nodesteer-agent.service /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now cadentra-hub
-systemctl enable --now cadentra-agent
+systemctl enable --now nodesteer-hub
+systemctl enable --now nodesteer-agent
 ```
 
 Hub 的节点纳管页面不要求手动选择架构。Native 安装命令会在目标机通过 `uname -m` 判断 x86/amd64 或 ARM/arm64，从 Hub 公开二进制端点下载并校验 SHA256。标准构建会把 Agent payload 直接打包进 Hub 可执行文件；`agent_binary_amd64_path` 和 `agent_binary_arm64_path` 仅作为未打包本地开发构建的回退路径。Docker Hub 镜像和 CI 发布镜像使用内置 payload 提供 amd64/arm64 Agent。
@@ -153,7 +151,7 @@ Hub 的节点纳管页面不要求手动选择架构。Native 安装命令会在
 ### Agent 部署模式
 
 - native：直接管理宿主机，适合生产部署。
-- docker：在容器内运行 Agent Core，状态通过 /var/lib/cadentra 持久化。
+- docker：在容器内运行 Agent Core，状态通过 /var/lib/nodesteer 持久化。
 - docker_host_integration：通过 Host Adapter 访问允许的宿主机路径和能力。
 
 ## 网络与安全

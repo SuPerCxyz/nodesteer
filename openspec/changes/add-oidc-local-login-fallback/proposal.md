@@ -31,7 +31,7 @@
 - **MODIFY**（配置接线）：`docker-compose.yml` 默认 `${OIDC_ALLOW_LOCAL_LOGIN:-true}`、
   `.env.example` 默认 `=true`、`hub.yaml.example` 注释改互斥语义 —— 三处默认值一致为 `true`，
   避免 compose 部署默认语义反转。
-- **MODIFY**（env 解析）：`CADENTRA_OIDC_ALLOW_LOCAL_LOGIN` 三态解析 —— 未设置不覆盖 yaml/默认；
+- **MODIFY**（env 解析）：`NODESTEER_OIDC_ALLOW_LOCAL_LOGIN` 三态解析 —— 未设置不覆盖 yaml/默认；
   设置则必须为合法 bool，非法值拒绝启动（安全开关不得静默忽略）。
 - **MODIFY**（文档）：`docs/DEPLOYMENT.md`（env 表、配置节、验证清单、场景表、故障表、恢复流程
   统一改互斥语义，恢复动作=切回 `true` 重启）、`docs/TEST_PLAN.md` 登录用例同步。

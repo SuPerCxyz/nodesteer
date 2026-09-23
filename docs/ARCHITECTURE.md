@@ -306,7 +306,7 @@ Host Integration 模式再启用：
 必须持久化：
 
 ```text
-/var/lib/cadentra
+/var/lib/nodesteer
 ```
 
 容器 restart/recreate 行为必须与 Native Agent restart 基本一致。
@@ -676,7 +676,7 @@ requires Script rev7
 ## 28. Agent 本地目录
 
 ```text
-/var/lib/cadentra/
+/var/lib/nodesteer/
 ├── state.db
 ├── scripts/
 ├── artifacts/
@@ -1375,7 +1375,7 @@ HELLO 包含：
 
 HELLO 首次注册使用 Registration Token；Hub 返回的 Agent Credential 持久化后用于后续连接和 Agent Artifact 请求。
 
-节点纳管命令可通过 `agent_id`、`node_name` / `node_ip`（Native YAML）或 `CADENTRA_AGENT_ID`、`CADENTRA_NODE_NAME` / `CADENTRA_NODE_IP`（Docker 环境变量）指定 HELLO 上报的身份与节点地址。节点地址支持 IPv4、IPv6 或 DNS 主机名，并在生成命令时保持原值；未指定时 Agent 继续使用本机探测值。Web 页面生成命令时使用当前页面地址作为 Hub 地址来源，并保留配置的 Agent Gateway 端口；生成成功后 Hub 会先保存一条离线待接入节点记录，Agent 首次 HELLO 时绑定该记录。
+节点纳管命令可通过 `agent_id`、`node_name` / `node_ip`（Native YAML）或 `NODESTEER_AGENT_ID`、`NODESTEER_NODE_NAME` / `NODESTEER_NODE_IP`（Docker 环境变量）指定 HELLO 上报的身份与节点地址。节点地址支持 IPv4、IPv6 或 DNS 主机名，并在生成命令时保持原值；未指定时 Agent 继续使用本机探测值。Web 页面生成命令时使用当前页面地址作为 Hub 地址来源，并保留配置的 Agent Gateway 端口；生成成功后 Hub 会先保存一条离线待接入节点记录，Agent 首次 HELLO 时绑定该记录。
 
 纳管不要求管理员选择架构。Native 命令在目标机检测 `uname -m`，再通过公开的内置 payload 端点 `/api/agent/binary?architecture=...` 获取对应 Agent 和 SHA256 元数据；该只读 payload 不使用 Registration Token，Registration Token 仍只用于 Agent 首次 HELLO。Native 命令下载后必须校验 SHA256，Docker/Compose 使用多架构镜像自动选择平台。标准 Hub 可执行文件和 Hub 镜像携带两种 Agent payload，未打包的本地开发构建可回退到配置路径。
 

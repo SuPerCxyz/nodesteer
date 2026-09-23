@@ -1,6 +1,6 @@
 ## Why
 
-Native enrollment commands currently assume that `cadentra-agent` and its unit file are already present on the target host. A clean VM therefore cannot be enrolled from the Nodes page, and the command cannot choose the Agent binary for the target CPU architecture.
+Native enrollment commands currently assume that `nodesteer-agent` and its unit file are already present on the target host. A clean VM therefore cannot be enrolled from the Nodes page, and the command cannot choose the Agent binary for the target CPU architecture.
 
 ## What Changes
 

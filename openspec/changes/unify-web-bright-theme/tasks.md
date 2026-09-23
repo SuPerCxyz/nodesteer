@@ -2,7 +2,7 @@
 
 ## 1. 依赖与基础设施
 
-- [x]- [ ] 1.1 备份现状：将 `web/src/index.css`、`web/src/components/Layout.tsx`、`web/vite.config.ts`、`web/src/main.tsx` 复制到 `/tmp/opencode/cadentra-web-backup/`
+- [x]- [ ] 1.1 备份现状：将 `web/src/index.css`、`web/src/components/Layout.tsx`、`web/vite.config.ts`、`web/src/main.tsx` 复制到 `/tmp/opencode/nodesteer-web-backup/`
 - [x]- [ ] 1.2 安装依赖：`npm install tailwindcss @tailwindcss/vite lucide-react class-variance-authority clsx tailwind-merge tailwindcss-animate @radix-ui/react-slot @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-select @radix-ui/react-tabs @radix-ui/react-tooltip @radix-ui/react-label @radix-ui/react-switch @radix-ui/react-scroll-area`
 - [x]- [ ] 1.3 `vite.config.ts` 添加 `@tailwindcss/vite` 插件
 - [x]- [ ] 1.4 `src/index.css` 重写：`@import "tailwindcss"`、`@theme`、Bright Theme CSS Variables（--background/--foreground/--primary/--accent/--success/--warning/--danger/--muted/--border/--input/--ring/--radius/--shadow）、`.log-view` 深色例外、业务 class 补充层

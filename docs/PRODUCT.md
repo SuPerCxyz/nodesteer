@@ -192,10 +192,10 @@ docker compose up -d
 推荐生产部署方式：
 
 ```text
-/usr/local/bin/cadentra-agent
-/etc/cadentra/agent.yaml
-/var/lib/cadentra/
-/etc/systemd/system/cadentra-agent.service
+/usr/local/bin/nodesteer-agent
+/etc/nodesteer/agent.yaml
+/var/lib/nodesteer/
+/etc/systemd/system/nodesteer-agent.service
 ```
 
 Native 模式支持完整宿主机管理能力。
@@ -209,7 +209,7 @@ Agent 支持 Docker / Docker Compose 正式部署。
 必须持久化：
 
 ```text
-/var/lib/cadentra
+/var/lib/nodesteer
 ```
 
 容器 restart/recreate 后不得丢失：
@@ -1337,7 +1337,7 @@ Web UI 调用真实 API。
 建议：
 
 ```text
-/var/lib/cadentra/
+/var/lib/nodesteer/
 ├── state.db
 ├── scripts/
 ├── artifacts/

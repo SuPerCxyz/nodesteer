@@ -141,7 +141,7 @@ The Agent SHALL load a preassigned Agent ID from generated configuration or envi
 - **THEN** Agent 拒绝执行并上报 BLOCKED
 
 ### Requirement: Agent 本地存储
-系统 SHALL 使用 SQLite + WAL 持久化本地状态至 /var/lib/cadentra/，Docker Agent 必须使用 Persistent Volume 保存全部状态（Identity、Revision、Scripts/Tasks、Schedules、Journal、Artifact Cache、Application State）。
+系统 SHALL 使用 SQLite + WAL 持久化本地状态至 /var/lib/nodesteer/，Docker Agent 必须使用 Persistent Volume 保存全部状态（Identity、Revision、Scripts/Tasks、Schedules、Journal、Artifact Cache、Application State）。
 
 #### Scenario: Docker Agent 重启不丢失状态
 - **WHEN** Docker Agent 容器 restart/recreate

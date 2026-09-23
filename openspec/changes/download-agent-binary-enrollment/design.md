@@ -1,6 +1,6 @@
 ## Context
 
-See `proposal.md`. The current POST `/api/nodes/enrollment` creates a pending node and returns three command strings, but the Native string assumes a local `./cadentra-agent`. The Hub already exposes authenticated Artifact downloads, while enrollment needs a small public, fixed-file binary endpoint because a clean host has no Agent credential yet. The current Dockerfiles and workflow build/publish one architecture.
+See `proposal.md`. The current POST `/api/nodes/enrollment` creates a pending node and returns three command strings, but the Native string assumes a local `./nodesteer-agent`. The Hub already exposes authenticated Artifact downloads, while enrollment needs a small public, fixed-file binary endpoint because a clean host has no Agent credential yet. The current Dockerfiles and workflow build/publish one architecture.
 
 ## Goals / Non-Goals
 

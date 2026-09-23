@@ -16,8 +16,8 @@
 ## 真实自动化要求
 
 - 默认测试地址通过 `BASE_URL` 设置，不把环境凭据写入仓库。
-- 管理员凭据通过 `CADENTRA_E2E_USERNAME` / `CADENTRA_E2E_PASSWORD` 注入。
-- RBAC 测试用户通过 `CADENTRA_E2E_OPERATOR_USERNAME`、`CADENTRA_E2E_VIEWER_USERNAME`、`CADENTRA_E2E_RBAC_PASSWORD` 注入。
+- 管理员凭据通过 `NODESTEER_E2E_USERNAME` / `NODESTEER_E2E_PASSWORD` 注入。
+- RBAC 测试用户通过 `NODESTEER_E2E_OPERATOR_USERNAME`、`NODESTEER_E2E_VIEWER_USERNAME`、`NODESTEER_E2E_RBAC_PASSWORD` 注入。
 - 不能使用 `if (isVisible())` 静默跳过必测控件；控件缺失必须失败。
 - 创建类用例必须验证 POST 后的对象、页面刷新和下游效果。
 - 删除类用例必须验证确认框取消、确认后 DELETE、列表消失和下游 Tombstone。
@@ -54,7 +54,7 @@
 ```bash
 cd web
 npm test
-CADENTRA_E2E_PASSWORD='<secret-from-controlled-source>' npm run test:e2e
+NODESTEER_E2E_PASSWORD='<secret-from-controlled-source>' npm run test:e2e
 ```
 
 真实环境的 Agent、Hub、QGA、SSH、systemd 和文件证据不属于纯 Web E2E，按 `docs/TEST_PLAN.md` 第 9 至 12 节执行并单独记录结果。

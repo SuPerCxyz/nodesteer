@@ -15,7 +15,7 @@ Compose 默认同时提供 Hub 和一个 Docker Agent。数据保存在 `hub-dat
 
 ## 2. 环境变量全表
 
-`.env`（compose 宿主侧变量 → 容器内 `CADENTRA_*`）：
+`.env`（compose 宿主侧变量 → 容器内 `NODESTEER_*`）：
 
 | 变量 | 必填 | 默认 | 说明 |
 |---|---|---|---|
@@ -35,7 +35,7 @@ Compose 默认同时提供 Hub 和一个 Docker Agent。数据保存在 `hub-dat
 | `OIDC_DEFAULT_ROLE` | 否 | `viewer` | **无 role_mappings 时所有 SSO 用户落此角色**，勿设 `administrator` |
 | `OIDC_ALLOW_LOCAL_LOGIN` | 否 | `true` | 登录方式互斥选择器：`true`=本地密码登录（OIDC 失效）；`false`=SSO 唯一登录（密码登录一律 403），见第 3、4 节 |
 
-完整列表以 `.env.example` 为准；容器内变量名统一为 `CADENTRA_` 前缀（如 `CADENTRA_OIDC_ISSUER`），由 Hub 进程读取。
+完整列表以 `.env.example` 为准；容器内变量名统一为 `NODESTEER_` 前缀（如 `NODESTEER_OIDC_ISSUER`），由 Hub 进程读取。
 
 ## 3. 配置 OIDC
 
@@ -55,7 +55,7 @@ Compose 默认同时提供 Hub 和一个 Docker Agent。数据保存在 `hub-dat
 ```bash
 OIDC_ALLOW_LOCAL_LOGIN=false   # SSO 唯一登录（密码登录一律 403）
 OIDC_ISSUER=https://idp.example.com/realms/beta
-OIDC_CLIENT_ID=cadentra
+OIDC_CLIENT_ID=nodesteer
 OIDC_DEFAULT_ROLE=viewer
 ```
 
@@ -71,7 +71,7 @@ OIDC_DEFAULT_ROLE=viewer
 ```yaml
 oidc:
   issuer: "https://idp.example.com/realms/beta"
-  client_id: "cadentra"
+  client_id: "nodesteer"
   role_mappings:
     admins: "administrator"
     ops: "operator"
@@ -82,8 +82,8 @@ oidc:
 ```bash
 # compose.yml 的 hub.services 下增加：
 #   volumes:
-#     - ./hub.yaml:/etc/cadentra/hub.yaml:ro
-#   command: ["--config", "/etc/cadentra/hub.yaml"]
+#     - ./hub.yaml:/etc/nodesteer/hub.yaml:ro
+#   command: ["--config", "/etc/nodesteer/hub.yaml"]
 ```
 
 ### 启用后的验证清单

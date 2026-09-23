@@ -62,13 +62,13 @@ Enrollment instructions SHALL configure the existing Agent binary/container with
 #### Scenario: Docker enrollment
 
 - **WHEN** an administrator runs the Docker or Compose instructions against an existing Hub
-- **THEN** the container uses a persistent `/var/lib/cadentra` volume, connects to the configured Gateway, and binds to the pending node record
+- **THEN** the container uses a persistent `/var/lib/nodesteer` volume, connects to the configured Gateway, and binds to the pending node record
 
 #### Scenario: Docker enrollment image
 
 - **WHEN** the administrator selects Docker or Compose enrollment
-- **THEN** the generated content uses `ghcr.io/supercxyz/cadentra-agent:latest`
-- **AND** preserves the `/var/lib/cadentra` persistent volume
+- **THEN** the generated content uses `ghcr.io/supercxyz/nodesteer-agent:latest`
+- **AND** preserves the `/var/lib/nodesteer` persistent volume
 
 ### Requirement: Protect enrollment metadata
 

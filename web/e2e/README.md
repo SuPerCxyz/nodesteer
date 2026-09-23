@@ -14,11 +14,11 @@
 
 ```text
 BASE_URL=http://<hub-web>:8080
-CADENTRA_E2E_USERNAME=<administrator username>
-CADENTRA_E2E_PASSWORD=<administrator password>
-CADENTRA_E2E_OPERATOR_USERNAME=<operator username>
-CADENTRA_E2E_VIEWER_USERNAME=<viewer username>
-CADENTRA_E2E_RBAC_PASSWORD=<RBAC test password>
+NODESTEER_E2E_USERNAME=<administrator username>
+NODESTEER_E2E_PASSWORD=<administrator password>
+NODESTEER_E2E_OPERATOR_USERNAME=<operator username>
+NODESTEER_E2E_VIEWER_USERNAME=<viewer username>
+NODESTEER_E2E_RBAC_PASSWORD=<RBAC test password>
 ```
 
 凭据只能来自受控 Secret/Vault，不得写入 Git、测试报告、命令日志或截图。
