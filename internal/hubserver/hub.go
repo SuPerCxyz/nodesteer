@@ -64,8 +64,11 @@ type Hub struct {
 	metrics   *metrics.Metrics
 	logger    *slog.Logger
 	webFS     fs.FS
-	ctx       context.Context
-	cancel    context.CancelFunc
+	// singlePort 单端口模式：GatewayAddr == WebAddr（零新配置项的触发条件）。
+	// 此模式下不起独立 Gateway listener，由 Web 最外层 middleware 分流。
+	singlePort bool
+	ctx        context.Context
+	cancel     context.CancelFunc
 }
 
 // New 组装 Hub
@@ -75,6 +78,12 @@ func New(cfg Config, logger *slog.Logger) (*Hub, error) {
 	}
 	if (cfg.GatewayTLSCert == "") != (cfg.GatewayTLSKey == "") {
 		return nil, fmt.Errorf("gateway_tls_cert and gateway_tls_key must be configured together")
+	}
+	singlePort := cfg.GatewayAddr == cfg.WebAddr
+	if singlePort && cfg.GatewayTLSCert != "" {
+		// 单端口模式下 HTTPS 统一在反代终结，仅告警防误配，不新增其他 TLS 逻辑。
+		logger.Warn("single-port gateway mode: gateway TLS config is unused, terminate HTTPS at the reverse proxy",
+			"gateway_tls_cert", cfg.GatewayTLSCert, "addr", cfg.WebAddr)
 	}
 	st, err := store.OpenSQLite(cfg.DataDir + "/hub.db")
 	if err != nil {
@@ -164,7 +173,7 @@ func New(cfg Config, logger *slog.Logger) (*Hub, error) {
 		sessions: sessions, nodes: nodes, scripts: scripts, tasks: tasks,
 		schedules: schedules, syncMgr: syncMgr, execMgr: execMgr,
 		artifacts: artifacts, apps: apps, transfers: transfers, gateway: gateway, api: apiServer,
-		metrics: m, logger: logger, ctx: ctx, cancel: cancel,
+		metrics: m, logger: logger, singlePort: singlePort, ctx: ctx, cancel: cancel,
 	}, nil
 }
 
@@ -173,9 +182,49 @@ func (h *Hub) SetWebFS(fsys fs.FS) {
 	h.webFS = fsys
 }
 
-// ServeMux 返回合并后的路由（含前端）
+// webMux 构造 Web/API 侧路由（注入内嵌前端时含 SPA 回退）。
+// 真实启动路径与 ServeMux 测试路径共用此构造。
+func (h *Hub) webMux() http.Handler {
+	if h.webFS == nil {
+		return h.api.Routes()
+	}
+	fsHandler := http.FileServer(http.FS(h.webFS))
+	mux := http.NewServeMux()
+	// API 由 api.Server.Routes 处理，前端静态文件用独立 mux 包装
+	root := h.api.Routes()
+	mux.Handle("/api/", root)
+	mux.Handle("/api", root)
+	mux.Handle("/healthz", root)
+	mux.Handle("/readyz", root)
+	mux.Handle("/metrics", root)
+	mux.Handle("/", spaHandler(h.webFS, fsHandler))
+	return mux
+}
+
+// webHandler 返回 Web/API 最外层 handler。
+// 单端口模式（GatewayAddr == WebAddr）下在最外层分流：
+// Upgrade=websocket 或 /agent/transfers/* 前缀 → Gateway handler
+// （其已同时具备 WS 任意路径 Accept 与 transfers 分流），其余 → Web 路由。
+// 双端口模式原样返回，行为与既有实现完全一致。
+// 启动路径与 ServeMux 共用本方法，保证 httptest 测试与真实监听拿到同一层包装。
+func (h *Hub) webHandler() http.Handler {
+	next := h.webMux()
+	if !h.singlePort {
+		return next
+	}
+	gw := h.gateway.Handler()
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Upgrade") == "websocket" || strings.HasPrefix(r.URL.Path, "/agent/transfers/") {
+			gw.ServeHTTP(w, r)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// ServeMux 返回合并后的路由（含前端；单端口模式含 Gateway 分流层）
 func (h *Hub) ServeMux() http.Handler {
-	return h.api.Routes()
+	return h.webHandler()
 }
 
 // SetStore 测试用替换 Store
@@ -276,27 +325,17 @@ func (h *Hub) Start() error {
 		}
 	}()
 
-	// Web/API server
+	// Web/API server（单端口模式下此 handler 已含 Gateway 分流层）
 	go func() {
 		if h.webFS != nil {
-			fsHandler := http.FileServer(http.FS(h.webFS))
-			mux := http.NewServeMux()
-			// API 由 api.Server.Routes 处理，前端静态文件用独立 mux 包装
-			root := h.api.Routes()
-			mux.Handle("/api/", root)
-			mux.Handle("/api", root)
-			mux.Handle("/healthz", root)
-			mux.Handle("/readyz", root)
-			mux.Handle("/metrics", root)
-			mux.Handle("/", spaHandler(h.webFS, fsHandler))
 			h.logger.Info("web server listening", "addr", h.cfg.WebAddr)
-			if err := h.serve(h.cfg.WebAddr, mux, h.cfg.WebTLSCert, h.cfg.WebTLSKey); err != nil {
+			if err := h.serve(h.cfg.WebAddr, h.webHandler(), h.cfg.WebTLSCert, h.cfg.WebTLSKey); err != nil {
 				h.logger.Error("web server failed", "error", err)
 			}
 			return
 		}
 		h.logger.Info("api server listening", "addr", h.cfg.WebAddr)
-		if err := h.serve(h.cfg.WebAddr, h.api.Routes(), h.cfg.WebTLSCert, h.cfg.WebTLSKey); err != nil {
+		if err := h.serve(h.cfg.WebAddr, h.webHandler(), h.cfg.WebTLSCert, h.cfg.WebTLSKey); err != nil {
 			h.logger.Error("api server failed", "error", err)
 		}
 	}()
@@ -315,7 +354,12 @@ func (h *Hub) Start() error {
 		}
 	}()
 
-	// Agent Gateway
+	// Agent Gateway：双端口模式独立 listener；
+	// 单端口模式不启动第二 listener，由 Web 最外层 middleware 分流。
+	if h.singlePort {
+		h.logger.Info("single-port gateway mode: gateway shares the web listener", "addr", h.cfg.WebAddr)
+		return nil
+	}
 	go func() {
 		h.logger.Info("agent gateway listening", "addr", h.cfg.GatewayAddr)
 		if err := h.serve(h.cfg.GatewayAddr, h.gateway.Handler(), h.cfg.GatewayTLSCert, h.cfg.GatewayTLSKey); err != nil {

@@ -31,13 +31,15 @@ func ResolveGatewayBaseURL(configured, webBaseURL, gatewayAddr string) string {
 	if configured != "" {
 		return normalizeHTTPBaseURL(configured)
 	}
-	u, err := url.Parse(webBaseURL)
-	if err != nil || u.Hostname() == "" {
-		return "http://localhost:8443"
-	}
+	// 端口统一取自 gateway_addr：主路径（hostname 有效）与 fallback 共用同一来源，
+	// 不再硬编码 8443 —— 单端口模式（gateway 与 web 同端口）下 fallback 才能正确。
 	port := "8443"
 	if _, configuredPort, splitErr := net.SplitHostPort(gatewayAddr); splitErr == nil && configuredPort != "" {
 		port = configuredPort
+	}
+	u, err := url.Parse(webBaseURL)
+	if err != nil || u.Hostname() == "" {
+		return "http://localhost:" + port
 	}
 	scheme := "http"
 	if u.Scheme == "https" {

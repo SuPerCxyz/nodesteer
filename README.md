@@ -69,7 +69,7 @@ Hub 是 Desired State 的唯一权威源；Agent 主动连接 Hub，缓存已同
 默认端口：
 
 - Web UI / REST API：8080
-- Agent Gateway：8443
+- Agent Gateway：8443（默认双端口；单入口模式下与 Web 同为 8080）
 
 ## 快速开始
 
@@ -100,7 +100,7 @@ cp packaging/systemd/hub.yaml.example /etc/nodesteer/hub.yaml
 ./bin/nodesteer-hub --config /etc/nodesteer/hub.yaml
 ```
 
-访问 http://localhost:8080 打开 Web UI。Agent Gateway 默认监听 :8443。
+访问 http://localhost:8080 打开 Web UI。Agent Gateway 默认监听 :8443；单入口模式下 `gateway_addr` 与 `web_addr` 设为相同地址（如均用 `:8080`）即可同端口服务。
 
 ### 3. 部署 Native Agent
 
@@ -156,9 +156,9 @@ Hub 的节点纳管页面不要求手动选择架构。Native 安装命令会在
 
 ## 网络与安全
 
-Agent 采用主动连接模型，默认不需要开放 Agent 入站管理端口。Hub 内网、Agent 公网的场景只需将 Agent Gateway（默认 8443）通过 NAT 或反向代理暴露给 Agent。
+Agent 采用主动连接模型，默认不需要开放 Agent 入站管理端口。Hub 内网、Agent 公网的场景通过 NAT 或反向代理暴露**单一入口**即可：Web/API、纳管下载、Agent WebSocket 与文件传输共用 8080，**对外只需暴露 8080 单口**，Agent 以 `wss://` 经反向代理连接。
 
-生产环境建议为 Web/API 和 Agent Gateway 配置 TLS，并让 Agent 使用 wss:// 和 tls_ca_file 验证 Hub 证书。Artifact 下载使用独立的 HTTPS 数据通道，不占用控制长连接。
+HTTPS 一律由反向代理终结，Hub 侧保持明文（`web_tls_*`/`gateway_tls_*` 恒为空）；使用公签证书时 Agent 无需 `tls_ca_file`（仅私有 CA 场景仍需为 Agent 配置）。默认双端口 `:8080/:8443` 保留为可选回退，配置与示例见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) 第 7 节。Artifact 下载与实时日志走同一入口的 HTTP 通道，不占用控制长连接。
 
 ## 开发与测试
 

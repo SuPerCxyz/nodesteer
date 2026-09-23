@@ -23,8 +23,8 @@ Compose 默认同时提供 Hub 和一个 Docker Agent。数据保存在 `hub-dat
 | `ADMIN_USERNAME` | 否 | `admin` | 初始管理员用户名 |
 | `REGISTRATION_TOKEN` | **是** | `changeme` | Agent 首次注册 Token，**必须改掉默认值** |
 | `HUB_BASE_URL` | **是** | `http://localhost:8080` | 对外可达的 Web/API 地址（Artifact 下载、纳管命令、OIDC 回跳均依赖它） |
-| `HUB_WEB_PORT` | 否 | `8080` | 宿主映射的 Web 端口 |
-| `HUB_GATEWAY_PORT` | 否 | `8443` | 宿主映射的 Agent Gateway 端口 |
+| `HUB_WEB_PORT` | 否 | `8080` | 宿主映射的 Web 端口；单入口模式下 Gateway 同走此端口（对外仅需暴露这一个） |
+| `HUB_GATEWAY_PORT` | 否 | `8443` | **仅双端口模式使用**：单入口模式无独立 Gateway 端口（compose 已注释 8443 映射） |
 | `HUB_GATEWAY_BASE_URL` | 否 | 空 | 跨网络纳管时设为 Agent 可达的 `wss://` 地址 |
 | `MAX_FILE_TRANSFER_BYTES` | 否 | `10737418240`（10 GiB） | 单文件传输上限 |
 | `OIDC_ISSUER` | 否 | 空 | `OIDC_ALLOW_LOCAL_LOGIN=false` 时**必填**；true 模式下忽略（OIDC 失效），见第 3 节 |
@@ -36,6 +36,8 @@ Compose 默认同时提供 Hub 和一个 Docker Agent。数据保存在 `hub-dat
 | `OIDC_ALLOW_LOCAL_LOGIN` | 否 | `true` | 登录方式互斥选择器：`true`=本地密码登录（OIDC 失效）；`false`=SSO 唯一登录（密码登录一律 403），见第 3、4 节 |
 
 完整列表以 `.env.example` 为准；容器内变量名统一为 `NODESTEER_` 前缀（如 `NODESTEER_OIDC_ISSUER`），由 Hub 进程读取。
+
+> **HTTPS 口径**：`web_tls_*` / `gateway_tls_*` 两套 TLS 配置在反代部署下**恒为空**，HTTPS 一律由反向代理终结，Hub 侧全程明文；详见第 7 节。
 
 ## 3. 配置 OIDC
 
@@ -145,3 +147,48 @@ git pull && docker compose up -d --build
 | `init oidc: ...`（exit 1） | SSO-only 模式（`allow_local_login=false`）discovery 失败 | 见第 4 节恢复流程（切回 `true` 重启） |
 | `allow_local_login=false requires oidc.issuer ...`（exit 1） | SSO-only 模式未配置 `OIDC_ISSUER` | 配置 issuer，或切回 `true` 重启 |
 | `load bundled agent payloads failed`（WARN） | 非打包构建缺内置 Agent | 用 `make build` 或官方镜像 |
+
+## 7. 网络与反向代理（单入口）
+
+**单入口模式**：`NODESTEER_GATEWAY_ADDR` 与 `NODESTEER_WEB_ADDR` 相同（compose 默认 `:8080`）即触发。
+Web/API、纳管下载、Agent WebSocket 与文件传输全部走 8080 一个端口，对外只需暴露 8080。
+
+**HTTPS 一律由反向代理终结，Hub 侧全明文：**
+
+- `web_tls_*` / `gateway_tls_*` 两套 TLS 配置在反代部署下**恒为空**，Hub 只以明文 HTTP/WS 提供服务。
+- Agent 经反代以 `wss://` 连接；使用公签证书时**无需**为 Agent 配置 `tls_ca_file`。
+- 仅私有 CA 场景需要给 Agent 配置 `tls_ca_file`，且信任的是反代的证书链。
+
+**双端口模式（可选回退）**：默认双端口 `:8080/:8443` 保留为可选模式，8443 仍可选，见 `docker-compose.yml` 注释（放开 8443 端口映射，并把 `NODESTEER_GATEWAY_ADDR` 改回 `:8443`）。
+
+> ⚠️ **行为提示**：已生成的旧纳管命令若基于 8443，切换单口后需在节点页**重新生成**，否则命令仍指向 8443。
+
+nginx 示例（单 `location /` + WebSocket 透传 + 明文上游）：
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name hub.example.com;
+
+    ssl_certificate     /etc/nginx/tls/fullchain.pem;
+    ssl_certificate_key /etc/nginx/tls/privkey.pem;
+
+    client_max_body_size 10g;   # 与单文件传输上限匹配
+    proxy_buffering off;        # 实时日志/流式响应直通
+
+    location / {                # 单入口：Web/API、纳管下载、Agent WS、文件传输共用
+        proxy_pass http://127.0.0.1:8080;   # 明文上游（Hub 侧不做 TLS）
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;      # WebSocket 握手透传
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 3600s;   # 长连接与大文件传输
+        proxy_send_timeout 3600s;
+    }
+}
+```
+
+要点：nginx 只保留**单 `location /`**；`Upgrade`/`Connection` 头原样透传给 Agent WS；上游必须是**明文** `http://127.0.0.1:8080`；保留 `proxy_read/send_timeout 3600s`、`client_max_body_size 10g` 并关闭 `proxy_buffering`。不再需要 8443 独立 vhost 或双 location。

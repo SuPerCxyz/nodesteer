@@ -10,10 +10,12 @@ services:
     restart: unless-stopped
     ports:
       - "${HUB_WEB_PORT:-8080}:8080"
-      - "${HUB_GATEWAY_PORT:-8443}:8443"
+      # 可选双端口模式：放开下行端口映射，并需同时把 NODESTEER_GATEWAY_ADDR 改回 :8443
+      # - "${HUB_GATEWAY_PORT:-8443}:8443"
     environment:
       NODESTEER_WEB_ADDR: ":8080"
-      NODESTEER_GATEWAY_ADDR: ":8443"
+      # 与 Web 同端口=单入口模式（WS/纳管下载/文件传输全走它）
+      NODESTEER_GATEWAY_ADDR: ":8080"
       NODESTEER_GATEWAY_BASE_URL: "${HUB_GATEWAY_BASE_URL:-}"
       NODESTEER_REGISTRATION_TOKEN: "${REGISTRATION_TOKEN:-changeme}"
       NODESTEER_BASE_URL: "${HUB_BASE_URL:-http://localhost:8080}"
@@ -46,7 +48,8 @@ services:
     depends_on:
       - hub
     environment:
-      NODESTEER_HUB_URL: "ws://hub:8443"
+      # 单入口模式：Gateway 与 Web 同端口
+      NODESTEER_HUB_URL: "ws://hub:8080"
       NODESTEER_REGISTRATION_TOKEN: "${REGISTRATION_TOKEN:-changeme}"
       NODESTEER_DEPLOYMENT_MODE: "docker"
       NODESTEER_DATA_DIR: /var/lib/nodesteer
