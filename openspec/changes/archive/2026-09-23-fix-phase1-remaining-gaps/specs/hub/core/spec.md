@@ -38,7 +38,15 @@
 ## MODIFIED Requirements
 
 ### Requirement: Remote Node Condition
-系统 SHALL 在远程状态解析结果为 UNKNOWN 时按 Fail Closed 处理，不得将未知值作为普通值参与比较。
+系统 SHALL 支持远程节点条件求值：`node == ONLINE`、`node.last_execution(task) == SUCCESS`；并在远程状态解析结果为 UNKNOWN 时按 Fail Closed 处理，不得将未知值作为普通值参与比较。
+
+#### Scenario: 查询在线状态
+- **WHEN** 条件引用另一节点的在线状态
+- **THEN** 返回该节点 Value/ObservedAt/TTL，未过期的真实值参与求值
+
+#### Scenario: 状态过期
+- **WHEN** Remote State 超出 TTL 或不可确认
+- **THEN** 视为 UNKNOWN，条件评估结果 Fail Closed（BLOCKED），不得将 UNKNOWN 当作 TRUE
 
 #### Scenario: 远程节点不存在
 - **WHEN** Remote Condition 引用的节点不存在或属性不可解析

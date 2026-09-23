@@ -1,6 +1,6 @@
 # web-ui Specification Delta
 
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Role-aware actions
 
