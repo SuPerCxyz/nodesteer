@@ -28,4 +28,4 @@
 
 - [x] 5.1 全量回归：go vet/test、openspec validate --all、compose config（两仓库）
 - [x] 5.2 跨仓库一致性：单端口触发条件、8080 唯一入口、反代 HTTPS 口径三处文档自洽
-- [ ] 5.3 两仓库 commit/push 分别请求用户授权
+- [x] 5.3 两仓库 commit/push 分别请求用户授权

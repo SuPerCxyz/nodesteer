@@ -124,7 +124,7 @@ docker compose up -d --build
 
 Compose 默认同时提供 Hub 和一个 Docker Agent。Agent 数据保存在 agent-data 卷，Hub 数据和发布包保存在 hub-data 卷。**环境变量全表、OIDC 配置与故障恢复、升级备份见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。**
 
-如需从其他网络接入 Agent，将 HUB_GATEWAY_BASE_URL 设置为 Agent 可访问的 Gateway 地址。节点页面可以生成 Native、docker run 和 Docker Compose 纳管命令，并携带节点身份和 Registration Token；节点地址支持 IPv4、IPv6 或 DNS 主机名。
+纳管命令、Agent WebSocket 与文件传输地址自动跟随网页地址（`HUB_BASE_URL`），无需额外配置。节点页面可以生成 Native、docker run 和 Docker Compose 纳管命令，并携带节点身份和 Registration Token；节点地址支持 IPv4、IPv6 或 DNS 主机名。
 
 ### CI 构建产物
 
