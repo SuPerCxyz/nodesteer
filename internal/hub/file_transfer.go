@@ -405,11 +405,41 @@ func (m *FileTransferManager) HandleUploadResult(ctx context.Context, nodeID str
 	if err != nil {
 		return err
 	}
-	if t.SourceNodeID != nodeID || t.Status == models.FileTransferCanceled {
+	// 已取消、已成功或源文件已暂存的传输忽略迟到的失败结果，避免回退终态。
+	if t.SourceNodeID != nodeID || t.Status == models.FileTransferCanceled || t.Status == models.FileTransferSuccess || t.SHA256 != "" {
 		return nil
 	}
-	t.Status, t.Error = models.FileTransferFailed, p.Error
-	return m.store.UpdateFileTransfer(ctx, t)
+	message := sourceUploadErrorMessage(p.Error)
+	t.Status, t.Error = models.FileTransferFailed, message
+	if err := m.store.UpdateFileTransfer(ctx, t); err != nil {
+		return err
+	}
+	// 源文件未暂存时不会再有交付，必须终结所有非终态目标，否则目标悬挂在 PENDING。
+	return m.failTargets(ctx, t, message)
+}
+
+// failTargets 将传输中所有非终态目标置为 FAILED 并持久化，返回首个持久化错误。
+func (m *FileTransferManager) failTargets(ctx context.Context, t *models.FileTransfer, message string) error {
+	var firstErr error
+	for _, target := range t.Targets {
+		switch target.Status {
+		case models.FileTargetSuccess, models.FileTargetFailed, models.FileTargetCanceled:
+			continue
+		}
+		target.Status, target.Error = models.FileTargetFailed, message
+		if err := m.store.UpdateFileTransferTarget(ctx, target); err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+	return firstErr
+}
+
+func sourceUploadErrorMessage(reason string) string {
+	reason = strings.TrimSpace(reason)
+	if reason == "" {
+		return "source upload failed"
+	}
+	return "source upload failed: " + reason
 }
 
 // HandleDeliveryResult records one target result and updates aggregate state.
@@ -428,7 +458,8 @@ func (m *FileTransferManager) HandleDeliveryResult(ctx context.Context, nodeID s
 			break
 		}
 	}
-	if target == nil || t.Status == models.FileTransferCanceled {
+	if target == nil || t.Status == models.FileTransferCanceled || t.SHA256 == "" {
+		// 源文件未暂存（例如源上传失败）时不可能有合法交付，忽略迟到的目标结果。
 		return nil
 	}
 	if p.OK {
@@ -487,6 +518,7 @@ func (m *FileTransferManager) Retry(ctx context.Context, id, targetID string) (*
 		m.dispatchSource(ctx, t)
 		return m.store.GetFileTransfer(ctx, id)
 	}
+	restarted := false
 	for _, target := range t.Targets {
 		if targetID == "" || target.NodeID == targetID {
 			if target.Status == models.FileTargetFailed {
@@ -495,8 +527,13 @@ func (m *FileTransferManager) Retry(ctx context.Context, id, targetID string) (*
 					return nil, err
 				}
 				m.dispatchTarget(ctx, t, target)
+				restarted = true
 			}
 		}
+	}
+	if !restarted {
+		// 没有目标可重启（例如误重试已成功的传输）时保持原状态，避免把已终结的传输推进为 DELIVERING 后永久悬挂。
+		return m.store.GetFileTransfer(ctx, id)
 	}
 	t.Status, t.Error = models.FileTransferDelivering, ""
 	if err := m.store.UpdateFileTransfer(ctx, t); err != nil {

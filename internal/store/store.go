@@ -17,6 +17,7 @@ func ErrInvalidTask(msg string) error {
 type Store interface {
 	// Users
 	CreateUser(ctx context.Context, u *models.User) error
+	GetUserByID(ctx context.Context, id string) (*models.User, error)
 	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
 	ListUsers(ctx context.Context) ([]*models.User, error)
 	UpdateUserRole(ctx context.Context, id, role string) error
@@ -98,6 +99,7 @@ type Store interface {
 	UpdateExecution(ctx context.Context, e *models.Execution) error
 	GetExecution(ctx context.Context, id string) (*models.Execution, error)
 	ListExecutions(ctx context.Context, filter ExecutionFilter) ([]*models.Execution, error)
+	CountExecutions(ctx context.Context, filter ExecutionFilter) (int64, error)
 	FindExecutionBySlot(ctx context.Context, taskID, nodeID string, scheduledTime string) (*models.Execution, error)
 	CountExecutionsByStatus(ctx context.Context) (map[string]int, error)
 
@@ -125,6 +127,7 @@ type Store interface {
 	// Audit
 	AddAudit(ctx context.Context, a *models.AuditLog) error
 	ListAudit(ctx context.Context, filter AuditFilter) ([]*models.AuditLog, error)
+	CountAudit(ctx context.Context, filter AuditFilter) (int64, error)
 
 	// Settings
 	GetSetting(ctx context.Context, key string) (string, error)

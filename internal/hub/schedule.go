@@ -162,7 +162,14 @@ func (sm *ScheduleManager) Delete(ctx context.Context, id string) error {
 		if err := sm.store.RecordTombstone(txctx, models.ObjectSchedule, id, rev); err != nil {
 			return err
 		}
-		return recordMutationAudit(txctx, sm.store, "schedule", id, "delete")
+		detail := ""
+		if sc, err := sm.store.GetSchedule(ctx, id); err == nil {
+			detail = sc.Expression
+			if detail == "" && sc.IntervalSec > 0 {
+				detail = fmt.Sprintf("interval %ds", sc.IntervalSec)
+			}
+		}
+		return recordMutationAuditDetail(txctx, sm.store, "schedule", id, "delete", detail)
 	}); err != nil {
 		return err
 	}

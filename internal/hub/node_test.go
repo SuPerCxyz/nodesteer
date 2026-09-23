@@ -145,3 +145,59 @@ func TestHeartbeatRestoresOfflineButPreservesMaintenance(t *testing.T) {
 		t.Fatalf("heartbeat should preserve maintenance, err=%v node=%+v", err, got)
 	}
 }
+
+// TestReenrollmentReusesExistingNodeIdentity 验证「撤销凭证 -> 重新纳管」复用既有 Node ID/Agent ID，
+// 不产生重复节点记录，保留标签并解除撤销标记（缺陷 FAIL-B-104）。
+func TestReenrollmentReusesExistingNodeIdentity(t *testing.T) {
+	ctx := context.Background()
+	st, err := store.OpenInMemory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	nm := NewNodeManager(st, NewRevisionManager(st))
+
+	first, _, _, err := nm.RegisterOrUpdate(ctx, "agent-x", "host-x", "10.0.0.20", "linux", "amd64", "1.0", "native", false, nil)
+	if err != nil {
+		t.Fatalf("register: %v", err)
+	}
+	if err := nm.SetLabels(ctx, first.ID, map[string]string{"env": "prod"}); err != nil {
+		t.Fatalf("set labels: %v", err)
+	}
+	if err := st.SetSetting(ctx, "revoked:"+first.ID, "true"); err != nil {
+		t.Fatalf("mark revoked: %v", err)
+	}
+
+	again, err := nm.PrepareEnrollment(ctx, "host-x", "10.0.0.20", models.DeploymentModeNative)
+	if err != nil {
+		t.Fatalf("re-enroll: %v", err)
+	}
+	if again.ID != first.ID || again.AgentID != first.AgentID {
+		t.Fatalf("expected node/agent id reuse, got %s/%s want %s/%s", again.ID, again.AgentID, first.ID, first.AgentID)
+	}
+	if again.Status != models.NodeStatusOffline || again.SyncStatus != "pending" {
+		t.Fatalf("unexpected status after re-enrollment: %+v", again)
+	}
+	if again.Labels["env"] != "prod" {
+		t.Fatalf("labels should be preserved, got %v", again.Labels)
+	}
+	if revoked, _ := st.GetSetting(ctx, "revoked:"+first.ID); revoked == "true" {
+		t.Fatalf("revoked flag should be cleared on re-enrollment")
+	}
+	nodes, err := nm.ListNodes(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(nodes) != 1 {
+		t.Fatalf("expected one node after re-enrollment, got %d", len(nodes))
+	}
+
+	// 复用后 Agent 用预分配身份接入，应命中同一节点
+	registered, credential, isNew, err := nm.RegisterOrUpdate(ctx, again.AgentID, "host-x", "10.0.0.20", "linux", "amd64", "1.1", "native", false, nil)
+	if err != nil {
+		t.Fatalf("register after re-enroll: %v", err)
+	}
+	if isNew || registered.ID != first.ID || credential == "" {
+		t.Fatalf("expected reuse after re-enroll hello, node=%s isNew=%t", registered.ID, isNew)
+	}
+}

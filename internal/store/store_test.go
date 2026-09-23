@@ -164,6 +164,35 @@ func TestUserPassword(t *testing.T) {
 	}
 }
 
+func TestGetUserByID(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	u := &models.User{Username: "viewer1", PasswordHash: "hash", Role: "viewer"}
+	if err := s.CreateUser(ctx, u); err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+	got, err := s.GetUserByID(ctx, u.ID)
+	if err != nil {
+		t.Fatalf("get user by id: %v", err)
+	}
+	if got.ID != u.ID || got.Username != "viewer1" || got.Role != "viewer" {
+		t.Fatalf("unexpected user: %+v", got)
+	}
+	if err := s.UpdateUserRole(ctx, u.ID, "operator"); err != nil {
+		t.Fatalf("update role: %v", err)
+	}
+	got, err = s.GetUserByID(ctx, u.ID)
+	if err != nil {
+		t.Fatalf("get user by id after update: %v", err)
+	}
+	if got.Role != "operator" {
+		t.Fatalf("role = %q, want operator", got.Role)
+	}
+	if _, err := s.GetUserByID(ctx, "missing-id"); err == nil {
+		t.Fatal("expected error for missing user")
+	}
+}
+
 func TestApplicationNodeState(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
@@ -207,5 +236,90 @@ func TestWithTxRollsBackDesiredStateAndRevision(t *testing.T) {
 	}
 	if rev, err := s.CurrentGlobalRevision(ctx); err != nil || rev != 0 {
 		t.Fatalf("rolled-back revision changed: rev=%d err=%v", rev, err)
+	}
+}
+
+func TestCountExecutionsFilter(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	mk := func(id, taskID, nodeID, status string) {
+		t.Helper()
+		if err := s.CreateExecution(ctx, &models.Execution{
+			ID: id, TaskID: taskID, NodeID: nodeID,
+			TriggerType: models.TriggerManual, Status: status,
+		}); err != nil {
+			t.Fatalf("create execution %s: %v", id, err)
+		}
+	}
+	// 唯一索引为 (task_id, node_id, scheduled_time)，用不同 node 区分同任务记录。
+	mk("e1", "task-a", "node-1", models.ExecStatusSuccess)
+	mk("e2", "task-a", "node-2", models.ExecStatusFailed)
+	mk("e3", "task-b", "node-1", models.ExecStatusSuccess)
+	mk("e4", "task-b", "node-2", models.ExecStatusSuccess)
+
+	tests := []struct {
+		name   string
+		filter ExecutionFilter
+		want   int64
+	}{
+		{name: "all", filter: ExecutionFilter{}, want: 4},
+		{name: "ignores paging", filter: ExecutionFilter{Limit: 1, Offset: 2}, want: 4},
+		{name: "by task", filter: ExecutionFilter{TaskID: "task-a"}, want: 2},
+		{name: "by node", filter: ExecutionFilter{NodeID: "node-1"}, want: 2},
+		{name: "by status", filter: ExecutionFilter{Status: models.ExecStatusSuccess}, want: 3},
+		{name: "combined", filter: ExecutionFilter{TaskID: "task-b", Status: models.ExecStatusSuccess}, want: 2},
+		{name: "no match", filter: ExecutionFilter{TaskID: "task-zzz"}, want: 0},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := s.CountExecutions(ctx, tc.filter)
+			if err != nil {
+				t.Fatalf("count executions: %v", err)
+			}
+			if got != tc.want {
+				t.Fatalf("count = %d, want %d", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestCountAuditFilter(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	mk := func(id, userID, action string) {
+		t.Helper()
+		if err := s.AddAudit(ctx, &models.AuditLog{
+			ID: id, UserID: userID, Username: userID, Action: action, Resource: "test",
+		}); err != nil {
+			t.Fatalf("add audit %s: %v", id, err)
+		}
+	}
+	mk("a1", "u1", "login")
+	mk("a2", "u1", "update")
+	mk("a3", "u2", "login")
+	mk("a4", "u2", "delete")
+
+	tests := []struct {
+		name   string
+		filter AuditFilter
+		want   int64
+	}{
+		{name: "all", filter: AuditFilter{}, want: 4},
+		{name: "ignores paging", filter: AuditFilter{Limit: 1, Offset: 1}, want: 4},
+		{name: "by user", filter: AuditFilter{UserID: "u1"}, want: 2},
+		{name: "by action", filter: AuditFilter{Action: "login"}, want: 2},
+		{name: "combined", filter: AuditFilter{UserID: "u2", Action: "delete"}, want: 1},
+		{name: "no match", filter: AuditFilter{Action: "zzz"}, want: 0},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := s.CountAudit(ctx, tc.filter)
+			if err != nil {
+				t.Fatalf("count audit: %v", err)
+			}
+			if got != tc.want {
+				t.Fatalf("count = %d, want %d", got, tc.want)
+			}
+		})
 	}
 }

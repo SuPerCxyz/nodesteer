@@ -23,6 +23,18 @@ func (s *SQLiteStore) CreateUser(ctx context.Context, u *models.User) error {
 	return err
 }
 
+func (s *SQLiteStore) GetUserByID(ctx context.Context, id string) (*models.User, error) {
+	row := s.db.QueryRowContext(ctx,
+		`SELECT id, username, role, created_at FROM users WHERE id = ?`, id)
+	var u models.User
+	var created string
+	if err := row.Scan(&u.ID, &u.Username, &u.Role, &created); err != nil {
+		return nil, err
+	}
+	u.CreatedAt = parseTime(created)
+	return &u, nil
+}
+
 func (s *SQLiteStore) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	row := s.db.QueryRowContext(ctx,
 		`SELECT id, username, password_hash, role, created_at FROM users WHERE username = ?`, username)

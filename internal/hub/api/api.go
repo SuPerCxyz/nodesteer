@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -198,6 +199,7 @@ func (s *Server) withCORS(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Cadentra-Agent-Token, X-Cadentra-Agent-ID")
+		w.Header().Set("Access-Control-Expose-Headers", "X-Total-Count")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
@@ -214,7 +216,7 @@ func (s *Server) withAuth(next http.HandlerFunc, action string) http.HandlerFunc
 			writeErr(w, http.StatusUnauthorized, "unauthorized")
 			return
 		}
-		sess, ok := s.auth.Authenticate(token)
+		sess, ok := s.auth.Authenticate(r.Context(), token)
 		if !ok {
 			writeErr(w, http.StatusUnauthorized, "invalid or expired session")
 			return
@@ -241,7 +243,7 @@ func (s *Server) withAgentOrUserAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 先尝试用户会话
 		if token := bearerToken(r); token != "" {
-			if sess, ok := s.auth.Authenticate(token); ok {
+			if sess, ok := s.auth.Authenticate(r.Context(), token); ok {
 				if auth.HasPermission(sess.Role, "read") {
 					r = r.WithContext(withUser(r.Context(), sess))
 					next(w, r)
@@ -1579,10 +1581,21 @@ func (s *Server) handleExecutions(w http.ResponseWriter, r *http.Request) {
 				filter.Limit = n
 			}
 		}
+		if off := r.URL.Query().Get("offset"); off != "" {
+			if n, err := strconv.Atoi(off); err == nil {
+				filter.Offset = n
+			}
+		}
 		list, err := s.execs.ListExecutions(r.Context(), filter)
 		if err != nil {
 			writeErr(w, http.StatusInternalServerError, err.Error())
 			return
+		}
+		// 计数失败不影响列表返回：省略 X-Total-Count 并记录日志。
+		if total, err := s.store.CountExecutions(r.Context(), filter); err != nil {
+			s.logger.Error("count executions", "error", err)
+		} else {
+			w.Header().Set("X-Total-Count", strconv.FormatInt(total, 10))
 		}
 		writeJSON(w, http.StatusOK, list)
 	default:
@@ -1622,6 +1635,14 @@ func (s *Server) handleExecutionByID(w http.ResponseWriter, r *http.Request) {
 			writeErr(w, http.StatusBadRequest, err.Error())
 			return
 		}
+		detail := ""
+		if ex, err := s.execs.GetExecution(r.Context(), id); err == nil && ex != nil {
+			detail = ex.TaskID
+			if t, err := s.tasks.Get(r.Context(), ex.TaskID); err == nil && t != nil {
+				detail = t.Name
+			}
+		}
+		s.auditDetail(r, "execution", id, "cancel", detail)
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 		return
 	}
@@ -1660,10 +1681,21 @@ func (s *Server) handleAudit(w http.ResponseWriter, r *http.Request) {
 			filter.Limit = n
 		}
 	}
+	if off := r.URL.Query().Get("offset"); off != "" {
+		if n, err := strconv.Atoi(off); err == nil {
+			filter.Offset = n
+		}
+	}
 	list, err := s.store.ListAudit(r.Context(), filter)
 	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+	// 计数失败不影响列表返回：省略 X-Total-Count 并记录日志。
+	if total, err := s.store.CountAudit(r.Context(), filter); err != nil {
+		s.logger.Error("count audit", "error", err)
+	} else {
+		w.Header().Set("X-Total-Count", strconv.FormatInt(total, 10))
 	}
 	writeJSON(w, http.StatusOK, list)
 }
@@ -1701,6 +1733,14 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 				writeErr(w, http.StatusInternalServerError, err.Error())
 				return
 			}
+		}
+		keys := make([]string, 0, len(body))
+		for k := range body {
+			keys = append(keys, k)
+		}
+		if len(keys) > 0 {
+			sort.Strings(keys)
+			s.auditDetail(r, "setting", "", "update", "keys: "+strings.Join(keys, ","))
 		}
 		s.notifySettings()
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
@@ -1875,13 +1915,18 @@ func (s *Server) canAdmin(r *http.Request) bool {
 }
 
 func (s *Server) audit(r *http.Request, resource, resourceID, action string) {
+	s.auditDetail(r, resource, resourceID, action, "")
+}
+
+// auditDetail 写入带 detail 的审计记录
+func (s *Server) auditDetail(r *http.Request, resource, resourceID, action, detail string) {
 	sess := currentUser(r.Context())
 	if sess == nil {
 		return
 	}
 	_ = s.store.AddAudit(r.Context(), &models.AuditLog{
 		UserID: sess.UserID, Username: sess.Username,
-		Action: action, Resource: resource, ResourceID: resourceID,
+		Action: action, Resource: resource, ResourceID: resourceID, Detail: detail,
 	})
 }
 

@@ -84,8 +84,9 @@ func (s *SQLiteStore) GetExecution(ctx context.Context, id string) (*models.Exec
 	return e, err
 }
 
-func (s *SQLiteStore) ListExecutions(ctx context.Context, filter ExecutionFilter) ([]*models.Execution, error) {
-	query := `SELECT ` + execColumns + ` FROM executions WHERE 1=1`
+// executionFilterWhere 构造执行过滤条件（不含分页），List/Count 共用以保证计数与列表语义一致。
+func executionFilterWhere(filter ExecutionFilter) (string, []any) {
+	query := ` WHERE 1=1`
 	var args []any
 	if filter.NodeID != "" {
 		query += ` AND node_id = ?`
@@ -99,7 +100,12 @@ func (s *SQLiteStore) ListExecutions(ctx context.Context, filter ExecutionFilter
 		query += ` AND status = ?`
 		args = append(args, filter.Status)
 	}
-	query += ` ORDER BY created_at DESC`
+	return query, args
+}
+
+func (s *SQLiteStore) ListExecutions(ctx context.Context, filter ExecutionFilter) ([]*models.Execution, error) {
+	where, args := executionFilterWhere(filter)
+	query := `SELECT ` + execColumns + ` FROM executions` + where + ` ORDER BY created_at DESC`
 	if filter.Limit > 0 {
 		query += ` LIMIT ?`
 		args = append(args, filter.Limit)
@@ -122,6 +128,16 @@ func (s *SQLiteStore) ListExecutions(ctx context.Context, filter ExecutionFilter
 		out = append(out, e)
 	}
 	return out, rows.Err()
+}
+
+// CountExecutions 统计匹配过滤条件的执行总数，忽略 Limit/Offset。
+func (s *SQLiteStore) CountExecutions(ctx context.Context, filter ExecutionFilter) (int64, error) {
+	where, args := executionFilterWhere(filter)
+	var n int64
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM executions`+where, args...).Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
 }
 
 func (s *SQLiteStore) FindExecutionBySlot(ctx context.Context, taskID, nodeID, scheduledTime string) (*models.Execution, error) {
@@ -338,8 +354,9 @@ func (s *SQLiteStore) AddAudit(ctx context.Context, a *models.AuditLog) error {
 	return err
 }
 
-func (s *SQLiteStore) ListAudit(ctx context.Context, filter AuditFilter) ([]*models.AuditLog, error) {
-	query := `SELECT id, user_id, username, action, resource, resource_id, detail, created_at FROM audit_logs WHERE 1=1`
+// auditFilterWhere 构造审计过滤条件（不含分页），List/Count 共用。
+func auditFilterWhere(filter AuditFilter) (string, []any) {
+	query := ` WHERE 1=1`
 	var args []any
 	if filter.UserID != "" {
 		query += ` AND user_id = ?`
@@ -349,7 +366,13 @@ func (s *SQLiteStore) ListAudit(ctx context.Context, filter AuditFilter) ([]*mod
 		query += ` AND action = ?`
 		args = append(args, filter.Action)
 	}
-	query += ` ORDER BY created_at DESC`
+	return query, args
+}
+
+func (s *SQLiteStore) ListAudit(ctx context.Context, filter AuditFilter) ([]*models.AuditLog, error) {
+	where, args := auditFilterWhere(filter)
+	query := `SELECT id, user_id, username, action, resource, resource_id, detail, created_at FROM audit_logs` +
+		where + ` ORDER BY created_at DESC`
 	if filter.Limit > 0 {
 		query += ` LIMIT ?`
 		args = append(args, filter.Limit)
@@ -375,6 +398,16 @@ func (s *SQLiteStore) ListAudit(ctx context.Context, filter AuditFilter) ([]*mod
 		out = append(out, &a)
 	}
 	return out, rows.Err()
+}
+
+// CountAudit 统计匹配过滤条件的审计总数，忽略 Limit/Offset。
+func (s *SQLiteStore) CountAudit(ctx context.Context, filter AuditFilter) (int64, error) {
+	where, args := auditFilterWhere(filter)
+	var n int64
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_logs`+where, args...).Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
 }
 
 // ---------- Settings ----------

@@ -108,6 +108,9 @@ func (em *ExecutionManager) RunManual(ctx context.Context, task *models.Task, no
 	if !task.Enabled {
 		return nil, fmt.Errorf("task %s is disabled", task.ID)
 	}
+	if err := em.ensureReferencedScriptEnabled(ctx, task); err != nil {
+		return nil, err
+	}
 	var out []*models.Execution
 	for _, nodeID := range nodeIDs {
 		ex, err := em.createAndDispatch(ctx, task, nodeID, models.TriggerManual, time.Time{}, params, false)
@@ -119,8 +122,27 @@ func (em *ExecutionManager) RunManual(ctx context.Context, task *models.Task, no
 	return out, nil
 }
 
+// ensureReferencedScriptEnabled 阻断引用了已禁用脚本的任务继续执行（缺陷 FAIL-A-006）。
+// 任务创建时已校验脚本启用状态，但脚本随后被禁用时仍需在运行前拦截。
+func (em *ExecutionManager) ensureReferencedScriptEnabled(ctx context.Context, task *models.Task) error {
+	if task.Type != models.TaskTypeScript || task.ScriptID == "" {
+		return nil
+	}
+	sc, err := em.store.GetScript(ctx, task.ScriptID)
+	if err != nil {
+		return fmt.Errorf("referenced script not found")
+	}
+	if !sc.Enabled {
+		return fmt.Errorf("referenced script %s is disabled", sc.ID)
+	}
+	return nil
+}
+
 // RunScheduledHub 由 Hub 触发的调度执行
 func (em *ExecutionManager) RunScheduledHub(ctx context.Context, task *models.Task, nodeIDs []string, scheduledTime time.Time) ([]*models.Execution, error) {
+	if err := em.ensureReferencedScriptEnabled(ctx, task); err != nil {
+		return nil, err
+	}
 	var out []*models.Execution
 	for _, nodeID := range nodeIDs {
 		ex, err := em.createAndDispatch(ctx, task, nodeID, models.TriggerSchedule, scheduledTime, nil, false)

@@ -98,6 +98,10 @@ func (m *AppManager) Update(ctx context.Context, a *models.Application) error {
 
 // Delete 删除应用
 func (m *AppManager) Delete(ctx context.Context, id string) error {
+	appName := ""
+	if app, err := m.store.GetApplication(ctx, id); err == nil {
+		appName = app.Name
+	}
 	tasks, err := m.store.ListTasks(ctx)
 	if err != nil {
 		return err
@@ -123,7 +127,7 @@ func (m *AppManager) Delete(ctx context.Context, id string) error {
 		if err := m.store.RecordTombstone(txctx, models.ObjectApplication, id, rev); err != nil {
 			return err
 		}
-		return recordMutationAudit(txctx, m.store, "application", id, "delete")
+		return recordMutationAuditDetail(txctx, m.store, "application", id, "delete", appName)
 	}); err != nil {
 		return err
 	}

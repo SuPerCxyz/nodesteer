@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"strings"
 
 	"github.com/cadentra/cadentra/internal/models"
 	"github.com/cadentra/cadentra/internal/store"
@@ -34,6 +35,16 @@ func (m *ScriptManager) Create(ctx context.Context, s *models.Script) error {
 	if s.ID == "" {
 		s.ID = uuid.NewString()
 	}
+	if err := validateParameters(s.Parameters); err != nil {
+		return err
+	}
+	scripts, err := m.store.ListScripts(ctx)
+	if err != nil {
+		return err
+	}
+	if err := validateUniqueName(scripts, s.Name, ""); err != nil {
+		return err
+	}
 	s.Revision = 1
 	s.SHA256 = computeSHA(s.Content)
 	var rev int64
@@ -59,6 +70,16 @@ func (m *ScriptManager) Create(ctx context.Context, s *models.Script) error {
 
 // Update 更新脚本
 func (m *ScriptManager) Update(ctx context.Context, s *models.Script) error {
+	if err := validateParameters(s.Parameters); err != nil {
+		return err
+	}
+	scripts, err := m.store.ListScripts(ctx)
+	if err != nil {
+		return err
+	}
+	if err := validateUniqueName(scripts, s.Name, s.ID); err != nil {
+		return err
+	}
 	existing, err := m.store.GetScript(ctx, s.ID)
 	if err != nil {
 		return err
@@ -89,6 +110,10 @@ func (m *ScriptManager) Update(ctx context.Context, s *models.Script) error {
 
 // Delete 删除脚本
 func (m *ScriptManager) Delete(ctx context.Context, id string) error {
+	name := ""
+	if sc, err := m.store.GetScript(ctx, id); err == nil {
+		name = sc.Name
+	}
 	tasks, err := m.store.ListTasks(ctx)
 	if err != nil {
 		return err
@@ -114,7 +139,7 @@ func (m *ScriptManager) Delete(ctx context.Context, id string) error {
 		if err := m.store.RecordTombstone(txctx, models.ObjectScript, id, rev); err != nil {
 			return err
 		}
-		return recordMutationAudit(txctx, m.store, "script", id, "delete")
+		return recordMutationAuditDetail(txctx, m.store, "script", id, "delete", name)
 	}); err != nil {
 		return err
 	}
@@ -156,6 +181,16 @@ func NewTaskManager(st store.Store, rm *RevisionManager, sm *SyncManager) *TaskM
 
 // Validate 校验任务定义
 func (m *TaskManager) Validate(ctx context.Context, t *models.Task) error {
+	if err := validateParameters(t.Parameters); err != nil {
+		return err
+	}
+	tasks, err := m.store.ListTasks(ctx)
+	if err != nil {
+		return err
+	}
+	if err := validateUniqueTaskName(tasks, t.Name, t.ID); err != nil {
+		return err
+	}
 	switch t.Type {
 	case models.TaskTypeScript:
 		if t.ScriptID == "" {
@@ -189,6 +224,9 @@ func (m *TaskManager) Validate(ctx context.Context, t *models.Task) error {
 	}
 	if t.Timeout == 0 {
 		t.Timeout = 300
+	}
+	if t.Timeout < 0 {
+		return store.ErrInvalidTask("timeout cannot be negative")
 	}
 	if t.OfflinePolicy == "" {
 		t.OfflinePolicy = models.OfflinePolicyHubOnlineRequired
@@ -270,6 +308,16 @@ func (m *TaskManager) Create(ctx context.Context, t *models.Task) error {
 
 // Update 更新任务
 func (m *TaskManager) Update(ctx context.Context, t *models.Task) error {
+	// 目标节点可能已被删除：更新时自动剔除失效节点，避免任务无法编辑/启停（缺陷 FAIL-A-009）
+	if t.Target.Type == "node" && len(t.Target.NodeIDs) > 0 {
+		alive := make([]string, 0, len(t.Target.NodeIDs))
+		for _, id := range t.Target.NodeIDs {
+			if _, err := m.store.GetNode(ctx, id); err == nil {
+				alive = append(alive, id)
+			}
+		}
+		t.Target.NodeIDs = alive
+	}
 	if err := m.Validate(ctx, t); err != nil {
 		return err
 	}
@@ -302,6 +350,10 @@ func (m *TaskManager) Update(ctx context.Context, t *models.Task) error {
 
 // Delete 删除任务
 func (m *TaskManager) Delete(ctx context.Context, id string) error {
+	name := ""
+	if t, err := m.store.GetTask(ctx, id); err == nil {
+		name = t.Name
+	}
 	schedules, err := m.store.ListSchedules(ctx)
 	if err != nil {
 		return err
@@ -327,7 +379,7 @@ func (m *TaskManager) Delete(ctx context.Context, id string) error {
 		if err := m.store.RecordTombstone(txctx, models.ObjectTask, id, rev); err != nil {
 			return err
 		}
-		return recordMutationAudit(txctx, m.store, "task", id, "delete")
+		return recordMutationAuditDetail(txctx, m.store, "task", id, "delete", name)
 	}); err != nil {
 		return err
 	}
@@ -343,4 +395,49 @@ func (m *TaskManager) Get(ctx context.Context, id string) (*models.Task, error) 
 // List 列表
 func (m *TaskManager) List(ctx context.Context) ([]*models.Task, error) {
 	return m.store.ListTasks(ctx)
+}
+
+// validateUniqueName 校验同类对象名称唯一（忽略大小写与首尾空白），selfID 为空时用于创建。
+func validateUniqueName(items []*models.Script, name, selfID string) error {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return fmt.Errorf("script name is required")
+	}
+	for _, other := range items {
+		if other.ID != selfID && strings.EqualFold(strings.TrimSpace(other.Name), name) {
+			return fmt.Errorf("script name already exists: %s", name)
+		}
+	}
+	return nil
+}
+
+// validateUniqueTaskName 校验任务名称唯一。
+func validateUniqueTaskName(items []*models.Task, name, selfID string) error {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return fmt.Errorf("task name is required")
+	}
+	for _, other := range items {
+		if other.ID != selfID && strings.EqualFold(strings.TrimSpace(other.Name), name) {
+			return fmt.Errorf("task name already exists: %s", name)
+		}
+	}
+	return nil
+}
+
+// validateParameters 校验参数名称非空且不重复（缺陷 FAIL-A-014）。
+func validateParameters(params []models.Parameter) error {
+	seen := map[string]bool{}
+	for _, p := range params {
+		name := strings.TrimSpace(p.Name)
+		if name == "" {
+			return fmt.Errorf("parameter name is required")
+		}
+		key := strings.ToLower(name)
+		if seen[key] {
+			return fmt.Errorf("duplicate parameter name: %s", name)
+		}
+		seen[key] = true
+	}
+	return nil
 }

@@ -15,6 +15,11 @@ func WithAuditInfo(ctx context.Context, userID, username string) context.Context
 }
 
 func recordMutationAudit(ctx context.Context, st store.Store, resource, resourceID, action string) error {
+	return recordMutationAuditDetail(ctx, st, resource, resourceID, action, "")
+}
+
+// recordMutationAuditDetail 与 recordMutationAudit 相同，但写入可读 detail（如对象名称）。
+func recordMutationAuditDetail(ctx context.Context, st store.Store, resource, resourceID, action, detail string) error {
 	a, ok := ctx.Value(auditContextKey{}).(models.AuditLog)
 	if !ok {
 		return nil
@@ -22,5 +27,6 @@ func recordMutationAudit(ctx context.Context, st store.Store, resource, resource
 	a.Action = action
 	a.Resource = resource
 	a.ResourceID = resourceID
+	a.Detail = detail
 	return st.AddAudit(ctx, &a)
 }

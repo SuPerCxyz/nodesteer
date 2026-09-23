@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"sync"
 	"time"
@@ -106,21 +107,36 @@ func (m *Manager) Login(ctx context.Context, username, password string) (*Sessio
 	return s, nil
 }
 
-// Authenticate 校验 Token
-func (m *Manager) Authenticate(token string) (*Session, bool) {
+// Authenticate 校验 Token。
+// 返回的会话副本以数据库当前角色为准，使角色变更（含降权）对已登录会话立即生效；
+// 不改写共享 Session，避免并发数据竞争。用户已不存在时使会话失效并清理。
+func (m *Manager) Authenticate(ctx context.Context, token string) (*Session, bool) {
 	m.mu.RLock()
 	s, ok := m.sessions[token]
+	var snapshot Session
+	if ok {
+		snapshot = *s
+	}
 	m.mu.RUnlock()
 	if !ok {
 		return nil, false
 	}
-	if time.Now().After(s.Expires) {
-		m.mu.Lock()
-		delete(m.sessions, token)
-		m.mu.Unlock()
+	if time.Now().After(snapshot.Expires) {
+		m.Logout(token)
 		return nil, false
 	}
-	return s, true
+	u, err := m.store.GetUserByID(ctx, snapshot.UserID)
+	if err != nil {
+		// 用户已删除：会话失效并清理；读取失败同样 Fail Closed。
+		if errors.Is(err, sql.ErrNoRows) {
+			m.Logout(token)
+		}
+		return nil, false
+	}
+	// 副本携带数据库当前角色/用户名，不污染共享会话
+	snapshot.Role = u.Role
+	snapshot.Username = u.Username
+	return &snapshot, true
 }
 
 // Logout 注销

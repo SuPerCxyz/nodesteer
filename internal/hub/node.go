@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cadentra/cadentra/internal/models"
@@ -40,9 +41,59 @@ func (nm *NodeManager) RegisterAgent(ctx context.Context, hostname, ip, os, arch
 
 // PrepareEnrollment 创建待接入节点，并预分配 Agent 身份供首次 HELLO 绑定。
 // 版本、架构和部署模式必须等首次 HELLO 后再以 Agent 实际上报值为准。
+// 若同名（忽略大小写）或同地址的节点已存在，则复用其 Node ID / Agent ID 并重新签发凭证，
+// 避免「撤销凭证 → 重新纳管」产生重复节点记录；既有标签与历史保留。
 func (nm *NodeManager) PrepareEnrollment(ctx context.Context, hostname, ip string, _ string) (*models.Node, error) {
+	if existing := nm.findEnrollableNode(ctx, hostname, ip); existing != nil {
+		existing.Hostname = hostname
+		if ip != "" {
+			existing.IP = ip
+		}
+		existing.Status = models.NodeStatusOffline
+		existing.SyncStatus = "pending"
+		existing.AgentVersion = ""
+		existing.OS = ""
+		existing.Arch = ""
+		existing.DeploymentMode = ""
+		existing.HostIntegration = false
+		existing.Capabilities = nil
+		if err := nm.store.UpsertNode(ctx, existing); err != nil {
+			return nil, err
+		}
+		cred := "cred-" + uuid.NewString()
+		if err := nm.store.SetSetting(ctx, "cred:"+existing.ID, cred); err != nil {
+			return nil, err
+		}
+		// 重新纳管即重新授权：清除撤销标记，允许 Agent 用新凭证接入
+		_ = nm.store.DeleteSetting(ctx, "revoked:"+existing.ID)
+		return existing, nil
+	}
 	n, _, err := nm.createNode(ctx, hostname, ip, "", "", "", "", false, nil, models.NodeStatusOffline, "pending")
 	return n, err
+}
+
+// findEnrollableNode 按节点名（忽略大小写）或节点地址查找可复用的既有节点。
+func (nm *NodeManager) findEnrollableNode(ctx context.Context, hostname, ip string) *models.Node {
+	nodes, err := nm.store.ListNodes(ctx)
+	if err != nil {
+		return nil
+	}
+	name := strings.ToLower(strings.TrimSpace(hostname))
+	if name != "" {
+		for _, n := range nodes {
+			if strings.ToLower(strings.TrimSpace(n.Hostname)) == name {
+				return n
+			}
+		}
+	}
+	if ip != "" {
+		for _, n := range nodes {
+			if n.IP == ip {
+				return n
+			}
+		}
+	}
+	return nil
 }
 
 func (nm *NodeManager) createNode(ctx context.Context, hostname, ip, os, arch, agentVersion, mode string, hostInt bool, caps map[string]bool, status, syncStatus string) (*models.Node, string, error) {
@@ -189,7 +240,7 @@ func (nm *NodeManager) CreateGroup(ctx context.Context, g *models.Group) error {
 			return err
 		}
 		var err error
-		rev, err = nm.recordTargetChange(txctx, models.ObjectGroup, g.ID, "create")
+		rev, err = nm.recordTargetChangeDetail(txctx, models.ObjectGroup, g.ID, "create", g.Name)
 		return err
 	}); err != nil {
 		return err
@@ -209,7 +260,7 @@ func (nm *NodeManager) UpdateGroup(ctx context.Context, g *models.Group) error {
 			return err
 		}
 		var err error
-		rev, err = nm.recordTargetChange(txctx, models.ObjectGroup, g.ID, "update")
+		rev, err = nm.recordTargetChangeDetail(txctx, models.ObjectGroup, g.ID, "update", g.Name)
 		return err
 	}); err != nil {
 		return err
@@ -223,6 +274,10 @@ func (nm *NodeManager) UpdateGroup(ctx context.Context, g *models.Group) error {
 
 // DeleteGroup 删除节点组并推进 Desired State Revision。
 func (nm *NodeManager) DeleteGroup(ctx context.Context, id string) error {
+	groupName := ""
+	if g, err := nm.store.GetGroup(ctx, id); err == nil {
+		groupName = g.Name
+	}
 	tasks, err := nm.store.ListTasks(ctx)
 	if err != nil {
 		return err
@@ -242,7 +297,7 @@ func (nm *NodeManager) DeleteGroup(ctx context.Context, id string) error {
 			return err
 		}
 		var err error
-		rev, err = nm.recordTargetChange(txctx, models.ObjectGroup, id, "delete")
+		rev, err = nm.recordTargetChangeDetail(txctx, models.ObjectGroup, id, "delete", groupName)
 		return err
 	}); err != nil {
 		return err
@@ -255,6 +310,11 @@ func (nm *NodeManager) DeleteGroup(ctx context.Context, id string) error {
 }
 
 func (nm *NodeManager) recordTargetChange(ctx context.Context, objectType, objectID, operation string) (int64, error) {
+	return nm.recordTargetChangeDetail(ctx, objectType, objectID, operation, "")
+}
+
+// recordTargetChangeDetail 与 recordTargetChange 相同，但写入可读 detail（如分组名）。
+func (nm *NodeManager) recordTargetChangeDetail(ctx context.Context, objectType, objectID, operation, detail string) (int64, error) {
 	if nm.syncMgr == nil {
 		return 0, nil
 	}
@@ -265,7 +325,7 @@ func (nm *NodeManager) recordTargetChange(ctx context.Context, objectType, objec
 	if err := nm.revisions.RecordChange(ctx, rev, objectType, objectID, 0, operation); err != nil {
 		return 0, err
 	}
-	if err := recordMutationAudit(ctx, nm.store, objectType, objectID, operation); err != nil {
+	if err := recordMutationAuditDetail(ctx, nm.store, objectType, objectID, operation, detail); err != nil {
 		return 0, err
 	}
 	return rev, nil
@@ -372,7 +432,13 @@ func (nm *NodeManager) ResolveTarget(ctx context.Context, tgt models.Target) ([]
 	}
 	switch tgt.Type {
 	case "node":
-		add(tgt.NodeIDs)
+		// 目标节点可能已被删除：给出可读错误而不是原始 SQL 错误（缺陷 FAIL-A-009）
+		for _, id := range tgt.NodeIDs {
+			if _, err := nm.store.GetNode(ctx, id); err != nil {
+				return nil, fmt.Errorf("target node %s no longer exists; update the task targets", id)
+			}
+			add([]string{id})
+		}
 	case "group":
 		for _, gid := range tgt.GroupIDs {
 			g, err := nm.store.GetGroup(ctx, gid)
