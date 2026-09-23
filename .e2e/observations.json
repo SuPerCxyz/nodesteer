@@ -1,6 +1,6 @@
 {
  "schema_version": 1,
- "generated_at": "2026-09-22T19:11:34+08:00",
+ "generated_at": "2026-09-23T14:35:06+08:00",
  "observations": [
   {
    "id": "OBS-FIX-011",
@@ -653,6 +653,18 @@
    ],
    "follow_up_required": false,
    "resolved": true
+  },
+  {
+   "id": "OBS-FIX-012",
+   "note": "文件传输残留窗口（范围外，本轮未修）：Agent 断连时 sendFileUploadResult 静默丢弃失败回执（internal/agent/agent.go:1190-1193），源 Agent 若不重连，ResumeNode 不触发，传输停留 UPLOADING/PENDING；当前逃生路径为 UI 手动取消（入口已可用），watchdog/超时终态化为后续候选增强。",
+   "recorded_at": "2026-09-23T14:35:06+08:00",
+   "unit": "oidc-mutex-and-high-fixes"
+  },
+  {
+   "id": "OBS-FIX-013",
+   "note": "store.ListFileTransfers 在 OpenInMemory 下因 :memory: 按连接隔离、嵌套查询落到新连接空库且错误被 t.Targets 赋值处吞掉 → targets 恒空，使内存库测试中目标级删除检查恒不生效；本轮新测试改用 OpenSQLite 绕开并真实验证双检查。生产文件库不受影响；internal/store 不在本轮允许写入范围，未修，待后续处理。",
+   "recorded_at": "2026-09-23T14:35:06+08:00",
+   "unit": "oidc-mutex-and-high-fixes"
   }
  ]
 }

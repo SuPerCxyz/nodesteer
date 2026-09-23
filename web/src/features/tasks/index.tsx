@@ -18,6 +18,12 @@ import {
   type Target,
 } from '@/lib/api'
 import { useCanRun, useCanWrite } from '@/lib/permissions'
+import {
+  appDeployOperations,
+  appOperations,
+  buildTaskPayload,
+  normalizeAppOperation,
+} from '@/lib/task-payload'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -635,8 +641,9 @@ export function TaskEditor() {
       return
     }
     try {
-      if (editing) await api.put(`/tasks/${id}`, form)
-      else await api.post('/tasks', form)
+      const payload = buildTaskPayload(form)
+      if (editing) await api.put(`/tasks/${id}`, payload)
+      else await api.post('/tasks', payload)
       await client.invalidateQueries({ queryKey: ['tasks'] })
       window.location.assign('/tasks')
     } catch (error) {
@@ -644,6 +651,13 @@ export function TaskEditor() {
     }
   }
   const selectedNodes = form.target?.node_ids || []
+  // 操作下拉的候选与当前值：按类型归一化，避免 stale 值（如 command 的 start）漏进 app_deploy。
+  const currentOperation = form.app_operation || ''
+  const appOperationOptions =
+    form.type === 'app_deploy' ? appDeployOperations : appOperations
+  const selectedAppOperation = appOperationOptions.includes(currentOperation)
+    ? currentOperation
+    : appOperationOptions[0]
   const nodeNames = new Map(
     (nodes.data || []).map((node) => [node.id, node.hostname])
   )
@@ -751,13 +765,21 @@ export function TaskEditor() {
                 {t('common.type')}
                 <Select
                   value={form.type || 'command'}
-                  onValueChange={(value) =>
-                    setForm({
+                  onValueChange={(value) => {
+                    const next: Partial<Task> = {
                       ...form,
                       type: value,
                       command: value === 'command' ? form.command : '',
-                    })
-                  }
+                    }
+                    // 类型切换同步归一化 app_operation：应用类型给合法值，其余类型删除字段。
+                    const operation = normalizeAppOperation(
+                      value,
+                      form.app_operation
+                    )
+                    if (operation === undefined) delete next.app_operation
+                    else next.app_operation = operation
+                    setForm(next)
+                  }}
                 >
                   <SelectTrigger className='w-full'>
                     <SelectValue />
@@ -844,11 +866,11 @@ export function TaskEditor() {
                     </SelectContent>
                   </Select>
                 </label>
-                {form.type === 'app_operation' && (
+                {['app_operation', 'app_deploy'].includes(form.type || '') && (
                   <label className='grid gap-2 text-sm font-medium'>
                     {t('tasks.operation')}
                     <Select
-                      value={form.app_operation || 'start'}
+                      value={selectedAppOperation}
                       onValueChange={(value) =>
                         setForm({ ...form, app_operation: value })
                       }
@@ -857,13 +879,11 @@ export function TaskEditor() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {['start', 'stop', 'restart', 'upgrade'].map(
-                          (operation) => (
-                            <SelectItem key={operation} value={operation}>
-                              {t(`tasks.${operation}`)}
-                            </SelectItem>
-                          )
-                        )}
+                        {appOperationOptions.map((operation) => (
+                          <SelectItem key={operation} value={operation}>
+                            {t(`tasks.${operation}`)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </label>

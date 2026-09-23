@@ -925,8 +925,10 @@
    ],
    "notes": "经 API cancel 后节点删除成功；代码层 completeUpload 失败路径未终结 targets，Retry 对 PENDING 目标无操作",
    "source_agent": "main",
-   "status": "unverified",
-   "test_notes": "2026-09-19 记录，本轮未复测"
+   "status": "resolved",
+   "test_notes": "2026-09-19 记录，本轮未复测",
+   "fix_note": "已修复（2026-09-23 互斥登录+双high修复轮）：completeUpload 失败路径新增 failTransfer——置传输 FAILED、清空 SHA256、failTargets 终结全部非终态目标，节点删除不再 409。自动化验证：Go TestFileTransferCompleteUploadFailureTerminalizesTargets 断言预条件双 409 → 422 后传输/目标全终态 → 三节点 Delete 放行 + 迟到回执幂等（PASS）；Playwright P22-02 UI 取消用例（route mock，收集通过）。诚实边界：活环境页面级复验待 beta 部署执行；Agent 断连丢回执窗口为独立残留（已记 observations，watchdog 属范围外）。",
+   "fixed_at": "2026-09-23T14:34:16+08:00"
   },
   {
    "id": "FAIL-M-002",
@@ -989,7 +991,7 @@
   {
    "id": "FAIL-G-001",
    "severity": "high",
-   "status": "unverified",
+   "status": "resolved",
    "source_agent": "main",
    "title": "UI 无法创建「托管应用部署」任务：默认 app_operation=start 与后端校验冲突",
    "preconditions": [
@@ -1013,7 +1015,9 @@
     "web/src/features/tasks/index.tsx"
    ],
    "notes": "API 创建同配置任务可运行且执行 SUCCESS（b8aa9a9d）；后端在字段为空时会默认 deploy（internal/hub/definitions.go:203-208）",
-   "test_notes": "2026-09-19 记录，本轮未复测"
+   "test_notes": "2026-09-19 记录，本轮未复测",
+   "fix_note": "已修复（2026-09-23 互斥登录+双high修复轮）：前端归一化——类型切换与保存 payload 经 buildTaskPayload（app_deploy 仅 deploy|upgrade 且默认 deploy、非应用类型剔除 app_operation），并为 app_deploy 增加 deploy/upgrade 操作选择器；后端校验保持不变（PRODUCT §21 语义）。自动化验证：Go TestAppDeployOperationValidation 5 断言、vitest task-payload 4 用例、Playwright P10-02（mock POST 断言 payload，收集通过）均 PASS。诚实边界：活环境创建任务复验待 beta 部署执行（原记录 reproducible×2 场景）。",
+   "fixed_at": "2026-09-23T14:34:16+08:00"
   },
   {
    "id": "FAIL-G-002",

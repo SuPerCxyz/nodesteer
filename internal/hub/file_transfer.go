@@ -332,7 +332,13 @@ func (m *FileTransferManager) handleUpload(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	if err := m.completeUpload(r.Context(), t, total); err != nil {
-		writeTransferJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": err.Error()})
+		// 校验/暂存失败必须终态化：否则传输停留 UPLOADING、目标停留 PENDING，
+		// 源/目标节点删除会被 409 has active file transfer 永久阻断（缺陷 FAIL-M-001）。
+		message := sourceUploadErrorMessage(err.Error())
+		if failErr := m.failTransfer(r.Context(), t, message); failErr != nil {
+			m.logger.Warn("persist terminal transfer failed", "transfer", t.ID, "error", failErr)
+		}
+		writeTransferJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": message})
 		return
 	}
 	writeTransferJSON(w, http.StatusOK, map[string]any{"status": t.Status, "size": t.Size, "sha256": t.SHA256})
@@ -409,8 +415,14 @@ func (m *FileTransferManager) HandleUploadResult(ctx context.Context, nodeID str
 	if t.SourceNodeID != nodeID || t.Status == models.FileTransferCanceled || t.Status == models.FileTransferSuccess || t.SHA256 != "" {
 		return nil
 	}
-	message := sourceUploadErrorMessage(p.Error)
-	t.Status, t.Error = models.FileTransferFailed, message
+	return m.failTransfer(ctx, t, sourceUploadErrorMessage(p.Error))
+}
+
+// failTransfer 将传输终结为 FAILED 并同步终结所有非终态目标，返回首个持久化错误。
+func (m *FileTransferManager) failTransfer(ctx context.Context, t *models.FileTransfer, message string) error {
+	// completeUpload 可能在持久化失败前已把暂存元数据写进内存；
+	// 终态传输不得携带已回滚的 blob 信息，否则交付/重试路径会按“已暂存”处理。
+	t.Status, t.Error, t.SHA256 = models.FileTransferFailed, message, ""
 	if err := m.store.UpdateFileTransfer(ctx, t); err != nil {
 		return err
 	}
