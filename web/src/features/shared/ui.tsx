@@ -15,7 +15,8 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { api, type ApiError } from '@/lib/api'
+import { api } from '@/lib/api'
+import { formatApiError } from '@/lib/api-errors'
 import { copyText } from '@/lib/clipboard'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -31,6 +32,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { CadentraHeader } from '@/components/layout/cadentra-header'
+import { Main } from '@/components/layout/main'
 
 export function StatusBadge({ status }: { status: string }) {
   const { i18n } = useTranslation()
@@ -158,7 +161,7 @@ export function ErrorState({
   onRetry?: () => void
 }) {
   const { t } = useTranslation()
-  const message = error instanceof Error ? error.message : t('common.noData')
+  const message = errorMessage(error) || t('common.noData')
   return (
     <div
       className='flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive'
@@ -172,6 +175,51 @@ export function ErrorState({
         </Button>
       )}
     </div>
+  )
+}
+
+/** 从任意错误输入中提取可读文本；无法识别时返回空字符串。 */
+function errorMessage(error: unknown): string {
+  if (typeof error === 'string') return error.trim()
+  if (error instanceof Error) return error.message
+  if (error && typeof error === 'object') {
+    const record = error as Record<string, unknown>
+    for (const key of ['message', 'error', 'detail'] as const) {
+      const value = record[key]
+      if (typeof value === 'string' && value.trim()) return value
+    }
+  }
+  if (typeof error === 'number' || typeof error === 'boolean')
+    return String(error)
+  return ''
+}
+
+/**
+ * 资源详情/编辑页的整页错误态：带标题、返回列表入口与重试按钮。
+ * 用于 API 返回 404 或其他错误时，避免空白页或伪装成新建表单。
+ */
+export function ErrorPage({
+  title,
+  error,
+  onRetry,
+  backTo,
+}: {
+  title: string
+  error: unknown
+  onRetry?: () => void
+  backTo: string
+}) {
+  const { t } = useTranslation()
+  return (
+    <>
+      <CadentraHeader title={title} />
+      <Main className='flex flex-1 flex-col gap-6'>
+        <Button asChild variant='ghost' className='w-fit px-0'>
+          <a href={backTo}>← {t('common.back')}</a>
+        </Button>
+        <ErrorState error={error} onRetry={onRetry} />
+      </Main>
+    </>
   )
 }
 
@@ -224,6 +272,42 @@ export function SectionCard({
       </CardHeader>
       <CardContent>{children}</CardContent>
     </Card>
+  )
+}
+
+export function DetailGrid({
+  children,
+  className,
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <dl
+      className={cn(
+        'grid gap-x-8 gap-y-4 text-sm lg:grid-cols-2 2xl:grid-cols-3',
+        className
+      )}
+    >
+      {children}
+    </dl>
+  )
+}
+
+export function DetailField({
+  label,
+  children,
+  className,
+}: {
+  label: string
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <div className={cn('min-w-0', className)}>
+      <dt className='text-xs text-muted-foreground'>{label}</dt>
+      <dd className='mt-1 break-words'>{children}</dd>
+    </div>
   )
 }
 
@@ -465,10 +549,7 @@ export async function deleteResource(path: string, message: string) {
 }
 
 export function apiMessage(error: unknown) {
-  return (
-    (error as ApiError)?.message ||
-    (error instanceof Error ? error.message : 'Request failed')
-  )
+  return formatApiError(error) || 'Request failed'
 }
 
 export { Separator }

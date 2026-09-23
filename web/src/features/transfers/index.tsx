@@ -118,26 +118,58 @@ export function FileTransfers() {
         ),
       },
       {
+        id: 'error',
+        accessorFn: (row: FileTransfer) =>
+          `${row.error || ''} ${row.targets
+            .map((target) => target.error || '')
+            .join(' ')}`,
+        header: t('transfers.errorReason'),
+        size: 300,
+        minSize: 200,
+        maxSize: 480,
+        cell: ({ row }: { row: { original: FileTransfer } }) =>
+          row.original.error ? (
+            <span
+              className='block truncate text-xs text-destructive'
+              title={row.original.error}
+            >
+              {row.original.error}
+            </span>
+          ) : (
+            <span className='text-muted-foreground'>-</span>
+          ),
+      },
+      {
         id: 'targets',
         header: t('transfers.targets'),
-        size: 260,
+        size: 280,
         minSize: 200,
         cell: ({ row }: { row: { original: FileTransfer } }) => (
-          <div className='flex flex-wrap gap-1'>
+          <div className='flex flex-wrap gap-x-3 gap-y-2'>
             {row.original.targets.map((target) => (
               <span
                 key={target.node_id}
-                className='inline-flex max-w-full min-w-0 items-center gap-1 text-xs'
+                className='flex max-w-full min-w-0 flex-col gap-1'
               >
-                <span
-                  className='max-w-40 truncate'
-                  title={
-                    nodeNames.get(target.node_id) || t('common.unknownNode')
-                  }
-                >
-                  {nodeNames.get(target.node_id) || t('common.unknownNode')}
+                <span className='inline-flex max-w-full min-w-0 items-center gap-1'>
+                  <span
+                    className='max-w-40 truncate text-xs'
+                    title={
+                      nodeNames.get(target.node_id) || t('common.unknownNode')
+                    }
+                  >
+                    {nodeNames.get(target.node_id) || t('common.unknownNode')}
+                  </span>
+                  <StatusBadge status={target.status} />
                 </span>
-                <StatusBadge status={target.status} />
+                {target.error ? (
+                  <span
+                    className='max-w-full truncate text-xs text-destructive'
+                    title={target.error}
+                  >
+                    {target.error}
+                  </span>
+                ) : null}
               </span>
             ))}
           </div>
@@ -159,19 +191,23 @@ export function FileTransfers() {
         size: 72,
         minSize: 64,
         meta: { align: 'end' },
-        cell: ({ row }: { row: { original: FileTransfer } }) =>
-          canWrite ? (
+        cell: ({ row }: { row: { original: FileTransfer } }) => {
+          const canRetry = row.original.status === 'FAILED'
+          const canCancel = !['SUCCESS', 'CANCELED'].includes(
+            row.original.status
+          )
+          // 终态且无可用操作时不渲染空菜单（缺陷 FAIL-A-012）
+          if (!canWrite || (!canRetry && !canCancel)) return null
+          return (
             <MoreMenu>
-              {row.original.status === 'FAILED' && (
+              {canRetry && (
                 <DropdownMenuItem
                   onSelect={() => retryTransfer(row.original.id)}
                 >
                   {t('transfers.retry')}
                 </DropdownMenuItem>
               )}
-              {['PENDING', 'UPLOADING', 'DELIVERING'].includes(
-                row.original.status
-              ) && (
+              {canCancel && (
                 <DropdownMenuItem
                   onSelect={() => cancelTransfer(row.original.id)}
                 >
@@ -179,7 +215,8 @@ export function FileTransfers() {
                 </DropdownMenuItem>
               )}
             </MoreMenu>
-          ) : null,
+          )
+        },
       },
     ],
     [canWrite, cancelTransfer, nodeNames, retryTransfer, t]
@@ -205,7 +242,7 @@ export function FileTransfers() {
         title={t('transfers.title')}
         description={t('transfers.description')}
       />
-      <Main fluid className='flex flex-1 flex-col gap-6'>
+      <Main className='flex flex-1 flex-col gap-6'>
         {canWrite ? (
           <Card className='w-full'>
             <CardHeader>
@@ -342,6 +379,7 @@ export function FileTransfers() {
           <DataTable
             data={transfers.data}
             columns={columns}
+            storageKey='transfers'
             searchPlaceholder={t('transfers.searchPlaceholder')}
           />
         ) : (

@@ -33,7 +33,13 @@ import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { CadentraHeader } from '@/components/layout/cadentra-header'
 import { Main } from '@/components/layout/main'
-import { ErrorState, StatusBadge, TimeValue } from '@/features/shared/ui'
+import {
+  ErrorPage,
+  ErrorState,
+  LoadingState,
+  StatusBadge,
+  TimeValue,
+} from '@/features/shared/ui'
 
 function zonedDateTimeValue(value: string, timezone: string) {
   if (!value) return ''
@@ -43,13 +49,18 @@ function zonedDateTimeValue(value: string, timezone: string) {
   try {
     parts = new Intl.DateTimeFormat('en-CA', {
       timeZone: timezone || 'UTC',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
     }).formatToParts(date)
   } catch {
     return ''
   }
-  const get = (type: string) => parts.find((part) => part.type === type)?.value || ''
+  const get = (type: string) =>
+    parts.find((part) => part.type === type)?.value || ''
   return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`
 }
 
@@ -61,15 +72,31 @@ function zonedDateTimeToISO(value: string, timezone: string) {
   let parts: Intl.DateTimeFormatPart[]
   try {
     parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone: timezone || 'UTC', year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+      timeZone: timezone || 'UTC',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23',
     }).formatToParts(guess)
   } catch {
     return guess.toISOString()
   }
-  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value || 0)
-  const asZonedUTC = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'))
-  return new Date(guess.getTime() - (asZonedUTC - guess.getTime())).toISOString()
+  const get = (type: string) =>
+    Number(parts.find((part) => part.type === type)?.value || 0)
+  const asZonedUTC = Date.UTC(
+    get('year'),
+    get('month') - 1,
+    get('day'),
+    get('hour'),
+    get('minute'),
+    get('second')
+  )
+  return new Date(
+    guess.getTime() - (asZonedUTC - guess.getTime())
+  ).toISOString()
 }
 
 function EditorShell({
@@ -85,7 +112,7 @@ function EditorShell({
     <>
       <CadentraHeader title={title} description={description} />
       <Main className='flex flex-1 flex-col gap-6'>
-        <div className='w-full max-w-4xl'>{children}</div>
+        <div className='w-full max-w-5xl'>{children}</div>
       </Main>
     </>
   )
@@ -147,17 +174,35 @@ export function ScheduleEditor() {
     try {
       if (editing) await api.put(`/schedules/${id}`, payload)
       else await api.post('/schedules', payload)
-      window.location.assign('/schedules')
+      window.location.assign('/tasks?view=schedules')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('common.noData'))
     }
   }
+  if (editing && current.isError && !current.data)
+    return (
+      <ErrorPage
+        title={t('schedules.editTitle')}
+        error={current.error}
+        onRetry={() => current.refetch()}
+        backTo='/tasks?view=schedules'
+      />
+    )
+  if (editing && current.isPending && !draft)
+    return (
+      <EditorShell
+        title={t('schedules.editTitle')}
+        description={t('schedules.formDescription')}
+      >
+        <LoadingState />
+      </EditorShell>
+    )
   return (
     <EditorShell
       title={editing ? t('schedules.editTitle') : t('schedules.newTitle')}
       description={t('schedules.formDescription')}
     >
-      <Card className='max-w-4xl'>
+      <Card className='max-w-none'>
         <CardContent className='grid gap-5 pt-6'>
           {error && <ErrorState error={error} />}
           <label className='grid gap-2 text-sm font-medium'>
@@ -228,12 +273,19 @@ export function ScheduleEditor() {
               {t('schedules.runAt')}
               <Input
                 type='datetime-local'
-                value={form.run_at ? zonedDateTimeValue(form.run_at, form.timezone || 'UTC') : ''}
+                value={
+                  form.run_at
+                    ? zonedDateTimeValue(form.run_at, form.timezone || 'UTC')
+                    : ''
+                }
                 onChange={(event) =>
                   setForm({
                     ...form,
                     run_at: event.target.value
-                      ? zonedDateTimeToISO(event.target.value, form.timezone || 'UTC')
+                      ? zonedDateTimeToISO(
+                          event.target.value,
+                          form.timezone || 'UTC'
+                        )
                       : '',
                   })
                 }
@@ -324,7 +376,9 @@ export function ScheduleEditor() {
               <Button onClick={save}>{t('common.save')}</Button>
             ) : null}
             <Button asChild variant='outline'>
-              <Link to='/schedules'>{t('common.cancel')}</Link>
+              <Link to='/tasks' search={{ view: 'schedules' }}>
+                {t('common.cancel')}
+              </Link>
             </Button>
           </div>
         </CardContent>
@@ -409,6 +463,24 @@ export function ScriptEditor() {
     })
     setEnvironment({ key: '', value: '' })
   }
+  if (editing && current.isError && !current.data)
+    return (
+      <ErrorPage
+        title={t('scripts.editTitle')}
+        error={current.error}
+        onRetry={() => current.refetch()}
+        backTo='/scripts'
+      />
+    )
+  if (editing && current.isPending && !draft)
+    return (
+      <EditorShell
+        title={t('scripts.editTitle')}
+        description={t('scripts.formDescription')}
+      >
+        <LoadingState />
+      </EditorShell>
+    )
   return (
     <EditorShell
       title={editing ? t('scripts.editTitle') : t('scripts.newTitle')}
@@ -642,9 +714,7 @@ export function ScriptEditor() {
         </Card>
         <Separator />
         <div className='flex items-center gap-2'>
-            {canWrite ? (
-              <Button onClick={save}>{t('common.save')}</Button>
-            ) : null}
+          {canWrite ? <Button onClick={save}>{t('common.save')}</Button> : null}
           <Button asChild variant='outline'>
             <Link to='/scripts'>{t('common.cancel')}</Link>
           </Button>
@@ -724,13 +794,31 @@ export function GroupEditor() {
       setError(cause instanceof Error ? cause.message : t('common.noData'))
     }
   }
+  if (editing && current.isError && !current.data)
+    return (
+      <ErrorPage
+        title={t('groups.editTitle')}
+        error={current.error}
+        onRetry={() => current.refetch()}
+        backTo='/groups'
+      />
+    )
+  if (editing && current.isPending && !draft)
+    return (
+      <EditorShell
+        title={t('groups.editTitle')}
+        description={t('groups.description')}
+      >
+        <LoadingState />
+      </EditorShell>
+    )
   const members = form.members || []
   return (
     <EditorShell
       title={editing ? t('groups.editTitle') : t('groups.newGroup')}
       description={t('groups.description')}
     >
-      <div className='grid max-w-4xl gap-5'>
+      <div className='grid max-w-none gap-5'>
         <Card>
           <CardContent className='grid gap-5 pt-6'>
             {error && <ErrorState error={error} />}
@@ -841,6 +929,9 @@ export function ApplicationEditor() {
   const canWrite = useCanWrite()
   const id = window.location.pathname.split('/')[2] || ''
   const editing = id !== 'new'
+  const presetArtifactId = editing
+    ? ''
+    : new URLSearchParams(window.location.search).get('artifact_id') || ''
   const current = useQuery({
     queryKey: ['application', id],
     queryFn: () => api.get<Application>(`/applications/${id}`),
@@ -900,8 +991,29 @@ export function ApplicationEditor() {
     },
   }
   const [draft, setDraft] = useState<Partial<Application> | null>(null)
-  const form = draft || current.data || defaultForm
+  const presetArtifact = presetArtifactId
+    ? (artifacts.data || []).find((item) => item.id === presetArtifactId)
+    : undefined
+  const form =
+    draft ||
+    current.data ||
+    (presetArtifact
+      ? {
+          ...defaultForm,
+          artifact_id: presetArtifact.id,
+          version: presetArtifact.version,
+        }
+      : defaultForm)
   const setForm = (next: Partial<Application>) => setDraft(next)
+  const selectedArtifact = (artifacts.data || []).find(
+    (item) => item.id === form.artifact_id
+  )
+  const [showUpload, setShowUpload] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const [uploadFileName, setUploadFileName] = useState('')
+  const [uploadName, setUploadName] = useState('')
+  const [uploadVersion, setUploadVersion] = useState('')
   const [arg, setArg] = useState('')
   const [env, setEnv] = useState({ key: '', value: '' })
   const [selectedNodesDraft, setSelectedNodesDraft] = useState<string[] | null>(
@@ -955,6 +1067,31 @@ export function ApplicationEditor() {
       setError(cause instanceof Error ? cause.message : t('common.noData'))
     }
   }
+  const uploadArtifact = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setUploading(true)
+    setUploadError('')
+    try {
+      const response = await fetch('/api/artifacts', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken() || ''}` },
+        body: new FormData(event.currentTarget),
+      })
+      if (!response.ok)
+        throw new Error(`${t('artifacts.uploadFailed')}: ${response.status}`)
+      const uploaded = (await response.json()) as Artifact
+      setForm({ ...form, artifact_id: uploaded.id, version: uploaded.version })
+      setShowUpload(false)
+      setUploadFileName('')
+      await artifacts.refetch()
+    } catch (cause) {
+      setUploadError(
+        cause instanceof Error ? cause.message : t('artifacts.uploadFailed')
+      )
+    } finally {
+      setUploading(false)
+    }
+  }
   const addArg = () => {
     if (!arg.trim()) return
     setForm({ ...form, arguments: [...(form.arguments || []), arg.trim()] })
@@ -975,12 +1112,30 @@ export function ApplicationEditor() {
     attempts: 3,
     interval: 2,
   }
+  if (editing && current.isError && !current.data)
+    return (
+      <ErrorPage
+        title={t('apps.editTitle')}
+        error={current.error}
+        onRetry={() => current.refetch()}
+        backTo='/applications'
+      />
+    )
+  if (editing && current.isPending && !draft)
+    return (
+      <EditorShell
+        title={t('apps.editTitle')}
+        description={t('apps.formDescription')}
+      >
+        <LoadingState />
+      </EditorShell>
+    )
   return (
     <EditorShell
       title={editing ? t('apps.editTitle') : t('apps.newTitle')}
       description={t('apps.formDescription')}
     >
-      <div className='grid max-w-4xl gap-6'>
+      <div className='grid max-w-none gap-6'>
         <Card>
           <CardHeader>
             <CardTitle className='text-base'>{t('apps.title')}</CardTitle>
@@ -1017,14 +1172,31 @@ export function ApplicationEditor() {
                 }
               />
             </label>
-            <div className='grid gap-4 sm:grid-cols-2'>
-              <label className='grid gap-2 text-sm font-medium'>
-                {t('apps.artifact')}
+            <div className='grid gap-4 rounded-lg border p-4'>
+              <div className='flex flex-wrap items-center justify-between gap-2'>
+                <span className='text-sm font-medium'>
+                  {t('apps.currentArtifact')}
+                </span>
+                <Link
+                  className='text-xs text-muted-foreground hover:underline'
+                  to='/artifacts'
+                >
+                  {t('apps.manageArtifacts')}
+                </Link>
+              </div>
+              <div className='grid gap-4 sm:grid-cols-2'>
                 <Select
                   value={form.artifact_id || ''}
-                  onValueChange={(value) =>
-                    setForm({ ...form, artifact_id: value })
-                  }
+                  onValueChange={(value) => {
+                    const picked = (artifacts.data || []).find(
+                      (item) => item.id === value
+                    )
+                    setForm({
+                      ...form,
+                      artifact_id: value,
+                      version: picked ? picked.version : form.version,
+                    })
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t('apps.selectArtifact')} />
@@ -1037,7 +1209,110 @@ export function ApplicationEditor() {
                     ))}
                   </SelectContent>
                 </Select>
-              </label>
+                <div className='grid content-start gap-1 text-xs text-muted-foreground'>
+                  {selectedArtifact ? (
+                    <>
+                      <span className='truncate'>
+                        {selectedArtifact.name} · {selectedArtifact.version} ·{' '}
+                        {selectedArtifact.architecture}
+                      </span>
+                      <span className='truncate font-mono'>
+                        SHA256 {selectedArtifact.sha256.slice(0, 16)}…
+                      </span>
+                    </>
+                  ) : (
+                    <span>{t('apps.selectArtifact')}</span>
+                  )}
+                </div>
+              </div>
+              {canWrite ? (
+                showUpload ? (
+                  <form className='grid gap-3' onSubmit={uploadArtifact}>
+                    {uploadError && <ErrorState error={uploadError} />}
+                    <div className='grid gap-3 sm:grid-cols-2'>
+                      <Input
+                        required
+                        name='name'
+                        placeholder={t('common.name')}
+                        value={uploadName}
+                        onChange={(event) => setUploadName(event.target.value)}
+                      />
+                      <Input
+                        required
+                        name='version'
+                        placeholder={t('common.version')}
+                        value={uploadVersion}
+                        onChange={(event) =>
+                          setUploadVersion(event.target.value)
+                        }
+                      />
+                    </div>
+                    <div className='grid gap-3 sm:grid-cols-2'>
+                      <select
+                        className='h-9 rounded-md border bg-background px-3 text-sm'
+                        name='architecture'
+                        defaultValue='amd64'
+                        aria-label={t('artifacts.archField')}
+                      >
+                        <option value='amd64'>amd64</option>
+                        <option value='arm64'>arm64</option>
+                      </select>
+                      <label
+                        htmlFor='app-artifact-file'
+                        className='cursor-pointer'
+                      >
+                        <span className='flex h-9 items-center rounded-md border px-3 text-sm'>
+                          <span className='truncate'>
+                            {uploadFileName || t('artifacts.selectFile')}
+                          </span>
+                        </span>
+                        <input
+                          id='app-artifact-file'
+                          type='file'
+                          name='file'
+                          required
+                          className='sr-only'
+                          aria-label={t('artifacts.file')}
+                          onChange={(event) =>
+                            setUploadFileName(
+                              event.target.files?.[0]?.name || ''
+                            )
+                          }
+                        />
+                      </label>
+                    </div>
+                    <div className='flex items-center gap-2'>
+                      <Button type='submit' disabled={uploading}>
+                        {uploading ? t('common.uploading') : t('common.upload')}
+                      </Button>
+                      <Button
+                        type='button'
+                        variant='outline'
+                        onClick={() => setShowUpload(false)}
+                      >
+                        {t('common.cancel')}
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  <Button
+                    type='button'
+                    variant='outline'
+                    className='w-fit'
+                    onClick={() => {
+                      setUploadName(form.name || '')
+                      setUploadVersion(form.version || '')
+                      setUploadError('')
+                      setShowUpload(true)
+                    }}
+                  >
+                    <Plus className='me-1 size-4' />
+                    {t('apps.uploadArtifact')}
+                  </Button>
+                )
+              ) : null}
+            </div>
+            <div className='grid gap-4 sm:grid-cols-2'>
               <label className='grid gap-2 text-sm font-medium'>
                 {t('apps.binaryPath')}
                 <Input
@@ -1048,8 +1323,6 @@ export function ApplicationEditor() {
                   }
                 />
               </label>
-            </div>
-            <div className='grid gap-4 sm:grid-cols-2'>
               <label className='grid gap-2 text-sm font-medium'>
                 {t('apps.configPath')}
                 <Input
@@ -1060,17 +1333,17 @@ export function ApplicationEditor() {
                   }
                 />
               </label>
-              <label className='grid gap-2 text-sm font-medium'>
-                {t('apps.unit')}
-                <Input
-                  className='font-mono text-xs'
-                  value={form.unit_name || ''}
-                  onChange={(event) =>
-                    setForm({ ...form, unit_name: event.target.value })
-                  }
-                />
-              </label>
             </div>
+            <label className='grid gap-2 text-sm font-medium'>
+              {t('apps.unit')}
+              <Input
+                className='font-mono text-xs'
+                value={form.unit_name || ''}
+                onChange={(event) =>
+                  setForm({ ...form, unit_name: event.target.value })
+                }
+              />
+            </label>
             <label className='grid gap-2 text-sm font-medium'>
               {t('apps.configContent')}
               <Textarea
@@ -1303,35 +1576,37 @@ export function ApplicationEditor() {
           <>
             {canRun ? (
               <Card>
-              <CardHeader>
-                <CardTitle className='text-base'>{t('apps.deploy')}</CardTitle>
-              </CardHeader>
-              <CardContent className='flex flex-wrap gap-2'>
-                <Select
-                  value={operation}
-                  onValueChange={setOperation}
-                  disabled={!canRun}
-                >
-                  <SelectTrigger className='w-40'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {['deploy', 'start', 'stop', 'restart', 'upgrade'].map(
-                      (value) => (
-                        <SelectItem key={value} value={value}>
-                          {value}
-                        </SelectItem>
-                      )
-                    )}
-                  </SelectContent>
-                </Select>
-                <Button
-                  onClick={deploy}
-                  disabled={!canRun || !selectedNodes.length}
-                >
-                  {t('apps.deploy')}
-                </Button>
-              </CardContent>
+                <CardHeader>
+                  <CardTitle className='text-base'>
+                    {t('apps.deploy')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className='flex flex-wrap gap-2'>
+                  <Select
+                    value={operation}
+                    onValueChange={setOperation}
+                    disabled={!canRun}
+                  >
+                    <SelectTrigger className='w-40'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['deploy', 'start', 'stop', 'restart', 'upgrade'].map(
+                        (value) => (
+                          <SelectItem key={value} value={value}>
+                            {value}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    onClick={deploy}
+                    disabled={!canRun || !selectedNodes.length}
+                  >
+                    {t('apps.deploy')}
+                  </Button>
+                </CardContent>
               </Card>
             ) : null}
             <Card>
@@ -1472,7 +1747,7 @@ export function ArtifactEditor() {
       title={t('common.upload')}
       description={t('artifacts.description')}
     >
-      <Card className='max-w-4xl'>
+      <Card className='max-w-none'>
         <CardContent className='pt-6'>
           <form className='grid gap-5' onSubmit={upload}>
             {error && <ErrorState error={error} />}

@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Eye, EyeOff } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { Button } from './ui/button'
 
@@ -8,21 +9,27 @@ type PasswordInputProps = Omit<
   'type'
 > & {
   ref?: React.Ref<HTMLInputElement>
+  inputClassName?: string
 }
 
 export function PasswordInput({
   className,
+  inputClassName,
   disabled,
   ref,
   ...props
 }: PasswordInputProps) {
+  const { t } = useTranslation()
   const [showPassword, setShowPassword] = React.useState(false)
 
   return (
     <div className={cn('relative rounded-md', className)}>
       <input
         type={showPassword ? 'text' : 'password'}
-        className='flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50'
+        className={cn(
+          'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50',
+          inputClassName
+        )}
         ref={ref}
         disabled={disabled}
         {...props}
@@ -37,7 +44,7 @@ export function PasswordInput({
       >
         {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
         <span className='sr-only'>
-          {showPassword ? 'Hide password' : 'Show password'}
+          {showPassword ? t('common.hidePassword') : t('common.showPassword')}
         </span>
       </Button>
     </div>

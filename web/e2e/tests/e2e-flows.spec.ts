@@ -1,5 +1,5 @@
 import { test, expect } from 'playwright/test'
-import { loginViaApi, TEST_URLS } from './fixtures'
+import { cleanupByName, loginViaApi, TEST_URLS } from './fixtures'
 
 test.describe('E2E 端到端流程', () => {
   test('E2E-01 脚本任务全流程', async ({ page }) => {
@@ -36,6 +36,9 @@ test.describe('E2E 端到端流程', () => {
     await page.waitForTimeout(2000)
     const content = await page.textContent('body')
     expect(content).toBeTruthy()
+
+    // 清理：删除本用例创建的脚本与任务（执行历史按产品设计保留）
+    await cleanupByName(page, { scripts: ['e2e-script-'], tasks: ['e2e-task-'] })
   })
 
   test('E2E-11 用户生命周期', async ({ page }) => {
@@ -48,13 +51,13 @@ test.describe('E2E 端到端流程', () => {
     await createBtn.click()
     await page.waitForTimeout(500)
     const usernameInput = page.getByRole('textbox', {
-      name: /username|用户名/i,
+      name: /^(用户名|username)$/i,
     })
     await expect(usernameInput).toBeVisible()
     await usernameInput.fill(`e2e-user-${Date.now()}`)
     const passwordInput = page.getByRole('textbox', {
-      name: /password|密码/i,
-    })
+      name: /^(密码|password)$/i,
+    }).first()
     await expect(passwordInput).toBeVisible()
     const rbacPassword = process.env.CADENTRA_E2E_RBAC_PASSWORD || ''
     if (!rbacPassword) throw new Error('CADENTRA_E2E_RBAC_PASSWORD is required')

@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ChevronLeft, Clipboard, Loader2, StopCircle } from 'lucide-react'
@@ -8,18 +13,22 @@ import { toast } from 'sonner'
 import { api, type Execution, type Node, type Task } from '@/lib/api'
 import { copyText } from '@/lib/clipboard'
 import { useCanRun } from '@/lib/permissions'
+import { readTablePageSize } from '@/lib/table-view'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { CadentraHeader } from '@/components/layout/cadentra-header'
 import { Main } from '@/components/layout/main'
 import { DataTable } from '@/features/shared/data-table'
 import {
+  DetailField,
+  DetailGrid,
   DurationValue,
   EmptyState,
+  ErrorPage,
   ErrorState,
+  SectionCard,
   StatusBadge,
   TimeValue,
 } from '@/features/shared/ui'
@@ -53,12 +62,23 @@ export function Executions() {
   const { t, i18n } = useTranslation()
   const search = executionsRoute.useSearch()
   const navigate = executionsRoute.useNavigate()
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(() =>
+    readTablePageSize('executions', 10)
+  )
+  // 状态筛选变化时在渲染期重置页码，避免 effect 内同步 setState
+  const [prevStatus, setPrevStatus] = useState(search.status)
+  if (prevStatus !== search.status) {
+    setPrevStatus(search.status)
+    setPage(1)
+  }
   const query = useQuery({
-    queryKey: ['executions', search.status],
+    queryKey: ['executions', search.status, page, pageSize],
     queryFn: () =>
-      api.get<Execution[]>(
-        `/executions?limit=100${search.status ? `&status=${encodeURIComponent(search.status)}` : ''}`
+      api.getPage<Execution>(
+        `/executions?limit=${pageSize}&offset=${(page - 1) * pageSize}${search.status ? `&status=${encodeURIComponent(search.status)}` : ''}`
       ),
+    placeholderData: keepPreviousData,
   })
   const tasks = useQuery({
     queryKey: ['tasks'],
@@ -87,7 +107,7 @@ export function Executions() {
     })
   const visible = useMemo(
     () =>
-      (query.data || []).filter((execution) => {
+      (query.data?.items || []).filter((execution) => {
         const q = (search.q || '').toLowerCase()
         return (
           (!q ||
@@ -104,7 +124,7 @@ export function Executions() {
   )
   const triggers = Array.from(
     new Set(
-      (query.data || [])
+      (query.data?.items || [])
         .map((execution) => execution.trigger_type)
         .filter(Boolean)
     )
@@ -245,7 +265,7 @@ export function Executions() {
         title={t('executions.title')}
         description={t('executions.description')}
       />
-      <Main fluid className='flex flex-1 flex-col gap-6'>
+      <Main className='flex flex-1 flex-col gap-6'>
         {query.isError ? (
           <ErrorState error={query.error} onRetry={() => query.refetch()} />
         ) : query.isLoading ? (
@@ -295,7 +315,7 @@ export function Executions() {
                 ))}
               </select>
             </div>
-            {visible.length === 0 ? (
+            {(query.data?.total ?? 0) === 0 ? (
               <Card>
                 <EmptyState message={t('executions.noMatching')} />
               </Card>
@@ -304,6 +324,13 @@ export function Executions() {
                 data={visible}
                 columns={columns}
                 hideSearch
+                storageKey='executions'
+                manualPagination
+                total={query.data?.total ?? 0}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
                 searchPlaceholder={t('executions.searchPlaceholder')}
               />
             )}
@@ -319,7 +346,6 @@ export function ExecutionDetail() {
   const canRun = useCanRun()
   const id = window.location.pathname.split('/').pop() || ''
   const client = useQueryClient()
-  const [tab, setTab] = useState('overview')
   const [stopOpen, setStopOpen] = useState(false)
   const execution = useQuery({
     queryKey: ['execution', id],
@@ -343,7 +369,6 @@ export function ExecutionDetail() {
       api.get<{ stream: string; seq: number; chunk: string }[]>(
         `/executions/${id}/logs`
       ),
-    enabled: tab === 'logs',
   })
   const stop = useMutation({
     mutationFn: () => api.post(`/executions/${id}/cancel`),
@@ -353,7 +378,16 @@ export function ExecutionDetail() {
     },
     onError: (error) => toast.error(error.message),
   })
-  if (execution.isLoading)
+  if (execution.isError && !execution.data)
+    return (
+      <ErrorPage
+        title={t('executions.executionTitle')}
+        error={execution.error}
+        onRetry={() => execution.refetch()}
+        backTo='/executions'
+      />
+    )
+  if (!execution.data)
     return (
       <>
         <CadentraHeader title={t('executions.executionTitle')} />
@@ -361,18 +395,6 @@ export function ExecutionDetail() {
           <div className='flex min-h-32 items-center justify-center'>
             <Loader2 className='size-4 animate-spin text-muted-foreground' />
           </div>
-        </Main>
-      </>
-    )
-  if (execution.isError || !execution.data)
-    return (
-      <>
-        <CadentraHeader title={t('executions.executionTitle')} />
-        <Main>
-          <ErrorState
-            error={execution.error}
-            onRetry={() => execution.refetch()}
-          />
         </Main>
       </>
     )
@@ -481,103 +503,69 @@ export function ExecutionDetail() {
             </Card>
           ))}
         </div>
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList>
-            <TabsTrigger value='overview'>
-              {t('executions.overviewTab')}
-            </TabsTrigger>
-            <TabsTrigger value='logs'>{t('executions.logsTab')}</TabsTrigger>
-          </TabsList>
-          <TabsContent
-            value='overview'
-            className='mt-4 grid gap-4 lg:grid-cols-2'
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className='text-sm'>
-                  {t('executions.metadata')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <dl className='grid grid-cols-[minmax(120px,160px)_1fr] gap-x-4 gap-y-3 text-sm'>
-                  <dt className='text-muted-foreground'>
-                    {t('dashboard.task')}
-                  </dt>
-                  <dd>
-                    {task.data ? (
-                      <a
-                        className='hover:underline'
-                        href={`/tasks/${exec.task_id}`}
-                      >
-                        {taskName}
-                      </a>
-                    ) : (
-                      <span>{taskName}</span>
-                    )}
-                  </dd>
-                  <dt className='text-muted-foreground'>
-                    {t('executions.taskRevision')}
-                  </dt>
-                  <dd className='font-mono text-xs'>
-                    r{exec.task_revision || '-'}
-                  </dd>
-                  <dt className='text-muted-foreground'>
-                    {t('dashboard.trigger')}
-                  </dt>
-                  <dd>{trigger}</dd>
-                  <dt className='text-muted-foreground'>
-                    {t('executions.offline')}
-                  </dt>
-                  <dd>
-                    {exec.offline ? t('executions.yes') : t('executions.no')}
-                  </dd>
-                  <dt className='text-muted-foreground'>
-                    {t('executions.synced')}
-                  </dt>
-                  <dd>
-                    {exec.synced ? t('executions.yes') : t('executions.no')}
-                  </dd>
-                </dl>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className='text-sm'>
-                  {t('executions.outputSummary')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className='space-y-3 text-sm'>
-                <div className='flex items-center justify-between'>
-                  <span className='text-muted-foreground'>stdout</span>
-                  <span className='font-mono text-xs'>
-                    {exec.stdout?.length || 0} {t('executions.characters')}
-                  </span>
-                </div>
-                <div className='flex items-center justify-between'>
-                  <span className='text-muted-foreground'>stderr</span>
-                  <span className='font-mono text-xs'>
-                    {exec.stderr?.length || 0} {t('executions.characters')}
-                  </span>
-                </div>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() => setTab('logs')}
-                >
-                  <Clipboard className='me-1 size-3.5' />
-                  {t('executions.openLogs')}
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value='logs' className='mt-4'>
+        <SectionCard title={t('executions.metadata')}>
+          <DetailGrid>
+            <DetailField label={t('dashboard.task')}>
+              {task.data ? (
+                <a className='hover:underline' href={`/tasks/${exec.task_id}`}>
+                  {taskName}
+                </a>
+              ) : (
+                <span>{taskName}</span>
+              )}
+            </DetailField>
+            <DetailField label={t('executions.taskRevision')}>
+              <span className='font-mono text-xs'>
+                r{exec.task_revision || '-'}
+              </span>
+            </DetailField>
+            <DetailField label={t('dashboard.trigger')}>{trigger}</DetailField>
+            <DetailField label={t('executions.offline')}>
+              {exec.offline ? t('executions.yes') : t('executions.no')}
+            </DetailField>
+            <DetailField label={t('executions.synced')}>
+              {exec.synced ? t('executions.yes') : t('executions.no')}
+            </DetailField>
+          </DetailGrid>
+        </SectionCard>
+        <SectionCard title={t('executions.outputSummary')}>
+          <div className='flex flex-wrap items-center gap-x-8 gap-y-3 text-sm'>
+            <div className='flex items-center gap-3'>
+              <span className='text-muted-foreground'>stdout</span>
+              <span className='font-mono text-xs'>
+                {exec.stdout?.length || 0} {t('executions.characters')}
+              </span>
+            </div>
+            <div className='flex items-center gap-3'>
+              <span className='text-muted-foreground'>stderr</span>
+              <span className='font-mono text-xs'>
+                {exec.stderr?.length || 0} {t('executions.characters')}
+              </span>
+            </div>
+            <Button
+              variant='outline'
+              size='sm'
+              className='ms-auto'
+              onClick={() =>
+                document
+                  .getElementById('execution-logs')
+                  ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }
+            >
+              <Clipboard className='me-1 size-3.5' />
+              {t('executions.openLogs')}
+            </Button>
+          </div>
+        </SectionCard>
+        <div id='execution-logs' className='scroll-mt-4'>
+          <SectionCard title={t('executions.logsTab')}>
             <LogViewer
               stdout={exec.stdout}
               stderr={exec.stderr}
               chunks={logs.data || []}
             />
-          </TabsContent>
-        </Tabs>
+          </SectionCard>
+        </div>
       </Main>
     </>
   )

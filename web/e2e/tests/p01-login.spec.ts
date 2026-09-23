@@ -32,9 +32,18 @@ test.describe('P01 登录页', () => {
     const langBtn = page.getByRole('button', { name: /语言|language/i })
     await expect(langBtn).toBeVisible()
     await langBtn.click()
+    await page.getByRole('menuitem', { name: /English/i }).click()
     await page.waitForTimeout(500)
     const stored = await page.evaluate(() => localStorage.getItem('cadentra_lang'))
-    expect(stored).toBeTruthy()
+    expect(stored).toBe('en')
+    // 语言与 <html lang> 保持一致（FAIL-B-110）
+    const lang = await page.evaluate(() => document.documentElement.lang)
+    expect(lang).toBe('en')
+    // 切回中文，避免影响后续用例
+    await langBtn.click()
+    await page.getByRole('menuitem', { name: /中文/ }).click()
+    await page.waitForTimeout(300)
+    expect(await page.evaluate(() => document.documentElement.lang)).toBe('zh-CN')
   })
 
   test('P01-06 直接访问未登录页重定向', async ({ page }) => {

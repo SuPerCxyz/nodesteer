@@ -20,6 +20,16 @@ i18n.use(initReactI18next).init({
 export function setLang(l: 'zh' | 'en') {
   localStorage.setItem('cadentra_lang', l)
   i18n.changeLanguage(l)
+  syncHtmlLang(l)
 }
+
+/** 语言与 <html lang> 保持一致（可访问性与 SEO）。 */
+export function syncHtmlLang(l: string) {
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = l === 'en' ? 'en' : 'zh-CN'
+  }
+}
+
+syncHtmlLang(lang)
 
 export default i18n

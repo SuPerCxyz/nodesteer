@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
+import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Play, MoreHorizontal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -44,15 +44,20 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { CadentraHeader } from '@/components/layout/cadentra-header'
 import { Main } from '@/components/layout/main'
+import { Schedules } from '@/features/catalog'
 import { DataTable } from '@/features/shared/data-table'
+import { TaskScheduleTabs } from '@/features/shared/task-schedule-tabs'
 import {
+  DetailField,
+  DetailGrid,
+  ErrorPage,
   ErrorState,
   LoadingState,
+  SectionCard,
   StatusBadge,
   TableCard,
   TimeValue,
@@ -81,42 +86,39 @@ function TargetDetails({
   const nodeNames = new Map(nodes.map((node) => [node.id, node.hostname]))
   const groupNames = new Map(groups.map((group) => [group.id, group.name]))
   return (
-    <dl className='grid gap-x-8 gap-y-3 text-sm sm:grid-cols-[160px_minmax(0,1fr)]'>
-      <dt className='text-muted-foreground'>{t('tasks.targetType')}</dt>
-      <dd>
+    <DetailGrid className='sm:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3'>
+      <DetailField label={t('tasks.targetType')}>
         {t(`tasks.targetTypes.${target.type}`, {
           defaultValue: target.type,
         })}
-      </dd>
+      </DetailField>
       {target.node_ids?.length ? (
-        <>
-          <dt className='text-muted-foreground'>{t('tasks.nodes')}</dt>
-          <dd className='break-words'>
-            {target.node_ids
-              .map((id) => nodeNames.get(id) || t('common.unknownNode'))
-              .join(', ')}
-          </dd>
-        </>
+        <DetailField label={t('tasks.nodes')}>
+          {target.node_ids
+            .map((id) => nodeNames.get(id) || t('common.unknownNode'))
+            .join(', ')}
+        </DetailField>
       ) : null}
       {target.group_ids?.length ? (
-        <>
-          <dt className='text-muted-foreground'>{t('tasks.groups')}</dt>
-          <dd className='break-words'>
-            {target.group_ids
-              .map((id) => groupNames.get(id) || t('common.noData'))
-              .join(', ')}
-          </dd>
-        </>
+        <DetailField label={t('tasks.groups')}>
+          {target.group_ids
+            .map((id) => groupNames.get(id) || t('common.noData'))
+            .join(', ')}
+        </DetailField>
       ) : null}
       {target.label_key ? (
         <>
-          <dt className='text-muted-foreground'>{t('tasks.labelKey')}</dt>
-          <dd className='font-mono text-xs'>{target.label_key}</dd>
-          <dt className='text-muted-foreground'>{t('tasks.labelValue')}</dt>
-          <dd className='font-mono text-xs'>{target.label_value || '-'}</dd>
+          <DetailField label={t('tasks.labelKey')}>
+            <span className='font-mono text-xs'>{target.label_key}</span>
+          </DetailField>
+          <DetailField label={t('tasks.labelValue')}>
+            <span className='font-mono text-xs'>
+              {target.label_value || '-'}
+            </span>
+          </DetailField>
         </>
       ) : null}
-    </dl>
+    </DetailGrid>
   )
 }
 
@@ -270,19 +272,29 @@ export function Tasks() {
           ) : null
         }
       />
-      <Main fluid className='flex flex-1 flex-col gap-6'>
+      <Main className='flex flex-1 flex-col gap-6'>
+        <TaskScheduleTabs value='tasks' />
         {query.isError ? (
           <ErrorState error={query.error} onRetry={() => query.refetch()} />
         ) : (
           <DataTable
             data={query.data || []}
             columns={columns}
+            storageKey='tasks'
             searchPlaceholder={t('tasks.searchPlaceholder')}
           />
         )}
       </Main>
     </>
   )
+}
+
+const tasksRoute = getRouteApi('/_authenticated/tasks/')
+
+/** 任务页：任务定义 / 调度 两个视图 */
+export function TaskSchedules() {
+  const { view } = tasksRoute.useSearch()
+  return view === 'schedules' ? <Schedules /> : <Tasks />
 }
 
 export function TaskDetail() {
@@ -322,21 +334,21 @@ export function TaskDetail() {
     queryKey: ['applications'],
     queryFn: () => api.get<Application[]>('/applications'),
   })
-  if (task.isLoading)
+  if (task.isError && !task.data)
+    return (
+      <ErrorPage
+        title={t('tasks.title')}
+        error={task.error}
+        onRetry={() => task.refetch()}
+        backTo='/tasks'
+      />
+    )
+  if (!task.data)
     return (
       <>
         <CadentraHeader title={t('tasks.title')} />
         <Main>
           <LoadingState />
-        </Main>
-      </>
-    )
-  if (task.isError || !task.data)
-    return (
-      <>
-        <CadentraHeader title={t('tasks.title')} />
-        <Main>
-          <ErrorState error={task.error} onRetry={() => task.refetch()} />
         </Main>
       </>
     )
@@ -375,152 +387,89 @@ export function TaskDetail() {
           <span>{targetText(item, t)}</span>
           <span className='font-mono'>r{item.revision}</span>
         </div>
-        <Tabs defaultValue='overview'>
-          <TabsList>
-            <TabsTrigger value='overview'>{t('tasks.overviewTab')}</TabsTrigger>
-            <TabsTrigger value='definition'>
-              {t('tasks.definitionTab')}
-            </TabsTrigger>
-            <TabsTrigger value='targets'>{t('tasks.targetsTab')}</TabsTrigger>
-            <TabsTrigger value='executions'>
-              {t('tasks.executionsTab')}
-            </TabsTrigger>
-            <TabsTrigger value='schedule'>{t('tasks.scheduleTab')}</TabsTrigger>
-          </TabsList>
-          <TabsContent value='overview' className='mt-4 max-w-4xl'>
-            <Card>
-              <CardHeader>
-                <CardTitle className='text-sm'>
-                  {t('tasks.overviewTab')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <dl className='grid gap-x-8 gap-y-3 text-sm sm:grid-cols-[160px_1fr]'>
-                  <dt className='text-muted-foreground'>{t('common.type')}</dt>
-                  <dd>
-                    {t(`tasks.types.${item.type}`, { defaultValue: item.type })}
-                  </dd>
-                  <dt className='text-muted-foreground'>{t('tasks.target')}</dt>
-                  <dd>{targetText(item, t)}</dd>
-                  <dt className='text-muted-foreground'>
-                    {t('tasks.timeoutSec')}
-                  </dt>
-                  <dd className='font-mono text-xs'>{item.timeout}s</dd>
-                  <dt className='text-muted-foreground'>{t('tasks.retry')}</dt>
-                  <dd className='font-mono text-xs'>{item.retry}</dd>
-                  <dt className='text-muted-foreground'>
-                    {t('tasks.offlinePolicy')}
-                  </dt>
-                  <dd>
-                    {t(`tasks.offlinePolicies.${item.offline_policy}`, {
-                      defaultValue: item.offline_policy,
-                    })}
-                  </dd>
-                </dl>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value='definition' className='mt-4 max-w-4xl'>
-            <Card>
-              <CardHeader>
-                <CardTitle className='text-sm'>
-                  {t('tasks.definitionTab')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {item.command ? (
-                  <pre className='overflow-auto rounded-md bg-muted p-4 font-mono text-xs leading-6'>
-                    {item.command}
-                  </pre>
-                ) : item.script_id ? (
-                  <div className='grid gap-1 text-sm'>
-                    <a
-                      className='font-medium hover:underline'
-                      href={`/scripts/${item.script_id}`}
-                    >
-                      {script.data?.name || t('common.unknownScript')}
-                    </a>
-                    <span className='font-mono text-xs text-muted-foreground'>
-                      {script.data?.interpreter || 'script'}
-                    </span>
-                  </div>
-                ) : (
-                  <div className='text-sm text-muted-foreground'>
-                    {applications.data?.find(
-                      (application) => application.id === item.application_id
-                    )?.name ||
-                      (item.application_id
-                        ? t('common.unknownApplication')
-                        : '-')}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value='targets' className='mt-4 max-w-4xl'>
-            <Card>
-              <CardHeader>
-                <CardTitle className='text-sm'>
-                  {t('tasks.targetsTab')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <TargetDetails
-                  target={item.target}
-                  nodes={nodes.data || []}
-                  groups={groups.data || []}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value='executions' className='mt-4 max-w-4xl'>
-            <Card>
-              <CardHeader>
-                <CardTitle className='text-sm'>
-                  {t('tasks.executionsTab')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ExecutionHistory executions={executions.data || []} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value='schedule' className='mt-4 max-w-4xl'>
-            <Card>
-              <CardHeader>
-                <CardTitle className='text-sm'>
-                  {t('tasks.scheduleTab')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {schedules.data?.length ? (
-                  schedules.data.map((schedule) => (
-                    <div
-                      className='flex items-center justify-between border-b py-3 text-sm last:border-0'
-                      key={schedule.id}
-                    >
-                      <a
-                        className='font-medium hover:underline'
-                        href={`/schedules/${schedule.id}`}
-                      >
-                        {t(`schedules.types.${schedule.type}`, {
-                          defaultValue: schedule.type,
-                        })}
-                      </a>
-                      <span className='font-mono text-xs'>
-                        {schedule.expression || `${schedule.interval_sec}s`}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <div className='text-sm text-muted-foreground'>
-                    {t('tasks.noSchedules')}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        <SectionCard title={t('tasks.overviewTab')}>
+          <DetailGrid>
+            <DetailField label={t('common.type')}>
+              {t(`tasks.types.${item.type}`, { defaultValue: item.type })}
+            </DetailField>
+            <DetailField label={t('tasks.target')}>
+              {targetText(item, t)}
+            </DetailField>
+            <DetailField label={t('tasks.timeoutSec')}>
+              <span className='font-mono text-xs'>{item.timeout}s</span>
+            </DetailField>
+            <DetailField label={t('tasks.retry')}>
+              <span className='font-mono text-xs'>{item.retry}</span>
+            </DetailField>
+            <DetailField label={t('tasks.offlinePolicy')}>
+              {t(`tasks.offlinePolicies.${item.offline_policy}`, {
+                defaultValue: item.offline_policy,
+              })}
+            </DetailField>
+          </DetailGrid>
+        </SectionCard>
+        <SectionCard title={t('tasks.definitionTab')}>
+          {item.command ? (
+            <pre className='overflow-auto rounded-md bg-muted p-4 font-mono text-xs leading-6'>
+              {item.command}
+            </pre>
+          ) : item.script_id ? (
+            <div className='grid gap-1 text-sm'>
+              <a
+                className='font-medium hover:underline'
+                href={`/scripts/${item.script_id}`}
+              >
+                {script.data?.name || t('common.unknownScript')}
+              </a>
+              <span className='font-mono text-xs text-muted-foreground'>
+                {script.data?.interpreter || 'script'}
+              </span>
+            </div>
+          ) : (
+            <div className='text-sm text-muted-foreground'>
+              {applications.data?.find(
+                (application) => application.id === item.application_id
+              )?.name ||
+                (item.application_id ? t('common.unknownApplication') : '-')}
+            </div>
+          )}
+        </SectionCard>
+        <SectionCard title={t('tasks.targetsTab')}>
+          <TargetDetails
+            target={item.target}
+            nodes={nodes.data || []}
+            groups={groups.data || []}
+          />
+        </SectionCard>
+        <SectionCard title={t('tasks.executionsTab')}>
+          <ExecutionHistory executions={executions.data || []} />
+        </SectionCard>
+        <SectionCard title={t('tasks.scheduleTab')}>
+          {schedules.data?.length ? (
+            schedules.data.map((schedule) => (
+              <div
+                className='flex items-center justify-between border-b py-3 text-sm last:border-0'
+                key={schedule.id}
+              >
+                <a
+                  className='font-medium hover:underline'
+                  href={`/schedules/${schedule.id}`}
+                >
+                  {t(`schedules.types.${schedule.type}`, {
+                    defaultValue: schedule.type,
+                  })}
+                </a>
+                <span className='font-mono text-xs'>
+                  {schedule.expression || `${schedule.interval_sec}s`}
+                </span>
+              </div>
+            ))
+          ) : (
+            <div className='text-sm text-muted-foreground'>
+              {t('tasks.noSchedules')}
+            </div>
+          )}
+        </SectionCard>
       </Main>
     </>
   )
@@ -650,7 +599,12 @@ export function TaskEditor() {
   useEffect(() => {
     if (!current.data || draft) return
     const condition = current.data.condition
-    const items = condition?.type === 'and' ? condition.and || [] : condition ? [condition] : []
+    const items =
+      condition?.type === 'and'
+        ? condition.and || []
+        : condition
+          ? [condition]
+          : []
     const local = items.find((item) => item.local)?.local
     const remote = items.find((item) => item.remote)?.remote
     // The editor controls are local draft state hydrated once the async query resolves.
@@ -719,7 +673,10 @@ export function TaskEditor() {
             ? [previous.condition]
             : []
       const items = currentItems.filter((item) => item.type !== candidate.type)
-      return { ...previous, condition: { type: 'and', and: [...items, candidate] } }
+      return {
+        ...previous,
+        condition: { type: 'and', and: [...items, candidate] },
+      }
     })
   const setLocal = () =>
     mergeCondition({ type: 'local', local: localCondition })
@@ -729,10 +686,42 @@ export function TaskEditor() {
   }
   const clearCondition = (type: 'local' | 'remote') =>
     setForm((previous) => {
-      if (previous.condition?.type !== 'and') return { ...previous, condition: undefined }
-      const remaining = (previous.condition.and || []).filter((item) => item.type !== type)
-      return { ...previous, condition: remaining.length === 1 ? remaining[0] : remaining.length ? { type: 'and', and: remaining } : undefined }
+      if (previous.condition?.type !== 'and')
+        return { ...previous, condition: undefined }
+      const remaining = (previous.condition.and || []).filter(
+        (item) => item.type !== type
+      )
+      return {
+        ...previous,
+        condition:
+          remaining.length === 1
+            ? remaining[0]
+            : remaining.length
+              ? { type: 'and', and: remaining }
+              : undefined,
+      }
     })
+  if (editing && current.isError && !current.data)
+    return (
+      <ErrorPage
+        title={t('tasks.editTitle')}
+        error={current.error}
+        onRetry={() => current.refetch()}
+        backTo='/tasks'
+      />
+    )
+  if (editing && current.isPending && !draft)
+    return (
+      <>
+        <CadentraHeader
+          title={t('tasks.editTitle')}
+          description={t('tasks.formDescription')}
+        />
+        <Main>
+          <LoadingState />
+        </Main>
+      </>
+    )
   return (
     <>
       <CadentraHeader
@@ -1102,7 +1091,9 @@ export function TaskEditor() {
                     <span className='font-mono'>{item.name}</span>
                     <span className='text-muted-foreground'>{item.type}</span>
                     {item.required && (
-                      <span className='text-destructive'>{t('tasks.required')}</span>
+                      <span className='text-destructive'>
+                        {t('tasks.required')}
+                      </span>
                     )}
                     <span className='text-muted-foreground'>
                       {item.default || '-'}
@@ -1139,7 +1130,9 @@ export function TaskEditor() {
             <label className='flex items-center gap-2 text-sm font-medium sm:col-span-4'>
               <Checkbox
                 checked={andConditions}
-                onCheckedChange={(checked) => setAndConditions(checked === true)}
+                onCheckedChange={(checked) =>
+                  setAndConditions(checked === true)
+                }
               />
               {t('tasks.andConditions')}
             </label>
@@ -1205,7 +1198,10 @@ export function TaskEditor() {
                 placeholder={t('tasks.conditionPath')}
                 value={localCondition.path}
                 onChange={(event) =>
-                  setLocalCondition({ ...localCondition, path: event.target.value })
+                  setLocalCondition({
+                    ...localCondition,
+                    path: event.target.value,
+                  })
                 }
               />
             )}
@@ -1214,7 +1210,10 @@ export function TaskEditor() {
                 placeholder={t('tasks.conditionCommand')}
                 value={localCondition.command}
                 onChange={(event) =>
-                  setLocalCondition({ ...localCondition, command: event.target.value })
+                  setLocalCondition({
+                    ...localCondition,
+                    command: event.target.value,
+                  })
                 }
               />
             )}
@@ -1331,9 +1330,7 @@ export function TaskEditor() {
           </CardContent>
         </Card>
         <div className='flex items-center gap-2'>
-          {canWrite ? (
-            <Button onClick={save}>{t('common.save')}</Button>
-          ) : null}
+          {canWrite ? <Button onClick={save}>{t('common.save')}</Button> : null}
           <Button asChild variant='outline'>
             <Link to='/tasks'>{t('common.cancel')}</Link>
           </Button>
@@ -1364,6 +1361,24 @@ export function RunTask() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setParams(defaults)
   }, [task.data])
+  if (task.isError && !task.data)
+    return (
+      <ErrorPage
+        title={t('tasks.runNow')}
+        error={task.error}
+        onRetry={() => task.refetch()}
+        backTo='/tasks'
+      />
+    )
+  if (!task.data)
+    return (
+      <>
+        <CadentraHeader title={t('tasks.runNow')} />
+        <Main>
+          <LoadingState />
+        </Main>
+      </>
+    )
   const run = async () => {
     const missing = (task.data?.parameters || []).find(
       (parameter) => parameter.required && !params[parameter.name]
@@ -1399,14 +1414,20 @@ export function RunTask() {
             {task.data?.parameters?.length ? (
               <div className='grid gap-3'>
                 {task.data.parameters.map((parameter) => (
-                  <label key={parameter.name} className='grid gap-2 text-sm font-medium'>
+                  <label
+                    key={parameter.name}
+                    className='grid gap-2 text-sm font-medium'
+                  >
                     {parameter.name}
                     <Input
                       type={parameter.type === 'secret' ? 'password' : 'text'}
                       required={parameter.required}
                       value={params[parameter.name] || ''}
                       onChange={(event) =>
-                        setParams({ ...params, [parameter.name]: event.target.value })
+                        setParams({
+                          ...params,
+                          [parameter.name]: event.target.value,
+                        })
                       }
                     />
                   </label>
@@ -1415,10 +1436,7 @@ export function RunTask() {
             ) : null}
             <div className='flex items-center gap-2'>
               {canRun ? (
-                <Button
-                  onClick={() => setConfirmOpen(true)}
-                  disabled={running}
-                >
+                <Button onClick={() => setConfirmOpen(true)} disabled={running}>
                   {running ? t('tasks.running') : t('tasks.runNow')}
                 </Button>
               ) : null}
@@ -1477,33 +1495,33 @@ function TaskRowActions({
       ) : null}
       {canWrite ? (
         <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant='ghost'
-            size='icon'
-            className='size-8'
-            aria-label={t('common.actions')}
-          >
-            <MoreHorizontal className='size-4' />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align='end'>
-          <DropdownMenuItem asChild>
-            <a href={`/tasks/${task.id}/edit`}>{t('common.edit')}</a>
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => toggleTask(task)}>
-            {task.enabled ? t('common.disable') : t('common.enable')}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            variant='destructive'
-            onSelect={(event) => {
-              event.preventDefault()
-              setDeleteOpen(true)
-            }}
-          >
-            {t('common.delete')}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant='ghost'
+              size='icon'
+              className='size-8'
+              aria-label={t('common.actions')}
+            >
+              <MoreHorizontal className='size-4' />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='end'>
+            <DropdownMenuItem asChild>
+              <a href={`/tasks/${task.id}/edit`}>{t('common.edit')}</a>
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => toggleTask(task)}>
+              {task.enabled ? t('common.disable') : t('common.enable')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant='destructive'
+              onSelect={(event) => {
+                event.preventDefault()
+                setDeleteOpen(true)
+              }}
+            >
+              {t('common.delete')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
         </DropdownMenu>
       ) : null}
       {canWrite ? (

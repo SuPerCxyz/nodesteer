@@ -98,11 +98,13 @@ test.describe('RBAC 权限矩阵', () => {
       await expect(
         page.getByRole('link', { name: /new task|新建任务/i })
       ).toHaveCount(0)
-      const runCount = await page
-        .getByRole('link', { name: /run now|立即运行/i })
-        .count()
-      if (canRun) expect(runCount).toBeGreaterThan(0)
-      else expect(runCount).toBe(0)
+      const runLink = page.getByRole('link', { name: /run now|立即运行/i })
+      if (canRun) {
+        // 等待列表渲染完成后再断言（避免在数据加载中取 count 导致假失败）
+        await expect(runLink.first()).toBeVisible({ timeout: 10_000 })
+      } else {
+        await expect(runLink).toHaveCount(0)
+      }
 
       for (const [path, name] of [
         [TEST_URLS.scripts, /new script|新建脚本/i],

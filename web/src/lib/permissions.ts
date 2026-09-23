@@ -1,8 +1,8 @@
 import { useAuthStore } from '@/stores/auth-store'
 
 export function useCanWrite() {
-  return useAuthStore((state) =>
-    state.auth.user?.role.includes('administrator') ?? false
+  return useAuthStore(
+    (state) => state.auth.user?.role.includes('administrator') ?? false
   )
 }
 

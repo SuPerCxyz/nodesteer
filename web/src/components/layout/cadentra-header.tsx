@@ -1,15 +1,7 @@
 import { useEffect, useState } from 'react'
-import { setLang } from '@/i18n'
-import { Languages } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
+import { LanguageSwitch } from '@/components/language-switch'
 import { ProfileDropdown } from '../profile-dropdown'
 import { ThemeSwitch } from '../theme-switch'
 import { Header } from './header'
@@ -23,7 +15,7 @@ export function CadentraHeader({
   description?: string
   action?: React.ReactNode
 }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [hubOnline, setHubOnline] = useState<boolean | null>(null)
 
   useEffect(() => {
@@ -35,8 +27,6 @@ export function CadentraHeader({
     const timer = window.setInterval(check, 15000)
     return () => window.clearInterval(timer)
   }, [])
-
-  const language = i18n.language === 'en' ? 'en' : 'zh'
 
   return (
     <Header fixed>
@@ -73,29 +63,7 @@ export function CadentraHeader({
                 ? t('header.connected')
                 : t('header.unavailable')}
           </span>
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant='ghost'
-                size='icon'
-                className='size-8'
-                aria-label={t('common.language')}
-              >
-                <Languages className='size-4' />
-                <span className='sr-only'>
-                  {language === 'en' ? 'EN' : '中'}
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end'>
-              <DropdownMenuItem onClick={() => setLang('zh')}>
-                中文
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setLang('en')}>
-                English
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <LanguageSwitch />
           <ThemeSwitch />
           <ProfileDropdown />
         </div>

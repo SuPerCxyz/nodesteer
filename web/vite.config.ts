@@ -22,7 +22,24 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['i18next'],
+    // 测试与前端共用依赖：预先纳入，避免运行中途重新预构建触发页面重载导致浏览器测试挂起
+    include: [
+      'i18next',
+      'react',
+      'react-dom',
+      'react-dom/client',
+      'react/jsx-runtime',
+      'react-hook-form',
+      '@hookform/resolvers/zod',
+      'zod',
+      '@tanstack/react-router',
+      'zustand',
+      'lucide-react',
+      'sonner',
+      'clsx',
+      'tailwind-merge',
+      'vitest-browser-react',
+    ],
   },
   test: {
     silent: 'passed-only',

@@ -1,6 +1,10 @@
+import { z } from 'zod'
 import { createFileRoute } from '@tanstack/react-router'
-import { Tasks } from '@/features/tasks'
+import { TaskSchedules } from '@/features/tasks'
 
 export const Route = createFileRoute('/_authenticated/tasks/')({
-  component: Tasks,
+  validateSearch: z.object({
+    view: z.enum(['tasks', 'schedules']).optional(),
+  }),
+  component: TaskSchedules,
 })

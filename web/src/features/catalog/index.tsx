@@ -1,5 +1,10 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Check, Copy, Plus } from 'lucide-react'
@@ -24,6 +29,7 @@ import {
 } from '@/lib/api'
 import { copyText, selectText } from '@/lib/clipboard'
 import { useCanWrite } from '@/lib/permissions'
+import { readTablePageSize } from '@/lib/table-view'
 import { useTheme } from '@/context/theme-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -53,16 +59,21 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CadentraHeader } from '@/components/layout/cadentra-header'
 import { Main } from '@/components/layout/main'
 import { DataTable } from '@/features/shared/data-table'
+import { TaskScheduleTabs } from '@/features/shared/task-schedule-tabs'
 import {
+  DetailField,
+  DetailGrid,
   EmptyState,
+  ErrorPage,
   ErrorState,
   DangerMenuItem,
   DropdownMenuItem,
   MoreMenu,
+  SectionCard,
   StatusBadge,
   TableCard,
   TimeValue,
@@ -242,6 +253,7 @@ export function Agents() {
         columns={columns}
         data={query.data || []}
         searchPlaceholder={t('nodes.searchPlaceholder')}
+        storageKey='nodes'
         action={
           canWrite ? (
             <Button onClick={() => setEnrollmentOpen(true)}>
@@ -530,15 +542,16 @@ export function AgentDetail() {
   const nodeSchedules = (schedules.data || []).filter((schedule) =>
     nodeTasks.some((task) => task.id === schedule.task_id)
   )
-  if (node.isLoading) return <LoadingPage title={t('nodes.nodeTitle')} />
-  if (node.isError || !node.data)
+  if (node.isError && !node.data)
     return (
       <ErrorPage
         title={t('nodes.nodeTitle')}
         error={node.error}
-        retry={() => node.refetch()}
+        onRetry={() => node.refetch()}
+        backTo='/agents'
       />
     )
+  if (!node.data) return <LoadingPage title={t('nodes.nodeTitle')} />
   const item = node.data
   return (
     <>
@@ -547,373 +560,278 @@ export function AgentDetail() {
         description={item.ip || item.agent_id}
         action={<StatusBadge status={item.status} />}
       />
-      <Main fluid className='flex flex-1 flex-col'>
-        <div className='mx-auto flex w-full max-w-[1600px] flex-col gap-6'>
+      <Main className='flex flex-1 flex-col'>
+        <div className='flex w-full flex-col gap-6'>
           <Button asChild variant='ghost' className='w-fit px-0'>
             <Link to='/agents'>← {t('common.back')}</Link>
           </Button>
-          <Tabs defaultValue='overview'>
-            <TabsList>
-              <TabsTrigger value='overview'>{t('nodes.overview')}</TabsTrigger>
-              <TabsTrigger value='executions'>
-                {t('nav.executions')}
-              </TabsTrigger>
-              <TabsTrigger value='tasks'>{t('nodes.tasks')}</TabsTrigger>
-            </TabsList>
-            <TabsContent value='overview' className='mt-4'>
-              <div className='grid items-start gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]'>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className='text-sm'>
-                      {t('nodes.overview')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className='space-y-4'>
-                    <dl className='grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2'>
-                      <div className='min-w-0'>
-                        <dt className='text-xs text-muted-foreground'>
-                          {t('nodes.nodeId')}
-                        </dt>
-                        <dd
-                          className='truncate font-mono text-xs'
-                          title={item.id}
-                        >
-                          {item.id}
-                        </dd>
-                      </div>
-                      <div className='min-w-0'>
-                        <dt className='text-xs text-muted-foreground'>
-                          {t('nodes.agentId')}
-                        </dt>
-                        <dd
-                          className='truncate font-mono text-xs'
-                          title={item.agent_id}
-                        >
-                          {item.agent_id}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className='text-xs text-muted-foreground'>
-                          {t('dashboard.ip')}
-                        </dt>
-                        <dd className='font-mono text-xs'>{item.ip || '-'}</dd>
-                      </div>
-                      <div>
-                        <dt className='text-xs text-muted-foreground'>
-                          {t('dashboard.os')}
-                        </dt>
-                        <dd>{item.os || '-'}</dd>
-                      </div>
-                      <div>
-                        <dt className='text-xs text-muted-foreground'>
-                          {t('nodes.agentVersion')}
-                        </dt>
-                        <dd>{item.agent_version || '-'}</dd>
-                      </div>
-                      <div>
-                        <dt className='text-xs text-muted-foreground'>
-                          {t('nodes.architecture')}
-                        </dt>
-                        <dd className='font-mono text-xs'>
-                          {item.arch || '-'}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className='text-xs text-muted-foreground'>
-                          {t('nodes.deploymentMode')}
-                        </dt>
-                        <dd>{item.deployment_mode || '-'}</dd>
-                      </div>
-                      <div>
-                        <dt className='text-xs text-muted-foreground'>
-                          {t('nodes.globalRevision')}
-                        </dt>
-                        <dd className='font-mono text-xs'>
-                          r{item.global_revision}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className='text-xs text-muted-foreground'>
-                          {t('nodes.syncStatus')}
-                        </dt>
-                        <dd>
-                          <StatusBadge status={item.sync_status || 'unknown'} />
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className='text-xs text-muted-foreground'>
-                          {t('dashboard.lastSeen')}
-                        </dt>
-                        <dd>
-                          <TimeValue value={item.last_seen} absolute />
-                        </dd>
-                      </div>
-                    </dl>
-                    <Separator />
-                    <section className='space-y-3'>
-                      <h3 className='text-sm font-medium'>
-                        {t('nodes.labels')}
-                      </h3>
-                      <div className='flex min-h-5 flex-wrap gap-x-4 gap-y-1'>
-                        {Object.keys(item.labels || {}).length ? (
-                          Object.entries(item.labels || {}).map(
-                            ([key, value]) => (
-                              <span
-                                className='font-mono text-xs text-muted-foreground'
-                                key={key}
-                              >
-                                {key}={value}
-                              </span>
-                            )
-                          )
-                        ) : (
-                          <span className='text-sm text-muted-foreground'>
-                            {t('nodes.noLabels')}
-                          </span>
-                        )}
-                      </div>
-                      {canWrite ? (
-                        <div className='flex flex-wrap gap-2'>
-                          <Input
-                            className='h-8 w-32 font-mono text-xs'
-                            placeholder='key'
-                            value={labelKey}
-                            onChange={(event) =>
-                              setLabelKey(event.target.value)
-                            }
-                          />
-                          <Input
-                            className='h-8 w-32 font-mono text-xs'
-                            placeholder='value'
-                            value={labelValue}
-                            onChange={(event) =>
-                              setLabelValue(event.target.value)
-                            }
-                          />
-                          <Button
-                            size='sm'
-                            variant='outline'
-                            onClick={() => updateLabels.mutate()}
-                            disabled={
-                              !labelKey.trim() || updateLabels.isPending
-                            }
-                          >
-                            {t('nodes.addLabel')}
-                          </Button>
-                        </div>
-                      ) : null}
-                    </section>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className='text-sm'>
-                      {t('nodes.inventory')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className='space-y-4'>
-                    {item.inventory ? (
-                      <dl className='grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[120px_minmax(0,1fr)]'>
-                        <dt className='text-xs text-muted-foreground'>
-                          {t('dashboard.os')}
-                        </dt>
-                        <dd>
-                          {item.inventory.os} {item.inventory.os_version}
-                        </dd>
-                        <dt className='text-xs text-muted-foreground'>
-                          {t('nodes.kernel')}
-                        </dt>
-                        <dd
-                          className='truncate font-mono text-xs'
-                          title={item.inventory.kernel}
-                        >
-                          {item.inventory.kernel || '-'}
-                        </dd>
-                        <dt className='text-xs text-muted-foreground'>
-                          {t('nodes.cpu')}
-                        </dt>
-                        <dd className='min-w-0 break-words'>
-                          {item.inventory.cpu
-                            ?.map((cpu) => `${cpu.model} (${cpu.cores})`)
-                            .join(', ') || '-'}
-                        </dd>
-                        <dt className='text-xs text-muted-foreground'>
-                          {t('nodes.memory')}
-                        </dt>
-                        <dd>
-                          {item.inventory.memory
-                            ? `${Math.round(item.inventory.memory.total_kb / 1024)} MB`
-                            : '-'}
-                        </dd>
-                        <dt className='text-xs text-muted-foreground'>
-                          {t('nodes.network')}
-                        </dt>
-                        <dd className='min-w-0 font-mono text-xs break-words'>
-                          {item.inventory.network
-                            ?.map(
-                              (network) =>
-                                `${network.interface}: ${network.addresses.join(', ')}`
-                            )
-                            .join('; ') || '-'}
-                        </dd>
-                      </dl>
+          <SectionCard title={t('nodes.overview')}>
+            <div className='space-y-4'>
+              <DetailGrid>
+                <DetailField label={t('nodes.nodeId')}>
+                  <span
+                    className='block truncate font-mono text-xs'
+                    title={item.id}
+                  >
+                    {item.id}
+                  </span>
+                </DetailField>
+                <DetailField label={t('nodes.agentId')}>
+                  <span
+                    className='block truncate font-mono text-xs'
+                    title={item.agent_id}
+                  >
+                    {item.agent_id}
+                  </span>
+                </DetailField>
+                <DetailField label={t('dashboard.ip')}>
+                  <span className='font-mono text-xs'>{item.ip || '-'}</span>
+                </DetailField>
+                <DetailField label={t('dashboard.os')}>
+                  {item.os || '-'}
+                </DetailField>
+                <DetailField label={t('nodes.agentVersion')}>
+                  {item.agent_version || '-'}
+                </DetailField>
+                <DetailField label={t('nodes.architecture')}>
+                  <span className='font-mono text-xs'>{item.arch || '-'}</span>
+                </DetailField>
+                <DetailField label={t('nodes.deploymentMode')}>
+                  {item.deployment_mode || '-'}
+                </DetailField>
+                <DetailField label={t('nodes.globalRevision')}>
+                  <span className='font-mono text-xs'>
+                    r{item.global_revision}
+                  </span>
+                </DetailField>
+                <DetailField label={t('nodes.syncStatus')}>
+                  <StatusBadge status={item.sync_status || 'unknown'} />
+                </DetailField>
+                <DetailField label={t('dashboard.lastSeen')}>
+                  <TimeValue value={item.last_seen} absolute />
+                </DetailField>
+              </DetailGrid>
+              <Separator />
+              <section className='space-y-3'>
+                <h3 className='text-sm font-medium'>{t('nodes.labels')}</h3>
+                <div className='flex min-h-5 flex-wrap gap-x-4 gap-y-1'>
+                  {Object.keys(item.labels || {}).length ? (
+                    Object.entries(item.labels || {}).map(([key, value]) => (
+                      <span
+                        className='font-mono text-xs text-muted-foreground'
+                        key={key}
+                      >
+                        {key}={value}
+                      </span>
+                    ))
+                  ) : (
+                    <span className='text-sm text-muted-foreground'>
+                      {t('nodes.noLabels')}
+                    </span>
+                  )}
+                </div>
+                {canWrite ? (
+                  <div className='flex flex-wrap gap-2'>
+                    <Input
+                      className='h-8 w-32 font-mono text-xs'
+                      placeholder='key'
+                      value={labelKey}
+                      onChange={(event) => setLabelKey(event.target.value)}
+                    />
+                    <Input
+                      className='h-8 w-32 font-mono text-xs'
+                      placeholder='value'
+                      value={labelValue}
+                      onChange={(event) => setLabelValue(event.target.value)}
+                    />
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      onClick={() => updateLabels.mutate()}
+                      disabled={!labelKey.trim() || updateLabels.isPending}
+                    >
+                      {t('nodes.addLabel')}
+                    </Button>
+                  </div>
+                ) : null}
+              </section>
+            </div>
+          </SectionCard>
+          <SectionCard title={t('nodes.inventory')}>
+            <div className='space-y-4'>
+              {item.inventory ? (
+                <DetailGrid>
+                  <DetailField label={t('dashboard.os')}>
+                    {item.inventory.os} {item.inventory.os_version}
+                  </DetailField>
+                  <DetailField label={t('nodes.kernel')}>
+                    <span
+                      className='block truncate font-mono text-xs'
+                      title={item.inventory.kernel}
+                    >
+                      {item.inventory.kernel || '-'}
+                    </span>
+                  </DetailField>
+                  <DetailField label={t('nodes.cpu')}>
+                    {item.inventory.cpu
+                      ?.map((cpu) => `${cpu.model} (${cpu.cores})`)
+                      .join(', ') || '-'}
+                  </DetailField>
+                  <DetailField label={t('nodes.memory')}>
+                    {item.inventory.memory
+                      ? `${Math.round(item.inventory.memory.total_kb / 1024)} MB`
+                      : '-'}
+                  </DetailField>
+                  <DetailField label={t('nodes.filesystems')}>
+                    {item.inventory.filesystem?.length ? (
+                      <ul className='space-y-1 font-mono text-xs'>
+                        {item.inventory.filesystem.map((filesystem) => (
+                          <li key={filesystem.mount} className='break-words'>
+                            {filesystem.mount} ({filesystem.fs_type},{' '}
+                            {Math.round(filesystem.free_kb / 1024)}/
+                            {Math.round(filesystem.total_kb / 1024)} MB)
+                          </li>
+                        ))}
+                      </ul>
                     ) : (
-                      <EmptyState message={t('nodes.noInventory')} />
+                      '-'
                     )}
-                    <Separator />
-                    <section className='space-y-3'>
-                      <h3 className='text-sm font-medium'>
-                        {t('nodes.capabilities')}
-                      </h3>
-                      <div className='grid gap-2 sm:grid-cols-2'>
-                        {Object.entries(item.capabilities || {}).map(
-                          ([key, value]) => (
-                            <span
-                              className='flex min-w-0 items-center gap-2 text-sm'
-                              key={key}
-                            >
-                              <StatusBadge
-                                status={value ? 'enabled' : 'disabled'}
-                              />
-                              <span
-                                className='truncate font-mono text-xs'
-                                title={key}
-                              >
-                                {key}
-                              </span>
-                            </span>
-                          )
-                        )}
-                      </div>
-                    </section>
-                  </CardContent>
-                </Card>
+                  </DetailField>
+                  <DetailField label={t('nodes.network')}>
+                    <span className='font-mono text-xs'>
+                      {item.inventory.network
+                        ?.map(
+                          (network) =>
+                            `${network.interface}: ${network.addresses.join(', ')}`
+                        )
+                        .join('; ') || '-'}
+                    </span>
+                  </DetailField>
+                </DetailGrid>
+              ) : (
+                <EmptyState message={t('nodes.noInventory')} />
+              )}
+              <Separator />
+              <section className='space-y-3'>
+                <h3 className='text-sm font-medium'>
+                  {t('nodes.capabilities')}
+                </h3>
+                <div className='grid gap-2 sm:grid-cols-2'>
+                  {Object.entries(item.capabilities || {}).map(
+                    ([key, value]) => (
+                      <span
+                        className='flex min-w-0 items-center gap-2 text-sm'
+                        key={key}
+                      >
+                        <StatusBadge status={value ? 'enabled' : 'disabled'} />
+                        <span
+                          className='truncate font-mono text-xs'
+                          title={key}
+                        >
+                          {key}
+                        </span>
+                      </span>
+                    )
+                  )}
+                </div>
+              </section>
+            </div>
+          </SectionCard>
+          <SectionCard title={t('nav.executions')}>
+            <ExecutionRows
+              executions={executions.data || []}
+              tasks={tasks.data || []}
+            />
+          </SectionCard>
+          <SectionCard title={t('nodes.tasks')}>
+            {nodeTasks.length ? (
+              <div className='divide-y'>
+                {nodeTasks.map((task) => (
+                  <div
+                    className='flex min-w-0 items-center gap-3 py-3'
+                    key={task.id}
+                  >
+                    <a
+                      className='min-w-0 truncate font-medium hover:underline'
+                      href={`/tasks/${task.id}`}
+                      title={task.name}
+                    >
+                      {task.name}
+                    </a>
+                    <span
+                      className='max-w-full truncate font-mono text-xs text-muted-foreground'
+                      title={task.type}
+                    >
+                      {t(`tasks.types.${task.type}`, {
+                        defaultValue: task.type,
+                      })}
+                    </span>
+                    <StatusBadge
+                      status={task.enabled ? 'enabled' : 'disabled'}
+                    />
+                  </div>
+                ))}
               </div>
-            </TabsContent>
-            <TabsContent value='executions' className='mt-4'>
-              <ExecutionRows
-                executions={executions.data || []}
-                tasks={tasks.data || []}
-              />
-            </TabsContent>
-            <TabsContent value='tasks' className='mt-4'>
-              <div className='grid items-start gap-4 xl:grid-cols-3'>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className='text-sm'>
-                      {t('nodes.tasks')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {nodeTasks.length ? (
-                      <div className='divide-y'>
-                        {nodeTasks.map((task) => (
-                          <div
-                            className='flex min-w-0 items-center gap-3 py-3'
-                            key={task.id}
-                          >
-                            <a
-                              className='min-w-0 truncate font-medium hover:underline'
-                              href={`/tasks/${task.id}`}
-                              title={task.name}
-                            >
-                              {task.name}
-                            </a>
-                            <span
-                              className='max-w-full truncate font-mono text-xs text-muted-foreground'
-                              title={task.type}
-                            >
-                              {t(`tasks.types.${task.type}`, {
-                                defaultValue: task.type,
-                              })}
-                            </span>
-                            <StatusBadge
-                              status={task.enabled ? 'enabled' : 'disabled'}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <EmptyState message={t('nodes.noTasks')} />
-                    )}
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className='text-sm'>
-                      {t('nodes.schedules')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {nodeSchedules.length ? (
-                      <div className='divide-y'>
-                        {nodeSchedules.map((schedule) => (
-                          <div
-                            className='flex min-w-0 items-center gap-3 py-3'
-                            key={schedule.id}
-                          >
-                            <a
-                              className='min-w-0 truncate font-medium hover:underline'
-                              href={`/schedules/${schedule.id}`}
-                            >
-                              {tasks.data?.find(
-                                (task) => task.id === schedule.task_id
-                              )?.name || t('common.unknownTask')}
-                            </a>
-                            <span
-                              className='max-w-full truncate font-mono text-xs text-muted-foreground'
-                              title={
-                                schedule.expression ||
-                                `${schedule.interval_sec}s`
-                              }
-                            >
-                              {schedule.expression ||
-                                `${schedule.interval_sec}s`}
-                            </span>
-                            <StatusBadge
-                              status={schedule.enabled ? 'enabled' : 'disabled'}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <EmptyState message={t('nodes.noSchedules')} />
-                    )}
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className='text-sm'>{t('apps.title')}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {applications.data?.length ? (
-                      <div className='divide-y'>
-                        {applications.data.map((application) => (
-                          <div
-                            className='flex min-w-0 items-center gap-3 py-3'
-                            key={application.id}
-                          >
-                            <a
-                              className='min-w-0 truncate font-medium hover:underline'
-                              href={`/applications/${application.id}`}
-                              title={application.name}
-                            >
-                              {application.name}
-                            </a>
-                            <span className='font-mono text-xs text-muted-foreground'>
-                              {application.version}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <EmptyState message={t('apps.noApps')} />
-                    )}
-                  </CardContent>
-                </Card>
+            ) : (
+              <EmptyState message={t('nodes.noTasks')} />
+            )}
+          </SectionCard>
+          <SectionCard title={t('nodes.schedules')}>
+            {nodeSchedules.length ? (
+              <div className='divide-y'>
+                {nodeSchedules.map((schedule) => (
+                  <div
+                    className='flex min-w-0 items-center gap-3 py-3'
+                    key={schedule.id}
+                  >
+                    <a
+                      className='min-w-0 truncate font-medium hover:underline'
+                      href={`/schedules/${schedule.id}`}
+                    >
+                      {tasks.data?.find((task) => task.id === schedule.task_id)
+                        ?.name || t('common.unknownTask')}
+                    </a>
+                    <span
+                      className='max-w-full truncate font-mono text-xs text-muted-foreground'
+                      title={schedule.expression || `${schedule.interval_sec}s`}
+                    >
+                      {schedule.expression || `${schedule.interval_sec}s`}
+                    </span>
+                    <StatusBadge
+                      status={schedule.enabled ? 'enabled' : 'disabled'}
+                    />
+                  </div>
+                ))}
               </div>
-            </TabsContent>
-          </Tabs>
+            ) : (
+              <EmptyState message={t('nodes.noSchedules')} />
+            )}
+          </SectionCard>
+          <SectionCard title={t('apps.title')}>
+            {applications.data?.length ? (
+              <div className='divide-y'>
+                {applications.data.map((application) => (
+                  <div
+                    className='flex min-w-0 items-center gap-3 py-3'
+                    key={application.id}
+                  >
+                    <a
+                      className='min-w-0 truncate font-medium hover:underline'
+                      href={`/applications/${application.id}`}
+                      title={application.name}
+                    >
+                      {application.name}
+                    </a>
+                    <span className='font-mono text-xs text-muted-foreground'>
+                      {application.version}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState message={t('apps.noApps')} />
+            )}
+          </SectionCard>
         </div>
       </Main>
     </>
@@ -941,11 +859,7 @@ function ExecutionRows({
   const { t } = useTranslation()
   const taskNames = new Map(tasks.map((task) => [task.id, task.name]))
   if (!executions.length)
-    return (
-      <Card>
-        <EmptyState message={t('executions.noExecs')} />
-      </Card>
-    )
+    return <EmptyState message={t('executions.noExecs')} />
   return (
     <TableCard>
       <Table className='min-w-[620px] table-fixed'>
@@ -1198,6 +1112,8 @@ export function Schedules() {
       columns={columns}
       data={schedules.data || []}
       searchPlaceholder={t('schedules.searchPlaceholder')}
+      storageKey='schedules'
+      extra={<TaskScheduleTabs value='schedules' />}
       action={
         canWrite ? (
           <Button asChild>
@@ -1375,6 +1291,7 @@ export function Scripts() {
       columns={columns}
       data={query.data || []}
       searchPlaceholder={t('scripts.searchPlaceholder')}
+      storageKey='scripts'
       action={
         canWrite ? (
           <Button asChild>
@@ -1490,6 +1407,7 @@ export function Groups() {
       columns={columns}
       data={query.data || []}
       searchPlaceholder={t('groups.searchPlaceholder')}
+      storageKey='groups'
       action={
         canWrite ? (
           <Button asChild>
@@ -1628,6 +1546,7 @@ export function Applications() {
       columns={columns}
       data={query.data || []}
       searchPlaceholder={t('apps.searchPlaceholder')}
+      storageKey='applications'
       extra={deleteError ? <ErrorState error={new Error(deleteError)} /> : null}
       action={
         canWrite ? (
@@ -1802,6 +1721,17 @@ export function Artifacts() {
               {t('artifacts.download')}
             </DropdownMenuItem>
             {canWrite ? (
+              <DropdownMenuItem
+                onSelect={() =>
+                  window.location.assign(
+                    `/applications/new?artifact_id=${row.original.id}`
+                  )
+                }
+              >
+                {t('artifacts.createApplication')}
+              </DropdownMenuItem>
+            ) : null}
+            {canWrite ? (
               <DangerMenuItem
                 onSelect={() => removeArtifact(row.original)}
                 title={`${t('common.delete')}: ${row.original.name}`}
@@ -1822,6 +1752,7 @@ export function Artifacts() {
       columns={columns}
       data={query.data || []}
       searchPlaceholder={t('artifacts.searchPlaceholder')}
+      storageKey='artifacts'
       action={
         canWrite ? (
           <Button asChild>
@@ -1838,9 +1769,15 @@ export function Artifacts() {
 
 export function Audit() {
   const { t } = useTranslation()
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(() => readTablePageSize('audit', 10))
   const query = useQuery({
-    queryKey: ['audit'],
-    queryFn: () => api.get<AuditLog[]>('/audit?limit=100'),
+    queryKey: ['audit', page, pageSize],
+    queryFn: () =>
+      api.getPage<AuditLog>(
+        `/audit?limit=${pageSize}&offset=${(page - 1) * pageSize}`
+      ),
+    placeholderData: keepPreviousData,
   })
   const columns = useMemo<ColumnDef<AuditLog>[]>(
     () => [
@@ -1872,6 +1809,20 @@ export function Audit() {
         minSize: 100,
       },
       {
+        accessorKey: 'resource_id',
+        header: t('common.resourceId'),
+        size: 220,
+        minSize: 140,
+        cell: ({ row }: { row: { original: AuditLog } }) => (
+          <span
+            className='block truncate font-mono text-xs'
+            title={row.original.resource_id}
+          >
+            {row.original.resource_id || '-'}
+          </span>
+        ),
+      },
+      {
         accessorKey: 'detail',
         header: t('common.description'),
         size: 420,
@@ -1886,8 +1837,16 @@ export function Audit() {
       description={t('misc.auditDescription')}
       query={query}
       columns={columns}
-      data={query.data || []}
+      data={query.data?.items || []}
       searchPlaceholder={t('misc.auditSearch')}
+      storageKey='audit'
+      pagination={{
+        total: query.data?.total ?? 0,
+        page,
+        pageSize,
+        onPageChange: setPage,
+        onPageSizeChange: setPageSize,
+      }}
     />
   )
 }
@@ -1994,6 +1953,7 @@ export function Users() {
       columns={columns}
       data={query.data || []}
       searchPlaceholder={t('misc.usersSearch')}
+      storageKey='users'
       action={
         <Button onClick={() => setShowForm((value) => !value)}>
           {showForm ? t('common.cancel') : t('misc.newUser')}
@@ -2207,6 +2167,8 @@ function ListLayout<TData>({
   searchPlaceholder,
   action,
   extra,
+  storageKey,
+  pagination,
 }: {
   title: string
   description: string
@@ -2221,12 +2183,22 @@ function ListLayout<TData>({
   searchPlaceholder: string
   action?: React.ReactNode
   extra?: React.ReactNode
+  /** 表格视图持久化键（列可见性/每页条数） */
+  storageKey?: string
+  /** 提供时启用服务端分页（页码/每页条数受控） */
+  pagination?: {
+    total: number
+    page: number
+    pageSize: number
+    onPageChange: (page: number) => void
+    onPageSizeChange: (pageSize: number) => void
+  }
 }) {
   const { t } = useTranslation()
   return (
     <>
       <CadentraHeader title={title} description={description} action={action} />
-      <Main fluid className='flex flex-1 flex-col gap-6'>
+      <Main className='flex flex-1 flex-col gap-6'>
         {extra}
         {query.isError ? (
           <ErrorState error={query.error} onRetry={() => query.refetch()} />
@@ -2238,11 +2210,18 @@ function ListLayout<TData>({
             <Skeleton className='h-12 w-full' />
             <Skeleton className='h-12 w-full' />
           </div>
-        ) : data.length ? (
+        ) : data.length || (pagination?.total ?? 0) > 0 ? (
           <DataTable
             data={data}
             columns={columns}
             searchPlaceholder={searchPlaceholder}
+            storageKey={storageKey}
+            manualPagination={Boolean(pagination)}
+            total={pagination?.total}
+            page={pagination?.page}
+            pageSize={pagination?.pageSize}
+            onPageChange={pagination?.onPageChange}
+            onPageSizeChange={pagination?.onPageSizeChange}
           />
         ) : (
           <Card>
@@ -2265,24 +2244,6 @@ function LoadingPage({ title }: { title: string }) {
           <Skeleton className='h-12 w-full' />
           <Skeleton className='h-12 w-full' />
         </div>
-      </Main>
-    </>
-  )
-}
-function ErrorPage({
-  title,
-  error,
-  retry,
-}: {
-  title: string
-  error: unknown
-  retry: () => unknown
-}) {
-  return (
-    <>
-      <CadentraHeader title={title} />
-      <Main>
-        <ErrorState error={error} onRetry={() => retry()} />
       </Main>
     </>
   )

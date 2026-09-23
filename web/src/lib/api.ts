@@ -1,3 +1,5 @@
+import { formatApiError } from './api-errors'
+
 const API_BASE = '/api'
 
 export interface ApiClientOptions {
@@ -22,13 +24,20 @@ export function getToken(): string | null {
 
 export class ApiError extends Error {
   status: number
+  /** 后端原始错误信息（未经可读化映射） */
+  rawMessage: string
   constructor(status: number, message: string) {
     super(message)
     this.status = status
+    this.rawMessage = message
+    this.message = formatApiError(message, status)
   }
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function requestWithResponse<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<{ data: T; response: Response }> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
@@ -51,12 +60,37 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     }
     throw new ApiError(resp.status, msg)
   }
-  if (resp.status === 204) return undefined as T
-  return resp.json() as Promise<T>
+  if (resp.status === 204) return { data: undefined as T, response: resp }
+  return { data: (await resp.json()) as T, response: resp }
+}
+
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const { data } = await requestWithResponse<T>(path, options)
+  return data
+}
+
+/** 分页列表响应：X-Total-Count 缺失或非法时 total 回退为当前页条数 */
+export interface PageResult<T> {
+  items: T[]
+  total: number
 }
 
 export const api = {
   get: <T>(path: string) => request<T>(path),
+  /**
+   * GET 列表接口并读取 X-Total-Count 响应头。
+   * 后端未提供该响应头（如旧版本）时回退为 items.length。
+   */
+  getPage: async <T>(path: string): Promise<PageResult<T>> => {
+    const { data, response } = await requestWithResponse<T[]>(path)
+    const items = Array.isArray(data) ? data : []
+    const header = response.headers.get('X-Total-Count')
+    const parsed = header === null ? Number.NaN : Number(header)
+    return {
+      items,
+      total: Number.isFinite(parsed) && parsed >= 0 ? parsed : items.length,
+    }
+  },
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, {
       method: 'POST',

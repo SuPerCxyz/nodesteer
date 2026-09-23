@@ -6,21 +6,36 @@ test.describe('P02 布局与导航', () => {
     await loginViaApi(page)
     await page.goto(TEST_URLS.dashboard)
     await page.waitForTimeout(2000)
+    const sidebar = page.locator('[data-slot=sidebar]').first()
     const navItems = [
-      { name: /nodes|节点/i, url: '/agents' },
-      { name: /scripts|脚本/i, url: '/scripts' },
-      { name: /tasks|任务/i, url: '/tasks' },
-      { name: /schedules|调度/i, url: '/schedules' },
-      { name: /applications|托管应用/i, url: '/applications' },
-      { name: /executions|执行/i, url: '/executions' },
+      { name: /^节点$/, url: '/agents' },
+      { name: /^脚本$/, url: '/scripts' },
+      { name: /^任务$/, url: '/tasks' },
+      { name: /^应用$/, url: '/applications' },
+      { name: /^执行$/, url: '/executions' },
     ]
     for (const item of navItems) {
-      const link = page.getByRole('link', { name: item.name }).first()
+      const link = sidebar.getByRole('link', { name: item.name }).first()
       await expect(link).toBeVisible()
       await link.click()
       await page.waitForURL(new RegExp(item.url), { timeout: 10_000 })
       await expect(page).toHaveURL(new RegExp(item.url))
     }
+    // 调度已合并到任务页的「调度」视图，侧边栏不再有独立入口
+    await expect(sidebar.getByRole('link', { name: /调度/ })).toHaveCount(0)
+  })
+
+  test('P02-05 任务页调度视图与旧路由重定向', async ({ page }) => {
+    await loginViaApi(page)
+    await page.goto(TEST_URLS.tasks)
+    await page.waitForTimeout(1500)
+    await page.getByRole('tab', { name: /schedules|调度/i }).click()
+    await page.waitForURL(/view=schedules/, { timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: /schedules|调度/i }).first()).toBeVisible()
+    // 旧路由重定向
+    await page.goto('/schedules')
+    await page.waitForURL(/\/tasks\?view=schedules/, { timeout: 10_000 })
+    await expect(page).toHaveURL(/\/tasks\?view=schedules/)
   })
 
   test('P02-04 token 过期跳登录', async ({ page }) => {

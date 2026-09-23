@@ -9,6 +9,7 @@ import {
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
+import { ApiError } from '@/lib/api'
 import { handleServerError } from '@/lib/handle-server-error'
 import { currentPath, isSignInPath } from '@/lib/navigation'
 import { DirectionProvider } from './context/direction-provider'
@@ -26,6 +27,16 @@ const queryClient = new QueryClient({
       retry: (failureCount, error) => {
         // eslint-disable-next-line no-console
         if (import.meta.env.DEV) console.log({ failureCount, error })
+
+        // 4xx（除 429）重试无意义：快速失败，避免详情页长时间停留在骨架屏
+        if (
+          error instanceof ApiError &&
+          error.status >= 400 &&
+          error.status < 500 &&
+          error.status !== 429
+        ) {
+          return false
+        }
 
         if (failureCount >= 0 && import.meta.env.DEV) return false
         if (failureCount > 3 && import.meta.env.PROD) return false

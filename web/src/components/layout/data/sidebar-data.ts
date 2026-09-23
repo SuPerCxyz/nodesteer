@@ -3,12 +3,10 @@ import {
   Activity,
   ArrowLeftRight,
   AppWindow,
-  CalendarClock,
   FileCode2,
   History,
   LayoutDashboard,
   ListTodo,
-  Package,
   Server,
   Settings,
   Users,
@@ -34,26 +32,24 @@ export function getSidebarData(t: TFunction): SidebarData {
         items: [
           { title: t('nav.tasks'), url: '/tasks', icon: ListTodo },
           { title: t('nav.executions'), url: '/executions', icon: Activity },
-          { title: t('nav.nodes'), url: '/agents', icon: Server },
           {
             title: t('nav.transfers'),
             url: '/transfers',
             icon: ArrowLeftRight,
           },
-          { title: t('nav.schedules'), url: '/schedules', icon: CalendarClock },
+        ],
+      },
+      {
+        title: t('nav.sections.nodes'),
+        items: [
+          { title: t('nav.nodes'), url: '/agents', icon: Server },
+          { title: t('nav.groups'), url: '/groups', icon: Layers3 },
         ],
       },
       {
         title: t('nav.sections.resources'),
         items: [
           { title: t('nav.scripts'), url: '/scripts', icon: FileCode2 },
-          { title: t('nav.groups'), url: '/groups', icon: Layers3 },
-        ],
-      },
-      {
-        title: t('nav.sections.delivery'),
-        items: [
-          { title: t('nav.artifacts'), url: '/artifacts', icon: Package },
           {
             title: t('nav.applications'),
             url: '/applications',

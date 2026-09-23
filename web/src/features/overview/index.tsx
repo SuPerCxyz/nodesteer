@@ -164,7 +164,7 @@ export function Dashboard() {
         title={t('dashboard.title')}
         description={t('dashboard.description')}
       />
-      <Main fluid className='flex flex-1 flex-col'>
+      <Main className='flex flex-1 flex-col'>
         <div className='mx-auto flex w-full max-w-[1600px] flex-col gap-6'>
           <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
             <MetricCard
@@ -445,7 +445,8 @@ export function Dashboard() {
                 </CardTitle>
                 <Link
                   className='text-xs text-muted-foreground hover:text-foreground'
-                  to='/schedules'
+                  to='/tasks'
+                  search={{ view: 'schedules' }}
                 >
                   {t('common.viewAll')}{' '}
                   <ArrowUpRight className='inline size-3.5' />

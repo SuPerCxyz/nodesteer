@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form'
-import { describe, expect, it } from 'vitest'
+import i18n from '@/i18n'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
 import {
@@ -12,6 +13,9 @@ import {
 import { PasswordInput } from './password-input'
 
 describe('PasswordInput', () => {
+  // 组件文案已 i18n（显示/隐藏密码），测试固定英文以断言英文可访问名
+  beforeAll(() => void i18n.changeLanguage('en'))
+
   it('renders the password input correctly', async () => {
     const { getByPlaceholder, getByRole } = await render(
       <PasswordInput placeholder='password' />

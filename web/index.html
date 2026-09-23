@@ -36,13 +36,27 @@
       content="/images/cadentra-logo-original.png"
     />
 
-    <!-- font family -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- font family: 本地子集字体，首屏前应用，避免字体跳变 -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@200..800&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      href="/fonts/maple-mono-nl-nf-cn-medium.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
+    <script>
+      ;(function () {
+        try {
+          var m = document.cookie.match(/(?:^|;\s*)font=([^;]+)/)
+          var font = m ? m[1] : 'maple'
+          if (font !== 'system') {
+            document.documentElement.classList.add('font-maple')
+          }
+        } catch (e) {
+          document.documentElement.classList.add('font-maple')
+        }
+      })()
+    </script>
 
     <meta name="theme-color" content="#fff" />
   </head>

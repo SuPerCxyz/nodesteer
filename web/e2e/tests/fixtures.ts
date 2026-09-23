@@ -12,7 +12,8 @@ export const TEST_URLS = {
   groups: '/groups',
   scripts: '/scripts',
   tasks: '/tasks',
-  schedules: '/schedules',
+  schedules: '/tasks?view=schedules',
+  schedulesNew: '/schedules/new',
   applications: '/applications',
   artifacts: '/artifacts',
   executions: '/executions',
@@ -73,4 +74,50 @@ export async function getNodeIds(page: Page): Promise<string[]> {
   if (!resp.ok()) return []
   const nodes = await resp.json()
   return nodes.map((n: { id: string }) => n.id)
+}
+
+/** 删除名称匹配前缀的测试对象（脚本/任务及其调度），用于用例清理。 */
+export async function cleanupByName(
+  page: Page,
+  prefixes: { scripts?: string[]; tasks?: string[] }
+) {
+  const list = (b: unknown) => (Array.isArray(b) ? b : ((b as { items?: unknown[] })?.items || []))
+  const match = (name: string | undefined, prefix: string) =>
+    typeof name === 'string' && name.startsWith(prefix)
+
+  const schedules = await apiRequest(page, '/api/schedules')
+  const tasks = await apiRequest(page, '/api/tasks')
+  const taskItems = list(tasks.body) as { id: string; name: string }[]
+  const doomedTasks = new Set(
+    taskItems
+      .filter((t) => (prefixes.tasks || []).some((p) => match(t.name, p)))
+      .map((t) => t.id)
+  )
+  for (const sch of list(schedules.body) as { id: string; task_id: string }[]) {
+    if (doomedTasks.has(sch.task_id)) {
+      await apiRequest(page, `/api/schedules/${sch.id}`, { method: 'DELETE' })
+    }
+  }
+  for (const t of taskItems) {
+    if (doomedTasks.has(t.id)) {
+      await apiRequest(page, `/api/tasks/${t.id}`, { method: 'DELETE' })
+    }
+  }
+  const scripts = await apiRequest(page, '/api/scripts')
+  for (const sc of list(scripts.body) as { id: string; name: string }[]) {
+    if ((prefixes.scripts || []).some((p) => match(sc.name, p))) {
+      await apiRequest(page, `/api/scripts/${sc.id}`, { method: 'DELETE' })
+    }
+  }
+}
+
+/** 删除指定表达式的调度（用于用例自建调度的清理）。 */
+export async function deleteSchedulesByExpression(page: Page, expression: string) {
+  const schedules = await apiRequest(page, '/api/schedules')
+  const list = (b: unknown) => (Array.isArray(b) ? b : ((b as { items?: unknown[] })?.items || []))
+  for (const sch of list(schedules.body) as { id: string; expression: string }[]) {
+    if (sch.expression === expression) {
+      await apiRequest(page, `/api/schedules/${sch.id}`, { method: 'DELETE' })
+    }
+  }
 }

@@ -1,15 +1,15 @@
 import { Link } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 
 export function NotFoundError() {
+  const { t } = useTranslation()
   return (
     <div className='container flex min-h-svh flex-col items-center justify-center gap-4 text-center'>
-      <h1 className='text-3xl font-semibold'>Page not found</h1>
-      <p className='text-muted-foreground'>
-        The requested NodeSteer page does not exist.
-      </p>
+      <h1 className='text-3xl font-semibold'>{t('errors.pageNotFound')}</h1>
+      <p className='text-muted-foreground'>{t('errors.pageNotFoundDesc')}</p>
       <Button asChild>
-        <Link to='/'>Back to overview</Link>
+        <Link to='/'>{t('errors.backToOverview')}</Link>
       </Button>
     </div>
   )

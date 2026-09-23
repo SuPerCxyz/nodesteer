@@ -83,7 +83,7 @@ test.describe('P05 节点详情', () => {
     await loginViaApi(page)
     await page.context().grantPermissions(
       ['clipboard-read', 'clipboard-write'],
-      { origin: process.env.BASE_URL || 'http://192.168.100.249:8080' }
+      { origin: process.env.BASE_URL || 'http://192.168.100.209:8080' }
     )
     await page.route('**/api/nodes/enrollment', async (route) => {
       await route.fulfill({
@@ -107,7 +107,7 @@ test.describe('P05 节点详情', () => {
     await expect(dialog).toBeVisible()
     await dialog.getByLabel(/节点名称|node name/i).fill(`e2e-node-${Date.now()}`)
     await dialog.getByLabel(/节点地址|node address/i).fill('192.168.100.212')
-    await dialog.getByLabel(/Hub 地址|hub address/i).fill('http://192.168.100.249:8080')
+    await dialog.getByLabel(/Hub 地址|hub address/i).fill(process.env.BASE_URL || 'http://192.168.100.209:8080')
     await dialog.getByRole('button', { name: /生成安装命令|generate/i }).click()
     await page.waitForTimeout(1000)
     const content = await dialog.textContent()

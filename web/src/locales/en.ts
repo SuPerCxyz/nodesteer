@@ -24,7 +24,7 @@ export default {
       operations: 'Operations',
       definitions: 'Definitions',
       resources: 'Resources',
-      delivery: 'Delivery',
+      nodes: 'Nodes',
       system: 'System',
     },
   },
@@ -59,6 +59,12 @@ export default {
     uploading: 'Uploading...',
     login: 'Login',
     loggingIn: 'Logging in...',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
+    toggleSidebar: 'Toggle Sidebar',
+    toggleNavigation: 'Toggle navigation menu',
+    clearSelection: 'Clear selection',
+    resourceId: 'Resource ID',
     language: 'Language',
     profile: 'Profile',
     remove: 'Remove',
@@ -103,6 +109,47 @@ export default {
     lastPage: 'Go to last page',
     goToPage: 'Go to page {{page}}',
     pageOf: 'Page {{current}} of {{total}}',
+    totalRows: '{{total}} rows',
+    sortAscending: 'Sort ascending',
+    sortDescending: 'Sort descending',
+    clearSorting: 'Clear sorting',
+  },
+  // 后端错误可读化映射
+  errors: {
+    types: {
+      artifact: 'artifact',
+      application: 'application',
+      script: 'script',
+      task: 'task',
+      group: 'group',
+      node: 'node',
+      schedule: 'schedule',
+      execution: 'execution',
+      user: 'user',
+    },
+    referenced:
+      'Cannot delete this {{resource}}: it is still referenced by {{reference}}. Remove the reference first.',
+    referenceLabel: '{{type}} ({{id}})',
+    activeTransfer:
+      'Node {{node}} still has an active file transfer ({{transfer}}). Cancel it or wait for it to finish.',
+    cronFields:
+      'Invalid cron expression: expected {{expected}} fields (minute hour day month weekday), got {{found}}.',
+    cronInvalid: 'Invalid cron expression: {{detail}}',
+    invalidTimezone: 'Invalid timezone: {{detail}}',
+    duplicateUsername: 'This username is already taken. Choose another one.',
+    uniqueConstraint: 'A record with the same {{field}} already exists.',
+    pageNotFound: 'Page not found',
+    pageNotFoundDesc: 'The requested NodeSteer page does not exist.',
+    loadFailed: 'Unable to load this page',
+    requestFailed: 'The request could not be completed.',
+    backToOverview: 'Back to overview',
+    duplicateName: 'A {{type}} with this name already exists: {{name}}',
+    duplicateParameter: 'Duplicate parameter name: {{name}}',
+    parameterNameRequired: 'Parameter name is required.',
+    nameRequired: '{{type}} name is required.',
+    notFound: 'The resource does not exist or has been deleted.',
+    notFoundResource: 'The {{resource}} does not exist or has been deleted.',
+    permissionDenied: 'You do not have permission to perform this action.',
   },
   // 登录页
   login: {
@@ -259,6 +306,7 @@ export default {
     cancel: 'Cancel transfer',
     id: 'Transfer ID',
     empty: 'No file transfers',
+    errorReason: 'Error',
     searchPlaceholder: 'Search transfer ID, path, or Agent',
   },
   // 分组
@@ -267,7 +315,7 @@ export default {
     description: 'Define static node sets or label-based dynamic targets.',
     searchPlaceholder: 'Search group name or type',
     confirmDelete:
-      'Delete this group? Tasks referencing it will lose their target.',
+      'Delete this group? Deletion is blocked while any task references it.',
     newGroup: 'New Group',
     editTitle: 'Edit Group',
     noGroups: 'No groups',
@@ -509,6 +557,9 @@ export default {
     noHealth: 'No node health state',
     executionHistory: 'Execution History',
     noExecutions: 'No application executions',
+    currentArtifact: 'Current Artifact',
+    uploadArtifact: 'Upload Artifact',
+    manageArtifacts: 'Manage Artifacts',
   },
   // 发布包
   artifacts: {
@@ -527,6 +578,7 @@ export default {
     selectFile: 'Choose a file',
     archField: 'Arch',
     uploadFailed: 'upload failed',
+    createApplication: 'Create Application',
   },
   // 执行
   executions: {

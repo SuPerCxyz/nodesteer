@@ -1,5 +1,5 @@
 import { test, expect } from 'playwright/test'
-import { loginViaApi, TEST_URLS } from './fixtures'
+import { cleanupByName, loginViaApi, TEST_URLS } from './fixtures'
 
 test.describe('P07 脚本列表', () => {
   test('P07-01 列表渲染', async ({ page }) => {
@@ -54,6 +54,8 @@ test.describe('P08 脚本编辑器', () => {
     await expect(saveBtn).toBeVisible()
     await saveBtn.click()
     await page.waitForTimeout(3000)
+    // 清理：删除本用例创建的脚本，避免环境累积
+    await cleanupByName(page, { scripts: ['test-e2e-script'] })
   })
 
   test('P08-08 取消编辑', async ({ page }) => {
