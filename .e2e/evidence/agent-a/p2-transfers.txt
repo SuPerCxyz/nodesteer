@@ -1,0 +1,34 @@
+======== create+run source file task on agent-1
+mkfile task id: 26b818d4-742c-4f32-b41b-9c9b19177f19
+======== T-A: source agent-1 -> targets agent-2 & agent-3
+src options: "e2e-b-20260922-a1b2-n1 | nodesteer-agent-1 | nodesteer-agent-2 | nodesteer-agent-3 | nodesteer-agent-4"
+form: "[\"/var/lib/app/config.yaml=\",\"/var/lib/app/config.yaml=\",\"搜索传输 ID、路径或节点=\"]"
+addTarget disabled? true
+after add target: "Skip to Main\nNodeSteer\nLinux 节点自动化控制台\nToggle Sidebar\n概览\n仪表盘\n运行\n任务\n执行\n文件传输\n节点\n节点\n分组\n资源\n脚本\n应用\n系统\n审计\n用户\n设置\nadmin\n管理员\n文件传输\n\n通过 Hub 将文件从一个 Agent 发送到指定节点。\n\nHub 已连接\n中\n切换主题\n新建文件传输\n源 Agent\nnodesteer-agent-1\n源文件路径\n目标 Agent\nnodesteer-agent-2\n目标文件路径\n"
+======== T-A: agent-1 /tmp/e2e-a-...-src.txt -> agent-2 & agent-3
+form before add: "[\"/tmp/e2e-a-20260922-de6e-src.txt\",\"/tmp/e2e-a-20260922-de6e-dst.txt\"]"
+targets: "\n新建文件传输\n源 Agent\nnodesteer-agent-1\n源文件路径\n目标 Agent\n选择目标 Agent\n目标文件路径\n添加目标\nnodesteer-agent-2/tmp/e2e-a-20260922-de6e-dst.txt\n开始传输\n视图\n源 Agent\t源文件路径\t状态\t目标节点\t时间\t\nnode"
+after target2 select: "\n新建文件传输\n源 Agent\nnodesteer-agent-1\n源文件路径\n目标 Agent\nnodesteer-agent-3\n目标文件路径\n添加目标\nnodesteer-agent-2/tmp/e2e-a-20260922-de6e-dst.txt\n开始传输\n视图\n源 Agent\t源文件路径\t状态\t目标节点\t时"
+targets2: "\n新建文件传输\n源 Agent\nnodesteer-agent-1\n源文件路径\n目标 Agent\nnodesteer-agent-3\n目标文件路径\n添加目标\nnodesteer-agent-2/tmp/e2e-a-20260922-de6e-dst.txt\n开始传输\n视图\n源 Agent\t源文件路径\t状态\t目标节点\t时间\t\nnodesteer-agent-3\t\n/etc/hostname\n\t失败\t"
+toast: "文件传输已创建"
+api: [3591776.6636] POST http://192.168.100.209:8080/api/transfers (Fetch) 200
+[3591776.6637] GET http://192.168.100.209:8080/api/transfers (Fetch) 200
+transfers:     accafab7 SUCCESS src= ac400b3e /tmp/e2e-a-20260922-de6e-src.txt sha= 49ba55601895 err= None
+        -> 06ad7af9 SUCCESS /tmp/e2e-a-20260922-de6e-dst.txt None
+    23fbbc00 FAILED src= 476618d4 /etc/hostname sha= 30fe6649a68c err= None
+        -> 06ad7af9 FAILED /proc/e2e-g-out.txt 'open /proc/.cadentra-transfer-2525940791: no such file or directory'
+    ba52ca91 SUCCESS src= 476618d4 /etc/hostname sha= 30fe6649a68c err= None
+        -> 50dfad58 SUCCESS /tmp/e2e-main-p2.txt None
+======== T-A2: 2 targets
+chips: "添加目标\nnodesteer-agent-2/tmp/e2e-a-20260922-de6e-dst.txt\nnodesteer-agent-3/tmp/e2e-a-20260922-de6e-dst.txt\n开始传输\n视图\n源 Agent\t源文件路径\t状态\t目标节点\t时间\t\nnodesteer-agent-1\t\n/t"
+remove-chip buttons: "[\"移除\",\"移除\"]"
+toast: "文件传输已创建"
+api: [3591776.6702] POST http://192.168.100.209:8080/api/transfers (Fetch) 200
+[3591776.6703] GET http://192.168.100.209:8080/api/transfers (Fetch) 200
+transfers:     05780576 SUCCESS src= ac400b3e /tmp/e2e-a-20260922-de6e-src.txt sha= 49ba55601895
+        -> 06ad7af9 SUCCESS /tmp/e2e-a-20260922-de6e-dst.txt None
+        -> 476618d4 SUCCESS /tmp/e2e-a-20260922-de6e-dst.txt None
+    accafab7 SUCCESS src= ac400b3e /tmp/e2e-a-20260922-de6e-src.txt sha= 49ba55601895
+        -> 06ad7af9 SUCCESS /tmp/e2e-a-20260922-de6e-dst.txt None
+======== T-A3: verify destination content on agent-2/agent-3
+verify task: 14a2eb5f-f645-483e-a659-873326471908

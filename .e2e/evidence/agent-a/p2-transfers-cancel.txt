@@ -1,0 +1,14 @@
+======== 创建 300MB 大文件（agent-1）
+======== 启动大文件传输（agent-1 -> agent-2）并立即取消
+state right after create:     4ef65cc5 UPLOADING /tmp/e2e-a-20260922-de6e-big.bin size= 0
+        -> PENDING /tmp/e2e-a-20260922-de6e-big-dst.bin None
+    a033c1a6 CANCELED /tmp/e2e-a-20260922-de6e-nonexistent.txt size= 0
+        -> CANCELED /tmp/e2e-a-20260922-de6e-never.txt None
+menu items: "[\"取消传输\"]"
+api: [3591776.7741] POST http://192.168.100.209:8080/api/transfers/4ef65cc5-ca6f-432c-bac6-4f6c56544a00/cancel (Fetch) 200
+[3591776.7742] GET http://192.168.100.209:8080/api/transfers (Fetch) 200
+[3591776.7743] GET http://192.168.100.209:8080/api/transfers (Fetch) 200
+after UI cancel:     4ef65cc5 CANCELED /tmp/e2e-a-20260922-de6e-big.bin size= 314572800
+        -> CANCELED /tmp/e2e-a-20260922-de6e-big-dst.bin None
+    a033c1a6 CANCELED /tmp/e2e-a-20260922-de6e-nonexistent.txt size= 0
+        -> CANCELED /tmp/e2e-a-20260922-de6e-never.txt None

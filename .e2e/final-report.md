@@ -1,112 +1,172 @@
-# Autonomous Web E2E Test Report
+# NodeSteer Web 全量 E2E 测试报告（3 遍遍历 + 自动化 + UI/UX）
 
-## 1. Scope
+- 时间：2026-09-22 ｜ 环境：Hub `http://192.168.100.209:8080`（kvm2），4 台 Agent（Debian 13 / Fedora 42 / Rocky 9.8 / openSUSE Leap 16.0）全部 online
+- 执行方式：3 个遍历执行单元（运行域 / 节点与系统域 / 制品与应用域，各 3 遍）+ Playwright 全量自动化 + 多视口 UI/UX 巡检
+- 证据：`.e2e/evidence/agent-{a,b,c}/`、`.e2e/ui-review/screenshots/`
 
-- Base URL: `http://192.168.100.249:8080`
-- Environment: KVM2 real Hub deployment, administrator browser session
-- Browser/tool: agent-browser 0.32.4, Chrome for Testing 151
-- Run ID: `20260916-214000`
-- End: `2026-09-16T23:04:28+08:00`
-- Scope: source/runtime discovery, primary routes, authenticated UI, API smoke, CRUD/state continuity, negative confirmations, execution/logs, settings persistence, artifact download, and transfer retry
-- Business code changes: none made during this test run
+## 1. 结论摘要
 
-## 2. System Model
+| 指标 | 结果 |
+|---|---|
+| 功能点（控件/操作级枚举） | 184 |
+| 实测操作 | 89（通过 89） |
+| 跨页连续性工作流 | 20（通过 16 / 失败 4） |
+| E2E 自动化用例 | 17 个 spec / **64 通过 / 1 跳过 / 0 失败**（3.1 分钟） |
+| UI/UX 巡检 | 21 页面 × 5 视口 = 105 组合；页面级横向滚动 0，控制台错误 0 |
+| 本轮新缺陷 | 26（高 2 / 中 14 / 低 10） |
+| UI/UX findings | 11（本轮）+ 17（上轮待复测） |
+| 上轮缺陷待复测 | 16 |
 
-Static discovery found 14 primary pages, 32 route entries including create/edit/detail/run routes, 12 resource types, 13 main API areas, and administrator/operator/viewer role definitions. Runtime exploration reached the dashboard plus the 13 primary authenticated navigation pages and the main create/edit/detail routes used below.
+## 2. 高优先级缺陷（必读）
 
-Primary resources modeled:
+1. **FAIL-A-010（高）** 源上传失败的传输目标永久 PENDING：整体 FAILED 后目标停留「等待中」，UI 无取消入口，节点删除被 `409 has active file transfer` 阻断。后端 cancel 接口可用，前端未暴露。
+2. **FAIL-B-101（高）** RBAC 角色变更（含降权）对已登录会话不生效：降为 viewer 后旧会话仍可执行操作，仅新登录会话生效（会话 Role 在登录时固化）。
 
-`node`, `group`, `script`, `task`, `schedule`, `artifact`, `application`, `execution`, `transfer`, `audit_log`, `user`, and `settings`.
+## 3. 中优先级缺陷（14 条，摘要）
 
-Important state dependencies:
+- FAIL-A-004 取消执行不写审计（文件传输取消有审计）
+- FAIL-A-005 执行/审计列表硬上限 100 条，更早记录 UI 不可达（DB 269 条）
+- FAIL-A-006 禁用脚本不阻断已引用任务的立即运行
+- FAIL-A-007 / FAIL-B-107 编辑页错误提示统一显示「暂无数据」（ErrorState 只识别 Error 实例）
+- FAIL-A-008 任务超时允许负数（显示 -5s，实际按 300s 执行）
+- FAIL-A-009 目标节点被删后任务无法编辑/启停，运行报原始 SQL 错误
+- FAIL-A-011 文件传输失败原因 UI 完全不可见
+- FAIL-B-102 审计缺 detail 字段：描述列恒空、按资源名搜索无结果
+- FAIL-B-103 / FAIL-C-001 引用阻断提示为英文后端原文 + 裸 UUID
+- FAIL-B-104 重新纳管既有节点不复用 Node ID/Agent ID，产生重复节点
+- FAIL-B-105 设置保存不写审计
+- FAIL-B-106 不存在资源的详情/编辑路由无错误态（空白页/空白新建表单）
 
-```text
-authenticated
-  → node/script/task/schedule/group/artifact existence
-  → task run
-  → execution pending/terminal
-  → execution detail/logs
-```
+## 4. 工作流连续性结果
 
-## 3. Coverage Summary
+| 工作流 | 结果 |
+|---|---|
+| workflow.script.task.run | ✅ passed |
+| workflow.schedule.crud.trigger | ✅ passed |
+| workflow.task.multi_node | ✅ passed |
+| workflow.transfer.multi_target.sha256 | ✅ passed |
+| workflow.transfer.failure_retry_cancel | ❌ failed |
+| workflow.execution.cancel_timeout_retry.audit | ❌ failed |
+| workflow.task_param_override | ✅ passed |
+| workflow.entity_reference_guards | ✅ passed |
+| workflow.task_delete_history | ✅ passed |
+| workflow.label.group.task | ✅ passed |
+| workflow.enrollment | ❌ failed |
+| workflow.node.status | ✅ passed |
+| workflow.rbac.matrix | ❌ failed |
+| workflow.user.lifecycle | ✅ passed |
+| workflow.settings.roundtrip | ✅ passed |
+| 制品上传→SHA256/大小校验→下载校验→Usage 引用→删除被引用制品 | ✅ passed |
+| 制品→创建应用→分配节点→Deploy→健康→Start/Stop/Restart→Upgrade→删除清理 | ✅ passed |
+| 应用操作产生的执行→执行详情/日志→审计 | ✅ passed |
+| 仪表盘统计与列表 API 一致性、各「查看全部」落点 | ✅ passed |
+| UI 基础项：字体（无外网请求）/主题/语言切换与刷新保持；1366/1920/3840 无横向溢出 | ✅ passed |
 
-Values are calculated from `feature-inventory.json`, `state-graph.json`, and `workflows.json`:
+## 5. E2E 自动化现状
 
-```text
-Features discovered: 56
-Features tested: 40
-Features passed: 38
-Features failed: 0
-Features blocked: 10
+- 目录 `web/e2e/tests/`，17 个 spec、65 个用例（64 通过 / 1 跳过）。
+- 运行方式：`cd web && CADENTRA_E2E_PASSWORD=<pwd> npx playwright test --config e2e/playwright.config.ts`（RBAC 用例需 `CADENTRA_E2E_RBAC_PASSWORD` 与 operator/viewer 用户名环境变量；`BASE_URL` 默认指向 209）。
+- 本轮新增：`p23-detail-layout.spec.ts`（详情页单页化/宽度一致/字段栅格/短视口侧边栏）、`p24-task-schedules.spec.ts`（任务与调度合并视图 CRUD/深链/重定向）。
+- 修正：默认 BASE_URL（249→209）、侧栏 12 项与调度入口、p04 硬编码地址、E2E-11 定位器歧义、p24 行定位。
+- 已知跳过：P01-04 登录页语言切换（产品缺口 FAIL-B-110，`test.fixme` 标记，修复后启用）。
+- 缺口：编辑器/详情类页面用例仍偏「渲染级」，按钮级与异常路径部分只在一次性遍历中覆盖；自动化用例创建的数据缺少清理钩子（本轮 3 脚本/3 任务/2 调度由人工清理）。
 
-States discovered: 17
-Transitions discovered: 12
-Transitions tested: 9
+## 6. 环境与数据清理
 
-Workflows generated: 8
-Workflows executed: 6
+- 已清理：本轮自动化创建的 3 个脚本、3 个任务、2 条调度；遍历单元的测试对象（脚本/任务/调度/制品/应用/分组）均已删除，Agent 侧临时文件已核对无残留。
+- 保留（产品无删除能力或属审计设计）：执行与审计历史、4 个测试用户、3 个历史脚本/2 个历史任务。
+- **环境遗留（非本轮创建、建议处理）**：任务 `test-date-1node` 仍挂着每分钟触发的调度 `* * * * *`，会持续产生执行记录；另执行/审计列表硬上限导致更早记录不可见（FAIL-A-005）。
 
-CRUD lifecycles expected: 5
-CRUD lifecycles tested: 3
+## 7. 未覆盖项
 
-Negative paths expected: 8
-Negative paths tested: 5
-```
+- /artifacts 无详情页（行内无详情入口），无法验证单制品详情视图（产品边界）。
+- Agent 重连（重启/断网）对「维护」状态的影响未做运行时验证（禁止重启 Hub/Agent），仅基于 internal/hub/node.go:104 代码阅读给出观察。
+- Hub 执行方（execution_owner=hub）的调度触发未验证：按安全规则不创建长期后台调度；本轮全部使用 Agent 执行方（一次性调度真实触发已验证）。
+- RBAC 未覆盖脚本/发布包/应用/文件传输等其它域的按钮可见性（属其它执行单元范围），仅覆盖节点、分组、用户、设置、任务入口与直连接口。
+- RBAC（viewer/operator 对运行域接口的 403）未验证：本轮全程使用 admin；属其他单元范围。
+- arm64 制品上传/下载未在本轮重复（历史 G-09 已覆盖）。
+- 「设置条件/设置远程条件」的清除入口、AND 组合等仅确认存在，未逐组合验证。
+- 任务「条件」（本地 cpu_usage / 远程节点字段）仅完成字段枚举与「设置/清除」入口确认，未构造满足/不满足条件的分支执行验证。
+- 传输大文件成功路径的 SHA256 未验证：300MB 用例用于中途取消，未等待完成；小文件（35B）已完成端到端内容与 SHA256 校验。
+- 分组/标签类任务目标未执行验证（属节点/分组单元范围），本轮只做表单枚举。
+- 删除确认对话框的「取消」路径未单独取证（取消按钮存在于制品/应用删除确认框）。
+- 制品编辑器非法输入（Unit 名非法字符、健康检查数值边界如 0/负数/非数字）未逐一穷举。
+- 响应式（1024/820）与深色主题、i18n 切换下的运行域页面未复检（属 ui-review 范围）。
+- 多页分页交互仅在 /audit（10 页）实测，节点/分组/用户列表因数据量不足无法验证跨页行为。
+- 应用手动回滚：UI 无入口（部署操作仅 deploy/start/stop/restart/upgrade），无法测试手动回滚；健康检查失败自动回滚本轮未复测（历史轮次已覆盖）。
+- 托管应用部署/操作类任务未能端到端验证：环境内无任何托管应用（其他单元已清理），应用下拉为空。仅完成表单枚举与 400 错误路径验证；历史 FAIL-G-001 需在有应用的条件下复测。
+- 执行/传输/审计记录无删除能力，测试数据只能保留；若需要干净基线需数据治理方案。
+- 真实 Agent 的「撤销凭证 / 重新纳管」闭环未在真实节点上执行（保护 4 台 Agent），仅在自建 pending 节点上验证了撤销与同名重纳管。
+- 节点详情「托管应用」分区因当前无应用分配，仅验证空态。
+- 表格列宽拖拽/列排序等 tanstack-table 能力因无 UI 入口未验证（见 FAIL-B-112）。
+- 语言/主题与浏览器 system 偏好联动（prefers-color-scheme）未验证。
+- 跨代际传输（DELIVERING 中断/Agent 重连后恢复）未验证：需要停止 Agent，超出本单元安全边界。
+- 部署失败/节点离线场景未复测：4 台节点全部在线，本轮未构造节点离线部署；也未构造健康检查失败用例。
 
-The machine-readable source of truth is `.e2e/coverage.json`; no 100% claim is made.
+## 8. 建议下一步
 
-## 4. Critical Workflows Tested
+1. 修高优先级 2 项（传输目标终态与取消入口、RBAC 会话降权）。
+2. 统一错误提示链路（ErrorState 支持字符串 + 后端错误本地化），可一并解决 4 条中低缺陷。
+3. 补齐审计 detail 字段与执行/审计列表分页（含超过 100 条的历史可达性）。
+4. 自动化用例加清理钩子；把本次遍历中未自动化的按钮级/异常路径补进 spec。
+5. 处理环境遗留调度，避免持续产生执行噪音。
 
-- Authentication: invalid credentials remain on `/sign-in`; controlled login reaches dashboard; logout confirmation redirects to `/sign-in?redirect=%2Fusers`; Chinese/English switching works.
-- Script lifecycle: create `e2e-script-20260916-a81c`, update content/description, revision advanced `r1 → r2`, search and refresh verified persistence, delete confirmation cancel/confirm completed.
-- Task execution: create `e2e-task-20260916-a81c` targeting `ubuntu2604-agent`, open run confirmation, execute successfully, verify `SUCCESS`, execution detail and `E2E_TASK_SUCCESS` logs, then delete task.
-- Schedule lifecycle: create Cron `0 0 * * *`, edit to `5 0 * * *`, disable, delete; both confirmation branches exercised.
-- Group lifecycle: create static group, change description and membership, delete with confirmation.
-- Artifact lifecycle: upload `e2e-artifact-20260916-a81c` version `1.0.0`, download to evidence, delete with confirmation.
-- Settings: change heartbeat `30 → 31`, save, refresh persistence, restore to `30` and verify after refresh.
-- Transfer negative path: create transfer from the known source path to a test destination, observe retained `FAILED`, inspect source-path error through authenticated API, invoke retry, and observe failure retained with retry available.
+---
 
-## 5. Failures
+# 缺陷修复轮（2026-09-22）
 
-### FAIL-001 — Medium（已修复）
+- 修复并线上验证：**11 项**（含 2 项 high），另有 6 项部分修复、1 项经复核为设计行为。
+- 回归：E2E 全量 **64 通过 / 1 跳过 / 0 失败**；Go 全量测试通过；前端 12 文件 74 单测通过。
+- 部署：Hub 二进制 `18154d28…`（含后端与内嵌前端修复），回滚备份 `/usr/local/bin/cadentra-hub.bak-20260922-1400`。
 
-Delete confirmation for a schedule displayed the raw schedule UUID instead of a human-readable task/expression label. Reproduced twice. Original evidence: `.e2e/evidence/screenshots/schedule-delete-confirm-uuid.png`.
+| 缺陷 | 级别 | 修复内容 |
+|---|---|---|
+| FAIL-A-010 | 高 | 源上传失败时终结全部非终态目标；修复迟到交付结果复活、无失败目标重试推进状态两处状态机问题 |
+| FAIL-B-101 | 高 | `Authenticate` 每次以数据库当前角色返回会话副本，降权/升权立即生效 |
+| FAIL-A-004 | 中 | 取消执行写审计（detail=任务名） |
+| FAIL-A-006 | 中 | 运行前校验引用脚本仍启用（手动与 Hub 调度路径） |
+| FAIL-A-007 / FAIL-B-107 | 中 | `ErrorState` 支持字符串/对象错误，编辑器显示真实原因 |
+| FAIL-A-008 | 中 | 后端拒绝负数超时 |
+| FAIL-A-009 | 中 | 更新任务自动剔除已删除节点；运行失效目标返回可读错误 |
+| FAIL-A-011 | 中 | 传输列表新增错误原因列与目标错误展示；失败传输可取消 |
+| FAIL-B-103 / FAIL-C-001 | 中 | 后端错误本地化映射（引用阻断/cron/时区/重复名/404/403），原文保留于 rawMessage |
+| FAIL-B-104 | 中 | 重新纳管复用 Node ID/Agent ID，清除撤销标记并轮换凭证 |
+| FAIL-B-105 | 中 | 设置保存写审计（detail 含 keys） |
+| FAIL-B-106 | 中 | 8 个不存在资源路由显示错误态与返回入口（含 4xx 不再重试） |
+| FAIL-B-102 | 中 | 部分：删除/取消/设置审计写入可读 detail |
+| FAIL-A-005 | 中 | 部分：列表上限 100→500，服务端分页待实现 |
+| FAIL-A-015 / FAIL-B-109 | 低 | 常见错误本地化（部分覆盖） |
+| FAIL-A-016 | 低 | 复核为设计行为（DELETE 幂等），新增用例固定行为 |
 
-This is separate from the earlier list UUID cleanup: general list rows hide UUIDs, but this confirmation title still rendered the identifier. Fixed in the post-run UI pass; the confirmation now uses the task name plus Cron/interval expression. Retest evidence: `.e2e/ui-review/evidence/screenshots/schedule-delete-confirm-fixed.png`.
+**仍开放**：FAIL-A-012/013/014、FAIL-B-108/110/111/112（低-中，见 `failures.json` 的 `fix_note`）。
 
-## 6. Coverage Gaps and Blocks
+---
 
-- Managed application create/assign/deploy/health/rollback was not executed because it would mutate an existing enrolled Agent and no isolated enrolled target is available; the requested manual VM intentionally remains unmanaged.
-- Operator/viewer RBAC and denied-action testing is blocked because the corresponding credentials are not present in the environment.
-- Node enrollment/revoke/status mutations were not executed; creating a pending node would change Hub state and is outside the current unmanaged-node scope.
-- Positive file relay did not complete because the selected source path was absent on the source Agent. The failure and retry paths were exercised and retained as test evidence; the failed transfer has no delete action in the UI.
-- Execution cancellation while running and live streaming/follow behavior were not exercised.
-- Script revision increment was verified, but a dedicated revision-history UI was not opened.
-- Node label add works; no visible label removal/edit control was found. The test label was removed through the authenticated API to restore the existing node.
+# 后续 4 项改进（2026-09-22 第二轮）
 
-## 7. Source vs Runtime Differences
+| 项 | 结果 |
+|---|---|
+| 服务端分页（执行/审计） | ✅ 后端 `X-Total-Count` + `limit/offset`（补齐此前缺失的 offset 解析）；前端 DataTable 手动分页；线上实测 1011 条 / 共 102 页，翻页无重叠 |
+| 表格视图状态持久化 | ✅ `storageKey` → localStorage（列可见性 + 每页条数），10 个列表页接入，刷新保持 |
+| 列排序 | ✅ 可排序表头（`DataTableColumnHeader`），点击切换 asc/desc/清除；服务端分页下作用于当前页 |
+| 登录页语言入口 + `html lang` | ✅ 与顶栏共用 LanguageSwitch；切换同步 `html lang` 并持久化；P01-04 由 fixme 转为真实通过 |
+| 环境遗留每分钟调度 | ✅ 已删除（用户确认），调度列表为空 |
 
-- Source route discovery and runtime navigation matched for the primary pages and dynamic create/edit/detail routes used.
-- `/nodes` renders the node catalog but does not canonicalize the browser URL to `/agents`.
-- Schedule delete confirmation was fixed to use product-facing task/expression fields; UUID is retained only as technical data.
-- Runtime application form is reachable, but the artifact selector is empty after artifact cleanup, so deployment could not safely proceed.
+- 回归：E2E **65 通过 / 0 失败 / 0 跳过**；前端 13 文件 78 单测通过；Go 全量测试通过。
+- 部署：Hub 二进制 `412bf900…`，回滚备份 `/usr/local/bin/cadentra-hub.bak-20260922-1500`。
+- 剩余开放缺陷（低）：FAIL-A-013（审计无资源 ID 列）、FAIL-A-014（重名对象）、FAIL-B-108（登录页 Show password 等英文文案）、FAIL-A-015 残留项。
 
-## 8. Test Data and Cleanup
+---
 
-- Deleted: test script, task, schedule, group, artifact, and temporary node label.
-- Restored: runtime heartbeat setting to `30` seconds.
-- Retained intentionally: successful execution history, as required for audit/execution continuity.
-- Retained as evidence: one failed transfer record because the UI exposes retry but no delete action; it is marked `safe_to_delete: false` in `.e2e/test-data.json`.
-- No Hub node was created for `cadentra-agent-manual-test`.
+# 低优先级缺陷收尾（2026-09-22 第三轮）
 
-## 9. Final Status
+| 缺陷 | 修复 |
+|---|---|
+| FAIL-A-013 | 审计列表新增「资源 ID」列（等宽、截断可查看），可定位被操作对象 |
+| FAIL-A-014 | 脚本/任务名称唯一（忽略大小写与首尾空白）＋ 参数名非空且不重复；后端返回可读错误，前端本地化展示（如「脚本名称已存在：test-echo，请更换后重试。」） |
+| FAIL-B-108 | 剩余英文文案 i18n：登录页显示/隐藏密码、系统 404 与错误页、侧边栏切换、导航菜单、批量操作清除选择 |
 
-`completed_with_gaps`
+- 回归：E2E **65 通过 / 0 失败 / 0 跳过**；前端 13 文件 79 单测；Go 全量测试通过。
+- 部署：Hub 二进制 `3a906ed8…`，回滚备份 `/usr/local/bin/cadentra-hub.bak-20260922-1930`。
+- **缺陷台账：全部 resolved，0 开放**（含此前复核为设计行为的 FAIL-A-016）。
 
-The primary Web UI and authenticated API surface was explored with real browser actions and evidence. Remaining gaps are explicitly recorded and are primarily constrained by missing RBAC credentials, the lack of an isolated enrolled deployment target, and the unavailable positive source file for relay testing.
-
-## 10. Post-fix UI Regression
-
-- Shared responsive table hint and sticky action-column behavior were deployed to the KVM2 test Hub and verified at `390x844` and `1440x900`; evidence is under `.e2e/ui-review/`.
-- Execution detail now shows localized friendly task/node labels and keeps the execution UUID in secondary technical metadata.
-- The scoped UI findings are resolved; broader business coverage remains `completed_with_gaps` as described above.

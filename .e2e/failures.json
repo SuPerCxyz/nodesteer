@@ -1,34 +1,1046 @@
 {
-  "schema_version": 1,
-  "failures": [
-    {
-      "id": "FAIL-001",
-      "workflow_id": "workflow.schedule.persistence.001",
-      "feature_id": "schedule.delete",
-      "severity": "medium",
-      "status": "resolved",
-      "title": "Delete confirmation exposes raw schedule UUID instead of a human-readable name",
-      "preconditions": ["authenticated", "test schedule exists"],
-      "steps": [
-        "Open /schedules",
-        "Open the schedule action menu",
-        "Choose 删除",
-        "Observe the confirmation dialog title"
-      ],
-      "expected": "Confirmation identifies the schedule by its task/expression or another product-facing label.",
-      "actual": "Dialog title is rendered as 删除: 8f09c288-26e7-45d0-9cc2-26fdb74910b6.",
-      "reproducible": true,
-      "reproduction_count": 2,
-      "console_errors": [],
-      "network_errors": [],
-      "screenshots": [".e2e/evidence/screenshots/schedule-delete-confirm-uuid.png"],
-      "traces": [],
-      "suspected_area": ["web/src/features/catalog/index.tsx", "shared delete confirmation"],
-      "notes": "The prior UUID-hiding requirement was verified for general list rows; this is a separate confirmation-dialog content issue.",
-      "resolved_at": "2026-09-17T08:25:00+08:00",
-      "resolution": "Schedule confirmation now uses the task name plus the Cron/interval expression; UUID is no longer shown in the dialog title.",
-      "retest_result": "passed",
-      "retest_evidence": [".e2e/ui-review/evidence/screenshots/schedule-delete-confirm-fixed.png"]
-    }
-  ]
+ "schema_version": 1,
+ "generated_at": "2026-09-22T19:11:34+08:00",
+ "failures": [
+  {
+   "id": "FAIL-A-004",
+   "severity": "medium",
+   "title": "取消执行不写审计日志（file_transfer 取消有审计，execution 取消没有）",
+   "steps": [
+    "运行长任务（sleep 300）",
+    "在执行详情点击「停止执行」并确认",
+    "GET /api/audit?limit=500 检索 action=cancel 与 resource=execution"
+   ],
+   "expected": "取消执行属于写操作，应产生审计记录（与文件传输 cancel 一致）",
+   "actual": "审计中只有 file_transfer 的 cancel/retry；本次取消的 execution（dfb29d29…）没有任何审计记录。代码侧 internal/hub/api/api.go 的 cancel 分支未调用 s.audit，ExecutionManager.Cancel 也未做 recordMutationAudit",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-audit-list.png",
+    ".e2e/evidence/agent-a/p2-cleanup.txt"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-a",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "已修复：取消执行写审计（含任务名 detail）。"
+  },
+  {
+   "id": "FAIL-A-005",
+   "severity": "medium",
+   "title": "执行列表与审计列表硬上限 100 条：更早记录在 UI 完全不可达",
+   "steps": [
+    "打开 /executions，读取分页信息",
+    "对比 /api/executions（无 limit）返回的真实条数",
+    "打开 /audit 同样核对"
+   ],
+   "expected": "历史记录可访问（分页/时间筛选/加载更多）",
+   "actual": "/executions 请求 limit=100，页面显示「第 1 页，共 10 页」（10×10=100 行），DB 实际 269 条；/audit 同样 limit=100 而实际 500+ 条。界面无超出前 100 条的入口，也无时间范围筛选",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-executions-list.txt",
+    ".e2e/evidence/agent-a/p2-audit-list.png"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-a",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T15:09:10+08:00",
+   "fix_note": "已修复：后端支持 limit/offset 与 X-Total-Count（含 CORS 暴露），前端执行/审计列表改为服务端分页（共 102 页实测可翻页），视图状态持久化。"
+  },
+  {
+   "id": "FAIL-A-006",
+   "severity": "medium",
+   "title": "禁用脚本不阻断已引用任务的立即运行，脚本内容照常下发执行",
+   "steps": [
+    "脚本 e2e-a-…-sh 被任务引用",
+    "在脚本列表行菜单「禁用」（enabled=false，revision+1）",
+    "对引用它的任务执行「立即运行」"
+   ],
+   "expected": "禁用脚本应阻止引用它的任务执行（后端 Validate 明确把「referenced script is disabled」视为非法，脚本删除确认文案也称「引用它的任务将无法执行」）",
+   "actual": "POST /api/tasks/:id/run 返回 200，生成 2 条 SUCCESS 执行，stdout 为脚本内容；仅任务创建/编辑时校验脚本状态，运行时不校验",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-scripts-ops.txt",
+    ".e2e/evidence/agent-a/p3-workflow-script.txt"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-a",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "已修复：运行前校验引用脚本仍启用，禁用即拦截（手动与 Hub 调度路径）。"
+  },
+  {
+   "id": "FAIL-A-007",
+   "severity": "medium",
+   "title": "调度编辑器所有错误提示都显示「暂无数据」（客户端校验与后端 400 均被吞）",
+   "steps": [
+    "打开 /schedules/new，直接点保存（未选任务）",
+    "只选任务、不填 Cron 表达式再点保存",
+    "填任务+表达式+非法时区 Mars/Olympus 再点保存"
+   ],
+   "expected": "分别提示「请选择任务 / Cron 表达式必填 / 时区非法」等可定位信息",
+   "actual": "三种情况内联错误区均为「暂无数据」。根因：src/features/shared/ui.tsx:161 的 ErrorState 仅在 `error instanceof Error` 时展示 message，而 ScheduleEditor 的 setError 传的是字符串",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-edges.txt",
+    ".e2e/evidence/agent-a/p2-schedule-error-nodata.png"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-a",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "已修复：ErrorState 支持字符串/对象错误，编辑器显示真实原因（含 FAIL-B-107）。"
+  },
+  {
+   "id": "FAIL-A-008",
+   "severity": "medium",
+   "title": "任务超时允许负数保存，界面显示 -5s 但实际按 300s 执行",
+   "steps": [
+    "在 /tasks/new 名称+命令+目标齐全，超时输入 -5（input min=0 不阻止提交）",
+    "保存 → 任务详情检查",
+    "运行该任务"
+   ],
+   "expected": "拒绝 <=0 的超时值，或给出明确提示",
+   "actual": "POST 200 创建成功，详情显示「超时（秒） -5s」；internal/hub/definitions.go 只处理 timeout==0→300；Agent 侧 timeout<=0 静默回退 300s，故执行 SUCCESS，用户看到 -5s 却按 300s 执行",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-task-form-edges.txt"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-a",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "已修复：后端拒绝负数超时（前端已有限制）。"
+  },
+  {
+   "id": "FAIL-A-009",
+   "severity": "medium",
+   "title": "目标节点被删除后任务既不能编辑/启停，运行时报原始 SQL 错误",
+   "steps": [
+    "任务目标指向某节点，随后该节点被删除（另一测试单元清理）",
+    "对该任务执行「禁用」「启用」",
+    "对该任务执行「立即运行」"
+   ],
+   "expected": "给出「目标节点不存在，请重新选择」并允许编辑修复",
+   "actual": "禁用/启用/编辑均 400 toast「invalid task: target node not found」；立即运行 400 toast「sql: no rows in result set」（SQL 内部错误直达 UI）；只有删除可用",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-tasks-list.txt",
+    ".e2e/evidence/agent-a/p2-retry-disabled.txt"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-a",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "已修复：更新任务时自动剔除已删除节点（可编辑/启停），运行失效目标返回可读错误而非 SQL 原文。"
+  },
+  {
+   "id": "FAIL-A-010",
+   "severity": "high",
+   "title": "源上传失败的传输目标永久 PENDING，UI 无取消入口（复现并定位 FAIL-M-001）",
+   "steps": [
+    "建传输：源 agent-1 /tmp/…-nonexistent.txt → agent-2",
+    "观察传输与目标状态、行菜单项",
+    "对比 POST /api/transfers/:id/cancel"
+   ],
+   "expected": "失败传输可被终止（取消/删除），目标不长期滞留 PENDING",
+   "actual": "传输 FAILED（源文件不存在），目标永久「等待中」；行菜单仅「重试」无「取消」（前端仅对 PENDING/UPLOADING/DELIVERING 提供取消）；后端 cancel 接口可用，调用后传输与目标均变 CANCELED",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-transfers-fail.txt"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-a",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "已修复：源上传失败时终结全部非终态目标；交付结果迟到、无失败目标重试两处状态机问题一并修复。线上验证 11/11。"
+  },
+  {
+   "id": "FAIL-A-011",
+   "severity": "medium",
+   "title": "文件传输失败原因在 UI 完全不可见（无详情页；列表只显示节点+状态）",
+   "steps": [
+    "制造目标失败（/proc/…）与源失败（文件不存在）",
+    "查看列表行文案与可用入口"
+   ],
+   "expected": "能看到失败原因（目标 error 字段）以便排查",
+   "actual": "行内只有「nodesteer-agent-2 失败」「等待中」，无错误原因、无详情页、无 tooltip；原因只在 API 响应中（如 open /proc/.cadentra-transfer-…: no such file or directory）",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-transfers-fail.txt",
+    ".e2e/evidence/agent-a/p2-transfers-list.png"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-a",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "已修复：传输列表新增错误原因列与目标错误展示。"
+  },
+  {
+   "id": "FAIL-A-012",
+   "severity": "low",
+   "title": "传输终态行的「操作」按钮打开空菜单",
+   "steps": [
+    "在 /transfers 点击成功/已取消传输行的「操作」"
+   ],
+   "expected": "隐藏无操作的行按钮，或显示禁用说明",
+   "actual": "弹出 role=menu 但无任何菜单项与文案",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-transfer-empty-menu.png"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-a",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fix_note": "已修复：终态传输且无可用操作时不再渲染空菜单。",
+   "fixed_at": "2026-09-22T15:09:10+08:00"
+  },
+  {
+   "id": "FAIL-A-013",
+   "severity": "low",
+   "title": "审计列表不展示资源 ID，无法定位被操作对象",
+   "steps": [
+    "打开 /audit，查看列与内容",
+    "对比 /api/audit 返回的 resource_id"
+   ],
+   "expected": "能看到被操作对象（任务/脚本/传输的 ID 或名称）",
+   "actual": "列为 时间/名称/操作/类型/描述；描述列恒空，resource_id 未展示 → 同一类型多条记录无法区分",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-audit-list.png",
+    ".e2e/evidence/agent-a/p2-misc.txt"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-a",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fix_note": "已修复：审计列表新增「资源 ID」列（等宽字体、可截断查看）。",
+   "fixed_at": "2026-09-22T19:11:34+08:00"
+  },
+  {
+   "id": "FAIL-A-014",
+   "severity": "low",
+   "title": "重名任务/脚本与重复参数可创建，实体无法区分",
+   "steps": [
+    "创建与既有任务同名的任务",
+    "创建与既有脚本同名的脚本",
+    "连续两次「添加参数」同名参数"
+   ],
+   "expected": "名称唯一性或至少给出重名提示",
+   "actual": "均创建成功；列表与调度下拉出现两条同名项，调度只能按名称辨识；重复参数行同时保留",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-task-form-edges.txt",
+    ".e2e/evidence/agent-a/p2-edges.txt"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-a",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fix_note": "已修复：脚本/任务名称唯一（忽略大小写与空白）+ 参数名非空且不重复；后端返回可读错误，前端映射为本地化提示。",
+   "fixed_at": "2026-09-22T19:11:34+08:00"
+  },
+  {
+   "id": "FAIL-A-015",
+   "severity": "low",
+   "title": "多处错误信息为后端英文原文 + 裸 UUID",
+   "steps": [
+    "运行被禁用任务",
+    "删除被引用的任务/脚本",
+    "源上传失败查看传输 error",
+    "节点被删除后运行任务"
+   ],
+   "expected": "本地化、可读、指向具体对象名称",
+   "actual": "如「task <uuid> is disabled」「task <uuid> is referenced by schedule <uuid>」「script <uuid> is referenced by task <uuid>」「sql: no rows in result set」",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-scripts-ops.txt",
+    ".e2e/evidence/agent-a/p2-tasks-list.txt"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-a",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "部分修复：常见错误（引用阻断/cron/时区/重复名/404/403）已本地化，其余保留原文。"
+  },
+  {
+   "id": "FAIL-A-016",
+   "severity": "low",
+   "title": "DELETE 不存在的任务/脚本/调度返回 200 ok:true（GET 同资源返回 404）",
+   "steps": [
+    "对随机 UUID 调用 DELETE /api/tasks|scripts|schedules",
+    "GET 同一 UUID"
+   ],
+   "expected": "删除语义与查询语义一致（404 或统一幂等语义并在文档说明）",
+   "actual": "DELETE 三种资源均返回 200 {\"ok\":\"true\"}；GET 返回 404 {\"error\":\"… not found\"}",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-edges.txt"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-a",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "不修复（设计行为）：DELETE 幂等返回 200，见 internal/hubserver/api_test.go 注释；已新增用例固定该行为。"
+  },
+  {
+   "id": "FAIL-B-101",
+   "severity": "high",
+   "title": "RBAC：角色变更（含降权）对已登录会话不生效，旧会话保留原权限",
+   "steps": [
+    "admin 创建 operator 用户并用其登录，取 token",
+    "POST /api/executions/<uuid>/cancel 探测 → 400（canRun 放行）",
+    "admin 将该用户角色改为 viewer（PUT /users/:id 200）",
+    "同一会话再次探测 → 仍 400（放行）；刷新页面后探测 → 仍 400",
+    "新会话登录后探测 → 403（新角色生效）"
+   ],
+   "expected": "降权后旧会话应立即失去 operator 权限（或至少拒绝继续执行 canRun 操作）",
+   "actual": "旧会话在降权后仍通过 canRun 鉴权；刷新页面无效，仅重新登录才生效。根因：internal/hub/api/api.go:217 的 withAuth 仅使用 auth.Authenticate(token) 返回的会话快照（Role 在登录时固化），UpdateUserRole 只改库不改会话",
+   "evidence": [
+    ".e2e/evidence/agent-b/p3-rbac-demoted-session.png",
+    ".e2e/evidence/agent-b/p3-rbac-oldsession-tasks.png"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-b",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "已修复：Authenticate 每次以数据库当前角色返回会话副本，降权立即生效；新增 HTTP 级回归测试。"
+  },
+  {
+   "id": "FAIL-B-102",
+   "severity": "medium",
+   "title": "审计记录缺少 detail 字段：描述列恒空、按资源名搜索永远无结果",
+   "steps": [
+    "GET /api/audit?limit=100",
+    "检查返回字段",
+    "/audit 页面查看\"描述\"列并搜索测试前缀用户名"
+   ],
+   "expected": "审计记录应包含可读描述（如\"创建用户 e2e-b-…\"），并支持按描述搜索",
+   "actual": "接口仅返回 id/user_id/username/action/resource/resource_id/created_at，无 detail；前端 lib/api.ts 的 AuditLog 声明了 detail 并渲染描述列 → 列恒为空；搜索 \"e2e-b-20260922-a1b2\" 返回\"没有结果。\"，只能靠 UUID 定位资源",
+   "evidence": [
+    ".e2e/evidence/agent-b/p2-audit-list.png",
+    ".e2e/evidence/agent-b/p2-audit-search.png",
+    ".e2e/evidence/agent-b/p2-audit-final.png"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-b",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "部分修复：删除/取消/设置等审计写入可读 detail；更细粒度 detail 待补。"
+  },
+  {
+   "id": "FAIL-B-103",
+   "severity": "medium",
+   "title": "引用阻断错误提示为英文 + 裸 UUID；分组删除确认框文案与实际阻断行为矛盾",
+   "steps": [
+    "创建静态分组并把 pending 节点加入成员",
+    "行菜单→删除该节点并确认",
+    "创建任务引用分组，行菜单→删除分组并确认"
+   ],
+   "expected": "提示应说明被哪个具名对象引用；确认框文案应与真实行为一致",
+   "actual": "节点：toast \"node 7a60b813-… is referenced by group c0ac39f0-…\"（英文+双裸 UUID，无法识别是哪个分组）；分组：确认框写\"引用它的任务将失去目标\"（暗示可删除），实际接口返回 409 \"group a9fe8502-… is referenced by task b2c962eb-…\" 被阻断",
+   "evidence": [
+    ".e2e/evidence/agent-b/p3-w2-delete-referenced-blocked.png",
+    ".e2e/evidence/agent-b/p2-group-delete-confirm.png"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-b",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "已修复：引用阻断等后端错误映射为本地化文案（保留原文于 rawMessage）。"
+  },
+  {
+   "id": "FAIL-B-104",
+   "severity": "medium",
+   "title": "重新纳管既有节点不复用 Node ID / Agent ID，产生重复节点记录",
+   "steps": [
+    "在添加节点对话框中填入既有主机名 nodesteer-agent-1 与既有 IP 192.168.100.217 生成命令",
+    "比对响应 node_id/agent_id 与既有记录",
+    "查看 /agents 列表记录数",
+    "对自建 pending 节点执行\"撤销凭证\"后再次同名纳管"
+   ],
+   "expected": "既有节点应复用原 Node ID/Agent ID（或明确提示已存在），不新增重复记录",
+   "actual": "POST /api/nodes/enrollment 返回全新 node_id/agent_id（PrepareEnrollment 无条件 createNode），列表出现第二条 nodesteer-agent-1（offline/pending）；撤销凭证后重新纳管同样新增记录。既有 agent-1 连接与状态未受影响（online/synced）",
+   "evidence": [
+    ".e2e/evidence/agent-b/p3-w2-reenroll-duplicate.png",
+    ".e2e/evidence/agent-b/p3-w2-pending-node.png"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-b",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "已修复：重新纳管按名称/地址复用 Node ID 与 Agent ID，清除撤销标记并轮换凭证。"
+  },
+  {
+   "id": "FAIL-B-105",
+   "severity": "medium",
+   "title": "设置保存不写入审计",
+   "steps": [
+    "/settings 修改 changelog_window 并保存（PUT /api/settings 200）",
+    "GET /api/audit?limit=100 过滤 resource/action 含 setting"
+   ],
+   "expected": "设置类写操作应产生审计记录",
+   "actual": "审计中无任何 settings 记录（连续两次保存后仍为空），与\"所有写操作 → 审计\"的联动约定不符",
+   "evidence": [
+    ".e2e/evidence/agent-b/p2-settings-saved.png",
+    ".e2e/evidence/agent-b/p2-audit-final.png"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-b",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "已修复：设置保存写审计（detail 含变更 keys）。"
+  },
+  {
+   "id": "FAIL-B-106",
+   "severity": "medium",
+   "title": "不存在资源的详情/编辑路由无错误态：节点详情空白、分组编辑显示空白新建表单",
+   "steps": [
+    "访问 /agents/does-not-exist-0001 等待 3.5s 与 15s",
+    "访问 /groups/not-a-real-group-0001"
+   ],
+   "expected": "显示\"资源不存在\"错误态并提供返回入口",
+   "actual": "节点详情：3.5s 时仅骨架屏，15s 后 main 内容整体为空（API 连续 404，无任何提示/重试入口）；分组编辑页：直接渲染空白\"新建分组\"表单（名称/描述为空、成员未勾选），无错误提示，用户可能误以为在新建",
+   "evidence": [
+    ".e2e/evidence/agent-b/p2-agent-notfound.png",
+    ".e2e/evidence/agent-b/p2-agent-notfound-15s.png",
+    ".e2e/evidence/agent-b/p2-group-notfound.png"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-b",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "已修复：不存在资源的详情/编辑路由显示错误态与返回入口（8 个页面）。"
+  },
+  {
+   "id": "FAIL-B-107",
+   "severity": "medium",
+   "title": "分组编辑器必填校验提示为\"暂无数据\"而非字段名",
+   "steps": [
+    "打开 /groups/new",
+    "名称留空点击\"保存\""
+   ],
+   "expected": "提示\"名称\"为必填",
+   "actual": "role=alert 区域显示\"暂无数据\"（ErrorState 收到字符串错误后回退到 common.noData），用户无法得知是哪个字段缺失；URL 不变、无 API 调用",
+   "evidence": [
+    ".e2e/evidence/agent-b/p2-group-empty-save-error.png",
+    ".e2e/evidence/agent-b/p2-group-empty-save.png"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-b",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "已修复：同 FAIL-A-007。"
+  },
+  {
+   "id": "FAIL-B-108",
+   "severity": "low",
+   "title": "i18n 缺口：多处界面文案在中文模式下显示英文或后端原文",
+   "steps": [
+    "登录页空表单提交 / 错误密码登录",
+    "将节点置为维护后查看列表徽标",
+    "查看列排序菜单（若存在）",
+    "设置保存非法值"
+   ],
+   "expected": "中文模式下所有提示使用中文文案",
+   "actual": "登录页 zod 校验显示 \"Invalid input\"；错误密码 toast/提示为 \"invalid credentials\"；节点状态徽标对 maintenance/disabled 显示英文原值（在线/离线为中文）；设置校验提示 \"changelog_window must be between 1 and 1000000000\"；添加节点表单必填提示为浏览器原生英文 \"Please fill out this field.\"/\"Please enter a URL.\"；列排序菜单项为 \"Asc/Desc\"",
+   "evidence": [
+    ".e2e/evidence/agent-b/p2-signin-empty-submit.png",
+    ".e2e/evidence/agent-b/p2-signin-wrong-password.png",
+    ".e2e/evidence/agent-b/p3-w3-maintenance-list.png",
+    ".e2e/evidence/agent-b/p2-settings-invalid.png",
+    ".e2e/evidence/agent-b/p2-enroll-empty-submit.png"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-b",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fix_note": "已修复：登录页显示/隐藏密码、系统 404/错误页、侧边栏与导航/批量操作 sr-only 文案全部 i18n。",
+   "fixed_at": "2026-09-22T19:11:34+08:00"
+  },
+  {
+   "id": "FAIL-B-109",
+   "severity": "low",
+   "title": "重复用户名创建暴露原始 SQLite 错误",
+   "steps": [
+    "新建用户填入已存在的用户名并创建"
+   ],
+   "expected": "提示\"用户名已存在\"",
+   "actual": "toast 显示 \"constraint failed: UNIQUE constraint failed: users.username (2067)\"",
+   "evidence": [
+    ".e2e/evidence/agent-b/p2-users-duplicate.png"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-b",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "已修复：重复用户名等 UNIQUE 错误映射为本地化文案。"
+  },
+  {
+   "id": "FAIL-B-110",
+   "severity": "low",
+   "title": "登录页无语言切换入口；语言切换不更新 <html lang>",
+   "steps": [
+    "访问 /sign-in 查找语言切换控件",
+    "切换语言为 English 后读取 document.documentElement.lang"
+   ],
+   "expected": "登录页可切换语言（continuity-map 记载存在）；html lang 随语言变化",
+   "actual": "登录页仅有用户名/密码/显示密码/登录按钮，无语言切换；切换为 English 后 html lang 仍为 zh-CN（语言选择已通过 localStorage cadentra_lang 持久化，刷新后仍为英文）",
+   "evidence": [
+    ".e2e/evidence/agent-b/p2-signin-empty-submit.png",
+    ".e2e/evidence/agent-b/p2-lang-en.png",
+    ".e2e/evidence/agent-b/p2-lang-en-reload.png"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-b",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fix_note": "已修复：登录页新增语言切换入口（顶栏与登录页共用 LanguageSwitch），语言切换同步 <html lang>（zh-CN/en）并持久化；P01-04 用例已从 fixme 恢复并通过。",
+   "fixed_at": "2026-09-22T15:09:10+08:00"
+  },
+  {
+   "id": "FAIL-B-111",
+   "severity": "low",
+   "title": "表格视图状态不持久化（列可见性/每页条数刷新即重置）",
+   "steps": [
+    "/agents 视图菜单取消勾选\"状态\"列",
+    "刷新页面 / 跨页导航返回"
+   ],
+   "expected": "用户偏好可保持或至少同一会话内保持",
+   "actual": "刷新后表头恢复全部 7 列；跨导航返回同样重置（组件内 useState，未写入 localStorage/URL）",
+   "evidence": [
+    ".e2e/evidence/agent-b/p2-agents-view-toggled.png",
+    ".e2e/evidence/agent-b/p2-agents-col-hidden.png"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-b",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fix_note": "已修复：DataTable 支持 storageKey，列可见性与每页条数持久化到 localStorage（执行/审计/节点/任务/脚本/分组/应用/制品/用户/调度列表已接入），刷新后保持。",
+   "fixed_at": "2026-09-22T15:09:10+08:00"
+  },
+  {
+   "id": "FAIL-B-112",
+   "severity": "low",
+   "title": "列表无列排序入口（DataTableColumnHeader 为死代码）",
+   "steps": [
+    "检查 /agents、/groups、/users、/audit 表头是否含排序控件",
+    "全仓库搜索 DataTableColumnHeader 使用点"
+   ],
+   "expected": "表格支持按列排序（useReactTable 已装配 getSortedRowModel）",
+   "actual": "所有表头均为纯文本（无 button、无排序菜单），DataTableColumnHeader 组件零引用；排序能力不可达",
+   "evidence": [
+    ".e2e/evidence/agent-b/p2-agents-sorted.png"
+   ],
+   "status": "resolved",
+   "source_agent": "agent-b",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fix_note": "已修复：可排序列使用 DataTableColumnHeader，点击表头切换 asc/desc/清除（服务端分页模式下排序作用于当前页）。",
+   "fixed_at": "2026-09-22T15:09:10+08:00"
+  },
+  {
+   "id": "FAIL-C-001",
+   "severity": "medium",
+   "title": "删除被引用制品的阻断提示为英文后端原文并暴露裸 UUID",
+   "steps": [
+    "/artifacts 找到被应用引用的制品（Usage 列显示应用链接）",
+    "行菜单→删除→确认"
+   ],
+   "expected": "中文可读提示，例如「制品正被应用 X 引用，无法删除」",
+   "actual": "toast: \"artifact 5b313720-2727-46fa-b0c2-e18727d9b979 is referenced by application 4c10b536-14ca-4b1f-bc6f-fa36da603d8b\"（英文 + 2 个裸 UUID）",
+   "evidence": [
+    ".e2e/evidence/agent-c/r2-p2-artifact-delete-referenced-blocked.png"
+   ],
+   "notes": "与既有 FAIL-M-003（节点删除）同类；制品删除场景首次取证",
+   "status": "resolved",
+   "source_agent": "agent-c",
+   "found_at": "2026-09-22T09:34:49+08:00",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "已修复：同 FAIL-B-103。"
+  },
+  {
+   "id": "FAIL-A-001",
+   "severity": "medium",
+   "feature_id": "audit.list",
+   "title": "运行时设置保存不会写入审计日志",
+   "preconditions": [
+    "以 admin 登录",
+    "已有其它审计记录作为对照"
+   ],
+   "steps": [
+    "打开 /settings",
+    "在心跳间隔填入非法值并保存（被拒）",
+    "恢复原值并保存（提示已保存）",
+    "查询 /api/audit?limit=500 与审计页面"
+   ],
+   "expected": "设置变更应产生一条 audit 记录（资源 settings、动作 update/save）",
+   "actual": "94 条审计记录中没有任何 settings 资源，最后一次成功保存也未留下记录；hub 源码 handleSettings 未调用 s.audit/recordMutationAudit。",
+   "reproducible": true,
+   "reproduction_count": 2,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [
+    ".e2e/evidence/agent-a/light-1440-audit.png"
+   ],
+   "suspected_area": [
+    "internal/hub/api/api.go:handleSettings"
+   ],
+   "notes": "任务要求核对‘设置保存’是否入审计，结论为未入审计。",
+   "source_agent": "a",
+   "status": "unverified",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "FAIL-A-002",
+   "severity": "medium",
+   "feature_id": "user.list",
+   "title": "用户无法删除：UI 无入口且 API 不支持 DELETE，测试用户无法清理",
+   "preconditions": [
+    "以 admin 登录",
+    "存在非 admin 用户"
+   ],
+   "steps": [
+    "打开 /users 观察每行操作（仅有角色下拉）",
+    "DELETE /api/users/<id>",
+    "GET /api/users 复查"
+   ],
+   "expected": "应能删除/停用测试用户，或在测试要求下可清理",
+   "actual": "用户表无操作列；DELETE /api/users/{id} 返回 405 method not allowed；用户管理仅有创建与改角色，生命周期不完整，导致本轮 operator/viewer 测试用户残留。",
+   "reproducible": true,
+   "reproduction_count": 1,
+   "console_errors": [],
+   "network_errors": [
+    "DELETE /api/users/{id} -> 405"
+   ],
+   "screenshots": [
+    ".e2e/evidence/agent-a/light-1440-users.png"
+   ],
+   "suspected_area": [
+    "internal/hub/api/api.go:handleUserByID",
+    "web/src/features/catalog/index.tsx:Users"
+   ],
+   "notes": "残留账号：e2e-a-20260919-b7k1-op（operator）、e2e-a-20260919-b7k1-vw（viewer），需在 Hub 数据库中直接删除。",
+   "source_agent": "a",
+   "status": "unverified",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "FAIL-A-003",
+   "severity": "low",
+   "feature_id": "user.create",
+   "title": "重复用户名创建时向用户暴露原始 SQLite 约束错误",
+   "preconditions": [
+    "以 admin 登录",
+    "已存在同名用户"
+   ],
+   "steps": [
+    "打开 /users -> 新建用户",
+    "用户名填已存在的 e2e-a-20260919-b7k1-op",
+    "填写密码后点击创建"
+   ],
+   "expected": "提示可读的本地化错误，例如‘用户名已存在’",
+   "actual": "toast 显示 'constraint failed: UNIQUE constraint failed: users.username (2067)'；同类问题：POST /api/executions/<不存在ID>/cancel 返回 'sql: no rows in result set'（原始内部错误）。",
+   "reproducible": true,
+   "reproduction_count": 1,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [
+    ".e2e/evidence/agent-a/light-1440-users.png"
+   ],
+   "suspected_area": [
+    "internal/hub/api/api.go:handleUsers(create)",
+    "internal/hub/api/api.go:cancel"
+   ],
+   "notes": "错误处理与本地化问题，用户可直接看到数据库层信息。",
+   "source_agent": "a",
+   "status": "unverified",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "FAIL-B-001",
+   "severity": "medium",
+   "feature_id": "execution.detail",
+   "title": "脚本任务的执行详情不显示脚本名称/脚本修订号",
+   "preconditions": [
+    "存在引用脚本的任务（脚本 revision R）",
+    "该任务已产生执行"
+   ],
+   "steps": [
+    "打开脚本任务运行页并运行",
+    "进入该执行详情",
+    "查看“元数据”区块"
+   ],
+   "expected": "详情展示所执行脚本及其 revision（如 脚本 e2e-b-…-shell / 脚本修订号 r5）",
+   "actual": "只显示“任务修订号 r1”；API GET /api/executions/:id 返回 script_id 与 script_revision=5，但页面不渲染；zh.ts/en.ts 中 executions.scriptRevision 键未被任何组件引用",
+   "reproducible": true,
+   "reproduction_count": 2,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [
+    ".e2e/evidence/agent-b/exec-detail-script-noscriptrev.png"
+   ],
+   "suspected_area": [
+    "web/src/features/executions/index.tsx"
+   ],
+   "notes": "数据链路正常（Hub 正确记录），纯展示缺失；导致无法从执行详情定位实际运行脚本版本",
+   "source_agent": "b",
+   "status": "unverified",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "FAIL-B-002",
+   "severity": "medium",
+   "feature_id": "execution.detail",
+   "title": "跳过执行的“阻塞原因”丢失且界面无处展示",
+   "preconditions": [
+    "任务配置本地条件 cpu_usage > 0",
+    "目标节点空载时 CPU 采样为 0.00"
+   ],
+   "steps": [
+    "带条件运行分组任务",
+    "其中 agent-1 执行状态为 SKIPPED",
+    "查看执行详情与 API 响应"
+   ],
+   "expected": "执行详情说明被跳过原因（如“条件不满足 / condition not satisfied”）",
+   "actual": "API 响应的 block_reason 为空；Agent 侧已设置 \"condition not satisfied\"（internal/agent/agent.go:823），但 Hub MarkFinished 对已存在执行未回写 p.BlockReason（internal/hub/execution.go），UI 也没有使用 locales 中的 executions.blockReason",
+   "reproducible": true,
+   "reproduction_count": 2,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [
+    ".e2e/evidence/agent-b/ui-1440-executions-list.png"
+   ],
+   "suspected_area": [
+    "internal/hub/execution.go",
+    "web/src/features/executions/index.tsx"
+   ],
+   "notes": "跳过本身是 Fail Closed 的正确行为（idle 节点 CPU 0.00 > 0 不成立），问题在于原因不可见，故障排查困难",
+   "source_agent": "b",
+   "status": "unverified",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "FAIL-B-003",
+   "severity": "medium",
+   "feature_id": "schedule.edit",
+   "title": "编辑器保存失败时显示“暂无数据”，真实错误信息被丢弃",
+   "preconditions": [
+    "打开 /schedules/:id 编辑页"
+   ],
+   "steps": [
+    "将 Cron 表达式改为 zz-invalid",
+    "点击保存（PUT /api/schedules/:id 返回 400，错误体为 invalid cron expression: expected exactly 5 fields, found 1）",
+    "观察页面错误提示"
+   ],
+   "expected": "显示服务端校验错误（如“invalid cron expression: …”）并保持表单不跳转",
+   "actual": "页面内错误条显示“暂无数据”",
+   "reproducible": true,
+   "reproduction_count": 3,
+   "console_errors": [],
+   "network_errors": [
+    "PUT /api/schedules/8c4c7355-a501-4208-bbf4-e7b69f6c5485 400"
+   ],
+   "screenshots": [
+    ".e2e/evidence/agent-b/schedule-invalid-cron.png",
+    ".e2e/evidence/agent-b/schedule-invalid-cron-toast.png"
+   ],
+   "suspected_area": [
+    "web/src/features/editors/index.tsx:152,393,724,965,979,1001",
+    "web/src/features/shared/ui.tsx:161"
+   ],
+   "notes": "根因：save() 用 setError(cause instanceof Error ? cause.message : t('common.noData')) 传入字符串，ErrorState 仅对 Error 实例渲染 message。同一模式影响 Schedule/Script/Group/Application/Artifact 五个编辑器",
+   "source_agent": "b",
+   "status": "unverified",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "FAIL-C-001",
+   "severity": "high",
+   "feature_id": "transfer.create",
+   "title": "跨节点文件传输目标永久停在 DELIVERING，文件未交付且无终止态",
+   "preconditions": [
+    "Hub 与 agent-3/agent-4 均在线",
+    "来源文件 /etc/hostname 存在"
+   ],
+   "steps": [
+    "打开 /transfers",
+    "源 Agent=agent-3、源路径=/etc/hostname",
+    "先加目标 agent-3:/tmp/e2e-c-transfer-8256-self.txt，再加目标 agent-4:/tmp/e2e-c-transfer-8256.txt",
+    "点击开始传输",
+    "等待并刷新/轮询列表（3s refetch）"
+   ],
+   "expected": "两个目标均 SUCCESS，agent-4 出现 /tmp/e2e-c-transfer-8256.txt",
+   "actual": "agent-3 目标 SUCCESS；agent-4 目标 3 分钟以上停在 DELIVERING，文件不存在；API error=context canceled，target.updated_at 一直为下发时刻；agent-4 无下载 TCP 连接、journalctl 无传输日志、无结果回包；页面无重试入口（仅取消）",
+   "reproducible": true,
+   "reproduction_count": 1,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [
+    ".e2e/evidence/agent-c/transfer-stuck.png"
+   ],
+   "suspected_area": [
+    "internal/hub/file_transfer.go dispatchTarget/download",
+    "internal/agent/agent.go downloadFile/OnFileDeliveryRequest",
+    "gatewayBaseURL/HTTP 数据面"
+   ],
+   "notes": "transfer-stuck-api.json 保存完整 API 记录；取消后目标状态=已取消，可复现路径保留在 /transfers 主控两次受控复现（在线/维护）均成功；保留无超时看门狗结论，见 OBS-M-001/OBS-M-003。",
+   "source_agent": "c",
+   "status": "resolved",
+   "test_notes": "2026-09-19 记录，本轮未复测",
+   "fixed_at": "2026-09-22T14:07:29+08:00",
+   "fix_note": "已修复：同 FAIL-B-103。"
+  },
+  {
+   "id": "FAIL-C-002",
+   "severity": "medium",
+   "feature_id": "application.deploy",
+   "title": "托管应用部署失败在「执行详情」不可见：日志为空、无错误、无回滚标识",
+   "preconditions": [
+    "应用配置 command/false 健康检查触发部署失败并自动回滚"
+   ],
+   "steps": [
+    "创建应用（健康检查 command target=false）",
+    "部署",
+    "打开 /executions 中 FAILED 执行",
+    "查看 概览/日志 标签"
+   ],
+   "expected": "执行详情可看到部署失败原因与回滚结果",
+   "actual": "执行详情状态=失败，但 stdout/stderr 0 字符、日志标签「（空）」、无错误文本；错误仅显示在应用页健康卡片（health check failed; rolled back）",
+   "reproducible": true,
+   "reproduction_count": 1,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [
+    ".e2e/evidence/agent-c/exec-failed-detail.png",
+    ".e2e/evidence/agent-c/app-fail-rollback.png"
+   ],
+   "suspected_area": [
+    "execution 记录未写入部署错误/日志",
+    "hub application deploy 结果未落 execution 输出"
+   ],
+   "notes": "",
+   "source_agent": "c",
+   "status": "unverified",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "FAIL-C-003",
+   "severity": "medium",
+   "feature_id": "application.create",
+   "title": "新建应用未填名称时校验提示显示「暂无数据」而非必填提示",
+   "preconditions": [
+    "登录",
+    "打开 /applications/new"
+   ],
+   "steps": [
+    "不填任何字段点击「保存」"
+   ],
+   "expected": "提示名称必填（如「名称」）或高亮字段",
+   "actual": "红色错误条显示「暂无数据」（ErrorState 对字符串错误回退 t('common.noData')），用户无法得知缺失字段",
+   "reproducible": true,
+   "reproduction_count": 2,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [
+    ".e2e/evidence/agent-c/ui-app-new-validation-top.png",
+    ".e2e/evidence/agent-c/ui-app-new-validation.png"
+   ],
+   "suspected_area": [
+    "web/src/features/editors ApplicationEditor save() 传字符串 error",
+    "features/shared/ui.tsx ErrorState 仅识别 Error 实例"
+   ],
+   "notes": "同类编辑器（脚本/任务/分组）疑似同样模式，未在本次范围验证",
+   "source_agent": "c",
+   "status": "unverified",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "FAIL-C-004",
+   "severity": "medium",
+   "feature_id": "application.deploy",
+   "title": "托管应用部署执行在 /executions 显示为「未知任务」，缺少来源上下文",
+   "preconditions": [
+    "应用部署产生执行记录"
+   ],
+   "steps": [
+    "打开 /executions",
+    "查看应用部署产生的最新执行行与详情标题"
+   ],
+   "expected": "标明来自托管应用部署（应用名/操作）",
+   "actual": "列表与详情标题均为「未知任务」，只有节点与时间可辨识；同页任务执行正常显示任务名",
+   "reproducible": true,
+   "reproduction_count": 2,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [
+    ".e2e/evidence/agent-c/executions-list-unknown-task.png",
+    ".e2e/evidence/agent-c/exec-failed-detail.png"
+   ],
+   "suspected_area": [
+    "execution.task_id 关联缺失",
+    "web executions 列 taskNames 回退 common.unknownTask"
+   ],
+   "notes": "",
+   "source_agent": "c",
+   "status": "unverified",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "FAIL-C-005",
+   "severity": "medium",
+   "feature_id": "transfer.retry",
+   "title": "文件传输失败原因在页面完全不可见",
+   "preconditions": [
+    "源路径不存在的失败传输"
+   ],
+   "steps": [
+    "创建失败传输",
+    "查看列表行/行菜单/重试"
+   ],
+   "expected": "展示失败原因（如源文件不存在）",
+   "actual": "列表仅显示「失败」；API error='open /tmp/e2e-c-8256-nonexistent.txt: no such file or directory' 不展示；重试后无任何提示",
+   "reproducible": true,
+   "reproduction_count": 1,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [
+    ".e2e/evidence/agent-c/transfer-failed-menu.png"
+   ],
+   "suspected_area": [
+    "web/src/features/transfers 未渲染 transfer.error/target.error"
+   ],
+   "notes": "transfer-failed-api.json 保存 API 原文",
+   "source_agent": "c",
+   "status": "unverified",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "FAIL-M-001",
+   "severity": "high",
+   "feature_id": "transfer.terminal_state",
+   "title": "源上传失败的传输目标永久 PENDING，阻断节点删除且 UI 无取消入口",
+   "preconditions": [
+    "一个源文件不存在的传输",
+    "节点为目标之一"
+   ],
+   "steps": [
+    "创建源文件不存在的传输",
+    "等待整体 FAILED",
+    "观察该目标仍为 等待中",
+    "在节点页删除该节点"
+   ],
+   "expected": "失败传输的目标进入失败/取消终态；节点删除不受影响；UI 可终止失败传输",
+   "actual": "目标永久 PENDING；DELETE /api/nodes/{id} 返回 409 has active file transfer；传输行菜单只有重试没有取消",
+   "reproducible": true,
+   "reproduction_count": 2,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [
+    ".e2e/evidence/main/node-delete-blocked-1440.png"
+   ],
+   "suspected_area": [
+    "internal/hub/file_transfer.go:completeUpload",
+    "web/src/features/catalog/index.tsx transfer actions"
+   ],
+   "notes": "经 API cancel 后节点删除成功；代码层 completeUpload 失败路径未终结 targets，Retry 对 PENDING 目标无操作",
+   "source_agent": "main",
+   "status": "unverified",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "FAIL-M-002",
+   "severity": "medium",
+   "feature_id": "agent.revoke.recovery",
+   "title": "撤销凭证后的重新纳管流程不闭环",
+   "preconditions": [
+    "节点已被撤销凭证",
+    "节点上 Agent 服务仍在运行"
+   ],
+   "steps": [
+    "添加节点生成安装命令",
+    "在已存在 Agent 的节点执行命令",
+    "观察服务仍在用旧凭据重试"
+   ],
+   "expected": "执行纳管命令后 Agent 重新登记上线",
+   "actual": "enable --now 不重启运行中服务；即使重启，本地 state.db 仍持有旧凭据被 Hub 以 credential revoked 拒绝；必须手工 stop + 删除 state.db + start",
+   "reproducible": true,
+   "reproduction_count": 1,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [],
+   "suspected_area": [
+    "纳管脚本生成（internal/hub/api/api.go:handleNodeEnrollment）",
+    "agent 凭据恢复策略"
+   ],
+   "notes": "Hub 日志明确提示 'node credential revoked; re-enrollment required'",
+   "source_agent": "main",
+   "status": "unverified",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "FAIL-M-003",
+   "severity": "low",
+   "feature_id": "ui.error_message",
+   "title": "节点删除阻断提示暴露英文后端原文与裸 UUID",
+   "preconditions": [
+    "节点存在非终态传输"
+   ],
+   "steps": [
+    "删除节点"
+   ],
+   "expected": "业务化中文提示与业务标识",
+   "actual": "toast: node 50dfad58-... has active file transfer b698781b-...",
+   "reproducible": true,
+   "reproduction_count": 1,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [
+    ".e2e/evidence/main/node-delete-blocked-1440.png"
+   ],
+   "suspected_area": [
+    "web/src/features/catalog/index.tsx deleteNode onError"
+   ],
+   "notes": "与 UI-A/B/C 的同类提示问题合并",
+   "source_agent": "main",
+   "status": "unverified",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "FAIL-G-001",
+   "severity": "high",
+   "status": "unverified",
+   "source_agent": "main",
+   "title": "UI 无法创建「托管应用部署」任务：默认 app_operation=start 与后端校验冲突",
+   "preconditions": [
+    "管理员登录",
+    "存在已部署的托管应用"
+   ],
+   "steps": [
+    "打开 /tasks/new",
+    "类型选择「托管应用部署」",
+    "选择应用与目标节点",
+    "点击保存"
+   ],
+   "expected": "任务创建成功（该类型应有 deploy/upgrade 操作语义）",
+   "actual": "toast: invalid task: app_deploy operation must be deploy or upgrade；表单未提供操作选择且默认值为 start（web/src/features/tasks/index.tsx:610,858）",
+   "reproducible": true,
+   "reproduction_count": 2,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [],
+   "suspected_area": [
+    "web/src/features/tasks/index.tsx"
+   ],
+   "notes": "API 创建同配置任务可运行且执行 SUCCESS（b8aa9a9d）；后端在字段为空时会默认 deploy（internal/hub/definitions.go:203-208）",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "FAIL-G-002",
+   "severity": "medium",
+   "status": "unverified",
+   "source_agent": "main",
+   "title": "不存在的资源详情路由无错误态：空白编辑器/永久加载中",
+   "preconditions": [
+    "管理员登录"
+   ],
+   "steps": [
+    "访问 /scripts/<uuid>、/groups/<uuid>、/schedules/<uuid>、/applications/<uuid>、/agents/<uuid>、/tasks/<uuid>（均为不存在的随机 UUID）"
+   ],
+   "expected": "显示 404/资源不存在错误态并阻止编辑保存",
+   "actual": "脚本/分组/调度/应用渲染空白默认表单；/agents/<uuid> 主区域空白；/tasks/<uuid> 永久停在「加载中...」",
+   "reproducible": true,
+   "reproduction_count": 1,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [
+    ".e2e/evidence/main/fake-id-task-detail-1440.png"
+   ],
+   "suspected_area": [
+    "web/src/features/*/编辑器加载错误处理"
+   ],
+   "notes": "",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  }
+ ]
 }

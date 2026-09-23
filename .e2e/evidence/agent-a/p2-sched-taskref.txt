@@ -1,0 +1,24 @@
+======== create schedule on junk task (edge-negtimeout)
+url: http://192.168.100.209:8080/tasks?view=schedules
+api: [3591776.5087] POST http://192.168.100.209:8080/api/schedules (Fetch) 200
+[3591776.5143] GET http://192.168.100.209:8080/api/schedules (Fetch) 200
+schedules now:     0df119a4 * * * * * task= 02d99f6e en= True
+    d86decac 0 0 1 1 * task= 23a81d5b en= True
+    565ce37c 0 0 1 1 * task= ae0f0dff en= True
+======== delete referenced task (expect blocked)
+menu: ""
+dialog: null
+toast: null
+api: 
+task still exists? True
+======== delete junk schedule 565ce37c
+row=3
+dialog: "删除: e2e-a-20260922-de6e-edge-negtimeout · 0 0 1 1 *\n确定删除调度“e2e-a-20260922-de6e-edge-negtimeout · 0 0 1 1 *”吗？\n取消\n删除"
+toast: "已删除"
+api: [3591776.5324] DELETE http://192.168.100.209:8080/api/schedules/565ce37c-5067-43b2-bcd3-0d0874db75e2 (Fetch) 200
+schedules:     0df119a4 * * * * * task= 02d99f6e en= True
+    d86decac 0 0 1 1 * task= 23a81d5b en= True
+======== delete junk task (no longer referenced)
+toast: "任务已删除"
+api: [3591776.5384] DELETE http://192.168.100.209:8080/api/tasks/ae0f0dff-18bb-4158-8b28-4f83725ed4f7 (Fetch) 200
+task gone? True

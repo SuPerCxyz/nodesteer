@@ -1,0 +1,752 @@
+{
+  "schema_version": 1,
+  "agent": "a",
+  "started_at": "2026-09-19T17:25:00+08:00",
+  "finished_at": "2026-09-19T18:26:00+08:00",
+  "summary": {
+    "features_tested": 26,
+    "features_passed": 26,
+    "features_failed": 0,
+    "features_blocked": 0,
+    "workflows_executed": 6,
+    "ui_findings": 9
+  },
+  "features": [
+    {
+      "id": "auth.login",
+      "page": "page.sign_in",
+      "status": "passed",
+      "expected": "管理员通过页面表单登录并进入目标页",
+      "actual": "admin/1234qwer!1 表单登录成功；从 /scripts 匿名访问被重定向到 /sign-in?redirect=%2Fscripts，登录后回到 /scripts；Enter 键提交同样成功。",
+      "evidence": [
+        ".e2e/evidence/agent-a/auth-login-redirect.png",
+        ".e2e/evidence/agent-a/signin-1440-light-zh.png"
+      ],
+      "notes": "深链保护 + 登录回跳均正常。"
+    },
+    {
+      "id": "auth.invalid_login",
+      "page": "page.sign_in",
+      "status": "passed",
+      "expected": "空表单与错误密码被拒并给出提示",
+      "actual": "空表单提交显示两条 'Invalid input'；错误密码显示 'invalid credentials'，停留在登录页。",
+      "evidence": [
+        ".e2e/evidence/agent-a/auth-empty-submit.png",
+        ".e2e/evidence/agent-a/auth-invalid-login.png"
+      ],
+      "notes": "错误信息为英文硬编码，未本地化（见 UI-A-001）。"
+    },
+    {
+      "id": "auth.logout",
+      "page": "page.sign_in",
+      "status": "passed",
+      "expected": "退出登录需要确认并清除会话，后续访问受保护页面需重新登录",
+      "actual": "用户菜单 -> 退出登录 -> 确认对话框（Sign out / Cancel / Logout）-> 跳转 /sign-in?redirect=%2Fsettings，localStorage token 被清除；随后访问 /scripts 被重定向到登录页。",
+      "evidence": [
+        ".e2e/evidence/agent-a/zh-restore-1440.png"
+      ],
+      "notes": "退出确认对话框行为正确。"
+    },
+    {
+      "id": "auth.language_switch",
+      "page": "page.sign_in",
+      "status": "passed",
+      "expected": "中英文切换可用且持久化",
+      "actual": "头部语言按钮在中文/English 间切换，全站文案随之变化（仪表盘/节点/审计/设置逐页核对），localStorage cadentra_lang=en 刷新后保持；切回 zh 后保持。登录页本身没有语言切换控件。",
+      "evidence": [
+        ".e2e/evidence/agent-a/en-agents-1440.png",
+        ".e2e/evidence/agent-a/signin-1440-light-zh.png"
+      ],
+      "notes": "登录页无语言开关（discovery 将 auth.language_switch 归到 sign-in 页，实际入口仅在已登录头部）。"
+    },
+    {
+      "id": "dashboard.summary",
+      "page": "page.dashboard",
+      "status": "passed",
+      "expected": "统计卡数据与 /api 实际一致",
+      "actual": "节点总数 4/4 在线、运行中 0、执行失败 0、成功率 100%（4 次已完成）、托管应用 0/0、同步已同步 4/过期 0/错误 0；逐项与 /api/nodes、/api/executions?limit=50、/api/applications、/api/schedules 计算结果一致。",
+      "evidence": [
+        ".e2e/evidence/agent-a/dashboard-1440-light-zh.png"
+      ],
+      "notes": "网络请求核对：/api/nodes、/api/executions?limit=50、/api/applications、/api/schedules、/api/tasks、/api/me。"
+    },
+    {
+      "id": "dashboard.recent_executions",
+      "page": "page.dashboard",
+      "status": "passed",
+      "expected": "最近执行列表行链接到执行详情",
+      "actual": "4 行最近执行（nodesteer-e2e-smoke x4，成功/手动）逐行链接 /executions/<id>；详情页标题为任务名 + 节点名，UUID 仅作次要信息（UI-002 回归通过）。",
+      "evidence": [
+        ".e2e/evidence/agent-a/dashboard-1440-light-zh.png"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "dashboard.navigation_links",
+      "page": "page.dashboard",
+      "status": "passed",
+      "expected": "各“查看全部”跳转到对应列表页",
+      "actual": "正在执行的任务->/executions、Agent 健康状态->/agents、托管应用状态->/applications、同步状态->/agents、最近执行->/executions、即将执行的调度->/schedules，全部命中。",
+      "evidence": [
+        ".e2e/evidence/agent-a/dashboard-1440-light-zh.png"
+      ],
+      "notes": "侧边栏缺失 /artifacts（发布包）入口，见 UI-A-007。"
+    },
+    {
+      "id": "agent.list",
+      "page": "page.agents",
+      "status": "passed",
+      "expected": "列表展示主机名/状态/IP/版本/架构/部署模式/最后在线，分页可用",
+      "actual": "4 个节点数据与 /api/nodes 一致；分页控件正确（第 1 页/共 1 页，首页/上一页/下一页/末页禁用态正确），列可见性菜单可隐藏/恢复列。",
+      "evidence": [
+        ".e2e/evidence/agent-a/light-1440-agents.png",
+        ".e2e/evidence/agent-a/narrow-820-agents.png"
+      ],
+      "notes": "只有 4 条记录且页大小 10，无法验证多页翻页。"
+    },
+    {
+      "id": "agent.search",
+      "page": "page.agents",
+      "status": "passed",
+      "expected": "按主机名/IP/Agent ID 过滤",
+      "actual": "搜索 'agent-3' -> 1 行；'192.168.100.205' -> agent-2；'zzz-no-match' -> ‘没有结果。’空态；键盘清空后恢复 4 行。",
+      "evidence": [
+        ".e2e/evidence/agent-a/agents-search-empty-1440.png"
+      ],
+      "notes": "无状态过滤控件（见 OBS-A-002）。"
+    },
+    {
+      "id": "agent.enroll",
+      "page": "page.agents",
+      "status": "passed",
+      "expected": "添加节点对话框展示 native/docker run/docker compose 命令、节点身份与 registration token、复制按钮",
+      "actual": "对话框字段（节点名称/节点地址/Hub 地址，默认当前 origin）与必填校验正常；服务端 POST 会创建 pending 节点，为不残留不可删除的节点，使用 /api/nodes/enrollment GET（同一生成逻辑，只读）核对命令内容：三种命令均含 hub_url=ws://192.168.100.209:8443、node_name/node_ip、deployment_mode、docker 镜像；registration_token 指纹(48:a08c:c341) 与 nodesteer-agent-1/2 实际 /etc/cadentra/agent.yaml 完全一致；UI 侧用网络 mock 呈现 POST 响应，三个页签切换正确，复制按钮在 HTTP 下回退为“复制失败，请手动复制。”并选中文本；关闭后无新节点（节点数仍 4）。",
+      "evidence": [
+        ".e2e/evidence/agent-a/agents-enroll-dialog-1440.png",
+        ".e2e/evidence/agent-a/agents-enroll-native-1440.png",
+        ".e2e/evidence/agent-a/agents-enroll-dockerrun-1440.png"
+      ],
+      "notes": "未真实提交 POST（避免创建无法删除的 pending 节点）；POST 才有的 agent_id 行未在 UI 中验证。"
+    },
+    {
+      "id": "agent.detail",
+      "page": "page.agents",
+      "status": "passed",
+      "expected": "概览/Inventory/Labels/Tasks/Schedules/Managed Applications/Executions/Sync 展示真实数据",
+      "actual": "概览字段与 /api/nodes/<id> 一致（ID/Agent ID/IP/系统/版本/架构/native/r17/已同步/最后在线）；清单展示内核/CPU/内存/网卡地址/能力；标签可新增；执行页签列出该节点执行；任务页签列出匹配任务、调度空态‘该节点任务暂无调度’、托管应用空态‘暂无托管应用’。",
+      "evidence": [
+        ".e2e/evidence/agent-a/light-1440-agent-detail.png",
+        ".e2e/evidence/agent-a/agent-detail-label-added-1440.png"
+      ],
+      "notes": "节点详情实际为三页签（概览/执行/任务）而非独立区块；同步状态为概览字段。"
+    },
+    {
+      "id": "agent.status",
+      "page": "page.agents",
+      "status": "passed",
+      "expected": "节点状态变化的 UI 反映",
+      "actual": "agent-4 行操作菜单 -> 维护：徽标显示 maintenance（未本地化）且 /api/nodes 返回 maintenance；再 -> 设为在线：徽标恢复 在线、API 恢复 online。状态已复原。",
+      "evidence": [
+        ".e2e/evidence/agent-a/agents-maintenance-badge-1440.png"
+      ],
+      "notes": "维护/在线往返已验证；禁用与撤销凭据未执行（撤销被明确禁止）。"
+    },
+    {
+      "id": "group.list",
+      "page": "page.groups",
+      "status": "passed",
+      "expected": "分组列表展示名称/类型/描述/成员数",
+      "actual": "列表显示名称/静态/描述/成员数，与 /api/groups 一致；搜索‘e2e-a-2026’过滤为 1 行，清空恢复 2 行。",
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "group.create",
+      "page": "page.groups",
+      "status": "passed",
+      "expected": "新建分组并选择成员节点",
+      "actual": "新建分组表单（名称/描述/类型/成员复选）创建 e2e-a-20260919-a9f3，选择 agent-1/agent-3，保存后回到列表显示成员数 2；/api/groups 的 members 与所选节点一致。",
+      "evidence": [],
+      "notes": "测试分组已删除。"
+    },
+    {
+      "id": "group.edit",
+      "page": "page.groups",
+      "status": "passed",
+      "expected": "编辑分组名称/描述/成员",
+      "actual": "编辑页回填正确；改描述为 'E2E A edited group'，成员由 agent-1+agent-3 改为 agent-1+agent-2，保存后 API 一致。",
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "group.delete",
+      "page": "page.groups",
+      "status": "passed",
+      "expected": "删除有确认对话框，取消不生效",
+      "actual": "取消 -> 分组保留；确认删除 -> 列表移除并出现‘已删除’ toast；/api/groups 不再包含该分组。",
+      "evidence": [
+        ".e2e/evidence/agent-a/group-delete-confirm-1440.png"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "group.members",
+      "page": "page.groups",
+      "status": "passed",
+      "expected": "分组与节点成员关系一致",
+      "actual": "创建/编辑后均用 /api/groups.members 与 /api/nodes 交叉核对，成员与 UI 选择完全一致。",
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "user.list",
+      "page": "page.users",
+      "status": "passed",
+      "expected": "用户列表与角色展示",
+      "actual": "列出 admin/管理员，创建后新增两行并显示角色与创建时间；搜索‘b7k1’过滤正确。",
+      "evidence": [
+        ".e2e/evidence/agent-a/light-1440-users.png"
+      ],
+      "notes": "列表无删除/更多操作入口。"
+    },
+    {
+      "id": "user.create",
+      "page": "page.users",
+      "status": "passed",
+      "expected": "创建用户（用户名/密码/角色），空值禁用提交，重复用户名报错",
+      "actual": "空表单时‘创建’按钮禁用；创建 operator 与 viewer 各一个均成功（toast 已创建）；重复用户名被拒，但 toast 暴露原始 SQLite 错误文本（FAIL-A-003）。",
+      "evidence": [
+        ".e2e/evidence/agent-a/light-1440-users.png"
+      ],
+      "notes": "测试用户因无删除能力而保留，见 test_data 与 FAIL-A-002。"
+    },
+    {
+      "id": "user.change_role",
+      "page": "page.users",
+      "status": "passed",
+      "expected": "修改角色并生效",
+      "actual": "viewer 用户角色改为操作员后行内下拉与 /api/users 同步，再改回查看者同样生效；随后用该用户登录时权限按新角色生效（viewer -> 运行接口 403）。",
+      "evidence": [],
+      "notes": "角色修改无成功 toast（列表刷新为反馈）。"
+    },
+    {
+      "id": "rbac.permission_matrix",
+      "page": "page.users",
+      "status": "passed",
+      "expected": "operator/viewer 的可见范围、按钮与 403 行为符合权限模型",
+      "actual": "独立浏览器会话分别用 operator/viewer 登录：侧边栏两者均显示全部菜单（含用户/设置）；/agents 无‘添加节点’且行操作列为空，/scripts /groups /tasks /transfers /artifacts 无写按钮；/users 显示‘只有管理员可以管理用户。’；/settings 运行时输入全部 disabled 且无保存按钮。接口矩阵：operator 读 /api/nodes /api/settings /api/audit 200、/api/users 403，所有写接口 403，运行/取消接口 403 之外为 404/400（说明 canRun 放行）；viewer 运行/取消同样 403。",
+      "evidence": [
+        ".e2e/evidence/agent-a/rbac-operator-agents-readonly-1440.png",
+        ".e2e/evidence/agent-a/rbac-viewer-agents-readonly-1440.png",
+        ".e2e/evidence/agent-a/rbac-viewer-users-denied-1440.png"
+      ],
+      "notes": "写权限=仅 administrator；运行=administrator|operator，与后端 canWrite/canRun 一致。侧边栏不做角色过滤（OBS-A-001）。"
+    },
+    {
+      "id": "audit.list",
+      "page": "page.audit",
+      "status": "passed",
+      "expected": "审计记录覆盖登录、分组、用户、节点、设置等操作",
+      "actual": "登录(auth/login)、节点状态/labels(node)、分组 create/update/delete(group)、用户 create/update(user)、任务/传输/应用等均入审计，用户名/操作/资源/时间正确；500 条内资源分布 auth27/node8/user5/group4/script7/... 。",
+      "evidence": [
+        ".e2e/evidence/agent-a/light-1440-audit.png"
+      ],
+      "notes": "设置保存无审计记录（FAIL-A-001，94 条记录中无 settings 资源）。"
+    },
+    {
+      "id": "audit.filter",
+      "page": "page.audit",
+      "status": "passed",
+      "expected": "审计可按关键字过滤",
+      "actual": "搜索用户名 'e2e-a-20260919-b7k1-vw' -> 仅 login 1 行；搜索 'group' -> 4 行；清空后恢复。",
+      "evidence": [
+        ".e2e/evidence/agent-a/light-1440-audit.png"
+      ],
+      "notes": "页面仅有搜索框，无操作/资源/时间下拉过滤。"
+    },
+    {
+      "id": "settings.runtime",
+      "page": "page.settings",
+      "status": "passed",
+      "expected": "运行时设置展示值与实际生效值一致",
+      "actual": "页面显示 changelog_window=5000、heartbeat_interval_sec=30、max_log_bytes=1048576、revision_check_interval_sec=45；与 /api/settings 一致；SSH 只读核对 nodesteer-agent-1 的 /etc/cadentra/agent.yaml：heartbeat_sec 30、revision_check_sec 45、max_log_bytes 1048576，完全吻合。",
+      "evidence": [
+        ".e2e/evidence/agent-a/settings-appearance-1440.png"
+      ],
+      "notes": "未测试 gateway/base_url/token/TLS/端口等破坏性字段（界面也不暴露）。"
+    },
+    {
+      "id": "settings.appearance",
+      "page": "page.settings",
+      "status": "passed",
+      "expected": "主题 light/dark/system 与语言 zh/en 切换并持久化",
+      "actual": "主题切深色后 html class=dark、cookie vite-ui-theme=dark，刷新保持；切回系统后恢复 light、cookie=system。语言切 English 后全站英文并持久化，刷新保持；已复原 zh。深/浅色下仪表盘、节点、审计、设置均无对比度问题。",
+      "evidence": [
+        ".e2e/evidence/agent-a/dark-dashboard-1440.png",
+        ".e2e/evidence/agent-a/dark-agents-1440.png",
+        ".e2e/evidence/agent-a/dark-audit-1440.png",
+        ".e2e/evidence/agent-a/settings-appearance-1440.png"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "settings.save",
+      "page": "page.settings",
+      "status": "passed",
+      "expected": "非法值被拒且不落库，合法保存成功且持久",
+      "actual": "heartbeat_interval_sec='abc' -> toast 'heartbeat_interval_sec must be between 1 and 86400' 且 /api/settings 仍为 30；='0' 同样被拒；max_log_bytes='100' -> 'max_log_bytes must be between 1024 and 17179869184'；恢复原值保存 -> toast '已保存'，四项值与保存前完全一致（无环境变更）。",
+      "evidence": [],
+      "notes": "校验为服务端唯一防线（前端输入为 text 且保存按钮不禁用，见 UI-A-008）；保存未入审计（FAIL-A-001）。"
+    }
+  ],
+  "workflows": [
+    {
+      "id": "workflow.auth.deep_link.login.001",
+      "name": "匿名深链 -> 登录 -> 回跳原页 -> 退出登录",
+      "status": "passed",
+      "steps": [
+        "匿名访问 /scripts",
+        "重定向 /sign-in?redirect=%2Fscripts",
+        "表单登录（Tab 切换字段 + Enter 提交）",
+        "回跳 /scripts",
+        "用户菜单退出登录并确认",
+        "访问 /scripts 再次被拦截"
+      ],
+      "result": "深链保护、回跳、退出均正确；退出后 token 从 localStorage 移除。",
+      "evidence": [
+        ".e2e/evidence/agent-a/auth-login-redirect.png",
+        ".e2e/evidence/agent-a/signin-1440-light-zh.png"
+      ]
+    },
+    {
+      "id": "workflow.group.lifecycle.001",
+      "name": "分组创建-编辑-搜索-删除全生命周期",
+      "status": "passed",
+      "steps": [
+        "新建 e2e-a-20260919-a9f3（agent-1/agent-3）",
+        "API 核对成员",
+        "编辑描述与成员（agent-1/agent-2）",
+        "搜索过滤",
+        "删除并取消一次",
+        "确认删除并核对 API"
+      ],
+      "result": "成员关系在创建与编辑后均与 API 一致，删除需确认，测试分组已清理。",
+      "evidence": [
+        ".e2e/evidence/agent-a/group-delete-confirm-1440.png"
+      ]
+    },
+    {
+      "id": "workflow.node.status.toggle.001",
+      "name": "节点状态变更 UI 反映与复原",
+      "status": "passed",
+      "steps": [
+        "agent-4 操作菜单 -> 维护",
+        "UI 徽标与 /api/nodes 核对",
+        "菜单 -> 设为在线",
+        "再次核对"
+      ],
+      "result": "状态双向同步正确，已复原 online。",
+      "evidence": [
+        ".e2e/evidence/agent-a/agents-maintenance-badge-1440.png"
+      ]
+    },
+    {
+      "id": "workflow.agent.enroll.preview.001",
+      "name": "纳管命令预览（对话框 + 只读接口核对）",
+      "status": "passed",
+      "steps": [
+        "打开添加节点对话框",
+        "空表单提交触发必填校验",
+        "填写同名/同 IP",
+        "用网络 mock 呈现 POST 响应",
+        "切换 native/docker run/docker compose",
+        "复制按钮",
+        "关闭并确认无新节点"
+      ],
+      "result": "三种命令内容与真实 GET 输出一致，token 指纹与线上 Agent 配置一致；未产生 pending 节点。",
+      "evidence": [
+        ".e2e/evidence/agent-a/agents-enroll-native-1440.png",
+        ".e2e/evidence/agent-a/agents-enroll-dockerrun-1440.png"
+      ]
+    },
+    {
+      "id": "workflow.rbac.operator.viewer.001",
+      "name": "operator/viewer 独立会话权限矩阵与清理",
+      "status": "partial",
+      "steps": [
+        "创建 operator/viewer 测试用户",
+        "改角色往返",
+        "operator 登录核对 UI 与接口",
+        "viewer 登录核对 UI 与接口",
+        "删除测试用户"
+      ],
+      "result": "权限矩阵全部符合预期；但用户删除不可用：UI 无入口且 DELETE /api/users/{id} 返回 405，两个测试用户无法清理（FAIL-A-002）。",
+      "evidence": [
+        ".e2e/evidence/agent-a/rbac-viewer-users-denied-1440.png",
+        ".e2e/evidence/agent-a/rbac-operator-agents-readonly-1440.png"
+      ]
+    },
+    {
+      "id": "workflow.settings.validation.001",
+      "name": "运行时设置校验与安全保存",
+      "status": "passed",
+      "steps": [
+        "读取设置并与 Agent 实际配置核对",
+        "输入 abc/0/100 触发拒绝",
+        "确认落库值未变",
+        "恢复原值保存成功",
+        "切换到外观页做主题往返"
+      ],
+      "result": "非法值全部被拒且未持久化，合法保存成功，环境配置无变化。",
+      "evidence": [
+        ".e2e/evidence/agent-a/settings-appearance-1440.png"
+      ]
+    }
+  ],
+  "failures": [
+    {
+      "id": "FAIL-A-001",
+      "severity": "medium",
+      "feature_id": "audit.list",
+      "title": "运行时设置保存不会写入审计日志",
+      "preconditions": [
+        "以 admin 登录",
+        "已有其它审计记录作为对照"
+      ],
+      "steps": [
+        "打开 /settings",
+        "在心跳间隔填入非法值并保存（被拒）",
+        "恢复原值并保存（提示已保存）",
+        "查询 /api/audit?limit=500 与审计页面"
+      ],
+      "expected": "设置变更应产生一条 audit 记录（资源 settings、动作 update/save）",
+      "actual": "94 条审计记录中没有任何 settings 资源，最后一次成功保存也未留下记录；hub 源码 handleSettings 未调用 s.audit/recordMutationAudit。",
+      "reproducible": true,
+      "reproduction_count": 2,
+      "console_errors": [],
+      "network_errors": [],
+      "screenshots": [
+        ".e2e/evidence/agent-a/light-1440-audit.png"
+      ],
+      "suspected_area": [
+        "internal/hub/api/api.go:handleSettings"
+      ],
+      "notes": "任务要求核对‘设置保存’是否入审计，结论为未入审计。"
+    },
+    {
+      "id": "FAIL-A-002",
+      "severity": "medium",
+      "feature_id": "user.list",
+      "title": "用户无法删除：UI 无入口且 API 不支持 DELETE，测试用户无法清理",
+      "preconditions": [
+        "以 admin 登录",
+        "存在非 admin 用户"
+      ],
+      "steps": [
+        "打开 /users 观察每行操作（仅有角色下拉）",
+        "DELETE /api/users/<id>",
+        "GET /api/users 复查"
+      ],
+      "expected": "应能删除/停用测试用户，或在测试要求下可清理",
+      "actual": "用户表无操作列；DELETE /api/users/{id} 返回 405 method not allowed；用户管理仅有创建与改角色，生命周期不完整，导致本轮 operator/viewer 测试用户残留。",
+      "reproducible": true,
+      "reproduction_count": 1,
+      "console_errors": [],
+      "network_errors": [
+        "DELETE /api/users/{id} -> 405"
+      ],
+      "screenshots": [
+        ".e2e/evidence/agent-a/light-1440-users.png"
+      ],
+      "suspected_area": [
+        "internal/hub/api/api.go:handleUserByID",
+        "web/src/features/catalog/index.tsx:Users"
+      ],
+      "notes": "残留账号：e2e-a-20260919-b7k1-op（operator）、e2e-a-20260919-b7k1-vw（viewer），需在 Hub 数据库中直接删除。"
+    },
+    {
+      "id": "FAIL-A-003",
+      "severity": "low",
+      "feature_id": "user.create",
+      "title": "重复用户名创建时向用户暴露原始 SQLite 约束错误",
+      "preconditions": [
+        "以 admin 登录",
+        "已存在同名用户"
+      ],
+      "steps": [
+        "打开 /users -> 新建用户",
+        "用户名填已存在的 e2e-a-20260919-b7k1-op",
+        "填写密码后点击创建"
+      ],
+      "expected": "提示可读的本地化错误，例如‘用户名已存在’",
+      "actual": "toast 显示 'constraint failed: UNIQUE constraint failed: users.username (2067)'；同类问题：POST /api/executions/<不存在ID>/cancel 返回 'sql: no rows in result set'（原始内部错误）。",
+      "reproducible": true,
+      "reproduction_count": 1,
+      "console_errors": [],
+      "network_errors": [],
+      "screenshots": [
+        ".e2e/evidence/agent-a/light-1440-users.png"
+      ],
+      "suspected_area": [
+        "internal/hub/api/api.go:handleUsers(create)",
+        "internal/hub/api/api.go:cancel"
+      ],
+      "notes": "错误处理与本地化问题，用户可直接看到数据库层信息。"
+    }
+  ],
+  "observations": [
+    {
+      "id": "OBS-A-001",
+      "type": "ux",
+      "description": "非管理员用户（operator/viewer）侧边栏仍显示‘用户/设置’入口，页面内部再做管理员校验与只读禁用；导航未按角色过滤。",
+      "related_features": [
+        "rbac.permission_matrix",
+        "user.list"
+      ],
+      "follow_up_required": false,
+      "resolved": false
+    },
+    {
+      "id": "OBS-A-002",
+      "type": "possible_gap",
+      "description": "discovery.json 为 /agents 列出 agent.filter（状态过滤），但实际页面只有自由文本搜索与列可见性切换，没有状态/部署模式过滤控件。",
+      "related_features": [
+        "agent.search"
+      ],
+      "follow_up_required": true,
+      "resolved": false
+    },
+    {
+      "id": "OBS-A-003",
+      "type": "environmental",
+      "description": "复制按钮在 HTTP（非安全上下文）下无法写入系统剪贴板，组件按设计回退为选中文本并提示‘复制失败，请手动复制。’；headless 环境无法验证真实剪贴板写入。",
+      "related_features": [
+        "agent.enroll"
+      ],
+      "follow_up_required": false,
+      "resolved": false
+    },
+    {
+      "id": "OBS-A-004",
+      "type": "possible_gap",
+      "description": "OBS-001 复核：节点标签仍是仅新增（key/value + 添加标签），标签值渲染为普通 span，无删除/编辑入口，清理只能调用 /api/nodes/{id} 覆盖 labels。",
+      "related_features": [
+        "agent.detail"
+      ],
+      "follow_up_required": true,
+      "resolved": false
+    },
+    {
+      "id": "OBS-A-005",
+      "type": "ux",
+      "description": "用户角色变更（下拉选择）没有成功提示，也没有失败回滚提示；列表刷新是唯一反馈。",
+      "related_features": [
+        "user.change_role"
+      ],
+      "follow_up_required": false,
+      "resolved": false
+    }
+  ],
+  "ui_findings": [
+    {
+      "id": "UI-A-001",
+      "page": "/sign-in",
+      "viewport": "1440x900",
+      "theme": "light",
+      "severity": "medium",
+      "category": "i18n",
+      "title": "登录页密码显示按钮与错误信息未本地化，且登录页没有语言切换入口",
+      "evidence": [
+        ".e2e/evidence/agent-a/signin-1440-light-zh.png",
+        ".e2e/evidence/agent-a/auth-invalid-login.png",
+        ".e2e/evidence/agent-a/auth-empty-submit.png"
+      ],
+      "description": "中文界面下按钮显示 'Show password'，错误提示为 'Invalid input' 与 'invalid credentials'（web/src/components/password-input.tsx 中硬编码英文）；登录页无语言切换控件，用户必须先登录才能切换语言。",
+      "status": "open"
+    },
+    {
+      "id": "UI-A-002",
+      "page": "/users",
+      "viewport": "1440x900",
+      "theme": "light",
+      "severity": "medium",
+      "category": "feedback",
+      "title": "创建重复用户时 toast 暴露数据库原始错误",
+      "evidence": [
+        ".e2e/evidence/agent-a/light-1440-users.png"
+      ],
+      "description": "toast 文案为 'constraint failed: UNIQUE constraint failed: users.username (2067)'，非用户可读信息（同 FAIL-A-003）。",
+      "status": "open"
+    },
+    {
+      "id": "UI-A-003",
+      "page": "/artifacts",
+      "viewport": "1440x900",
+      "theme": "light",
+      "severity": "medium",
+      "category": "consistency",
+      "title": "侧边栏缺少‘发布包’入口，/artifacts 只能靠 URL 直达",
+      "evidence": [
+        ".e2e/evidence/agent-a/artifacts-nonav-1440.png",
+        ".e2e/evidence/agent-a/dashboard-1440-light-zh.png"
+      ],
+      "description": "运行中的构建里除 /artifacts（发布包）外所有页面都在侧边栏有入口；当前工作区 sidebar-data.ts 也未包含 artifacts 项，页面本身可正常渲染（‘发布包 / 管理不可变的发布包及其校验信息。’），但只能通过 URL 直达。",
+      "status": "open"
+    },
+    {
+      "id": "UI-A-004",
+      "page": "/agents",
+      "viewport": "1440x900",
+      "theme": "light",
+      "severity": "low",
+      "category": "i18n",
+      "title": "节点状态 maintenance 未本地化，直接显示英文枚举",
+      "evidence": [
+        ".e2e/evidence/agent-a/agents-maintenance-badge-1440.png"
+      ],
+      "description": "维护状态下徽标显示 'maintenance'，而其它状态显示‘在线/离线’；StatusBadge 的标签映射缺少 maintenance（locales 中已有 misc.maintenance=维护）。",
+      "status": "open"
+    },
+    {
+      "id": "UI-A-005",
+      "page": "/groups/new",
+      "viewport": "1440x900",
+      "theme": "light",
+      "severity": "low",
+      "category": "consistency",
+      "title": "分组编辑器成员行使用裸状态文本 online",
+      "evidence": [],
+      "description": "成员列表显示 'nodesteer-agent-1 online'（web/src/features/catalog/index.tsx:816 直接渲染 node.status），与其它页面使用本地化徽标不一致，可访问名称同样受影响。",
+      "status": "open"
+    },
+    {
+      "id": "UI-A-006",
+      "page": "/agents",
+      "viewport": "820x1180",
+      "theme": "dark",
+      "severity": "low",
+      "category": "overflow",
+      "title": "窄视口下横向滚动提示浮层遮挡表格最后一行内容",
+      "evidence": [
+        ".e2e/evidence/agent-a/narrow-820-agents.png"
+      ],
+      "description": "滚动提示为 absolute end-1 bottom-1 浮层（实测 x=679,y=364,w=112,h=25），与表格第 4 行矩形重叠，遮住 IP 单元格部分文本；提示需滚动后才消失。",
+      "status": "open"
+    },
+    {
+      "id": "UI-A-007",
+      "page": "/",
+      "viewport": "1024x768",
+      "theme": "dark",
+      "severity": "low",
+      "category": "layout",
+      "title": "仪表盘‘最近执行’卡片在 1024 宽度下把节点列裁切为半截文本",
+      "evidence": [
+        ".e2e/evidence/agent-a/narrow-1024-dashboard.png"
+      ],
+      "description": "表格超出卡片宽度时节点列被裁切为 'lesteer-ag...' 这类中间截断文本，既没有省略号也没有滚动提示，可读性差。",
+      "status": "open"
+    },
+    {
+      "id": "UI-A-008",
+      "page": "/settings",
+      "viewport": "1440x900",
+      "theme": "light",
+      "severity": "low",
+      "category": "feedback",
+      "title": "运行时设置输入框为纯文本、保存按钮常亮，校验错误提示为英文原始字段名",
+      "evidence": [
+        ".e2e/evidence/agent-a/settings-appearance-1440.png"
+      ],
+      "description": "四个数值项均为 type=text，无 inputMode=number；保存按钮在任意值下都可点击，非法值由服务端 400 拒绝，toast 直接显示 'heartbeat_interval_sec must be between 1 and 86400'（英文、含内部键名）。",
+      "status": "open"
+    },
+    {
+      "id": "UI-A-009",
+      "page": "/agents",
+      "viewport": "1440x900",
+      "theme": "light",
+      "severity": "low",
+      "category": "a11y",
+      "title": "添加节点对话框关闭按钮的可访问名称为英文 Close，页签 Native 未本地化",
+      "evidence": [
+        ".e2e/evidence/agent-a/agents-enroll-dialog-1440.png",
+        ".e2e/evidence/agent-a/agents-enroll-native-1440.png"
+      ],
+      "description": "中文界面下对话框右上角按钮 aria-label 为 'Close'；命令页签为 'Native' 而其它文案已本地化，屏幕阅读器体验不一致。",
+      "status": "open"
+    }
+  ],
+  "test_data": [
+    {
+      "id": "data.a.group.001",
+      "type": "group",
+      "name": "e2e-a-20260919-a9f3",
+      "created_at": "2026-09-19T17:46:47+08:00",
+      "current_state": "deleted",
+      "safe_to_delete": true,
+      "deleted": true,
+      "cleanup_note": "通过分组列表操作菜单确认删除；/api/groups 已无该分组。"
+    },
+    {
+      "id": "data.a.node.label.001",
+      "type": "node_label",
+      "name": "e2e-a-probe=ok (nodesteer-agent-1)",
+      "created_at": "2026-09-19T17:44:00+08:00",
+      "current_state": "deleted",
+      "safe_to_delete": true,
+      "deleted": true,
+      "cleanup_note": "UI 无删除入口（OBS-A-004），改由 POST /api/nodes/{id} 覆盖 labels 清空；已确认 labels={}。"
+    },
+    {
+      "id": "data.a.node.status.001",
+      "type": "node_status",
+      "name": "nodesteer-agent-4 -> maintenance -> online",
+      "created_at": "2026-09-19T17:45:00+08:00",
+      "current_state": "deleted",
+      "safe_to_delete": true,
+      "deleted": true,
+      "cleanup_note": "状态已复原为 online，/api/nodes 确认。"
+    },
+    {
+      "id": "data.a.user.op.001",
+      "type": "user",
+      "name": "e2e-a-20260919-b7k1-op",
+      "created_at": "2026-09-19T17:49:36+08:00",
+      "current_state": "exists",
+      "safe_to_delete": true,
+      "deleted": false,
+      "cleanup_note": "无法清理：UI 无删除入口，DELETE /api/users/{id} 返回 405（FAIL-A-002）。需在 Hub 宿主机执行 SQL 删除：DELETE FROM users WHERE username='e2e-a-20260919-b7k1-op';（Hub 位于 nodesteer-hub，数据库 /var/lib/cadentra-hub 下，服务 cadentra-hub）。"
+    },
+    {
+      "id": "data.a.user.viewer.001",
+      "type": "user",
+      "name": "e2e-a-20260919-b7k1-vw",
+      "created_at": "2026-09-19T17:49:45+08:00",
+      "current_state": "exists",
+      "safe_to_delete": true,
+      "deleted": false,
+      "cleanup_note": "同上；两个测试用户密码在本次会话中自建，未在结果中明文记录。"
+    },
+    {
+      "id": "data.a.settings.001",
+      "type": "settings",
+      "name": "e2e-a 设置校验测试（未变更）",
+      "created_at": "2026-09-19T18:05:00+08:00",
+      "current_state": "exists",
+      "safe_to_delete": true,
+      "deleted": true,
+      "cleanup_note": "非法值未落库，最后以原值保存成功；四项值与测试前一致，Hub/Agent 生效值经 SSH 核对未变。"
+    },
+    {
+      "id": "data.a.enroll.mock.001",
+      "type": "network_mock",
+      "name": "POST /api/nodes/enrollment mock",
+      "created_at": "2026-09-19T17:41:00+08:00",
+      "current_state": "deleted",
+      "safe_to_delete": true,
+      "deleted": true,
+      "cleanup_note": "network unroute 已移除；未真实提交 POST，节点数保持 4，无 pending 节点残留。"
+    }
+  ]
+}

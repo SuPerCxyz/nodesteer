@@ -1,0 +1,1048 @@
+{
+  "unit": "agent-a",
+  "scope": "运行域",
+  "schema_version": 1,
+  "run_at": "2026-09-22T01:50:00+08:00",
+  "base_url": "http://192.168.100.209:8080",
+  "test_prefix": "e2e-a-20260922-de6e",
+  "browser_session": "agent-browser --session e2e-a",
+  "evidence_dir": ".e2e/evidence/agent-a/",
+  "passes": [
+    "pass1 操作枚举（逐页全部可交互操作）",
+    "pass2 状态变化（真实执行 + API/URL/UI 反馈/刷新持久化/异常路径）",
+    "pass3 跨页连续性工作流"
+  ],
+  "pass1_operations": [
+    {
+      "page": "/tasks",
+      "route": "任务列表（视图标签：任务）",
+      "controls": [
+        { "name": "新建任务", "type": "link", "notes": "→ /tasks/new" },
+        { "name": "标签页 任务 | 调度", "type": "switch", "notes": "切换后 URL 变为 /tasks?view=schedules，列表 API 由 /api/tasks 变为 /api/schedules+/api/tasks" },
+        { "name": "搜索任务名称、类型或 ID", "type": "field", "notes": "客户端过滤；无结果时显示「没有结果。」" },
+        { "name": "视图", "type": "menu", "notes": "列可见性：名称/类型/目标/超时/离线策略/修订号/状态，全部默认勾选" },
+        { "name": "列头 名称/类型/目标/超时/离线策略/修订号/状态", "type": "button", "notes": "点击列头可排序（实测点击「名称」后顺序变化）" },
+        { "name": "任务名", "type": "link", "notes": "→ /tasks/:id（单页分区详情）" },
+        { "name": "立即运行", "type": "link", "notes": "行内，→ /tasks/:id/run" },
+        { "name": "操作", "type": "menu", "notes": "编辑 / 禁用|启用 / 删除（删除弹出确认框，仅显示任务名）" },
+        { "name": "分页", "type": "button", "notes": "每页行数(10)、第一页/上一页/页码/下一页/最后一页；当前 15 个任务 = 2 页" }
+      ]
+    },
+    {
+      "page": "/tasks?view=schedules",
+      "route": "任务列表（视图标签：调度），旧路由 /schedules 重定向到此",
+      "controls": [
+        { "name": "新建调度", "type": "link", "notes": "→ /schedules/new" },
+        { "name": "搜索任务、Cron 表达式或时区", "type": "field", "notes": "客户端过滤" },
+        { "name": "视图", "type": "menu", "notes": "列：任务/类型/表达式/时区/执行方/离线/漏触发策略/状态" },
+        { "name": "任务名", "type": "link", "notes": "→ /schedules/:id（编辑页，非只读详情）" },
+        { "name": "操作", "type": "menu", "notes": "编辑 / 禁用|启用 / 删除（确认框显示任务名 + 表达式，无裸 UUID）" },
+        { "name": "分页", "type": "button", "notes": "同任务视图" },
+        { "name": "横向滚动提示", "type": "text", "notes": "列较多时出现「左右滑动查看更多」" }
+      ]
+    },
+    {
+      "page": "/tasks/new",
+      "route": "新建任务",
+      "controls": [
+        { "name": "名称", "type": "field", "notes": "required；空值时保存被前端拦截（toast「名称」），不发请求" },
+        { "name": "类型", "type": "field", "notes": "命令 | 脚本 | 托管应用部署 | 托管应用操作；切换后命令框与服务端校验随之变化" },
+        { "name": "超时（秒）", "type": "field", "notes": "number，min=0，默认 300" },
+        { "name": "命令 / 脚本选择 / 托管应用+操作", "type": "field", "notes": "命令=textarea；脚本=脚本下拉；应用=应用下拉（app_operation 选择仅在「托管应用操作」时出现）" },
+        { "name": "目标类型", "type": "field", "notes": "节点 | 分组 | 标签；节点=复选框列表（含离线/pending 节点），上方显示「N 已选择」" },
+        { "name": "重试次数", "type": "field", "notes": "number，默认 0" },
+        { "name": "运行用户", "type": "field", "notes": "可选" },
+        { "name": "离线策略", "type": "field", "notes": "需 Hub 在线 | 允许离线" },
+        { "name": "已启用", "type": "field", "notes": "复选框，默认勾选" },
+        { "name": "参数（参数名称/类型/默认值/必填/添加参数）", "type": "field", "notes": "点击添加参数后生成一行，带「移除」按钮；无重名校验" },
+        { "name": "条件：所有条件都满足（AND）/ 本地条件（cpu_usage、操作符、value、设置条件）/ 远程条件（节点、字段、操作符、value、设置远程条件）", "type": "field", "notes": "设置后出现「清除」入口" },
+        { "name": "保存 / 取消", "type": "button", "notes": "保存成功后 window.location.assign('/tasks')" }
+      ]
+    },
+    {
+      "page": "/tasks/:id",
+      "route": "任务详情（单页分区：概览/定义/目标/执行/调度）",
+      "controls": [
+        { "name": "立即运行", "type": "link", "notes": "→ /tasks/:id/run" },
+        { "name": "编辑", "type": "link", "notes": "→ /tasks/:id/edit" },
+        { "name": "← 返回", "type": "link", "notes": "→ /tasks" },
+        { "name": "脚本名", "type": "link", "notes": "定义分区，→ /scripts/:id" },
+        { "name": "调度条目", "type": "link", "notes": "调度分区，→ /schedules/:id；仅显示 类型 + 表达式/间隔，不显示状态/时区/执行方" },
+        { "name": "查看详情", "type": "link", "notes": "执行分区每行，→ /executions/:id" }
+      ]
+    },
+    {
+      "page": "/tasks/:id/edit",
+      "route": "编辑任务",
+      "controls": [
+        { "name": "与 /tasks/new 相同字段", "type": "field", "notes": "回填当前值；保存 PUT /api/tasks/:id" },
+        { "name": "保存 / 取消", "type": "button", "notes": "成功/失败均为 toast；成功跳回 /tasks" }
+      ]
+    },
+    {
+      "page": "/tasks/:id/run",
+      "route": "立即运行",
+      "controls": [
+        { "name": "参数输入（任务定义含参数时）", "type": "field", "notes": "按参数名渲染，默认值回填，secret 类型为 password 输入框" },
+        { "name": "立即运行", "type": "button", "notes": "点击后弹确认框「确定立即运行“任务名”吗？目标 Agent 将开始执行。」+ 取消/立即运行" },
+        { "name": "取消", "type": "link", "notes": "返回任务详情" }
+      ]
+    },
+    {
+      "page": "/executions",
+      "route": "执行列表",
+      "controls": [
+        { "name": "搜索任务、节点或执行 ID", "type": "field", "notes": "客户端匹配 execution.id / task_id / 任务名 / node_id；状态写入 URL(?q=)" },
+        { "name": "状态", "type": "field", "notes": "全部/等待中/运行中/成功/失败/已跳过/已取消/超时/已阻断；服务端过滤 ?status=" },
+        { "name": "触发方式", "type": "field", "notes": "选项由当前已加载数据动态生成（仅出现数据中存在的触发方式）" },
+        { "name": "视图", "type": "menu", "notes": "列可见性（状态/任务/节点/触发方式/开始时间/耗时/退出码）" },
+        { "name": "查看详情", "type": "link", "notes": "→ /executions/:id" },
+        { "name": "分页", "type": "button", "notes": "每页 10 行；整页数据来自 /api/executions?limit=100" }
+      ]
+    },
+    {
+      "page": "/executions/:id",
+      "route": "执行详情（单页分区：元数据/输出摘要/日志）",
+      "controls": [
+        { "name": "返回", "type": "link", "notes": "→ /executions" },
+        { "name": "节点 / 任务", "type": "link", "notes": "→ /agents/:id、→ /tasks/:id；任务已删除时显示「未知任务」纯文本" },
+        { "name": "停止执行", "type": "button", "notes": "仅 RUNNING 时出现；确认框「停止执行: 任务名」+ 取消/停止执行" },
+        { "name": "打开日志", "type": "button", "notes": "实际行为是滚动到日志区（非独立日志视图）" },
+        { "name": "搜索日志...", "type": "field", "notes": "按行过滤，无匹配显示（空）" },
+        { "name": "流选择", "type": "field", "notes": "全部流 / stdout / stderr" },
+        { "name": "换行 / 跟随", "type": "button", "notes": "切换开关，无 aria-pressed，状态不可编程读取" },
+        { "name": "复制日志", "type": "button", "notes": "HTTP 部署下必然提示「复制失败，请手动复制。」（设计如此，见 observations）" }
+      ]
+    },
+    {
+      "page": "/transfers",
+      "route": "文件传输",
+      "controls": [
+        { "name": "源 Agent", "type": "field", "notes": "下拉，含离线/pending 节点" },
+        { "name": "源文件路径", "type": "field", "notes": "placeholder 为示例路径 /var/lib/app/config.yaml" },
+        { "name": "目标 Agent", "type": "field", "notes": "下拉" },
+        { "name": "目标文件路径", "type": "field", "notes": "placeholder 与源路径相同（复用示例，易误解）" },
+        { "name": "添加目标", "type": "button", "notes": "源路径+目标+目标路径均填写后才可用；追加一个目标 chip" },
+        { "name": "目标 chip 的 移除", "type": "button", "notes": "每个已添加目标一个移除按钮" },
+        { "name": "开始传输", "type": "button", "notes": "至少一个目标才可用；成功 toast「文件传输已创建」" },
+        { "name": "搜索传输 ID、路径或节点", "type": "field", "notes": "客户端过滤；无结果显示「没有结果。」" },
+        { "name": "视图", "type": "menu", "notes": "列：源 Agent/源文件路径/状态/时间" },
+        { "name": "操作", "type": "menu", "notes": "FAILED→重试；PENDING/UPLOADING/DELIVERING→取消传输；终态→空菜单（见 failures）" },
+        { "name": "分页", "type": "button", "notes": "每页 10 行" }
+      ]
+    },
+    {
+      "page": "/scripts",
+      "route": "脚本列表",
+      "controls": [
+        { "name": "新建脚本", "type": "link", "notes": "→ /scripts/new" },
+        { "name": "搜索脚本名称、解释器或 SHA256", "type": "field", "notes": "客户端过滤" },
+        { "name": "视图", "type": "menu", "notes": "列：名称/解释器/修订号/超时/SHA256/更新时间/状态" },
+        { "name": "操作", "type": "menu", "notes": "编辑 / 禁用|启用 / 克隆 / 删除（确认框显示脚本名，无裸 UUID）" },
+        { "name": "分页", "type": "button", "notes": "每页 10 行" }
+      ]
+    },
+    {
+      "page": "/scripts/new 与 /scripts/:id",
+      "route": "新建脚本 / 编辑脚本（同一表单，编辑态额外展示版本历史）",
+      "controls": [
+        { "name": "名称/描述/解释器(Shell|Bash|Python)/超时/内容/工作目录/运行用户/已启用", "type": "field", "notes": "内容默认 `#!/bin/sh\\necho hello`" },
+        { "name": "参数（名称/类型/默认值/添加参数）", "type": "field", "notes": "脚本级参数，支持移除" },
+        { "name": "环境变量（KEY/VALUE/添加）", "type": "field", "notes": "键值对，支持移除" },
+        { "name": "保存 / 取消", "type": "button", "notes": "PUT /api/scripts/:id → 修订号 +1" },
+        { "name": "版本历史（rN + SHA256 折叠块）", "type": "details", "notes": "点击展开可看该修订内容；无 diff/回滚入口" }
+      ]
+    },
+    {
+      "page": "/schedules/new 与 /schedules/:id",
+      "route": "新建调度 / 编辑调度",
+      "controls": [
+        { "name": "任务", "type": "field", "notes": "下拉，显示全部任务（含重名任务，无法区分）" },
+        { "name": "类型", "type": "field", "notes": "Cron | 间隔 | 一次性" },
+        { "name": "Cron 表达式 / 间隔秒 / 执行时间(datetime-local)", "type": "field", "notes": "按类型切换显示；一次性使用运行时区换算" },
+        { "name": "时区", "type": "field", "notes": "文本，默认 UTC；非法时区由后端 400 拒绝" },
+        { "name": "执行方", "type": "field", "notes": "Agent | Hub" },
+        { "name": "离线策略", "type": "field", "notes": "允许离线 | 需 Hub 在线" },
+        { "name": "漏触发策略", "type": "field", "notes": "补跑一次 | 跳过" },
+        { "name": "已启用", "type": "field", "notes": "复选框" },
+        { "name": "保存 / 取消", "type": "button", "notes": "成功跳转 /tasks?view=schedules；错误显示在内联错误区（实测全部为「暂无数据」）" }
+      ]
+    }
+  ],
+  "pass2_state_changes": [
+    {
+      "page": "/schedules → /tasks?view=schedules",
+      "operation": "访问旧调度路由",
+      "url_before": "/schedules",
+      "url_after": "/tasks?view=schedules",
+      "api": [],
+      "ui_feedback": "客户端重定向，页面标题变为「调度」，标签页选中「调度」；/schedules/new 仍可直接访问",
+      "persisted_after_reload": true,
+      "edge_cases": ["/schedules 重定向在打开页面时立即生效，无中间态"]
+    },
+    {
+      "page": "/tasks",
+      "operation": "切换到调度视图",
+      "url_before": "/tasks",
+      "url_after": "/tasks?view=schedules",
+      "api": [
+        { "method": "GET", "path": "/api/schedules", "status": 200 },
+        { "method": "GET", "path": "/api/tasks", "status": 200 }
+      ],
+      "ui_feedback": "标题「调度」，按钮变「新建调度」，出现横向滚动提示",
+      "persisted_after_reload": true,
+      "edge_cases": ["视图状态写入 query 参数，刷新后保持"]
+    },
+    {
+      "page": "/tasks/new",
+      "operation": "空表单保存",
+      "url_before": "/tasks/new",
+      "url_after": "/tasks/new",
+      "api": [],
+      "ui_feedback": "toast「名称」（仅字段名，无「必填」说明）",
+      "persisted_after_reload": true,
+      "edge_cases": ["前端拦截，不发请求"]
+    },
+    {
+      "page": "/tasks/new",
+      "operation": "填名称+命令但未选目标节点保存",
+      "url_before": "/tasks/new",
+      "url_after": "/tasks/new",
+      "api": [{ "method": "POST", "path": "/api/tasks", "status": 400 }],
+      "ui_feedback": "toast「invalid task: node target requires node_ids」（后端英文原文）",
+      "persisted_after_reload": true,
+      "edge_cases": ["非 Error 消息同样直达用户"]
+    },
+    {
+      "page": "/tasks/new",
+      "operation": "脚本类型未选脚本保存",
+      "url_before": "/tasks/new",
+      "url_after": "/tasks/new",
+      "api": [{ "method": "POST", "path": "/api/tasks", "status": 400 }],
+      "ui_feedback": "toast「invalid task: script task requires script_id」",
+      "persisted_after_reload": true,
+      "edge_cases": []
+    },
+    {
+      "page": "/tasks/new",
+      "operation": "超时输入 -5（键盘输入，input min=0 但不阻断提交）保存",
+      "url_before": "/tasks/new",
+      "url_after": "/tasks",
+      "api": [{ "method": "POST", "path": "/api/tasks", "status": 200 }],
+      "ui_feedback": "创建成功并跳转；任务详情显示「超时（秒） -5s」",
+      "persisted_after_reload": true,
+      "edge_cases": ["后端仅校验 timeout==0→300，负数落库；Agent 侧 timeout<=0 静默回退 300s", "运行该任务返回 SUCCESS（实际 300s 上限）"]
+    },
+    {
+      "page": "/tasks/new",
+      "operation": "创建与既有任务同名的任务",
+      "url_before": "/tasks/new",
+      "url_after": "/tasks",
+      "api": [{ "method": "POST", "path": "/api/tasks", "status": 200 }],
+      "ui_feedback": "创建成功，列表出现两条同名任务（无法区分）",
+      "persisted_after_reload": true,
+      "edge_cases": ["调度下拉同样出现两条同名任务"]
+    },
+    {
+      "page": "/tasks/new",
+      "operation": "托管应用部署任务（环境无可用应用）",
+      "url_before": "/tasks/new",
+      "url_after": "/tasks/new",
+      "api": [{ "method": "POST", "path": "/api/tasks", "status": 400 }],
+      "ui_feedback": "toast「invalid task: application task requires application_id」；应用下拉为空无选项",
+      "persisted_after_reload": true,
+      "edge_cases": ["表单对该类型不提供 app_operation 选择，但默认值仍为 start（代码路径见 FAIL-G-001 相关观察）"]
+    },
+    {
+      "page": "/tasks/new",
+      "operation": "创建任务并配置参数 msg(默认 hello-default)",
+      "url_before": "/tasks/new",
+      "url_after": "/tasks",
+      "api": [{ "method": "POST", "path": "/api/tasks", "status": 200 }],
+      "ui_feedback": "创建成功；任务参数在 GET /api/tasks/:id 返回 parameters[{name:msg,default:hello-default}]",
+      "persisted_after_reload": true,
+      "edge_cases": ["连续两次点击「添加参数」可产生同名参数行"]
+    },
+    {
+      "page": "/tasks/:id/run",
+      "operation": "运行页覆盖参数值后立即运行",
+      "url_before": "/tasks/:id/run",
+      "url_after": "/executions",
+      "api": [
+        { "method": "POST", "path": "/api/tasks/:id/run", "status": 200 },
+        { "method": "GET", "path": "/api/executions?limit=100", "status": 200 }
+      ],
+      "ui_feedback": "确认框 → 运行成功跳转执行列表；执行 stdout=param=runtime-override（参数以 CADENTRA_PARAM_<name> 注入）",
+      "persisted_after_reload": true,
+      "edge_cases": ["参数输入默认回填默认值"]
+    },
+    {
+      "page": "/tasks/:id",
+      "operation": "编辑任务目标节点（2→4 节点）",
+      "url_before": "/tasks/:id/edit",
+      "url_after": "/tasks",
+      "api": [{ "method": "PUT", "path": "/api/tasks/:id", "status": 200 }],
+      "ui_feedback": "保存成功跳回列表；revision r1→r2",
+      "persisted_after_reload": true,
+      "edge_cases": []
+    },
+    {
+      "page": "/tasks/:id",
+      "operation": "目标节点被删除后禁用/启用任务",
+      "url_before": "/tasks",
+      "url_after": "/tasks",
+      "api": [{ "method": "PUT", "path": "/api/tasks/:id", "status": 400 }],
+      "ui_feedback": "toast「invalid task: target node not found」；任务状态仍为已启用",
+      "persisted_after_reload": true,
+      "edge_cases": ["同一任务「立即运行」返回 400 toast「sql: no rows in result set」（原始 SQL 错误直达 UI）", "该任务可被删除（DELETE 200）"]
+    },
+    {
+      "page": "/tasks",
+      "operation": "被调度引用的任务删除",
+      "url_before": "/tasks",
+      "url_after": "/tasks",
+      "api": [{ "method": "DELETE", "path": "/api/tasks/:id", "status": 409 }],
+      "ui_feedback": "确认框「删除: 任务名 …确定删除这个任务吗？相关调度也可能无法继续运行。」→ toast「task <uuid> is referenced by schedule <uuid>」",
+      "persisted_after_reload": true,
+      "edge_cases": ["删除被阻断时列表不刷新"]
+    },
+    {
+      "page": "/tasks",
+      "operation": "删除无引用的任务",
+      "url_before": "/tasks",
+      "url_after": "/tasks",
+      "api": [{ "method": "DELETE", "path": "/api/tasks/:id", "status": 200 }],
+      "ui_feedback": "toast「任务已删除」",
+      "persisted_after_reload": true,
+      "edge_cases": ["删除后执行历史保留，列表显示「未知任务」（L16 成立）"]
+    },
+    {
+      "page": "/tasks/:id",
+      "operation": "通过立即运行执行命令任务（4 节点）",
+      "url_before": "/tasks/:id/run",
+      "url_after": "/executions",
+      "api": [{ "method": "POST", "path": "/api/tasks/:id/run", "status": 200 }],
+      "ui_feedback": "确认框 → 跳转执行列表；生成 4 条 manual 执行，全部 SUCCESS",
+      "persisted_after_reload": true,
+      "edge_cases": ["每节点一条独立执行记录"]
+    },
+    {
+      "page": "/tasks/:id",
+      "operation": "脚本任务运行（脚本 r1 → 编辑为 r2 → 再运行）",
+      "url_before": "/tasks/:id/run",
+      "url_after": "/executions",
+      "api": [
+        { "method": "POST", "path": "/api/tasks/:id/run", "status": 200 },
+        { "method": "PUT", "path": "/api/scripts/:id", "status": 200 }
+      ],
+      "ui_feedback": "两次运行各生成 2 条执行；execution.script_revision 由 1 变 2，stdout 由 e2e-a-ok 变为 e2e-a-ok-v2（Agent 侧脚本同步生效）",
+      "persisted_after_reload": true,
+      "edge_cases": ["脚本编辑后任务 revision 不变（r1），执行详情只显示「任务修订号 r1」，不显示脚本修订号"]
+    },
+    {
+      "page": "/tasks/:id/run",
+      "operation": "运行被禁用任务",
+      "url_before": "/tasks/:id/run",
+      "url_after": "/tasks/:id/run",
+      "api": [{ "method": "POST", "path": "/api/tasks/:id/run", "status": 400 }],
+      "ui_feedback": "toast「task <uuid> is disabled」（英文 + 裸 UUID）",
+      "persisted_after_reload": true,
+      "edge_cases": []
+    },
+    {
+      "page": "/tasks/:id/run",
+      "operation": "运行引用了已禁用脚本的任务",
+      "url_before": "/tasks/:id/run",
+      "url_after": "/executions",
+      "api": [{ "method": "POST", "path": "/api/tasks/:id/run", "status": 200 }],
+      "ui_feedback": "运行成功；执行状态 SUCCESS，stdout 为脚本内容（禁用未生效）",
+      "persisted_after_reload": true,
+      "edge_cases": ["脚本 enabled=false 时仍下发执行；仅任务创建/编辑时校验脚本状态"]
+    },
+    {
+      "page": "/executions",
+      "operation": "状态过滤=超时",
+      "url_before": "/executions",
+      "url_after": "/executions?status=TIMED_OUT",
+      "api": [{ "method": "GET", "path": "/api/executions?limit=100&status=TIMED_OUT", "status": 200 }],
+      "ui_feedback": "列表 2 行，行显示 超时 / 任务 / 节点 / 手动 / 17分钟前 / 17s / -1",
+      "persisted_after_reload": true,
+      "edge_cases": ["过滤条件写入 URL，可与 trigger/q 叠加"]
+    },
+    {
+      "page": "/executions",
+      "operation": "触发方式过滤",
+      "url_before": "/executions?status=TIMED_OUT",
+      "url_after": "/executions?status=TIMED_OUT&trigger=manual",
+      "api": [],
+      "ui_feedback": "选项仅包含当前已加载数据中出现的触发方式（如 status=TIMED_OUT 时只有 manual）",
+      "persisted_after_reload": true,
+      "edge_cases": ["数据量大时无法按未出现在当前页的触发方式过滤"]
+    },
+    {
+      "page": "/executions",
+      "operation": "搜索（任务名/执行ID）",
+      "url_before": "/executions",
+      "url_after": "/executions?q=de6e-cmd4",
+      "api": [],
+      "ui_feedback": "客户端过滤 execution.id/task_id/任务名/node_id；无结果显示「没有结果。」",
+      "persisted_after_reload": true,
+      "edge_cases": ["任务被删除后按任务名搜不到该执行的记录（显示为未知任务）"]
+    },
+    {
+      "page": "/executions",
+      "operation": "数据量上限核对",
+      "url_before": "/executions",
+      "url_after": "/executions",
+      "api": [{ "method": "GET", "path": "/api/executions?limit=100", "status": 200 }],
+      "ui_feedback": "页面显示「第 1 页，共 10 页」（10 行/页 × 10 页 = 100 行）；DB 实际 269 条执行记录",
+      "persisted_after_reload": true,
+      "edge_cases": ["无日期范围筛选，无页码跳转超出手头 100 条的能力 → 更早执行记录 UI 不可达"]
+    },
+    {
+      "page": "/executions/:id",
+      "operation": "取消运行中执行（停止执行）",
+      "url_before": "/executions/:id",
+      "url_after": "/executions/:id",
+      "api": [
+        { "method": "POST", "path": "/api/executions/:id/cancel", "status": 200 },
+        { "method": "GET", "path": "/api/executions/:id", "status": 200 }
+      ],
+      "ui_feedback": "确认框「停止执行: 任务名」→ 状态变「已取消」、耗时 34s、退出码 -1；停止按钮消失",
+      "persisted_after_reload": true,
+      "edge_cases": ["随后在目标节点执行 `ps -eo args | grep -c '[s]leep 300'` 返回 0 → 节点侧进程已终止", "审计：/api/audit 无 execution cancel 记录（失败项）"]
+    },
+    {
+      "page": "/executions/:id",
+      "operation": "日志区过滤/搜索",
+      "url_before": "/executions/:id",
+      "url_after": "/executions/:id",
+      "api": [],
+      "ui_feedback": "选择 stderr 仅显示 stderr 行；搜索 out 仅保留匹配行；搜索无匹配显示（空）",
+      "persisted_after_reload": false,
+      "edge_cases": ["刷新后过滤状态重置"]
+    },
+    {
+      "page": "/executions/:id",
+      "operation": "复制日志",
+      "url_before": "/executions/:id",
+      "url_after": "/executions/:id",
+      "api": [],
+      "ui_feedback": "toast「复制失败，请手动复制。」",
+      "persisted_after_reload": true,
+      "edge_cases": ["HTTP 非安全上下文下 navigator.clipboard 不可用，属既有设计（copyText 显式返回 false）"]
+    },
+    {
+      "page": "/executions/:id",
+      "operation": "超时执行详情",
+      "url_before": "/executions/:id",
+      "url_after": "/executions/:id",
+      "api": [{ "method": "GET", "path": "/api/executions/:id", "status": 200 }],
+      "ui_feedback": "状态「超时」、退出码 -1、耗时 17s（timeout=15s + 开销）",
+      "persisted_after_reload": true,
+      "edge_cases": ["无 TIMED_OUT 专属错误文案，只能靠状态徽章判断"]
+    },
+    {
+      "page": "/executions/:id",
+      "operation": "重试语义（retry=2, exit 3）",
+      "url_before": "/executions/:id",
+      "url_after": "/executions/:id",
+      "api": [{ "method": "GET", "path": "/api/executions/:id", "status": 200 }],
+      "ui_feedback": "单条执行记录 FAILED/exit=3；命令内自增计数 stdout 输出 3 → 节点侧确实执行 3 次",
+      "persisted_after_reload": true,
+      "edge_cases": ["retry 无退避等待，3 次尝试总耗时 9ms；执行记录只有 1 条（无每次尝试的子记录）"]
+    },
+    {
+      "page": "/transfers",
+      "operation": "多目标传输（agent-1 → agent-2 + agent-3）",
+      "url_before": "/transfers",
+      "url_after": "/transfers",
+      "api": [
+        { "method": "POST", "path": "/api/transfers", "status": 200 },
+        { "method": "GET", "path": "/api/transfers", "status": 200 }
+      ],
+      "ui_feedback": "toast「文件传输已创建」；列表新增一行，目标单元格显示两个目标的状态",
+      "persisted_after_reload": true,
+      "edge_cases": ["两个目标均 SUCCESS，hub 侧 sha256=49ba556018959f0b… 与源一致", "在 agent-2/agent-3 回读目标文件 sha256 与内容均与源一致"]
+    },
+    {
+      "page": "/transfers",
+      "operation": "添加/移除目标 chip",
+      "url_before": "/transfers",
+      "url_after": "/transfers",
+      "api": [],
+      "ui_feedback": "点击添加目标生成 chip「agent-2/路径」，带「移除」按钮；目标路径未填时按钮禁用",
+      "persisted_after_reload": false,
+      "edge_cases": ["添加一次目标后目标路径输入被清空，需重新填写才能添加第二个目标"]
+    },
+    {
+      "page": "/transfers",
+      "operation": "目标路径不可写（/proc/…）导致失败",
+      "url_before": "/transfers",
+      "url_after": "/transfers",
+      "api": [{ "method": "POST", "path": "/api/transfers", "status": 200 }],
+      "ui_feedback": "传输状态「失败」，目标「nodesteer-agent-2 失败」；行内看不到失败原因（仅显示节点名+状态）",
+      "persisted_after_reload": true,
+      "edge_cases": ["API 中目标 error=open /proc/.cadentra-transfer-…: no such file or directory", "页面无传输详情页可查看原因"]
+    },
+    {
+      "page": "/transfers",
+      "operation": "重试失败传输",
+      "url_before": "/transfers",
+      "url_after": "/transfers",
+      "api": [{ "method": "POST", "path": "/api/transfers/:id/retry", "status": 200 }],
+      "ui_feedback": "列表静默刷新，无成功 toast；目标重新投递并再次 FAILED（临时文件名变化证明重试发生）",
+      "persisted_after_reload": true,
+      "edge_cases": ["重试成功后也无反馈，用户需自行判断"]
+    },
+    {
+      "page": "/transfers",
+      "operation": "源文件不存在（源上传失败）",
+      "url_before": "/transfers",
+      "url_after": "/transfers",
+      "api": [{ "method": "POST", "path": "/api/transfers", "status": 200 }],
+      "ui_feedback": "传输状态「失败」（error=open …: no such file or directory），但目标状态永久停在「等待中」",
+      "persisted_after_reload": true,
+      "edge_cases": ["该行操作菜单只有「重试」，没有「取消」→ UI 无法终止（复现 FAIL-M-001）", "同一条传输改用 POST /api/transfers/:id/cancel 可立即变 CANCELED，目标也变 CANCELED（后端支持、UI 缺失）"]
+    },
+    {
+      "page": "/transfers",
+      "operation": "大文件传输中途取消（300MB）",
+      "url_before": "/transfers",
+      "url_after": "/transfers",
+      "api": [{ "method": "POST", "path": "/api/transfers/:id/cancel", "status": 200 }],
+      "ui_feedback": "创建后传输处于 UPLOADING，菜单为「取消传输」；点击后传输与目标均变「已取消」",
+      "persisted_after_reload": true,
+      "edge_cases": ["取消后 hub 侧清理 blob/part；目标节点未留下部分文件（清理任务输出证实）", "已取消传输保留 size=314572800"]
+    },
+    {
+      "page": "/transfers",
+      "operation": "终态行点击「操作」",
+      "url_before": "/transfers",
+      "url_after": "/transfers",
+      "api": [],
+      "ui_feedback": "弹出空菜单（无任何菜单项、无文案）",
+      "persisted_after_reload": true,
+      "edge_cases": ["同样出现在成功/已取消传输行"]
+    },
+    {
+      "page": "/transfers",
+      "operation": "搜索与视图列开关",
+      "url_before": "/transfers",
+      "url_after": "/transfers",
+      "api": [],
+      "ui_feedback": "搜索可定位；无结果显示「没有结果。」；取消勾选「时间」后列表时间列消失",
+      "persisted_after_reload": false,
+      "edge_cases": []
+    },
+    {
+      "page": "/scripts",
+      "operation": "克隆脚本",
+      "url_before": "/scripts",
+      "url_after": "/scripts/:copyId",
+      "api": [{ "method": "POST", "path": "/api/scripts", "status": 200 }],
+      "ui_feedback": "立即创建副本（名称加 (copy)）并跳转到副本编辑页",
+      "persisted_after_reload": true,
+      "edge_cases": ["克隆是立即写库，不是「预填新建表单」"]
+    },
+    {
+      "page": "/scripts",
+      "operation": "脚本禁用（被任务引用中）",
+      "url_before": "/scripts",
+      "url_after": "/scripts",
+      "api": [{ "method": "PUT", "path": "/api/scripts/:id", "status": 200 }],
+      "ui_feedback": "状态列变「已禁用」，修订号 r2→r3",
+      "persisted_after_reload": true,
+      "edge_cases": ["禁用后任务仍可运行（见失败项）"]
+    },
+    {
+      "page": "/scripts",
+      "operation": "删除被任务引用的脚本",
+      "url_before": "/scripts",
+      "url_after": "/scripts",
+      "api": [{ "method": "DELETE", "path": "/api/scripts/:id", "status": 409 }],
+      "ui_feedback": "确认框「删除: 脚本名 …引用它的任务将无法执行」→ toast「script <uuid> is referenced by task <uuid>」",
+      "persisted_after_reload": true,
+      "edge_cases": ["提示为英文原文 + 裸 UUID"]
+    },
+    {
+      "page": "/scripts/new",
+      "operation": "空内容脚本 / 重名脚本保存",
+      "url_before": "/scripts/new",
+      "url_after": "/scripts",
+      "api": [{ "method": "POST", "path": "/api/scripts", "status": 200 }],
+      "ui_feedback": "两者均创建成功（无内容校验、无重名校验）",
+      "persisted_after_reload": true,
+      "edge_cases": ["空内容脚本保存后 SHA256 为固定空内容哈希"]
+    },
+    {
+      "page": "/scripts/:id",
+      "operation": "编辑内容 → 修订号 +1",
+      "url_before": "/scripts/:id",
+      "url_after": "/scripts",
+      "api": [
+        { "method": "PUT", "path": "/api/scripts/:id", "status": 200 },
+        { "method": "GET", "path": "/api/scripts/:id/revisions", "status": 200 }
+      ],
+      "ui_feedback": "保存成功跳回列表；修订号 r1→r2，SHA256 变化；版本历史新增一条可展开折叠项",
+      "persisted_after_reload": true,
+      "edge_cases": ["版本历史仅查看，无 diff/回滚"]
+    },
+    {
+      "page": "/schedules/new",
+      "operation": "创建 Cron 调度（不触发表达式）",
+      "url_before": "/schedules/new",
+      "url_after": "/tasks?view=schedules",
+      "api": [
+        { "method": "POST", "path": "/api/schedules", "status": 200 },
+        { "method": "GET", "path": "/api/schedules", "status": 200 }
+      ],
+      "ui_feedback": "保存成功并跳转到调度视图，新行显示 Cron/表达式/时区/执行方/离线/漏触发/状态",
+      "persisted_after_reload": true,
+      "edge_cases": ["表达式 0 0 1 1 *（1月1日）保证不触发"]
+    },
+    {
+      "page": "/tasks?view=schedules",
+      "operation": "调度禁用/启用",
+      "url_before": "/tasks?view=schedules",
+      "url_after": "/tasks?view=schedules",
+      "api": [
+        { "method": "PUT", "path": "/api/schedules/:id", "status": 200 },
+        { "method": "GET", "path": "/api/schedules", "status": 200 }
+      ],
+      "ui_feedback": "状态列 已启用 → 已禁用 → 已启用",
+      "persisted_after_reload": true,
+      "edge_cases": ["无 toast，靠列表刷新"]
+    },
+    {
+      "page": "/schedules/:id",
+      "operation": "编辑调度时区（UTC → Asia/Shanghai）",
+      "url_before": "/schedules/:id",
+      "url_after": "/tasks?view=schedules",
+      "api": [{ "method": "PUT", "path": "/api/schedules/:id", "status": 200 }],
+      "ui_feedback": "保存成功跳转；时区更新，revision r1→r2",
+      "persisted_after_reload": true,
+      "edge_cases": []
+    },
+    {
+      "page": "/schedules/new",
+      "operation": "一次性调度真实触发",
+      "url_before": "/schedules/new",
+      "url_after": "/tasks?view=schedules",
+      "api": [{ "method": "POST", "path": "/api/schedules", "status": 200 }],
+      "ui_feedback": "创建后约 40s 到点触发，产生 2 条 trigger=schedule 的执行（每目标节点一条），全部 SUCCESS，scheduled_time 与设定一致",
+      "persisted_after_reload": true,
+      "edge_cases": ["触发后一次性调度仍显示「已启用」，无已消费/已完成状态；未观察到重复触发", "任务详情调度分区同步出现该调度（链接到 /schedules/:id）"]
+    },
+    {
+      "page": "/tasks?view=schedules",
+      "operation": "删除调度",
+      "url_before": "/tasks?view=schedules",
+      "url_after": "/tasks?view=schedules",
+      "api": [{ "method": "DELETE", "path": "/api/schedules/:id", "status": 200 }],
+      "ui_feedback": "确认框「删除: 任务名 · 表达式」→ toast「已删除」",
+      "persisted_after_reload": true,
+      "edge_cases": ["删除后引用它的任务可正常删除"]
+    },
+    {
+      "page": "/schedules/new",
+      "operation": "空表单/仅选任务/非法时区保存",
+      "url_before": "/schedules/new",
+      "url_after": "/schedules/new",
+      "api": [{ "method": "POST", "path": "/api/schedules", "status": 400 }],
+      "ui_feedback": "三种情况内联错误区均显示「暂无数据」（真实校验文案与后端错误被吞）",
+      "persisted_after_reload": true,
+      "edge_cases": ["客户端拦截：未选任务、Cron 表达式为空", "服务端拦截：时区 Mars/Olympus → 400"]
+    },
+    {
+      "page": "/audit",
+      "operation": "按操作关键字搜索",
+      "url_before": "/audit",
+      "url_after": "/audit",
+      "api": [{ "method": "GET", "path": "/api/audit?limit=100", "status": 200 }],
+      "ui_feedback": "搜索 cancel 仅 2 条 file_transfer cancel；无 execution cancel 记录",
+      "persisted_after_reload": true,
+      "edge_cases": ["列表不展示 resource_id，描述列恒空 → 无法定位被操作对象", "数据同样上限 100 条"]
+    },
+    {
+      "page": "多个详情页",
+      "operation": "访问不存在的 ID",
+      "url_before": "/tasks/00000000-0000-4000-8000-0000000000aa",
+      "url_after": "同上",
+      "api": [{ "method": "GET", "path": "/api/tasks/:id", "status": 404 }],
+      "ui_feedback": "无错误态：/tasks/:id 永久「加载中...」；/tasks/:id/edit 显示空白定义表单（超时 0）；/tasks/:id/run 显示「加载中...」+ 可点的「立即运行」；/executions/:id 全空白；/scripts/:id 未编辑页 +「暂无版本历史」；/schedules/:id 未编辑表单（任务=选择任务...）",
+      "persisted_after_reload": true,
+      "edge_cases": ["无 404 页面或返回入口（FAIL-G-002 复现）"]
+    },
+    {
+      "page": "/scripts 等",
+      "operation": "DELETE 不存在的资源",
+      "url_before": "直接 API 调用",
+      "url_after": "直接 API 调用",
+      "api": [{ "method": "DELETE", "path": "/api/{tasks|scripts|schedules}/<random-uuid>", "status": 200 }],
+      "ui_feedback": "返回 {\"ok\":\"true\"}（同资源 GET 返回 404）",
+      "persisted_after_reload": true,
+      "edge_cases": ["删除语义为幂等成功，与 GET 的 404 语义不一致"]
+    }
+  ],
+  "pass3_workflows": [
+    {
+      "id": "workflow.script.task.run",
+      "steps": [
+        "POST /api/scripts 建脚本 e2e-a-…-sh（bash，echo e2e-a-ok）",
+        "POST /api/tasks 建脚本任务（目标 agent-1+agent-2）",
+        "运行任务 → 2 条执行（script_revision=1，stdout=e2e-a-ok）",
+        "编辑脚本内容 → revision r2",
+        "再次运行 → 2 条执行（script_revision=2，stdout=e2e-a-ok-v2）",
+        "打开执行详情检查元数据/输出摘要/日志",
+        "检查 /api/audit 中 script update / task execute 记录"
+      ],
+      "expected": "脚本修订、任务引用、执行记录、日志与审计形成闭环；脚本修改后 Agent 使用最新修订执行",
+      "actual": "全部成立：执行记录 script_revision 1→2、stdout 随内容变化；审计含 script update 与 task execute；执行详情可看 stdout/stderr 与日志过滤",
+      "result": "passed",
+      "evidence": [
+        ".e2e/evidence/agent-a/p3-workflow-script.txt",
+        ".e2e/evidence/agent-a/p1-exec-detail.txt",
+        ".e2e/evidence/agent-a/p2-audit-list.png"
+      ]
+    },
+    {
+      "id": "workflow.schedule.crud.trigger",
+      "steps": [
+        "从调度视图新建 Cron 调度（0 0 1 1 *，不触发）",
+        "禁用 → 状态已禁用；启用 → 已启用",
+        "编辑时区 UTC→Asia/Shanghai（revision r2）",
+        "任务详情调度分区可见并链接到调度编辑页",
+        "新建一次性调度（+90s，Agent 执行方，允许离线）",
+        "等待触发 → 2 条 trigger=schedule 执行 SUCCESS",
+        "删除两个调度；随后删除被引用过的任务"
+      ],
+      "expected": "调度 CRUD 完整、状态切换生效、一次性调度按时触发产生执行记录、删除后不再引用",
+      "actual": "全部成立；一次性调度触发后仍显示「已启用」（无已完成态），删除调度后任务可删除",
+      "result": "passed",
+      "evidence": [
+        ".e2e/evidence/agent-a/p2-schedules.txt",
+        ".e2e/evidence/agent-a/p2-schedules-ops.txt",
+        ".e2e/evidence/agent-a/p3-workflow-schedule.txt",
+        ".e2e/evidence/agent-a/p2-schedules-view.png"
+      ]
+    },
+    {
+      "id": "workflow.task.multi_node",
+      "steps": [
+        "建命令任务（命令 echo e2e-a-$(hostname)，目标 = agent-1/2/3/4）",
+        "通过 /tasks/:id/run 立即运行",
+        "核对执行记录条数与节点归属"
+      ],
+      "expected": "每节点一条执行记录，状态与日志独立",
+      "actual": "生成 4 条 manual 执行，分别归属 4 台 Agent，全部 SUCCESS",
+      "result": "passed",
+      "evidence": [".e2e/evidence/agent-a/p2-run-tasks.txt", ".e2e/evidence/agent-a/p2-executions-list.png"]
+    },
+    {
+      "id": "workflow.transfer.multi_target.sha256",
+      "steps": [
+        "在 agent-1 生成源文件并记录 sha256（49ba556018959f0b…）",
+        "UI 建传输：源 agent-1 → 目标 agent-2 与 agent-3（/tmp/e2e-a-…-dst.txt）",
+        "等待 hub 投递完成，核对传输与目标状态、hub sha256",
+        "在 agent-2/agent-3 回读目标文件 sha256 与内容"
+      ],
+      "expected": "两目标独立成功、hub 记录 sha256 与源一致、目标节点文件内容一致",
+      "actual": "两目标 SUCCESS、hub sha256 与源一致、目标节点 sha256 与内容均一致",
+      "result": "passed",
+      "evidence": [".e2e/evidence/agent-a/p2-transfers.txt", ".e2e/evidence/agent-a/p2-transfers-list.png"]
+    },
+    {
+      "id": "workflow.transfer.failure_retry_cancel",
+      "steps": [
+        "传输到 /proc/… 制造目标失败 → 检查状态与可见性",
+        "对失败传输执行「重试」",
+        "300MB 大文件传输，UPLOADING 时点「取消传输」",
+        "源文件不存在场景 → 目标停在 PENDING，检查取消入口"
+      ],
+      "expected": "失败可重试、可取消、失败原因可见、失败后可终止",
+      "actual": "重试与取消均生效；但 (a) 失败原因在页面完全不可见（无详情页），(b) 源上传失败时目标永久 PENDING 且行菜单只有「重试」没有「取消」，只能靠 API 取消 → UI 无法终止",
+      "result": "failed",
+      "evidence": [
+        ".e2e/evidence/agent-a/p2-transfers-fail.txt",
+        ".e2e/evidence/agent-a/p2-transfers-cancel.txt",
+        ".e2e/evidence/agent-a/p2-transfer-empty-menu.png"
+      ]
+    },
+    {
+      "id": "workflow.execution.cancel_timeout_retry.audit",
+      "steps": [
+        "运行 sleep 300 任务 → /executions/:id 点「停止执行」→ 核对状态与节点进程",
+        "运行 sleep 60 + timeout 15 → 核对超时状态与耗时",
+        "运行 exit 3 + retry 2 → 用命令内自增计数核对节点侧尝试次数",
+        "检查 /api/audit 是否有取消/重试对应记录"
+      ],
+      "expected": "取消终止节点进程、超时状态正确、重试按次数执行、写操作全部入审计",
+      "actual": "取消 → CANCELED 且节点侧 sleep 进程不存在；超时 → TIMED_OUT/17s；重试 → 节点侧执行 3 次、1 条记录；但审计中没有任何 execution cancel 记录（file_transfer cancel 有）",
+      "result": "failed",
+      "evidence": [
+        ".e2e/evidence/agent-a/p2-retry-disabled.txt",
+        ".e2e/evidence/agent-a/p2-run-tasks.txt",
+        ".e2e/evidence/agent-a/p2-audit-list.png"
+      ]
+    },
+    {
+      "id": "workflow.task_param_override",
+      "steps": [
+        "建带参数 msg（默认 hello-default）的命令任务（命令 echo param=$CADENTRA_PARAM_msg）",
+        "运行页覆盖参数值 runtime-override 后立即运行",
+        "核对执行 stdout"
+      ],
+      "expected": "运行时参数覆盖默认值并注入执行环境",
+      "actual": "stdout=param=runtime-override，参数以 CADENTRA_PARAM_msg 注入",
+      "result": "passed",
+      "evidence": [".e2e/evidence/agent-a/p2-task-params.txt"]
+    },
+    {
+      "id": "workflow.entity_reference_guards",
+      "steps": [
+        "被调度引用的任务删除 → 期望阻断",
+        "被任务引用的脚本删除 → 期望阻断",
+        "删除调度后再删除任务 → 期望成功"
+      ],
+      "expected": "引用约束生效，提示可读",
+      "actual": "两次删除均 409 阻断且状态未被破坏；解除引用后可删除；但两条提示均为英文原文 + 裸 UUID",
+      "result": "passed",
+      "evidence": [".e2e/evidence/agent-a/p2-sched-taskref.txt", ".e2e/evidence/agent-a/p2-scripts-ops.txt"]
+    },
+    {
+      "id": "workflow.task_delete_history",
+      "steps": [
+        "删除已有执行记录的任务",
+        "在执行列表与执行详情检查该任务展示"
+      ],
+      "expected": "执行历史保留，任务显示为未知任务",
+      "actual": "成立：列表 6 行显示「未知任务」，详情元数据「任务 未知任务」",
+      "result": "passed",
+      "evidence": [".e2e/evidence/agent-a/p2-cleanup.txt"]
+    }
+  ],
+  "failures": [
+    {
+      "id": "FAIL-A-004",
+      "severity": "medium",
+      "title": "取消执行不写审计日志（file_transfer 取消有审计，execution 取消没有）",
+      "steps": [
+        "运行长任务（sleep 300）",
+        "在执行详情点击「停止执行」并确认",
+        "GET /api/audit?limit=500 检索 action=cancel 与 resource=execution"
+      ],
+      "expected": "取消执行属于写操作，应产生审计记录（与文件传输 cancel 一致）",
+      "actual": "审计中只有 file_transfer 的 cancel/retry；本次取消的 execution（dfb29d29…）没有任何审计记录。代码侧 internal/hub/api/api.go 的 cancel 分支未调用 s.audit，ExecutionManager.Cancel 也未做 recordMutationAudit",
+      "evidence": [".e2e/evidence/agent-a/p2-audit-list.png", ".e2e/evidence/agent-a/p2-cleanup.txt"]
+    },
+    {
+      "id": "FAIL-A-005",
+      "severity": "medium",
+      "title": "执行列表与审计列表硬上限 100 条：更早记录在 UI 完全不可达",
+      "steps": [
+        "打开 /executions，读取分页信息",
+        "对比 /api/executions（无 limit）返回的真实条数",
+        "打开 /audit 同样核对"
+      ],
+      "expected": "历史记录可访问（分页/时间筛选/加载更多）",
+      "actual": "/executions 请求 limit=100，页面显示「第 1 页，共 10 页」（10×10=100 行），DB 实际 269 条；/audit 同样 limit=100 而实际 500+ 条。界面无超出前 100 条的入口，也无时间范围筛选",
+      "evidence": [".e2e/evidence/agent-a/p2-executions-list.txt", ".e2e/evidence/agent-a/p2-audit-list.png"]
+    },
+    {
+      "id": "FAIL-A-006",
+      "severity": "medium",
+      "title": "禁用脚本不阻断已引用任务的立即运行，脚本内容照常下发执行",
+      "steps": [
+        "脚本 e2e-a-…-sh 被任务引用",
+        "在脚本列表行菜单「禁用」（enabled=false，revision+1）",
+        "对引用它的任务执行「立即运行」"
+      ],
+      "expected": "禁用脚本应阻止引用它的任务执行（后端 Validate 明确把「referenced script is disabled」视为非法，脚本删除确认文案也称「引用它的任务将无法执行」）",
+      "actual": "POST /api/tasks/:id/run 返回 200，生成 2 条 SUCCESS 执行，stdout 为脚本内容；仅任务创建/编辑时校验脚本状态，运行时不校验",
+      "evidence": [".e2e/evidence/agent-a/p2-scripts-ops.txt", ".e2e/evidence/agent-a/p3-workflow-script.txt"]
+    },
+    {
+      "id": "FAIL-A-007",
+      "severity": "medium",
+      "title": "调度编辑器所有错误提示都显示「暂无数据」（客户端校验与后端 400 均被吞）",
+      "steps": [
+        "打开 /schedules/new，直接点保存（未选任务）",
+        "只选任务、不填 Cron 表达式再点保存",
+        "填任务+表达式+非法时区 Mars/Olympus 再点保存"
+      ],
+      "expected": "分别提示「请选择任务 / Cron 表达式必填 / 时区非法」等可定位信息",
+      "actual": "三种情况内联错误区均为「暂无数据」。根因：src/features/shared/ui.tsx:161 的 ErrorState 仅在 `error instanceof Error` 时展示 message，而 ScheduleEditor 的 setError 传的是字符串",
+      "evidence": [".e2e/evidence/agent-a/p2-edges.txt", ".e2e/evidence/agent-a/p2-schedule-error-nodata.png"]
+    },
+    {
+      "id": "FAIL-A-008",
+      "severity": "medium",
+      "title": "任务超时允许负数保存，界面显示 -5s 但实际按 300s 执行",
+      "steps": [
+        "在 /tasks/new 名称+命令+目标齐全，超时输入 -5（input min=0 不阻止提交）",
+        "保存 → 任务详情检查",
+        "运行该任务"
+      ],
+      "expected": "拒绝 <=0 的超时值，或给出明确提示",
+      "actual": "POST 200 创建成功，详情显示「超时（秒） -5s」；internal/hub/definitions.go 只处理 timeout==0→300；Agent 侧 timeout<=0 静默回退 300s，故执行 SUCCESS，用户看到 -5s 却按 300s 执行",
+      "evidence": [".e2e/evidence/agent-a/p2-task-form-edges.txt"]
+    },
+    {
+      "id": "FAIL-A-009",
+      "severity": "medium",
+      "title": "目标节点被删除后任务既不能编辑/启停，运行时报原始 SQL 错误",
+      "steps": [
+        "任务目标指向某节点，随后该节点被删除（另一测试单元清理）",
+        "对该任务执行「禁用」「启用」",
+        "对该任务执行「立即运行」"
+      ],
+      "expected": "给出「目标节点不存在，请重新选择」并允许编辑修复",
+      "actual": "禁用/启用/编辑均 400 toast「invalid task: target node not found」；立即运行 400 toast「sql: no rows in result set」（SQL 内部错误直达 UI）；只有删除可用",
+      "evidence": [".e2e/evidence/agent-a/p2-tasks-list.txt", ".e2e/evidence/agent-a/p2-retry-disabled.txt"]
+    },
+    {
+      "id": "FAIL-A-010",
+      "severity": "high",
+      "title": "源上传失败的传输目标永久 PENDING，UI 无取消入口（复现并定位 FAIL-M-001）",
+      "steps": [
+        "建传输：源 agent-1 /tmp/…-nonexistent.txt → agent-2",
+        "观察传输与目标状态、行菜单项",
+        "对比 POST /api/transfers/:id/cancel"
+      ],
+      "expected": "失败传输可被终止（取消/删除），目标不长期滞留 PENDING",
+      "actual": "传输 FAILED（源文件不存在），目标永久「等待中」；行菜单仅「重试」无「取消」（前端仅对 PENDING/UPLOADING/DELIVERING 提供取消）；后端 cancel 接口可用，调用后传输与目标均变 CANCELED",
+      "evidence": [".e2e/evidence/agent-a/p2-transfers-fail.txt"]
+    },
+    {
+      "id": "FAIL-A-011",
+      "severity": "medium",
+      "title": "文件传输失败原因在 UI 完全不可见（无详情页；列表只显示节点+状态）",
+      "steps": [
+        "制造目标失败（/proc/…）与源失败（文件不存在）",
+        "查看列表行文案与可用入口"
+      ],
+      "expected": "能看到失败原因（目标 error 字段）以便排查",
+      "actual": "行内只有「nodesteer-agent-2 失败」「等待中」，无错误原因、无详情页、无 tooltip；原因只在 API 响应中（如 open /proc/.cadentra-transfer-…: no such file or directory）",
+      "evidence": [".e2e/evidence/agent-a/p2-transfers-fail.txt", ".e2e/evidence/agent-a/p2-transfers-list.png"]
+    },
+    {
+      "id": "FAIL-A-012",
+      "severity": "low",
+      "title": "传输终态行的「操作」按钮打开空菜单",
+      "steps": ["在 /transfers 点击成功/已取消传输行的「操作」"],
+      "expected": "隐藏无操作的行按钮，或显示禁用说明",
+      "actual": "弹出 role=menu 但无任何菜单项与文案",
+      "evidence": [".e2e/evidence/agent-a/p2-transfer-empty-menu.png"]
+    },
+    {
+      "id": "FAIL-A-013",
+      "severity": "low",
+      "title": "审计列表不展示资源 ID，无法定位被操作对象",
+      "steps": ["打开 /audit，查看列与内容", "对比 /api/audit 返回的 resource_id"],
+      "expected": "能看到被操作对象（任务/脚本/传输的 ID 或名称）",
+      "actual": "列为 时间/名称/操作/类型/描述；描述列恒空，resource_id 未展示 → 同一类型多条记录无法区分",
+      "evidence": [".e2e/evidence/agent-a/p2-audit-list.png", ".e2e/evidence/agent-a/p2-misc.txt"]
+    },
+    {
+      "id": "FAIL-A-014",
+      "severity": "low",
+      "title": "重名任务/脚本与重复参数可创建，实体无法区分",
+      "steps": ["创建与既有任务同名的任务", "创建与既有脚本同名的脚本", "连续两次「添加参数」同名参数"],
+      "expected": "名称唯一性或至少给出重名提示",
+      "actual": "均创建成功；列表与调度下拉出现两条同名项，调度只能按名称辨识；重复参数行同时保留",
+      "evidence": [".e2e/evidence/agent-a/p2-task-form-edges.txt", ".e2e/evidence/agent-a/p2-edges.txt"]
+    },
+    {
+      "id": "FAIL-A-015",
+      "severity": "low",
+      "title": "多处错误信息为后端英文原文 + 裸 UUID",
+      "steps": [
+        "运行被禁用任务",
+        "删除被引用的任务/脚本",
+        "源上传失败查看传输 error",
+        "节点被删除后运行任务"
+      ],
+      "expected": "本地化、可读、指向具体对象名称",
+      "actual": "如「task <uuid> is disabled」「task <uuid> is referenced by schedule <uuid>」「script <uuid> is referenced by task <uuid>」「sql: no rows in result set」",
+      "evidence": [".e2e/evidence/agent-a/p2-scripts-ops.txt", ".e2e/evidence/agent-a/p2-tasks-list.txt"]
+    },
+    {
+      "id": "FAIL-A-016",
+      "severity": "low",
+      "title": "DELETE 不存在的任务/脚本/调度返回 200 ok:true（GET 同资源返回 404）",
+      "steps": ["对随机 UUID 调用 DELETE /api/tasks|scripts|schedules", "GET 同一 UUID"],
+      "expected": "删除语义与查询语义一致（404 或统一幂等语义并在文档说明）",
+      "actual": "DELETE 三种资源均返回 200 {\"ok\":\"true\"}；GET 返回 404 {\"error\":\"… not found\"}",
+      "evidence": [".e2e/evidence/agent-a/p2-edges.txt"]
+    }
+  ],
+  "observations": [
+    "任务详情为单页分区（概览/定义/目标/执行/调度），不再是标签页；/executions/:id 为单页分区（元数据/输出摘要/日志）。",
+    "/schedules 已重定向到 /tasks?view=schedules（beforeLoad throw redirect），/schedules/new 与 /schedules/:id 仍独立存在，调度列表内「新建调度」链接指向 /schedules/new。",
+    "任务详情「调度」分区只显示调度类型与表达式，不显示状态/时区/执行方，禁用状态无法从任务侧看出。",
+    "任务/schedule 删除确认框已不暴露裸 UUID（显示任务名、脚本名、任务名+表达式），历史 FAIL-001 保持修复状态。",
+    "复制日志在 HTTP 部署下必然提示「复制失败，请手动复制。」（src/lib/clipboard.ts 对非安全上下文显式返回 false），属既有设计，但会让用户误认为功能损坏。",
+    "文件传输「重试」「取消」成功后没有 toast，仅静默刷新列表；创建传输有「文件传输已创建」。",
+    "执行列表「触发方式」筛选项由当前已加载数据动态生成，若某触发方式不在当前数据中则无法选择（例如按 status 过滤后选项收窄）。",
+    "执行详情「打开日志」按钮实际只是滚动定位到日志区，并非打开独立日志视图，标签与行为不一致。",
+    "「换行」「跟随」按钮无可编程读取的按下状态（无 aria-pressed），自动化无法断言其开关状态。",
+    "一次性调度触发后仍显示「已启用」（enabled 保持 true），缺少「已执行/已完成」状态；观察 70s 未出现重复触发。",
+    "任务参数在运行页可覆盖默认值并经 CADENTRA_PARAM_<name> 注入执行环境（实测通过），脚本/任务参数类型支持 string/secret 等。",
+    "传输表单「目标文件路径」的 placeholder 与源路径相同（/var/lib/app/config.yaml），且添加一次目标后输入被清空，连续添加多目标需重复填写。",
+    "调度「执行方」可选项为 Agent/Hub；本轮仅验证 Agent 执行方（Hub 执行方会产生持续后台调度，按安全规则未创建长期调度）。",
+    "任务列表按列头可排序、支持分页（15 个任务 = 2 页）；脚本/传输/执行/审计列表均已验证搜索、视图列开关与分页。",
+    "「托管应用部署」任务在当前环境无法端到端验证：环境内无任何托管应用，应用下拉为空，保存返回 400 invalid task: application task requires application_id。代码上该类型仍默认 app_operation=start（tasks/index.tsx:557），且 UI 仅在「托管应用操作」时提供操作选择，因此历史 FAIL-G-001 的代码路径仍存在，但本轮无应用可复现。",
+    "目标节点列表包含其他单元遗留的离线/pending 节点，节点复选框按接口返回顺序渲染且无常量排序；任务目标选择需按名称精确定位（本轮曾误选离线节点并已修正）。",
+    "执行耗时由 start_time/end_time 计算，UI 可正确显示（超时 17s、取消 34s）。",
+    "脚本 /scripts/:id 与调度 /schedules/:id 都是编辑页而非只读详情页；脚本页含可展开的版本历史（details），无 diff/回滚入口。",
+    "空内容脚本可保存成功；脚本参数与环境变量均支持逐项移除。",
+    "预置的 test-date-1node「* * * * *」调度（非本单元数据）仍在启用状态，每分钟产生一条执行记录，会持续稀释执行列表与审计数据（建议由数据治理单元确认）。"
+  ],
+  "test_data": [
+    { "type": "script", "name": "e2e-a-20260922-de6e-sh", "status": "deleted" },
+    { "type": "script", "name": "e2e-a-20260922-de6e-sh (copy)", "status": "deleted" },
+    { "type": "script", "name": "e2e-a-20260922-de6e-emptycontent", "status": "deleted" },
+    { "type": "script", "name": "e2e-a-20260922-de6e-sh (重名验证副本)", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-script-task", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-cmd4", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-cmd4(重名副本)", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-edge-negtimeout", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-negtimeout-ui", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-sleep60", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-cancel", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-retry", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-retrycount", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-disabled", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-disabled2", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-pgcheck", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-logstreams", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-dstverify", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-mkfile", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-cleanup", "status": "deleted" },
+    { "type": "task", "name": "e2e-a-20260922-de6e-params", "status": "deleted" },
+    { "type": "schedule", "name": "cron 0 0 1 1 * @e2e-a-…-script-task", "status": "deleted" },
+    { "type": "schedule", "name": "one_time @e2e-a-…-script-task", "status": "deleted" },
+    { "type": "schedule", "name": "cron 0 0 1 1 * @e2e-a-…-edge-negtimeout", "status": "deleted" },
+    { "type": "transfer", "name": "accafab7 /tmp/e2e-a-…-src.txt → agent-2", "status": "kept", "note": "SUCCESS；产品无删除传输入口，记录保留" },
+    { "type": "transfer", "name": "05780576 源文件 → agent-2+agent-3", "status": "kept", "note": "SUCCESS；多目标验证用" },
+    { "type": "transfer", "name": "59948747 源文件 → agent-2 /proc/…", "status": "kept", "note": "FAILED；失败原因与重试验证用" },
+    { "type": "transfer", "name": "a033c1a6 不存在源文件 → agent-2", "status": "kept", "note": "CANCELED（经 API）；FAIL-M-001 证据" },
+    { "type": "transfer", "name": "4ef65cc5 300MB 大文件 → agent-2", "status": "kept", "note": "CANCELED（经 UI）" },
+    { "type": "execution", "name": "本单元运行产生的执行记录 26 条（21 SUCCESS / 3 FAILED / 1 TIMED_OUT / 1 CANCELED；24 manual + 2 schedule）", "status": "kept", "note": "产品无删除执行入口，随历史保留" },
+    { "type": "agent_file", "name": "/tmp/e2e-a-20260922-de6e-* （4 台 Agent）", "status": "deleted", "note": "cleanup 任务在 4 台 Agent 上 rm 并验证不存在" },
+    { "type": "audit", "name": "本单元操作产生的审计记录", "status": "kept", "note": "审计不可删除" }
+  ],
+  "gaps": [
+    "托管应用部署/操作类任务未能端到端验证：环境内无任何托管应用（其他单元已清理），应用下拉为空。仅完成表单枚举与 400 错误路径验证；历史 FAIL-G-001 需在有应用的条件下复测。",
+    "Hub 执行方（execution_owner=hub）的调度触发未验证：按安全规则不创建长期后台调度；本轮全部使用 Agent 执行方（一次性调度真实触发已验证）。",
+    "传输大文件成功路径的 SHA256 未验证：300MB 用例用于中途取消，未等待完成；小文件（35B）已完成端到端内容与 SHA256 校验。",
+    "跨代际传输（DELIVERING 中断/Agent 重连后恢复）未验证：需要停止 Agent，超出本单元安全边界。",
+    "RBAC（viewer/operator 对运行域接口的 403）未验证：本轮全程使用 admin；属其他单元范围。",
+    "任务「条件」（本地 cpu_usage / 远程节点字段）仅完成字段枚举与「设置/清除」入口确认，未构造满足/不满足条件的分支执行验证。",
+    "分组/标签类任务目标未执行验证（属节点/分组单元范围），本轮只做表单枚举。",
+    "响应式（1024/820）与深色主题、i18n 切换下的运行域页面未复检（属 ui-review 范围）。",
+    "执行/传输/审计记录无删除能力，测试数据只能保留；若需要干净基线需数据治理方案。",
+    "「设置条件/设置远程条件」的清除入口、AND 组合等仅确认存在，未逐组合验证。"
+  ]
+}

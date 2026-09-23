@@ -1,69 +1,418 @@
 {
-  "schema_version": 1,
-  "findings": [
-    {
-      "id":"UI-001",
-      "severity":"medium",
-      "status":"resolved",
-      "type":"responsive_table_discoverability",
-      "title":"移动端数据表保留宽桌面列，横向滚动入口不明显",
-      "routes":["/","/agents","/nodes","/tasks","/executions","/transfers","/audit","/users"],
-      "viewports":["390x844","1024x768"],
-      "precondition":"在已登录 Hub 中进入带表格的列表页面",
-      "expected":"移动端优先展示关键列，或明确提示/提供稳定的横向滚动；操作列应容易发现和使用",
-      "actual":"表格通过内部 overflow-x:auto 保持完整桌面列宽，但页面没有明显的横向滚动提示；390px 下表格宽度仍为 660-1152px，搜索/首列可见，后续字段和操作列需要用户自行发现并横向滚动。转账页的源 Agent/路径字段尤其拥挤。",
-      "reproducible":true,
-      "evidence":[
-        "evidence/screenshots/transfers-mobile.png",
-        "evidence/screenshots/agents-mobile.png",
-        "evidence/screenshots/tasks-mobile.png",
-        "evidence/screenshots/executions-mobile.png",
-        "evidence/screenshots/audit-mobile.png",
-        "evidence/screenshots/users-mobile.png",
-        "evidence/measurements/transfers-mobile.json",
-        "evidence/measurements/executions-mobile.json",
-        "evidence/measurements/users-mobile.json"
-      ],
-      "measurements":{"agents":1086,"tasks":1096,"executions":1152,"transfers":1068,"audit":1020,"users":660,"dashboard":700},
-      "recommendation":"移动端隐藏低优先级列或改为卡片/详情结构；保留横向表时增加滚动提示、渐变遮罩或固定操作列，并让长路径使用可读的截断与完整值提示。",
-      "resolved_at":"2026-09-17T08:25:00+08:00",
-      "resolution":"共享表格容器现在仅在实际溢出且未滚动到末尾时显示本地化横向滚动提示；DataTable 操作列固定在可视区域末端。",
-      "retest_result":"passed",
-      "retest_evidence":[
-        "evidence/screenshots/transfers-mobile-fixed.png",
-        "evidence/measurements/agents-mobile-fixed.json",
-        "evidence/measurements/tasks-mobile-fixed.json",
-        "evidence/measurements/executions-mobile-fixed.json",
-        "evidence/measurements/transfers-mobile-fixed.json",
-        "evidence/measurements/audit-mobile-fixed.json",
-        "evidence/measurements/users-mobile-fixed.json"
-      ]
-    },
-    {
-      "id":"UI-002",
-      "severity":"medium",
-      "status":"resolved",
-      "type":"product_identity",
-      "title":"执行详情和日志页以 UUID 作为主标题，缺少友好业务标识",
-      "routes":["/executions/:executionId"],
-      "viewports":["1440x900","390x844"],
-      "precondition":"打开已有执行记录的详情或日志页",
-      "expected":"页面主标题优先显示任务名/执行摘要，UUID 作为次要复制或详情字段；节点也应显示主机名而非短 UUID。",
-      "actual":"页面主标题显示完整执行 UUID；移动端只显示截断 UUID。详情中的节点链接显示短 UUID。当前样本因关联任务已删除，列表还显示“未知任务”，进一步降低了可读性。",
-      "reproducible":true,
-      "evidence":[
-        "evidence/screenshots/execution-detail-desktop.png",
-        "evidence/screenshots/execution-detail-mobile.png",
-        "evidence/screenshots/execution-log-desktop.png"
-      ],
-      "recommendation":"主标题使用“任务名 · 节点名 · 状态/触发方式”等业务摘要；在副标题或复制入口保留 execution ID，避免技术 ID 成为首要视觉信息。",
-      "resolved_at":"2026-09-17T08:25:00+08:00",
-      "resolution":"执行详情增加任务/节点友好名称查询；关联资源不存在时使用本地化未知名称，不再把 UUID 作为标题或节点卡片主值，执行 ID 保留为次要技术信息。",
-      "retest_result":"passed",
-      "retest_evidence":[
-        "evidence/screenshots/execution-detail-desktop-fixed.png",
-        "evidence/screenshots/execution-detail-mobile-fixed.png"
-      ]
-    }
-  ]
+ "schema_version": 1,
+ "generated_at": "2026-09-22T09:50:45+08:00",
+ "base_url": "http://192.168.100.209:8080",
+ "summary": {
+  "total": 28,
+  "open": 11,
+  "carried": 17,
+  "by_severity": {
+   "high": 0,
+   "medium": 1,
+   "low": 10
+  }
+ },
+ "findings": [
+  {
+   "id": "UI-201",
+   "severity": "low",
+   "status": "open",
+   "category": "a11y",
+   "viewport": "1366x768",
+   "page": "agent-detail",
+   "title": "小点击目标偏多（200 个 <24px）",
+   "description": "agent-detail 在 1366x768 下有 200 个按钮/链接小于 24px，低于 WCAG 2.5.8 目标尺寸建议值（不影响功能）。",
+   "evidence": [
+    ".e2e/ui-review/screenshots/agent-detail-1366x768.png"
+   ]
+  },
+  {
+   "id": "UI-202",
+   "severity": "low",
+   "status": "open",
+   "category": "a11y",
+   "viewport": "1920x1080",
+   "page": "agent-detail",
+   "title": "小点击目标偏多（200 个 <24px）",
+   "description": "agent-detail 在 1920x1080 下有 200 个按钮/链接小于 24px，低于 WCAG 2.5.8 目标尺寸建议值（不影响功能）。",
+   "evidence": [
+    ".e2e/ui-review/screenshots/agent-detail-1920x1080.png"
+   ]
+  },
+  {
+   "id": "UI-203",
+   "severity": "low",
+   "status": "open",
+   "category": "a11y",
+   "viewport": "3840x2160",
+   "page": "agent-detail",
+   "title": "小点击目标偏多（200 个 <24px）",
+   "description": "agent-detail 在 3840x2160 下有 200 个按钮/链接小于 24px，低于 WCAG 2.5.8 目标尺寸建议值（不影响功能）。",
+   "evidence": [
+    ".e2e/ui-review/screenshots/agent-detail-3840x2160.png"
+   ]
+  },
+  {
+   "id": "UI-204",
+   "severity": "low",
+   "status": "open",
+   "category": "a11y",
+   "viewport": "1024x768",
+   "page": "agent-detail",
+   "title": "小点击目标偏多（200 个 <24px）",
+   "description": "agent-detail 在 1024x768 下有 200 个按钮/链接小于 24px，低于 WCAG 2.5.8 目标尺寸建议值（不影响功能）。",
+   "evidence": [
+    ".e2e/ui-review/screenshots/agent-detail-1024x768.png"
+   ]
+  },
+  {
+   "id": "UI-205",
+   "severity": "low",
+   "status": "open",
+   "category": "a11y",
+   "viewport": "390x844",
+   "page": "agent-detail",
+   "title": "小点击目标偏多（200 个 <24px）",
+   "description": "agent-detail 在 390x844 下有 200 个按钮/链接小于 24px，低于 WCAG 2.5.8 目标尺寸建议值（不影响功能）。",
+   "evidence": [
+    ".e2e/ui-review/screenshots/agent-detail-390x844.png"
+   ]
+  },
+  {
+   "id": "UI-206",
+   "severity": "low",
+   "status": "open",
+   "category": "a11y",
+   "viewport": "1366x768",
+   "page": "executions",
+   "title": "小点击目标偏多（30 个 <24px）",
+   "description": "executions 在 1366x768 下有 30 个按钮/链接小于 24px，低于 WCAG 2.5.8 目标尺寸建议值（不影响功能）。",
+   "evidence": [
+    ".e2e/ui-review/screenshots/executions-1366x768.png"
+   ]
+  },
+  {
+   "id": "UI-207",
+   "severity": "low",
+   "status": "open",
+   "category": "error-message",
+   "title": "编辑页错误提示显示「暂无数据」而非真实原因",
+   "description": "ErrorState 只识别 Error 实例，编辑器传入字符串导致所有校验与后端错误统一显示「暂无数据」（FAIL-A-007 / FAIL-B-107）。",
+   "evidence": [
+    ".e2e/evidence/agent-a/",
+    ".e2e/evidence/agent-b/"
+   ]
+  },
+  {
+   "id": "UI-208",
+   "severity": "low",
+   "status": "open",
+   "category": "table-ux",
+   "title": "列表页视图状态不持久化、无列排序入口",
+   "description": "列可见性/每页条数刷新即重置；DataTableColumnHeader 为死代码，用户无法排序（FAIL-B-111 / FAIL-B-112）。",
+   "evidence": [
+    ".e2e/evidence/agent-b/"
+   ]
+  },
+  {
+   "id": "UI-209",
+   "severity": "low",
+   "status": "open",
+   "category": "i18n-a11y",
+   "title": "语言切换不更新 <html lang>，登录页无语言入口",
+   "description": "切换语言后 html lang 保持 zh-CN；登录页没有语言切换入口（FAIL-B-110）。",
+   "evidence": [
+    ".e2e/evidence/agent-b/"
+   ]
+  },
+  {
+   "id": "UI-210",
+   "severity": "medium",
+   "status": "open",
+   "category": "information-density",
+   "title": "应用执行历史不可点击且任务名显示「未知任务」",
+   "description": "应用详情的执行列表无法进入执行详情，操作类型不可区分（OBS-C 系列）。",
+   "evidence": [
+    ".e2e/evidence/agent-c/"
+   ]
+  },
+  {
+   "id": "UI-211",
+   "severity": "low",
+   "status": "open",
+   "category": "form-ux",
+   "title": "发布包下拉重复项不可区分（名称+版本相同）",
+   "description": "同名同版本制品可重复上传，下拉中无法区分（OBS-C 系列）。",
+   "evidence": [
+    ".e2e/evidence/agent-c/"
+   ]
+  },
+  {
+   "id": "UI-101",
+   "severity": "medium",
+   "status": "unverified",
+   "category": "i18n",
+   "title": "错误提示未本地化并暴露内部 UUID/英文后端原文",
+   "description": "删除阻断、重复用户名、禁用任务运行、重试被引用发布包等场景的 toast 直接展示后端英文与裸 UUID。",
+   "sources": [
+    "FAIL-A-003/UI-A-002",
+    "UI-B-002",
+    "UI-C-005",
+    "FAIL-M-003"
+   ],
+   "evidence": [
+    ".e2e/evidence/main/node-delete-blocked-1440.png",
+    ".e2e/evidence/agent-c/"
+   ],
+   "recommendation": "统一错误码到本地化文案的映射，业务标识替换 UUID。",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "UI-102",
+   "severity": "medium",
+   "status": "unverified",
+   "category": "i18n",
+   "title": "登录页硬编码英文且无语言切换入口",
+   "description": "Show password / Invalid input / invalid credentials 为英文；登录页无法切换语言。",
+   "sources": [
+    "UI-A-001"
+   ],
+   "evidence": [
+    ".e2e/evidence/agent-a/auth-invalid-login.png"
+   ],
+   "recommendation": "复用 i18n 文案并在登录页提供语言切换。",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "UI-103",
+   "severity": "low",
+   "status": "unverified",
+   "category": "i18n",
+   "title": "状态徽标与类型标识未本地化（maintenance/online/script/command）",
+   "description": "节点维护徽标显示英文枚举；分组编辑器成员行裸 online；任务详情副标题 script · r1。",
+   "sources": [
+    "UI-A-004",
+    "UI-A-005",
+    "UI-B-001"
+   ],
+   "evidence": [
+    ".e2e/evidence/agent-a/agents-maintenance-badge-1440.png"
+   ],
+   "recommendation": "补齐 StatusBadge 与类型映射。",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "UI-104",
+   "severity": "low",
+   "status": "unverified",
+   "category": "responsive",
+   "title": "窄视口表格悬浮滚动提示遮挡最后一行",
+   "description": "820x1180 下“左右滑动查看更多”浮层压住最后一行单元格文本。三个测试单元重复确认。",
+   "sources": [
+    "UI-A-006",
+    "UI-B-005",
+    "UI-M-004"
+   ],
+   "evidence": [
+    ".e2e/evidence/main/narrow-agents-820.png"
+   ],
+   "recommendation": "提示改为滚动条淡入或移出内容区。",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "UI-105",
+   "severity": "low",
+   "status": "unverified",
+   "category": "overflow",
+   "title": "1440 标准宽度下执行/应用/发布包表格仍横向滚动或末列截断",
+   "description": "执行列表超容器约 10px；应用列表修订号列被截断；英文深色下发布包 Usage 列被滚动提示遮挡。",
+   "sources": [
+    "UI-B-003",
+    "UI-C-001"
+   ],
+   "evidence": [
+    ".e2e/evidence/agent-b/",
+    ".e2e/evidence/agent-c/"
+   ],
+   "recommendation": "压缩列宽或调整 minWidth，保证 1440 内不滚动。",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "UI-106",
+   "severity": "low",
+   "status": "unverified",
+   "category": "layout",
+   "title": "仪表盘最近执行卡片 1024 宽度下列内容中间截断",
+   "description": "节点列被裁成 'lesteer-ag...' 且无省略号或滚动提示。",
+   "sources": [
+    "UI-A-007"
+   ],
+   "evidence": [
+    ".e2e/evidence/agent-a/dashboard-1440-light-zh.png"
+   ],
+   "recommendation": "设置列宽策略与 tooltip。",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "UI-107",
+   "severity": "low",
+   "status": "unverified",
+   "category": "feedback",
+   "title": "运行时设置输入为纯文本、无前端校验，错误暴露内部键名",
+   "description": "四个数值项 type=text，保存按钮常亮，非法值返回 'heartbeat_interval_sec must be between 1 and 86400'。",
+   "sources": [
+    "UI-A-008"
+   ],
+   "evidence": [],
+   "recommendation": "number 输入 + 前端范围校验 + 本地化错误。",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "UI-108",
+   "severity": "low",
+   "status": "unverified",
+   "category": "a11y",
+   "title": "添加节点对话框关闭按钮与页签未本地化",
+   "description": "aria-label 为 Close，页签为 Native，中文界面下不一致。",
+   "sources": [
+    "UI-A-009"
+   ],
+   "evidence": [
+    ".e2e/evidence/agent-a/agents-enroll-dialog-1440.png"
+   ],
+   "recommendation": "补齐 i18n 与 aria 文案。",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "UI-109",
+   "severity": "low",
+   "status": "unverified",
+   "category": "layout",
+   "title": "传输列表源 Agent 与源文件路径视觉粘连",
+   "description": "行内 'nodesteer-agent-3' 后紧接 '/tmp/...'，无列间距。",
+   "sources": [
+    "UI-C-002"
+   ],
+   "evidence": [],
+   "recommendation": "增加列间距或分隔。",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "UI-110",
+   "severity": "low",
+   "status": "unverified",
+   "category": "i18n",
+   "title": "切换英文后 html lang 仍为 zh-CN",
+   "description": "文案已切换，document.documentElement.lang 未更新。",
+   "sources": [
+    "UI-C-004",
+    "UI-M-001"
+   ],
+   "evidence": [],
+   "recommendation": "i18n 切换时同步 html lang。",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "UI-111",
+   "severity": "low",
+   "status": "unverified",
+   "category": "feedback",
+   "title": "失败传输重试无任何反馈",
+   "description": "点击重试后无 loading/toast，状态停留失败且原因不可见。",
+   "sources": [
+    "UI-C-006"
+   ],
+   "evidence": [],
+   "recommendation": "增加进行中状态与结果反馈。",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "UI-112",
+   "severity": "low",
+   "status": "unverified",
+   "category": "feedback",
+   "title": "运行失败后确认对话框不关闭，错误仅 toast",
+   "description": "禁用任务运行失败时确认框保持打开，用户可能重复提交。",
+   "sources": [
+    "UI-B-004"
+   ],
+   "evidence": [
+    ".e2e/evidence/agent-b/task-run-disabled-blocked.png"
+   ],
+   "recommendation": "失败时在对话框内展示错误或关闭对话框。",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "UI-113",
+   "severity": "low",
+   "status": "unverified",
+   "category": "feedback",
+   "title": "空名称提交仅依赖浏览器原生 required 提示",
+   "description": "无内联错误与 aria-invalid，与其它表单本地化校验不一致。",
+   "sources": [
+    "UI-B-006"
+   ],
+   "evidence": [],
+   "recommendation": "统一表单校验反馈。",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "UI-114",
+   "severity": "low",
+   "status": "unverified",
+   "category": "consistency",
+   "title": "撤销凭证使用浏览器原生 confirm，与其他确认对话框风格不一致",
+   "description": "其余删除走 Radix AlertDialog，撤销凭证使用 window.confirm，不可主题化且自动化不友好。",
+   "sources": [
+    "UI-M-003"
+   ],
+   "evidence": [],
+   "recommendation": "改用统一确认对话框。",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  },
+  {
+   "id": "UI-001",
+   "severity": "medium",
+   "status": "resolved",
+   "category": "responsive",
+   "title": "移动端数据表保留宽桌面列，横向滚动入口不明显（历史）",
+   "description": "已在 2026-09-17 修复；本轮 820/1024 回归通过（“左右滑动查看更多”提示可见）。",
+   "sources": [
+    "prior-run"
+   ],
+   "evidence": [
+    ".e2e/ui-review/evidence/screenshots/schedule-delete-confirm-fixed.png"
+   ],
+   "recommendation": "-"
+  },
+  {
+   "id": "UI-002",
+   "severity": "medium",
+   "status": "resolved",
+   "category": "consistency",
+   "title": "执行详情与日志页以 UUID 作为主标题（历史）",
+   "description": "已修复；本轮执行详情标题为业务标识。",
+   "sources": [
+    "prior-run"
+   ],
+   "evidence": [],
+   "recommendation": "-"
+  },
+  {
+   "id": "UI-115",
+   "severity": "medium",
+   "status": "unverified",
+   "category": "feedback",
+   "title": "不存在的资源详情路由无错误态（空白表单/永久加载中）",
+   "description": "随机 UUID 访问 /scripts|groups|schedules|applications 渲染空白默认编辑器，/agents/:id 主区空白，/tasks/:id 永久「加载中...」。",
+   "sources": [
+    "FAIL-G-002"
+   ],
+   "evidence": [
+    ".e2e/evidence/main/fake-id-task-detail-1440.png"
+   ],
+   "recommendation": "统一 404/资源不存在错误态并禁用保存。",
+   "test_notes": "2026-09-19 记录，本轮未复测"
+  }
+ ]
 }

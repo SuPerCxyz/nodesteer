@@ -1,0 +1,785 @@
+{
+ "unit": "agent-c",
+ "scope": "制品与应用域",
+ "pass1_operations": [
+  {
+   "page": "/",
+   "route": "dashboard",
+   "controls": [
+    {
+     "name": "统计卡-节点总数/在线",
+     "type": "stat",
+     "notes": "4 总数 / 4 在线；无点击"
+    },
+    {
+     "name": "统计卡-运行中",
+     "type": "stat",
+     "notes": "0 正在执行的任务"
+    },
+    {
+     "name": "统计卡-执行失败",
+     "type": "stat",
+     "notes": "4 最近50次执行"
+    },
+    {
+     "name": "统计卡-成功率",
+     "type": "stat",
+     "notes": "91.8% / 49 次已完成执行"
+    },
+    {
+     "name": "查看看板-正在执行的任务→/executions",
+     "type": "link",
+     "notes": "href=/executions"
+    },
+    {
+     "name": "查看看板-Agent健康状态→/agents",
+     "type": "link",
+     "notes": "href=/agents；在线4/离线0/降级0"
+    },
+    {
+     "name": "查看看板-托管应用状态→/applications",
+     "type": "link",
+     "notes": "href=/applications；0/0 健康"
+    },
+    {
+     "name": "查看看板-同步状态→/agents",
+     "type": "link",
+     "notes": "href=/agents；已同步4/已过期0/错误0"
+    },
+    {
+     "name": "查看看板-最近执行→/executions",
+     "type": "link",
+     "notes": "href=/executions；表格列: 任务/节点/状态/触发方式/结束时间"
+    },
+    {
+     "name": "查看看板-即将执行的调度→/tasks?view=schedules",
+     "type": "link",
+     "notes": "href=/tasks?view=schedules（非 /schedules）"
+    },
+    {
+     "name": "最近执行表格-任务名链接",
+     "type": "link",
+     "notes": "行链接→执行详情"
+    },
+    {
+     "name": "即将执行调度-项链接",
+     "type": "link",
+     "notes": "任务名+cron"
+    },
+    {
+     "name": "侧边栏导航",
+     "type": "nav",
+     "notes": "概览:仪表盘; 运行:任务/执行/文件传输; 节点:节点/分组; 资源:脚本/应用; 系统:审计/用户/设置"
+    },
+    {
+     "name": "Toggle Sidebar",
+     "type": "button",
+     "notes": "折叠侧栏"
+    },
+    {
+     "name": "顶栏-语言切换",
+     "type": "menu",
+     "notes": "中文/English"
+    },
+    {
+     "name": "顶栏-切换主题",
+     "type": "menu",
+     "notes": "浅色/深色/系统"
+    },
+    {
+     "name": "顶栏-个人资料/admin",
+     "type": "menu",
+     "notes": "设置/退出登录"
+    }
+   ]
+  },
+  {
+   "page": "/artifacts",
+   "route": "artifacts/list",
+   "controls": [
+    {
+     "name": "上传",
+     "type": "link",
+     "notes": "→/artifacts/new"
+    },
+    {
+     "name": "搜索框",
+     "type": "textbox",
+     "notes": "占位: 搜索名称、版本、文件名或 SHA256"
+    },
+    {
+     "name": "视图(列可见性)",
+     "type": "menu",
+     "notes": "名称/版本/架构/文件名/大小/SHA256/使用情况 可勾选"
+    },
+    {
+     "name": "表格列",
+     "type": "table",
+     "notes": "名称/版本/架构/文件名/大小/SHA256/使用情况/操作"
+    },
+    {
+     "name": "行操作菜单",
+     "type": "menu",
+     "notes": "下载 / 创建应用(→/applications/new?artifact_id=) / 删除"
+    },
+    {
+     "name": "分页",
+     "type": "pagination",
+     "notes": "页大小10 + 首页/上页/页号/下页/末页"
+    }
+   ]
+  },
+  {
+   "page": "/artifacts/new",
+   "route": "artifacts/new",
+   "controls": [
+    {
+     "name": "名称",
+     "type": "textbox",
+     "notes": "required"
+    },
+    {
+     "name": "版本",
+     "type": "textbox",
+     "notes": "required"
+    },
+    {
+     "name": "架构",
+     "type": "select",
+     "notes": "amd64|arm64"
+    },
+    {
+     "name": "文件",
+     "type": "file",
+     "notes": "原生 file input"
+    },
+    {
+     "name": "上传",
+     "type": "button",
+     "notes": "提交"
+    },
+    {
+     "name": "取消",
+     "type": "link",
+     "notes": "返回列表"
+    }
+   ]
+  },
+  {
+   "page": "/applications",
+   "route": "applications/list",
+   "controls": [
+    {
+     "name": "新建托管应用",
+     "type": "link",
+     "notes": "→/applications/new；空态时仅此入口，搜索/视图/分页有数据后出现"
+    },
+    {
+     "name": "搜索/视图/分页/行菜单",
+     "type": "mixed",
+     "notes": "列表有数据后显示（结构同制品列表）"
+    }
+   ]
+  },
+  {
+   "page": "/applications/new",
+   "route": "applications/new",
+   "controls": [
+    {
+     "name": "名称/版本/描述",
+     "type": "textbox",
+     "notes": "名称 required；带 artifact_id 时版本自动回填"
+    },
+    {
+     "name": "当前发布包",
+     "type": "combobox",
+     "notes": "选择发布包；显示 name/version/arch/SHA 摘要"
+    },
+    {
+     "name": "发布包管理",
+     "type": "link",
+     "notes": "→/artifacts"
+    },
+    {
+     "name": "上传新发布包",
+     "type": "button",
+     "notes": "编辑器内上传并自动关联"
+    },
+    {
+     "name": "二进制路径/配置路径/Unit/配置内容",
+     "type": "textbox",
+     "notes": "部署脚本与单元元数据"
+    },
+    {
+     "name": "参数",
+     "type": "textbox+添加",
+     "notes": "追加 CLI 参数，可移除"
+    },
+    {
+     "name": "环境变量",
+     "type": "KEY/VALUE+添加",
+     "notes": "可移除"
+    },
+    {
+     "name": "健康检查类型",
+     "type": "select",
+     "notes": "systemd 等"
+    },
+    {
+     "name": "健康检查目标",
+     "type": "textbox",
+     "notes": "systemd 时为单元名"
+    },
+    {
+     "name": "检查超时/次数/间隔",
+     "type": "spinbutton",
+     "notes": "默认 5/3/2"
+    },
+    {
+     "name": "分配节点",
+     "type": "checkbox",
+     "notes": "每节点一行，显示 online 状态"
+    },
+    {
+     "name": "保存/取消",
+     "type": "button/link",
+     "notes": "空名称被原生 required 拦截（英文提示）"
+    }
+   ]
+  },
+  {
+   "page": "/applications/:id",
+   "route": "applications/detail",
+   "controls": [
+    {
+     "name": "编辑器全部字段",
+     "type": "mixed",
+     "notes": "同 /applications/new，回显已保存值"
+    },
+    {
+     "name": "操作下拉",
+     "type": "combobox",
+     "notes": "deploy/start/stop/restart/upgrade（无 rollback 入口）"
+    },
+    {
+     "name": "部署/执行按钮",
+     "type": "button",
+     "notes": "触发所选操作"
+    },
+    {
+     "name": "健康检查卡片",
+     "type": "status",
+     "notes": "按节点显示 健康/已停止/不健康 等"
+    },
+    {
+     "name": "执行历史",
+     "type": "list",
+     "notes": "应用操作执行记录"
+    },
+    {
+     "name": "版本历史",
+     "type": "list",
+     "notes": "r1/r2… 可展开"
+    }
+   ]
+  }
+ ],
+ "pass2_state_changes": [
+  {
+   "page": "/artifacts/new",
+   "operation": "上传制品 v1 (e2e-c-20260922-c8x1-svc/1.0.0)",
+   "url_before": "/artifacts/new",
+   "url_after": "/artifacts",
+   "api": [
+    {
+     "method": "POST",
+     "path": "/api/artifacts",
+     "status": 200
+    }
+   ],
+   "ui_feedback": "跳转回列表，新行出现在首行",
+   "persisted_after_reload": true,
+   "edge_cases": [
+    "列表 SHA256 前缀 fe80292d629ad051 与本地 sha256sum 一致",
+    "行菜单下载内容 SHA256 完全一致"
+   ]
+  },
+  {
+   "page": "/artifacts/new",
+   "operation": "已填名称/版本但未选文件提交",
+   "url_before": "/artifacts/new",
+   "url_after": "/artifacts/new",
+   "api": [],
+   "ui_feedback": "toast「Please select a file.」（中文 UI 下英文文案），无请求发出，停留原页",
+   "persisted_after_reload": true,
+   "edge_cases": [
+    "文件为必选，前端校验拦截"
+   ]
+  },
+  {
+   "page": "/artifacts/new",
+   "operation": "重复上传同名同版本不同内容 (c8x1-svc/1.0.0)",
+   "url_before": "/artifacts/new",
+   "url_after": "/artifacts",
+   "api": [
+    {
+     "method": "POST",
+     "path": "/api/artifacts",
+     "status": 200
+    }
+   ],
+   "ui_feedback": "上传成功，允许同名同版本重复记录（列表出现两条同 name+version，SHA 不同）",
+   "persisted_after_reload": true,
+   "edge_cases": [
+    "无唯一性约束（与 k2p9-svc 历史行为一致）"
+   ]
+  },
+  {
+   "page": "/artifacts/new",
+   "operation": "上传 0 字节空文件 (c8x1-empty/0.0.1)",
+   "url_before": "/artifacts/new",
+   "url_after": "/artifacts",
+   "api": [
+    {
+     "method": "POST",
+     "path": "/api/artifacts",
+     "status": 200
+    }
+   ],
+   "ui_feedback": "上传成功，大小显示 0 KB，SHA256 e3b0c442…（空字符串哈希）",
+   "persisted_after_reload": true,
+   "edge_cases": [
+    "空文件被接受"
+   ]
+  },
+  {
+   "page": "/applications/new",
+   "operation": "从制品行菜单创建应用（artifact_id 预选）+ 分配 agent-3/agent-4",
+   "url_before": "/artifacts",
+   "url_after": "/applications/4c10b536-14ca-4b1f-bc6f-fa36da603d8b",
+   "api": [
+    {
+     "method": "POST",
+     "path": "/api/applications",
+     "status": 200
+    },
+    {
+     "method": "POST",
+     "path": "/api/applications/{id}/assign",
+     "status": 200
+    }
+   ],
+   "ui_feedback": "跳转详情页；版本回填 1.0.0、发布包摘要含 SHA256 fe80292d…；节点勾选持久",
+   "persisted_after_reload": true,
+   "edge_cases": [
+    "空名称提交被原生 required 拦截（Please fill out this field，英文，无请求）",
+    "参数 --msg c8x1 与环境变量 E2E_MODE=c8x1 成 chip"
+   ]
+  },
+  {
+   "page": "/applications/:id",
+   "operation": "部署 deploy 到 agent-3/agent-4",
+   "url_before": "/applications/4c10b536-14ca-4b1f-bc6f-fa36da603d8b",
+   "url_after": "同上",
+   "api": [
+    {
+     "method": "POST",
+     "path": "/api/applications/{id}/deploy",
+     "status": 200
+    }
+   ],
+   "ui_feedback": "健康卡片两节点=健康；执行历史出现 2 条",
+   "persisted_after_reload": true,
+   "edge_cases": [
+    "SSH 核对：两节点 systemctl active+enabled；二进制 sha256=fe80292d… 与制品一致；/etc/e2e-c-20260922-c8x1.conf=MSG=hello-c8x1；ExecStart 含 --msg c8x1"
+   ]
+  },
+  {
+   "page": "/applications/:id",
+   "operation": "stop（操作下拉选择 stop 后点击按钮）",
+   "url_before": "/applications/4c10b536-14ca-4b1f-bc6f-fa36da603d8b",
+   "url_after": "同上",
+   "api": [
+    {
+     "method": "POST",
+     "path": "/api/applications/{id}/deploy",
+     "status": 200
+    }
+   ],
+   "ui_feedback": "健康卡片两节点=已停止；state operation=stop/health=stopped",
+   "persisted_after_reload": true,
+   "edge_cases": [
+    "SSH: 两节点 systemctl inactive、进程0",
+    "注意：操作按钮文案固定为「部署」，不随操作类型变化"
+   ]
+  },
+  {
+   "page": "/applications/:id",
+   "operation": "start",
+   "url_before": "同上",
+   "url_after": "同上",
+   "api": [
+    {
+     "method": "POST",
+     "path": "/api/applications/{id}/deploy",
+     "status": 200
+    }
+   ],
+   "ui_feedback": "两节点=健康；SSH active，PID agent-3=8693/agent-4=10092",
+   "persisted_after_reload": true,
+   "edge_cases": [
+    "下拉选项必须点击 option ref；find text click 未生效（曾误发第二次 stop）"
+   ]
+  },
+  {
+   "page": "/applications/:id",
+   "operation": "restart",
+   "url_before": "同上",
+   "url_after": "同上",
+   "api": [
+    {
+     "method": "POST",
+     "path": "/api/applications/{id}/deploy",
+     "status": 200
+    }
+   ],
+   "ui_feedback": "两节点=健康；PID 8693→8742、10092→10140",
+   "persisted_after_reload": true,
+   "edge_cases": [
+    "SSH 前后 PID 对比"
+   ]
+  },
+  {
+   "page": "/applications/:id",
+   "operation": "编辑：切换发布包 1.0.0→2.0.0 后保存（r2）",
+   "url_before": "同上",
+   "url_after": "同上",
+   "api": [
+    {
+     "method": "PUT",
+     "path": "/api/applications/{id}",
+     "status": 200
+    },
+    {
+     "method": "POST",
+     "path": "/api/applications/{id}/assign",
+     "status": 200
+    }
+   ],
+   "ui_feedback": "版本自动回填 2.0.0、SHA256 摘要 82b29d09…；版本历史 r2/r1",
+   "persisted_after_reload": true,
+   "edge_cases": [
+    "发布包下拉中同名同版本重复项无法区分（无文件名/SHA）"
+   ]
+  },
+  {
+   "page": "/applications/:id",
+   "operation": "upgrade",
+   "url_before": "同上",
+   "url_after": "同上",
+   "api": [
+    {
+     "method": "POST",
+     "path": "/api/applications/{id}/deploy",
+     "status": 200
+    }
+   ],
+   "ui_feedback": "state version=2.0.0 healthy；SSH 二进制 sha256=82b29d09…（v2）",
+   "persisted_after_reload": true,
+   "edge_cases": [
+    "无 rollback 入口（产品边界）"
+   ]
+  },
+  {
+   "page": "/artifacts",
+   "operation": "删除被应用引用的制品 v2.0.0",
+   "url_before": "/artifacts",
+   "url_after": "/artifacts",
+   "api": [
+    {
+     "method": "DELETE",
+     "path": "/api/artifacts/5b313720-2727-46fa-b0c2-e18727d9b979",
+     "status": 409
+    }
+   ],
+   "ui_feedback": "确认框「删除: e2e-c-20260922-c8x1-svc」→ 删除 → toast 英文原文 artifact <uuid> is referenced by application <uuid>；行保留",
+   "persisted_after_reload": true,
+   "edge_cases": [
+    "阻断生效但文案不可读（英文+裸UUID），见 FAIL-C-001"
+   ]
+  },
+  {
+   "page": "/applications/:id",
+   "operation": "编辑器内「上传新发布包」并自动关联",
+   "url_before": "/applications/4c10b536-14ca-4b1f-bc6f-fa36da603d8b",
+   "url_after": "同上",
+   "api": [
+    {
+     "method": "POST",
+     "path": "/api/artifacts",
+     "status": 200
+    }
+   ],
+   "ui_feedback": "内联上传表单默认带入应用名称/版本；上传后发布包下拉自动切换为新制品（e2e-c-20260922-c8x1-editorup 1.0.0）",
+   "persisted_after_reload": false,
+   "edge_cases": [
+    "未保存时刷新后应用仍引用原制品 2.0.0（表单态不持久，符合预期）"
+   ]
+  },
+  {
+   "page": "/applications",
+   "operation": "搜索与行菜单（有数据）",
+   "url_before": "/applications",
+   "url_after": "/applications",
+   "api": [],
+   "ui_feedback": "搜索 c8x1 命中 1 行；行菜单含 编辑/删除；删除确认框显示应用名",
+   "persisted_after_reload": true,
+   "edge_cases": [
+    "删除应用 DELETE 200 → toast 已删除 → 空态 暂无数据"
+   ]
+  },
+  {
+   "page": "/applications/:id",
+   "operation": "不存在的应用 ID 路由",
+   "url_before": "/applications",
+   "url_after": "/applications/<随机UUID>",
+   "api": [
+    {
+     "method": "GET",
+     "path": "/api/applications/<随机UUID>",
+     "status": null
+    }
+   ],
+   "ui_feedback": "渲染空白「编辑托管应用」编辑器（无错误态/无 404），复现 FAIL-G-002",
+   "persisted_after_reload": true,
+   "edge_cases": [
+    "0 个 spinner，字段为空，健康检查显示「暂无节点健康状态」"
+   ]
+  },
+  {
+   "page": "/artifacts",
+   "operation": "搜索/分页/列视图",
+   "url_before": "/artifacts",
+   "url_after": "/artifacts",
+   "api": [],
+   "ui_feedback": "搜索 c8x1 命中 3 行、无匹配显示「没有结果」+重置；13 条时分页 10+6、页 2 正确；取消勾选 SHA256 列即时隐藏并可恢复",
+   "persisted_after_reload": true,
+   "edge_cases": [
+    "搜索 SHA256/名称/版本/文件名均可命中；分页不改变 URL"
+   ]
+  },
+  {
+   "page": "/artifacts/new",
+   "operation": "「取消」链接返回列表",
+   "url_before": "/artifacts/new",
+   "url_after": "/artifacts",
+   "api": [],
+   "ui_feedback": "返回列表，未创建记录",
+   "persisted_after_reload": true,
+   "edge_cases": []
+  }
+ ],
+ "pass3_workflows": [
+  {
+   "id": "workflow.artifact.lifecycle",
+   "name": "制品上传→SHA256/大小校验→下载校验→Usage 引用→删除被引用制品",
+   "steps": [
+    "/artifacts/new 上传 e2e-c-20260922-c8x1-svc/1.0.0（v1.sh，104B）",
+    "列表核对 SHA256 前缀 fe80292d629ad051 与本地 sha256sum 一致",
+    "行菜单下载，保存文件后本地 sha256 完全一致（fe80292d…）",
+    "/artifacts 出现 Usage=应用名且链接到 /applications/:id（应用创建后）",
+    "尝试删除被引用制品 → 确认框 → DELETE 409 被阻断",
+    "删除应用后 Usage 归零（-）→ 再次删除成功"
+   ],
+   "expected": "上传/校验/下载/引用/引用保护全链路符合文档；引用解除后可删除",
+   "actual": "全部符合：上传 POST 200、列表与下载 SHA256 与本地一致、Usage 链接指向应用详情、被引用时 DELETE 409 阻止且行保留、解除引用后 UI 删除成功（5/5）",
+   "result": "passed",
+   "evidence": [
+    ".e2e/evidence/agent-c/r2-p2-artifact-uploaded.png",
+    ".e2e/evidence/agent-c/r2-p2-artifacts-usage.png",
+    ".e2e/evidence/agent-c/r2-p2-artifact-delete-referenced-confirm.png",
+    ".e2e/evidence/agent-c/r2-p2-artifact-delete-referenced-blocked.png",
+    ".e2e/evidence/agent-c/r2-p3-artifacts-empty-final.png"
+   ],
+   "notes": "被引用阻断文案为英文+裸 UUID（FAIL-C-001）"
+  },
+  {
+   "id": "workflow.artifact.app.deploy",
+   "name": "制品→创建应用→分配节点→Deploy→健康→Start/Stop/Restart→Upgrade→删除清理",
+   "steps": [
+    "制品行菜单「创建应用」→ /applications/new?artifact_id=…（版本回填 1.0.0、SHA 摘要）",
+    "填写二进制/配置路径/Unit/配置内容/参数/环境变量/健康检查(systemd)，分配 agent-3/agent-4，保存",
+    "部署 deploy → 两节点健康；执行历史 SUCCESS；SSH 核对 unit active+enabled、二进制 SHA、配置、argv",
+    "stop → 已停止 + SSH inactive/0 进程；start → 健康 + active",
+    "restart → PID 变化（8693→8742 / 10092→10140）且健康",
+    "上传 v2.0.0 制品 → 编辑器切换发布包（版本自动 2.0.0、r2）→ upgrade → 节点二进制 82b29d09…（v2）、version=2.0.0 healthy",
+    "删除应用 → 节点侧 unit/二进制/配置/进程全部清理；应用列表空态"
+   ],
+   "expected": "应用生命周期与节点实际状态一致；删除后节点无残留",
+   "actual": "全部通过；UI 无手动回滚入口（部署操作下拉仅 deploy/start/stop/restart/upgrade），记为产品边界",
+   "result": "passed",
+   "evidence": [
+    ".e2e/evidence/agent-c/r2-p2-app-new-from-artifact.png",
+    ".e2e/evidence/agent-c/r2-p2-app-deploy-clicked.png",
+    ".e2e/evidence/agent-c/r2-p2-app-restart-healthy.png",
+    ".e2e/evidence/agent-c/r2-p2-app-edited-r2.png",
+    ".e2e/evidence/agent-c/r2-p3-app-delete-confirm.png"
+   ],
+   "notes": "SSH 证据为只读命令输出（systemctl is-active/is-enabled、sha256sum、cat 配置、systemctl show ExecStart）"
+  },
+  {
+   "id": "workflow.app.execution.audit",
+   "name": "应用操作产生的执行→执行详情/日志→审计",
+   "steps": [
+    "部署/启停/升级产生执行记录",
+    "/executions 列表找到应用执行（显示「未知任务」）→ 查看详情",
+    "执行详情：状态/节点/耗时/r2/元数据（任务=未知任务、任务修订号=r2、触发方式=手动、离线/已同步）",
+    "日志标签页：stdout/stderr 0 字符、（空）",
+    "/audit 搜索 application：deploy/assign/update 记录可见；搜索 artifact：upload/delete 记录可见"
+   ],
+   "expected": "应用操作执行可从执行侧查看详情与日志，写操作进入审计",
+   "actual": "执行详情可打开但内容有限：任务显示「未知任务」、无应用名/操作类型（deploy 与 upgrade 无法区分）、stdout/stderr 为空、无日志；审计完整记录",
+   "result": "passed",
+   "evidence": [
+    ".e2e/evidence/agent-c/r2-p3-executions-list.png",
+    ".e2e/evidence/agent-c/r2-p3-execution-detail-app-upgrade.png",
+    ".e2e/evidence/agent-c/r2-p3-audit-list.png"
+   ],
+   "notes": "可用性缺口见 OBS-C-001/OBS-C-002"
+  },
+  {
+   "id": "workflow.dashboard.consistency",
+   "name": "仪表盘统计与列表 API 一致性、各「查看全部」落点",
+   "steps": [
+    "读取统计卡与卡片区数值",
+    "与 /api/nodes、/api/executions?limit=50、/api/applications 对比",
+    "点击「即将执行的调度」查看全部",
+    "核对 6 个查看全部 href"
+   ],
+   "expected": "统计与 API 一致；链接落点正确（即将执行的调度→/tasks?view=schedules）",
+   "actual": "节点 4/4 在线、应用 1/1 健康、最近50次 49 成功 1 失败 = 98% 成功率，全部与 API 一致；查看全部落点 /executions、/agents、/applications、/agents、/executions、/tasks?view=schedules 均正确，后者落在调度标签页",
+   "result": "passed",
+   "evidence": [
+    ".e2e/evidence/agent-c/r2-p1-dashboard.png",
+    ".e2e/evidence/agent-c/r2-p3-dashboard-after-app.png",
+    ".e2e/evidence/agent-c/r2-p3-dashboard-schedules-link.png"
+   ],
+   "notes": "应用执行在最近执行表显示为「未知任务」"
+  },
+  {
+   "id": "workflow.ui.basics",
+   "name": "UI 基础项：字体（无外网请求）/主题/语言切换与刷新保持；1366/1920/3840 无横向溢出",
+   "steps": [
+    "抓取 /artifacts 加载的全部网络请求，检查外部域名与字体来源",
+    "切换 深色 → 刷新；切换 浅色 恢复",
+    "切换 English → 刷新 → 切回中文",
+    "1366/1920/3840 宽度测量 document.scrollWidth 与应用详情页"
+   ],
+   "expected": "字体自托管无 fonts.googleapis/gstatic；主题/语言刷新保持；三档宽度无横向溢出",
+   "actual": "0 个外部请求，字体为同源 /fonts/maple-mono-nl-nf-cn-medium.woff2；主题保存于 cookie vite-ui-theme 刷新保持；语言 cadentra_lang 刷新保持；1366/1920/3840 均 scrollWidth==innerWidth 无横向溢出",
+   "result": "passed",
+   "evidence": [
+    ".e2e/evidence/agent-c/r2-p3-theme-dark.png",
+    ".e2e/evidence/agent-c/r2-p3-lang-en.png",
+    ".e2e/evidence/agent-c/r2-p3-resp-1366-artifacts.png",
+    ".e2e/evidence/agent-c/r2-p3-resp-1920-app.png",
+    ".e2e/evidence/agent-c/r2-p3-resp-3840-app.png",
+    ".e2e/evidence/agent-c/r2-p3-resp-3840-artifacts.png"
+   ],
+   "notes": "语言切换后 html lang 仍为 zh-CN（OBS-C-006）"
+  }
+ ],
+ "failures": [
+  {
+   "id": "FAIL-C-001",
+   "severity": "medium",
+   "title": "删除被引用制品的阻断提示为英文后端原文并暴露裸 UUID",
+   "steps": [
+    "/artifacts 找到被应用引用的制品（Usage 列显示应用链接）",
+    "行菜单→删除→确认"
+   ],
+   "expected": "中文可读提示，例如「制品正被应用 X 引用，无法删除」",
+   "actual": "toast: \"artifact 5b313720-2727-46fa-b0c2-e18727d9b979 is referenced by application 4c10b536-14ca-4b1f-bc6f-fa36da603d8b\"（英文 + 2 个裸 UUID）",
+   "evidence": [
+    ".e2e/evidence/agent-c/r2-p2-artifact-delete-referenced-blocked.png"
+   ],
+   "notes": "与既有 FAIL-M-003（节点删除）同类；制品删除场景首次取证"
+  }
+ ],
+ "observations": [
+  "OBS-C-001（low/UX）：应用详情的「执行历史」为纯文本列表，不可点击、不显示执行 ID，无法跳转到执行详情，只能到 /executions 按时间/节点辨认。",
+  "OBS-C-002（low/UX）：应用操作产生的执行在 /executions 列表与详情均显示「未知任务」，元数据无应用名与操作类型（deploy/stop/upgrade 无法区分），按应用名搜索执行无结果；审计中可见 deploy/assign/update 记录。",
+  "OBS-C-003（low/UX）：应用编辑器的发布包下拉对同 name+version 的重复制品显示完全相同标签（无文件名/SHA/上传时间），无法区分。",
+  "OBS-C-004（low/i18n）：中文界面下空表单提交由浏览器原生校验提示英文「Please fill out this field.」。",
+  "OBS-C-005（low/i18n）：中文界面上传制品未选文件时 toast 为英文「Please select a file.」。",
+  "OBS-C-006（low/a11y）：语言切换为 English 后 document.documentElement.lang 仍为 zh-CN。",
+  "OBS-C-007（low/UX）：应用操作下拉切换到 stop/start/restart/upgrade 后，执行按钮文案固定为「部署」，不随所选操作变化。",
+  "OBS-C-008（low）：应用操作执行详情 stdout/stderr 恒为 0 字符，操作结果信息缺失（与 OBS-C-002 相关）。",
+  "OBS-C-009（low/数据）：制品允许 0 字节文件与同名同版本重复上传（无唯一性约束），UI 无提示；是否符合产品预期待确认。",
+  "OBS-C-010（medium/数据，不可复现制作）：上一轮中断遗留的制品 e2e-c-20260922-k2p9-svc/1.0.0（id=7bb90e28，139B，01:24 上传）在列表中但下载 404（artifact not found）；DELETE 该记录返回 200（可清理）。应用删除后制品文件不受影响（本轮 5 个制品在应用删除后均可正常下载），Hub 未对 blob 缺失做校验/提示；疑似中断导致，无法复现，记为观察。"
+ ],
+ "test_data": [
+  {
+   "type": "artifact",
+   "name": "e2e-c-20260922-c8x1-svc/1.0.0 (v1.sh)",
+   "id": "39910b19-3150-4109-b603-787904e448d5",
+   "status": "deleted",
+   "cleanup": "UI 行菜单删除确认（DELETE 200，下载 SHA256 已校验）"
+  },
+  {
+   "type": "artifact",
+   "name": "e2e-c-20260922-c8x1-svc/1.0.0 (v2.sh 重复)",
+   "id": "17382bd0-7e64-4418-b601-ab32ed1df371",
+   "status": "deleted",
+   "cleanup": "UI 行菜单删除确认"
+  },
+  {
+   "type": "artifact",
+   "name": "e2e-c-20260922-c8x1-svc/2.0.0",
+   "id": "5b313720-2727-46fa-b0c2-e18727d9b979",
+   "status": "deleted",
+   "cleanup": "先被应用引用删除被阻止(409)，应用删除后 UI 删除成功"
+  },
+  {
+   "type": "artifact",
+   "name": "e2e-c-20260922-c8x1-empty/0.0.1",
+   "id": "70c68d18-82e8-4e28-b56e-53acc287c6e8",
+   "status": "deleted",
+   "cleanup": "UI 行菜单删除确认"
+  },
+  {
+   "type": "artifact",
+   "name": "e2e-c-20260922-c8x1-editorup/1.0.0",
+   "id": "2ecda6f2-…",
+   "status": "deleted",
+   "cleanup": "编辑器内上传制品，UI 行菜单删除确认"
+  },
+  {
+   "type": "application",
+   "name": "e2e-c-20260922-c8x1-svc",
+   "id": "4c10b536-14ca-4b1f-bc6f-fa36da603d8b",
+   "status": "deleted",
+   "cleanup": "UI 删除确认；SSH 核对两节点 unit/二进制/配置均已清理、进程 0、服务 inactive"
+  },
+  {
+   "type": "artifact",
+   "name": "e2e-c-20260922-k2p9-* (13 个，上一轮遗留)",
+   "status": "deleted",
+   "cleanup": "API DELETE 全部 200（含 404 孤立记录 7bb90e28）；/api/artifacts 剩余 0"
+  },
+  {
+   "type": "local_files",
+   "name": "/tmp/opencode/cdata/*（v1/v2/empty/probe）与 downloads/dl-v1.sh",
+   "status": "kept",
+   "cleanup": "位于 /tmp/opencode，非仓库文件；保留供复核"
+  }
+ ],
+ "gaps": [
+  "应用手动回滚：UI 无入口（部署操作仅 deploy/start/stop/restart/upgrade），无法测试手动回滚；健康检查失败自动回滚本轮未复测（历史轮次已覆盖）。",
+  "部署失败/节点离线场景未复测：4 台节点全部在线，本轮未构造节点离线部署；也未构造健康检查失败用例。",
+  "arm64 制品上传/下载未在本轮重复（历史 G-09 已覆盖）。",
+  "制品编辑器非法输入（Unit 名非法字符、健康检查数值边界如 0/负数/非数字）未逐一穷举。",
+  "删除确认对话框的「取消」路径未单独取证（取消按钮存在于制品/应用删除确认框）。",
+  "/artifacts 无详情页（行内无详情入口），无法验证单制品详情视图（产品边界）。"
+ ]
+}

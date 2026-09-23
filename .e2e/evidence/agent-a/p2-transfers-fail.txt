@@ -1,0 +1,53 @@
+======== T-B: 目标路径不可写 -> FAILED + 重试
+api: [3591776.7243] POST http://192.168.100.209:8080/api/transfers (Fetch) 200
+transfers:     59948747 FAILED src= ac400b3e /tmp/e2e-a-20260922-de6e-src.txt err= None
+        -> 06ad7af9 FAILED /proc/e2e-a-dst.txt 'open /proc/.cadentra-transfer-2355132632: no such file or directory'
+    05780576 SUCCESS src= ac400b3e /tmp/e2e-a-20260922-de6e-src.txt err= None
+        -> 06ad7af9 SUCCESS /tmp/e2e-a-20260922-de6e-dst.txt None
+        -> 476618d4 SUCCESS /tmp/e2e-a-20260922-de6e-dst.txt None
+    accafab7 SUCCESS src= ac400b3e /tmp/e2e-a-20260922-de6e-src.txt err= None
+        -> 06ad7af9 SUCCESS /tmp/e2e-a-20260922-de6e-dst.txt None
+--- 行内可见文案（失败原因是否展示）
+"ROW-NOT-FOUND"
+======== T-B2: 重试失败传输
+row=0
+menu: ""
+toast: null
+api: [3591776.7246] GET http://192.168.100.209:8080/api/transfers (Fetch) 200
+[3591776.7248] GET http://192.168.100.209:8080/api/transfers (Fetch) 200
+transfers:     59948747 FAILED src= ac400b3e /tmp/e2e-a-20260922-de6e-src.txt err= None
+        -> 06ad7af9 FAILED /proc/e2e-a-dst.txt 'open /proc/.cadentra-transfer-2355132632: no such file or directory'
+    05780576 SUCCESS src= ac400b3e /tmp/e2e-a-20260922-de6e-src.txt err= None
+        -> 06ad7af9 SUCCESS /tmp/e2e-a-20260922-de6e-dst.txt None
+        -> 476618d4 SUCCESS /tmp/e2e-a-20260922-de6e-dst.txt None
+    accafab7 SUCCESS src= ac400b3e /tmp/e2e-a-20260922-de6e-src.txt err= None
+        -> 06ad7af9 SUCCESS /tmp/e2e-a-20260922-de6e-dst.txt None
+======== T-B3: 源文件不存在（PENDING 缺口）
+transfers:     a033c1a6 FAILED src= ac400b3e /tmp/e2e-a-20260922-de6e-nonexistent.txt err= 'open /tmp/e2e-a-20260922-de6e-nonexistent.txt: no such file or direct
+        -> 06ad7af9 PENDING /tmp/e2e-a-20260922-de6e-never.txt None
+    59948747 FAILED src= ac400b3e /tmp/e2e-a-20260922-de6e-src.txt err= None
+        -> 06ad7af9 FAILED /proc/e2e-a-dst.txt 'open /proc/.cadentra-transfer-2355132632: no such file or directory'
+    05780576 SUCCESS src= ac400b3e /tmp/e2e-a-20260922-de6e-src.txt err= None
+        -> 06ad7af9 SUCCESS /tmp/e2e-a-20260922-de6e-dst.txt None
+        -> 476618d4 SUCCESS /tmp/e2e-a-20260922-de6e-dst.txt None
+row text: "nodesteer-agent-1\t | /tmp/e2e-a-20260922-de6e-nonexistent.txt | \t失败\t | nodesteer-agent-2 | 等待中 | \t刚刚\t"
+PENDING-target row index=1
+row menu items: "[\"重试\"]"
+--- 通过 API 取消该传输（验证 UI 缺失但后端支持）
+cancel a033c1a6-cb97-4a15-9332-45d5aea1a227 -> 
+after api cancel:     a033c1a6 FAILED /tmp/e2e-a-20260922-de6e-nonexistent.txt err= 'open /tmp/e2e-a-20260922-de6e-nonexistent.txt: no such file
+        -> 06ad7af9 PENDING /tmp/e2e-a-20260922-de6e-never.txt None
+    59948747 FAILED /tmp/e2e-a-20260922-de6e-src.txt err= None
+        -> 06ad7af9 FAILED /proc/e2e-a-dst.txt 'open /proc/.cadentra-transfer-2355132632: no such file or directory'
+row after cancel: "nodesteer-agent-1\t | /tmp/e2e-a-20260922-de6e-nonexistent.txt | \t失败\t | nodesteer-agent-2 | 等待中 | \t刚刚\t"
+======== 重试 /proc 失败传输（row index by 状态=失败 & 目标节点含 nodesteer-agent-2）
+failed row index=2
+menu items: "[\"重试\"]"
+toast: null
+api: [3591776.7429] POST http://192.168.100.209:8080/api/transfers/59948747-5565-47e3-9532-18f6a0edfd07/retry (Fetch) 200
+[3591776.7430] GET http://192.168.100.209:8080/api/transfers (Fetch) 200
+[3591776.7431] GET http://192.168.100.209:8080/api/transfers (Fetch) 200
+after retry:     a033c1a6 FAILED /tmp/e2e-a-20260922-de6e-nonexistent.txt err= 'open /tmp/e2e-a-20260922-de6e-nonexistent.txt: no such file
+        -> 06ad7af9 PENDING /tmp/e2e-a-20260922-de6e-never.txt None
+    59948747 FAILED /tmp/e2e-a-20260922-de6e-src.txt err= None
+        -> 06ad7af9 FAILED /proc/e2e-a-dst.txt 'open /proc/.cadentra-transfer-1134021718: no such file or directory'

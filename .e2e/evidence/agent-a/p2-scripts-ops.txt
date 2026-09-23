@@ -1,0 +1,21 @@
+======== 脚本列表：搜索/视图列
+rows: 3
+headers: "[\"名称\",\"解释器\",\"修订号\",\"超时\",\"SHA256\",\"更新时间\",\"状态\",\"\"]"
+columns: "[\"名称:true\",\"解释器:true\",\"修订号:true\",\"超时:true\",\"SHA256:true\",\"更新时间:true\",\"状态:true\"]"
+headers after toggle: "[\"名称\",\"解释器\",\"修订号\",\"超时\",\"更新时间\",\"状态\",\"\"]"
+rows after search: 2
+======== 禁用被任务引用的脚本 -> 运行任务应失败
+row=1
+menu: "[\"编辑\",\"禁用\",\"克隆\",\"删除\"]"
+toast: null
+script enabled? False rev= 
+run toast: null
+api: [3591776.8962] POST http://192.168.100.209:8080/api/tasks/23a81d5b-68e4-4b0a-b6c0-fc534c183b11/run (Fetch) 200
+[3591776.9015] GET http://192.168.100.209:8080/api/tasks (Fetch) 200
+======== 恢复启用脚本
+enabled now? [(True, 4)]
+======== 删除被引用的脚本（应阻断）
+dialog: "删除: e2e-a-20260922-de6e-sh\n确定删除这个脚本吗？引用它的任务将无法执行。\n取消\n删除"
+toast: "script 7c99d397-e2fd-4e62-aaef-224799d9b678 is referenced by task 23a81d5b-68e4-4b0a-b6c0-fc534c183b11"
+api: [3591776.9077] DELETE http://192.168.100.209:8080/api/scripts/7c99d397-e2fd-4e62-aaef-224799d9b678 (Fetch) 409
+still exists? True

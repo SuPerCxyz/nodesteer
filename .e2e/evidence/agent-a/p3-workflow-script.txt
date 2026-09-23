@@ -1,0 +1,13 @@
+======== step1: run task with script r1
+run url: http://192.168.100.209:8080/executions
+======== step2: edit script content -> r2
+before: "[\"e2e-a-20260922-de6e-sh\",\"E2E-A script\",\"30\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+content set: "#!/bin/bash\necho \"e2e-a-ok-v2 $(hostname)\""
+after save url: http://192.168.100.209:8080/scripts
+toast: null
+api: [3591776.5558] PUT http://192.168.100.209:8080/api/scripts/7c99d397-e2fd-4e62-aaef-224799d9b678 (Fetch) 200
+[3591776.5612] GET http://192.168.100.209:8080/api/scripts (Fetch) 200
+script state: rev= 2 sha= b8b3a2ce2fa7
+task state after script edit: task_rev= 1
+======== step3: run task again (expect r2 content)
+run url: http://192.168.100.209:8080/executions

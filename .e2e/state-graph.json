@@ -1,308 +1,399 @@
 {
-  "schema_version": 1,
-  "states": [
-    {
-      "id": "state.logged_out",
-      "description": "No valid auth token in browser"
-    },
-    {
-      "id": "state.authenticated",
-      "description": "Administrator session is accepted by Hub"
-    },
-    {
-      "id": "state.node_exists",
-      "resource": "node",
-      "description": "At least one node record exists"
-    },
-    {
-      "id": "state.node_online",
-      "resource": "node",
-      "description": "Node is online and reachable"
-    },
-    {
-      "id": "state.script_exists",
-      "resource": "script",
-      "description": "Test script exists with revision"
-    },
-    {
-      "id": "state.task_exists",
-      "resource": "task",
-      "description": "Task exists and references a script/target"
-    },
-    {
-      "id": "state.schedule_exists",
-      "resource": "schedule",
-      "description": "Schedule exists and references a task"
-    },
-    {
-      "id": "state.group_exists",
-      "resource": "group",
-      "description": "Group exists with membership"
-    },
-    {
-      "id": "state.artifact_exists",
-      "resource": "artifact",
-      "description": "Artifact exists with validated metadata"
-    },
-    {
-      "id": "state.application_exists",
-      "resource": "application",
-      "description": "Managed application exists"
-    },
-    {
-      "id": "state.execution_pending",
-      "resource": "execution",
-      "description": "Execution created but not terminal"
-    },
-    {
-      "id": "state.execution_terminal",
-      "resource": "execution",
-      "description": "Execution reached success/failure/cancelled"
-    },
-    {
-      "id": "state.transfer_exists",
-      "resource": "transfer",
-      "description": "File transfer exists"
-    },
-    {
-      "id": "state.loading",
-      "description": "Page or mutation is loading"
-    },
-    {
-      "id": "state.error",
-      "description": "Expected or unexpected error state visible"
-    },
-    {
-      "id": "state.filtered",
-      "description": "List is filtered/search constrained"
-    },
-    {
-      "id": "state.deleted",
-      "resource": "resource",
-      "description": "Previously created test resource no longer exists"
-    }
-  ],
-  "transitions": [
-    {
-      "id": "transition.auth.login",
-      "from": [
-        "state.logged_out"
-      ],
-      "action": "auth.login",
-      "to": [
-        "state.authenticated"
-      ],
-      "preconditions": [],
-      "expected_effects": [
-        "token_stored"
-      ],
-      "tested": true,
-      "last_result": {
-        "status": "passed"
-      }
-    },
-    {
-      "id": "transition.auth.logout",
-      "from": [
-        "state.authenticated"
-      ],
-      "action": "auth.logout",
-      "to": [
-        "state.logged_out"
-      ],
-      "preconditions": [],
-      "expected_effects": [
-        "token_cleared"
-      ],
-      "tested": true,
-      "last_result": {
-        "status": "passed"
-      }
-    },
-    {
-      "id": "transition.agent.enroll",
-      "from": [
-        "state.authenticated"
-      ],
-      "action": "agent.enroll",
-      "to": [
-        "state.node_exists"
-      ],
-      "preconditions": [],
-      "expected_effects": [
-        "pending_node"
-      ],
-      "tested": false,
-      "last_result": null
-    },
-    {
-      "id": "transition.script.create",
-      "from": [
-        "state.authenticated"
-      ],
-      "action": "script.create",
-      "to": [
-        "state.script_exists"
-      ],
-      "preconditions": [],
-      "expected_effects": [
-        "script_created"
-      ],
-      "tested": true,
-      "last_result": {
-        "status": "passed"
-      }
-    },
-    {
-      "id": "transition.task.create",
-      "from": [
-        "state.authenticated",
-        "state.script_exists"
-      ],
-      "action": "task.create",
-      "to": [
-        "state.task_exists"
-      ],
-      "preconditions": [],
-      "expected_effects": [
-        "task_created"
-      ],
-      "tested": true,
-      "last_result": {
-        "status": "passed"
-      }
-    },
-    {
-      "id": "transition.task.run",
-      "from": [
-        "state.authenticated",
-        "state.task_exists",
-        "state.node_online"
-      ],
-      "action": "task.run",
-      "to": [
-        "state.execution_pending",
-        "state.execution_terminal"
-      ],
-      "preconditions": [],
-      "expected_effects": [
-        "execution_created",
-        "agent_effect"
-      ],
-      "tested": true,
-      "last_result": {
-        "status": "passed"
-      }
-    },
-    {
-      "id": "transition.schedule.create",
-      "from": [
-        "state.authenticated",
-        "state.task_exists"
-      ],
-      "action": "schedule.create",
-      "to": [
-        "state.schedule_exists"
-      ],
-      "preconditions": [],
-      "expected_effects": [
-        "schedule_created"
-      ],
-      "tested": true,
-      "last_result": {
-        "status": "passed"
-      }
-    },
-    {
-      "id": "transition.group.create",
-      "from": [
-        "state.authenticated",
-        "state.node_exists"
-      ],
-      "action": "group.create",
-      "to": [
-        "state.group_exists"
-      ],
-      "preconditions": [],
-      "expected_effects": [
-        "group_created"
-      ],
-      "tested": true,
-      "last_result": {
-        "status": "passed"
-      }
-    },
-    {
-      "id": "transition.artifact.upload",
-      "from": [
-        "state.authenticated"
-      ],
-      "action": "artifact.upload",
-      "to": [
-        "state.artifact_exists"
-      ],
-      "preconditions": [],
-      "expected_effects": [
-        "artifact_validated"
-      ],
-      "tested": true,
-      "last_result": {
-        "status": "passed"
-      }
-    },
-    {
-      "id": "transition.application.create",
-      "from": [
-        "state.authenticated",
-        "state.artifact_exists"
-      ],
-      "action": "application.create",
-      "to": [
-        "state.application_exists"
-      ],
-      "preconditions": [],
-      "expected_effects": [
-        "application_created"
-      ],
-      "tested": false,
-      "last_result": null
-    },
-    {
-      "id": "transition.transfer.create",
-      "from": [
-        "state.authenticated",
-        "state.node_exists"
-      ],
-      "action": "transfer.create",
-      "to": [
-        "state.transfer_exists"
-      ],
-      "preconditions": [],
-      "expected_effects": [
-        "file_transferred"
-      ],
-      "tested": false,
-      "last_result": null
-    },
-    {
-      "id": "transition.resource.delete",
-      "from": [
-        "state.authenticated",
-        "state.script_exists"
-      ],
-      "action": "script.delete",
-      "to": [
-        "state.deleted"
-      ],
-      "preconditions": [],
-      "expected_effects": [
-        "tombstone",
-        "history_retained"
-      ],
-      "tested": true,
-      "last_result": {
-        "status": "partial"
-      }
-    }
-  ]
+ "schema_version": 1,
+ "generated_at": "2026-09-22T09:34:49+08:00",
+ "base_url": "http://192.168.100.209:8080",
+ "states": [
+  {
+   "id": "node.online",
+   "entity": "node",
+   "description": "在线，可执行任务/部署/传输"
+  },
+  {
+   "id": "node.maintenance",
+   "entity": "node",
+   "description": "维护中，UI 标记 maintenance；传输仍可交付"
+  },
+  {
+   "id": "node.disabled",
+   "entity": "node",
+   "description": "禁用；撤销凭证后进入此状态且拒绝旧凭据"
+  },
+  {
+   "id": "node.pending",
+   "entity": "node",
+   "description": "纳管生成的待接入节点，首次 HELLO 后绑定并转 online"
+  },
+  {
+   "id": "node.deleted",
+   "entity": "node",
+   "description": "删除节点记录；执行历史保留；需无活跃传输引用"
+  },
+  {
+   "id": "transfer.pending",
+   "entity": "transfer",
+   "description": "等待源上传"
+  },
+  {
+   "id": "transfer.uploading",
+   "entity": "transfer",
+   "description": "源 Agent 上传中"
+  },
+  {
+   "id": "transfer.delivering",
+   "entity": "transfer",
+   "description": "目标下载中；无超时看门狗"
+  },
+  {
+   "id": "transfer.success",
+   "entity": "transfer",
+   "description": "全部目标成功"
+  },
+  {
+   "id": "transfer.failed",
+   "entity": "transfer",
+   "description": "整体失败；目标可能停在 pending（缺陷路径）"
+  },
+  {
+   "id": "transfer.canceled",
+   "entity": "transfer",
+   "description": "取消；目标未成功的置为 canceled"
+  },
+  {
+   "id": "target.pending",
+   "entity": "transfer_target",
+   "description": "未派发；源失败时永久停留（FAIL-M-001）"
+  },
+  {
+   "id": "target.delivering",
+   "entity": "transfer_target",
+   "description": "已派发待回执；仅 FAILED 可重试"
+  },
+  {
+   "id": "target.success",
+   "entity": "transfer_target",
+   "description": "交付成功"
+  },
+  {
+   "id": "target.failed",
+   "entity": "transfer_target",
+   "description": "交付失败，可重试"
+  },
+  {
+   "id": "target.canceled",
+   "entity": "transfer_target",
+   "description": "取消"
+  },
+  {
+   "id": "app.defined",
+   "entity": "application",
+   "description": "应用定义（含发布包）已同步"
+  },
+  {
+   "id": "app.deploying",
+   "entity": "application",
+   "description": "部署/升级执行中"
+  },
+  {
+   "id": "app.healthy",
+   "entity": "application",
+   "description": "健康检查通过"
+  },
+  {
+   "id": "app.unhealthy",
+   "entity": "application",
+   "description": "健康检查失败或部署失败"
+  },
+  {
+   "id": "execution.pending",
+   "entity": "execution",
+   "description": "已创建待执行"
+  },
+  {
+   "id": "execution.running",
+   "entity": "execution",
+   "description": "运行中，可取消"
+  },
+  {
+   "id": "execution.success",
+   "entity": "execution",
+   "description": "成功"
+  },
+  {
+   "id": "execution.failed",
+   "entity": "execution",
+   "description": "失败"
+  },
+  {
+   "id": "execution.skipped",
+   "entity": "execution",
+   "description": "条件跳过；block_reason 未回写（FAIL-B-002）"
+  },
+  {
+   "id": "execution.canceled",
+   "entity": "execution",
+   "description": "取消且进程已终止"
+  }
+ ],
+ "transitions": [
+  {
+   "id": "transition.node.maintenance",
+   "from": "node.online",
+   "to": "node.maintenance",
+   "trigger": "节点行菜单-维护"
+  },
+  {
+   "id": "transition.node.online",
+   "from": "node.maintenance",
+   "to": "node.online",
+   "trigger": "节点行菜单-设为在线"
+  },
+  {
+   "id": "transition.node.disable",
+   "from": "node.online",
+   "to": "node.disabled",
+   "trigger": "节点行菜单-禁用"
+  },
+  {
+   "id": "transition.node.revoke",
+   "from": "node.online",
+   "to": "node.disabled",
+   "trigger": "节点行菜单-撤销凭证（原生 confirm）"
+  },
+  {
+   "id": "transition.node.reenroll",
+   "from": "node.disabled",
+   "to": "node.pending",
+   "trigger": "添加节点生成命令并在节点执行（需清理本地 state.db）"
+  },
+  {
+   "id": "transition.node.bind",
+   "from": "node.pending",
+   "to": "node.online",
+   "trigger": "Agent 首次 HELLO 绑定"
+  },
+  {
+   "id": "transition.node.delete",
+   "from": "node.disabled",
+   "to": "node.deleted",
+   "trigger": "节点行菜单-删除（需无活跃传输）"
+  },
+  {
+   "id": "transition.transfer.upload",
+   "from": "transfer.pending",
+   "to": "transfer.uploading",
+   "trigger": "源 Agent 收到上传请求"
+  },
+  {
+   "id": "transition.transfer.deliver",
+   "from": "transfer.uploading",
+   "to": "transfer.delivering",
+   "trigger": "上传完成并派发目标"
+  },
+  {
+   "id": "transition.transfer.success",
+   "from": "transfer.delivering",
+   "to": "transfer.success",
+   "trigger": "全部目标成功"
+  },
+  {
+   "id": "transition.transfer.fail",
+   "from": "transfer.uploading",
+   "to": "transfer.failed",
+   "trigger": "源上传失败（目标保持 pending）"
+  },
+  {
+   "id": "transition.transfer.cancel",
+   "from": "transfer.failed",
+   "to": "transfer.canceled",
+   "trigger": "API cancel（UI 仅重试）"
+  },
+  {
+   "id": "transition.app.deploy",
+   "from": "app.defined",
+   "to": "app.deploying",
+   "trigger": "部署/升级"
+  },
+  {
+   "id": "transition.app.healthy",
+   "from": "app.deploying",
+   "to": "app.healthy",
+   "trigger": "systemd 健康检查通过"
+  },
+  {
+   "id": "transition.app.fail",
+   "from": "app.deploying",
+   "to": "app.unhealthy",
+   "trigger": "部署或健康检查失败（自动回滚）"
+  },
+  {
+   "id": "transition.execution.run",
+   "from": "execution.pending",
+   "to": "execution.running",
+   "trigger": "Manual Run / Schedule"
+  },
+  {
+   "id": "transition.execution.success",
+   "from": "execution.running",
+   "to": "execution.success",
+   "trigger": "进程退出码 0"
+  },
+  {
+   "id": "transition.execution.fail",
+   "from": "execution.running",
+   "to": "execution.failed",
+   "trigger": "非零退出/超时"
+  },
+  {
+   "id": "transition.execution.skip",
+   "from": "execution.pending",
+   "to": "execution.skipped",
+   "trigger": "条件不满足"
+  },
+  {
+   "id": "transition.execution.cancel",
+   "from": "execution.running",
+   "to": "execution.canceled",
+   "trigger": "执行页取消"
+  },
+  {
+   "id": "transition.workflow.script.task.run",
+   "from": null,
+   "to": null,
+   "trigger": "workflow.script.task.run",
+   "workflow_id": "workflow.script.task.run"
+  },
+  {
+   "id": "transition.workflow.schedule.crud.trigger",
+   "from": null,
+   "to": null,
+   "trigger": "workflow.schedule.crud.trigger",
+   "workflow_id": "workflow.schedule.crud.trigger"
+  },
+  {
+   "id": "transition.workflow.task.multi.node",
+   "from": null,
+   "to": null,
+   "trigger": "workflow.task.multi_node",
+   "workflow_id": "workflow.task.multi_node"
+  },
+  {
+   "id": "transition.workflow.transfer.multi.target.sha256",
+   "from": null,
+   "to": null,
+   "trigger": "workflow.transfer.multi_target.sha256",
+   "workflow_id": "workflow.transfer.multi_target.sha256"
+  },
+  {
+   "id": "transition.workflow.transfer.failure.retry.cancel",
+   "from": null,
+   "to": null,
+   "trigger": "workflow.transfer.failure_retry_cancel",
+   "workflow_id": "workflow.transfer.failure_retry_cancel"
+  },
+  {
+   "id": "transition.workflow.execution.cancel.timeout.retry.audit",
+   "from": null,
+   "to": null,
+   "trigger": "workflow.execution.cancel_timeout_retry.audit",
+   "workflow_id": "workflow.execution.cancel_timeout_retry.audit"
+  },
+  {
+   "id": "transition.workflow.task.param.override",
+   "from": null,
+   "to": null,
+   "trigger": "workflow.task_param_override",
+   "workflow_id": "workflow.task_param_override"
+  },
+  {
+   "id": "transition.workflow.entity.reference.guards",
+   "from": null,
+   "to": null,
+   "trigger": "workflow.entity_reference_guards",
+   "workflow_id": "workflow.entity_reference_guards"
+  },
+  {
+   "id": "transition.workflow.task.delete.history",
+   "from": null,
+   "to": null,
+   "trigger": "workflow.task_delete_history",
+   "workflow_id": "workflow.task_delete_history"
+  },
+  {
+   "id": "transition.workflow.label.group.task",
+   "from": null,
+   "to": null,
+   "trigger": "workflow.label.group.task",
+   "workflow_id": "workflow.label.group.task"
+  },
+  {
+   "id": "transition.workflow.enrollment",
+   "from": null,
+   "to": null,
+   "trigger": "workflow.enrollment",
+   "workflow_id": "workflow.enrollment"
+  },
+  {
+   "id": "transition.workflow.node.status",
+   "from": null,
+   "to": null,
+   "trigger": "workflow.node.status",
+   "workflow_id": "workflow.node.status"
+  },
+  {
+   "id": "transition.workflow.rbac.matrix",
+   "from": null,
+   "to": null,
+   "trigger": "workflow.rbac.matrix",
+   "workflow_id": "workflow.rbac.matrix"
+  },
+  {
+   "id": "transition.workflow.user.lifecycle",
+   "from": null,
+   "to": null,
+   "trigger": "workflow.user.lifecycle",
+   "workflow_id": "workflow.user.lifecycle"
+  },
+  {
+   "id": "transition.workflow.settings.roundtrip",
+   "from": null,
+   "to": null,
+   "trigger": "workflow.settings.roundtrip",
+   "workflow_id": "workflow.settings.roundtrip"
+  },
+  {
+   "id": "transition.workflow.artifact.lifecycle",
+   "from": null,
+   "to": null,
+   "trigger": "制品上传→SHA256/大小校验→下载校验→Usage 引用→删除被引用制品",
+   "workflow_id": "workflow.artifact.lifecycle"
+  },
+  {
+   "id": "transition.workflow.artifact.app.deploy",
+   "from": null,
+   "to": null,
+   "trigger": "制品→创建应用→分配节点→Deploy→健康→Start/Stop/Restart→Upgrade→删除清理",
+   "workflow_id": "workflow.artifact.app.deploy"
+  },
+  {
+   "id": "transition.workflow.app.execution.audit",
+   "from": null,
+   "to": null,
+   "trigger": "应用操作产生的执行→执行详情/日志→审计",
+   "workflow_id": "workflow.app.execution.audit"
+  },
+  {
+   "id": "transition.workflow.dashboard.consistency",
+   "from": null,
+   "to": null,
+   "trigger": "仪表盘统计与列表 API 一致性、各「查看全部」落点",
+   "workflow_id": "workflow.dashboard.consistency"
+  },
+  {
+   "id": "transition.workflow.ui.basics",
+   "from": null,
+   "to": null,
+   "trigger": "UI 基础项：字体（无外网请求）/主题/语言切换与刷新保持；1366/1920/3840 无横向溢出",
+   "workflow_id": "workflow.ui.basics"
+  }
+ ]
 }

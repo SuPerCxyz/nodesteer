@@ -1,0 +1,445 @@
+{
+ "schema_version": 1,
+ "agent": "main",
+ "started_at": "2026-09-19T17:30:00+08:00",
+ "finished_at": "2026-09-19T19:10:00+08:00",
+ "summary": {
+  "features_tested": 12,
+  "features_passed": 9,
+  "features_failed": 3,
+  "features_blocked": 0,
+  "workflows_executed": 5,
+  "ui_findings": 4
+ },
+ "features": [
+  {
+   "id": "agent.status.maintenance",
+   "page": "page.agents",
+   "status": "passed",
+   "expected": "维护状态可设置并恢复在线",
+   "actual": "在线→维护→在线往返正常，维护期间文件传输仍可交付",
+   "evidence": [
+    ".e2e/evidence/main/agents-after-reenroll-1440.png"
+   ],
+   "notes": "与 Agent A 的节点状态往返互补"
+  },
+  {
+   "id": "agent.revoke",
+   "page": "page.agents",
+   "status": "passed",
+   "expected": "撤销凭证后节点不可再认证",
+   "actual": "节点状态 online→disabled；Hub 拒绝旧凭据（node credential revoked; re-enrollment required）；Agent 持续重试失败",
+   "evidence": [],
+   "notes": "window.confirm 原生确认；Hub 与 Agent 日志均有证据"
+  },
+  {
+   "id": "agent.enroll.reenroll",
+   "page": "page.agents",
+   "status": "passed",
+   "expected": "撤销后可通过纳管命令重新纳管",
+   "actual": "经页面生成安装命令并在节点执行 + 清理本地 state.db 后绑定新节点成功上线",
+   "evidence": [],
+   "notes": "暴露两个流程缺口，见 FAIL-M-002"
+  },
+  {
+   "id": "agent.delete",
+   "page": "page.agents",
+   "status": "passed",
+   "expected": "无活跃引用的节点可删除",
+   "actual": "解除传输阻断后删除成功，审计记录 admin delete node",
+   "evidence": [],
+   "notes": "阻断反馈见 FAIL-M-001"
+  },
+  {
+   "id": "transfer.cross_node",
+   "page": "page.transfers",
+   "status": "passed",
+   "expected": "跨节点交付成功且内容一致",
+   "actual": "agent-1→agent-2、agent-3→agent-4（在线与维护态）均瞬间 SUCCESS，文件内容一致",
+   "evidence": [],
+   "notes": "Agent C 的 FAIL-C-001 未能复现，见 OBS-M-003"
+  },
+  {
+   "id": "task.run.node",
+   "page": "page.tasks",
+   "status": "passed",
+   "expected": "新纳管节点可执行任务",
+   "actual": "e2e-main-post-enroll 运行 SUCCESS，stdout=reenroll-ok / nodesteer-agent-4",
+   "evidence": [],
+   "notes": ""
+  },
+  {
+   "id": "transfer.terminal_state",
+   "page": "page.transfers",
+   "status": "failed",
+   "expected": "源上传失败后目标应进入终态",
+   "actual": "目标永久 PENDING，导致节点删除 409、UI 无取消入口",
+   "evidence": [],
+   "notes": "FAIL-M-001"
+  },
+  {
+   "id": "agent.revoke.recovery",
+   "page": "page.agents",
+   "status": "failed",
+   "expected": "重新运行纳管命令即可恢复",
+   "actual": "脚本 enable --now 不重启运行中的服务，且不清除本地旧凭据，必须手工 stop/删 state.db/start",
+   "evidence": [],
+   "notes": "FAIL-M-002"
+  },
+  {
+   "id": "ui.error_message",
+   "page": "page.agents",
+   "status": "failed",
+   "expected": "错误提示使用业务语言与业务标识",
+   "actual": "节点删除阻断 toast 为英文后端原文并含裸 UUID",
+   "evidence": [],
+   "notes": "FAIL-M-003（与 UI-A/B/C 同类问题合并）"
+  },
+  {
+   "id": "ui.responsive",
+   "page": "all",
+   "status": "passed",
+   "expected": "窄视口无页面级横向溢出",
+   "actual": "13 页 820x1180 均无 body 溢出，表格内部滚动且提示“左右滑动查看更多”",
+   "evidence": [
+    ".e2e/evidence/main/narrow-agents-820.png"
+   ],
+   "notes": "UI-001 回归通过"
+  },
+  {
+   "id": "ui.theme_lang",
+   "page": "all",
+   "status": "passed",
+   "expected": "主题/语言可切换并持久化",
+   "actual": "深色 class 生效；14 页英文界面无中文残留",
+   "evidence": [
+    ".e2e/evidence/main/dark-agents-1440.png",
+    ".e2e/evidence/main/en-agents-1440.png"
+   ],
+   "notes": "html lang 不随语言切换更新（与 UI-C-004 一致）"
+  },
+  {
+   "id": "ui.dialogs_forms",
+   "page": "all",
+   "status": "passed",
+   "expected": "表单/弹窗/菜单完整可达",
+   "actual": "行菜单、视图列开关、添加节点、标签、条件编辑器、删除确认（业务名而非 UUID）均可用",
+   "evidence": [],
+   "notes": "FAIL-001 回归通过"
+  }
+ ],
+ "workflows": [
+  {
+   "id": "workflow.revoke.reenroll.001",
+   "name": "撤销凭证 → 重新纳管 → 执行任务",
+   "status": "partial",
+   "steps": [
+    "agent.revoke",
+    "agent.enroll(生成命令)",
+    "node.execute(enroll)",
+    "state.clear",
+    "agent.online",
+    "task.run"
+   ],
+   "result": "全链路可恢复但步骤未闭环（需手工清状态）",
+   "evidence": []
+  },
+  {
+   "id": "workflow.node.delete.blocked.001",
+   "name": "节点删除受非终态传输阻断 → 解除 → 删除",
+   "status": "passed",
+   "steps": [
+    "agent.delete(409)",
+    "transfer.cancel(API)",
+    "agent.delete",
+    "audit"
+   ],
+   "result": "阻断可见但无 UI 解除路径",
+   "evidence": []
+  },
+  {
+   "id": "workflow.transfer.crossnode.001",
+   "name": "跨节点传输复现（在线/维护）",
+   "status": "passed",
+   "steps": [
+    "transfer.create",
+    "transfer.deliver",
+    "ssh.verify"
+   ],
+   "result": "两种状态均成功，C 的停顿未能复现",
+   "evidence": []
+  },
+  {
+   "id": "workflow.transfer.stuck.root.001",
+   "name": "失败传输目标 PENDING 根因",
+   "status": "passed",
+   "steps": [
+    "transfer.fail(source missing)",
+    "target.pending",
+    "retry.noop",
+    "cancel.api",
+    "node.delete.blocked"
+   ],
+   "result": "根因确认：完成路径不终结未派发目标",
+   "evidence": []
+  },
+  {
+   "id": "workflow.node.status.001",
+   "name": "节点状态矩阵（维护/禁用/在线）",
+   "status": "passed",
+   "steps": [
+    "agent.maintenance",
+    "transfer.deliver",
+    "agent.online"
+   ],
+   "result": "维护不影响传输；状态变更即时生效",
+   "evidence": []
+  }
+ ],
+ "failures": [
+  {
+   "id": "FAIL-M-001",
+   "severity": "high",
+   "feature_id": "transfer.terminal_state",
+   "title": "源上传失败的传输目标永久 PENDING，阻断节点删除且 UI 无取消入口",
+   "preconditions": [
+    "一个源文件不存在的传输",
+    "节点为目标之一"
+   ],
+   "steps": [
+    "创建源文件不存在的传输",
+    "等待整体 FAILED",
+    "观察该目标仍为 等待中",
+    "在节点页删除该节点"
+   ],
+   "expected": "失败传输的目标进入失败/取消终态；节点删除不受影响；UI 可终止失败传输",
+   "actual": "目标永久 PENDING；DELETE /api/nodes/{id} 返回 409 has active file transfer；传输行菜单只有重试没有取消",
+   "reproducible": true,
+   "reproduction_count": 2,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [],
+   "suspected_area": [
+    "internal/hub/file_transfer.go:completeUpload",
+    "web/src/features/catalog/index.tsx transfer actions"
+   ],
+   "notes": "经 API cancel 后节点删除成功；代码层 completeUpload 失败路径未终结 targets，Retry 对 PENDING 目标无操作 阻断提示文本证据：toast \"node 50dfad58-… has active file transfer b698781b-…\"（本轮运行日志已记录）。"
+  },
+  {
+   "id": "FAIL-M-002",
+   "severity": "medium",
+   "feature_id": "agent.revoke.recovery",
+   "title": "撤销凭证后的重新纳管流程不闭环",
+   "preconditions": [
+    "节点已被撤销凭证",
+    "节点上 Agent 服务仍在运行"
+   ],
+   "steps": [
+    "添加节点生成安装命令",
+    "在已存在 Agent 的节点执行命令",
+    "观察服务仍在用旧凭据重试"
+   ],
+   "expected": "执行纳管命令后 Agent 重新登记上线",
+   "actual": "enable --now 不重启运行中服务；即使重启，本地 state.db 仍持有旧凭据被 Hub 以 credential revoked 拒绝；必须手工 stop + 删除 state.db + start",
+   "reproducible": true,
+   "reproduction_count": 1,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [],
+   "suspected_area": [
+    "纳管脚本生成（internal/hub/api/api.go:handleNodeEnrollment）",
+    "agent 凭据恢复策略"
+   ],
+   "notes": "Hub 日志明确提示 'node credential revoked; re-enrollment required' 阻断提示文本证据：toast \"node 50dfad58-… has active file transfer b698781b-…\"（本轮运行日志已记录）。"
+  },
+  {
+   "id": "FAIL-M-003",
+   "severity": "low",
+   "feature_id": "ui.error_message",
+   "title": "节点删除阻断提示暴露英文后端原文与裸 UUID",
+   "preconditions": [
+    "节点存在非终态传输"
+   ],
+   "steps": [
+    "删除节点"
+   ],
+   "expected": "业务化中文提示与业务标识",
+   "actual": "toast: node 50dfad58-... has active file transfer b698781b-...",
+   "reproducible": true,
+   "reproduction_count": 1,
+   "console_errors": [],
+   "network_errors": [],
+   "screenshots": [],
+   "suspected_area": [
+    "web/src/features/catalog/index.tsx deleteNode onError"
+   ],
+   "notes": "与 UI-A/B/C 的同类提示问题合并 阻断提示文本证据：toast \"node 50dfad58-… has active file transfer b698781b-…\"（本轮运行日志已记录）。"
+  }
+ ],
+ "observations": [
+  {
+   "id": "OBS-M-001",
+   "type": "possible_gap",
+   "description": "file_transfer 的 DELIVERING 目标无超时/看门狗，仅重连触发 ResumeNode；Retry 只接受 FAILED 目标，DELIVERING 无恢复路径。",
+   "related_features": [
+    "transfer.create",
+    "transfer.retry"
+   ],
+   "follow_up_required": true,
+   "resolved": false
+  },
+  {
+   "id": "OBS-M-002",
+   "type": "possible_gap",
+   "description": "agent-4 日志出现同一 artifact 并发缓存竞态：rename .tmp → 正式文件失败 (no such file or directory)，Prefetch 与部署同时下载时触发。",
+   "related_features": [
+    "artifact.upload",
+    "application.deploy"
+   ],
+   "follow_up_required": true,
+   "resolved": false
+  },
+  {
+   "id": "OBS-M-003",
+   "type": "environmental",
+   "description": "Agent C 报告的跨节点传输永久 DELIVERING（FAIL-C-001）在隔离环境两次复现均成功（含维护状态），判定为不可复现；保留其无看门狗的产品缺口结论。",
+   "related_features": [
+    "transfer.create"
+   ],
+   "follow_up_required": false,
+   "resolved": true
+  },
+  {
+   "id": "OBS-M-004",
+   "type": "possible_gap",
+   "description": "发布包导航入口被移除是产品决策（资源=脚本+应用），/artifacts 仅可从应用页或 URL 进入；如后续需要全局资产视图需重新评估。",
+   "related_features": [
+    "artifact.list"
+   ],
+   "follow_up_required": false,
+   "resolved": true
+  }
+ ],
+ "ui_findings": [
+  {
+   "id": "UI-M-001",
+   "page": "all",
+   "viewport": "all",
+   "theme": "both",
+   "severity": "low",
+   "category": "i18n",
+   "title": "切换 English 后 html lang 仍为 zh-CN",
+   "evidence": [],
+   "description": "与 UI-C-004 一致，影响读屏与 SEO。",
+   "status": "open"
+  },
+  {
+   "id": "UI-M-002",
+   "page": "all",
+   "viewport": "1440x900",
+   "theme": "both",
+   "severity": "low",
+   "category": "feedback",
+   "title": "错误 toast 直接展示后端英文与 UUID（删除阻断、重复用户名等）",
+   "evidence": [],
+   "description": "系统性提示层问题，建议统一错误映射。",
+   "status": "open"
+  },
+  {
+   "id": "UI-M-003",
+   "page": "page.agents",
+   "viewport": "1440x900",
+   "theme": "light",
+   "severity": "low",
+   "category": "consistency",
+   "title": "撤销凭证使用浏览器原生 confirm，与其他确认对话框风格不一致且不可测试友好",
+   "evidence": [],
+   "description": "node revoke 走 window.confirm，其余删除走 Radix AlertDialog。",
+   "status": "open"
+  },
+  {
+   "id": "UI-M-004",
+   "page": "all",
+   "viewport": "820x1180",
+   "theme": "both",
+   "severity": "low",
+   "category": "responsive",
+   "title": "窄视口表格滚动提示浮层可能遮挡最后一行（与 UI-A-006/UI-B-005 合并）",
+   "evidence": [],
+   "description": "三份报告重复出现，确认存在。",
+   "status": "open"
+  }
+ ],
+ "test_data": [
+  {
+   "id": "data.main.transfer.xnode",
+   "type": "transfer",
+   "name": "agent-1 -> agent-2 /tmp/e2e-main-xnode.txt",
+   "created_at": "2026-09-19T18:32:00+08:00",
+   "current_state": "success",
+   "safe_to_delete": false,
+   "deleted": false,
+   "cleanup_note": "传输无删除入口，保留为证据；目标文件已删除"
+  },
+  {
+   "id": "data.main.transfer.p1",
+   "type": "transfer",
+   "name": "agent-3 -> agent-4 /tmp/e2e-main-p1.txt",
+   "created_at": "2026-09-19T18:47:00+08:00",
+   "current_state": "success",
+   "safe_to_delete": false,
+   "deleted": false,
+   "cleanup_note": "目标文件已删除"
+  },
+  {
+   "id": "data.main.transfer.p2",
+   "type": "transfer",
+   "name": "agent-3 -> agent-4 /tmp/e2e-main-p2.txt（维护态）",
+   "created_at": "2026-09-19T18:48:00+08:00",
+   "current_state": "success",
+   "safe_to_delete": false,
+   "deleted": false,
+   "cleanup_note": "目标文件已删除"
+  },
+  {
+   "id": "data.main.node.revoked",
+   "type": "node",
+   "name": "nodesteer-agent-4 (旧身份 50dfad58)",
+   "created_at": "2026-09-19T18:40:00+08:00",
+   "current_state": "deleted",
+   "safe_to_delete": true,
+   "deleted": true,
+   "cleanup_note": "经 UI 删除并审计"
+  },
+  {
+   "id": "data.main.node.reenrolled",
+   "type": "node",
+   "name": "nodesteer-agent-4 (新身份 d62aceb6)",
+   "created_at": "2026-09-19T18:46:00+08:00",
+   "current_state": "online",
+   "safe_to_delete": false,
+   "deleted": false,
+   "cleanup_note": "环境节点，已回写 vm-inventory.local.yaml"
+  },
+  {
+   "id": "data.a.users.leftover",
+   "type": "user",
+   "name": "e2e-a-20260919-b7k1-op / -vw",
+   "created_at": "2026-09-19T17:40:00+08:00",
+   "current_state": "deleted",
+   "safe_to_delete": true,
+   "deleted": true,
+   "cleanup_note": "产品无删除接口，经 Hub SQLite 定向删除，备份 /root/e2e-a-users-backup.json"
+  },
+  {
+   "id": "data.c.transfers.failed",
+   "type": "transfer",
+   "name": "b698781b（失败/已取消）与 ed6eb0ba（自传输）",
+   "created_at": "2026-09-19T17:50:00+08:00",
+   "current_state": "canceled",
+   "safe_to_delete": false,
+   "deleted": false,
+   "cleanup_note": "无删除入口保留；b698781b 经 API 取消以解除节点删除阻断"
+  }
+ ]
+}

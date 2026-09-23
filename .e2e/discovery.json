@@ -1,66 +1,598 @@
 {
-  "schema_version": 1,
-  "pages": [
-    {"id":"page.sign_in","name":"Sign in","route":"/sign-in","discovered_by":["source","runtime"],"requires_auth":false,"reachable":true,"features":["auth.login","auth.invalid_login","auth.language_switch"]},
-    {"id":"page.dashboard","name":"Dashboard","route":"/","discovered_by":["source","runtime"],"requires_auth":true,"reachable":true,"features":["dashboard.summary","dashboard.recent_executions","dashboard.navigation_links"]},
-    {"id":"page.tasks","name":"Tasks","route":"/tasks","discovered_by":["source","runtime"],"requires_auth":true,"reachable":true,"features":["task.list","task.search","task.filter","task.create","task.edit","task.enable","task.delete","task.run"]},
-    {"id":"page.executions","name":"Executions","route":"/executions","discovered_by":["source","runtime"],"requires_auth":true,"reachable":true,"features":["execution.list","execution.filter","execution.detail","execution.logs","execution.cancel"]},
-    {"id":"page.agents","name":"Agents","route":"/agents","aliases":["/nodes"],"discovered_by":["source","runtime"],"requires_auth":true,"reachable":true,"features":["agent.list","agent.search","agent.filter","agent.enroll","agent.detail","agent.status","agent.revoke"]},
-    {"id":"page.transfers","name":"File transfers","route":"/transfers","discovered_by":["source","runtime"],"requires_auth":true,"reachable":true,"features":["transfer.create","transfer.retry","transfer.cancel","transfer.detail"]},
-    {"id":"page.schedules","name":"Schedules","route":"/schedules","discovered_by":["source","runtime"],"requires_auth":true,"reachable":true,"features":["schedule.list","schedule.create","schedule.edit","schedule.enable","schedule.delete"]},
-    {"id":"page.scripts","name":"Scripts","route":"/scripts","discovered_by":["source","runtime"],"requires_auth":true,"reachable":true,"features":["script.list","script.search","script.create","script.edit","script.enable","script.delete","script.revisions"]},
-    {"id":"page.groups","name":"Groups","route":"/groups","discovered_by":["source","runtime"],"requires_auth":true,"reachable":true,"features":["group.list","group.create","group.edit","group.delete","group.members"]},
-    {"id":"page.artifacts","name":"Artifacts","route":"/artifacts","discovered_by":["source","runtime"],"requires_auth":true,"reachable":true,"features":["artifact.list","artifact.upload","artifact.download","artifact.delete"]},
-    {"id":"page.applications","name":"Managed applications","route":"/applications","discovered_by":["source","runtime"],"requires_auth":true,"reachable":true,"features":["application.list","application.create","application.edit","application.assign","application.deploy","application.delete"]},
-    {"id":"page.audit","name":"Audit","route":"/audit","discovered_by":["source","runtime"],"requires_auth":true,"reachable":true,"features":["audit.list","audit.filter"]},
-    {"id":"page.users","name":"Users","route":"/users","discovered_by":["source","runtime"],"requires_auth":true,"reachable":true,"features":["user.list","user.create","user.change_role"]},
-    {"id":"page.settings","name":"Settings","route":"/settings","discovered_by":["source","runtime"],"requires_auth":true,"reachable":true,"features":["settings.runtime","settings.appearance","settings.save"]}
-  ],
-  "routes": [
-    {"route":"/sign-in","source":"web/src/routes/(auth)/sign-in.tsx","auth":"public"},
-    {"route":"/","source":"web/src/routes/_authenticated/index.tsx","auth":"required"},
-    {"route":"/agents","source":"web/src/routes/_authenticated/agents/index.tsx","auth":"required"},
-    {"route":"/agents/:agentId","source":"web/src/routes/_authenticated/agents/$agentId.tsx","auth":"required"},
-    {"route":"/nodes","source":"web/src/routes/_authenticated/nodes/index.tsx","auth":"required","alias_of":"/agents"},
-    {"route":"/nodes/:nodeId","source":"web/src/routes/_authenticated/nodes/$nodeId.tsx","auth":"required"},
-    {"route":"/tasks","source":"web/src/routes/_authenticated/tasks/index.tsx","auth":"required"},
-    {"route":"/tasks/new","source":"web/src/routes/_authenticated/tasks/new.tsx","auth":"required"},
-    {"route":"/tasks/:taskId","source":"web/src/routes/_authenticated/tasks/$taskId.tsx","auth":"required"},
-    {"route":"/tasks/:taskId/edit","source":"web/src/routes/_authenticated/tasks/$taskId/edit.tsx","auth":"required"},
-    {"route":"/tasks/:taskId/run","source":"web/src/routes/_authenticated/tasks/$taskId/run.tsx","auth":"required"},
-    {"route":"/scripts","source":"web/src/routes/_authenticated/scripts/index.tsx","auth":"required"},
-    {"route":"/scripts/new","source":"web/src/routes/_authenticated/scripts/new.tsx","auth":"required"},
-    {"route":"/scripts/:scriptId","source":"web/src/routes/_authenticated/scripts/$scriptId.tsx","auth":"required"},
-    {"route":"/schedules","source":"web/src/routes/_authenticated/schedules/index.tsx","auth":"required"},
-    {"route":"/schedules/new","source":"web/src/routes/_authenticated/schedules/new.tsx","auth":"required"},
-    {"route":"/schedules/:scheduleId","source":"web/src/routes/_authenticated/schedules/$scheduleId.tsx","auth":"required"},
-    {"route":"/groups","source":"web/src/routes/_authenticated/groups/index.tsx","auth":"required"},
-    {"route":"/groups/new","source":"web/src/routes/_authenticated/groups/new.tsx","auth":"required"},
-    {"route":"/groups/:groupId","source":"web/src/routes/_authenticated/groups/$groupId.tsx","auth":"required"},
-    {"route":"/applications","source":"web/src/routes/_authenticated/applications/index.tsx","auth":"required"},
-    {"route":"/applications/new","source":"web/src/routes/_authenticated/applications/new.tsx","auth":"required"},
-    {"route":"/applications/:applicationId","source":"web/src/routes/_authenticated/applications/$applicationId.tsx","auth":"required"},
-    {"route":"/artifacts","source":"web/src/routes/_authenticated/artifacts/index.tsx","auth":"required"},
-    {"route":"/artifacts/new","source":"web/src/routes/_authenticated/artifacts/new.tsx","auth":"required"},
-    {"route":"/executions","source":"web/src/routes/_authenticated/executions/index.tsx","auth":"required"},
-    {"route":"/executions/:executionId","source":"web/src/routes/_authenticated/executions/$executionId.tsx","auth":"required"},
-    {"route":"/transfers","source":"web/src/routes/_authenticated/transfers/index.tsx","auth":"required"},
-    {"route":"/audit","source":"web/src/routes/_authenticated/audit/index.tsx","auth":"required"},
-    {"route":"/users","source":"web/src/routes/_authenticated/users/index.tsx","auth":"required"},
-    {"route":"/settings","source":"web/src/routes/_authenticated/settings/index.tsx","auth":"required"}
-  ],
-  "menus": [
-    {"section":"overview","items":[{"label":"仪表盘","route":"/"}]},
-    {"section":"operations","items":[{"label":"任务","route":"/tasks"},{"label":"执行","route":"/executions"},{"label":"节点","route":"/agents"},{"label":"文件传输","route":"/transfers"},{"label":"调度","route":"/schedules"}]},
-    {"section":"resources","items":[{"label":"脚本","route":"/scripts"},{"label":"分组","route":"/groups"}]},
-    {"section":"delivery","items":[{"label":"发布包","route":"/artifacts"},{"label":"托管应用","route":"/applications"}]},
-    {"section":"system","items":[{"label":"审计","route":"/audit"},{"label":"用户","route":"/users"},{"label":"设置","route":"/settings"}]}
-  ],
-  "resources":["node","group","script","task","schedule","artifact","application","execution","transfer","audit_log","user","settings"],
-  "api_endpoints":["/api/login","/api/me","/api/oidc/state","/api/nodes","/api/groups","/api/scripts","/api/tasks","/api/schedules","/api/artifacts","/api/applications","/api/executions","/api/transfers","/api/audit","/api/users","/api/settings","/healthz","/readyz","/metrics"],
-  "permissions":["administrator","operator","viewer"],
-  "feature_flags":["oidc"],
-  "unreachable_routes":[],
-  "runtime_only_features":[],
-  "source_only_features":[]
+ "schema_version": 1,
+ "pages": [
+  {
+   "id": "page.dashboard",
+   "name": "/",
+   "route": "/",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.agents",
+   "name": "/agents",
+   "route": "/agents",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.agents.id",
+   "name": "/agents/:id（单页分区）",
+   "route": "/agents/:id（单页分区）",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.applications",
+   "name": "/applications",
+   "route": "/applications",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.applications.id",
+   "name": "/applications/:id",
+   "route": "/applications/:id",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.applications.new",
+   "name": "/applications/new",
+   "route": "/applications/new",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.artifacts",
+   "name": "/artifacts",
+   "route": "/artifacts",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.artifacts.new",
+   "name": "/artifacts/new",
+   "route": "/artifacts/new",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.audit",
+   "name": "/audit",
+   "route": "/audit",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.executions",
+   "name": "/executions",
+   "route": "/executions",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.executions.id",
+   "name": "/executions/:id",
+   "route": "/executions/:id",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.groups",
+   "name": "/groups",
+   "route": "/groups",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.groups.new.groups.id",
+   "name": "/groups/new（+ /groups/:id 复用）",
+   "route": "/groups/new（+ /groups/:id 复用）",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.nodes",
+   "name": "/nodes（兼容路由）",
+   "route": "/nodes（兼容路由）",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.schedules.new.schedules.id",
+   "name": "/schedules/new 与 /schedules/:id",
+   "route": "/schedules/new 与 /schedules/:id",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.scripts",
+   "name": "/scripts",
+   "route": "/scripts",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.scripts.new.scripts.id",
+   "name": "/scripts/new 与 /scripts/:id",
+   "route": "/scripts/new 与 /scripts/:id",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.settings",
+   "name": "/settings",
+   "route": "/settings",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.sign.in",
+   "name": "/sign-in",
+   "route": "/sign-in",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": false,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.tasks",
+   "name": "/tasks",
+   "route": "/tasks",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.tasks.id",
+   "name": "/tasks/:id",
+   "route": "/tasks/:id",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.tasks.id.edit",
+   "name": "/tasks/:id/edit",
+   "route": "/tasks/:id/edit",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.tasks.id.run",
+   "name": "/tasks/:id/run",
+   "route": "/tasks/:id/run",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.tasks.new",
+   "name": "/tasks/new",
+   "route": "/tasks/new",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.tasks.view.schedules",
+   "name": "/tasks?view=schedules",
+   "route": "/tasks?view=schedules",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.transfers",
+   "name": "/transfers",
+   "route": "/transfers",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.users",
+   "name": "/users",
+   "route": "/users",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  },
+  {
+   "id": "page.item",
+   "name": "全局布局（顶栏/侧边栏）",
+   "route": "全局布局（顶栏/侧边栏）",
+   "discovered_by": [
+    "runtime"
+   ],
+   "requires_auth": true,
+   "reachable": true,
+   "features": []
+  }
+ ],
+ "routes": [
+  {
+   "route": "/(auth)/sign-in",
+   "source": "routes/(auth)/sign-in.tsx",
+   "auth": "public"
+  },
+  {
+   "route": "/agents/$agentId",
+   "source": "routes/_authenticated/agents/$agentId.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/agents/",
+   "source": "routes/_authenticated/agents/index.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/applications/",
+   "source": "routes/_authenticated/applications/index.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/applications/new",
+   "source": "routes/_authenticated/applications/new.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/artifacts/",
+   "source": "routes/_authenticated/artifacts/index.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/artifacts/new",
+   "source": "routes/_authenticated/artifacts/new.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/audit/",
+   "source": "routes/_authenticated/audit/index.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/executions/$executionId",
+   "source": "routes/_authenticated/executions/$executionId.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/executions/",
+   "source": "routes/_authenticated/executions/index.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/groups/$groupId",
+   "source": "routes/_authenticated/groups/$groupId.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/groups/",
+   "source": "routes/_authenticated/groups/index.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/groups/new",
+   "source": "routes/_authenticated/groups/new.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/",
+   "source": "routes/_authenticated/index.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/nodes/$nodeId",
+   "source": "routes/_authenticated/nodes/$nodeId.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/nodes/",
+   "source": "routes/_authenticated/nodes/index.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/",
+   "source": "routes/_authenticated/route.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/schedules/$scheduleId",
+   "source": "routes/_authenticated/schedules/$scheduleId.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/schedules/",
+   "source": "routes/_authenticated/schedules/index.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/schedules/new",
+   "source": "routes/_authenticated/schedules/new.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/scripts/$scriptId",
+   "source": "routes/_authenticated/scripts/$scriptId.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/scripts/",
+   "source": "routes/_authenticated/scripts/index.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/scripts/new",
+   "source": "routes/_authenticated/scripts/new.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/settings/",
+   "source": "routes/_authenticated/settings/index.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/tasks/$taskId",
+   "source": "routes/_authenticated/tasks/$taskId.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/tasks/$taskId/edit",
+   "source": "routes/_authenticated/tasks/$taskId/edit.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/tasks/$taskId/",
+   "source": "routes/_authenticated/tasks/$taskId/index.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/tasks/$taskId/run",
+   "source": "routes/_authenticated/tasks/$taskId/run.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/tasks/",
+   "source": "routes/_authenticated/tasks/index.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/tasks/new",
+   "source": "routes/_authenticated/tasks/new.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/transfers/",
+   "source": "routes/_authenticated/transfers/index.tsx",
+   "auth": "session"
+  },
+  {
+   "route": "/users/",
+   "source": "routes/_authenticated/users/index.tsx",
+   "auth": "session"
+  }
+ ],
+ "menus": [
+  {
+   "section": "overview",
+   "items": [
+    {
+     "label": "dashboard",
+     "route": "/"
+    }
+   ]
+  },
+  {
+   "section": "operations",
+   "items": [
+    {
+     "label": "tasks",
+     "route": "/tasks"
+    },
+    {
+     "label": "executions",
+     "route": "/executions"
+    }
+   ]
+  },
+  {
+   "section": "nodes",
+   "items": [
+    {
+     "label": "nodes",
+     "route": "/agents"
+    },
+    {
+     "label": "groups",
+     "route": "/groups"
+    }
+   ]
+  },
+  {
+   "section": "resources",
+   "items": [
+    {
+     "label": "scripts",
+     "route": "/scripts"
+    }
+   ]
+  },
+  {
+   "section": "system",
+   "items": [
+    {
+     "label": "audit",
+     "route": "/audit"
+    },
+    {
+     "label": "users",
+     "route": "/users"
+    },
+    {
+     "label": "settings",
+     "route": "/settings"
+    }
+   ]
+  }
+ ],
+ "resources": [
+  "node",
+  "group",
+  "script",
+  "task",
+  "schedule",
+  "artifact",
+  "application",
+  "execution",
+  "transfer",
+  "audit_log",
+  "user",
+  "settings"
+ ],
+ "api_endpoints": [
+  "/api/login",
+  "/api/me",
+  "/api/oidc/state",
+  "/api/nodes",
+  "/api/groups",
+  "/api/scripts",
+  "/api/tasks",
+  "/api/schedules",
+  "/api/artifacts",
+  "/api/applications",
+  "/api/executions",
+  "/api/transfers",
+  "/api/audit",
+  "/api/users",
+  "/api/settings",
+  "/healthz",
+  "/readyz",
+  "/metrics"
+ ],
+ "permissions": [
+  "administrator",
+  "operator",
+  "viewer"
+ ],
+ "feature_flags": [
+  "oidc"
+ ],
+ "unreachable_routes": [],
+ "runtime_only_features": [],
+ "source_only_features": [],
+ "generated_at": "2026-09-22T09:34:49+08:00",
+ "base_url": "http://192.168.100.209:8080",
+ "menu_notes": [
+  "调度已合并到 /tasks?view=schedules；侧边栏无独立调度项",
+  "视口高度 <=700px 时侧边栏分组标签隐藏"
+ ],
+ "environment": {
+  "hub": "nodesteer-hub 192.168.100.209",
+  "agents": [
+   "nodesteer-agent-1 Debian",
+   "nodesteer-agent-2 Fedora",
+   "nodesteer-agent-3 Rocky",
+   "nodesteer-agent-4 openSUSE"
+  ]
+ }
 }

@@ -1,257 +1,446 @@
 {
-  "schema_version": 1,
-  "workflows": [
-    {
-      "id": "workflow.auth.guard.001",
-      "name": "Unauthenticated route guard and login",
-      "priority": "P0",
-      "type": "critical_path",
-      "status": "completed",
-      "preconditions": [],
-      "steps": [
-        "auth.logout",
-        "auth.login",
-        "dashboard.summary",
-        "auth.logout",
-        "auth.login"
-      ],
-      "covered_features": [
-        "auth.login",
-        "auth.invalid_login",
-        "auth.logout",
-        "auth.language_switch"
-      ],
-      "covered_transitions": [],
-      "test_data_refs": [],
-      "started_at": "2026-09-16T21:50:00+08:00",
-      "finished_at": "2026-09-16T22:55:00+08:00",
-      "result": "passed",
-      "failure_ids": [],
-      "evidence": []
-    },
-    {
-      "id": "workflow.script.task.lifecycle.001",
-      "name": "Script to task to execution lifecycle",
-      "priority": "P0",
-      "type": "crud_lifecycle",
-      "status": "partial",
-      "preconditions": [
-        "authenticated",
-        "node_online"
-      ],
-      "steps": [
-        "script.create",
-        "script.edit",
-        "script.revisions",
-        "task.create",
-        "task.edit",
-        "task.run",
-        "execution.detail",
-        "execution.logs",
-        "task.delete",
-        "script.delete"
-      ],
-      "covered_features": [
-        "script.create",
-        "script.edit",
-        "task.create",
-        "task.run",
-        "execution.detail",
-        "execution.logs",
-        "task.delete",
-        "script.delete"
-      ],
-      "covered_transitions": [],
-      "test_data_refs": [],
-      "started_at": "2026-09-16T21:50:00+08:00",
-      "finished_at": "2026-09-16T22:55:00+08:00",
-      "result": "partial",
-      "failure_ids": [],
-      "evidence": []
-    },
-    {
-      "id": "workflow.schedule.persistence.001",
-      "name": "Schedule create edit enable refresh",
-      "priority": "P0",
-      "type": "state_mutation",
-      "status": "completed",
-      "preconditions": [
-        "authenticated",
-        "task_exists"
-      ],
-      "steps": [
-        "schedule.create",
-        "schedule.edit",
-        "schedule.enable",
-        "schedule.list",
-        "schedule.delete"
-      ],
-      "covered_features": [
-        "schedule.create",
-        "schedule.edit",
-        "schedule.enable",
-        "schedule.delete"
-      ],
-      "covered_transitions": [],
-      "test_data_refs": [],
-      "started_at": "2026-09-16T21:50:00+08:00",
-      "finished_at": "2026-09-16T22:55:00+08:00",
-      "result": "passed",
-      "failure_ids": [],
-      "evidence": []
-    },
-    {
-      "id": "workflow.node.group.target.001",
-      "name": "Node group target continuity",
-      "priority": "P1",
-      "type": "pairwise_transition",
-      "status": "partial",
-      "preconditions": [
-        "authenticated",
-        "node_exists"
-      ],
-      "steps": [
-        "agent.list",
-        "agent.detail",
-        "group.create",
-        "group.edit",
-        "task.create",
-        "group.delete"
-      ],
-      "covered_features": [
-        "agent.list",
-        "agent.detail",
-        "group.create",
-        "group.edit",
-        "group.delete"
-      ],
-      "covered_transitions": [],
-      "test_data_refs": [],
-      "started_at": "2026-09-16T21:50:00+08:00",
-      "finished_at": "2026-09-16T22:55:00+08:00",
-      "result": "partial",
-      "failure_ids": [],
-      "evidence": []
-    },
-    {
-      "id": "workflow.artifact.application.deploy.001",
-      "name": "Artifact application deployment lifecycle",
-      "priority": "P0",
-      "type": "critical_path",
-      "status": "blocked",
-      "preconditions": [
-        "authenticated",
-        "node_online"
-      ],
-      "steps": [
-        "artifact.upload",
-        "artifact.download",
-        "application.create",
-        "application.assign",
-        "application.deploy",
-        "execution.detail",
-        "application.delete",
-        "artifact.delete"
-      ],
-      "covered_features": [
-        "artifact.upload",
-        "artifact.download",
-        "artifact.delete"
-      ],
-      "covered_transitions": [],
-      "test_data_refs": [],
-      "started_at": "2026-09-16T21:50:00+08:00",
-      "finished_at": "2026-09-16T22:55:00+08:00",
-      "result": "blocked",
-      "failure_ids": [],
-      "evidence": []
-    },
-    {
-      "id": "workflow.transfer.retry.001",
-      "name": "Multi-target transfer and retry/cancel",
-      "priority": "P0",
-      "type": "critical_path",
-      "status": "completed",
-      "preconditions": [
-        "authenticated",
-        "source_and_target_nodes"
-      ],
-      "steps": [
-        "transfer.create",
-        "transfer.detail",
-        "transfer.retry",
-        "transfer.cancel"
-      ],
-      "covered_features": [
-        "transfer.create",
-        "transfer.retry"
-      ],
-      "covered_transitions": [],
-      "test_data_refs": [],
-      "started_at": "2026-09-16T21:50:00+08:00",
-      "finished_at": "2026-09-16T22:55:00+08:00",
-      "result": "passed",
-      "failure_ids": [],
-      "evidence": []
-    },
-    {
-      "id": "workflow.rbac.roles.001",
-      "name": "Role visibility and protected actions",
-      "priority": "P0",
-      "type": "permission_flow",
-      "status": "blocked",
-      "preconditions": [
-        "operator_and_viewer_credentials"
-      ],
-      "steps": [
-        "user.create",
-        "user.change_role",
-        "auth.logout",
-        "auth.login",
-        "task.create",
-        "application.deploy",
-        "settings.save"
-      ],
-      "covered_features": [],
-      "covered_transitions": [],
-      "test_data_refs": [],
-      "started_at": "2026-09-16T21:50:00+08:00",
-      "finished_at": "2026-09-16T22:55:00+08:00",
-      "result": "blocked",
-      "failure_ids": [],
-      "evidence": []
-    },
-    {
-      "id": "workflow.navigation.persistence.001",
-      "name": "List search detail back refresh persistence",
-      "priority": "P1",
-      "type": "navigation_continuity",
-      "status": "partial",
-      "preconditions": [
-        "authenticated",
-        "resource_exists"
-      ],
-      "steps": [
-        "script.list",
-        "script.search",
-        "script.edit",
-        "dashboard.navigation_links",
-        "script.list",
-        "script.revisions"
-      ],
-      "covered_features": [
-        "script.list",
-        "script.search",
-        "script.edit",
-        "script.revisions"
-      ],
-      "covered_transitions": [],
-      "test_data_refs": [],
-      "started_at": "2026-09-16T21:50:00+08:00",
-      "finished_at": "2026-09-16T22:55:00+08:00",
-      "result": "partial",
-      "failure_ids": [],
-      "evidence": []
-    }
-  ]
+ "schema_version": 1,
+ "generated_at": "2026-09-22T09:34:49+08:00",
+ "base_url": "http://192.168.100.209:8080",
+ "workflows": [
+  {
+   "id": "workflow.script.task.run",
+   "name": "workflow.script.task.run",
+   "status": "passed",
+   "steps": [
+    "POST /api/scripts 建脚本 e2e-a-…-sh（bash，echo e2e-a-ok）",
+    "POST /api/tasks 建脚本任务（目标 agent-1+agent-2）",
+    "运行任务 → 2 条执行（script_revision=1，stdout=e2e-a-ok）",
+    "编辑脚本内容 → revision r2",
+    "再次运行 → 2 条执行（script_revision=2，stdout=e2e-a-ok-v2）",
+    "打开执行详情检查元数据/输出摘要/日志",
+    "检查 /api/audit 中 script update / task execute 记录"
+   ],
+   "result": "全部成立：执行记录 script_revision 1→2、stdout 随内容变化；审计含 script update 与 task execute；执行详情可看 stdout/stderr 与日志过滤",
+   "evidence": [
+    ".e2e/evidence/agent-a/p3-workflow-script.txt",
+    ".e2e/evidence/agent-a/p1-exec-detail.txt",
+    ".e2e/evidence/agent-a/p2-audit-list.png"
+   ],
+   "source_agent": "agent-a",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.schedule.crud.trigger",
+   "name": "workflow.schedule.crud.trigger",
+   "status": "passed",
+   "steps": [
+    "从调度视图新建 Cron 调度（0 0 1 1 *，不触发）",
+    "禁用 → 状态已禁用；启用 → 已启用",
+    "编辑时区 UTC→Asia/Shanghai（revision r2）",
+    "任务详情调度分区可见并链接到调度编辑页",
+    "新建一次性调度（+90s，Agent 执行方，允许离线）",
+    "等待触发 → 2 条 trigger=schedule 执行 SUCCESS",
+    "删除两个调度；随后删除被引用过的任务"
+   ],
+   "result": "全部成立；一次性调度触发后仍显示「已启用」（无已完成态），删除调度后任务可删除",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-schedules.txt",
+    ".e2e/evidence/agent-a/p2-schedules-ops.txt",
+    ".e2e/evidence/agent-a/p3-workflow-schedule.txt",
+    ".e2e/evidence/agent-a/p2-schedules-view.png"
+   ],
+   "source_agent": "agent-a",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.task.multi_node",
+   "name": "workflow.task.multi_node",
+   "status": "passed",
+   "steps": [
+    "建命令任务（命令 echo e2e-a-$(hostname)，目标 = agent-1/2/3/4）",
+    "通过 /tasks/:id/run 立即运行",
+    "核对执行记录条数与节点归属"
+   ],
+   "result": "生成 4 条 manual 执行，分别归属 4 台 Agent，全部 SUCCESS",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-run-tasks.txt",
+    ".e2e/evidence/agent-a/p2-executions-list.png"
+   ],
+   "source_agent": "agent-a",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.transfer.multi_target.sha256",
+   "name": "workflow.transfer.multi_target.sha256",
+   "status": "passed",
+   "steps": [
+    "在 agent-1 生成源文件并记录 sha256（49ba556018959f0b…）",
+    "UI 建传输：源 agent-1 → 目标 agent-2 与 agent-3（/tmp/e2e-a-…-dst.txt）",
+    "等待 hub 投递完成，核对传输与目标状态、hub sha256",
+    "在 agent-2/agent-3 回读目标文件 sha256 与内容"
+   ],
+   "result": "两目标 SUCCESS、hub sha256 与源一致、目标节点 sha256 与内容均一致",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-transfers.txt",
+    ".e2e/evidence/agent-a/p2-transfers-list.png"
+   ],
+   "source_agent": "agent-a",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.transfer.failure_retry_cancel",
+   "name": "workflow.transfer.failure_retry_cancel",
+   "status": "failed",
+   "steps": [
+    "传输到 /proc/… 制造目标失败 → 检查状态与可见性",
+    "对失败传输执行「重试」",
+    "300MB 大文件传输，UPLOADING 时点「取消传输」",
+    "源文件不存在场景 → 目标停在 PENDING，检查取消入口"
+   ],
+   "result": "重试与取消均生效；但 (a) 失败原因在页面完全不可见（无详情页），(b) 源上传失败时目标永久 PENDING 且行菜单只有「重试」没有「取消」，只能靠 API 取消 → UI 无法终止",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-transfers-fail.txt",
+    ".e2e/evidence/agent-a/p2-transfers-cancel.txt",
+    ".e2e/evidence/agent-a/p2-transfer-empty-menu.png"
+   ],
+   "source_agent": "agent-a",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.execution.cancel_timeout_retry.audit",
+   "name": "workflow.execution.cancel_timeout_retry.audit",
+   "status": "failed",
+   "steps": [
+    "运行 sleep 300 任务 → /executions/:id 点「停止执行」→ 核对状态与节点进程",
+    "运行 sleep 60 + timeout 15 → 核对超时状态与耗时",
+    "运行 exit 3 + retry 2 → 用命令内自增计数核对节点侧尝试次数",
+    "检查 /api/audit 是否有取消/重试对应记录"
+   ],
+   "result": "取消 → CANCELED 且节点侧 sleep 进程不存在；超时 → TIMED_OUT/17s；重试 → 节点侧执行 3 次、1 条记录；但审计中没有任何 execution cancel 记录（file_transfer cancel 有）",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-retry-disabled.txt",
+    ".e2e/evidence/agent-a/p2-run-tasks.txt",
+    ".e2e/evidence/agent-a/p2-audit-list.png"
+   ],
+   "source_agent": "agent-a",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.task_param_override",
+   "name": "workflow.task_param_override",
+   "status": "passed",
+   "steps": [
+    "建带参数 msg（默认 hello-default）的命令任务（命令 echo param=$CADENTRA_PARAM_msg）",
+    "运行页覆盖参数值 runtime-override 后立即运行",
+    "核对执行 stdout"
+   ],
+   "result": "stdout=param=runtime-override，参数以 CADENTRA_PARAM_msg 注入",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-task-params.txt"
+   ],
+   "source_agent": "agent-a",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.entity_reference_guards",
+   "name": "workflow.entity_reference_guards",
+   "status": "passed",
+   "steps": [
+    "被调度引用的任务删除 → 期望阻断",
+    "被任务引用的脚本删除 → 期望阻断",
+    "删除调度后再删除任务 → 期望成功"
+   ],
+   "result": "两次删除均 409 阻断且状态未被破坏；解除引用后可删除；但两条提示均为英文原文 + 裸 UUID",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-sched-taskref.txt",
+    ".e2e/evidence/agent-a/p2-scripts-ops.txt"
+   ],
+   "source_agent": "agent-a",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.task_delete_history",
+   "name": "workflow.task_delete_history",
+   "status": "passed",
+   "steps": [
+    "删除已有执行记录的任务",
+    "在执行列表与执行详情检查该任务展示"
+   ],
+   "result": "成立：列表 6 行显示「未知任务」，详情元数据「任务 未知任务」",
+   "evidence": [
+    ".e2e/evidence/agent-a/p2-cleanup.txt"
+   ],
+   "source_agent": "agent-a",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.label.group.task",
+   "name": "workflow.label.group.task",
+   "status": "passed",
+   "steps": [
+    "节点详情添加标签 e2e-b-20260922-a1b2-zone=alpha → {\"e2e-b-20260922-a1b2-zone\":\"alpha\"}",
+    "创建标签分组 e2e-b-20260922-a1b2-lgroup → {\"id\":\"eaf2b622-5c3d-45fe-83cf-3ab6e9e46499\",\"name\":\"e2e-b-20260922-a1b2-lgroup\",\"description\":\"label group for wf1\",\"type\":\"label\",\"label_key\":\"e2e-b-20260922-a1b2",
+    "分组列表成员数随标签变化 → e2e-b-20260922-a1b2-lgroup 标签 label group for wf1 1",
+    "创建 group 目标任务 → 200 b5115b05-6cb5-4539-b6c4-ccb1bc5f0064",
+    "创建 label 目标任务 → 200 19ff0ff5-3c10-4d72-b76a-6da758c10ad1",
+    "为 group 任务创建调度 → 200 6e666ec5-69ab-4287-a62a-93c9e77f6b76",
+    "节点详情任务区显示目标任务 → t-group=true t-label=true",
+    "节点详情调度区显示调度 → sched=true",
+    "标签值改为 beta 后分组/任务命中变化 → e2e-b-20260922-a1b2-lgroup 标签 label group for wf1 0",
+    "节点详情任务区移除不再命中的任务 → t-group=false t-label=false",
+    "清理：删除调度/任务/分组并还原标签 → {\"cleanup\":{\"schedule\":200,\"task1\":200,\"task2\":200,\"group\":200,\"labels\":200},\"finalLabels\":{}}"
+   ],
+   "result": "11/11 步通过；标签 alpha→beta 后分组成员 1→0，节点详情任务区同步移除；调度/任务/分组删除均 200，标签还原为空",
+   "evidence": [
+    "p3-w1-label-added.png",
+    "p3-w1-group-members-1.png",
+    "p3-w1-detail-tasks-schedules.png",
+    "p3-w1-detail-after-label-change.png"
+   ],
+   "source_agent": "agent-b",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.enrollment",
+   "name": "workflow.enrollment",
+   "status": "failed",
+   "steps": [
+    "UI 添加节点对话框输入名称/IP/Hub 地址 → 生成安装命令",
+    "读取 POST /api/nodes/enrollment 响应并核对 node_id/agent_id 与命令内容",
+    "列表/接口确认 pending 节点记录",
+    "以既有主机名 nodesteer-agent-1 重新纳管 → 比对返回 node_id/agent_id 与既有记录",
+    "核对既有 Agent 是否受影响 + 清理自建节点"
+   ],
+   "result": "三种命令生成正常（native 1886 字符，含 node_name/node_ip/registration_token/agent_id）；pending 节点 status=offline/sync_status=pending；重新纳管既有主机名返回全新 node_id/agent_id 并新增一条 offline 重复记录（不复用）；既有 agent-1 仍 online/synced 未受影响；自建节点与重复记录已删除，最终 4 节点",
+   "evidence": [
+    ".e2e/evidence/agent-b/p3-w2-pending-node.png",
+    ".e2e/evidence/agent-b/p3-w2-reenroll-duplicate.png",
+    ".e2e/evidence/agent-b/p3-w2-revoked-node.png",
+    ".e2e/evidence/agent-b/p3-w2-cleanup.png"
+   ],
+   "source_agent": "agent-b",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.node.status",
+   "name": "workflow.node.status",
+   "status": "passed",
+   "steps": [
+    "仪表盘基线统计 → [\"节点总数 5 4 在线\",\"运行中 0 正在执行的任务\",\"执行失败 4 最近 50 次执行\"]",
+    "定位 agent-2 行 → row 3",
+    "行菜单→维护 → maintenance",
+    "列表状态徽标更新 → nodesteer-agent-2 maintenance 192.168.100.205 0.1.0 amd64 native 刚刚",
+    "仪表盘在线数变化 → [\"节点总数 5 3 在线\",\"运行中 0 正在执行的任务\",\"执行失败 4 最近 50 次执行\"]",
+    "创建针对 agent-2 的临时任务 → 200 57a7ace7-a61e-4181-b1bd-d841eedb3919",
+    "维护节点上运行任务被阻断 → 400 {\"error\":\"node 06ad7af9-63cb-4ba7-8495-2c589a65e405 is not online (status=maintenance)\"}",
+    "任务运行页可见维护节点状态 → \"立即运行 1 节点 立即运行 取消\"",
+    "行菜单→禁用 → disabled",
+    "禁用节点上运行任务被阻断 → 400 {\"error\":\"node 06ad7af9-63cb-4ba7-8495-2c589a65e405 is not online (status=disabled)\"}",
+    "行菜单→设为在线 → online",
+    "恢复在线后可运行任务 → 200 [{\"id\":\"e4c52198-1982-43ce-a23f-9a6def129588\",\"task_id\":\"57a7ace7-a61e-4181-b1bd-d841eedb3919\",\"task_revision\":1,\"node_i",
+    "清理临时任务 → 200",
+    "节点状态还原 → online"
+   ],
+   "result": "维护/禁用/设为在线均生效；仪表盘在线数 4→3→4；维护与禁用节点运行任务均返回 400 \"node <uuid> is not online (status=maintenance|disabled)\"；恢复在线后运行成功；临时任务已删除，节点状态还原。注：13 步中 12 步断言通过，唯一未通过项为\"列表状态徽标显示中文\"——徽标实际显示英文原值 maintenance，属 i18n 缺口（FAIL-B-108），状态流转本身正确",
+   "evidence": [
+    ".e2e/evidence/agent-b/p3-w3-dashboard-baseline.png",
+    ".e2e/evidence/agent-b/p3-w3-maintenance-list.png",
+    ".e2e/evidence/agent-b/p3-w3-dashboard-maintenance.png",
+    ".e2e/evidence/agent-b/p3-w3-run-blocked-api.png",
+    ".e2e/evidence/agent-b/p3-w3-online-run-ok.png"
+   ],
+   "source_agent": "agent-b",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.rbac.matrix",
+   "name": "workflow.rbac.matrix",
+   "status": "failed",
+   "steps": [
+    "创建 viewer(e2e-b-…-v2) 与 operator(e2e-b-…-op) 用户",
+    "独立会话登录，逐页记录可见操作与受限提示",
+    "以各角色 token 直连写接口探测 403/放行",
+    "viewer→operator 提权后用新会话与旧会话分别探测 canRun 接口",
+    "operator→viewer 降权后用旧会话探测 canRun 接口（安全方向）",
+    "还原角色"
+   ],
+   "result": "前端：两者侧边栏均为完整 12 项；/users 显示\"只有管理员可以管理用户。\"；/settings 输入禁用且无保存按钮；/agents 无添加节点与行菜单；/groups 无新建与行菜单。后端：POST /groups|/nodes、PUT /settings、POST /users 均 403；POST /tasks/:id/run viewer=403、operator=404(放行)；GET /users 403、GET /audit 200。角色变更：新会话即时生效；**旧会话（含刷新后）在提权与降权两个方向都不生效**，降权后 operator 会话仍通过 canRun 鉴权",
+   "evidence": [
+    ".e2e/evidence/agent-b/p3-rbac-viewer-users.png",
+    ".e2e/evidence/agent-b/p3-rbac-operator-users.png",
+    ".e2e/evidence/agent-b/p3-rbac-viewer-promoted-users.png",
+    ".e2e/evidence/agent-b/p3-rbac-demoted-session.png",
+    ".e2e/evidence/agent-b/p3-rbac-oldsession-tasks.png"
+   ],
+   "source_agent": "agent-b",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.user.lifecycle",
+   "name": "workflow.user.lifecycle",
+   "status": "passed",
+   "steps": [
+    "新建用户（viewer/operator）→ 列表出现 → 新会话可登录",
+    "行内下拉改角色 → PUT /users/:id → 新会话权限变化",
+    "PUT /users/:id 改密码（UI 无入口）→ 新密码可登录、旧密码失效 → 还原",
+    "检查审计记录"
+   ],
+   "result": "创建/改角色/登录/改密码均成功且即时生效；审计有 create/update user 与 login 记录，但审计记录不含 detail 字段（描述列恒空、按用户名搜索无结果），且设置保存不入审计",
+   "evidence": [
+    ".e2e/evidence/agent-b/p2-users-created.png",
+    ".e2e/evidence/agent-b/p2-users-role-changed.png",
+    ".e2e/evidence/agent-b/p2-audit-list.png",
+    ".e2e/evidence/agent-b/p2-audit-final.png"
+   ],
+   "source_agent": "agent-b",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.settings.roundtrip",
+   "name": "workflow.settings.roundtrip",
+   "status": "passed",
+   "steps": [
+    "运行时设置：读取展示与原始值一致性 → 页面值=[{\"label\":\"变更日志窗口\",\"value\":\"5000\"},{\"label\":\"心跳间隔（秒）\",\"value\":\"30\"},{\"label\":\"最大日志字节数\",\"value\":\"1048576\"},{\"label\":\"修订检查间隔（秒）\",\"value\":\"45\"}] API 值={\"changelog_window\":\"5000\",\"",
+    "修改 changelog_window 5000→6000 并保存 → toast=[\"已保存\"] 保存后 API=\"6000\"",
+    "刷新后设置持久化 → 刷新后值=[{\"label\":\"变更日志窗口\",\"value\":\"6000\"},{\"label\":\"心跳间隔（秒）\",\"value\":\"30\"},{\"label\":\"最大日志字节数\",\"value\":\"1048576\"},{\"label\":\"修订检查间隔（秒）\",\"value\":\"45\"}] 持久化=true",
+    "非法值保存：非数字输入是否被拒绝 → toast=[\"changelog_window must be between 1 and 1000000000\"] API=\"6000\"",
+    "越界值保存：负数 → toast=[\"changelog_window must be between 1 and 1000000000\",\"changelog_window must be between 1 and 1000000000\"] API=\"6000\"",
+    "还原 changelog_window → 5000 → 还原后 API={\"changelog_window\":\"5000\",\"heartbeat_interval_sec\":\"30\",\"max_log_bytes\":\"1048576\",\"revision_check_interval_sec\":\"45\"}",
+    "外观：主题切换 浅色→深色→系统 → 主题选项=[\"浅色\",\"深色\",\"系统\"] 深色 class=font-maple dark 浅色 class=font-maple light"
+   ],
+   "result": "4 项设置读取一致；changelog_window 5000→6000 保存后刷新仍为 6000；非法值 \"abc\" 与 \"-5\" 均 400 并 toast \"changelog_window must be between 1 and 1000000000\"（英文原文）；已还原为 5000；外观主题浅色/深色/系统切换生效且刷新保持",
+   "evidence": [
+    ".e2e/evidence/agent-b/p2-settings-runtime.png",
+    ".e2e/evidence/agent-b/p2-settings-saved.png",
+    ".e2e/evidence/agent-b/p2-settings-invalid.png",
+    ".e2e/evidence/agent-b/p2-theme-dark-real.png"
+   ],
+   "source_agent": "agent-b",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.artifact.lifecycle",
+   "name": "制品上传→SHA256/大小校验→下载校验→Usage 引用→删除被引用制品",
+   "status": "passed",
+   "steps": [
+    "/artifacts/new 上传 e2e-c-20260922-c8x1-svc/1.0.0（v1.sh，104B）",
+    "列表核对 SHA256 前缀 fe80292d629ad051 与本地 sha256sum 一致",
+    "行菜单下载，保存文件后本地 sha256 完全一致（fe80292d…）",
+    "/artifacts 出现 Usage=应用名且链接到 /applications/:id（应用创建后）",
+    "尝试删除被引用制品 → 确认框 → DELETE 409 被阻断",
+    "删除应用后 Usage 归零（-）→ 再次删除成功"
+   ],
+   "result": "全部符合：上传 POST 200、列表与下载 SHA256 与本地一致、Usage 链接指向应用详情、被引用时 DELETE 409 阻止且行保留、解除引用后 UI 删除成功（5/5）",
+   "evidence": [
+    ".e2e/evidence/agent-c/r2-p2-artifact-uploaded.png",
+    ".e2e/evidence/agent-c/r2-p2-artifacts-usage.png",
+    ".e2e/evidence/agent-c/r2-p2-artifact-delete-referenced-confirm.png",
+    ".e2e/evidence/agent-c/r2-p2-artifact-delete-referenced-blocked.png",
+    ".e2e/evidence/agent-c/r2-p3-artifacts-empty-final.png"
+   ],
+   "source_agent": "agent-c",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.artifact.app.deploy",
+   "name": "制品→创建应用→分配节点→Deploy→健康→Start/Stop/Restart→Upgrade→删除清理",
+   "status": "passed",
+   "steps": [
+    "制品行菜单「创建应用」→ /applications/new?artifact_id=…（版本回填 1.0.0、SHA 摘要）",
+    "填写二进制/配置路径/Unit/配置内容/参数/环境变量/健康检查(systemd)，分配 agent-3/agent-4，保存",
+    "部署 deploy → 两节点健康；执行历史 SUCCESS；SSH 核对 unit active+enabled、二进制 SHA、配置、argv",
+    "stop → 已停止 + SSH inactive/0 进程；start → 健康 + active",
+    "restart → PID 变化（8693→8742 / 10092→10140）且健康",
+    "上传 v2.0.0 制品 → 编辑器切换发布包（版本自动 2.0.0、r2）→ upgrade → 节点二进制 82b29d09…（v2）、version=2.0.0 healthy",
+    "删除应用 → 节点侧 unit/二进制/配置/进程全部清理；应用列表空态"
+   ],
+   "result": "全部通过；UI 无手动回滚入口（部署操作下拉仅 deploy/start/stop/restart/upgrade），记为产品边界",
+   "evidence": [
+    ".e2e/evidence/agent-c/r2-p2-app-new-from-artifact.png",
+    ".e2e/evidence/agent-c/r2-p2-app-deploy-clicked.png",
+    ".e2e/evidence/agent-c/r2-p2-app-restart-healthy.png",
+    ".e2e/evidence/agent-c/r2-p2-app-edited-r2.png",
+    ".e2e/evidence/agent-c/r2-p3-app-delete-confirm.png"
+   ],
+   "source_agent": "agent-c",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.app.execution.audit",
+   "name": "应用操作产生的执行→执行详情/日志→审计",
+   "status": "passed",
+   "steps": [
+    "部署/启停/升级产生执行记录",
+    "/executions 列表找到应用执行（显示「未知任务」）→ 查看详情",
+    "执行详情：状态/节点/耗时/r2/元数据（任务=未知任务、任务修订号=r2、触发方式=手动、离线/已同步）",
+    "日志标签页：stdout/stderr 0 字符、（空）",
+    "/audit 搜索 application：deploy/assign/update 记录可见；搜索 artifact：upload/delete 记录可见"
+   ],
+   "result": "执行详情可打开但内容有限：任务显示「未知任务」、无应用名/操作类型（deploy 与 upgrade 无法区分）、stdout/stderr 为空、无日志；审计完整记录",
+   "evidence": [
+    ".e2e/evidence/agent-c/r2-p3-executions-list.png",
+    ".e2e/evidence/agent-c/r2-p3-execution-detail-app-upgrade.png",
+    ".e2e/evidence/agent-c/r2-p3-audit-list.png"
+   ],
+   "source_agent": "agent-c",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.dashboard.consistency",
+   "name": "仪表盘统计与列表 API 一致性、各「查看全部」落点",
+   "status": "passed",
+   "steps": [
+    "读取统计卡与卡片区数值",
+    "与 /api/nodes、/api/executions?limit=50、/api/applications 对比",
+    "点击「即将执行的调度」查看全部",
+    "核对 6 个查看全部 href"
+   ],
+   "result": "节点 4/4 在线、应用 1/1 健康、最近50次 49 成功 1 失败 = 98% 成功率，全部与 API 一致；查看全部落点 /executions、/agents、/applications、/agents、/executions、/tasks?view=schedules 均正确，后者落在调度标签页",
+   "evidence": [
+    ".e2e/evidence/agent-c/r2-p1-dashboard.png",
+    ".e2e/evidence/agent-c/r2-p3-dashboard-after-app.png",
+    ".e2e/evidence/agent-c/r2-p3-dashboard-schedules-link.png"
+   ],
+   "source_agent": "agent-c",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  },
+  {
+   "id": "workflow.ui.basics",
+   "name": "UI 基础项：字体（无外网请求）/主题/语言切换与刷新保持；1366/1920/3840 无横向溢出",
+   "status": "passed",
+   "steps": [
+    "抓取 /artifacts 加载的全部网络请求，检查外部域名与字体来源",
+    "切换 深色 → 刷新；切换 浅色 恢复",
+    "切换 English → 刷新 → 切回中文",
+    "1366/1920/3840 宽度测量 document.scrollWidth 与应用详情页"
+   ],
+   "result": "0 个外部请求，字体为同源 /fonts/maple-mono-nl-nf-cn-medium.woff2；主题保存于 cookie vite-ui-theme 刷新保持；语言 cadentra_lang 刷新保持；1366/1920/3840 均 scrollWidth==innerWidth 无横向溢出",
+   "evidence": [
+    ".e2e/evidence/agent-c/r2-p3-theme-dark.png",
+    ".e2e/evidence/agent-c/r2-p3-lang-en.png",
+    ".e2e/evidence/agent-c/r2-p3-resp-1366-artifacts.png",
+    ".e2e/evidence/agent-c/r2-p3-resp-1920-app.png",
+    ".e2e/evidence/agent-c/r2-p3-resp-3840-app.png",
+    ".e2e/evidence/agent-c/r2-p3-resp-3840-artifacts.png"
+   ],
+   "source_agent": "agent-c",
+   "finished_at": "2026-09-22T09:34:49+08:00",
+   "covered_features": []
+  }
+ ]
 }

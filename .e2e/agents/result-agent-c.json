@@ -1,0 +1,706 @@
+{
+  "schema_version": 1,
+  "agent": "c",
+  "started_at": "2026-09-19T17:30:00+08:00",
+  "finished_at": "2026-09-19T18:40:00+08:00",
+  "summary": {
+    "features_tested": 20,
+    "features_passed": 17,
+    "features_failed": 1,
+    "features_blocked": 2,
+    "workflows_executed": 2,
+    "ui_findings": 6
+  },
+  "features": [
+    {
+      "id": "artifact.upload",
+      "page": "page.artifacts",
+      "status": "passed",
+      "expected": "从 /artifacts/new 上传发布包（名称/版本/架构/文件），列表出现且校验信息正确",
+      "actual": "v1.0.0、v2.0.0、1.0.1 与 11 个分页探针包均上传成功；列表显示 名称/版本/架构/文件名/大小/SHA256；2502 KB、SHA256 截断显示与源文件一致",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-artifacts-new-1440-light.png",
+        ".e2e/evidence/agent-c/artifacts-list-2items.png",
+        ".e2e/evidence/agent-c/ui-artifacts-1440-light.png"
+      ],
+      "notes": "v1 sha256=7a6acd39…cf457, v2 sha256=a1485597…e27fd"
+    },
+    {
+      "id": "artifact.list",
+      "page": "page.artifacts",
+      "status": "passed",
+      "expected": "列表列完整、搜索可用、分页可用、Usage 列显示引用应用",
+      "actual": "搜索前缀命中 2 行、无结果空态显示「没有结果。」；11 个探针包时分页「第 1 页，共 2 页」，第二页 1 行；每页行数 20 时 11 行 1 页；Usage 列显示引用它的应用名并链接",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-artifacts-1440-light.png",
+        ".e2e/evidence/agent-c/ui-artifacts-page2.png",
+        ".e2e/evidence/agent-c/ui-artifacts-search-p0.png"
+      ],
+      "notes": "Usage 应用名以链接形式展示，点击跳转 /applications/:id"
+    },
+    {
+      "id": "artifact.download",
+      "page": "page.artifacts",
+      "status": "passed",
+      "expected": "行菜单下载文件，内容与 SHA256 与上传一致",
+      "actual": "下载 v1 得到 2561661 字节，sha256sum=7a6acd394ff9e7db645b554aedc4fbabbf0a40d5aec126886eaf3a549d9cf457，与源文件一致",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-artifacts-1440-light.png",
+        ".e2e/evidence/agent-c/artifacts-list-2items.png"
+      ],
+      "notes": "download 命令保存到 /tmp/opencode/e2e-app/downloaded-v1 后本地比对"
+    },
+    {
+      "id": "artifact.delete",
+      "page": "page.artifacts",
+      "status": "passed",
+      "expected": "未引用包可删除（确认对话框）；被应用引用的包删除被阻止且包保留",
+      "actual": "未引用 1.0.0 与 11 个探针包删除成功（toast 已删除，列表减少）；被两个应用引用的 2.0.0 删除两次均被阻止，提示 referenced by application 且行保留",
+      "evidence": [
+        ".e2e/evidence/agent-c/artifact-delete-confirm.png",
+        ".e2e/evidence/agent-c/artifact-delete-blocked.png",
+        ".e2e/evidence/agent-c/artifacts-all-deleted.png",
+        ".e2e/evidence/agent-c/artifacts-after-probe-cleanup.png"
+      ],
+      "notes": "阻止提示为后端英文原文，见 ui_findings UI-C-005"
+    },
+    {
+      "id": "application.list",
+      "page": "page.applications",
+      "status": "passed",
+      "expected": "应用列表显示名称/版本/二进制/Unit/修订号，搜索可用",
+      "actual": "创建后列表出现 2 个应用，列齐全；搜索 8256-svc 命中 1 行；删除后空态「暂无数据」",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-applications-1440-light.png",
+        ".e2e/evidence/agent-c/ui-applications-1024-light.png",
+        ".e2e/evidence/agent-c/app-svc-deleted.png"
+      ],
+      "notes": "修订号列在 1440 下被水平滚动截断，见 UI-C-001"
+    },
+    {
+      "id": "application.create",
+      "page": "page.applications",
+      "status": "passed",
+      "expected": "从发布包菜单「创建应用」预选包与版本；编辑器内「上传新发布包」自动关联/回填版本/显示摘要/下拉出现新包；保存后分配节点",
+      "actual": "菜单跳转 /applications/new?artifact_id=… 且版本回填 1.0.0、摘要显示 amd64 与 SHA256 7a6acd…；编辑器内上传 1.0.1 后 artifact_id 自动关联、版本回填 1.0.1、下拉含 3 个包；切回 1.0.0 版本同步回填；保存后分配 agent-3/agent-4",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-applications-new-1440-light.png",
+        ".e2e/evidence/agent-c/app-new-filled.png",
+        ".e2e/evidence/agent-c/ui-application-detail-1440-light.png"
+      ],
+      "notes": "上传表单默认带入表单名称与版本，符合实现预期"
+    },
+    {
+      "id": "application.edit",
+      "page": "page.applications",
+      "status": "passed",
+      "expected": "编辑应用切换发布包/版本、健康检查等并持久化，revision 递增",
+      "actual": "v1.0.0→v2.0.0 切换后版本回填 2.0.0、摘要 SHA256 a1485597…；健康检查 command→systemd 保存生效；刷新后保持；版本历史 r1→r2",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-application-detail-1440-light.png",
+        ".e2e/evidence/agent-c/ui-application-detail-1440-dark.png"
+      ],
+      "notes": "revision 列表 details 可展开查看内容"
+    },
+    {
+      "id": "application.assign",
+      "page": "page.applications",
+      "status": "passed",
+      "expected": "勾选节点并保存后分配关系持久化，部署按分配节点执行",
+      "actual": "勾选 agent-3/agent-4 保存后分配持久；部署产生 agent-3、agent-4 两条执行；节点详情「任务」标签托管应用列出两个应用",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-application-detail-1440-light.png",
+        ".e2e/evidence/agent-c/node-agent3-tasks-tab.png"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "application.deploy",
+      "page": "page.applications",
+      "status": "passed",
+      "expected": "部署到分配节点，systemd 单元 active、二进制落盘、进程运行、健康显示健康",
+      "actual": "deploy 后两节点 systemctl active+enabled、二进制 2561661 字节存在、进程带 --msg hello-v1 运行、心跳文件持续更新；页面健康=健康，执行历史 SUCCESS；失败路径（健康检查 command false）执行 FAILED 且自动回滚清理 unit/二进制，修正后重部署 SUCCESS",
+      "evidence": [
+        ".e2e/evidence/agent-c/app-fail-rollback.png",
+        ".e2e/evidence/agent-c/node-agent3-detail.png",
+        ".e2e/evidence/agent-c/exec-failed-detail.png"
+      ],
+      "notes": "systemd 单元/配置/参数/环境变量 SSH 核对一致；失败执行详情看不到错误见 FAIL-C-002"
+    },
+    {
+      "id": "application.start",
+      "page": "page.applications",
+      "status": "passed",
+      "expected": "start 后服务恢复 active，页面健康=健康",
+      "actual": "stop 后节点 inactive 无进程；start 后 active，页面健康=健康，执行 SUCCESS",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-application-detail-1440-light.png"
+      ],
+      "notes": "SSH 核对 systemctl is-active 与 pgrep"
+    },
+    {
+      "id": "application.stop",
+      "page": "page.applications",
+      "status": "passed",
+      "expected": "stop 后服务停止，页面健康显示已停止",
+      "actual": "stop 后两节点 systemctl inactive、无进程；页面健康=已停止（操作 stop），执行 SUCCESS",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-application-detail-1440-light.png"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "application.restart",
+      "page": "page.applications",
+      "status": "passed",
+      "expected": "restart 后进程 PID 变化且服务仍健康",
+      "actual": "restart 后 agent-3 PID 1831→1888、agent-4 2105→2159，服务 active，心跳继续更新，页面健康=健康",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-application-detail-1440-light.png"
+      ],
+      "notes": "SSH 记录前后 PID 对比"
+    },
+    {
+      "id": "application.upgrade",
+      "page": "page.applications",
+      "status": "passed",
+      "expected": "切换 v2 发布包后 upgrade，节点实际运行 v2 二进制",
+      "actual": "upgrade 后两节点二进制 sha256=a148559711f16619275c93f1c3d6f88e215d5e55ce208b732a688c2f861e27fd（v2），服务 active，执行 SUCCESS，页面版本 2.0.0/r2",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-application-detail-1440-light.png"
+      ],
+      "notes": "心跳仍为 hello-v1 是因 arguments 未改（--msg hello-v1），以二进制哈希判定 v2 生效"
+    },
+    {
+      "id": "application.health",
+      "page": "page.applications",
+      "status": "passed",
+      "expected": "健康卡片显示每个节点健康/停止/不健康状态与操作",
+      "actual": "deploy/start/restart 后显示健康；stop 后显示已停止；失败部署显示不健康并带 health check failed; rolled back 文本",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-application-detail-1440-light.png",
+        ".e2e/evidence/agent-c/app-fail-rollback.png"
+      ],
+      "notes": "健康检查类型 systemd 以单元状态判定"
+    },
+    {
+      "id": "application.delete",
+      "page": "page.applications",
+      "status": "passed",
+      "expected": "删除应用有确认对话框；节点侧清理 systemd 单元/二进制/配置，无不残留",
+      "actual": "确认对话框删除两个应用；SSH 核对两节点 unit 文件、二进制、/etc 配置全部删除，进程 0，systemctl 无 e2e-c 单元；删除后 /applications 空态",
+      "evidence": [
+        ".e2e/evidence/agent-c/app-delete-confirm.png",
+        ".e2e/evidence/agent-c/app-deleted-toast.png",
+        ".e2e/evidence/agent-c/app-svc-deleted.png"
+      ],
+      "notes": "应用运行期写的 /tmp 心跳文件不属清理范围，已由测试者 SSH 删除；删除后 Usage 归零"
+    },
+    {
+      "id": "application.rollback",
+      "page": "page.applications",
+      "status": "blocked",
+      "expected": "页面提供回滚操作则可测回滚并核对",
+      "actual": "部署操作下拉仅 deploy/start/stop/restart/upgrade，无 rollback 入口；自动回滚在健康检查失败路径已验证（FAILED + rollback 清理）",
+      "evidence": [
+        ".e2e/evidence/agent-c/app-fail-rollback.png"
+      ],
+      "notes": "无 UI 入口，未做手动回滚"
+    },
+    {
+      "id": "transfer.create",
+      "page": "page.transfers",
+      "status": "failed",
+      "expected": "多目标传输（agent-3→agent-4 与 agent-3→自身）全部成功，目标文件内容正确",
+      "actual": "自传输目标成功（agent-3 文件内容为 nodesteer-agent-3）；跨节点目标 agent-4 永久停在 DELIVERING，未生成文件、无系统调用/日志、无终止状态，3 分钟后仍不变",
+      "evidence": [
+        ".e2e/evidence/agent-c/transfer-stuck.png",
+        ".e2e/evidence/agent-c/transfer-stuck-api.json",
+        ".e2e/evidence/agent-c/transfer-form-filled.png"
+      ],
+      "notes": "FAIL-C-001；同方向 agent-3 自传输成功，说明上传链路正常，问题在跨节点交付"
+    },
+    {
+      "id": "transfer.detail",
+      "page": "page.transfers",
+      "status": "blocked",
+      "expected": "存在传输详情（目标、状态、错误）可查看",
+      "actual": "路由仅有 /transfers 列表页，无详情页/详情抽屉；只有列表行内每目标状态徽章",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-transfers-1440-light.png",
+        ".e2e/evidence/agent-c/transfer-stuck-api.json"
+      ],
+      "notes": "失败原因/传输错误仅在 API 返回，页面不可见"
+    },
+    {
+      "id": "transfer.retry",
+      "page": "page.transfers",
+      "status": "passed",
+      "expected": "失败传输可重试；重试有结果反馈",
+      "actual": "源路径不存在的传输状态=失败，行菜单出现「重试」；点击重试后重新执行并再次失败（updated_at 更新），状态仍为失败；无 toast/错误提示",
+      "evidence": [
+        ".e2e/evidence/agent-c/transfer-failed-menu.png",
+        ".e2e/evidence/agent-c/transfer-failed-api.json"
+      ],
+      "notes": "重试入口仅 FAILED 状态出现；重试无反馈记入 UI-C-006"
+    },
+    {
+      "id": "transfer.cancel",
+      "page": "page.transfers",
+      "status": "passed",
+      "expected": "进行中传输可取消；失败传输不可取消；不存在删除入口",
+      "actual": "DELIVERING 卡住传输行菜单有「取消传输」，取消后状态=已取消、agent-4 目标→已取消（成功的 agent-3 目标保持成功）；FAILED 行菜单只有重试；两行均无删除入口",
+      "evidence": [
+        ".e2e/evidence/agent-c/transfer-canceled.png",
+        ".e2e/evidence/agent-c/transfer-failed-menu.png",
+        ".e2e/evidence/agent-c/ui-transfers-final.png"
+      ],
+      "notes": "取消入口仅 PENDING/UPLOADING/DELIVERING；无删除为产品现状（OBS-C-003）"
+    }
+  ],
+  "workflows": [
+    {
+      "id": "workflow.artifact.application.deploy.001",
+      "name": "发布包→应用→部署→执行/节点→升级→失败回滚→删除清理 闭环",
+      "status": "passed",
+      "steps": [
+        "artifact.upload(v1/v2)",
+        "artifact.list/search/pagination/usage",
+        "artifact.download+SHA256 核对",
+        "artifact 菜单创建应用预选",
+        "编辑器内上传新发布包自动关联",
+        "assign agent-3/agent-4",
+        "deploy",
+        "SSH 核对 systemd/进程/单元/配置",
+        "执行详情",
+        "节点详情托管应用",
+        "edit 切 v2",
+        "upgrade",
+        "SSH 核对 v2 哈希",
+        "健康失败→FAILED+自动回滚",
+        "修正后重部署 SUCCESS",
+        "application.delete",
+        "节点清理核对",
+        "artifact.delete"
+      ],
+      "result": "全链路真实闭环完成；部署、升级、失败回滚、删除清理均在节点侧核对；唯一未含手动回滚（UI 不提供）",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-application-detail-1440-light.png",
+        ".e2e/evidence/agent-c/app-fail-rollback.png",
+        ".e2e/evidence/agent-c/exec-failed-detail.png",
+        ".e2e/evidence/agent-c/app-svc-deleted.png"
+      ]
+    },
+    {
+      "id": "workflow.transfer.multi_target.001",
+      "name": "多目标文件传输 + 失败重试/取消",
+      "status": "partial",
+      "steps": [
+        "transfer.create(agent-3→agent-3 自身)",
+        "transfer.create(agent-3→agent-4)",
+        "目标状态核对",
+        "SSH 文件内容核对",
+        "失败传输(源不存在)",
+        "retry",
+        "cancel(卡住传输)"
+      ],
+      "result": "自传输成功且内容正确；跨节点目标卡在 DELIVERING 未交付（FAIL-C-001）；失败重试可用但无反馈；取消可用",
+      "evidence": [
+        ".e2e/evidence/agent-c/transfer-stuck.png",
+        ".e2e/evidence/agent-c/transfer-stuck-api.json",
+        ".e2e/evidence/agent-c/transfer-canceled.png",
+        ".e2e/evidence/agent-c/transfer-failed-menu.png"
+      ]
+    }
+  ],
+  "failures": [
+    {
+      "id": "FAIL-C-001",
+      "severity": "high",
+      "feature_id": "transfer.create",
+      "title": "跨节点文件传输目标永久停在 DELIVERING，文件未交付且无终止态",
+      "preconditions": [
+        "Hub 与 agent-3/agent-4 均在线",
+        "来源文件 /etc/hostname 存在"
+      ],
+      "steps": [
+        "打开 /transfers",
+        "源 Agent=agent-3、源路径=/etc/hostname",
+        "先加目标 agent-3:/tmp/e2e-c-transfer-8256-self.txt，再加目标 agent-4:/tmp/e2e-c-transfer-8256.txt",
+        "点击开始传输",
+        "等待并刷新/轮询列表（3s refetch）"
+      ],
+      "expected": "两个目标均 SUCCESS，agent-4 出现 /tmp/e2e-c-transfer-8256.txt",
+      "actual": "agent-3 目标 SUCCESS；agent-4 目标 3 分钟以上停在 DELIVERING，文件不存在；API error=context canceled，target.updated_at 一直为下发时刻；agent-4 无下载 TCP 连接、journalctl 无传输日志、无结果回包；页面无重试入口（仅取消）",
+      "reproducible": true,
+      "reproduction_count": 1,
+      "console_errors": [],
+      "network_errors": [],
+      "screenshots": [
+        ".e2e/evidence/agent-c/transfer-stuck.png"
+      ],
+      "suspected_area": [
+        "internal/hub/file_transfer.go dispatchTarget/download",
+        "internal/agent/agent.go downloadFile/OnFileDeliveryRequest",
+        "gatewayBaseURL/HTTP 数据面"
+      ],
+      "notes": "transfer-stuck-api.json 保存完整 API 记录；取消后目标状态=已取消，可复现路径保留在 /transfers"
+    },
+    {
+      "id": "FAIL-C-002",
+      "severity": "medium",
+      "feature_id": "application.deploy",
+      "title": "托管应用部署失败在「执行详情」不可见：日志为空、无错误、无回滚标识",
+      "preconditions": [
+        "应用配置 command/false 健康检查触发部署失败并自动回滚"
+      ],
+      "steps": [
+        "创建应用（健康检查 command target=false）",
+        "部署",
+        "打开 /executions 中 FAILED 执行",
+        "查看 概览/日志 标签"
+      ],
+      "expected": "执行详情可看到部署失败原因与回滚结果",
+      "actual": "执行详情状态=失败，但 stdout/stderr 0 字符、日志标签「（空）」、无错误文本；错误仅显示在应用页健康卡片（health check failed; rolled back）",
+      "reproducible": true,
+      "reproduction_count": 1,
+      "console_errors": [],
+      "network_errors": [],
+      "screenshots": [
+        ".e2e/evidence/agent-c/exec-failed-detail.png",
+        ".e2e/evidence/agent-c/app-fail-rollback.png"
+      ],
+      "suspected_area": [
+        "execution 记录未写入部署错误/日志",
+        "hub application deploy 结果未落 execution 输出"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "FAIL-C-003",
+      "severity": "medium",
+      "feature_id": "application.create",
+      "title": "新建应用未填名称时校验提示显示「暂无数据」而非必填提示",
+      "preconditions": [
+        "登录",
+        "打开 /applications/new"
+      ],
+      "steps": [
+        "不填任何字段点击「保存」"
+      ],
+      "expected": "提示名称必填（如「名称」）或高亮字段",
+      "actual": "红色错误条显示「暂无数据」（ErrorState 对字符串错误回退 t('common.noData')），用户无法得知缺失字段",
+      "reproducible": true,
+      "reproduction_count": 2,
+      "console_errors": [],
+      "network_errors": [],
+      "screenshots": [
+        ".e2e/evidence/agent-c/ui-app-new-validation-top.png",
+        ".e2e/evidence/agent-c/ui-app-new-validation.png"
+      ],
+      "suspected_area": [
+        "web/src/features/editors ApplicationEditor save() 传字符串 error",
+        "features/shared/ui.tsx ErrorState 仅识别 Error 实例"
+      ],
+      "notes": "同类编辑器（脚本/任务/分组）疑似同样模式，未在本次范围验证"
+    },
+    {
+      "id": "FAIL-C-004",
+      "severity": "medium",
+      "feature_id": "application.deploy",
+      "title": "托管应用部署执行在 /executions 显示为「未知任务」，缺少来源上下文",
+      "preconditions": [
+        "应用部署产生执行记录"
+      ],
+      "steps": [
+        "打开 /executions",
+        "查看应用部署产生的最新执行行与详情标题"
+      ],
+      "expected": "标明来自托管应用部署（应用名/操作）",
+      "actual": "列表与详情标题均为「未知任务」，只有节点与时间可辨识；同页任务执行正常显示任务名",
+      "reproducible": true,
+      "reproduction_count": 2,
+      "console_errors": [],
+      "network_errors": [],
+      "screenshots": [
+        ".e2e/evidence/agent-c/executions-list-unknown-task.png",
+        ".e2e/evidence/agent-c/exec-failed-detail.png"
+      ],
+      "suspected_area": [
+        "execution.task_id 关联缺失",
+        "web executions 列 taskNames 回退 common.unknownTask"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "FAIL-C-005",
+      "severity": "medium",
+      "feature_id": "transfer.retry",
+      "title": "文件传输失败原因在页面完全不可见",
+      "preconditions": [
+        "源路径不存在的失败传输"
+      ],
+      "steps": [
+        "创建失败传输",
+        "查看列表行/行菜单/重试"
+      ],
+      "expected": "展示失败原因（如源文件不存在）",
+      "actual": "列表仅显示「失败」；API error='open /tmp/e2e-c-8256-nonexistent.txt: no such file or directory' 不展示；重试后无任何提示",
+      "reproducible": true,
+      "reproduction_count": 1,
+      "console_errors": [],
+      "network_errors": [],
+      "screenshots": [
+        ".e2e/evidence/agent-c/transfer-failed-menu.png"
+      ],
+      "suspected_area": [
+        "web/src/features/transfers 未渲染 transfer.error/target.error"
+      ],
+      "notes": "transfer-failed-api.json 保存 API 原文"
+    }
+  ],
+  "observations": [
+    {
+      "id": "OBS-C-001",
+      "type": "possible_gap",
+      "description": "节点详情没有托管应用健康视图：托管应用只列在「任务」标签（名称+版本，无健康/操作），健康状态只能在应用页看到",
+      "related_features": [
+        "application.health",
+        "application.list"
+      ],
+      "follow_up_required": true,
+      "resolved": false
+    },
+    {
+      "id": "OBS-C-002",
+      "type": "possible_gap",
+      "description": "升级部署时 agent-4 journal 出现 WARN 'application artifact prefetch failed ... rename ...tmp ...: no such file or directory'，疑似并发 prefetch 竞争；本次部署仍成功",
+      "related_features": [
+        "application.upgrade"
+      ],
+      "follow_up_required": true,
+      "resolved": false
+    },
+    {
+      "id": "OBS-C-003",
+      "type": "possible_gap",
+      "description": "文件传输没有删除入口/API，FAILED 与 CANCELED 记录永久保留（历史 test-data 亦有同记录）",
+      "related_features": [
+        "transfer.cancel"
+      ],
+      "follow_up_required": true,
+      "resolved": false
+    },
+    {
+      "id": "OBS-C-004",
+      "type": "ux",
+      "description": "目标 Agent 下拉会排除已选源 Agent，无法通过正常顺序选择同节点自传输；仅在先选目标后选源时可加自身，属交互不一致",
+      "related_features": [
+        "transfer.create"
+      ],
+      "follow_up_required": true,
+      "resolved": false
+    },
+    {
+      "id": "OBS-C-005",
+      "type": "possible_gap",
+      "description": "部署操作无手动回滚入口（仅 deploy/start/stop/restart/upgrade）；回滚仅在健康失败时自动触发",
+      "related_features": [
+        "application.rollback"
+      ],
+      "follow_up_required": true,
+      "resolved": false
+    }
+  ],
+  "ui_findings": [
+    {
+      "id": "UI-C-001",
+      "page": "/applications",
+      "viewport": "1440x900",
+      "theme": "light",
+      "severity": "low",
+      "category": "overflow",
+      "title": "应用列表 1440 下修订号列被截断，需横向滚动",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-applications-1440-light.png"
+      ],
+      "description": "名称/版本/二进制/Unit 后「修订号」列只剩部分表头，右下出现「左右」滑动提示；在 /artifacts 英文深色下 Usage 列同样被 Scroll 提示边缘压住",
+      "status": "open"
+    },
+    {
+      "id": "UI-C-002",
+      "page": "/transfers",
+      "viewport": "1440x900",
+      "theme": "light",
+      "severity": "low",
+      "category": "layout",
+      "title": "传输列表「源 Agent」与「源文件路径」文本视觉粘连",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-transfers-1440-light.png",
+        ".e2e/evidence/agent-c/ui-transfers-1440-dark-en.png"
+      ],
+      "description": "行内 'nodesteer-agent-3' 后紧接 '/tmp/...'，无列间距，易误读为同一字符串",
+      "status": "open"
+    },
+    {
+      "id": "UI-C-003",
+      "page": "/ (sidebar)",
+      "viewport": "1440x900",
+      "theme": "light",
+      "severity": "low",
+      "category": "consistency",
+      "title": "侧边导航无「发布包」入口，/artifacts 只能直达或从应用页链接进入",
+      "evidence": [
+        ".e2e/evidence/agent-c/ui-artifacts-1440-light.png",
+        ".e2e/evidence/agent-c/ui-applications-1440-light.png"
+      ],
+      "description": "资源分组只有 脚本/应用；发布包页面无导航项，历史 discovery 菜单中的 delivery 分组（发布包+托管应用）未落地",
+      "status": "open"
+    },
+    {
+      "id": "UI-C-004",
+      "page": "/artifacts, /applications, /transfers",
+      "viewport": "1440x900",
+      "theme": "dark",
+      "severity": "low",
+      "category": "i18n",
+      "title": "切换 English 后 html lang 仍为 zh-CN",
+      "evidence": [
+        ".e2e/evidence/agent-c/i18n-en.log",
+        ".e2e/evidence/agent-c/ui-artifacts-1440-dark-en.png"
+      ],
+      "description": "页面文案已英文（Artifacts/Applications/File Transfers），但 document.documentElement.lang 保持 zh-CN，影响读屏与翻译提示",
+      "status": "open"
+    },
+    {
+      "id": "UI-C-005",
+      "page": "/artifacts",
+      "viewport": "1440x900",
+      "theme": "light",
+      "severity": "low",
+      "category": "i18n",
+      "title": "删除被引用发布包的阻断提示为英文后端原文并带裸 UUID",
+      "evidence": [
+        ".e2e/evidence/agent-c/artifact-delete-blocked.png"
+      ],
+      "description": "中文界面弹出 'artifact b0c6d7a3-… is referenced by application 6a96efd5-…'，未本地化且泄露内部 ID",
+      "status": "open"
+    },
+    {
+      "id": "UI-C-006",
+      "page": "/transfers",
+      "viewport": "1440x900",
+      "theme": "light",
+      "severity": "low",
+      "category": "feedback",
+      "title": "失败传输点击「重试」无任何反馈",
+      "evidence": [
+        ".e2e/evidence/agent-c/transfer-failed-menu.png"
+      ],
+      "description": "重试后无 loading/toast，状态停留「失败」且原因不可见，用户无法判断重试是否执行",
+      "status": "open"
+    }
+  ],
+  "test_data": [
+    {
+      "id": "data.c.artifact.001",
+      "type": "artifact",
+      "name": "e2e-c-20260919-8256-app/1.0.0 (e2e-c-app-v1)",
+      "created_at": "2026-09-19T17:34:00+08:00",
+      "current_state": "deleted",
+      "safe_to_delete": true,
+      "deleted": true,
+      "cleanup_note": "页面删除（未引用后）"
+    },
+    {
+      "id": "data.c.artifact.002",
+      "type": "artifact",
+      "name": "e2e-c-20260919-8256-app/2.0.0 (e2e-c-app-v2)",
+      "created_at": "2026-09-19T17:35:00+08:00",
+      "current_state": "deleted",
+      "safe_to_delete": true,
+      "deleted": true,
+      "cleanup_note": "先被应用引用删除被阻止（负路径），应用删除后页面删除"
+    },
+    {
+      "id": "data.c.artifact.003",
+      "type": "artifact",
+      "name": "e2e-c-20260919-8256-app/1.0.1 (编辑器内上传)",
+      "created_at": "2026-09-19T17:37:00+08:00",
+      "current_state": "deleted",
+      "safe_to_delete": true,
+      "deleted": true,
+      "cleanup_note": "页面删除"
+    },
+    {
+      "id": "data.c.artifact.pagination",
+      "type": "artifact",
+      "name": "e2e-c-20260919-8256-p01..p11 (11 个分页探针)",
+      "created_at": "2026-09-19T18:20:00+08:00",
+      "current_state": "deleted",
+      "safe_to_delete": true,
+      "deleted": true,
+      "cleanup_note": "分页验证后页面全部删除，artifacts 列表为空"
+    },
+    {
+      "id": "data.c.app.001",
+      "type": "application",
+      "name": "e2e-c-20260919-8256-svc",
+      "created_at": "2026-09-19T17:38:00+08:00",
+      "current_state": "deleted",
+      "safe_to_delete": true,
+      "deleted": true,
+      "cleanup_note": "页面删除；agent-3/agent-4 上 unit/二进制/配置经 SSH 核对全部清理，进程 0"
+    },
+    {
+      "id": "data.c.app.002",
+      "type": "application",
+      "name": "e2e-c-20260919-8256-fail (失败回滚用例)",
+      "created_at": "2026-09-19T17:44:00+08:00",
+      "current_state": "deleted",
+      "safe_to_delete": true,
+      "deleted": true,
+      "cleanup_note": "页面删除；agent-3 上 unit/二进制已清理；运行期默认心跳 /tmp/e2e-c-heartbeat.txt 由测试者 SSH 删除"
+    },
+    {
+      "id": "data.c.transfer.001",
+      "type": "transfer",
+      "name": "agent-3:/etc/hostname -> agent-3:/tmp/e2e-c-transfer-8256-self.txt + agent-4:/tmp/e2e-c-transfer-8256.txt",
+      "created_at": "2026-09-19T17:49:00+08:00",
+      "current_state": "canceled",
+      "safe_to_delete": false,
+      "deleted": false,
+      "cleanup_note": "跨节点目标卡 DELIVERING 后经页面取消；传输记录无删除入口（UI/API），记录长期保留；agent-3 目标文件已由 SSH 删除，agent-4 从未生成文件"
+    },
+    {
+      "id": "data.c.transfer.002",
+      "type": "transfer",
+      "name": "agent-3:/tmp/e2e-c-8256-nonexistent.txt -> agent-4 (失败重试用例)",
+      "created_at": "2026-09-19T17:53:00+08:00",
+      "current_state": "failed",
+      "safe_to_delete": false,
+      "deleted": false,
+      "cleanup_note": "FAILED 记录仅可重试不可取消/删除，页面保留为证据"
+    },
+    {
+      "id": "data.c.temp.files",
+      "type": "node_temp_files",
+      "name": "agent-3:/tmp/e2e-c-transfer-8256-self.txt, /tmp/e2e-c-8256-heartbeat.txt, /tmp/e2e-c-heartbeat.txt; agent-4:/tmp/e2e-c-8256-heartbeat.txt",
+      "created_at": "2026-09-19T17:49:00+08:00",
+      "current_state": "deleted",
+      "safe_to_delete": true,
+      "deleted": true,
+      "cleanup_note": "仅删除本轮自建文件；两节点已无 e2e-c 残留文件与 e2e-c systemd 单元"
+    },
+    {
+      "id": "data.c.binaries",
+      "type": "local_test_binaries",
+      "name": "/tmp/opencode/e2e-app/e2e-c-app-v1|v2 (Go, SIGTERM 优雅退出+心跳)",
+      "created_at": "2026-09-19T17:33:00+08:00",
+      "current_state": "exists",
+      "safe_to_delete": true,
+      "deleted": false,
+      "cleanup_note": "位于 /tmp/opencode，非仓库/节点资源，保留供后续复测"
+    }
+  ]
+}
