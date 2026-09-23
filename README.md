@@ -199,6 +199,7 @@ internal/agent/host Native / Container HostAdapter
 internal/protocol/  Hub-Agent 控制协议
 internal/store/     持久化层
 internal/models/    共享模型
+migrations/         数据库迁移目录（当前为空）
 web/                React + Vite + TypeScript 前端
 packaging/          Docker 与 systemd 部署文件
 docs/               产品、架构和测试文档
@@ -211,6 +212,11 @@ openspec/            变更管理与规格文件
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：系统架构和一致性约束
 - [docs/TEST_PLAN.md](docs/TEST_PLAN.md)：测试计划
 - [docs/TRACEABILITY_MATRIX.md](docs/TRACEABILITY_MATRIX.md)：需求追踪矩阵
+- [docs/REAL_TEST_REPORT.md](docs/REAL_TEST_REPORT.md)：真实环境功能测试与失败项复验报告
+- [docs/UI_FULL_TEST_PLAN.md](docs/UI_FULL_TEST_PLAN.md)：Web 页面全量黑盒测试计划
+- [docs/UI_FULL_TEST_REPORT_20260915.md](docs/UI_FULL_TEST_REPORT_20260915.md)：页面全量测试执行报告
+- [docs/IMPLEMENTATION_PROMPT.md](docs/IMPLEMENTATION_PROMPT.md)：研发实施总控提示词
+- [docs/DEV_RULES.md](docs/DEV_RULES.md)：实现原则和项目完成门禁（AGENTS.md 分片）
 
 ## 第三方声明
 
