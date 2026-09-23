@@ -154,7 +154,6 @@ export default {
   login: {
     subtitle: 'Linux 节点自动化控制台',
     sso: '使用 SSO 登录',
-    localFallback: '或使用本地账号登录',
     username: '用户名',
     password: '密码',
     failed: '登录失败，请检查凭据。',
@@ -394,6 +393,7 @@ export default {
     application: '托管应用',
     selectApp: '选择托管应用...',
     operation: '操作',
+    deploy: '部署',
     start: '启动',
     stop: '停止',
     restart: '重启',

@@ -30,12 +30,19 @@ type OIDCConfig struct {
 	RoleClaim     string            `yaml:"role_claim"`
 	RoleMappings  map[string]string `yaml:"role_mappings"`
 	DefaultRole   string            `yaml:"default_role"`
-	// AllowLocalLogin 本地账号密码登录兜底（break-glass）：OIDC 启用时仍允许本地登录。
-	// 默认 false 保持严格语义（OIDC 启用即禁本地）。
-	AllowLocalLogin bool `yaml:"allow_local_login"`
+	// AllowLocalLogin 两种登录方式的互斥选择器（三态指针，nil 视为 true=默认本地模式）：
+	//   true  —— 本地密码登录可用；OIDC 完全失效（启动不做 discovery、不构造客户端）。
+	//   false —— SSO 唯一登录方式；密码登录一律 403（与本地账户是否存在无关）。
+	AllowLocalLogin *bool `yaml:"allow_local_login"`
 }
 
-// DefaultOIDCConfig 返回默认 OIDC 配置
+// LocalLoginAllowed 返回 allow_local_login 的生效值：nil（未显式配置）视为 true。
+func (c OIDCConfig) LocalLoginAllowed() bool {
+	return c.AllowLocalLogin == nil || *c.AllowLocalLogin
+}
+
+// DefaultOIDCConfig 返回默认 OIDC 配置。
+// AllowLocalLogin 保持 nil，即默认本地模式（LocalLoginAllowed()==true）。
 func DefaultOIDCConfig() OIDCConfig {
 	return OIDCConfig{
 		Scopes:        []string{"openid", "profile", "email"},
@@ -118,9 +125,11 @@ func NewOIDC(ctx context.Context, cfg OIDCConfig, baseURL string) (*OIDC, error)
 // Enabled 是否启用
 func (o *OIDC) Enabled() bool { return o != nil && o.cfg.Issuer != "" }
 
-// LocalFallback 本地登录兜底是否生效（OIDC 启用且 allow_local_login 开启）。nil 安全。
+// LocalFallback 本地登录模式是否生效（allow_local_login=true，含默认）。
+// true 模式下客户端根本不构造（o==nil），同样返回 true；nil 安全。
+// SSO-only 模式（false）下客户端已构造且 cfg 显式为 false，返回 false。
 func (o *OIDC) LocalFallback() bool {
-	return o != nil && o.cfg.Issuer != "" && o.cfg.AllowLocalLogin
+	return o == nil || o.cfg.LocalLoginAllowed()
 }
 
 // BaseURL 返回回跳基址

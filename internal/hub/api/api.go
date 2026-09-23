@@ -17,6 +17,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cadentra/cadentra/internal/hub"
@@ -41,8 +42,11 @@ type Server struct {
 	metrics   *metrics.Metrics
 	logger    *slog.Logger
 
-	// OIDC 认证客户端（未启用时为 nil）
+	// OIDC 认证客户端（仅 SSO-only 模式注入，本地模式恒为 nil）
 	oidc *auth.OIDC
+
+	// loginFails 登录失败计数（简单限速：连续失败递增延迟，成功后重置）
+	loginFails loginFailTracker
 
 	// RegistrationToken Agent 注册令牌，用于 Agent 身份访问（如 Artifact 下载）
 	RegistrationToken string
@@ -104,6 +108,7 @@ func New(st store.Store, am *auth.Manager, nm *hub.NodeManager, sm *hub.ScriptMa
 		schedules: scm, artifacts: artm, apps: appm, execs: exm, logger: logger,
 		agentBinaryPaths: map[string]string{},
 		agentBinaryData:  map[string][]byte{},
+		loginFails:       loginFailTracker{fails: map[string]*loginFailEntry{}},
 	}
 }
 
@@ -298,11 +303,91 @@ func readJSON(r *http.Request, v any) error {
 
 // ---------- 认证 Handlers ----------
 
-func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
-	if s.auth.LocalLoginDisabled() {
-		writeErr(w, http.StatusForbidden, "local login disabled")
-		return
+// oidcActive OIDC 是否作为当前登录方式生效。
+// 仅当 allow_local_login=false（SSO-only 模式）且 OIDC 客户端就绪时为 true；
+// 本地模式（默认 true）下恒为 false —— 两种登录方式互斥，OIDC 完全失效。
+func (s *Server) oidcActive() bool {
+	return !s.auth.LocalLoginAllowed() && s.oidc != nil && s.oidc.Enabled()
+}
+
+// 登录失败限速（最小实现，无第三方依赖）：同 IP+用户名连续失败达到阈值后
+// 递增延迟，成功后重置，记录超时后视为新的计数窗口。
+const (
+	loginFailThreshold = 3 // 连续失败达到该次数后开始延迟
+	loginFailBaseDelay = 200 * time.Millisecond
+	loginFailMaxDelay  = 2 * time.Second
+	loginFailEntryTTL  = 10 * time.Minute
+)
+
+type loginFailEntry struct {
+	count    int
+	lastFail time.Time
+}
+
+type loginFailTracker struct {
+	mu    sync.Mutex
+	fails map[string]*loginFailEntry
+}
+
+// delay 按当前连续失败次数返回本次请求需等待的时长（首个窗口返回 0）。
+func (t *loginFailTracker) delay(key string) time.Duration {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	e, ok := t.fails[key]
+	if !ok {
+		return 0
 	}
+	if time.Since(e.lastFail) > loginFailEntryTTL {
+		delete(t.fails, key)
+		return 0
+	}
+	if e.count < loginFailThreshold {
+		return 0
+	}
+	shift := e.count - loginFailThreshold
+	if shift > 8 {
+		shift = 8
+	}
+	d := time.Duration(1<<shift) * loginFailBaseDelay
+	if d > loginFailMaxDelay {
+		d = loginFailMaxDelay
+	}
+	return d
+}
+
+// fail 记录一次登录失败。
+func (t *loginFailTracker) fail(key string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.fails == nil {
+		t.fails = map[string]*loginFailEntry{}
+	}
+	e, ok := t.fails[key]
+	if !ok || time.Since(e.lastFail) > loginFailEntryTTL {
+		e = &loginFailEntry{}
+		t.fails[key] = e
+	}
+	e.count++
+	e.lastFail = time.Now()
+}
+
+// reset 登录成功后清零该 key 的失败计数。
+func (t *loginFailTracker) reset(key string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	delete(t.fails, key)
+}
+
+// loginFailKey 限速维度：客户端 IP + 小写用户名（用户名为空也计入）。
+func loginFailKey(r *http.Request, username string) string {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		host = r.RemoteAddr
+	}
+	return host + "|" + strings.ToLower(username)
+}
+
+func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -311,13 +396,35 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "invalid request")
 		return
 	}
+	// SSO-only 模式（allow_local_login=false）：密码登录一律 403，
+	// 与本地账户是否存在、密码是否正确无关（绝对语义）。
+	if s.auth.LocalLoginDisabled() {
+		_ = s.store.AddAudit(r.Context(), &models.AuditLog{
+			Username: req.Username, Action: "login", Resource: "auth",
+			Detail: "local login disabled",
+		})
+		writeErr(w, http.StatusForbidden, "local login disabled")
+		return
+	}
+	key := loginFailKey(r, req.Username)
+	if d := s.loginFails.delay(key); d > 0 {
+		time.Sleep(d)
+	}
 	sess, err := s.auth.Login(r.Context(), req.Username, req.Password)
 	if err != nil {
+		s.loginFails.fail(key)
+		// 失败登录写审计：detail 不得包含密码
+		_ = s.store.AddAudit(r.Context(), &models.AuditLog{
+			Username: req.Username, Action: "login", Resource: "auth",
+			Detail: "failed: invalid credentials",
+		})
 		writeErr(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
+	s.loginFails.reset(key)
 	s.store.AddAudit(r.Context(), &models.AuditLog{
 		UserID: sess.UserID, Username: sess.Username, Action: "login", Resource: "auth",
+		Detail: "local",
 	})
 	writeJSON(w, http.StatusOK, map[string]any{
 		"token": sess.Token, "user": sess,
@@ -343,25 +450,26 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 
 // ---------- OIDC Handlers ----------
 
-// handleOIDCState 返回 OIDC 是否启用
+// handleOIDCState 返回当前登录方式互斥状态：
+// enabled=SSO 是否为当前登录方式；local_fallback=本地密码登录是否可用（字段名保留兼容旧前端）。
 func (s *Server) handleOIDCState(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]bool{
-		"enabled":        s.oidc != nil && s.oidc.Enabled(),
-		"local_fallback": s.oidc != nil && s.oidc.LocalFallback(),
+		"enabled":        s.oidcActive(),
+		"local_fallback": s.auth.LocalLoginAllowed(),
 	})
 }
 
-// handleOIDCLogin 生成授权跳转 URL
+// handleOIDCLogin 生成授权跳转 URL（本地模式下 OIDC 完全失效 → 404）
 func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
-	if s.oidc == nil || !s.oidc.Enabled() {
+	if !s.oidcActive() {
 		writeErr(w, http.StatusNotFound, "oidc not enabled")
 		return
 	}
@@ -380,7 +488,7 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
-	if s.oidc == nil || !s.oidc.Enabled() {
+	if !s.oidcActive() {
 		writeErr(w, http.StatusNotFound, "oidc not enabled")
 		return
 	}

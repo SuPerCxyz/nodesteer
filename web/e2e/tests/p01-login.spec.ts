@@ -54,12 +54,14 @@ test.describe('P01 登录页', () => {
     }
   })
 
-  test('P01-07 OIDC 开启后仅显示 SSO 入口', async ({ page }) => {
+  test('P01-07 SSO-only 模式（enabled:true, local_fallback:false）仅显示 SSO 入口', async ({
+    page,
+  }) => {
     await page.route('**/api/oidc/state', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ enabled: true }),
+        body: JSON.stringify({ enabled: true, local_fallback: false }),
       })
     })
     await page.goto(TEST_URLS.login)
@@ -68,20 +70,47 @@ test.describe('P01 登录页', () => {
     await expect(page.getByLabel(/password|密码/i)).toHaveCount(0)
   })
 
-  test('P01-08 OIDC 兜底开启时 SSO 与本地表单并存', async ({ page }) => {
+  test('P01-08 本地模式（enabled:false, local_fallback:true）仅显示本地表单', async ({
+    page,
+  }) => {
     await page.route('**/api/oidc/state', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ enabled: true, local_fallback: true }),
+        body: JSON.stringify({ enabled: false, local_fallback: true }),
       })
     })
     await page.goto(TEST_URLS.login)
-    // SSO 按钮与本地表单同时可见，含分隔文案
-    await expect(page.getByRole('button', { name: /sign in with sso|使用 sso/i })).toBeVisible()
     await expect(page.getByLabel(/username|用户名/i)).toBeVisible()
     await expect(page.getByLabel(/password|密码/i)).toBeVisible()
-    await expect(page.getByText(/or sign in with a local account|或使用本地账号登录/i)).toBeVisible()
+    // 本地模式下不出现 SSO 按钮与分隔文案（互斥，永不并存）
+    await expect(page.getByRole('button', { name: /sign in with sso|使用 sso/i })).toHaveCount(0)
+    await expect(
+      page.getByText(/or sign in with a local account|或使用本地账号登录/i)
+    ).toHaveCount(0)
+  })
+
+  test('P01-09 本地登录被后端拒绝（403）时显示错误提示', async ({ page }) => {
+    await page.route('**/api/oidc/state', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ enabled: false, local_fallback: true }),
+      })
+    })
+    await page.route('**/api/login', async (route) => {
+      await route.fulfill({
+        status: 403,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'local login disabled' }),
+      })
+    })
+    await page.goto(TEST_URLS.login)
+    await page.getByLabel(/username|用户名/i).fill('any-user')
+    await page.getByLabel(/password|密码/i).fill('any-password')
+    await page.getByRole('button', { name: /sign in|登录/i }).click()
+    await expect(page.getByRole('alert')).toBeVisible()
+    await expect(page.getByRole('alert')).toContainText('local login disabled')
   })
 })
 

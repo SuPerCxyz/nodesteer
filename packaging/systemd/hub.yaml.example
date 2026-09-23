@@ -23,8 +23,12 @@ changelog_window: 5000
 heartbeat_timeout: 90s
 max_file_transfer_bytes: 10737418240
 
-# OIDC 认证（可选）。配置 issuer 后启用 SSO，并禁用本地账号密码登录。
-# 未配置 issuer 时保持纯本地认证，行为不变。
+# OIDC 登录（可选）。allow_local_login 是两种登录方式的互斥选择器（默认 true）：
+#   true（默认，含未显式配置）= 本地密码登录可用；OIDC 完全失效
+#     —— 启动不做 discovery、不构造 OIDC 客户端，/api/oidc/login 返回 404。
+#   false = SSO 唯一登录方式 —— 密码登录一律 403（与本地账户是否存在无关）；
+#     此模式必须配置 issuer 且启动期 discovery 成功，否则 Hub 拒绝启动
+#     （恢复：切回 allow_local_login: true 后重启）。
 # oidc:
 #   issuer: "https://your-idp.example.com/realms/myrealm"
 #   client_id: "cadentra"
@@ -36,12 +40,11 @@ max_file_transfer_bytes: 10737418240
 #     admins: "administrator"
 #     ops: "operator"
 #   default_role: "viewer"
-#   # 本地登录兜底（break-glass）：true 时 OIDC 启用仍允许本地密码登录；
-#   # 且启动期 IdP discovery 失败不再拒绝启动，降级为 OIDC 未启用 + WARN 日志。
-#   allow_local_login: false
+#   # 登录方式互斥选择器（未显式配置时按 true 处理）
+#   allow_local_login: true
 #
-# 注意：启用 OIDC 后本地登录默认被禁用。请确保 IdP 中存在可映射为 administrator
-# 的账号，否则将无法通过 Web UI 管理 Hub；或设置 allow_local_login: true 保留兜底。
+# 注意：仅 allow_local_login=false 时 SSO 才是登录入口。该模式下请确保 IdP 中存在
+# 可映射为 administrator 的账号，否则将无法通过 Web UI 管理 Hub；本地密码登录不可用。
 # 环境变量覆盖：CADENTRA_OIDC_ISSUER / CADENTRA_OIDC_CLIENT_ID /
 # CADENTRA_OIDC_REDIRECT_URL / CADENTRA_OIDC_USERNAME_CLAIM /
 # CADENTRA_OIDC_ROLE_CLAIM / CADENTRA_OIDC_DEFAULT_ROLE /

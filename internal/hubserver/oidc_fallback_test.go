@@ -14,8 +14,11 @@ import (
 	"github.com/cadentra/cadentra/internal/hub/auth"
 )
 
-// fallbackHubConfig 生成最小可用 Hub 配置，issuer 由调用方指定。
-func fallbackHubConfig(dir, issuer string, allowLocal bool) Config {
+// boolPtr 返回指向 v 的指针（allow_local_login 三态开关测试辅助）。
+func boolPtr(v bool) *bool { return &v }
+
+// fallbackHubConfig 生成最小可用 Hub 配置；allowLocal 为 nil 表示不显式配置（默认 true）。
+func fallbackHubConfig(dir, issuer string, allowLocal *bool) Config {
 	return Config{
 		WebAddr:           "127.0.0.1:0",
 		GatewayAddr:       "127.0.0.1:0",
@@ -37,105 +40,83 @@ func fallbackHubConfig(dir, issuer string, allowLocal bool) Config {
 	}
 }
 
-// TestOIDCInitFailureFailFast 未开启兜底时 discovery 失败必须拒绝启动。
-func TestOIDCInitFailureFailFast(t *testing.T) {
+// TestDefaultLocalModeSkipsDiscovery 未显式配置（默认 true）本地模式：
+// 即使配置了不可达的 issuer，启动也绝不做 discovery（永不因 OIDC 失败）、
+// state={enabled:false, local_fallback:true}、/api/oidc/login 404、本地登录 200。
+func TestDefaultLocalModeSkipsDiscovery(t *testing.T) {
 	dir := t.TempDir()
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
-	// 127.0.0.1:1 连接必失败，模拟 IdP 不可达
-	_, err := New(fallbackHubConfig(dir, "http://127.0.0.1:1", false), logger)
+	// 127.0.0.1:1 连接必失败；本地模式下 Hub 不应发起 discovery，故正常启动
+	h, err := New(fallbackHubConfig(dir, "http://127.0.0.1:1", nil), logger)
+	if err != nil {
+		t.Fatalf("local mode must start regardless of issuer reachability, got: %v", err)
+	}
+	t.Cleanup(func() { h.Close() })
+	if err := h.EnsureDefaultAdmin(context.Background()); err != nil {
+		t.Fatalf("ensure admin: %v", err)
+	}
+	ts := httptest.NewServer(h.ServeMux())
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/api/oidc/state")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var state struct {
+		Enabled       bool `json:"enabled"`
+		LocalFallback bool `json:"local_fallback"`
+	}
+	json.NewDecoder(resp.Body).Decode(&state)
+	resp.Body.Close()
+	if state.Enabled || !state.LocalFallback {
+		t.Fatalf("local mode should report enabled=false local_fallback=true, got enabled=%v fallback=%v",
+			state.Enabled, state.LocalFallback)
+	}
+
+	// OIDC 完全失效：登录入口 404
+	oidcLogin, err := http.Get(ts.URL + "/api/oidc/login")
+	if err != nil {
+		t.Fatal(err)
+	}
+	oidcLogin.Body.Close()
+	if oidcLogin.StatusCode != http.StatusNotFound {
+		t.Fatalf("oidc/login expected 404 in local mode, got %d", oidcLogin.StatusCode)
+	}
+
+	// 本地密码登录必须可用
+	loginResp, err := http.Post(ts.URL+"/api/login", "application/json",
+		strings.NewReader(`{"username":"admin","password":"admin123"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer loginResp.Body.Close()
+	if loginResp.StatusCode != http.StatusOK {
+		t.Fatalf("local login should work in default local mode, got %d", loginResp.StatusCode)
+	}
+}
+
+// TestSSOOnlyModeFailsFastOnBadIssuer allow_local_login=false 时 discovery 失败必须 fail-fast 拒启。
+func TestSSOOnlyModeFailsFastOnBadIssuer(t *testing.T) {
+	dir := t.TempDir()
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
+	_, err := New(fallbackHubConfig(dir, "http://127.0.0.1:1", boolPtr(false)), logger)
 	if err == nil {
-		t.Fatal("hub should refuse to start when oidc init fails without fallback")
+		t.Fatal("hub should refuse to start when sso-only mode oidc discovery fails")
 	}
 	if !strings.Contains(err.Error(), "init oidc") {
 		t.Fatalf("expected init oidc error, got: %v", err)
 	}
 }
 
-// TestOIDCInitFailureDegradesWithFallback 开启兜底时 discovery 失败降级启动：
-// OIDC 未启用、state=false、本地登录可用。
-func TestOIDCInitFailureDegradesWithFallback(t *testing.T) {
+// TestSSOOnlyModeRequiresIssuer allow_local_login=false 且未配置 issuer 时必须拒启。
+func TestSSOOnlyModeRequiresIssuer(t *testing.T) {
 	dir := t.TempDir()
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
-	h, err := New(fallbackHubConfig(dir, "http://127.0.0.1:1", true), logger)
-	if err != nil {
-		t.Fatalf("hub should degrade-start with local login fallback, got: %v", err)
+	_, err := New(fallbackHubConfig(dir, "", boolPtr(false)), logger)
+	if err == nil {
+		t.Fatal("hub should refuse to start when allow_local_login=false without oidc.issuer")
 	}
-	t.Cleanup(func() { h.Close() })
-	if err := h.EnsureDefaultAdmin(context.Background()); err != nil {
-		t.Fatalf("ensure admin: %v", err)
-	}
-	ts := httptest.NewServer(h.ServeMux())
-	defer ts.Close()
-
-	resp, err := http.Get(ts.URL + "/api/oidc/state")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var state struct {
-		Enabled       bool `json:"enabled"`
-		LocalFallback bool `json:"local_fallback"`
-	}
-	json.NewDecoder(resp.Body).Decode(&state)
-	resp.Body.Close()
-	if state.Enabled || state.LocalFallback {
-		t.Fatalf("degraded hub should report disabled oidc, got enabled=%v fallback=%v",
-			state.Enabled, state.LocalFallback)
-	}
-
-	// 本地登录必须可用
-	loginResp, err := http.Post(ts.URL+"/api/login", "application/json",
-		strings.NewReader(`{"username":"admin","password":"admin123"}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer loginResp.Body.Close()
-	if loginResp.StatusCode != http.StatusOK {
-		t.Fatalf("local login should work after degraded start, got %d", loginResp.StatusCode)
-	}
-}
-
-// TestOIDCEnabledWithLocalFallback discovery 成功且开启兜底时：
-// state 同时报告 enabled 与 local_fallback，本地登录不被 403。
-func TestOIDCEnabledWithLocalFallback(t *testing.T) {
-	idp := newMockDiscovery(t)
-	dir := t.TempDir()
-	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
-	h, err := New(fallbackHubConfig(dir, idp.URL, true), logger)
-	if err != nil {
-		t.Fatalf("new hub: %v", err)
-	}
-	t.Cleanup(func() { h.Close() })
-	if err := h.EnsureDefaultAdmin(context.Background()); err != nil {
-		t.Fatalf("ensure admin: %v", err)
-	}
-	ts := httptest.NewServer(h.ServeMux())
-	defer ts.Close()
-
-	resp, err := http.Get(ts.URL + "/api/oidc/state")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var state struct {
-		Enabled       bool `json:"enabled"`
-		LocalFallback bool `json:"local_fallback"`
-	}
-	json.NewDecoder(resp.Body).Decode(&state)
-	resp.Body.Close()
-	if !state.Enabled {
-		t.Fatal("state.enabled should be true when discovery succeeded")
-	}
-	if !state.LocalFallback {
-		t.Fatal("state.local_fallback should be true when allow_local_login set")
-	}
-
-	// 本地登录可用（break-glass）
-	loginResp, err := http.Post(ts.URL+"/api/login", "application/json",
-		strings.NewReader(`{"username":"admin","password":"admin123"}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer loginResp.Body.Close()
-	if loginResp.StatusCode != http.StatusOK {
-		t.Fatalf("local login should work with fallback enabled, got %d", loginResp.StatusCode)
+	if !strings.Contains(err.Error(), "allow_local_login=false requires oidc.issuer") {
+		t.Fatalf("expected missing issuer error, got: %v", err)
 	}
 }

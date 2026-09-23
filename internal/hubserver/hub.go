@@ -82,19 +82,27 @@ func New(cfg Config, logger *slog.Logger) (*Hub, error) {
 	}
 
 	authMgr := auth.New(st, cfg.SessionTTL)
-	if cfg.OIDC.Issuer != "" {
+	allowLocal := cfg.OIDC.LocalLoginAllowed()
+	authMgr.SetLocalLoginAllowed(allowLocal)
+	if allowLocal {
+		// 本地模式（默认）：本地密码登录可用，OIDC 完全失效——
+		// 不做 discovery、不构造 OIDC 客户端，启动永不因 OIDC 失败。
+		logger.Info("local login mode (allow_local_login=true), oidc disabled",
+			"oidc_issuer_configured", cfg.OIDC.Issuer != "")
+	} else {
+		// SSO-only 模式：SSO 是唯一登录方式，密码登录一律 403；
+		// 配置缺失或 discovery 失败必须 fail-fast 拒启（恢复=切回 true 重启）。
+		if cfg.OIDC.Issuer == "" {
+			_ = st.Close()
+			return nil, fmt.Errorf("allow_local_login=false requires oidc.issuer to be configured")
+		}
 		oidcClient, err := auth.NewOIDC(context.Background(), cfg.OIDC, cfg.BaseURL)
 		if err != nil {
-			if !cfg.OIDC.AllowLocalLogin {
-				_ = st.Close()
-				return nil, fmt.Errorf("init oidc: %w", err)
-			}
-			// 本地登录兜底开启时 OIDC 初始化失败降级继续：OIDC 不启用，本地登录可用
-			logger.Warn("oidc init failed, continuing with local login fallback", "error", err, "issuer", cfg.OIDC.Issuer)
-		} else {
-			authMgr.SetOIDC(oidcClient)
-			logger.Info("oidc enabled", "issuer", cfg.OIDC.Issuer, "local_fallback", cfg.OIDC.AllowLocalLogin)
+			_ = st.Close()
+			return nil, fmt.Errorf("init oidc: %w", err)
 		}
+		authMgr.SetOIDC(oidcClient)
+		logger.Info("oidc enabled (allow_local_login=false, sso-only mode)", "issuer", cfg.OIDC.Issuer)
 	}
 	revisions := hub.NewRevisionManager(st)
 	sessions := hub.NewSessionManager()

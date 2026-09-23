@@ -36,10 +36,11 @@ export function SignIn() {
     queryFn: () =>
       api.get<{ enabled: boolean; local_fallback?: boolean }>('/oidc/state'),
   })
+  // OIDC 互斥登录：两种模式永不并存。
+  // enabled 控制 SSO 按钮；local_fallback（旧后端缺省按 false）为 true 或 OIDC 未启用时展示本地表单。
   const oidcEnabled = oidc.data?.enabled === true
-  // local_fallback：OIDC 启用且 allow_local_login 开启（break-glass 本地登录兜底）
-  const localFallback = oidc.data?.local_fallback === true
-  const showLocalForm = !oidcEnabled || localFallback
+  const localFallback = oidc.data?.local_fallback ?? false
+  const showLocalForm = localFallback || !oidcEnabled
   const oidcFailed =
     new URLSearchParams(window.location.search).get('error') === 'oidc_failed'
   const form = useForm<z.infer<typeof formSchema>>({
@@ -91,11 +92,6 @@ export function SignIn() {
       )}
       {showLocalForm && (
         <>
-          {oidcEnabled && (
-            <p className='my-4 text-center text-sm text-muted-foreground'>
-              {t('login.localFallback')}
-            </p>
-          )}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className='grid gap-5'>
               <FormField

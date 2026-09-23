@@ -176,7 +176,7 @@ Dashboard
 - [ ] 中文/English 切换及刷新持久化。
 - [ ] OIDC disabled 时 SSO 按钮不显示。
 - [ ] OIDC enabled 时 SSO 按钮跳转 IdP，state/PKCE 正常。
-- [ ] OIDC enabled 时本地登录按产品版本要求返回 403 或按明确兼容策略处理。
+- [ ] `allow_local_login=false`（SSO 模式）时本地登录一律返回 403 并记审计；`allow_local_login=true`（默认本地模式）时本地登录可用、SSO 按钮与 `/api/oidc/login`（404）均关闭。
 - [ ] OIDC callback 缺少 state/code、错误 state、重复 state、错误 code。
 
 ### P02 布局

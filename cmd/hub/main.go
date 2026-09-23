@@ -81,8 +81,11 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	// 环境变量覆盖
-	applyEnv(&cfg)
+	// 环境变量覆盖（三态：未设置不覆盖 yaml/默认值；设置则解析）
+	if err := applyEnv(&cfg); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 	if err := validateAdminCredentials(cfg); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -176,7 +179,7 @@ func validateAdminCredentials(cfg Config) error {
 	return nil
 }
 
-func applyEnv(cfg *Config) {
+func applyEnv(cfg *Config) error {
 	if v := os.Getenv("CADENTRA_WEB_ADDR"); v != "" {
 		cfg.WebAddr = v
 	}
@@ -245,9 +248,14 @@ func applyEnv(cfg *Config) {
 	if v := os.Getenv("CADENTRA_OIDC_DEFAULT_ROLE"); v != "" {
 		cfg.OIDC.DefaultRole = v
 	}
-	if v := os.Getenv("CADENTRA_OIDC_ALLOW_LOCAL_LOGIN"); v != "" {
-		if b, err := strconv.ParseBool(v); err == nil {
-			cfg.OIDC.AllowLocalLogin = b
+	// allow_local_login 三态：环境变量未设置时保留 yaml/默认值（默认 true=本地模式）；
+	// 设置则必须是合法 bool —— 解析失败直接报错，避免安全开关被静默忽略。
+	if v, ok := os.LookupEnv("CADENTRA_OIDC_ALLOW_LOCAL_LOGIN"); ok && v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return fmt.Errorf("invalid CADENTRA_OIDC_ALLOW_LOCAL_LOGIN %q: want true or false", v)
 		}
+		cfg.OIDC.AllowLocalLogin = &b
 	}
+	return nil
 }

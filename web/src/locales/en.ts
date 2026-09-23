@@ -155,7 +155,6 @@ export default {
   login: {
     subtitle: 'Linux Infrastructure Automation Console',
     sso: 'Sign in with SSO',
-    localFallback: 'Or sign in with a local account',
     username: 'Username',
     password: 'Password',
     failed: 'Login failed. Check credentials.',
@@ -404,6 +403,7 @@ export default {
     application: 'Application',
     selectApp: 'Select application...',
     operation: 'Operation',
+    deploy: 'Deploy',
     start: 'Start',
     stop: 'Stop',
     restart: 'Restart',

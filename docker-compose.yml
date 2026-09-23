@@ -29,8 +29,9 @@ services:
       CADENTRA_OIDC_USERNAME_CLAIM: "${OIDC_USERNAME_CLAIM:-}"
       CADENTRA_OIDC_ROLE_CLAIM: "${OIDC_ROLE_CLAIM:-}"
       CADENTRA_OIDC_DEFAULT_ROLE: "${OIDC_DEFAULT_ROLE:-}"
-      # OIDC 异常时保留本地登录兜底（break-glass，默认关闭）
-      CADENTRA_OIDC_ALLOW_LOCAL_LOGIN: "${OIDC_ALLOW_LOCAL_LOGIN:-false}"
+      # 登录方式互斥选择器：true（默认）=本地密码登录，OIDC 完全失效；
+      # false=SSO 唯一登录（必须配置 OIDC_ISSUER，密码登录一律 403）
+      CADENTRA_OIDC_ALLOW_LOCAL_LOGIN: "${OIDC_ALLOW_LOCAL_LOGIN:-true}"
     volumes:
       - hub-data:/var/lib/cadentra-hub
 

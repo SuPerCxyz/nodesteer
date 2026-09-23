@@ -33,18 +33,36 @@ type Manager struct {
 	sessionTTL time.Duration
 	adminToken string
 	oidc       *OIDC
+	// localAllowed 登录方式互斥开关（allow_local_login 的生效值）。
+	// true=本地模式（默认），false=SSO-only 模式。不依赖 OIDC 客户端是否注入。
+	localAllowed bool
 }
 
-// New 创建认证管理器
+// New 创建认证管理器（默认本地模式，localAllowed=true）
 func New(st store.Store, sessionTTL time.Duration) *Manager {
 	return &Manager{
-		store:      st,
-		sessions:   map[string]*Session{},
-		sessionTTL: sessionTTL,
+		store:        st,
+		sessions:     map[string]*Session{},
+		sessionTTL:   sessionTTL,
+		localAllowed: true,
 	}
 }
 
-// SetOIDC 设置 OIDC 客户端（设置后本地登录被禁用）
+// SetLocalLoginAllowed 设置登录方式互斥开关（allow_local_login 生效值）
+func (m *Manager) SetLocalLoginAllowed(v bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.localAllowed = v
+}
+
+// LocalLoginAllowed 返回登录方式互斥开关生效值（true=本地模式）
+func (m *Manager) LocalLoginAllowed() bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.localAllowed
+}
+
+// SetOIDC 设置 OIDC 客户端（仅 SSO-only 模式注入；本地登录是否禁用由 localAllowed 开关决定）
 func (m *Manager) SetOIDC(o *OIDC) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -58,10 +76,10 @@ func (m *Manager) OIDC() *OIDC {
 	return m.oidc
 }
 
-// LocalLoginDisabled OIDC 启用且未开启本地登录兜底时，本地账号密码登录是否禁用
+// LocalLoginDisabled 本地账号密码登录是否禁用。
+// 只取决于 allow_local_login 开关（false 模式恒禁用，绝对语义），不依赖 OIDC 是否启用。
 func (m *Manager) LocalLoginDisabled() bool {
-	o := m.OIDC()
-	return o.Enabled() && !o.LocalFallback()
+	return !m.LocalLoginAllowed()
 }
 
 // HashPassword 密码哈希
