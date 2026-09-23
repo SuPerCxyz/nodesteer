@@ -202,7 +202,7 @@ func (a *ContainerHostAdapter) AtomicReplaceReader(ctx context.Context, p string
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
-	tmp, err := os.CreateTemp(dir, ".cadentra-transfer-*")
+	tmp, err := os.CreateTemp(dir, ".nodesteer-transfer-*")
 	if err != nil {
 		return err
 	}

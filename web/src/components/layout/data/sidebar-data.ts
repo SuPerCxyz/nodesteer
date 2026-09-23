@@ -19,7 +19,7 @@ export function getSidebarData(t: TFunction): SidebarData {
     user: {
       name: 'NodeSteer User',
       email: 'admin',
-      avatar: '/images/cadentra-logo-square.png',
+      avatar: '/images/nodesteer-logo-square.png',
     },
     teams: [],
     navGroups: [

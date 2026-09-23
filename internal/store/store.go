@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
 )
 
 // ErrInvalidTask 无效任务

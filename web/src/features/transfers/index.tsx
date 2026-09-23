@@ -16,8 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { CadentraHeader } from '@/components/layout/cadentra-header'
 import { Main } from '@/components/layout/main'
+import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import { DataTable } from '@/features/shared/data-table'
 import {
   DropdownMenuItem,
@@ -238,7 +238,7 @@ export function FileTransfers() {
   const source = nodes.data?.find((node) => node.id === sourceNodeID)
   return (
     <>
-      <CadentraHeader
+      <NodeSteerHeader
         title={t('transfers.title')}
         description={t('transfers.description')}
       />

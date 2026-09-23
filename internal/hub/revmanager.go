@@ -3,7 +3,7 @@ package hub
 import (
 	"context"
 
-	"github.com/cadentra/cadentra/internal/store"
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 )
 
 // RevisionManager 管理全局与对象 Revision

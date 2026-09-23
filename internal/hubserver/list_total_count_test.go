@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cadentra/cadentra/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
 	"github.com/google/uuid"
 )
 

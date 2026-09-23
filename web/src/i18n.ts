@@ -4,7 +4,7 @@ import en from './locales/en'
 import zh from './locales/zh'
 
 // 默认中文；用户切换后持久化到 localStorage
-const saved = localStorage.getItem('cadentra_lang')
+const saved = localStorage.getItem('nodesteer_lang')
 const lang = saved === 'en' || saved === 'zh' ? saved : 'zh'
 
 i18n.use(initReactI18next).init({
@@ -18,7 +18,7 @@ i18n.use(initReactI18next).init({
 })
 
 export function setLang(l: 'zh' | 'en') {
-  localStorage.setItem('cadentra_lang', l)
+  localStorage.setItem('nodesteer_lang', l)
   i18n.changeLanguage(l)
   syncHtmlLang(l)
 }

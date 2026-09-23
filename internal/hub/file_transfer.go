@@ -18,9 +18,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/protocol"
-	"github.com/cadentra/cadentra/internal/store"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/protocol"
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 	"github.com/google/uuid"
 )
 
@@ -220,8 +220,8 @@ func (m *FileTransferManager) HandleAgentHTTP(w http.ResponseWriter, r *http.Req
 		return
 	}
 	id, action := parts[0], parts[1]
-	agentID := r.Header.Get("X-Cadentra-Agent-ID")
-	token := r.Header.Get("X-Cadentra-Agent-Token")
+	agentID := r.Header.Get("X-NodeSteer-Agent-ID")
+	token := r.Header.Get("X-NodeSteer-Agent-Token")
 	if agentID == "" || token == "" {
 		writeTransferJSON(w, http.StatusUnauthorized, map[string]string{"error": "agent authentication required"})
 		return
@@ -269,12 +269,12 @@ func (m *FileTransferManager) handleUpload(w http.ResponseWriter, r *http.Reques
 		writeTransferJSON(w, http.StatusOK, map[string]any{"status": t.Status, "size": t.Size, "sha256": t.SHA256})
 		return
 	}
-	total, err := strconv.ParseInt(r.Header.Get("X-Cadentra-File-Size"), 10, 64)
+	total, err := strconv.ParseInt(r.Header.Get("X-NodeSteer-File-Size"), 10, 64)
 	if err != nil || total < 0 || total > m.maxBytes {
 		writeTransferJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid file size"})
 		return
 	}
-	if value := r.Header.Get("X-Cadentra-File-Mode"); value != "" {
+	if value := r.Header.Get("X-NodeSteer-File-Mode"); value != "" {
 		mode, parseErr := strconv.ParseUint(value, 8, 32)
 		if parseErr != nil {
 			writeTransferJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid file mode"})
@@ -327,7 +327,7 @@ func (m *FileTransferManager) handleUpload(w http.ResponseWriter, r *http.Reques
 	if next < total {
 		t.Status = models.FileTransferUploading
 		_ = m.store.UpdateFileTransfer(r.Context(), t)
-		w.Header().Set("X-Cadentra-Next-Offset", strconv.FormatInt(next, 10))
+		w.Header().Set("X-NodeSteer-Next-Offset", strconv.FormatInt(next, 10))
 		writeTransferJSON(w, http.StatusConflict, map[string]any{"status": t.Status, "next_offset": next})
 		return
 	}
@@ -395,7 +395,7 @@ func (m *FileTransferManager) handleDownload(w http.ResponseWriter, r *http.Requ
 	}
 	defer f.Close()
 	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("X-Cadentra-File-SHA256", t.SHA256)
+	w.Header().Set("X-NodeSteer-File-SHA256", t.SHA256)
 	w.Header().Set("Content-Length", strconv.FormatInt(t.Size, 10))
 	http.ServeContent(w, r, filepath.Base(t.SourcePath), t.UpdatedAt, f)
 }

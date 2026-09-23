@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/store"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 )
 
 // TestResolveTargetLabelGroup 验证 Bug G：label 分组成员为动态解析，

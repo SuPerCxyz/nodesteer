@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/hub"
-	"github.com/cadentra/cadentra/internal/hub/api"
-	"github.com/cadentra/cadentra/internal/hub/auth"
-	"github.com/cadentra/cadentra/internal/metrics"
-	"github.com/cadentra/cadentra/internal/store"
+	"github.com/SuPerCxyz/nodesteer/internal/hub"
+	"github.com/SuPerCxyz/nodesteer/internal/hub/api"
+	"github.com/SuPerCxyz/nodesteer/internal/hub/auth"
+	"github.com/SuPerCxyz/nodesteer/internal/metrics"
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 )
 
 // Config Hub 配置

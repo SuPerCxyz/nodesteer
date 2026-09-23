@@ -3,7 +3,7 @@ package hub
 import (
 	"context"
 
-	"github.com/cadentra/cadentra/internal/store"
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 )
 
 type transactionalStore interface {

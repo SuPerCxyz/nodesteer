@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cadentra/cadentra/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
 )
 
 // collectInventory 采集宿主 Inventory（Docker 无 Host 访问时返回 nil 表示 UNAVAILABLE）

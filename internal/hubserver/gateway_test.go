@@ -7,11 +7,12 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/protocol"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/protocol"
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
 )
@@ -265,5 +266,73 @@ func TestGatewaySync(t *testing.T) {
 	}
 	if len(sr.Tasks) != 1 {
 		t.Fatalf("expected 1 task in sync, got %d", len(sr.Tasks))
+	}
+}
+
+// TestGatewayAcceptsNodesteerSubprotocol 实测 Agent 侧 `Subprotocols: []string{"nodesteer"}`
+// 对当前 Hub 的握手结果：Hub 未声明子协议协商时不得拒绝连接，且 HELLO 注册链路可用。
+func TestGatewayAcceptsNodesteerSubprotocol(t *testing.T) {
+	dir := t.TempDir()
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
+	h, err := New(Config{
+		RegistrationToken: "test-token",
+		DataDir:           dir,
+		ArtifactDir:       dir + "/artifacts",
+		BaseURL:           "http://127.0.0.1:18080",
+		HeartbeatTimeout:  30 * time.Second,
+	}, logger)
+	if err != nil {
+		t.Fatalf("new hub: %v", err)
+	}
+	t.Cleanup(func() { h.Close() })
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	go http.Serve(ln, h.GatewayHandler())
+	url := "ws://" + ln.Addr().String()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	conn, resp, err := websocket.Dial(ctx, url, &websocket.DialOptions{
+		Subprotocols: []string{"nodesteer"},
+	})
+	if err != nil {
+		t.Fatalf("dial with nodesteer subprotocol: %v", err)
+	}
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	if resp == nil {
+		t.Fatal("expected handshake response")
+	}
+	if got := resp.Header.Get("Sec-WebSocket-Protocol"); got != "" && !strings.EqualFold(got, "nodesteer") {
+		t.Fatalf("server echoed unexpected subprotocol %q", got)
+	}
+
+	// 握手后的业务链路必须真实可用：HELLO 注册被接受。
+	hello := protocol.NewEnvelope(protocol.MsgHello, "subproto-1", protocol.HelloPayload{
+		ProtocolVersion: protocol.ProtocolVersion,
+		RegistrationKey: "test-token",
+		Hostname:        "subproto-node",
+	})
+	if err := wsjson.Write(ctx, conn, hello); err != nil {
+		t.Fatalf("write hello: %v", err)
+	}
+	var ack protocol.Envelope
+	if err := wsjson.Read(ctx, conn, &ack); err != nil {
+		t.Fatalf("read ack: %v", err)
+	}
+	if ack.Type != protocol.MsgHelloAck {
+		t.Fatalf("expected HELLO_ACK, got %s", ack.Type)
+	}
+	var helloAck protocol.HelloAckPayload
+	if err := json.Unmarshal(ack.Payload, &helloAck); err != nil {
+		t.Fatalf("decode ack: %v", err)
+	}
+	if !helloAck.Accepted {
+		t.Fatalf("hello rejected: %s", helloAck.Message)
+	}
+	if helloAck.NodeID == "" {
+		t.Fatal("expected node id in ack")
 	}
 }

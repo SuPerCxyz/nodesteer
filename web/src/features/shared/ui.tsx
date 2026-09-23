@@ -32,8 +32,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { CadentraHeader } from '@/components/layout/cadentra-header'
 import { Main } from '@/components/layout/main'
+import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 
 export function StatusBadge({ status }: { status: string }) {
   const { i18n } = useTranslation()
@@ -212,7 +212,7 @@ export function ErrorPage({
   const { t } = useTranslation()
   return (
     <>
-      <CadentraHeader title={title} />
+      <NodeSteerHeader title={title} />
       <Main className='flex flex-1 flex-col gap-6'>
         <Button asChild variant='ghost' className='w-fit px-0'>
           <a href={backTo}>← {t('common.back')}</a>

@@ -1,4 +1,4 @@
-name: Build and publish Cadentra
+name: Build and publish NodeSteer
 
 on:
   push:
@@ -69,19 +69,19 @@ jobs:
         run: |
           mkdir -p dist
           for arch in amd64 arm64; do
-            CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -buildvcs=false -ldflags='-s -w' -o dist/cadentra-agent-linux-$arch ./cmd/agent
+            CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -buildvcs=false -ldflags='-s -w' -o dist/nodesteer-agent-linux-$arch ./cmd/agent
           done
           for arch in amd64 arm64; do
-            CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -buildvcs=false -ldflags='-s -w' -o dist/cadentra-hub-linux-$arch.unbundled ./cmd/hub
-            sh packaging/bundle-agent.sh dist/cadentra-hub-linux-$arch dist/cadentra-hub-linux-$arch.unbundled amd64 dist/cadentra-agent-linux-amd64 arm64 dist/cadentra-agent-linux-arm64
-            rm dist/cadentra-hub-linux-$arch.unbundled
+            CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -buildvcs=false -ldflags='-s -w' -o dist/nodesteer-hub-linux-$arch.unbundled ./cmd/hub
+            sh packaging/bundle-agent.sh dist/nodesteer-hub-linux-$arch dist/nodesteer-hub-linux-$arch.unbundled amd64 dist/nodesteer-agent-linux-amd64 arm64 dist/nodesteer-agent-linux-arm64
+            rm dist/nodesteer-hub-linux-$arch.unbundled
           done
-          sha256sum dist/cadentra-*
+          sha256sum dist/nodesteer-*
 
       - name: Upload binaries
         uses: actions/upload-artifact@v7
         with:
-          name: cadentra-linux-binaries
+          name: nodesteer-linux-binaries
           path: dist/
           if-no-files-found: error
 
@@ -122,7 +122,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/cadentra-${{ matrix.component }}
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/nodesteer-${{ matrix.component }}
           tags: |
             type=ref,event=branch
             type=ref,event=tag

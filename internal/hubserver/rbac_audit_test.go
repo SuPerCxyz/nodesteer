@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/protocol"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/protocol"
 	"github.com/google/uuid"
 )
 

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
 )
 
 func newTestStore(t *testing.T) *SQLiteStore {

@@ -91,9 +91,9 @@ test.describe('P05 节点详情', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           gateway_url: 'ws://hub.example.test:8443',
-          native: 'sudo install ./cadentra-agent',
-          docker_run: 'docker run cadentra-agent',
-          docker_compose: 'services:\n  cadentra-agent:',
+          native: 'sudo install ./nodesteer-agent',
+          docker_run: 'docker run nodesteer-agent',
+          docker_compose: 'services:\n  nodesteer-agent:',
         }),
       })
     })
@@ -111,14 +111,14 @@ test.describe('P05 节点详情', () => {
     await dialog.getByRole('button', { name: /生成安装命令|generate/i }).click()
     await page.waitForTimeout(1000)
     const content = await dialog.textContent()
-    expect(content).toContain('cadentra-agent')
+    expect(content).toContain('nodesteer-agent')
     await dialog.getByRole('button', { name: /copy|复制/i }).click()
     const secureClipboard = await page.evaluate(
       () => window.isSecureContext && !!navigator.clipboard?.readText
     )
     if (secureClipboard) {
       const copied = await page.evaluate(() => navigator.clipboard?.readText())
-      expect(copied).toBe('sudo install ./cadentra-agent')
+      expect(copied).toBe('sudo install ./nodesteer-agent')
     } else {
       await expect(
         page.getByText(/当前页面无法自动写入剪切板|cannot write to the clipboard automatically/i)

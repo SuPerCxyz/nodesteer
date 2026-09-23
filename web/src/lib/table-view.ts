@@ -6,9 +6,9 @@ export interface TableViewState {
   pageSize?: number
 }
 
-const STORAGE_PREFIX = 'cadentra.table.'
+const STORAGE_PREFIX = 'nodesteer.table.'
 
-/** localStorage 键名：cadentra.table.<storageKey> */
+/** localStorage 键名：nodesteer.table.<storageKey> */
 export function tableViewStorageKey(storageKey: string) {
   return `${STORAGE_PREFIX}${storageKey}`
 }

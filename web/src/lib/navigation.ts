@@ -7,7 +7,7 @@ export function currentPath(): string {
 
 export function isSignInPath(value: string): boolean {
   try {
-    const path = new URL(value, 'http://cadentra.local').pathname
+    const path = new URL(value, 'http://nodesteer.local').pathname
     return path === SIGN_IN_PATH
   } catch {
     return false
@@ -21,7 +21,7 @@ export function safeRedirect(value: string | null | undefined): string {
   try {
     const origin =
       typeof window === 'undefined'
-        ? 'http://cadentra.local'
+        ? 'http://nodesteer.local'
         : window.location.origin
     const target = new URL(value, origin)
     if (target.origin !== origin || target.pathname === SIGN_IN_PATH) {

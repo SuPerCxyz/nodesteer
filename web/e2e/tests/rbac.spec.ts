@@ -1,9 +1,9 @@
 import { test, expect } from 'playwright/test'
 import { apiRequest, loginViaApi, TEST_URLS, TEST_USER } from './fixtures'
 
-const OPERATOR_USER = process.env.CADENTRA_E2E_OPERATOR_USERNAME || 'test-operator'
-const VIEWER_USER = process.env.CADENTRA_E2E_VIEWER_USERNAME || 'test-viewer'
-const RBAC_PASSWORD = process.env.CADENTRA_E2E_RBAC_PASSWORD || ''
+const OPERATOR_USER = process.env.NODESTEER_E2E_OPERATOR_USERNAME || 'test-operator'
+const VIEWER_USER = process.env.NODESTEER_E2E_VIEWER_USERNAME || 'test-viewer'
+const RBAC_PASSWORD = process.env.NODESTEER_E2E_RBAC_PASSWORD || ''
 
 test.describe('RBAC 权限矩阵', () => {
   test('RBAC-07 未认证请求 401', async ({ page }) => {

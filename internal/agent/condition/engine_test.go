@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cadentra/cadentra/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
 )
 
 func TestCompareOperators(t *testing.T) {

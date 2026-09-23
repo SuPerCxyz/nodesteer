@@ -16,9 +16,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/agent/host"
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/protocol"
+	"github.com/SuPerCxyz/nodesteer/internal/agent/host"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/protocol"
 )
 
 type testHost struct {
@@ -126,7 +126,7 @@ func TestApplicationDeploymentRollsBackPreviousFiles(t *testing.T) {
 	h := &testHost{root: root}
 	cache := NewArtifactCache(filepath.Join(t.TempDir(), "artifacts"), st, slog.New(slog.NewTextHandler(io.Discard, nil)), "")
 	am := NewApplicationManager(st, h, cache, slog.New(slog.NewTextHandler(io.Discard, nil)))
-	app := models.Application{ID: "app-1", Name: "app", Version: "1.0", BinaryPath: "/usr/local/bin/app", UnitName: "cadentra-app.service"}
+	app := models.Application{ID: "app-1", Name: "app", Version: "1.0", BinaryPath: "/usr/local/bin/app", UnitName: "nodesteer-app.service"}
 	def, _ := json.Marshal(app)
 	if err := st.BeginSync(ctx); err != nil {
 		t.Fatal(err)
@@ -155,7 +155,7 @@ func TestApplicationDeploymentRollsBackPreviousFiles(t *testing.T) {
 	if err != nil || string(data) != string(first) {
 		t.Fatalf("previous binary not restored: %q err=%v", data, err)
 	}
-	config, err := h.ReadFile(ctx, "/etc/cadentra-app.conf")
+	config, err := h.ReadFile(ctx, "/etc/nodesteer-app.conf")
 	if err != nil || string(config) != "old" {
 		t.Fatalf("previous config not restored: %q err=%v", config, err)
 	}
@@ -167,7 +167,7 @@ func TestSystemdHealthRequiresStableActiveState(t *testing.T) {
 
 	if am.checkOnce(context.Background(), models.HealthCheck{
 		Type: models.HealthTypeSystemd,
-	}, "cadentra-test.service", time.Second) {
+	}, "nodesteer-test.service", time.Second) {
 		t.Fatal("transient active state must not pass health check")
 	}
 	if h.calls != 2 {
@@ -181,7 +181,7 @@ func TestFirstDeploymentFailureCleansManagedFiles(t *testing.T) {
 	h := &testHost{root: t.TempDir()}
 	cache := NewArtifactCache(filepath.Join(t.TempDir(), "artifacts"), st, slog.New(slog.NewTextHandler(io.Discard, nil)), "")
 	am := NewApplicationManager(st, h, cache, slog.New(slog.NewTextHandler(io.Discard, nil)))
-	app := models.Application{ID: "first-failure", Name: "first", Version: "1.0", BinaryPath: "/usr/local/bin/first", UnitName: "cadentra-first.service"}
+	app := models.Application{ID: "first-failure", Name: "first", Version: "1.0", BinaryPath: "/usr/local/bin/first", UnitName: "nodesteer-first.service"}
 	def, _ := json.Marshal(app)
 	artifact := []byte("new-version")
 	sum := sha256.Sum256(artifact)
@@ -200,7 +200,7 @@ func TestFirstDeploymentFailureCleansManagedFiles(t *testing.T) {
 	if _, err := h.Stat(ctx, app.BinaryPath); !os.IsNotExist(err) {
 		t.Fatalf("failed first deployment left binary, err=%v", err)
 	}
-	if _, err := h.Stat(ctx, "/etc/cadentra-first.conf"); !os.IsNotExist(err) {
+	if _, err := h.Stat(ctx, "/etc/nodesteer-first.conf"); !os.IsNotExist(err) {
 		t.Fatalf("failed first deployment left config, err=%v", err)
 	}
 	if _, err := h.Stat(ctx, "/etc/systemd/system/"+app.UnitName); !os.IsNotExist(err) {

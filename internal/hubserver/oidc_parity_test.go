@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
 )
@@ -116,7 +116,7 @@ func writeJSONTest(w http.ResponseWriter, v any) {
 	json.NewEncoder(w).Encode(v)
 }
 
-var tokenFromCallback = regexp.MustCompile(`localStorage\.setItem\('cadentra_token', ("[^"]+")\)`)
+var tokenFromCallback = regexp.MustCompile(`localStorage\.setItem\('nodesteer_token', ("[^"]+")\)`)
 
 // ssoLogin 走完整 SSO 流程：/api/oidc/login 取 state+nonce → callback 换会话 token。
 func ssoLogin(t *testing.T, base string, idp *fullMockIdP, username string, groups []string) string {

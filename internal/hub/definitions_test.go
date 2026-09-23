@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/store"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 )
 
 // TestTaskTimeoutValidation 验证任务超时不允许负数（缺陷 FAIL-A-008），

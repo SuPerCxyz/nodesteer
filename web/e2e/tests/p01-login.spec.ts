@@ -34,7 +34,7 @@ test.describe('P01 登录页', () => {
     await langBtn.click()
     await page.getByRole('menuitem', { name: /English/i }).click()
     await page.waitForTimeout(500)
-    const stored = await page.evaluate(() => localStorage.getItem('cadentra_lang'))
+    const stored = await page.evaluate(() => localStorage.getItem('nodesteer_lang'))
     expect(stored).toBe('en')
     // 语言与 <html lang> 保持一致（FAIL-B-110）
     const lang = await page.evaluate(() => document.documentElement.lang)

@@ -41,7 +41,7 @@ test.describe('P02 布局与导航', () => {
   test('P02-04 token 过期跳登录', async ({ page }) => {
     await loginViaApi(page)
     await page.goto(TEST_URLS.dashboard)
-    await page.evaluate(() => localStorage.setItem('cadentra_token', 'invalid-token'))
+    await page.evaluate(() => localStorage.setItem('nodesteer_token', 'invalid-token'))
     await page.goto(TEST_URLS.nodes)
     await page.waitForURL(/\/sign-in(?:\?.*)?$/, { timeout: 10_000 })
     await expect(page).toHaveURL(/\/sign-in(?:\?.*)?$/)

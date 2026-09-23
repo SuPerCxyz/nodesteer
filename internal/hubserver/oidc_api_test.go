@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/hub/auth"
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/store"
+	"github.com/SuPerCxyz/nodesteer/internal/hub/auth"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 )
 
 // newMockDiscovery 只提供 discovery 文档的 mock IdP（NewOIDC 构造时会请求）

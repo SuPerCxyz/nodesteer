@@ -8,8 +8,8 @@ export function Logo({
 }: ImgHTMLAttributes<HTMLImageElement>) {
   return (
     <img
-      id='cadentra-logo'
-      src='/images/cadentra-logo-original.png'
+      id='nodesteer-logo'
+      src='/images/nodesteer-logo-original.png'
       alt={alt}
       className={cn('size-6 object-contain', className)}
       {...props}

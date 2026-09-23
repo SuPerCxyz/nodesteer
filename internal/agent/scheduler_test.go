@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/agent/scheduler"
-	"github.com/cadentra/cadentra/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/agent/scheduler"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
 	"github.com/google/uuid"
 )
 

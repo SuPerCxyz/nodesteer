@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/protocol"
-	"github.com/cadentra/cadentra/internal/store"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/protocol"
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 )
 
 func newTestStore(t *testing.T) store.Store {
@@ -122,7 +122,7 @@ func TestExecutionEnvironmentMergesScriptAndParameters(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if env["BASE"] != "yes" || env["CADENTRA_PARAM_name"] != "manual" || env["CADENTRA_PARAM_count"] != "2" {
+	if env["BASE"] != "yes" || env["NODESTEER_PARAM_name"] != "manual" || env["NODESTEER_PARAM_count"] != "2" {
 		t.Fatalf("unexpected environment: %+v", env)
 	}
 	if len(secrets) != 1 || secrets[0] != "secret" {

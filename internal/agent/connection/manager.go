@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/protocol"
+	"github.com/SuPerCxyz/nodesteer/internal/protocol"
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
 )
@@ -188,7 +188,7 @@ func (m *Manager) connectAndServe(ctx context.Context, helloFn func() *protocol.
 	m.mu.Unlock()
 	conn, _, err := websocket.Dial(ctx, m.url, &websocket.DialOptions{
 		HTTPClient:   client,
-		Subprotocols: []string{"cadentra"},
+		Subprotocols: []string{"nodesteer"},
 	})
 	if err != nil {
 		return err

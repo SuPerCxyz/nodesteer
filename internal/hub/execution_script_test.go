@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/store"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 )
 
 // TestRunBlocksDisabledScript 验证引用已禁用脚本的任务在运行前被拦截（缺陷 FAIL-A-006）。

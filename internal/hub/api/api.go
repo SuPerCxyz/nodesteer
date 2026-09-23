@@ -20,12 +20,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/hub"
-	"github.com/cadentra/cadentra/internal/hub/auth"
-	"github.com/cadentra/cadentra/internal/metrics"
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/protocol"
-	"github.com/cadentra/cadentra/internal/store"
+	"github.com/SuPerCxyz/nodesteer/internal/hub"
+	"github.com/SuPerCxyz/nodesteer/internal/hub/auth"
+	"github.com/SuPerCxyz/nodesteer/internal/metrics"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/protocol"
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 )
 
 // Server REST API 服务器
@@ -203,7 +203,7 @@ func (s *Server) withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Cadentra-Agent-Token, X-Cadentra-Agent-ID")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID")
 		w.Header().Set("Access-Control-Expose-Headers", "X-Total-Count")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
@@ -256,8 +256,8 @@ func (s *Server) withAgentOrUserAuth(next http.HandlerFunc) http.HandlerFunc {
 				}
 			}
 		}
-		// Agent 身份：X-Cadentra-Agent-Token 或 Authorization 携带 registration token
-		agentToken := r.Header.Get("X-Cadentra-Agent-Token")
+		// Agent 身份：X-NodeSteer-Agent-Token 或 Authorization 携带 registration token
+		agentToken := r.Header.Get("X-NodeSteer-Agent-Token")
 		if agentToken == "" {
 			agentToken = r.URL.Query().Get("agent_token")
 		}
@@ -265,7 +265,7 @@ func (s *Server) withAgentOrUserAuth(next http.HandlerFunc) http.HandlerFunc {
 			next(w, r)
 			return
 		}
-		agentID := r.Header.Get("X-Cadentra-Agent-ID")
+		agentID := r.Header.Get("X-NodeSteer-Agent-ID")
 		if agentID != "" && agentToken != "" {
 			if node, err := s.store.GetNodeByAgentID(r.Context(), agentID); err == nil &&
 				s.nodes.AuthenticateAgent(r.Context(), node.ID, agentToken) {
@@ -521,7 +521,7 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	fmt.Fprintf(w, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sign in</title></head>
 <body><script>
-localStorage.setItem('cadentra_token', %s);
+localStorage.setItem('nodesteer_token', %s);
 window.location.replace(%s);
 </script><p>Signing in...</p></body></html>`,
 		tokenJSON, baseJSON)
@@ -630,7 +630,7 @@ func (s *Server) handleNodeEnrollment(w http.ResponseWriter, r *http.Request) {
 	if agentID != "" {
 		agentIDConfig = fmt.Sprintf("agent_id: %q\n", agentID)
 	}
-	config := fmt.Sprintf("hub_url: %q\nregistration_token: %q\n%snode_name: %q\nnode_ip: %q\ndeployment_mode: native\nhost_integration: false\ndata_dir: /var/lib/cadentra\nagent_version: 0.1.0\n", wsURL, s.RegistrationToken, agentIDConfig, nodeName, nodeIP)
+	config := fmt.Sprintf("hub_url: %q\nregistration_token: %q\n%snode_name: %q\nnode_ip: %q\ndeployment_mode: native\nhost_integration: false\ndata_dir: /var/lib/nodesteer\nagent_version: 0.1.0\n", wsURL, s.RegistrationToken, agentIDConfig, nodeName, nodeIP)
 	native := fmt.Sprintf(`set -eu
 case "$(uname -m)" in
   x86_64|amd64) detected_arch=amd64 ;;
@@ -647,25 +647,25 @@ curl --fail --silent --show-error --location --retry 3 --dump-header "$header_tm
 binary_sha256=$(awk 'tolower($1) == "x-agent-binary-sha256:" {print $2}' "$header_tmp" | tr -d '\r' | tail -n 1)
 test -n "$binary_sha256" || { echo "Hub did not provide Agent binary SHA256" >&2; exit 1; }
 printf '%%s  %%s\n' "$binary_sha256" "$agent_tmp" | sha256sum -c -
-sudo install -d /etc/cadentra
-sudo install -m 0755 "$agent_tmp" /usr/local/bin/cadentra-agent
-sudo sh -c 'cat > /etc/systemd/system/cadentra-agent.service' <<'EOF'
+sudo install -d /etc/nodesteer
+sudo install -m 0755 "$agent_tmp" /usr/local/bin/nodesteer-agent
+sudo sh -c 'cat > /etc/systemd/system/nodesteer-agent.service' <<'EOF'
 %sEOF
-sudo sh -c 'cat > /etc/cadentra/agent.yaml' <<'EOF'
+sudo sh -c 'cat > /etc/nodesteer/agent.yaml' <<'EOF'
 %sEOF
-sudo systemctl daemon-reload && sudo systemctl enable --now cadentra-agent`,
+sudo systemctl daemon-reload && sudo systemctl enable --now nodesteer-agent`,
 		shellQuote(binaryURLBase), agentServiceUnit, config)
-	agentImage := "ghcr.io/supercxyz/cadentra-agent:latest"
+	agentImage := "ghcr.io/supercxyz/nodesteer-agent:latest"
 	agentIDEnv := ""
 	if agentID != "" {
-		agentIDEnv = fmt.Sprintf(" -e CADENTRA_AGENT_ID=%s", shellQuote(agentID))
+		agentIDEnv = fmt.Sprintf(" -e NODESTEER_AGENT_ID=%s", shellQuote(agentID))
 	}
-	dockerRun := fmt.Sprintf("docker run -d --name cadentra-agent --restart unless-stopped -e CADENTRA_HUB_URL=%s -e CADENTRA_REGISTRATION_TOKEN=%s -e CADENTRA_NODE_NAME=%s -e CADENTRA_NODE_IP=%s%s -e CADENTRA_DEPLOYMENT_MODE=docker -v cadentra-agent-data:/var/lib/cadentra %s", shellQuote(wsURL), shellQuote(s.RegistrationToken), shellQuote(nodeName), shellQuote(nodeIP), agentIDEnv, agentImage)
+	dockerRun := fmt.Sprintf("docker run -d --name nodesteer-agent --restart unless-stopped -e NODESTEER_HUB_URL=%s -e NODESTEER_REGISTRATION_TOKEN=%s -e NODESTEER_NODE_NAME=%s -e NODESTEER_NODE_IP=%s%s -e NODESTEER_DEPLOYMENT_MODE=docker -v nodesteer-agent-data:/var/lib/nodesteer %s", shellQuote(wsURL), shellQuote(s.RegistrationToken), shellQuote(nodeName), shellQuote(nodeIP), agentIDEnv, agentImage)
 	agentIDCompose := ""
 	if agentID != "" {
-		agentIDCompose = fmt.Sprintf("      CADENTRA_AGENT_ID: %q\n", agentID)
+		agentIDCompose = fmt.Sprintf("      NODESTEER_AGENT_ID: %q\n", agentID)
 	}
-	compose := fmt.Sprintf("services:\n  cadentra-agent:\n    image: %s\n    restart: unless-stopped\n    environment:\n      CADENTRA_HUB_URL: %q\n      CADENTRA_REGISTRATION_TOKEN: %q\n      CADENTRA_NODE_NAME: %q\n      CADENTRA_NODE_IP: %q\n%s      CADENTRA_DEPLOYMENT_MODE: docker\n    volumes:\n      - cadentra-agent-data:/var/lib/cadentra\n\nvolumes:\n  cadentra-agent-data:\n", agentImage, wsURL, s.RegistrationToken, nodeName, nodeIP, agentIDCompose)
+	compose := fmt.Sprintf("services:\n  nodesteer-agent:\n    image: %s\n    restart: unless-stopped\n    environment:\n      NODESTEER_HUB_URL: %q\n      NODESTEER_REGISTRATION_TOKEN: %q\n      NODESTEER_NODE_NAME: %q\n      NODESTEER_NODE_IP: %q\n%s      NODESTEER_DEPLOYMENT_MODE: docker\n    volumes:\n      - nodesteer-agent-data:/var/lib/nodesteer\n\nvolumes:\n  nodesteer-agent-data:\n", agentImage, wsURL, s.RegistrationToken, nodeName, nodeIP, agentIDCompose)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"gateway_url": wsURL, "gateway_base_url": base, "agent_image": agentImage, "node_id": nodeID, "agent_id": agentID,
 		"native": native, "docker_run": dockerRun, "docker_compose": compose,
@@ -673,17 +673,17 @@ sudo systemctl daemon-reload && sudo systemctl enable --now cadentra-agent`,
 }
 
 const agentServiceUnit = `[Unit]
-Description=Cadentra Agent
-Documentation=file:///usr/share/doc/cadentra
+Description=NodeSteer Agent
+Documentation=file:///usr/share/doc/nodesteer
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/cadentra-agent --config /etc/cadentra/agent.yaml
+ExecStart=/usr/local/bin/nodesteer-agent --config /etc/nodesteer/agent.yaml
 Restart=on-failure
 RestartSec=5
-StateDirectory=cadentra
+StateDirectory=nodesteer
 StateDirectoryMode=0750
 NoNewPrivileges=false
 
@@ -709,7 +709,7 @@ func (s *Server) handleAgentBinary(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
 	w.Header().Set("X-Agent-Binary-SHA256", digest)
-	http.ServeContent(w, r, "cadentra-agent-"+architecture, time.Time{}, bytes.NewReader(data))
+	http.ServeContent(w, r, "nodesteer-agent-"+architecture, time.Time{}, bytes.NewReader(data))
 }
 
 func (s *Server) agentBinaryDataFor(architecture string) ([]byte, string, error) {

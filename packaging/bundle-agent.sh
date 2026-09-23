@@ -10,7 +10,7 @@ tmp="$output.tmp.$$"
 trap 'rm -f "$tmp"' EXIT HUP INT TERM
 
 cat "$hub_binary" >"$tmp"
-printf '\nCADENTRA_AGENT_BUNDLE_V1\n' >>"$tmp"
+printf '\nNODESTEER_AGENT_BUNDLE_V1\n' >>"$tmp"
 while [ "$#" -gt 0 ]; do
 	architecture=$1
 	agent_binary=$2

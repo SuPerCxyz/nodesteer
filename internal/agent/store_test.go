@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/protocol"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/protocol"
 )
 
 func newTestAgentStore(t *testing.T) *LocalStore {
@@ -205,7 +205,7 @@ func TestArtifactRegister(t *testing.T) {
 	if s.ArtifactExists("sha-1") {
 		t.Fatalf("should not exist yet")
 	}
-	if err := s.RegisterArtifact("sha-1", "/var/lib/cadentra/artifacts/sha-1"); err != nil {
+	if err := s.RegisterArtifact("sha-1", "/var/lib/nodesteer/artifacts/sha-1"); err != nil {
 		t.Fatalf("register: %v", err)
 	}
 	if !s.ArtifactExists("sha-1") {

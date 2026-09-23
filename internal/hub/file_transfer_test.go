@@ -9,14 +9,15 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/protocol"
-	"github.com/cadentra/cadentra/internal/store"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/protocol"
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 )
 
 type transferTestConn struct {
@@ -57,7 +58,7 @@ func TestFileTransferUploadAndDelivery(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	item, err := m.Create(ctx, source.ID, "/var/lib/cadentra/source.txt", []FileTransferTargetRequest{{NodeID: target.ID, DestinationPath: "/var/lib/cadentra/target.txt"}})
+	item, err := m.Create(ctx, source.ID, "/var/lib/nodesteer/source.txt", []FileTransferTargetRequest{{NodeID: target.ID, DestinationPath: "/var/lib/nodesteer/target.txt"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,12 +71,12 @@ func TestFileTransferUploadAndDelivery(t *testing.T) {
 		t.Fatalf("unexpected upload request: %+v", upload)
 	}
 
-	body := []byte("cadentra-transfer")
+	body := []byte("nodesteer-transfer")
 	req := httptest.NewRequest(http.MethodPost, "/agent/transfers/"+item.ID+"/upload", io.NopCloser(bytesReader(body)))
-	req.Header.Set("X-Cadentra-Agent-ID", source.AgentID)
-	req.Header.Set("X-Cadentra-Agent-Token", sourceCred)
-	req.Header.Set("X-Cadentra-File-Size", "17")
-	req.Header.Set("X-Cadentra-File-Mode", "644")
+	req.Header.Set("X-NodeSteer-Agent-ID", source.AgentID)
+	req.Header.Set("X-NodeSteer-Agent-Token", sourceCred)
+	req.Header.Set("X-NodeSteer-File-Size", strconv.Itoa(len(body)))
+	req.Header.Set("X-NodeSteer-File-Mode", "644")
 	req.ContentLength = int64(len(body))
 	rec := httptest.NewRecorder()
 	m.HandleAgentHTTP(rec, req)
@@ -92,8 +93,8 @@ func TestFileTransferUploadAndDelivery(t *testing.T) {
 	}
 
 	download := httptest.NewRequest(http.MethodGet, "/agent/transfers/"+item.ID+"/download", nil)
-	download.Header.Set("X-Cadentra-Agent-ID", target.AgentID)
-	download.Header.Set("X-Cadentra-Agent-Token", targetCred)
+	download.Header.Set("X-NodeSteer-Agent-ID", target.AgentID)
+	download.Header.Set("X-NodeSteer-Agent-Token", targetCred)
 	downloadRec := httptest.NewRecorder()
 	m.HandleAgentHTTP(downloadRec, download)
 	if downloadRec.Code != http.StatusOK || downloadRec.Body.String() != string(body) {
@@ -155,9 +156,9 @@ func TestFileTransferAllTargetsSuccess(t *testing.T) {
 
 	body := []byte("relay")
 	req := httptest.NewRequest(http.MethodPost, "/agent/transfers/"+item.ID+"/upload", bytesReader(body))
-	req.Header.Set("X-Cadentra-Agent-ID", source.AgentID)
-	req.Header.Set("X-Cadentra-Agent-Token", sourceCred)
-	req.Header.Set("X-Cadentra-File-Size", "5")
+	req.Header.Set("X-NodeSteer-Agent-ID", source.AgentID)
+	req.Header.Set("X-NodeSteer-Agent-Token", sourceCred)
+	req.Header.Set("X-NodeSteer-File-Size", "5")
 	req.ContentLength = int64(len(body))
 	rec := httptest.NewRecorder()
 	m.HandleAgentHTTP(rec, req)
@@ -224,8 +225,8 @@ func TestFileTransferRejectsWrongAgentAndPath(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := httptest.NewRequest(http.MethodPost, "/agent/transfers/"+item.ID+"/upload", bytesReader([]byte("x")))
-	req.Header.Set("X-Cadentra-Agent-ID", target.AgentID)
-	req.Header.Set("X-Cadentra-Agent-Token", sourceCred)
+	req.Header.Set("X-NodeSteer-Agent-ID", target.AgentID)
+	req.Header.Set("X-NodeSteer-Agent-Token", sourceCred)
 	rec := httptest.NewRecorder()
 	m.HandleAgentHTTP(rec, req)
 	if rec.Code != http.StatusUnauthorized {
@@ -275,9 +276,9 @@ func TestFileTransferTargetFailureIsolatedAndRetryable(t *testing.T) {
 	<-sourceConn.sent
 	body := []byte("relay")
 	req := httptest.NewRequest(http.MethodPost, "/agent/transfers/"+item.ID+"/upload", bytesReader(body))
-	req.Header.Set("X-Cadentra-Agent-ID", source.AgentID)
-	req.Header.Set("X-Cadentra-Agent-Token", sourceCred)
-	req.Header.Set("X-Cadentra-File-Size", "5")
+	req.Header.Set("X-NodeSteer-Agent-ID", source.AgentID)
+	req.Header.Set("X-NodeSteer-Agent-Token", sourceCred)
+	req.Header.Set("X-NodeSteer-File-Size", "5")
 	req.ContentLength = int64(len(body))
 	rec := httptest.NewRecorder()
 	m.HandleAgentHTTP(rec, req)
@@ -393,7 +394,7 @@ func TestFileTransferSourceFailureTerminalizesTargets(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	item, err := m.Create(ctx, source.ID, "/var/lib/cadentra/missing.txt", []FileTransferTargetRequest{
+	item, err := m.Create(ctx, source.ID, "/var/lib/nodesteer/missing.txt", []FileTransferTargetRequest{
 		{NodeID: targetA.ID, DestinationPath: "/target-a"},
 		{NodeID: targetB.ID, DestinationPath: "/target-b"},
 	})
@@ -407,7 +408,7 @@ func TestFileTransferSourceFailureTerminalizesTargets(t *testing.T) {
 		t.Fatalf("expected active transfer guard before failure, got %v", err)
 	}
 
-	const uploadError = "open /var/lib/cadentra/missing.txt: no such file or directory"
+	const uploadError = "open /var/lib/nodesteer/missing.txt: no such file or directory"
 	if err := m.HandleUploadResult(ctx, source.ID, protocol.FileUploadResultPayload{TransferID: item.ID, OK: false, Error: uploadError}); err != nil {
 		t.Fatal(err)
 	}
@@ -540,9 +541,9 @@ func TestFileTransferCompleteUploadFailureTerminalizesTargets(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	item, err := m.Create(ctx, source.ID, "/var/lib/cadentra/source.txt", []FileTransferTargetRequest{
-		{NodeID: targetA.ID, DestinationPath: "/var/lib/cadentra/target-a.txt"},
-		{NodeID: targetB.ID, DestinationPath: "/var/lib/cadentra/target-b.txt"},
+	item, err := m.Create(ctx, source.ID, "/var/lib/nodesteer/source.txt", []FileTransferTargetRequest{
+		{NodeID: targetA.ID, DestinationPath: "/var/lib/nodesteer/target-a.txt"},
+		{NodeID: targetB.ID, DestinationPath: "/var/lib/nodesteer/target-b.txt"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -551,9 +552,9 @@ func TestFileTransferCompleteUploadFailureTerminalizesTargets(t *testing.T) {
 
 	upload := func(contentRange string, body []byte) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodPost, "/agent/transfers/"+item.ID+"/upload", bytesReader(body))
-		req.Header.Set("X-Cadentra-Agent-ID", source.AgentID)
-		req.Header.Set("X-Cadentra-Agent-Token", sourceCred)
-		req.Header.Set("X-Cadentra-File-Size", "10")
+		req.Header.Set("X-NodeSteer-Agent-ID", source.AgentID)
+		req.Header.Set("X-NodeSteer-Agent-Token", sourceCred)
+		req.Header.Set("X-NodeSteer-File-Size", "10")
 		if contentRange != "" {
 			req.Header.Set("Content-Range", contentRange)
 		}
@@ -666,9 +667,9 @@ func TestFileTransferRetryWithoutFailedTargetKeepsState(t *testing.T) {
 	<-sourceConn.sent
 	body := []byte("relay")
 	req := httptest.NewRequest(http.MethodPost, "/agent/transfers/"+item.ID+"/upload", bytesReader(body))
-	req.Header.Set("X-Cadentra-Agent-ID", source.AgentID)
-	req.Header.Set("X-Cadentra-Agent-Token", sourceCred)
-	req.Header.Set("X-Cadentra-File-Size", "5")
+	req.Header.Set("X-NodeSteer-Agent-ID", source.AgentID)
+	req.Header.Set("X-NodeSteer-Agent-Token", sourceCred)
+	req.Header.Set("X-NodeSteer-File-Size", "5")
 	req.ContentLength = int64(len(body))
 	rec := httptest.NewRecorder()
 	m.HandleAgentHTTP(rec, req)

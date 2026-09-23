@@ -6,7 +6,7 @@ import { ProfileDropdown } from '../profile-dropdown'
 import { ThemeSwitch } from '../theme-switch'
 import { Header } from './header'
 
-export function CadentraHeader({
+export function NodeSteerHeader({
   title,
   description,
   action,

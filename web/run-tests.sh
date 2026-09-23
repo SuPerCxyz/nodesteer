@@ -1,5 +1,5 @@
 #!/bin/bash
-# Cadentra E2E 测试运行脚本
+# NodeSteer E2E 测试运行脚本
 # 用法: ./run-tests.sh [环境] [测试模块]
 # 环境: sim (模拟环境, 默认) | real (真实环境)
 # 测试模块: all (默认) | login | nodes | scripts | tasks | schedules | applications | artifacts | executions | rbac | e2e
@@ -27,7 +27,7 @@ export BASE_URL
 cd "$(dirname "$0")"
 
 echo "=========================================="
-echo "Cadentra E2E 测试"
+echo "NodeSteer E2E 测试"
 echo "环境: $ENV ($BASE_URL)"
 echo "模块: $MODULE"
 echo "=========================================="

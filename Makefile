@@ -4,11 +4,11 @@
 build: build-agent build-hub
 
 build-hub: build-agent
-	go build -buildvcs=false -o bin/cadentra-hub.unbundled ./cmd/hub
-	sh packaging/bundle-agent.sh bin/cadentra-hub bin/cadentra-hub.unbundled amd64 bin/cadentra-agent
+	go build -buildvcs=false -o bin/nodesteer-hub.unbundled ./cmd/hub
+	sh packaging/bundle-agent.sh bin/nodesteer-hub bin/nodesteer-hub.unbundled amd64 bin/nodesteer-agent
 
 build-agent:
-	go build -buildvcs=false -o bin/cadentra-agent ./cmd/agent
+	go build -buildvcs=false -o bin/nodesteer-agent ./cmd/agent
 
 # Web 前端
 web:
@@ -31,10 +31,10 @@ lint:
 docker: docker-hub docker-agent
 
 docker-hub:
-	docker build -t cadentra/hub:latest -f packaging/docker/hub/Dockerfile .
+	docker build -t nodesteer/hub:latest -f packaging/docker/hub/Dockerfile .
 
 docker-agent:
-	docker build -t cadentra/agent:latest -f packaging/docker/agent/Dockerfile .
+	docker build -t nodesteer/agent:latest -f packaging/docker/agent/Dockerfile .
 
 clean:
 	rm -rf bin web/dist

@@ -37,10 +37,10 @@ func httpGetWithAgentToken(ctx context.Context, url, token, agentID string) (*ht
 		return nil, err
 	}
 	if token != "" {
-		req.Header.Set("X-Cadentra-Agent-Token", token)
+		req.Header.Set("X-NodeSteer-Agent-Token", token)
 	}
 	if agentID != "" {
-		req.Header.Set("X-Cadentra-Agent-ID", agentID)
+		req.Header.Set("X-NodeSteer-Agent-ID", agentID)
 	}
 	return http.DefaultClient.Do(req)
 }

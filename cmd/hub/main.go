@@ -12,10 +12,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/hub/agentbundle"
-	"github.com/cadentra/cadentra/internal/hub/auth"
-	"github.com/cadentra/cadentra/internal/hubserver"
-	"github.com/cadentra/cadentra/web"
+	"github.com/SuPerCxyz/nodesteer/internal/hub/agentbundle"
+	"github.com/SuPerCxyz/nodesteer/internal/hub/auth"
+	"github.com/SuPerCxyz/nodesteer/internal/hubserver"
+	"github.com/SuPerCxyz/nodesteer/web"
 	"gopkg.in/yaml.v3"
 )
 
@@ -50,9 +50,9 @@ func DefaultConfig() Config {
 		WebAddr:              ":8080",
 		GatewayAddr:          ":8443",
 		GatewayBaseURL:       "",
-		DataDir:              "/var/lib/cadentra-hub",
-		ArtifactDir:          "/var/lib/cadentra-hub/artifacts",
-		AgentBinaryAMD64Path: "/usr/local/bin/cadentra-agent",
+		DataDir:              "/var/lib/nodesteer-hub",
+		ArtifactDir:          "/var/lib/nodesteer-hub/artifacts",
+		AgentBinaryAMD64Path: "/usr/local/bin/nodesteer-agent",
 		BaseURL:              "http://localhost:8080",
 		AdminUsername:        "admin",
 		AdminPassword:        "",
@@ -162,14 +162,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Info("cadentra hub started",
+	logger.Info("nodesteer hub started",
 		"web", cfg.WebAddr, "gateway", cfg.GatewayAddr)
 
 	// 等待退出信号
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	<-sig
-	logger.Info("cadentra hub stopping")
+	logger.Info("nodesteer hub stopping")
 }
 
 func validateAdminCredentials(cfg Config) error {
@@ -180,80 +180,80 @@ func validateAdminCredentials(cfg Config) error {
 }
 
 func applyEnv(cfg *Config) error {
-	if v := os.Getenv("CADENTRA_WEB_ADDR"); v != "" {
+	if v := os.Getenv("NODESTEER_WEB_ADDR"); v != "" {
 		cfg.WebAddr = v
 	}
-	if v := os.Getenv("CADENTRA_GATEWAY_ADDR"); v != "" {
+	if v := os.Getenv("NODESTEER_GATEWAY_ADDR"); v != "" {
 		cfg.GatewayAddr = v
 	}
-	if v := os.Getenv("CADENTRA_GATEWAY_BASE_URL"); v != "" {
+	if v := os.Getenv("NODESTEER_GATEWAY_BASE_URL"); v != "" {
 		cfg.GatewayBaseURL = v
 	}
-	if v := os.Getenv("CADENTRA_WEB_TLS_CERT"); v != "" {
+	if v := os.Getenv("NODESTEER_WEB_TLS_CERT"); v != "" {
 		cfg.WebTLSCert = v
 	}
-	if v := os.Getenv("CADENTRA_WEB_TLS_KEY"); v != "" {
+	if v := os.Getenv("NODESTEER_WEB_TLS_KEY"); v != "" {
 		cfg.WebTLSKey = v
 	}
-	if v := os.Getenv("CADENTRA_GATEWAY_TLS_CERT"); v != "" {
+	if v := os.Getenv("NODESTEER_GATEWAY_TLS_CERT"); v != "" {
 		cfg.GatewayTLSCert = v
 	}
-	if v := os.Getenv("CADENTRA_GATEWAY_TLS_KEY"); v != "" {
+	if v := os.Getenv("NODESTEER_GATEWAY_TLS_KEY"); v != "" {
 		cfg.GatewayTLSKey = v
 	}
-	if v := os.Getenv("CADENTRA_REGISTRATION_TOKEN"); v != "" {
+	if v := os.Getenv("NODESTEER_REGISTRATION_TOKEN"); v != "" {
 		cfg.RegistrationToken = v
 	}
-	if v := os.Getenv("CADENTRA_DATA_DIR"); v != "" {
+	if v := os.Getenv("NODESTEER_DATA_DIR"); v != "" {
 		cfg.DataDir = v
 	}
-	if v := os.Getenv("CADENTRA_ARTIFACT_DIR"); v != "" {
+	if v := os.Getenv("NODESTEER_ARTIFACT_DIR"); v != "" {
 		cfg.ArtifactDir = v
 	}
-	if v := os.Getenv("CADENTRA_AGENT_BINARY_AMD64_PATH"); v != "" {
+	if v := os.Getenv("NODESTEER_AGENT_BINARY_AMD64_PATH"); v != "" {
 		cfg.AgentBinaryAMD64Path = v
 	}
-	if v := os.Getenv("CADENTRA_AGENT_BINARY_ARM64_PATH"); v != "" {
+	if v := os.Getenv("NODESTEER_AGENT_BINARY_ARM64_PATH"); v != "" {
 		cfg.AgentBinaryARM64Path = v
 	}
-	if v := os.Getenv("CADENTRA_BASE_URL"); v != "" {
+	if v := os.Getenv("NODESTEER_BASE_URL"); v != "" {
 		cfg.BaseURL = v
 	}
-	if v := os.Getenv("CADENTRA_MAX_FILE_TRANSFER_BYTES"); v != "" {
+	if v := os.Getenv("NODESTEER_MAX_FILE_TRANSFER_BYTES"); v != "" {
 		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
 			cfg.MaxFileTransferBytes = n
 		}
 	}
-	if v := os.Getenv("CADENTRA_ADMIN_USERNAME"); v != "" {
+	if v := os.Getenv("NODESTEER_ADMIN_USERNAME"); v != "" {
 		cfg.AdminUsername = v
 	}
-	if v := os.Getenv("CADENTRA_ADMIN_PASSWORD"); v != "" {
+	if v := os.Getenv("NODESTEER_ADMIN_PASSWORD"); v != "" {
 		cfg.AdminPassword = v
 	}
-	if v := os.Getenv("CADENTRA_OIDC_ISSUER"); v != "" {
+	if v := os.Getenv("NODESTEER_OIDC_ISSUER"); v != "" {
 		cfg.OIDC.Issuer = v
 	}
-	if v := os.Getenv("CADENTRA_OIDC_CLIENT_ID"); v != "" {
+	if v := os.Getenv("NODESTEER_OIDC_CLIENT_ID"); v != "" {
 		cfg.OIDC.ClientID = v
 	}
-	if v := os.Getenv("CADENTRA_OIDC_REDIRECT_URL"); v != "" {
+	if v := os.Getenv("NODESTEER_OIDC_REDIRECT_URL"); v != "" {
 		cfg.OIDC.RedirectURL = v
 	}
-	if v := os.Getenv("CADENTRA_OIDC_USERNAME_CLAIM"); v != "" {
+	if v := os.Getenv("NODESTEER_OIDC_USERNAME_CLAIM"); v != "" {
 		cfg.OIDC.UsernameClaim = v
 	}
-	if v := os.Getenv("CADENTRA_OIDC_ROLE_CLAIM"); v != "" {
+	if v := os.Getenv("NODESTEER_OIDC_ROLE_CLAIM"); v != "" {
 		cfg.OIDC.RoleClaim = v
 	}
-	if v := os.Getenv("CADENTRA_OIDC_DEFAULT_ROLE"); v != "" {
+	if v := os.Getenv("NODESTEER_OIDC_DEFAULT_ROLE"); v != "" {
 		cfg.OIDC.DefaultRole = v
 	}
 	// allow_local_login 三态：环境变量未设置时保留 yaml/默认值（默认 true=本地模式）；
 	// 设置则必须是合法 bool —— 解析失败直接报错，避免安全开关被静默忽略。
-	if v, ok := os.LookupEnv("CADENTRA_OIDC_ALLOW_LOCAL_LOGIN"); ok && v != "" {
+	if v, ok := os.LookupEnv("NODESTEER_OIDC_ALLOW_LOCAL_LOGIN"); ok && v != "" {
 		b, err := strconv.ParseBool(v)
 		if err != nil {
-			return fmt.Errorf("invalid CADENTRA_OIDC_ALLOW_LOCAL_LOGIN %q: want true or false", v)
+			return fmt.Errorf("invalid NODESTEER_OIDC_ALLOW_LOCAL_LOGIN %q: want true or false", v)
 		}
 		cfg.OIDC.AllowLocalLogin = &b
 	}

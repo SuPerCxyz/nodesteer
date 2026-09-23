@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/cadentra/cadentra/internal/store"
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 )
 
 func TestArtifactDeleteIsIdempotent(t *testing.T) {

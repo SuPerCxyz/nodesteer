@@ -59,8 +59,8 @@ test.describe('E2E 端到端流程', () => {
       name: /^(密码|password)$/i,
     }).first()
     await expect(passwordInput).toBeVisible()
-    const rbacPassword = process.env.CADENTRA_E2E_RBAC_PASSWORD || ''
-    if (!rbacPassword) throw new Error('CADENTRA_E2E_RBAC_PASSWORD is required')
+    const rbacPassword = process.env.NODESTEER_E2E_RBAC_PASSWORD || ''
+    if (!rbacPassword) throw new Error('NODESTEER_E2E_RBAC_PASSWORD is required')
     await passwordInput.fill(rbacPassword)
     const submitBtn = page.getByRole('button', { name: /submit|create|保存|创建/i }).first()
     await expect(submitBtn).toBeVisible()

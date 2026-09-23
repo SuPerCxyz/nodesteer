@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/hub"
-	"github.com/cadentra/cadentra/internal/hub/auth"
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/store"
+	"github.com/SuPerCxyz/nodesteer/internal/hub"
+	"github.com/SuPerCxyz/nodesteer/internal/hub/auth"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 )
 
 func TestAuthPermissions(t *testing.T) {

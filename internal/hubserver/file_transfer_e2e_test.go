@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/agent"
-	"github.com/cadentra/cadentra/internal/hub"
-	"github.com/cadentra/cadentra/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/agent"
+	"github.com/SuPerCxyz/nodesteer/internal/hub"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
 )
 
 func TestFileTransferWithRealAgents(t *testing.T) {

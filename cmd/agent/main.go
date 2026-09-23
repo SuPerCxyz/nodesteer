@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/cadentra/cadentra/internal/agent"
+	"github.com/SuPerCxyz/nodesteer/internal/agent"
 	"gopkg.in/yaml.v3"
 )
 
@@ -36,7 +36,7 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		DeploymentMode:   "native",
-		DataDir:          "/var/lib/cadentra",
+		DataDir:          "/var/lib/nodesteer",
 		AgentVersion:     "0.1.0",
 		HeartbeatSec:     30,
 		RevisionCheckSec: 45,
@@ -107,48 +107,48 @@ func main() {
 		cancel()
 	}()
 
-	logger.Info("cadentra agent starting",
+	logger.Info("nodesteer agent starting",
 		"hub", cfg.HubURL, "mode", cfg.DeploymentMode, "data_dir", cfg.DataDir)
 
 	if err := a.Run(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "agent run: %v\n", err)
 		os.Exit(1)
 	}
-	logger.Info("cadentra agent stopped")
+	logger.Info("nodesteer agent stopped")
 }
 
 func applyEnv(cfg *Config) {
-	if v := os.Getenv("CADENTRA_HUB_URL"); v != "" {
+	if v := os.Getenv("NODESTEER_HUB_URL"); v != "" {
 		cfg.HubURL = v
 	}
-	if v := os.Getenv("CADENTRA_REGISTRATION_TOKEN"); v != "" {
+	if v := os.Getenv("NODESTEER_REGISTRATION_TOKEN"); v != "" {
 		cfg.RegistrationToken = v
 	}
-	if v := os.Getenv("CADENTRA_AGENT_ID"); v != "" {
+	if v := os.Getenv("NODESTEER_AGENT_ID"); v != "" {
 		cfg.AgentID = v
 	}
-	if v := os.Getenv("CADENTRA_NODE_NAME"); v != "" {
+	if v := os.Getenv("NODESTEER_NODE_NAME"); v != "" {
 		cfg.NodeName = v
 	}
-	if v := os.Getenv("CADENTRA_NODE_IP"); v != "" {
+	if v := os.Getenv("NODESTEER_NODE_IP"); v != "" {
 		cfg.NodeIP = v
 	}
-	if v := os.Getenv("CADENTRA_DEPLOYMENT_MODE"); v != "" {
+	if v := os.Getenv("NODESTEER_DEPLOYMENT_MODE"); v != "" {
 		cfg.DeploymentMode = v
 	}
-	if v := os.Getenv("CADENTRA_HOST_INTEGRATION"); v == "true" {
+	if v := os.Getenv("NODESTEER_HOST_INTEGRATION"); v == "true" {
 		cfg.HostIntegration = true
 	}
-	if v := os.Getenv("CADENTRA_DATA_DIR"); v != "" {
+	if v := os.Getenv("NODESTEER_DATA_DIR"); v != "" {
 		cfg.DataDir = v
 	}
-	if v := os.Getenv("CADENTRA_HOST_ROOT"); v != "" {
+	if v := os.Getenv("NODESTEER_HOST_ROOT"); v != "" {
 		cfg.HostRoot = v
 	}
-	if v := os.Getenv("CADENTRA_TLS_CA_FILE"); v != "" {
+	if v := os.Getenv("NODESTEER_TLS_CA_FILE"); v != "" {
 		cfg.TLSCAFile = v
 	}
-	if v := os.Getenv("CADENTRA_AGENT_VERSION"); v != "" {
+	if v := os.Getenv("NODESTEER_AGENT_VERSION"); v != "" {
 		cfg.AgentVersion = v
 	}
 }

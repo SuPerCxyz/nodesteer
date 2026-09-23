@@ -60,8 +60,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { CadentraHeader } from '@/components/layout/cadentra-header'
 import { Main } from '@/components/layout/main'
+import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import { DataTable } from '@/features/shared/data-table'
 import { TaskScheduleTabs } from '@/features/shared/task-schedule-tabs'
 import {
@@ -555,7 +555,7 @@ export function AgentDetail() {
   const item = node.data
   return (
     <>
-      <CadentraHeader
+      <NodeSteerHeader
         title={item.hostname}
         description={item.ip || item.agent_id}
         action={<StatusBadge status={item.status} />}
@@ -1935,7 +1935,7 @@ export function Users() {
   if (!isAdministrator) {
     return (
       <>
-        <CadentraHeader
+        <NodeSteerHeader
           title={t('misc.usersTitle')}
           description={t('misc.usersDescription')}
         />
@@ -2042,7 +2042,7 @@ export function Settings() {
       : query.data || {}
   return (
     <>
-      <CadentraHeader
+      <NodeSteerHeader
         title={t('misc.settingsTitle')}
         description={t('misc.settingsDescription')}
       />
@@ -2197,7 +2197,11 @@ function ListLayout<TData>({
   const { t } = useTranslation()
   return (
     <>
-      <CadentraHeader title={title} description={description} action={action} />
+      <NodeSteerHeader
+        title={title}
+        description={description}
+        action={action}
+      />
       <Main className='flex flex-1 flex-col gap-6'>
         {extra}
         {query.isError ? (
@@ -2236,7 +2240,7 @@ function ListLayout<TData>({
 function LoadingPage({ title }: { title: string }) {
   return (
     <>
-      <CadentraHeader title={title} />
+      <NodeSteerHeader title={title} />
       <Main>
         <div className='grid gap-3' aria-label={title}>
           <Skeleton className='h-8 w-48' />

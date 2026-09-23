@@ -17,12 +17,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
 )
 
 func testAgentBinary(t *testing.T, dir string) string {
 	t.Helper()
-	path := filepath.Join(dir, "cadentra-agent-amd64")
+	path := filepath.Join(dir, "nodesteer-agent-amd64")
 	if err := os.WriteFile(path, []byte("agent-binary-test"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +32,7 @@ func testAgentBinary(t *testing.T, dir string) string {
 func TestAgentBinaryDownloadIsPublicAndBounded(t *testing.T) {
 	dir := t.TempDir()
 	agentBinary := testAgentBinary(t, dir)
-	armBinary := filepath.Join(dir, "cadentra-agent-arm64")
+	armBinary := filepath.Join(dir, "nodesteer-agent-arm64")
 	if err := os.WriteFile(armBinary, []byte("agent-binary-arm64"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -152,13 +152,13 @@ func TestNodeEnrollmentMetadata(t *testing.T) {
 		!strings.Contains(result["native"], "node_name: \"edge-node-01\"") ||
 		!strings.Contains(result["native"], "node_ip: \"203.0.113.10\"") ||
 		!strings.Contains(result["native"], "registration_token: \"registration-test\"") ||
-		!strings.Contains(result["docker_run"], "CADENTRA_REGISTRATION_TOKEN='registration-test'") ||
-		!strings.Contains(result["docker_run"], "CADENTRA_NODE_NAME='edge-node-01'") ||
-		!strings.Contains(result["docker_run"], "CADENTRA_NODE_IP='203.0.113.10'") ||
-		!strings.Contains(result["docker_run"], "CADENTRA_DEPLOYMENT_MODE=docker") ||
-		!strings.Contains(result["docker_compose"], "CADENTRA_NODE_NAME: \"edge-node-01\"") ||
-		!strings.Contains(result["docker_compose"], "CADENTRA_NODE_IP: \"203.0.113.10\"") ||
-		!strings.Contains(result["docker_compose"], "CADENTRA_DEPLOYMENT_MODE: docker") {
+		!strings.Contains(result["docker_run"], "NODESTEER_REGISTRATION_TOKEN='registration-test'") ||
+		!strings.Contains(result["docker_run"], "NODESTEER_NODE_NAME='edge-node-01'") ||
+		!strings.Contains(result["docker_run"], "NODESTEER_NODE_IP='203.0.113.10'") ||
+		!strings.Contains(result["docker_run"], "NODESTEER_DEPLOYMENT_MODE=docker") ||
+		!strings.Contains(result["docker_compose"], "NODESTEER_NODE_NAME: \"edge-node-01\"") ||
+		!strings.Contains(result["docker_compose"], "NODESTEER_NODE_IP: \"203.0.113.10\"") ||
+		!strings.Contains(result["docker_compose"], "NODESTEER_DEPLOYMENT_MODE: docker") {
 		t.Fatalf("unexpected enrollment metadata: %+v", result)
 	}
 
@@ -185,8 +185,8 @@ func TestNodeEnrollmentMetadata(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !strings.Contains(domainResult["native"], "node_ip: \"agent.example.com\"") ||
-		!strings.Contains(domainResult["docker_run"], "CADENTRA_NODE_IP='agent.example.com'") ||
-		!strings.Contains(domainResult["docker_compose"], "CADENTRA_NODE_IP: \"agent.example.com\"") {
+		!strings.Contains(domainResult["docker_run"], "NODESTEER_NODE_IP='agent.example.com'") ||
+		!strings.Contains(domainResult["docker_compose"], "NODESTEER_NODE_IP: \"agent.example.com\"") {
 		t.Fatalf("domain address was not preserved: %+v", domainResult)
 	}
 }
@@ -247,12 +247,12 @@ func TestNodeEnrollmentCreatesPendingNode(t *testing.T) {
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
 		t.Fatal(err)
 	}
-	if result["agent_id"] == "" || result["agent_image"] != "ghcr.io/supercxyz/cadentra-agent:latest" ||
+	if result["agent_id"] == "" || result["agent_image"] != "ghcr.io/supercxyz/nodesteer-agent:latest" ||
 		!strings.Contains(result["native"], "agent_id: \""+result["agent_id"]+"\"") ||
-		!strings.Contains(result["docker_run"], "CADENTRA_AGENT_ID='") ||
-		!strings.Contains(result["docker_run"], "ghcr.io/supercxyz/cadentra-agent:latest") ||
-		!strings.Contains(result["docker_compose"], "image: ghcr.io/supercxyz/cadentra-agent:latest") ||
-		!strings.Contains(result["docker_compose"], "CADENTRA_AGENT_ID: \""+result["agent_id"]+"\"") {
+		!strings.Contains(result["docker_run"], "NODESTEER_AGENT_ID='") ||
+		!strings.Contains(result["docker_run"], "ghcr.io/supercxyz/nodesteer-agent:latest") ||
+		!strings.Contains(result["docker_compose"], "image: ghcr.io/supercxyz/nodesteer-agent:latest") ||
+		!strings.Contains(result["docker_compose"], "NODESTEER_AGENT_ID: \""+result["agent_id"]+"\"") {
 		t.Fatalf("unexpected enrollment result: %+v", result)
 	}
 	nodes, err := h.Nodes().ListNodes(ctx)

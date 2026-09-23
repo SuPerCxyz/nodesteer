@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-const magic = "\nCADENTRA_AGENT_BUNDLE_V1\n"
+const magic = "\nNODESTEER_AGENT_BUNDLE_V1\n"
 
 // LoadExecutable loads the amd64/arm64 Agent payloads appended by the build
 // bundle step. A normal unbundled development binary returns an empty map.

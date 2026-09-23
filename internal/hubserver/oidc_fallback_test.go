@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/hub/auth"
+	"github.com/SuPerCxyz/nodesteer/internal/hub/auth"
 )
 
 // boolPtr 返回指向 v 的指针（allow_local_login 三态开关测试辅助）。

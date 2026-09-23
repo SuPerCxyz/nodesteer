@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/protocol"
-	"github.com/cadentra/cadentra/internal/store"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/protocol"
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 	"github.com/google/uuid"
 )
 
@@ -46,7 +46,7 @@ func (m *AppManager) Create(ctx context.Context, a *models.Application) error {
 		a.ID = uuid.NewString()
 	}
 	if a.UnitName == "" {
-		a.UnitName = "cadentra-" + a.Name + ".service"
+		a.UnitName = "nodesteer-" + a.Name + ".service"
 	}
 	if err := validateApplicationDefinition(a); err != nil {
 		return err

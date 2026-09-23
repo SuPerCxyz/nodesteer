@@ -1,8 +1,8 @@
 import { type Page } from 'playwright/test'
 
 export const TEST_USER = {
-  username: process.env.CADENTRA_E2E_USERNAME || 'admin',
-  password: process.env.CADENTRA_E2E_PASSWORD || '',
+  username: process.env.NODESTEER_E2E_USERNAME || 'admin',
+  password: process.env.NODESTEER_E2E_PASSWORD || '',
 }
 
 export const TEST_URLS = {
@@ -38,7 +38,7 @@ export async function loginViaApi(page: Page, username = TEST_USER.username, pas
   })
   const body = await resp.json()
   const token = body.token ?? body.Token
-  await page.evaluate((t) => localStorage.setItem('cadentra_token', t), token)
+  await page.evaluate((t) => localStorage.setItem('nodesteer_token', t), token)
   return token
 }
 
@@ -53,7 +53,7 @@ export async function apiRequest(
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('cadentra_token') || ''}`,
+          Authorization: `Bearer ${localStorage.getItem('nodesteer_token') || ''}`,
         },
         body: data === undefined ? undefined : JSON.stringify(data),
       })

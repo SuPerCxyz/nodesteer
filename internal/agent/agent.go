@@ -18,13 +18,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/agent/condition"
-	"github.com/cadentra/cadentra/internal/agent/connection"
-	"github.com/cadentra/cadentra/internal/agent/execution"
-	"github.com/cadentra/cadentra/internal/agent/host"
-	"github.com/cadentra/cadentra/internal/agent/scheduler"
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/protocol"
+	"github.com/SuPerCxyz/nodesteer/internal/agent/condition"
+	"github.com/SuPerCxyz/nodesteer/internal/agent/connection"
+	"github.com/SuPerCxyz/nodesteer/internal/agent/execution"
+	"github.com/SuPerCxyz/nodesteer/internal/agent/host"
+	"github.com/SuPerCxyz/nodesteer/internal/agent/scheduler"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/protocol"
 	"github.com/google/uuid"
 )
 
@@ -212,8 +212,8 @@ func (a *Agent) capabilities() map[string]bool {
 
 // osArch 获取架构
 func osArch() string {
-	if os.Getenv("CADENTRA_ARCH") != "" {
-		return os.Getenv("CADENTRA_ARCH")
+	if os.Getenv("NODESTEER_ARCH") != "" {
+		return os.Getenv("NODESTEER_ARCH")
 	}
 	if isArm() {
 		return "arm64"
@@ -1038,10 +1038,10 @@ func (a *Agent) uploadFile(ctx context.Context, p protocol.FileUploadRequestPayl
 			return err
 		}
 		req.ContentLength = info.Size() - offset
-		req.Header.Set("X-Cadentra-Agent-ID", a.agentID)
-		req.Header.Set("X-Cadentra-Agent-Token", a.credential)
-		req.Header.Set("X-Cadentra-File-Size", strconv.FormatInt(info.Size(), 10))
-		req.Header.Set("X-Cadentra-File-Mode", strconv.FormatUint(uint64(info.Mode().Perm()), 8))
+		req.Header.Set("X-NodeSteer-Agent-ID", a.agentID)
+		req.Header.Set("X-NodeSteer-Agent-Token", a.credential)
+		req.Header.Set("X-NodeSteer-File-Size", strconv.FormatInt(info.Size(), 10))
+		req.Header.Set("X-NodeSteer-File-Mode", strconv.FormatUint(uint64(info.Mode().Perm()), 8))
 		if info.Size() > 0 {
 			req.Header.Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", offset, info.Size()-1, info.Size()))
 		}
@@ -1100,8 +1100,8 @@ func (a *Agent) downloadFile(ctx context.Context, p protocol.FileDeliveryRequest
 	if err != nil {
 		return err
 	}
-	req.Header.Set("X-Cadentra-Agent-ID", a.agentID)
-	req.Header.Set("X-Cadentra-Agent-Token", a.credential)
+	req.Header.Set("X-NodeSteer-Agent-ID", a.agentID)
+	req.Header.Set("X-NodeSteer-Agent-Token", a.credential)
 	resp, err := a.conn.HTTPClient().Do(req)
 	if err != nil {
 		return err
@@ -1388,7 +1388,7 @@ func (a *Agent) TriggerSchedule(ctx context.Context, sch *models.Schedule, sched
 		p.Environment = map[string]string{}
 	}
 	for k, v := range values {
-		p.Environment["CADENTRA_PARAM_"+k] = v
+		p.Environment["NODESTEER_PARAM_"+k] = v
 	}
 	p.SecretValues = localSecretValues(t.Parameters, scriptParams, values)
 	if t.Condition != nil {

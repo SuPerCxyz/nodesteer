@@ -18,8 +18,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { CadentraHeader } from '@/components/layout/cadentra-header'
 import { Main } from '@/components/layout/main'
+import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import { DataTable } from '@/features/shared/data-table'
 import {
   DetailField,
@@ -261,7 +261,7 @@ export function Executions() {
 
   return (
     <>
-      <CadentraHeader
+      <NodeSteerHeader
         title={t('executions.title')}
         description={t('executions.description')}
       />
@@ -390,7 +390,7 @@ export function ExecutionDetail() {
   if (!execution.data)
     return (
       <>
-        <CadentraHeader title={t('executions.executionTitle')} />
+        <NodeSteerHeader title={t('executions.executionTitle')} />
         <Main>
           <div className='flex min-h-32 items-center justify-center'>
             <Loader2 className='size-4 animate-spin text-muted-foreground' />
@@ -412,7 +412,7 @@ export function ExecutionDetail() {
         ] || exec.trigger_type
   return (
     <>
-      <CadentraHeader
+      <NodeSteerHeader
         title={taskName}
         description={`${nodeName} · ${trigger}`}
         action={

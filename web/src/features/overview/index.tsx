@@ -28,8 +28,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { CadentraHeader } from '@/components/layout/cadentra-header'
 import { Main } from '@/components/layout/main'
+import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import {
   DurationValue,
   EmptyState,
@@ -139,7 +139,7 @@ export function Dashboard() {
   if (query.isLoading)
     return (
       <>
-        <CadentraHeader
+        <NodeSteerHeader
           title={t('dashboard.title')}
           description={t('dashboard.description')}
         />
@@ -151,7 +151,7 @@ export function Dashboard() {
   if (query.isError || !data)
     return (
       <>
-        <CadentraHeader title={t('dashboard.title')} />
+        <NodeSteerHeader title={t('dashboard.title')} />
         <Main>
           <ErrorState error={query.error} onRetry={() => query.refetch()} />
         </Main>
@@ -160,7 +160,7 @@ export function Dashboard() {
 
   return (
     <>
-      <CadentraHeader
+      <NodeSteerHeader
         title={t('dashboard.title')}
         description={t('dashboard.description')}
       />

@@ -1,11 +1,11 @@
 #!/bin/bash
-# Cadentra E2E 完整测试 - 使用 agent-browser
+# NodeSteer E2E 完整测试 - 使用 agent-browser
 set -e
 
 BASE_URL="http://192.168.100.249:8080"
-AUTH_PROFILE="${CADENTRA_E2E_AUTH_PROFILE:-cadentra}"
-E2E_USERNAME="${CADENTRA_E2E_USERNAME:-admin}"
-: "${CADENTRA_E2E_PASSWORD:?请通过受控环境注入 CADENTRA_E2E_PASSWORD，或使用 agent-browser auth profile}"
+AUTH_PROFILE="${NODESTEER_E2E_AUTH_PROFILE:-nodesteer}"
+E2E_USERNAME="${NODESTEER_E2E_USERNAME:-admin}"
+: "${NODESTEER_E2E_PASSWORD:?请通过受控环境注入 NODESTEER_E2E_PASSWORD，或使用 agent-browser auth profile}"
 PASS=0
 FAIL=0
 TOTAL=0
@@ -31,7 +31,7 @@ do_login() {
 }
 
 api_login() {
-  printf '{"username":"%s","password":"%s"}' "$E2E_USERNAME" "$CADENTRA_E2E_PASSWORD" |
+  printf '{"username":"%s","password":"%s"}' "$E2E_USERNAME" "$NODESTEER_E2E_PASSWORD" |
     curl -s -X POST "$BASE_URL/api/login" -H "Content-Type: application/json" --data-binary @- 2>/dev/null
 }
 
@@ -113,7 +113,7 @@ test_page_after_login() {
 
 # ========== 执行测试 ==========
 echo "=========================================="
-echo "Cadentra E2E 完整测试"
+echo "NodeSteer E2E 完整测试"
 echo "环境: $BASE_URL"
 echo "=========================================="
 

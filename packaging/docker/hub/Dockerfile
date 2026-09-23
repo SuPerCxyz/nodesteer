@@ -18,16 +18,16 @@ RUN go mod download
 COPY . .
 COPY --from=web-builder /src/web/dist ./web/dist
 ARG TARGETARCH
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -ldflags="-s -w" -o /out/cadentra-hub.unbundled ./cmd/hub \
-    && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /out/cadentra-agent-amd64 ./cmd/agent \
-    && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o /out/cadentra-agent-arm64 ./cmd/agent \
-    && sh packaging/bundle-agent.sh /out/cadentra-hub /out/cadentra-hub.unbundled amd64 /out/cadentra-agent-amd64 arm64 /out/cadentra-agent-arm64
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -ldflags="-s -w" -o /out/nodesteer-hub.unbundled ./cmd/hub \
+    && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /out/nodesteer-agent-amd64 ./cmd/agent \
+    && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o /out/nodesteer-agent-arm64 ./cmd/agent \
+    && sh packaging/bundle-agent.sh /out/nodesteer-hub /out/nodesteer-hub.unbundled amd64 /out/nodesteer-agent-amd64 arm64 /out/nodesteer-agent-arm64
 
 # Runtime
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates tzdata
-COPY --from=builder /out/cadentra-hub /usr/local/bin/cadentra-hub
-RUN mkdir -p /var/lib/cadentra-hub /var/lib/cadentra-hub/artifacts
+COPY --from=builder /out/nodesteer-hub /usr/local/bin/nodesteer-hub
+RUN mkdir -p /var/lib/nodesteer-hub /var/lib/nodesteer-hub/artifacts
 EXPOSE 8080 8443
-VOLUME ["/var/lib/cadentra-hub"]
-ENTRYPOINT ["/usr/local/bin/cadentra-hub"]
+VOLUME ["/var/lib/nodesteer-hub"]
+ENTRYPOINT ["/usr/local/bin/nodesteer-hub"]

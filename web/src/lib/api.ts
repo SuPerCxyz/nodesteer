@@ -7,14 +7,14 @@ export interface ApiClientOptions {
 }
 
 const storage = typeof localStorage === 'undefined' ? null : localStorage
-let authToken: string | null = storage?.getItem('cadentra_token') || null
+let authToken: string | null = storage?.getItem('nodesteer_token') || null
 
 export function setToken(token: string | null) {
   authToken = token
   if (token) {
-    storage?.setItem('cadentra_token', token)
+    storage?.setItem('nodesteer_token', token)
   } else {
-    storage?.removeItem('cadentra_token')
+    storage?.removeItem('nodesteer_token')
   }
 }
 
@@ -48,7 +48,7 @@ async function requestWithResponse<T>(
   const resp = await fetch(`${API_BASE}${path}`, { ...options, headers })
   if (resp.status === 401) {
     setToken(null)
-    window.dispatchEvent(new Event('cadentra-unauthorized'))
+    window.dispatchEvent(new Event('nodesteer-unauthorized'))
   }
   if (!resp.ok) {
     let msg = `HTTP ${resp.status}`

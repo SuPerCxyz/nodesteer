@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/protocol"
+	"github.com/SuPerCxyz/nodesteer/internal/protocol"
 )
 
 // AgentConn 抽象 Agent 连接（由 Gateway 实现）

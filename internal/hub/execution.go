@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/metrics"
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/protocol"
-	"github.com/cadentra/cadentra/internal/store"
+	"github.com/SuPerCxyz/nodesteer/internal/metrics"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/protocol"
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 	"github.com/google/uuid"
 )
 
@@ -86,7 +86,7 @@ func executionEnvironment(task *models.Task, script *models.Script, supplied map
 		}
 	}
 	for k, v := range values {
-		env["CADENTRA_PARAM_"+k] = v
+		env["NODESTEER_PARAM_"+k] = v
 	}
 	for _, def := range append(append([]models.Parameter{}, task.Parameters...), scriptParameters(script)...) {
 		if def.Type == "secret" && values[def.Name] != "" {

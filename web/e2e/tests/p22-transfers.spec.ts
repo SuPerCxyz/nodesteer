@@ -27,7 +27,7 @@ test.describe('P22 文件传输', () => {
     const transfer = {
       id: 'e2e-failed-transfer',
       source_node_id: 'e2e-node-source',
-      source_path: '/var/lib/cadentra/e2e.txt',
+      source_path: '/var/lib/nodesteer/e2e.txt',
       size: 0,
       status: 'FAILED',
       error: 'source upload failed: e2e simulated',
@@ -37,7 +37,7 @@ test.describe('P22 文件传输', () => {
         {
           transfer_id: 'e2e-failed-transfer',
           node_id: 'e2e-node-target',
-          destination_path: '/var/lib/cadentra/e2e-target.txt',
+          destination_path: '/var/lib/nodesteer/e2e-target.txt',
           status: 'FAILED',
           error: 'source upload failed: e2e simulated',
           updated_at: now,

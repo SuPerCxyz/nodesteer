@@ -56,26 +56,26 @@ func (m *Metrics) Render() string {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var out string
-	out += fmt.Sprintf("# HELP cadentra_connected_agents Number of connected agents\n")
-	out += fmt.Sprintf("# TYPE cadentra_connected_agents gauge\n")
-	out += fmt.Sprintf("cadentra_connected_agents %d\n", m.connectedAgents)
+	out += fmt.Sprintf("# HELP nodesteer_connected_agents Number of connected agents\n")
+	out += fmt.Sprintf("# TYPE nodesteer_connected_agents gauge\n")
+	out += fmt.Sprintf("nodesteer_connected_agents %d\n", m.connectedAgents)
 
-	out += "# HELP cadentra_sync_errors Total sync errors\n"
-	out += "# TYPE cadentra_sync_errors counter\n"
-	out += fmt.Sprintf("cadentra_sync_errors %d\n", m.syncErrors)
+	out += "# HELP nodesteer_sync_errors Total sync errors\n"
+	out += "# TYPE nodesteer_sync_errors counter\n"
+	out += fmt.Sprintf("nodesteer_sync_errors %d\n", m.syncErrors)
 
-	out += "# HELP cadentra_execution_total Total executions by status\n"
-	out += "# TYPE cadentra_execution_total counter\n"
+	out += "# HELP nodesteer_execution_total Total executions by status\n"
+	out += "# TYPE nodesteer_execution_total counter\n"
 	for status, n := range m.executionTotal {
-		out += fmt.Sprintf("cadentra_execution_total{status=%q} %d\n", status, n)
+		out += fmt.Sprintf("nodesteer_execution_total{status=%q} %d\n", status, n)
 	}
-	out += fmt.Sprintf("cadentra_execution_failed %d\n", m.executionTotal["FAILED"])
-	out += fmt.Sprintf("cadentra_execution_total_all %d\n", total(m.executionTotal))
-	out += fmt.Sprintf("cadentra_active_executions %d\n", m.executionTotal["RUNNING"])
+	out += fmt.Sprintf("nodesteer_execution_failed %d\n", m.executionTotal["FAILED"])
+	out += fmt.Sprintf("nodesteer_execution_total_all %d\n", total(m.executionTotal))
+	out += fmt.Sprintf("nodesteer_active_executions %d\n", m.executionTotal["RUNNING"])
 
-	out += "# HELP cadentra_artifact_download_bytes Artifact download bytes\n"
-	out += "# TYPE cadentra_artifact_download_bytes counter\n"
-	out += fmt.Sprintf("cadentra_artifact_download_bytes %d\n", m.artifactDownloadBytes)
+	out += "# HELP nodesteer_artifact_download_bytes Artifact download bytes\n"
+	out += "# TYPE nodesteer_artifact_download_bytes counter\n"
+	out += fmt.Sprintf("nodesteer_artifact_download_bytes %d\n", m.artifactDownloadBytes)
 	return out
 }
 

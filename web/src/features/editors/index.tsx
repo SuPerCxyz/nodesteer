@@ -31,8 +31,8 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
-import { CadentraHeader } from '@/components/layout/cadentra-header'
 import { Main } from '@/components/layout/main'
+import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import {
   ErrorPage,
   ErrorState,
@@ -110,7 +110,7 @@ function EditorShell({
 }) {
   return (
     <>
-      <CadentraHeader title={title} description={description} />
+      <NodeSteerHeader title={title} description={description} />
       <Main className='flex flex-1 flex-col gap-6'>
         <div className='w-full max-w-5xl'>{children}</div>
       </Main>

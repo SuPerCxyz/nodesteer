@@ -12,9 +12,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cadentra/cadentra/internal/agent/connection"
-	"github.com/cadentra/cadentra/internal/agent/host"
-	"github.com/cadentra/cadentra/internal/protocol"
+	"github.com/SuPerCxyz/nodesteer/internal/agent/connection"
+	"github.com/SuPerCxyz/nodesteer/internal/agent/host"
+	"github.com/SuPerCxyz/nodesteer/internal/protocol"
 )
 
 func TestAgentFileUploadAndDownload(t *testing.T) {
@@ -32,7 +32,7 @@ func TestAgentFileUploadAndDownload(t *testing.T) {
 			if err != nil || string(body) != string(content) {
 				t.Fatalf("unexpected upload body: %v %q", err, body)
 			}
-			if r.Header.Get("X-Cadentra-Agent-ID") != "agent-1" {
+			if r.Header.Get("X-NodeSteer-Agent-ID") != "agent-1" {
 				t.Fatalf("missing agent id")
 			}
 			return

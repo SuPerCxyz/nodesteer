@@ -52,8 +52,8 @@ import {
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { CadentraHeader } from '@/components/layout/cadentra-header'
 import { Main } from '@/components/layout/main'
+import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import { Schedules } from '@/features/catalog'
 import { DataTable } from '@/features/shared/data-table'
 import { TaskScheduleTabs } from '@/features/shared/task-schedule-tabs'
@@ -267,7 +267,7 @@ export function Tasks() {
 
   return (
     <>
-      <CadentraHeader
+      <NodeSteerHeader
         title={t('tasks.title')}
         description={t('tasks.description')}
         action={
@@ -352,7 +352,7 @@ export function TaskDetail() {
   if (!task.data)
     return (
       <>
-        <CadentraHeader title={t('tasks.title')} />
+        <NodeSteerHeader title={t('tasks.title')} />
         <Main>
           <LoadingState />
         </Main>
@@ -361,7 +361,7 @@ export function TaskDetail() {
   const item = task.data
   return (
     <>
-      <CadentraHeader
+      <NodeSteerHeader
         title={item.name}
         description={`${item.type} · r${item.revision}`}
         action={
@@ -727,7 +727,7 @@ export function TaskEditor() {
   if (editing && current.isPending && !draft)
     return (
       <>
-        <CadentraHeader
+        <NodeSteerHeader
           title={t('tasks.editTitle')}
           description={t('tasks.formDescription')}
         />
@@ -738,7 +738,7 @@ export function TaskEditor() {
     )
   return (
     <>
-      <CadentraHeader
+      <NodeSteerHeader
         title={editing ? t('tasks.editTitle') : t('tasks.newTitle')}
         description={t('tasks.formDescription')}
       />
@@ -1393,7 +1393,7 @@ export function RunTask() {
   if (!task.data)
     return (
       <>
-        <CadentraHeader title={t('tasks.runNow')} />
+        <NodeSteerHeader title={t('tasks.runNow')} />
         <Main>
           <LoadingState />
         </Main>
@@ -1418,7 +1418,7 @@ export function RunTask() {
   }
   return (
     <>
-      <CadentraHeader
+      <NodeSteerHeader
         title={`${t('tasks.runTitle')}${task.data?.name || id}`}
         description={t('tasks.runDescription')}
       />

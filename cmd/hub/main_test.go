@@ -29,7 +29,7 @@ func TestAllowLocalLoginTriState(t *testing.T) {
 	if !cfg.OIDC.LocalLoginAllowed() {
 		t.Fatal("default must be local login mode (nil means true)")
 	}
-	t.Setenv("CADENTRA_OIDC_ALLOW_LOCAL_LOGIN", "")
+	t.Setenv("NODESTEER_OIDC_ALLOW_LOCAL_LOGIN", "")
 	if err := applyEnv(&cfg); err != nil {
 		t.Fatalf("applyEnv: %v", err)
 	}
@@ -53,7 +53,7 @@ func TestAllowLocalLoginTriState(t *testing.T) {
 	}
 
 	// 3) yaml false，env=true → env 覆盖回本地模式
-	t.Setenv("CADENTRA_OIDC_ALLOW_LOCAL_LOGIN", "true")
+	t.Setenv("NODESTEER_OIDC_ALLOW_LOCAL_LOGIN", "true")
 	if err := applyEnv(&parsed); err != nil {
 		t.Fatalf("applyEnv: %v", err)
 	}
@@ -63,7 +63,7 @@ func TestAllowLocalLoginTriState(t *testing.T) {
 
 	// 4) env=false → SSO-only 模式
 	cfg2 := DefaultConfig()
-	t.Setenv("CADENTRA_OIDC_ALLOW_LOCAL_LOGIN", "false")
+	t.Setenv("NODESTEER_OIDC_ALLOW_LOCAL_LOGIN", "false")
 	if err := applyEnv(&cfg2); err != nil {
 		t.Fatalf("applyEnv: %v", err)
 	}
@@ -72,10 +72,10 @@ func TestAllowLocalLoginTriState(t *testing.T) {
 	}
 
 	// 5) 非法值必须报错（安全开关不得被静默忽略）
-	t.Setenv("CADENTRA_OIDC_ALLOW_LOCAL_LOGIN", "flase")
+	t.Setenv("NODESTEER_OIDC_ALLOW_LOCAL_LOGIN", "flase")
 	if err := applyEnv(&cfg2); err == nil {
 		t.Fatal("invalid bool env must be rejected")
-	} else if !strings.Contains(err.Error(), "CADENTRA_OIDC_ALLOW_LOCAL_LOGIN") {
+	} else if !strings.Contains(err.Error(), "NODESTEER_OIDC_ALLOW_LOCAL_LOGIN") {
 		t.Fatalf("error should name the env var, got: %v", err)
 	}
 }

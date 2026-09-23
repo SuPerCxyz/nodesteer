@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cadentra/cadentra/internal/agent/host"
-	"github.com/cadentra/cadentra/internal/models"
-	"github.com/cadentra/cadentra/internal/protocol"
+	"github.com/SuPerCxyz/nodesteer/internal/agent/host"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/protocol"
 	"github.com/google/uuid"
 )
 
@@ -76,7 +76,7 @@ func (am *ApplicationManager) HandleRunOperation(ctx context.Context, p protocol
 	var hc models.HealthCheck
 	req := protocol.DeployRequestPayload{
 		AppID:     p.AppID,
-		UnitName:  "cadentra-" + p.AppID,
+		UnitName:  "nodesteer-" + p.AppID,
 		Operation: op,
 	}
 	if def := am.loadApplication(p.AppID); len(def) > 0 {
@@ -95,7 +95,7 @@ func (am *ApplicationManager) HandleRunOperation(ctx context.Context, p protocol
 }
 
 // CleanupApplication 删除 Hub Desired State 中已移除应用对应的受管控资源。
-// 只有登记过的 Unit 才允许被清理，避免误删宿主机上的非 Cadentra 服务。
+// 只有登记过的 Unit 才允许被清理，避免误删宿主机上的非 NodeSteer 服务。
 func (am *ApplicationManager) CleanupApplication(ctx context.Context, appID string) error {
 	def := am.loadApplication(appID)
 	if len(def) == 0 {
@@ -107,7 +107,7 @@ func (am *ApplicationManager) CleanupApplication(ctx context.Context, appID stri
 	}
 	unit := app.UnitName
 	if unit == "" {
-		unit = "cadentra-" + app.ID + ".service"
+		unit = "nodesteer-" + app.ID + ".service"
 	}
 	if !strings.HasSuffix(unit, ".service") {
 		unit += ".service"
@@ -201,7 +201,7 @@ func (am *ApplicationManager) operate(p protocol.DeployRequestPayload, op string
 	res.Version = p.AppVersion
 	unit := p.UnitName
 	if unit == "" {
-		unit = "cadentra-" + p.AppID
+		unit = "nodesteer-" + p.AppID
 	}
 	if !strings.HasSuffix(unit, ".service") {
 		unit += ".service"
@@ -311,7 +311,7 @@ func (am *ApplicationManager) deploy(ctx context.Context, p protocol.DeployReque
 	// unitName 规范化（用于备份停止、安装与操作）
 	unitName := p.UnitName
 	if unitName == "" {
-		unitName = "cadentra-" + p.AppID + ".service"
+		unitName = "nodesteer-" + p.AppID + ".service"
 	}
 	if !strings.HasSuffix(unitName, ".service") {
 		unitName += ".service"
@@ -549,7 +549,7 @@ func (am *ApplicationManager) deploy(ctx context.Context, p protocol.DeployReque
 func (am *ApplicationManager) buildUnit(unitName string, p protocol.DeployRequestPayload, binaryPath string) string {
 	var b strings.Builder
 	b.WriteString("[Unit]\n")
-	b.WriteString("Description=Cadentra managed application " + p.AppID + "\n")
+	b.WriteString("Description=NodeSteer managed application " + p.AppID + "\n")
 	b.WriteString("After=network.target\n\n[Service]\n")
 	b.WriteString("ExecStart=" + unitQuote(binaryPath))
 	for _, arg := range p.Arguments {
@@ -730,7 +730,7 @@ func (am *ApplicationManager) RecoverDeployments(ctx context.Context) {
 		if len(appDef) > 0 {
 			json.Unmarshal(appDef, &app)
 		}
-		unitName := "cadentra-" + d.ApplicationID + ".service"
+		unitName := "nodesteer-" + d.ApplicationID + ".service"
 		if app.UnitName != "" {
 			unitName = app.UnitName
 		}
