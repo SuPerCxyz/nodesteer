@@ -32,4 +32,4 @@
 
 - [x] 5.1 Go：gofmt/vet/test/race 全绿；Web：tsc/lint/format/build/vitest 全绿。
 - [x] 5.2 `openspec validate --all` 通过。
-- [ ] 5.3 现网按需部署更新（另行授权）。
+- [x] 5.3 现网按需部署更新（另行授权）。
