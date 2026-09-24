@@ -55,6 +55,10 @@ const (
 	CapHostFilesystem    = "host_filesystem"
 	CapManagedSystemd    = "managed_systemd"
 	CapApplicationDeploy = "application_deploy"
+	// CapAgentUpgrade Agent 自升级能力：仅 native 部署形态上报 true。
+	// 仅作能力广而告知（UI/调用方可用）；升级下发的硬门禁是 deployment_mode
+	// （存量旧 Agent 未上报该能力，若以其为门禁会形成"无法升级到能升级的版本"死锁）。
+	CapAgentUpgrade = "agent_upgrade"
 )
 
 // Node 节点
@@ -132,7 +136,8 @@ type User struct {
 	ID           string    `json:"id"`
 	Username     string    `json:"username"`
 	PasswordHash string    `json:"-"`
-	Role         string    `json:"role"` // administrator | operator | viewer
+	AvatarURL    string    `json:"avatar,omitempty"` // OIDC picture claim 同步的头像，空表示无
+	Role         string    `json:"role"`             // administrator | operator | viewer
 	CreatedAt    time.Time `json:"created_at"`
 }
 
@@ -200,7 +205,15 @@ const (
 	TaskTypeScript       = "script"
 	TaskTypeAppDeploy    = "app_deploy"
 	TaskTypeAppOperation = "app_operation"
+	// TaskTypeAgentUpgrade Agent 自升级执行类型：仅由 Hub 升级 API 下发，
+	// 不是用户可创建的 Task 类型（definitions 校验对未知类型直接拒绝）。
+	TaskTypeAgentUpgrade = "agent_upgrade"
 )
+
+// AgentUpgradeTaskID 自升级执行的系统 Task 标识（升级没有用户 Task 对象，
+// 以该常量填充执行记录的 task_id NOT NULL 约束；Hub/Agent 执行表均无外键，
+// 无需 schema 迁移）。执行历史以 task_id == AgentUpgradeTaskID 识别升级记录。
+const AgentUpgradeTaskID = "agent_upgrade"
 
 // Offline 策略
 const (
@@ -222,7 +235,7 @@ type Schedule struct {
 	ID             string    `json:"id"`
 	TaskID         string    `json:"task_id"`
 	Revision       int64     `json:"revision"`
-	Type           string    `json:"type"` // cron | interval | one_time
+	Type           string    `json:"type"` // cron | interval | one_time | on_start
 	Expression     string    `json:"expression"`
 	IntervalSec    int64     `json:"interval_sec,omitempty"`
 	RunAt          time.Time `json:"run_at,omitempty"`
@@ -240,6 +253,9 @@ const (
 	ScheduleTypeCron     = "cron"
 	ScheduleTypeInterval = "interval"
 	ScheduleTypeOneTime  = "one_time"
+	// ScheduleTypeOnStart 目标节点上的 agent 进程每次启动后触发一次
+	// （重启再触发，仅网络重连不触发；无任何触发时间字段，由 Agent 启动路径触发）。
+	ScheduleTypeOnStart = "on_start"
 
 	ExecutionOwnerHub   = "hub"
 	ExecutionOwnerAgent = "agent"

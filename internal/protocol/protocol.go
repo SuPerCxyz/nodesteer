@@ -174,6 +174,9 @@ type RunExecutionPayload struct {
 	Condition          json.RawMessage   `json:"condition,omitempty"`
 	ArtifactID         string            `json:"artifact_id,omitempty"`
 	TargetVersion      string            `json:"target_version,omitempty"`
+	// DownloadURL Agent 自升级（type=agent_upgrade）的二进制下载地址，
+	// 由 Hub 指定（既有 GET /api/agent/binary 端点）；为空时 Agent 侧按 HubURL 派生兜底。
+	DownloadURL string `json:"download_url,omitempty"`
 }
 
 // CancelExecutionPayload 取消

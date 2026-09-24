@@ -87,7 +87,7 @@ export function FileTransfers() {
         accessorFn: (row: FileTransfer) =>
           `${nodeNames.get(row.source_node_id) || ''} ${row.id}`,
         header: t('transfers.source'),
-        size: 120,
+        size: 130,
         minSize: 110,
         cell: ({ row }: { row: { original: FileTransfer } }) =>
           nodeNames.get(row.original.source_node_id) || t('common.unknownNode'),
@@ -95,9 +95,9 @@ export function FileTransfers() {
       {
         accessorKey: 'source_path',
         header: t('transfers.sourcePath'),
-        size: 340,
-        minSize: 240,
-        maxSize: 480,
+        size: 310,
+        minSize: 235,
+        maxSize: 470,
         cell: ({ row }: { row: { original: FileTransfer } }) => (
           <span
             className='block truncate font-mono text-xs'
@@ -110,9 +110,8 @@ export function FileTransfers() {
       {
         accessorKey: 'status',
         header: t('common.status'),
-        size: 96,
-        minSize: 88,
-        meta: { align: 'center' },
+        size: 104,
+        minSize: 96,
         cell: ({ row }: { row: { original: FileTransfer } }) => (
           <StatusBadge status={row.original.status} />
         ),
@@ -124,9 +123,9 @@ export function FileTransfers() {
             .map((target) => target.error || '')
             .join(' ')}`,
         header: t('transfers.errorReason'),
-        size: 300,
-        minSize: 200,
-        maxSize: 480,
+        size: 280,
+        minSize: 210,
+        maxSize: 460,
         cell: ({ row }: { row: { original: FileTransfer } }) =>
           row.original.error ? (
             <span
@@ -142,8 +141,8 @@ export function FileTransfers() {
       {
         id: 'targets',
         header: t('transfers.targets'),
-        size: 280,
-        minSize: 200,
+        size: 255,
+        minSize: 205,
         cell: ({ row }: { row: { original: FileTransfer } }) => (
           <div className='flex flex-wrap gap-x-3 gap-y-2'>
             {row.original.targets.map((target) => (
@@ -178,7 +177,7 @@ export function FileTransfers() {
       {
         accessorKey: 'updated_at',
         header: t('common.time'),
-        size: 180,
+        size: 175,
         minSize: 160,
         cell: ({ row }: { row: { original: FileTransfer } }) => (
           <TimeValue value={row.original.updated_at} />
@@ -190,7 +189,6 @@ export function FileTransfers() {
         enableHiding: false,
         size: 72,
         minSize: 64,
-        meta: { align: 'end' },
         cell: ({ row }: { row: { original: FileTransfer } }) => {
           const canRetry = row.original.status === 'FAILED'
           const canCancel = !['SUCCESS', 'CANCELED'].includes(

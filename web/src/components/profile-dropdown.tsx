@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Logo } from '@/assets/logo'
 import { useAuthStore } from '@/stores/auth-store'
 import useDialogState from '@/hooks/use-dialog-state'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -31,6 +31,14 @@ export function ProfileDropdown() {
             aria-label={t('common.profile')}
           >
             <Avatar className='h-8 w-8'>
+              {/* 有头像才渲染图片；加载失败时 Radix 自动回退到下方首字母/Logo Fallback */}
+              {user?.avatar ? (
+                <AvatarImage
+                  src={user.avatar}
+                  alt={user.username || ''}
+                  className='rounded-full'
+                />
+              ) : null}
               <AvatarFallback aria-label={user?.username || 'admin'}>
                 <Logo className='size-4' />
               </AvatarFallback>

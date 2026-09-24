@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   flexRender,
   getCoreRowModel,
@@ -8,7 +8,10 @@ import {
   useReactTable,
   type ColumnDef,
   type PaginationState,
+  type Row,
+  type RowSelectionState,
   type SortingState,
+  type Table as ReactTable,
   type VisibilityState,
 } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
@@ -18,6 +21,7 @@ import {
   writeTableView,
 } from '@/lib/table-view'
 import { cn } from '@/lib/utils'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
   TableBody,
@@ -27,10 +31,54 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
+  DataTableBulkActions,
   DataTableColumnHeader,
   DataTablePagination,
   DataTableToolbar,
 } from '@/components/data-table'
+
+/** 前置多选列：独立于业务列，注入后不改变业务列的顺序与相对宽度权重 */
+function selectColumn<TData>(): ColumnDef<TData> {
+  return {
+    id: 'select',
+    enableSorting: false,
+    enableHiding: false,
+    size: 44,
+    minSize: 40,
+    maxSize: 44,
+    header: SelectAllHeader,
+    cell: SelectRowCell,
+  }
+}
+
+function SelectAllHeader<TData>({
+  table,
+}: {
+  table: ReactTable<TData>
+}): React.ReactNode {
+  const { t } = useTranslation()
+  return (
+    <Checkbox
+      checked={
+        table.getIsAllRowsSelected() ||
+        (table.getIsSomeRowsSelected() && 'indeterminate')
+      }
+      onCheckedChange={(value) => table.toggleAllRowsSelected(Boolean(value))}
+      aria-label={t('common.selectAllRows')}
+    />
+  )
+}
+
+function SelectRowCell<TData>({ row }: { row: Row<TData> }): React.ReactNode {
+  const { t } = useTranslation()
+  return (
+    <Checkbox
+      checked={row.getIsSelected()}
+      onCheckedChange={(value) => row.toggleSelected(Boolean(value))}
+      aria-label={t('common.selectRow')}
+    />
+  )
+}
 
 export function DataTable<TData>({
   data,
@@ -45,6 +93,9 @@ export function DataTable<TData>({
   onPageChange,
   onPageSizeChange,
   storageKey,
+  enableRowSelection = false,
+  renderBulkActions,
+  bulkEntityName = '',
 }: {
   data: TData[]
   columns: ColumnDef<TData>[]
@@ -63,6 +114,12 @@ export function DataTable<TData>({
   onPageSizeChange?: (pageSize: number) => void
   /** 提供时把列可见性与每页条数持久化到 localStorage */
   storageKey?: string
+  /** 启用行多选（注入前置选择列）；选择按行 id 跨分页/排序保留 */
+  enableRowSelection?: boolean
+  /** 选中后浮出的批量操作工具条内容；未启用多选时不渲染 */
+  renderBulkActions?: (table: ReactTable<TData>) => React.ReactNode
+  /** 工具条读屏文案中的实体名（如「节点」） */
+  bulkEntityName?: string
 }) {
   const { t } = useTranslation()
   const [sorting, setSorting] = useState<SortingState>([])
@@ -72,6 +129,7 @@ export function DataTable<TData>({
       {}
   )
   const [globalFilter, setGlobalFilter] = useState('')
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const [clientPagination, setClientPagination] = useState<PaginationState>(
     () => ({
       pageIndex: 0,
@@ -88,13 +146,25 @@ export function DataTable<TData>({
       pageSize: pagination.pageSize,
     })
   }, [storageKey, columnVisibility, pagination.pageSize])
+  const tableColumns = useMemo(
+    () => (enableRowSelection ? [selectColumn<TData>(), ...columns] : columns),
+    [columns, enableRowSelection]
+  )
   const table = useReactTable({
     data,
-    columns,
-    state: { sorting, columnVisibility, globalFilter, pagination },
+    columns: tableColumns,
+    state: {
+      sorting,
+      columnVisibility,
+      globalFilter,
+      pagination,
+      rowSelection,
+    },
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     onGlobalFilterChange: setGlobalFilter,
+    onRowSelectionChange: setRowSelection,
+    enableRowSelection,
     onPaginationChange: (updater) => {
       const next = typeof updater === 'function' ? updater(pagination) : updater
       if (manualPagination) {
@@ -160,10 +230,6 @@ export function DataTable<TData>({
                       className={cn(
                         header.column.columnDef.meta?.thClassName,
                         header.column.columnDef.meta?.className,
-                        header.column.columnDef.meta?.align === 'center' &&
-                          'text-center',
-                        header.column.columnDef.meta?.align === 'end' &&
-                          'text-end',
                         header.column.id === 'actions' &&
                           'sticky end-0 z-10 bg-background shadow-sm'
                       )}
@@ -172,11 +238,6 @@ export function DataTable<TData>({
                         <DataTableColumnHeader
                           column={header.column}
                           title={headerDef.header as string}
-                          className={cn(
-                            headerDef.meta?.align === 'center' &&
-                              'justify-center',
-                            headerDef.meta?.align === 'end' && 'justify-end'
-                          )}
                         />
                       ) : (
                         flexRender(headerDef.header, header.getContext())
@@ -201,10 +262,6 @@ export function DataTable<TData>({
                       className={cn(
                         cell.column.columnDef.meta?.tdClassName,
                         cell.column.columnDef.meta?.className,
-                        cell.column.columnDef.meta?.align === 'center' &&
-                          'text-center',
-                        cell.column.columnDef.meta?.align === 'end' &&
-                          'text-end',
                         cell.column.id === 'actions' &&
                           'sticky end-0 z-10 bg-background shadow-sm'
                       )}
@@ -230,6 +287,11 @@ export function DataTable<TData>({
           </TableBody>
         </Table>
       </div>
+      {enableRowSelection && renderBulkActions ? (
+        <DataTableBulkActions table={table} entityName={bulkEntityName}>
+          {renderBulkActions(table)}
+        </DataTableBulkActions>
+      ) : null}
       <DataTablePagination
         table={table}
         totalRows={manualPagination ? total : undefined}

@@ -18,17 +18,17 @@ func (s *SQLiteStore) CreateUser(ctx context.Context, u *models.User) error {
 		u.ID = uuid.NewString()
 	}
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO users (id, username, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?)`,
-		u.ID, u.Username, u.PasswordHash, u.Role, now())
+		`INSERT INTO users (id, username, password_hash, avatar_url, role, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+		u.ID, u.Username, u.PasswordHash, u.AvatarURL, u.Role, now())
 	return err
 }
 
 func (s *SQLiteStore) GetUserByID(ctx context.Context, id string) (*models.User, error) {
 	row := s.db.QueryRowContext(ctx,
-		`SELECT id, username, role, created_at FROM users WHERE id = ?`, id)
+		`SELECT id, username, avatar_url, role, created_at FROM users WHERE id = ?`, id)
 	var u models.User
 	var created string
-	if err := row.Scan(&u.ID, &u.Username, &u.Role, &created); err != nil {
+	if err := row.Scan(&u.ID, &u.Username, &u.AvatarURL, &u.Role, &created); err != nil {
 		return nil, err
 	}
 	u.CreatedAt = parseTime(created)
@@ -37,10 +37,10 @@ func (s *SQLiteStore) GetUserByID(ctx context.Context, id string) (*models.User,
 
 func (s *SQLiteStore) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	row := s.db.QueryRowContext(ctx,
-		`SELECT id, username, password_hash, role, created_at FROM users WHERE username = ?`, username)
+		`SELECT id, username, password_hash, avatar_url, role, created_at FROM users WHERE username = ?`, username)
 	var u models.User
 	var created string
-	if err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &created); err != nil {
+	if err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.AvatarURL, &u.Role, &created); err != nil {
 		return nil, err
 	}
 	u.CreatedAt = parseTime(created)
@@ -48,7 +48,7 @@ func (s *SQLiteStore) GetUserByUsername(ctx context.Context, username string) (*
 }
 
 func (s *SQLiteStore) ListUsers(ctx context.Context) ([]*models.User, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id, username, role, created_at FROM users ORDER BY created_at`)
+	rows, err := s.db.QueryContext(ctx, `SELECT id, username, avatar_url, role, created_at FROM users ORDER BY created_at`)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (s *SQLiteStore) ListUsers(ctx context.Context) ([]*models.User, error) {
 	for rows.Next() {
 		var u models.User
 		var created string
-		if err := rows.Scan(&u.ID, &u.Username, &u.Role, &created); err != nil {
+		if err := rows.Scan(&u.ID, &u.Username, &u.AvatarURL, &u.Role, &created); err != nil {
 			return nil, err
 		}
 		u.CreatedAt = parseTime(created)
@@ -68,6 +68,11 @@ func (s *SQLiteStore) ListUsers(ctx context.Context) ([]*models.User, error) {
 
 func (s *SQLiteStore) UpdateUserRole(ctx context.Context, id, role string) error {
 	_, err := s.db.ExecContext(ctx, `UPDATE users SET role = ? WHERE id = ?`, role, id)
+	return err
+}
+
+func (s *SQLiteStore) UpdateUserAvatar(ctx context.Context, id, avatarURL string) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE users SET avatar_url = ? WHERE id = ?`, avatarURL, id)
 	return err
 }
 

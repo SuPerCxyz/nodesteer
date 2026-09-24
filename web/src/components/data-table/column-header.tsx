@@ -32,7 +32,7 @@ export function DataTableColumnHeader<TData, TValue>({
         ? t('common.clearSorting')
         : t('common.sortAscending')
   return (
-    <div className={cn('flex items-center', className)}>
+    <div className={cn('flex items-center justify-start', className)}>
       <Button
         variant='ghost'
         size='sm'

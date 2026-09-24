@@ -101,7 +101,7 @@ func TestAuthenticateSSOSessionUsesCurrentRole(t *testing.T) {
 	m, st := newAuthTestManager(t)
 	ctx := context.Background()
 
-	sess, err := m.SSOLogin(ctx, "sso-user", models.RoleOperator)
+	sess, err := m.SSOLogin(ctx, "sso-user", models.RoleOperator, "")
 	if err != nil {
 		t.Fatalf("sso login: %v", err)
 	}
@@ -118,6 +118,68 @@ func TestAuthenticateSSOSessionUsesCurrentRole(t *testing.T) {
 	}
 	if got.Role != models.RoleViewer {
 		t.Fatalf("sso session role = %q, want %q", got.Role, models.RoleViewer)
+	}
+}
+
+// SSO 登录头像口径：picture 有值才写入/刷新，空值不清掉已有头像；结果持久化可重读。
+func TestSSOLoginAvatarRefresh(t *testing.T) {
+	m, st := newAuthTestManager(t)
+	ctx := context.Background()
+
+	// 首次 SSO 登录：picture 有值 → 创建用户即写入，重读可见
+	sess, err := m.SSOLogin(ctx, "sso-avatar", models.RoleViewer, "https://idp.example/a.png")
+	if err != nil {
+		t.Fatalf("first sso login: %v", err)
+	}
+	u, err := st.GetUserByUsername(ctx, "sso-avatar")
+	if err != nil {
+		t.Fatalf("get user: %v", err)
+	}
+	if u.AvatarURL != "https://idp.example/a.png" {
+		t.Fatalf("avatar = %q, want a.png", u.AvatarURL)
+	}
+	if sess.Avatar != u.AvatarURL {
+		t.Fatalf("session avatar = %q, want %q", sess.Avatar, u.AvatarURL)
+	}
+
+	// 再次登录：新 picture 刷新头像
+	if _, err := m.SSOLogin(ctx, "sso-avatar", models.RoleViewer, "https://idp.example/b.png"); err != nil {
+		t.Fatalf("second sso login: %v", err)
+	}
+	u, err = st.GetUserByUsername(ctx, "sso-avatar")
+	if err != nil {
+		t.Fatalf("re-read user: %v", err)
+	}
+	if u.AvatarURL != "https://idp.example/b.png" {
+		t.Fatalf("avatar after refresh = %q, want b.png", u.AvatarURL)
+	}
+
+	// picture 为空：已有头像不动，会话仍返回旧头像
+	sess, err = m.SSOLogin(ctx, "sso-avatar", models.RoleViewer, "")
+	if err != nil {
+		t.Fatalf("third sso login: %v", err)
+	}
+	u, err = st.GetUserByUsername(ctx, "sso-avatar")
+	if err != nil {
+		t.Fatalf("re-read user after empty picture: %v", err)
+	}
+	if u.AvatarURL != "https://idp.example/b.png" {
+		t.Fatalf("empty picture must not clear avatar, got %q", u.AvatarURL)
+	}
+	if sess.Avatar != "https://idp.example/b.png" {
+		t.Fatalf("session avatar = %q, want b.png", sess.Avatar)
+	}
+
+	// 本地登录不受 SSO 头像逻辑影响：登录后头像保持
+	if _, err := m.SSOLogin(ctx, "sso-avatar", models.RoleViewer, ""); err != nil {
+		t.Fatalf("sso login: %v", err)
+	}
+	again, ok := m.Authenticate(ctx, sess.Token)
+	if !ok {
+		t.Fatal("authenticate should succeed")
+	}
+	if again.Avatar != "https://idp.example/b.png" {
+		t.Fatalf("authenticate avatar = %q, want b.png", again.Avatar)
 	}
 }
 

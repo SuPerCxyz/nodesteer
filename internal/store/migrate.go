@@ -24,6 +24,7 @@ var migrations = []migration{
 	{6, "application_node_state", schemaV6},
 	{7, "execution_sync_state", schemaV7},
 	{8, "file_transfers", schemaV8},
+	{9, "user_avatar_url", schemaV9},
 }
 
 // Migrate 应用所有未执行的迁移
@@ -373,6 +374,12 @@ CREATE TABLE IF NOT EXISTS file_transfer_targets (
 	PRIMARY KEY (transfer_id, node_id)
 );
 CREATE INDEX IF NOT EXISTS idx_file_transfer_targets_node ON file_transfer_targets(node_id, status);
+`
+
+// schemaV9 users 增加头像列。ADD COLUMN 带非空默认值，
+// 既有行自动回填空串，无数据回填负担。
+const schemaV9 = `
+ALTER TABLE users ADD COLUMN avatar_url TEXT NOT NULL DEFAULT '';
 `
 
 var _ = context.Background

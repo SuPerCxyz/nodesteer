@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -29,6 +30,9 @@ type ExecutionManager struct {
 	mu           sync.Mutex
 	activeByNode map[string]int
 	metrics      *metrics.Metrics
+	// upgradeMu 串行化自升级触发：进程内去重判定（findActiveUpgrade）与创建下发
+	// 不被并发请求穿透（单 Hub 单进程，SQLite 单写者，无需跨进程锁）。
+	upgradeMu sync.Mutex
 }
 
 // SetMetrics 注入指标
@@ -50,6 +54,10 @@ func requiredCapability(taskType string) string {
 	switch taskType {
 	case models.TaskTypeAppDeploy, models.TaskTypeAppOperation:
 		return models.CapApplicationDeploy
+	case models.TaskTypeAgentUpgrade:
+		// 自升级的实际下发门禁是 deployment_mode（见 UpgradeNodes）；
+		// 此处映射保持 task type → capability 语义完整。
+		return models.CapAgentUpgrade
 	default:
 		return models.CapScript
 	}
@@ -160,11 +168,55 @@ func (em *ExecutionManager) RunScheduledHub(ctx context.Context, task *models.Ta
 
 var errSlotExists = errors.New("execution slot already exists")
 
+// reasonNodePaused 暂停跳过的统一原因（Hub SKIPPED 留痕与 Agent 拒收回报共用语义）
+const reasonNodePaused = "node paused"
+
+// createPausedSkip 节点暂停（maintenance/disabled）导致调度跳过时创建 SKIPPED 执行记录，
+// 不下发到 Agent；调度 Slot 幂等，同 slot 不重复留痕。
+func (em *ExecutionManager) createPausedSkip(ctx context.Context, task *models.Task, nodeID, trigger string, schedTime time.Time) (*models.Execution, error) {
+	now := time.Now()
+	ex := &models.Execution{
+		ID:            uuid.NewString(),
+		TaskID:        task.ID,
+		TaskRevision:  task.Revision,
+		ScriptID:      task.ScriptID,
+		NodeID:        nodeID,
+		TriggerType:   trigger,
+		ScheduledTime: schedTime,
+		Status:        models.ExecStatusSkipped,
+		StartTime:     now,
+		EndTime:       now,
+		BlockReason:   reasonNodePaused,
+		Synced:        true,
+	}
+	if trigger == models.TriggerSchedule && !schedTime.IsZero() {
+		slot := schedTime.UTC().Truncate(time.Second).Format(time.RFC3339Nano)
+		if existing, err := em.store.FindExecutionBySlot(ctx, task.ID, nodeID, slot); err == nil && existing != nil {
+			return nil, errSlotExists
+		}
+		ex.ScheduledTime = schedTime.UTC().Truncate(time.Second)
+	}
+	if err := em.store.CreateExecution(ctx, ex); err != nil {
+		return nil, err
+	}
+	em.logger.Info("execution skipped: node paused", "id", ex.ID, "node", nodeID,
+		"task", task.ID, "trigger", trigger, "reason", reasonNodePaused)
+	if em.metrics != nil {
+		em.metrics.AddExecution(models.ExecStatusSkipped)
+	}
+	return ex, nil
+}
+
 // createAndDispatch 创建 Execution 并下发
 func (em *ExecutionManager) createAndDispatch(ctx context.Context, task *models.Task, nodeID, trigger string, schedTime time.Time, params map[string]string, offline bool) (*models.Execution, error) {
 	node, err := em.nodes.GetNode(ctx, nodeID)
 	if err != nil {
 		return nil, err
+	}
+	// 调度因暂停跳过：创建 SKIPPED 留痕（含目标节点与原因 node paused），不再静默丢弃；
+	// 其余触发与 offline/pending 维持原 online 门禁语义不变。
+	if !isDispatchableStatus(node.Status) && trigger == models.TriggerSchedule {
+		return em.createPausedSkip(ctx, task, nodeID, trigger, schedTime)
 	}
 	if node.Status != models.NodeStatusOnline {
 		return nil, fmt.Errorf("node %s is not online (status=%s)", nodeID, node.Status)
@@ -354,6 +406,10 @@ func (em *ExecutionManager) MarkFinished(ctx context.Context, nodeID string, p p
 		return nil
 	}
 	ex.Status = p.Status
+	// 失败原因随终态回报持久化：创建分支已含 BlockReason，此前更新分支丢弃
+	// p.BlockReason（升级失败的 sha256/回滚结果只携带在该字段，导致 Hub 创建的
+	// 记录收不到失败原因）。此分支仅非终态可达，非终态记录当前恒无 BlockReason。
+	ex.BlockReason = p.BlockReason
 	ex.ExitCode = p.ExitCode
 	if p.TaskID != "" {
 		ex.TaskID = p.TaskID
@@ -649,4 +705,154 @@ func truncateLog(s string) string {
 		return s[:maxLog]
 	}
 	return s
+}
+
+// ---------- Agent 自升级（node-lifecycle-operations 批2） ----------
+
+// UpgradeNodeResult 单节点自升级触发结果：每节点一条独立记录的终态/在途状态与原因。
+type UpgradeNodeResult struct {
+	NodeID       string `json:"node_id"`
+	ExecutionID  string `json:"execution_id,omitempty"`
+	Status       string `json:"status"`
+	BlockReason  string `json:"block_reason,omitempty"`
+	Dispatched   bool   `json:"dispatched,omitempty"`
+	Deduplicated bool   `json:"deduplicated,omitempty"`
+}
+
+// UpgradeNodes 触发 Agent 自升级（单节点传一个 node_id 即与批量同一执行路径）。
+// 逐节点独立记录、逐节点独立结果：
+//   - 非 native 部署形态（docker 等）→ 落 SKIPPED 终态（含不支持原因），不下发；
+//   - 暂停（maintenance/disabled）→ 落 SKIPPED 终态（node paused），不下发；
+//   - 非 online → 落 FAILED 终态（含状态原因），不下发；
+//   - 同节点已有在途（PENDING/RUNNING）升级 → 拒绝重复触发，返回既有在途记录；
+//   - 其余创建 PENDING 记录并经既有 RUN_EXECUTION 链下发（下发失败就地标 FAILED 终态）。
+//
+// downloadBaseURL 为 Agent 下载二进制的 Hub Web 基址（空则由 Agent 侧按 HubURL 派生兜底）。
+// 版本粒度固定为「升至 Hub 同版本」：下载源即既有 GET /api/agent/binary 端点。
+func (em *ExecutionManager) UpgradeNodes(ctx context.Context, nodeIDs []string, downloadBaseURL string) ([]UpgradeNodeResult, error) {
+	em.upgradeMu.Lock()
+	defer em.upgradeMu.Unlock()
+	out := make([]UpgradeNodeResult, 0, len(nodeIDs))
+	for _, nodeID := range nodeIDs {
+		res, err := em.upgradeOneNode(ctx, nodeID, downloadBaseURL)
+		if err != nil {
+			return out, err
+		}
+		out = append(out, res)
+	}
+	return out, nil
+}
+
+// upgradeOneNode 单节点升级触发（过滤 → 记录 → 下发）。
+func (em *ExecutionManager) upgradeOneNode(ctx context.Context, nodeID, downloadBaseURL string) (UpgradeNodeResult, error) {
+	node, err := em.nodes.GetNode(ctx, nodeID)
+	if err != nil {
+		return UpgradeNodeResult{}, fmt.Errorf("node %s not found", nodeID)
+	}
+	// 幂等：同节点在途升级去重（拒绝重复触发，返回既有记录）
+	if active := em.findActiveUpgrade(ctx, nodeID); active != nil {
+		return UpgradeNodeResult{NodeID: nodeID, ExecutionID: active.ID, Status: active.Status,
+			BlockReason: active.BlockReason, Deduplicated: true}, nil
+	}
+	// docker 等非 native 形态不提供自升级：直接落「不支持」终态，不下发（Agent 侧另有双保险拒绝）。
+	if node.DeploymentMode != models.DeploymentModeNative {
+		return em.createUpgradeTerminal(ctx, nodeID, models.ExecStatusSkipped,
+			fmt.Sprintf("self-upgrade unsupported for deployment mode %s", node.DeploymentMode))
+	}
+	// 暂停中不下发新任务（与调度跳过同一语义，原因文案共用 reasonNodePaused）。
+	if !isDispatchableStatus(node.Status) {
+		return em.createUpgradeTerminal(ctx, nodeID, models.ExecStatusSkipped, reasonNodePaused)
+	}
+	if node.Status != models.NodeStatusOnline {
+		return em.createUpgradeTerminal(ctx, nodeID, models.ExecStatusFailed,
+			fmt.Sprintf("node is not online (status=%s)", node.Status))
+	}
+
+	ex := &models.Execution{
+		ID:          uuid.NewString(),
+		TaskID:      models.AgentUpgradeTaskID,
+		NodeID:      nodeID,
+		TriggerType: models.TriggerManual,
+		Status:      models.ExecStatusPending,
+	}
+	if err := em.store.CreateExecution(ctx, ex); err != nil {
+		return UpgradeNodeResult{}, err
+	}
+	if err := em.dispatchUpgrade(ex, node, downloadBaseURL); err != nil {
+		// 下发失败 → 就地标 FAILED 终态（原因可见），不中断同批其他节点
+		ex.Status = models.ExecStatusFailed
+		ex.EndTime = time.Now()
+		ex.BlockReason = err.Error()
+		_ = em.store.UpdateExecution(ctx, ex)
+		if em.metrics != nil {
+			em.metrics.AddExecution(ex.Status)
+		}
+		em.logger.Warn("agent upgrade dispatch failed", "id", ex.ID, "node", nodeID, "error", err)
+		return UpgradeNodeResult{NodeID: nodeID, ExecutionID: ex.ID, Status: ex.Status, BlockReason: ex.BlockReason}, nil
+	}
+	return UpgradeNodeResult{NodeID: nodeID, ExecutionID: ex.ID, Status: ex.Status, Dispatched: true}, nil
+}
+
+// createUpgradeTerminal 创建升级终态记录（不下发）并打点。
+func (em *ExecutionManager) createUpgradeTerminal(ctx context.Context, nodeID, status, reason string) (UpgradeNodeResult, error) {
+	now := time.Now()
+	ex := &models.Execution{
+		ID:          uuid.NewString(),
+		TaskID:      models.AgentUpgradeTaskID,
+		NodeID:      nodeID,
+		TriggerType: models.TriggerManual,
+		Status:      status,
+		StartTime:   now,
+		EndTime:     now,
+		BlockReason: reason,
+		Synced:      true,
+	}
+	if err := em.store.CreateExecution(ctx, ex); err != nil {
+		return UpgradeNodeResult{}, err
+	}
+	if em.metrics != nil {
+		em.metrics.AddExecution(status)
+	}
+	em.logger.Info("agent upgrade not dispatched", "id", ex.ID, "node", nodeID, "status", status, "reason", reason)
+	return UpgradeNodeResult{NodeID: nodeID, ExecutionID: ex.ID, Status: status, BlockReason: reason}, nil
+}
+
+// findActiveUpgrade 查找节点在途（PENDING/RUNNING）升级记录，用于重复触发去重。
+func (em *ExecutionManager) findActiveUpgrade(ctx context.Context, nodeID string) *models.Execution {
+	for _, status := range []string{models.ExecStatusPending, models.ExecStatusRunning} {
+		list, err := em.store.ListExecutions(ctx, store.ExecutionFilter{
+			TaskID: models.AgentUpgradeTaskID, NodeID: nodeID, Status: status, Limit: 1,
+		})
+		if err == nil && len(list) > 0 {
+			return list[0]
+		}
+	}
+	return nil
+}
+
+// dispatchUpgrade 经既有「下发 → 执行 → 回报」链（RUN_EXECUTION / EXEC_STARTED /
+// EXEC_FINISHED）下发自升级指令，复用 Journal、暂停/READY 门禁与执行历史，不新增消息类型。
+func (em *ExecutionManager) dispatchUpgrade(ex *models.Execution, node *models.Node, downloadBaseURL string) error {
+	conn, ok := em.sessions.Get(ex.NodeID)
+	if !ok {
+		return ErrAgentOffline
+	}
+	payload := protocol.RunExecutionPayload{
+		ExecutionID: ex.ID,
+		TaskID:      models.AgentUpgradeTaskID,
+		Type:        models.TaskTypeAgentUpgrade,
+		DownloadURL: agentBinaryURL(downloadBaseURL, node.Arch),
+		TriggerType: models.TriggerManual,
+	}
+	return conn.Send(protocol.NewEnvelope(protocol.MsgRunExecution, ex.ID, payload))
+}
+
+// agentBinaryURL 构造自升级二进制下载地址（既有 GET /api/agent/binary，零改动复用）。
+// 基址或节点架构未知时返回空串，由 Agent 侧按 HubURL + 本机架构派生兜底。
+func agentBinaryURL(baseURL, arch string) string {
+	a := strings.ToLower(strings.TrimSpace(arch))
+	if baseURL == "" || (a != "amd64" && a != "arm64") {
+		return ""
+	}
+	return strings.TrimRight(baseURL, "/") + "/api/agent/binary?architecture=" + a
 }

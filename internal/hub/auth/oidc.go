@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -154,13 +155,14 @@ func (o *OIDC) AuthCodeURL() (string, error) {
 	return o.oauthCfg.AuthCodeURL(state, oauth2.S256ChallengeOption(verifier), oauth2.SetAuthURLParam("nonce", nonce)), nil
 }
 
-// Exchange 处理 callback：校验 state、交换 token、验证 ID Token、提取用户与角色
-func (o *OIDC) Exchange(ctx context.Context, state, code string) (username, role string, err error) {
+// Exchange 处理 callback：校验 state、交换 token、验证 ID Token、提取用户、角色与头像。
+// 头像取标准 OIDC picture claim（仅 ID Token claims，不额外请求 userinfo 端点）。
+func (o *OIDC) Exchange(ctx context.Context, state, code string) (username, role, avatar string, err error) {
 	o.mu.Lock()
 	st, ok := o.states[state]
 	if !ok || time.Now().After(st.expires) {
 		o.mu.Unlock()
-		return "", "", ErrOIDCStateInvalid
+		return "", "", "", ErrOIDCStateInvalid
 	}
 	delete(o.states, state)
 	verifier := st.verifier
@@ -169,31 +171,41 @@ func (o *OIDC) Exchange(ctx context.Context, state, code string) (username, role
 
 	raw, err := o.oauthCfg.Exchange(ctx, code, oauth2.VerifierOption(verifier))
 	if err != nil {
-		return "", "", fmt.Errorf("oidc token exchange: %w", err)
+		return "", "", "", fmt.Errorf("oidc token exchange: %w", err)
 	}
 	idToken, ok := raw.Extra("id_token").(string)
 	if !ok || idToken == "" {
-		return "", "", errors.New("oidc: no id_token in response")
+		return "", "", "", errors.New("oidc: no id_token in response")
 	}
 	verified, err := o.verifier.Verify(ctx, idToken)
 	if err != nil {
-		return "", "", fmt.Errorf("oidc id token verify: %w", err)
+		return "", "", "", fmt.Errorf("oidc id token verify: %w", err)
 	}
 
 	var claims map[string]any
 	if err := verified.Claims(&claims); err != nil {
-		return "", "", fmt.Errorf("oidc claims: %w", err)
+		return "", "", "", fmt.Errorf("oidc claims: %w", err)
 	}
 	claimNonce, ok := claims["nonce"].(string)
 	if !ok || claimNonce == "" || claimNonce != nonce {
-		return "", "", errors.New("oidc nonce validation failed")
+		return "", "", "", errors.New("oidc nonce validation failed")
 	}
 	username = o.extractUsername(claims)
 	if username == "" {
-		return "", "", errors.New("oidc: cannot determine username from claims")
+		return "", "", "", errors.New("oidc: cannot determine username from claims")
 	}
 	role = o.mapRole(claims)
-	return username, role, nil
+	avatar = o.extractAvatar(claims)
+	return username, role, avatar, nil
+}
+
+// extractAvatar 提取 picture claim（标准 OIDC 头像字段），缺失或非字符串返回空串
+func (o *OIDC) extractAvatar(claims map[string]any) string {
+	s, ok := claims["picture"].(string)
+	if !ok {
+		return ""
+	}
+	return strings.TrimSpace(s)
 }
 
 // extractUsername 按配置的 username claim 提取，fallback email/sub

@@ -22,6 +22,7 @@ type Store interface {
 	ListUsers(ctx context.Context) ([]*models.User, error)
 	UpdateUserRole(ctx context.Context, id, role string) error
 	UpdateUserPassword(ctx context.Context, id, passwordHash string) error
+	UpdateUserAvatar(ctx context.Context, id, avatarURL string) error
 	DeleteSetting(ctx context.Context, key string) error
 
 	// Nodes

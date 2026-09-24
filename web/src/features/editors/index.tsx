@@ -31,6 +31,16 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
+import { CronEditor } from '@/components/cron/cron-editor'
+import { isValidCronExpression } from '@/components/cron/cron-fields'
+import { NextRunsPreview } from '@/components/cron/next-runs-preview'
+import { buildSchedulePayload } from '@/components/cron/schedule-payload'
+import {
+  browserTimeZone,
+  isValidTimeZone,
+  zonedDateTimeToISO,
+  zonedDateTimeValue,
+} from '@/components/cron/timezone'
 import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import {
@@ -40,64 +50,6 @@ import {
   StatusBadge,
   TimeValue,
 } from '@/features/shared/ui'
-
-function zonedDateTimeValue(value: string, timezone: string) {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  let parts: Intl.DateTimeFormatPart[]
-  try {
-    parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone: timezone || 'UTC',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23',
-    }).formatToParts(date)
-  } catch {
-    return ''
-  }
-  const get = (type: string) =>
-    parts.find((part) => part.type === type)?.value || ''
-  return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`
-}
-
-function zonedDateTimeToISO(value: string, timezone: string) {
-  const [datePart, timePart] = value.split('T')
-  const [year, month, day] = datePart.split('-').map(Number)
-  const [hour, minute] = timePart.split(':').map(Number)
-  const guess = new Date(Date.UTC(year, month - 1, day, hour, minute))
-  let parts: Intl.DateTimeFormatPart[]
-  try {
-    parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone: timezone || 'UTC',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hourCycle: 'h23',
-    }).formatToParts(guess)
-  } catch {
-    return guess.toISOString()
-  }
-  const get = (type: string) =>
-    Number(parts.find((part) => part.type === type)?.value || 0)
-  const asZonedUTC = Date.UTC(
-    get('year'),
-    get('month') - 1,
-    get('day'),
-    get('hour'),
-    get('minute'),
-    get('second')
-  )
-  return new Date(
-    guess.getTime() - (asZonedUTC - guess.getTime())
-  ).toISOString()
-}
 
 function EditorShell({
   title,
@@ -133,13 +85,18 @@ export function ScheduleEditor() {
     enabled: editing,
   })
   const [error, setError] = useState('')
+  // 任务详情「新建调度」入口：/schedules/new?task_id=x 预选任务并只读展示
+  const presetTaskId = editing
+    ? ''
+    : new URLSearchParams(window.location.search).get('task_id') || ''
   const defaultForm: Partial<Schedule> = {
-    task_id: '',
+    task_id: presetTaskId,
     type: 'cron',
     expression: '',
     interval_sec: 60,
     run_at: '',
-    timezone: 'UTC',
+    // 调度页已独立成页，默认时区由 UTC 改为浏览器时区
+    timezone: browserTimeZone(),
     execution_owner: 'agent',
     offline_policy: 'allow_offline',
     misfire_policy: 'run_once',
@@ -154,9 +111,17 @@ export function ScheduleEditor() {
       setError(t('schedules.taskRequired'))
       return
     }
-    if (form.type === 'cron' && !form.expression?.trim()) {
-      setError(t('schedules.cronRequired'))
-      return
+    if (form.type === 'cron') {
+      const expression = (form.expression || '').trim()
+      if (!expression) {
+        setError(t('schedules.cronRequired'))
+        return
+      }
+      // 与图形化编辑器同一套 5 段语法口径，提前拦截后端 400
+      if (!isValidCronExpression(expression)) {
+        setError(t('schedules.cronInvalidSyntax'))
+        return
+      }
     }
     if (
       form.type === 'interval' &&
@@ -169,12 +134,11 @@ export function ScheduleEditor() {
       setError(t('schedules.runAtRequired'))
       return
     }
-    const payload = { ...form }
-    if (payload.type !== 'one_time') delete payload.run_at
+    const payload = buildSchedulePayload(form)
     try {
       if (editing) await api.put(`/schedules/${id}`, payload)
       else await api.post('/schedules', payload)
-      window.location.assign('/tasks?view=schedules')
+      window.location.assign('/schedules')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('common.noData'))
     }
@@ -185,7 +149,7 @@ export function ScheduleEditor() {
         title={t('schedules.editTitle')}
         error={current.error}
         onRetry={() => current.refetch()}
-        backTo='/tasks?view=schedules'
+        backTo='/schedules'
       />
     )
   if (editing && current.isPending && !draft)
@@ -209,6 +173,7 @@ export function ScheduleEditor() {
             {t('schedules.task')}
             <Select
               value={form.task_id || ''}
+              disabled={Boolean(presetTaskId)}
               onValueChange={(value) => setForm({ ...form, task_id: value })}
             >
               <SelectTrigger>
@@ -222,12 +187,27 @@ export function ScheduleEditor() {
                 ))}
               </SelectContent>
             </Select>
+            {presetTaskId ? (
+              <span className='text-xs font-normal text-muted-foreground'>
+                {t('schedules.taskPrefilled')}
+              </span>
+            ) : null}
           </label>
           <label className='grid gap-2 text-sm font-medium'>
             {t('common.type')}
             <Select
               value={form.type || 'cron'}
-              onValueChange={(value) => setForm({ ...form, type: value })}
+              onValueChange={(value) =>
+                setForm({
+                  ...form,
+                  type: value,
+                  // on_start 隐藏时区输入，切换时清理非法值，避免提交后端 400 却无处可改
+                  ...(value === 'on_start' &&
+                  !isValidTimeZone(form.timezone || '')
+                    ? { timezone: browserTimeZone() }
+                    : {}),
+                })
+              }
             >
               <SelectTrigger>
                 <SelectValue />
@@ -240,20 +220,17 @@ export function ScheduleEditor() {
                 <SelectItem value='one_time'>
                   {t('schedules.oneTime')}
                 </SelectItem>
+                <SelectItem value='on_start'>
+                  {t('schedules.onStart')}
+                </SelectItem>
               </SelectContent>
             </Select>
           </label>
           {form.type === 'cron' && (
-            <label className='grid gap-2 text-sm font-medium'>
-              {t('schedules.cronExpression')}
-              <Input
-                className='font-mono text-xs'
-                value={form.expression || ''}
-                onChange={(event) =>
-                  setForm({ ...form, expression: event.target.value })
-                }
-              />
-            </label>
+            <CronEditor
+              value={form.expression || ''}
+              onChange={(expression) => setForm({ ...form, expression })}
+            />
           )}
           {form.type === 'interval' && (
             <label className='grid gap-2 text-sm font-medium'>
@@ -292,16 +269,32 @@ export function ScheduleEditor() {
               />
             </label>
           )}
-          <label className='grid gap-2 text-sm font-medium'>
-            {t('schedules.timezone')}
-            <Input
-              className='font-mono text-xs'
-              value={form.timezone || ''}
-              onChange={(event) =>
-                setForm({ ...form, timezone: event.target.value })
-              }
-            />
-          </label>
+          {/* on_start 无触发时间：时区对它无意义，隐藏输入但保留合法默认值随 payload 上送 */}
+          {form.type !== 'on_start' && (
+            <label className='grid gap-2 text-sm font-medium'>
+              {t('schedules.timezone')}
+              <Input
+                className='font-mono text-xs'
+                value={form.timezone || ''}
+                onChange={(event) =>
+                  setForm({ ...form, timezone: event.target.value })
+                }
+              />
+            </label>
+          )}
+          <NextRunsPreview
+            type={
+              form.type === 'interval' ||
+              form.type === 'one_time' ||
+              form.type === 'on_start'
+                ? form.type
+                : 'cron'
+            }
+            expression={form.expression}
+            intervalSec={form.interval_sec}
+            runAt={form.run_at}
+            timezone={form.timezone}
+          />
           <div className='grid gap-4 sm:grid-cols-3'>
             <label className='grid gap-2 text-sm font-medium'>
               {t('schedules.executionOwner')}
@@ -376,9 +369,7 @@ export function ScheduleEditor() {
               <Button onClick={save}>{t('common.save')}</Button>
             ) : null}
             <Button asChild variant='outline'>
-              <Link to='/tasks' search={{ view: 'schedules' }}>
-                {t('common.cancel')}
-              </Link>
+              <Link to='/schedules'>{t('common.cancel')}</Link>
             </Button>
           </div>
         </CardContent>

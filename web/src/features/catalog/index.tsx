@@ -28,7 +28,7 @@ import {
   type User,
 } from '@/lib/api'
 import { copyText, selectText } from '@/lib/clipboard'
-import { useCanWrite } from '@/lib/permissions'
+import { useCanRun, useCanWrite } from '@/lib/permissions'
 import { readTablePageSize } from '@/lib/table-view'
 import { useTheme } from '@/context/theme-provider'
 import { Button } from '@/components/ui/button'
@@ -62,8 +62,8 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
+import { NodeBulkActions } from '@/features/catalog/node-bulk-actions'
 import { DataTable } from '@/features/shared/data-table'
-import { TaskScheduleTabs } from '@/features/shared/task-schedule-tabs'
 import {
   DetailField,
   DetailGrid,
@@ -83,11 +83,26 @@ export function Agents() {
   const { t } = useTranslation()
   const client = useQueryClient()
   const canWrite = useCanWrite()
+  const canRun = useCanRun()
   const [enrollmentOpen, setEnrollmentOpen] = useState(false)
   const query = useQuery({
     queryKey: ['nodes'],
     queryFn: () => api.get<Node[]>('/nodes'),
   })
+  const groups = useQuery({
+    queryKey: ['groups'],
+    queryFn: () => api.get<Group[]>('/groups'),
+  })
+  const groupNamesByNode = useMemo(() => {
+    const map = new Map<string, string[]>()
+    for (const node of query.data || []) {
+      const names = groupsForNode(node, groups.data || []).map(
+        (group) => group.name
+      )
+      if (names.length) map.set(node.id, names)
+    }
+    return map
+  }, [groups.data, query.data])
   const { mutate: updateNodeStatus } = useMutation({
     mutationFn: ({ node, status }: { node: Node; status: string }) =>
       api.post(`/nodes/${node.id}`, { status }),
@@ -108,12 +123,21 @@ export function Agents() {
   const columns = useMemo<ColumnDef<Node>[]>(
     () => [
       {
+        accessorKey: 'status',
+        header: t('common.status'),
+        size: 116,
+        minSize: 108,
+        cell: ({ row }: { row: { original: Node } }) => (
+          <StatusBadge status={row.original.status} />
+        ),
+      },
+      {
         id: 'hostname',
         accessorFn: (row) => `${row.hostname} ${row.id}`,
         header: t('dashboard.hostname'),
-        size: 280,
-        minSize: 220,
-        maxSize: 360,
+        size: 250,
+        minSize: 205,
+        maxSize: 340,
         cell: ({ row }: { row: { original: Node } }) => (
           <div>
             <a
@@ -127,51 +151,62 @@ export function Agents() {
         ),
       },
       {
-        accessorKey: 'status',
-        header: t('common.status'),
-        size: 104,
-        minSize: 96,
-        meta: { align: 'center' },
-        cell: ({ row }: { row: { original: Node } }) => (
-          <StatusBadge status={row.original.status} />
-        ),
+        id: 'groups',
+        header: t('nodes.groups'),
+        enableSorting: false,
+        size: 160,
+        minSize: 130,
+        cell: ({ row }: { row: { original: Node } }) => {
+          const names = groupNamesByNode.get(row.original.id)?.join(', ')
+          return (
+            <span className='block truncate' title={names || '-'}>
+              {names || '-'}
+            </span>
+          )
+        },
       },
       {
         accessorKey: 'ip',
         header: t('dashboard.ip'),
-        size: 120,
-        minSize: 96,
+        size: 140,
+        minSize: 120,
         cell: ({ row }: { row: { original: Node } }) => (
           <span className='font-mono text-xs'>{row.original.ip || '-'}</span>
         ),
       },
       {
-        accessorKey: 'agent_version',
-        header: t('nodes.agentVersion'),
-        size: 110,
-        minSize: 96,
+        accessorKey: 'os',
+        header: t('dashboard.os'),
+        size: 150,
+        minSize: 130,
+        cell: ({ row }: { row: { original: Node } }) => row.original.os || '-',
       },
       {
         accessorKey: 'arch',
         header: t('nodes.architecture'),
-        size: 90,
+        size: 88,
         minSize: 80,
-        meta: { align: 'center' },
         cell: ({ row }: { row: { original: Node } }) => (
           <span className='font-mono text-xs'>{row.original.arch || '-'}</span>
         ),
       },
       {
+        accessorKey: 'agent_version',
+        header: t('nodes.agentVersion'),
+        size: 100,
+        minSize: 88,
+      },
+      {
         accessorKey: 'deployment_mode',
         header: t('nodes.deploymentMode'),
-        size: 130,
+        size: 135,
         minSize: 110,
       },
       {
         accessorKey: 'last_seen',
         header: t('dashboard.lastSeen'),
-        size: 180,
-        minSize: 160,
+        size: 170,
+        minSize: 155,
         cell: ({ row }: { row: { original: Node } }) => (
           <TimeValue value={row.original.last_seen} />
         ),
@@ -182,7 +217,6 @@ export function Agents() {
         enableHiding: false,
         size: 72,
         minSize: 64,
-        meta: { align: 'end' },
         cell: ({ row }: { row: { original: Node } }) =>
           canWrite ? (
             <MoreMenu>
@@ -242,7 +276,7 @@ export function Agents() {
           ) : null,
       },
     ],
-    [canWrite, deleteNode, revokeNode, t, updateNodeStatus]
+    [canWrite, deleteNode, groupNamesByNode, revokeNode, t, updateNodeStatus]
   )
   return (
     <>
@@ -254,6 +288,16 @@ export function Agents() {
         data={query.data || []}
         searchPlaceholder={t('nodes.searchPlaceholder')}
         storageKey='nodes'
+        enableRowSelection={canWrite || canRun}
+        bulkEntityName={t('nav.nodes')}
+        renderBulkActions={(table) => (
+          <NodeBulkActions
+            nodes={table
+              .getFilteredSelectedRowModel()
+              .rows.map((row) => row.original)}
+            onClear={() => table.resetRowSelection()}
+          />
+        )}
         action={
           canWrite ? (
             <Button onClick={() => setEnrollmentOpen(true)}>
@@ -553,6 +597,9 @@ export function AgentDetail() {
     )
   if (!node.data) return <LoadingPage title={t('nodes.nodeTitle')} />
   const item = node.data
+  const nodeGroupNames = groupsForNode(item, groups.data || [])
+    .map((group) => group.name)
+    .join(', ')
   return (
     <>
       <NodeSteerHeader
@@ -598,6 +645,9 @@ export function AgentDetail() {
                 </DetailField>
                 <DetailField label={t('nodes.deploymentMode')}>
                   {item.deployment_mode || '-'}
+                </DetailField>
+                <DetailField label={t('nodes.groups')}>
+                  {nodeGroupNames || '-'}
                 </DetailField>
                 <DetailField label={t('nodes.globalRevision')}>
                   <span className='font-mono text-xs'>
@@ -864,16 +914,16 @@ function ExecutionRows({
     <TableCard>
       <Table className='min-w-[620px] table-fixed'>
         <colgroup>
-          <col className='w-[25%]' />
-          <col className='w-[25%]' />
-          <col className='w-[20%]' />
-          <col className='w-[20%]' />
-          <col className='w-[10%]' />
+          <col className='w-[32%]' />
+          <col className='w-[16%]' />
+          <col className='w-[24%]' />
+          <col className='w-[14%]' />
+          <col className='w-[14%]' />
         </colgroup>
         <TableHeader>
           <TableRow>
             <TableHead>{t('dashboard.task')}</TableHead>
-            <TableHead className='text-center'>{t('common.status')}</TableHead>
+            <TableHead>{t('common.status')}</TableHead>
             <TableHead>{t('executions.start')}</TableHead>
             <TableHead>{t('executions.duration')}</TableHead>
             <TableHead />
@@ -894,7 +944,7 @@ function ExecutionRows({
                   <span className='font-medium'>{t('common.unknownTask')}</span>
                 )}
               </TableCell>
-              <TableCell className='text-center'>
+              <TableCell>
                 <StatusBadge status={execution.status} />
               </TableCell>
               <TableCell>
@@ -910,7 +960,7 @@ function ExecutionRows({
                       .slice(11, 19)
                   : '-'}
               </TableCell>
-              <TableCell className='text-end'>
+              <TableCell>
                 <a
                   className='text-sm text-primary hover:underline'
                   href={`/executions/${execution.id}`}
@@ -926,6 +976,18 @@ function ExecutionRows({
   )
 }
 
+/** 判断组是否包含节点：label 组按标签匹配，static 组按成员 ID 匹配 */
+function groupMatchesNode(group: Group, node: Node) {
+  if (group.type === 'label')
+    return node.labels?.[group.label_key] === group.label_value
+  return group.members?.includes(node.id) || false
+}
+
+/** 节点所属分组列表（复用 taskTargetsNode 的组匹配语义） */
+function groupsForNode(node: Node, groups: Group[]) {
+  return groups.filter((group) => groupMatchesNode(group, node))
+}
+
 function taskTargetsNode(task: Task, node: Node | undefined, groups: Group[]) {
   if (!node) return false
   if (task.target.type === 'node')
@@ -937,9 +999,7 @@ function taskTargetsNode(task: Task, node: Node | undefined, groups: Group[]) {
   return (task.target.group_ids || []).some((groupId) => {
     const group = groups.find((item) => item.id === groupId)
     if (!group) return false
-    return group.type === 'label'
-      ? node.labels?.[group.label_key] === group.label_value
-      : group.members?.includes(node.id) || false
+    return groupMatchesNode(group, node)
   })
 }
 
@@ -979,9 +1039,9 @@ export function Schedules() {
         accessorFn: (row: Schedule) =>
           `${tasks.data?.find((task) => task.id === row.task_id)?.name || ''} ${row.task_id}`,
         header: t('schedules.task'),
-        size: 260,
-        minSize: 220,
-        maxSize: 360,
+        size: 250,
+        minSize: 210,
+        maxSize: 340,
         cell: ({ row }: { row: { original: Schedule } }) => (
           <a
             href={`/schedules/${row.original.id}`}
@@ -999,8 +1059,8 @@ export function Schedules() {
       {
         accessorKey: 'type',
         header: t('common.type'),
-        size: 100,
-        minSize: 88,
+        size: 88,
+        minSize: 80,
         cell: ({ row }: { row: { original: Schedule } }) =>
           t(`schedules.types.${row.original.type}`, {
             defaultValue: row.original.type,
@@ -1009,27 +1069,31 @@ export function Schedules() {
       {
         accessorKey: 'expression',
         header: t('tasks.expression'),
-        size: 160,
+        size: 165,
         minSize: 140,
-        cell: ({ row }: { row: { original: Schedule } }) => (
-          <span className='font-mono text-xs'>
-            {row.original.type === 'interval'
+        cell: ({ row }: { row: { original: Schedule } }) => {
+          const text =
+            row.original.type === 'interval'
               ? `${i18n.language === 'en' ? 'Every ' : '每 '}${row.original.interval_sec}${i18n.language === 'en' ? 's' : ' 秒'}`
-              : row.original.expression || '-'}
-          </span>
-        ),
+              : row.original.expression || '-'
+          return (
+            <span className='block truncate font-mono text-xs' title={text}>
+              {text}
+            </span>
+          )
+        },
       },
       {
         accessorKey: 'timezone',
         header: t('schedules.timezone'),
-        size: 120,
-        minSize: 100,
+        size: 130,
+        minSize: 110,
       },
       {
         accessorKey: 'execution_owner',
         header: t('schedules.executionOwner'),
-        size: 110,
-        minSize: 96,
+        size: 100,
+        minSize: 90,
         cell: ({ row }: { row: { original: Schedule } }) =>
           t(`schedules.owners.${row.original.execution_owner}`, {
             defaultValue: row.original.execution_owner,
@@ -1048,8 +1112,8 @@ export function Schedules() {
       {
         accessorKey: 'misfire_policy',
         header: t('tasks.misfire'),
-        size: 140,
-        minSize: 120,
+        size: 130,
+        minSize: 110,
         cell: ({ row }: { row: { original: Schedule } }) =>
           t(`schedules.misfirePolicies.${row.original.misfire_policy}`, {
             defaultValue: row.original.misfire_policy,
@@ -1058,9 +1122,8 @@ export function Schedules() {
       {
         accessorKey: 'enabled',
         header: t('common.status'),
-        size: 104,
-        minSize: 96,
-        meta: { align: 'center' },
+        size: 96,
+        minSize: 88,
         cell: ({ row }: { row: { original: Schedule } }) => (
           <StatusBadge status={row.original.enabled ? 'enabled' : 'disabled'} />
         ),
@@ -1071,7 +1134,6 @@ export function Schedules() {
         enableHiding: false,
         size: 72,
         minSize: 64,
-        meta: { align: 'end' },
         cell: ({ row }: { row: { original: Schedule } }) => {
           const schedule = row.original
           const taskName =
@@ -1113,7 +1175,6 @@ export function Schedules() {
       data={schedules.data || []}
       searchPlaceholder={t('schedules.searchPlaceholder')}
       storageKey='schedules'
-      extra={<TaskScheduleTabs value='schedules' />}
       action={
         canWrite ? (
           <Button asChild>
@@ -1198,15 +1259,22 @@ export function Scripts() {
       {
         accessorKey: 'interpreter',
         header: t('scripts.interpreter'),
-        size: 100,
-        minSize: 88,
+        size: 130,
+        minSize: 110,
+        cell: ({ row }: { row: { original: Script } }) => (
+          <span
+            className='block truncate font-mono text-xs'
+            title={row.original.interpreter}
+          >
+            {row.original.interpreter}
+          </span>
+        ),
       },
       {
         accessorKey: 'revision',
         header: t('tasks.revision'),
-        size: 96,
-        minSize: 88,
-        meta: { align: 'center' },
+        size: 76,
+        minSize: 68,
         cell: ({ row }: { row: { original: Script } }) => (
           <span className='font-mono text-xs'>r{row.original.revision}</span>
         ),
@@ -1214,17 +1282,16 @@ export function Scripts() {
       {
         accessorKey: 'timeout',
         header: t('scripts.timeout'),
-        size: 90,
-        minSize: 80,
-        meta: { align: 'end' },
+        size: 76,
+        minSize: 68,
         cell: ({ row }: { row: { original: Script } }) =>
           `${row.original.timeout}s`,
       },
       {
         accessorKey: 'sha256',
         header: t('scripts.sha256'),
-        size: 190,
-        minSize: 160,
+        size: 160,
+        minSize: 140,
         cell: ({ row }: { row: { original: Script } }) => (
           <span className='font-mono text-xs'>
             {row.original.sha256.slice(0, 16)}…
@@ -1234,8 +1301,8 @@ export function Scripts() {
       {
         accessorKey: 'updated_at',
         header: t('scripts.updated'),
-        size: 180,
-        minSize: 160,
+        size: 170,
+        minSize: 155,
         cell: ({ row }: { row: { original: Script } }) => (
           <TimeValue value={row.original.updated_at} />
         ),
@@ -1244,9 +1311,8 @@ export function Scripts() {
         id: 'status',
         accessorFn: (row: Script) => (row.enabled ? 'enabled' : 'disabled'),
         header: t('common.status'),
-        size: 104,
-        minSize: 96,
-        meta: { align: 'center' },
+        size: 96,
+        minSize: 88,
         cell: ({ row }: { row: { original: Script } }) => (
           <StatusBadge status={row.original.enabled ? 'enabled' : 'disabled'} />
         ),
@@ -1257,7 +1323,6 @@ export function Scripts() {
         enableHiding: false,
         size: 72,
         minSize: 64,
-        meta: { align: 'end' },
         cell: ({ row }: { row: { original: Script } }) =>
           canWrite ? (
             <MoreMenu>
@@ -1332,7 +1397,7 @@ export function Groups() {
         accessorKey: 'name',
         header: t('common.name'),
         size: 240,
-        minSize: 180,
+        minSize: 190,
         maxSize: 320,
         cell: ({ row }: { row: { original: Group } }) => (
           <span className='font-medium'>{row.original.name}</span>
@@ -1341,8 +1406,8 @@ export function Groups() {
       {
         accessorKey: 'type',
         header: t('common.type'),
-        size: 110,
-        minSize: 96,
+        size: 100,
+        minSize: 90,
         cell: ({ row }: { row: { original: Group } }) =>
           t(`groups.types.${row.original.type}`, {
             defaultValue: row.original.type,
@@ -1351,8 +1416,13 @@ export function Groups() {
       {
         accessorKey: 'description',
         header: t('common.description'),
-        size: 360,
-        minSize: 220,
+        size: 340,
+        minSize: 260,
+        cell: ({ row }: { row: { original: Group } }) => (
+          <span className='block truncate' title={row.original.description}>
+            {row.original.description || '-'}
+          </span>
+        ),
       },
       {
         id: 'members',
@@ -1363,9 +1433,8 @@ export function Groups() {
               ).length
             : row.members?.length || 0,
         header: t('groups.members'),
-        size: 90,
-        minSize: 72,
-        meta: { align: 'end' },
+        size: 76,
+        minSize: 68,
         cell: ({ row }: { row: { original: Group } }) =>
           row.original.type === 'label'
             ? (nodes.data || []).filter(
@@ -1381,7 +1450,6 @@ export function Groups() {
         enableHiding: false,
         size: 72,
         minSize: 64,
-        meta: { align: 'end' },
         cell: ({ row }: { row: { original: Group } }) =>
           canWrite ? (
             <MoreMenu>
@@ -1454,7 +1522,7 @@ export function Applications() {
       {
         accessorKey: 'name',
         header: t('common.name'),
-        size: 220,
+        size: 210,
         minSize: 180,
         maxSize: 300,
         cell: ({ row }: { row: { original: Application } }) => (
@@ -1469,14 +1537,14 @@ export function Applications() {
       {
         accessorKey: 'version',
         header: t('common.version'),
-        size: 96,
-        minSize: 80,
+        size: 88,
+        minSize: 76,
       },
       {
         accessorKey: 'binary_path',
         header: t('apps.binary'),
         size: 300,
-        minSize: 220,
+        minSize: 230,
         maxSize: 460,
         cell: ({ row }: { row: { original: Application } }) => (
           <span
@@ -1490,8 +1558,8 @@ export function Applications() {
       {
         accessorKey: 'unit_name',
         header: t('apps.unit'),
-        size: 260,
-        minSize: 180,
+        size: 250,
+        minSize: 200,
         maxSize: 380,
         cell: ({ row }: { row: { original: Application } }) => (
           <span
@@ -1505,9 +1573,8 @@ export function Applications() {
       {
         accessorKey: 'revision',
         header: t('tasks.revision'),
-        size: 96,
-        minSize: 88,
-        meta: { align: 'center' },
+        size: 76,
+        minSize: 68,
         cell: ({ row }: { row: { original: Application } }) => (
           <span className='font-mono text-xs'>r{row.original.revision}</span>
         ),
@@ -1518,7 +1585,6 @@ export function Applications() {
         enableHiding: false,
         size: 72,
         minSize: 64,
-        meta: { align: 'end' },
         cell: ({ row }: { row: { original: Application } }) =>
           canWrite ? (
             <MoreMenu>
@@ -1609,7 +1675,7 @@ export function Artifacts() {
       {
         accessorKey: 'name',
         header: t('common.name'),
-        size: 200,
+        size: 190,
         minSize: 160,
         maxSize: 280,
         cell: ({ row }: { row: { original: Artifact } }) => (
@@ -1624,20 +1690,20 @@ export function Artifacts() {
       {
         accessorKey: 'version',
         header: t('common.version'),
-        size: 100,
-        minSize: 84,
+        size: 88,
+        minSize: 76,
       },
       {
         accessorKey: 'architecture',
         header: t('artifacts.archField'),
-        size: 100,
-        minSize: 84,
+        size: 90,
+        minSize: 76,
       },
       {
         accessorKey: 'filename',
         header: t('artifacts.filename'),
-        size: 220,
-        minSize: 160,
+        size: 210,
+        minSize: 170,
         maxSize: 320,
         cell: ({ row }: { row: { original: Artifact } }) => (
           <span
@@ -1651,17 +1717,16 @@ export function Artifacts() {
       {
         accessorKey: 'size',
         header: t('artifacts.size'),
-        size: 90,
-        minSize: 80,
-        meta: { align: 'end' },
+        size: 76,
+        minSize: 68,
         cell: ({ row }: { row: { original: Artifact } }) =>
           `${Math.round(row.original.size / 1024)} KB`,
       },
       {
         accessorKey: 'sha256',
         header: 'SHA256',
-        size: 220,
-        minSize: 180,
+        size: 160,
+        minSize: 140,
         cell: ({ row }: { row: { original: Artifact } }) => (
           <span
             className='block truncate font-mono text-xs'
@@ -1678,7 +1743,7 @@ export function Artifacts() {
             (application) => application.artifact_id === row.id
           ).length || 0,
         header: t('artifacts.usage'),
-        size: 220,
+        size: 200,
         minSize: 160,
         cell: ({ row }: { row: { original: Artifact } }) => {
           const used =
@@ -1709,7 +1774,6 @@ export function Artifacts() {
         enableHiding: false,
         size: 72,
         minSize: 64,
-        meta: { align: 'end' },
         cell: ({ row }: { row: { original: Artifact } }) => (
           <MoreMenu>
             <DropdownMenuItem
@@ -1784,8 +1848,8 @@ export function Audit() {
       {
         accessorKey: 'created_at',
         header: t('common.time'),
-        size: 180,
-        minSize: 160,
+        size: 170,
+        minSize: 155,
         cell: ({ row }: { row: { original: AuditLog } }) => (
           <TimeValue value={row.original.created_at} />
         ),
@@ -1793,26 +1857,26 @@ export function Audit() {
       {
         accessorKey: 'username',
         header: t('common.name'),
-        size: 140,
+        size: 130,
         minSize: 110,
       },
       {
         accessorKey: 'action',
         header: t('common.actions'),
-        size: 150,
+        size: 140,
         minSize: 120,
       },
       {
         accessorKey: 'resource',
         header: t('common.type'),
-        size: 130,
-        minSize: 100,
+        size: 110,
+        minSize: 96,
       },
       {
         accessorKey: 'resource_id',
         header: t('common.resourceId'),
-        size: 220,
-        minSize: 140,
+        size: 210,
+        minSize: 160,
         cell: ({ row }: { row: { original: AuditLog } }) => (
           <span
             className='block truncate font-mono text-xs'
@@ -1826,7 +1890,12 @@ export function Audit() {
         accessorKey: 'detail',
         header: t('common.description'),
         size: 420,
-        minSize: 240,
+        minSize: 260,
+        cell: ({ row }: { row: { original: AuditLog } }) => (
+          <span className='block truncate' title={row.original.detail}>
+            {row.original.detail || '-'}
+          </span>
+        ),
       },
     ],
     [t]
@@ -1889,8 +1958,8 @@ export function Users() {
       {
         accessorKey: 'username',
         header: t('common.name'),
-        size: 360,
-        minSize: 180,
+        size: 320,
+        minSize: 200,
         maxSize: 320,
         cell: ({ row }: { row: { original: User } }) => (
           <span className='font-medium'>{row.original.username}</span>
@@ -1901,7 +1970,6 @@ export function Users() {
         header: t('misc.role'),
         size: 160,
         minSize: 160,
-        meta: { align: 'center' },
         cell: ({ row }: { row: { original: User } }) => (
           <Select
             value={row.original.role}
@@ -1923,8 +1991,8 @@ export function Users() {
       {
         accessorKey: 'created_at',
         header: t('common.time'),
-        size: 180,
-        minSize: 160,
+        size: 170,
+        minSize: 155,
         cell: ({ row }: { row: { original: User } }) => (
           <TimeValue value={row.original.created_at} />
         ),
@@ -2169,6 +2237,9 @@ function ListLayout<TData>({
   extra,
   storageKey,
   pagination,
+  enableRowSelection,
+  renderBulkActions,
+  bulkEntityName,
 }: {
   title: string
   description: string
@@ -2193,6 +2264,14 @@ function ListLayout<TData>({
     onPageChange: (page: number) => void
     onPageSizeChange: (pageSize: number) => void
   }
+  /** 启用行多选（注入前置选择列） */
+  enableRowSelection?: boolean
+  /** 选中后浮出的批量操作工具条内容 */
+  renderBulkActions?: (
+    table: import('@tanstack/react-table').Table<TData>
+  ) => React.ReactNode
+  /** 工具条读屏文案中的实体名 */
+  bulkEntityName?: string
 }) {
   const { t } = useTranslation()
   return (
@@ -2226,6 +2305,9 @@ function ListLayout<TData>({
             pageSize={pagination?.pageSize}
             onPageChange={pagination?.onPageChange}
             onPageSizeChange={pagination?.onPageSizeChange}
+            enableRowSelection={enableRowSelection}
+            renderBulkActions={renderBulkActions}
+            bulkEntityName={bulkEntityName}
           />
         ) : (
           <Card>

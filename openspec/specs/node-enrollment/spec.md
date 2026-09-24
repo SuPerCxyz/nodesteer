@@ -10,13 +10,17 @@ The Nodes page SHALL provide an administrator-only Add Node workflow with requir
 #### Scenario: Open Add Node
 
 - **WHEN** an administrator opens Add Node
-- **THEN** the page shows required node name and node address inputs, a Hub address prefilled from the current page origin, and the three enrollment methods
+- **THEN** the page shows required node name and node address inputs
+- **AND** the Hub address is prefilled from the current page origin
+- **AND** the three enrollment methods are available
 
-#### Scenario: Generate enrollment commands
+#### Scenario: Generate runtime-architecture enrollment commands
 
 - **WHEN** the administrator submits a valid node name, node address, and Hub address
 - **THEN** the Hub creates and persists one pending offline node record
 - **AND** returns commands containing the node identity, preassigned Agent ID, registration token, supplied address unchanged, and an Agent Gateway URL derived from the supplied Hub address and configured Gateway port
+- **AND** the Native command detects the target Linux architecture, downloads and SHA256-verifies the matching Agent binary from the Hub
+- **AND** the Docker and Compose content uses the multi-architecture Agent image
 - **AND** the Web UI refreshes the node list so the pending record is visible
 
 #### Scenario: Reject invalid node identity
@@ -37,11 +41,24 @@ The Nodes page SHALL provide an administrator-only Add Node workflow with requir
 #### Scenario: Clipboard API unavailable
 
 - **WHEN** the browser does not expose or rejects `navigator.clipboard.writeText`
-- **THEN** the UI uses a browser-native fallback and reports an error only if both copy paths fail
+- **THEN** the UI uses a synchronous browser-native fallback and reports an error only if both copy paths fail
 
 ### Requirement: Use the existing registration flow
 
-Enrollment instructions SHALL configure the existing Agent binary/container with the Hub URL, registration token, preassigned Agent ID, node name, and node address, preserve persistent Agent state, and bind the first registration to the pending node record.
+Enrollment instructions SHALL configure the existing Agent binary/container with the Hub URL, registration token, preassigned Agent ID, node name, and node address, preserve persistent Agent state, and bind the first registration to the pending node record. Native instructions SHALL remain executable on a clean Linux host after the Agent binary and existing service unit are obtained from the generated content.
+
+#### Scenario: Native enrollment detects host architecture
+
+- **WHEN** an administrator runs the Native instructions on a clean Linux host
+- **THEN** the command detects `x86_64`/`amd64` or `aarch64`/`arm64` and downloads the matching binary from Hub without requiring a download token
+- **AND** verifies the binary before installation
+- **AND** starts the Agent with the generated configuration so the pending node becomes the connected real node
+
+#### Scenario: Docker enrollment uses the multi-architecture image
+
+- **WHEN** an administrator runs Docker or Compose enrollment on a supported host
+- **THEN** the generated content uses the multi-architecture Agent image
+- **AND** preserves the `/var/lib/nodesteer` persistent volume
 
 #### Scenario: Agent reports configured identity
 

@@ -43,7 +43,7 @@ func TestAgentFileUploadAndDownload(t *testing.T) {
 
 	a := &Agent{
 		host:    host.NewNativeHostAdapter(),
-		conn:    connection.New("", "", "", nil, slog.Default()),
+		conn:    connection.New("", "", "", nil, slog.Default(), nil),
 		agentID: "agent-1", credential: "credential-1",
 	}
 	if err := a.uploadFile(context.Background(), protocol.FileUploadRequestPayload{
@@ -77,7 +77,7 @@ func TestAgentFileDownloadChecksumFailureKeepsDestination(t *testing.T) {
 	defer server.Close()
 	a := &Agent{
 		host:    host.NewNativeHostAdapter(),
-		conn:    connection.New("", "", "", nil, slog.Default()),
+		conn:    connection.New("", "", "", nil, slog.Default(), nil),
 		agentID: "agent-1", credential: "credential-1",
 	}
 	err := a.downloadFile(context.Background(), protocol.FileDeliveryRequestPayload{

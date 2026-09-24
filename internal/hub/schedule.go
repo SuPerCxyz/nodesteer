@@ -329,6 +329,10 @@ func (sm *ScheduleManager) computeNextRun(s *models.Schedule, now time.Time) (ne
 			return time.Time{}, false, nil
 		}
 		return t, false, nil
+	case models.ScheduleTypeOnStart:
+		// on_start 由目标节点 Agent 的进程启动路径触发，Hub 不参与到期计算：
+		// 显式跳过（不建执行、不报错），避免被当作非法类型。
+		return time.Time{}, false, nil
 	}
 	return time.Time{}, false, nil
 }

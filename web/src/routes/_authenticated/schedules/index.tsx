@@ -1,8 +1,7 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
+import { Schedules } from '@/features/catalog'
 
-// 调度列表已合并到任务页的「调度」视图，旧路由保留重定向
+// 调度为独立列表页（原重定向到 /tasks?view=schedules 已移除）
 export const Route = createFileRoute('/_authenticated/schedules/')({
-  beforeLoad: () => {
-    throw redirect({ to: '/tasks', search: { view: 'schedules' } })
-  },
+  component: Schedules,
 })

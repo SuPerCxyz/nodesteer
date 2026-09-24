@@ -27,4 +27,4 @@
 
 - [x] 5.1 Update product/architecture and enrollment documentation for public binary downloads and architecture selection.
 - [x] 5.2 Run targeted Go tests, frontend lint/typecheck/build, Dockerfile/build checks, and OpenSpec validation.
-- [ ] 5.3 Verify the complete clean-host path: select architecture → generate command → public binary download → checksum → Agent start/pending-node bind.
+- [x] 5.3 Verify the complete clean-host path: select architecture → generate command → public binary download → checksum → Agent start/pending-node bind.

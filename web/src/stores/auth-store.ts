@@ -8,6 +8,8 @@ export type AuthUser = {
   exp: number
   username?: string
   userId?: string
+  /** 头像 URL（/api/me、/api/login 返回），缺省表示无 */
+  avatar?: string
 }
 
 type AuthState = {
@@ -29,6 +31,7 @@ export function sessionToUser(session: SessionInfo): AuthUser {
     exp: new Date(session.Expires).getTime(),
     username: session.Username,
     userId: session.UserID,
+    avatar: session.avatar || undefined,
   }
 }
 

@@ -185,7 +185,7 @@ func TestOIDCExchangeSuccess(t *testing.T) {
 	state, _, nonce := parseAuthURL(t, authURL)
 	idp.nonce = nonce
 
-	username, role, err := o.Exchange(context.Background(), state, "mock-code")
+	username, role, avatar, err := o.Exchange(context.Background(), state, "mock-code")
 	if err != nil {
 		t.Fatalf("Exchange: %v", err)
 	}
@@ -194,6 +194,10 @@ func TestOIDCExchangeSuccess(t *testing.T) {
 	}
 	if role != "administrator" {
 		t.Fatalf("role = %q, want administrator", role)
+	}
+	// 无 picture claim 时返回空串
+	if avatar != "" {
+		t.Fatalf("avatar = %q, want empty when picture claim absent", avatar)
 	}
 }
 
@@ -208,7 +212,7 @@ func TestOIDCExchangeRoleDefault(t *testing.T) {
 	state, _, nonce := parseAuthURL(t, authURL)
 	idp.nonce = nonce
 
-	_, role, err := o.Exchange(context.Background(), state, "mock-code")
+	_, role, _, err := o.Exchange(context.Background(), state, "mock-code")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -228,7 +232,7 @@ func TestOIDCExchangeUsernameFallback(t *testing.T) {
 	state, _, nonce := parseAuthURL(t, authURL)
 	idp.nonce = nonce
 
-	username, _, err := o.Exchange(context.Background(), state, "mock-code")
+	username, _, _, err := o.Exchange(context.Background(), state, "mock-code")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -251,7 +255,7 @@ func TestOIDCExchangeCustomClaims(t *testing.T) {
 	state, _, nonce := parseAuthURL(t, authURL)
 	idp.nonce = nonce
 
-	username, role, err := o.Exchange(context.Background(), state, "mock-code")
+	username, role, _, err := o.Exchange(context.Background(), state, "mock-code")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -267,7 +271,7 @@ func TestOIDCExchangeInvalidState(t *testing.T) {
 	idp := newMockIdP(t)
 	defer idp.Close()
 	o := newTestOIDC(t, idp, nil)
-	if _, _, err := o.Exchange(context.Background(), "nonexistent-state", "code"); err != ErrOIDCStateInvalid {
+	if _, _, _, err := o.Exchange(context.Background(), "nonexistent-state", "code"); err != ErrOIDCStateInvalid {
 		t.Fatalf("expected ErrOIDCStateInvalid, got %v", err)
 	}
 }
@@ -279,12 +283,36 @@ func TestOIDCExchangeReplayState(t *testing.T) {
 	authURL, _ := o.AuthCodeURL()
 	state, _, nonce := parseAuthURL(t, authURL)
 	idp.nonce = nonce
-	if _, _, err := o.Exchange(context.Background(), state, "mock-code"); err != nil {
+	if _, _, _, err := o.Exchange(context.Background(), state, "mock-code"); err != nil {
 		t.Fatal(err)
 	}
 	// 第二次使用同一 state 应失败（一次性）
-	if _, _, err := o.Exchange(context.Background(), state, "mock-code"); err != ErrOIDCStateInvalid {
+	if _, _, _, err := o.Exchange(context.Background(), state, "mock-code"); err != ErrOIDCStateInvalid {
 		t.Fatalf("expected ErrOIDCStateInvalid on replay, got %v", err)
+	}
+}
+
+// picture claim（标准 OIDC 头像字段）随 Exchange 返回值带出
+func TestOIDCExchangePictureClaim(t *testing.T) {
+	idp := newMockIdP(t)
+	defer idp.Close()
+	idp.username = "alice"
+	idp.claims = map[string]any{"picture": "  https://idp.example/avatar.png  "}
+
+	o := newTestOIDC(t, idp, nil)
+	authURL, _ := o.AuthCodeURL()
+	state, _, nonce := parseAuthURL(t, authURL)
+	idp.nonce = nonce
+
+	username, _, avatar, err := o.Exchange(context.Background(), state, "mock-code")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if username != "alice" {
+		t.Fatalf("username = %q, want alice", username)
+	}
+	if avatar != "https://idp.example/avatar.png" {
+		t.Fatalf("avatar = %q, want trimmed picture claim", avatar)
 	}
 }
 

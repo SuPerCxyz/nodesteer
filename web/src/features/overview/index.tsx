@@ -382,18 +382,16 @@ export function Dashboard() {
                   <Table className='min-w-[700px] table-fixed'>
                     <colgroup>
                       <col className='w-[30%]' />
+                      <col className='w-[18%]' />
                       <col className='w-[15%]' />
                       <col className='w-[14%]' />
-                      <col className='w-[17%]' />
-                      <col className='w-[24%]' />
+                      <col className='w-[23%]' />
                     </colgroup>
                     <TableHeader>
                       <TableRow>
                         <TableHead>{t('dashboard.task')}</TableHead>
                         <TableHead>{t('dashboard.node')}</TableHead>
-                        <TableHead className='text-center'>
-                          {t('common.status')}
-                        </TableHead>
+                        <TableHead>{t('common.status')}</TableHead>
                         <TableHead>{t('dashboard.trigger')}</TableHead>
                         <TableHead>{t('dashboard.end')}</TableHead>
                       </TableRow>
@@ -414,7 +412,7 @@ export function Dashboard() {
                             {nodeName.get(execution.node_id) ||
                               t('common.unknownNode')}
                           </TableCell>
-                          <TableCell className='text-center'>
+                          <TableCell>
                             <StatusBadge status={execution.status} />
                           </TableCell>
                           <TableCell>

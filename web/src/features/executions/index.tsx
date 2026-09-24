@@ -141,9 +141,8 @@ export function Executions() {
       {
         accessorKey: 'status',
         header: t('common.status'),
-        size: 104,
-        minSize: 96,
-        meta: { align: 'center' },
+        size: 96,
+        minSize: 88,
         cell: ({ row }) => <StatusBadge status={row.original.status} />,
       },
       {
@@ -151,8 +150,8 @@ export function Executions() {
         accessorFn: (row) =>
           `${taskNames.get(row.task_id) || ''} ${row.task_id}`,
         header: t('dashboard.task'),
-        size: 300,
-        minSize: 220,
+        size: 290,
+        minSize: 225,
         maxSize: 380,
         cell: ({ row }) => {
           const name = taskNames.get(row.original.task_id)
@@ -180,8 +179,8 @@ export function Executions() {
         accessorFn: (row) =>
           `${nodeNames.get(row.node_id) || ''} ${row.node_id}`,
         header: t('dashboard.node'),
-        size: 150,
-        minSize: 120,
+        size: 190,
+        minSize: 150,
         cell: ({ row }) => {
           const name = nodeNames.get(row.original.node_id)
           return name ? (
@@ -200,25 +199,31 @@ export function Executions() {
       {
         accessorKey: 'trigger_type',
         header: t('dashboard.trigger'),
-        size: 130,
-        minSize: 110,
-        cell: ({ row }) =>
-          labels[row.original.trigger_type as keyof typeof labels] ||
-          row.original.trigger_type,
+        size: 115,
+        minSize: 100,
+        cell: ({ row }) => {
+          const trigger =
+            labels[row.original.trigger_type as keyof typeof labels] ||
+            row.original.trigger_type
+          return (
+            <span className='block truncate' title={trigger}>
+              {trigger}
+            </span>
+          )
+        },
       },
       {
         accessorKey: 'start_time',
         header: t('executions.start'),
-        size: 180,
+        size: 175,
         minSize: 160,
         cell: ({ row }) => <TimeValue value={row.original.start_time} />,
       },
       {
         id: 'duration',
         header: t('executions.duration'),
-        size: 100,
-        minSize: 88,
-        meta: { align: 'end' },
+        size: 88,
+        minSize: 80,
         cell: ({ row }) => (
           <DurationValue
             start={row.original.start_time}
@@ -230,9 +235,8 @@ export function Executions() {
       {
         accessorKey: 'exit_code',
         header: t('dashboard.exit'),
-        size: 88,
-        minSize: 76,
-        meta: { align: 'end' },
+        size: 76,
+        minSize: 68,
         cell: ({ row }) => (
           <span className='font-mono text-xs'>
             {row.original.exit_code ?? '-'}
@@ -243,9 +247,8 @@ export function Executions() {
         id: 'actions',
         header: '',
         enableHiding: false,
-        size: 100,
+        size: 96,
         minSize: 88,
-        meta: { align: 'end' },
         cell: ({ row }) => (
           <a
             className='text-sm text-primary hover:underline'

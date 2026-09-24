@@ -28,6 +28,9 @@ import (
 	"github.com/google/uuid"
 )
 
+// reasonNodePausedAgent 暂停态拒收/回报的统一原因文案
+const reasonNodePausedAgent = "node paused"
+
 // Config Agent 配置
 type Config struct {
 	HubURL            string
@@ -58,7 +61,9 @@ type Agent struct {
 	host           host.HostAdapter
 	artifact       *ArtifactCache
 	appMgr         *ApplicationManager
+	upgrade        *upgradeRunner
 	logger         *slog.Logger
+	logState       *connection.ConnectionLogState
 	nodeID         string
 	agentID        string
 	credential     string
@@ -70,6 +75,11 @@ type Agent struct {
 	settingsMu     sync.RWMutex
 	transferMu     sync.Mutex
 	transferCancel map[string]context.CancelFunc
+	// on_start 触发状态：startedAt 为本进程启动时刻（作为触发 slot 保证跨启动不同、
+	// 同启动幂等）；onStartMu/onStartDone 保证同一次进程启动内至多触发一批。
+	startedAt   time.Time
+	onStartMu   sync.Mutex
+	onStartDone bool
 }
 
 // New 创建 Agent
@@ -80,6 +90,17 @@ func New(cfg Config, logger *slog.Logger) (*Agent, error) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 
+	// 参数自动生成/推导：deployment_mode 缺省回退 native（cmd/agent 已做显式配置优先的探测）；
+	// host_integration 由 deployment_mode 推导，不再独立读配置（yaml/env 旧键忽略）。
+	if cfg.DeploymentMode == "" {
+		cfg.DeploymentMode = models.DeploymentModeNative
+	}
+	cfg.HostIntegration = HostIntegrationFromMode(cfg.DeploymentMode)
+	// agent_version 空值兜底 dev：上报值以编译注入版本为准（cmd/agent 注入）
+	if cfg.AgentVersion == "" {
+		cfg.AgentVersion = "dev"
+	}
+
 	a := &Agent{
 		cfg:            cfg,
 		store:          store,
@@ -87,10 +108,12 @@ func New(cfg Config, logger *slog.Logger) (*Agent, error) {
 		cond:           condition.New(condition.OSProvider{}),
 		host:           host.DefaultHostAdapter(cfg.DeploymentMode),
 		logger:         logger,
+		logState:       connection.NewConnectionLogState(),
 		ctx:            ctx,
 		cancel:         cancel,
 		remoteWait:     map[string]chan protocol.RemoteStatePayload{},
 		transferCancel: map[string]context.CancelFunc{},
+		startedAt:      time.Now(),
 	}
 	// 加载身份
 	a.agentID, _ = store.GetIdentity("agent_id")
@@ -108,13 +131,16 @@ func New(cfg Config, logger *slog.Logger) (*Agent, error) {
 	}
 	a.appMgr = NewApplicationManager(store, a.host, a.artifact, logger)
 
-	// 连接管理器
-	a.conn = connection.New(cfg.HubURL, cfg.RegistrationToken, a.agentID, a, logger)
+	// 连接管理器（logState 与 agent 自用共享：失败/成功打点同一窗口同一计数）
+	a.conn = connection.New(cfg.HubURL, cfg.RegistrationToken, a.agentID, a, logger, a.logState)
 	if err := a.conn.SetTLSCA(cfg.TLSCAFile); err != nil {
 		store.Close()
 		return nil, fmt.Errorf("configure agent TLS: %w", err)
 	}
 	a.conn.SetCredential(a.credential)
+
+	// 自升级执行链（默认实现绑定；测试按需覆盖字段注入）
+	a.upgrade = a.defaultUpgradeRunner()
 
 	// 调度器
 	a.sch = scheduler.New(a, logger)
@@ -149,6 +175,9 @@ func (a *Agent) Run(ctx context.Context) error {
 
 	// 心跳与 Revision 周期校验
 	go a.periodicLoop(ctx)
+
+	// 每小时状态日志（常驻 goroutine，不随连接状态启停；断开由状态机跳过）
+	go a.statusLogLoop(ctx)
 
 	// 连接循环
 	a.conn.Run(ctx, a.helloFn)
@@ -196,11 +225,14 @@ func (a *Agent) capabilities() map[string]bool {
 		models.CapHostFilesystem:    false,
 		models.CapManagedSystemd:    false,
 		models.CapApplicationDeploy: false,
+		// 自升级仅 native 形态支持（docker / docker_host_integration 均不上报）
+		models.CapAgentUpgrade: false,
 	}
 	if a.cfg.DeploymentMode == models.DeploymentModeNative {
 		caps[models.CapHostFilesystem] = true
 		caps[models.CapManagedSystemd] = true
 		caps[models.CapApplicationDeploy] = true
+		caps[models.CapAgentUpgrade] = true
 	}
 	if a.cfg.HostIntegration {
 		caps[models.CapHostFilesystem] = true
@@ -285,10 +317,12 @@ func (a *Agent) sendHeartbeat() {
 		return
 	}
 	localRev, _ := a.store.GetGlobalRevision()
-	a.conn.Send(protocol.NewEnvelope(protocol.MsgHeartbeat, "", protocol.HeartbeatPayload{
+	if a.conn.Send(protocol.NewEnvelope(protocol.MsgHeartbeat, "", protocol.HeartbeatPayload{
 		NodeID:    a.nodeID,
 		GlobalRev: localRev,
-	}))
+	})) {
+		a.logState.IncHeartbeatSent()
+	}
 }
 
 func (a *Agent) checkRevision() {
@@ -296,22 +330,39 @@ func (a *Agent) checkRevision() {
 		return
 	}
 	localRev, _ := a.store.GetGlobalRevision()
-	a.conn.Send(protocol.NewEnvelope(protocol.MsgRevisionCheck, "", protocol.HeartbeatPayload{
+	if a.conn.Send(protocol.NewEnvelope(protocol.MsgRevisionCheck, "", protocol.HeartbeatPayload{
 		NodeID:    a.nodeID,
 		GlobalRev: localRev,
-	}))
+	})) {
+		a.logState.IncRevisionChecks()
+	}
 }
 
 // ---------- 消息处理 ----------
 
+// recordConnectionFailure 连接类失败打点：汇入共享 ConnectionLogState（与 manager 的
+// connection lost 同一失败窗口同一计数，双行叠加按每分钟合计 ≤1 行节流），
+// 放行时输出 ERROR（原每周期刷屏行由此替代）。
+func (a *Agent) recordConnectionFailure(msg, errText string) {
+	snap, ok := a.logState.RecordFailure(errText, time.Now())
+	if !ok {
+		return
+	}
+	a.logger.Error(msg,
+		"error", snap.Error,
+		"fail_duration", snap.FailDuration,
+		"failures_this_minute", snap.FailuresThisMinute,
+		"failures_total", snap.FailuresTotal)
+}
+
 func (a *Agent) OnHelloAck(env protocol.Envelope) {
 	var p protocol.HelloAckPayload
 	if err := json.Unmarshal(env.Payload, &p); err != nil {
-		a.logger.Error("bad hello ack", "error", err)
+		a.recordConnectionFailure("bad hello ack", err.Error())
 		return
 	}
 	if !p.Accepted {
-		a.logger.Error("hello rejected", "message", p.Message)
+		a.recordConnectionFailure("hello rejected", p.Message)
 		// Credential 失效时下一次连接使用 Registration Token 重新换取凭证。
 		a.credential = ""
 		a.store.SetIdentity("credential", "")
@@ -319,6 +370,13 @@ func (a *Agent) OnHelloAck(env protocol.Envelope) {
 		a.artifact.SetIdentity(a.agentID, a.cfg.RegistrationToken)
 		return
 	}
+	// 首次/恢复成功：1 行 INFO（含失败摘要），并重置失败窗口与计数。
+	// accepted 是唯一成功准绳（传输层 connected 早于本点，不得作为依据）。
+	summary := a.logState.RecordSuccess(time.Now())
+	a.logger.Info("agent connected",
+		"recovered", summary.Recovered,
+		"fail_duration", summary.Duration,
+		"failures", summary.Failures)
 	// READY 门禁：对账完成前不视为就绪，不接收新任务
 	a.ready = false
 	// 保存身份
@@ -397,7 +455,41 @@ func (a *Agent) reportInventory() {
 	if inv != nil {
 		payload.Inventory = convertToProtocolInventory(inv)
 	}
-	a.conn.Send(protocol.NewEnvelope(protocol.MsgInventory, "", payload))
+	if a.conn.Send(protocol.NewEnvelope(protocol.MsgInventory, "", payload)) {
+		a.logState.IncInventoryReports()
+	}
+}
+
+// logStatusIfDue 成功期每小时状态行：以 accepted 为准绳（connectedAt 非零），
+// 未 accepted 或已进入失败态时跳过。返回是否输出。
+func (a *Agent) logStatusIfDue(now time.Time) bool {
+	snap, ok := a.logState.TakeStatus(now)
+	if !ok {
+		return false
+	}
+	rev, _ := a.store.GetGlobalRevision()
+	a.logger.Info("agent status",
+		"uptime", snap.Uptime,
+		"heartbeats", snap.Heartbeats,
+		"inventory_reports", snap.InventoryReports,
+		"revision_checks", snap.RevisionChecks,
+		"revision", rev)
+	return true
+}
+
+// statusLogLoop 常驻状态日志循环：固定 ticker 驱动，不随连接状态启停（防 goroutine 泄漏），
+// 断开/未 accepted 由 logStatusIfDue（状态机 connectedAt）跳过打印。
+func (a *Agent) statusLogLoop(ctx context.Context) {
+	t := time.NewTicker(connection.StatusLogInterval)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case now := <-t.C:
+			a.logStatusIfDue(now)
+		}
+	}
 }
 
 // convertToProtocolInventory models → protocol Inventory
@@ -439,6 +531,10 @@ func (a *Agent) OnNodeStatus(env protocol.Envelope) {
 		return
 	}
 	a.sch.SetPaused(p.Status == models.NodeStatusMaintenance || p.Status == models.NodeStatusDisabled)
+	// 恢复运行态时补做本进程尚未消费的 on_start 触发（启动时处于暂停态则延后到此）。
+	if !a.sch.IsPaused() {
+		a.runOnStartTriggers()
+	}
 }
 
 // reloadSchedulerSchedules 从本地存储加载调度到调度器
@@ -455,6 +551,87 @@ func (a *Agent) reloadSchedulerSchedules() {
 		}
 	}
 	a.sch.UpdateSchedules(schs)
+}
+
+// runOnStartTriggers on_start 调度的进程级一次性触发（任务触发 v2）。
+//
+// 时序：进程启动 → 首次成功应用 sync（OnSyncResponse，本地 store 已含 Hub 下发
+// 与历史缓存合并后的调度）→ 筛选 target 命中本节点的 on_start → 各触发一次。
+//   - 挂接点是 sync 完成而非 HELLO accepted：仅网络重连不会重复触发；
+//   - onStartDone 保证同一次进程启动内幂等（重复 sync/重连/状态推送不再触发）；
+//   - scheduledAt 固定为本进程启动时刻，TriggerSchedule 按 task+node+slot 幂等兜底，
+//     跨启动 slot 不同（重启再触发）；
+//   - 离线启动：启动阶段仅加载本地缓存（reloadSchedulerSchedules）不触发，
+//     连上并完成首次 sync 后在此补触发一次；Hub 始终不可达则不触发；
+//   - 节点暂停（maintenance/disabled）时不消费本启动的触发额度，恢复后由
+//     OnNodeStatus 或后续 sync 补触发。
+func (a *Agent) runOnStartTriggers() {
+	a.onStartMu.Lock()
+	if a.onStartDone || a.sch.IsPaused() {
+		a.onStartMu.Unlock()
+		return
+	}
+	schedules, err := a.store.ListSchedules(a.ctx)
+	if err != nil {
+		// 读取失败不消费触发额度，等待下次 sync 重试
+		a.onStartMu.Unlock()
+		return
+	}
+	a.onStartDone = true
+	a.onStartMu.Unlock()
+
+	for _, def := range schedules {
+		var sch models.Schedule
+		if err := json.Unmarshal(def, &sch); err != nil {
+			continue
+		}
+		if sch.Type != models.ScheduleTypeOnStart || !sch.Enabled {
+			continue
+		}
+		taskDef, err := a.store.GetTask(a.ctx, sch.TaskID)
+		if err != nil {
+			a.logger.Warn("on_start trigger skipped: task unavailable",
+				"schedule", sch.ID, "task", sch.TaskID, "error", err)
+			continue
+		}
+		var t models.Task
+		if err := json.Unmarshal(taskDef, &t); err != nil || !t.Enabled {
+			continue
+		}
+		if !a.onStartTargetsThisNode(&t) {
+			continue
+		}
+		if a.logger != nil {
+			a.logger.Info("on_start schedule trigger",
+				"schedule", sch.ID, "task", sch.TaskID, "at", a.startedAt)
+		}
+		if err := a.TriggerSchedule(a.ctx, &sch, a.startedAt); err != nil && a.logger != nil {
+			a.logger.Warn("on_start schedule trigger failed", "schedule", sch.ID, "error", err)
+		}
+	}
+}
+
+// onStartTargetsThisNode 判断 on_start 所属任务的目标是否命中本节点。
+// node 目标在本地精确比对；group/label 目标由 Hub 同步侧按目标过滤
+// （SyncManager.ComputeDesiredState 的 taskMatches），能下发到本地即视为命中。
+func (a *Agent) onStartTargetsThisNode(t *models.Task) bool {
+	switch t.Target.Type {
+	case "group", "label":
+		return true
+	case "node":
+		if a.nodeID == "" {
+			return false
+		}
+		for _, id := range t.Target.NodeIDs {
+			if id == a.nodeID {
+				return true
+			}
+		}
+		return false
+	default:
+		// target 类型由 Hub 校验限定为 node|group|label，未知类型不触发
+		return false
+	}
 }
 
 func (a *Agent) OnChangeNotification(env protocol.Envelope) {
@@ -576,6 +753,9 @@ func (a *Agent) OnSyncResponse(env protocol.Envelope) {
 	}))
 	// 对账完成，进入 READY 状态
 	a.ready = true
+	// on_start：本进程首次成功同步后触发一次（挂接点是 sync 而非 HELLO accepted，
+	// 保证仅网络重连不触发；离线启动在连上并同步后于此补触发一次）。
+	a.runOnStartTriggers()
 }
 
 func (a *Agent) cleanupPrunedApplications(entries []protocol.ObjectEntry) {
@@ -795,6 +975,18 @@ func (a *Agent) OnRunExecution(env protocol.Envelope) {
 		return
 	}
 
+	// PAUSED 门禁：节点暂停（maintenance/disabled）时拒收执行指令并回报，不启动本地执行
+	if a.sch.IsPaused() {
+		a.logger.Warn("execution rejected: node paused", "id", p.ExecutionID)
+		if a.conn.IsConnected() {
+			a.conn.Send(protocol.NewEnvelope(protocol.MsgError, p.ExecutionID, protocol.ErrorPayload{
+				Code: "node_paused", Message: "execution rejected: node paused",
+			}))
+		}
+		a.finishExecution(p.ExecutionID, models.ExecStatusBlocked, -1, "", "", false, false, reasonNodePausedAgent, true)
+		return
+	}
+
 	// 通知已开始
 	if a.conn.IsConnected() {
 		a.conn.Send(protocol.NewEnvelope(protocol.MsgExecStarted, p.ExecutionID, protocol.ExecutionStartedPayload{
@@ -803,7 +995,12 @@ func (a *Agent) OnRunExecution(env protocol.Envelope) {
 		}))
 	}
 
-	// 执行（含条件评估，均在独立 goroutine 中，避免阻塞 dispatch 循环）
+	// Agent 自升级走独立执行链（下载→SHA256 校验→备份→替换→重启→回滚），
+	// 其余类型走通用执行器；均在独立 goroutine 中，避免阻塞 dispatch 循环。
+	if p.Type == models.TaskTypeAgentUpgrade {
+		go a.runAgentUpgrade(p)
+		return
+	}
 	go a.executeTask(p, ex)
 }
 
@@ -951,30 +1148,35 @@ func (a *Agent) finishExecution(execID, status string, exitCode int, stdout, std
 		a.logger.Error("update execution failed", "id", execID, "error", err)
 		return
 	}
+	a.sendExecutionFinished(ex)
+}
 
-	// 上报
-	if a.conn.IsConnected() {
-		a.conn.Send(protocol.NewEnvelope(protocol.MsgExecFinished, execID, protocol.ExecutionFinishedPayload{
-			ExecutionID:     ex.ID,
-			TaskID:          ex.TaskID,
-			TaskRevision:    ex.TaskRevision,
-			ScriptID:        ex.ScriptID,
-			ScriptRevision:  ex.ScriptRevision,
-			NodeID:          ex.NodeID,
-			TriggerType:     ex.TriggerType,
-			ScheduledTime:   ex.ScheduledTime,
-			Status:          ex.Status,
-			ExitCode:        ex.ExitCode,
-			Stdout:          ex.Stdout,
-			Stderr:          ex.Stderr,
-			StdoutTruncated: ex.StdoutTruncated,
-			StderrTruncated: ex.StderrTruncated,
-			StartTime:       ex.StartTime,
-			EndTime:         ex.EndTime,
-			Offline:         ex.Offline,
-			BlockReason:     ex.BlockReason,
-		}))
+// sendExecutionFinished 从 journal 上报执行终态（EXECUTION_FINISHED）。
+// 连接断开时不发送；journal 保持 Synced=false，由重连对账（reconcileExecutions）补齐。
+func (a *Agent) sendExecutionFinished(ex *LocalExecution) {
+	if !a.conn.IsConnected() {
+		return
 	}
+	a.conn.Send(protocol.NewEnvelope(protocol.MsgExecFinished, ex.ID, protocol.ExecutionFinishedPayload{
+		ExecutionID:     ex.ID,
+		TaskID:          ex.TaskID,
+		TaskRevision:    ex.TaskRevision,
+		ScriptID:        ex.ScriptID,
+		ScriptRevision:  ex.ScriptRevision,
+		NodeID:          ex.NodeID,
+		TriggerType:     ex.TriggerType,
+		ScheduledTime:   ex.ScheduledTime,
+		Status:          ex.Status,
+		ExitCode:        ex.ExitCode,
+		Stdout:          ex.Stdout,
+		Stderr:          ex.Stderr,
+		StdoutTruncated: ex.StdoutTruncated,
+		StderrTruncated: ex.StderrTruncated,
+		StartTime:       ex.StartTime,
+		EndTime:         ex.EndTime,
+		Offline:         ex.Offline,
+		BlockReason:     ex.BlockReason,
+	}))
 }
 
 func (a *Agent) OnCancelExecution(env protocol.Envelope) {
@@ -1253,6 +1455,17 @@ func (a *Agent) OnDeployRequest(env protocol.Envelope) {
 	if !a.ready {
 		a.logger.Warn("deploy request rejected: not ready", "app", p.AppID)
 		callback(protocol.DeployResultPayload{AppID: p.AppID, Operation: p.Operation, OK: false, Error: "agent not ready (reconciling)"})
+		return
+	}
+	// PAUSED 门禁：节点暂停（maintenance/disabled）时拒收部署指令并回报，不启动本地部署
+	if a.sch.IsPaused() {
+		a.logger.Warn("deploy request rejected: node paused", "app", p.AppID, "exec", execID)
+		if a.conn.IsConnected() {
+			a.conn.Send(protocol.NewEnvelope(protocol.MsgError, execID, protocol.ErrorPayload{
+				Code: "node_paused", Message: "deploy request rejected: node paused",
+			}))
+		}
+		callback(protocol.DeployResultPayload{AppID: p.AppID, Operation: p.Operation, OK: false, Error: reasonNodePausedAgent})
 		return
 	}
 	go a.appMgr.HandleDeployRequest(a.ctx, p, execID, callback)

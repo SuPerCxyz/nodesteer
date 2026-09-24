@@ -28,7 +28,8 @@ export function AppSidebar() {
   const displayUser = {
     name: user?.username || user?.email || 'admin',
     email: user ? t(`misc.${roleKey}`) : t('misc.administrator'),
-    avatar: sidebarData.user.avatar,
+    // 接当前登录用户真实头像；无头像时保持原有静态 logo 视觉
+    avatar: user?.avatar || sidebarData.user.avatar,
   }
 
   return (

@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math/rand"
@@ -54,6 +55,10 @@ type Manager struct {
 	httpClient *http.Client
 	sendCh     chan protocol.Envelope
 	stop       chan struct{}
+	// logState 共享日志节奏状态机（与 agent 侧 hello rejected/accepted 同一实例）
+	logState *ConnectionLogState
+	// delayFn 可注入重连退避（测试加速）；nil 用默认 2s+0~2s jitter
+	delayFn func() time.Duration
 }
 
 // SetTLSCA 使用指定 CA 验证 wss:// Hub 证书。
@@ -104,13 +109,18 @@ func (m *Manager) HTTPClient() *http.Client {
 	return http.DefaultClient
 }
 
-// New 创建连接管理器
-func New(url, token, agentID string, handler Handler, logger *slog.Logger) *Manager {
+// New 创建连接管理器。logState 为共享日志节奏状态机，nil 时内部兜底创建
+// （保证失败打点与节流始终可用）。
+func New(url, token, agentID string, handler Handler, logger *slog.Logger, logState *ConnectionLogState) *Manager {
+	if logState == nil {
+		logState = NewConnectionLogState()
+	}
 	return &Manager{
 		url: url, token: token, agentID: agentID,
 		handler: handler, logger: logger,
-		sendCh: make(chan protocol.Envelope, 128),
-		stop:   make(chan struct{}),
+		sendCh:   make(chan protocol.Envelope, 128),
+		stop:     make(chan struct{}),
+		logState: logState,
 	}
 }
 
@@ -157,7 +167,11 @@ func (m *Manager) Run(ctx context.Context, helloFn func() *protocol.HelloPayload
 		default:
 		}
 		if err := m.connectAndServe(ctx, helloFn); err != nil {
-			m.logger.Warn("connection lost", "error", err)
+			// 正常停机（ctx 取消 / Stop 触发）不是连接失败：不打失败日志、不进入失败态。
+			if !m.shuttingDown(ctx) &&
+				!errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+				m.logFailure(err)
+			}
 		}
 		m.mu.Lock()
 		m.connected = false
@@ -172,12 +186,47 @@ func (m *Manager) Run(ctx context.Context, helloFn func() *protocol.HelloPayload
 			return
 		case <-m.stop:
 			return
-		case <-time.After(reconnectDelay()):
+		case <-time.After(m.reconnectDelay()):
 		}
 	}
 }
 
-func reconnectDelay() time.Duration {
+// shuttingDown 判定当前返回是否由 ctx 取消或 Stop 触发（正常停机，不进入失败态）。
+func (m *Manager) shuttingDown(ctx context.Context) bool {
+	if ctx.Err() != nil {
+		return true
+	}
+	select {
+	case <-m.stop:
+		return true
+	default:
+		return false
+	}
+}
+
+// logFailure 失败打点：汇入共享节流状态机（首错立即、分钟/小时级限频、
+// 跨分钟错误变化放行），放行时输出 ERROR（替代原每 2–4s 的 WARN 刷屏）。
+func (m *Manager) logFailure(err error) {
+	snap, ok := m.logState.RecordFailure(err.Error(), time.Now())
+	if !ok {
+		return
+	}
+	m.logger.Error("connection lost",
+		"error", snap.Error,
+		"fail_duration", snap.FailDuration,
+		"failures_this_minute", snap.FailuresThisMinute,
+		"failures_total", snap.FailuresTotal)
+}
+
+// reconnectDelay 重连退避间隔；delayFn 可注入（测试加速），默认 2s+0~2s jitter。
+func (m *Manager) reconnectDelay() time.Duration {
+	if m.delayFn != nil {
+		return m.delayFn()
+	}
+	return defaultReconnectDelay()
+}
+
+func defaultReconnectDelay() time.Duration {
 	// 基础 2s + 0~2s 随机抖动，避免多 Agent 同时重连
 	return 2*time.Second + time.Duration(rand.Intn(2000))*time.Millisecond
 }

@@ -3,6 +3,7 @@ import {
   Activity,
   ArrowLeftRight,
   AppWindow,
+  CalendarClock,
   FileCode2,
   History,
   LayoutDashboard,
@@ -31,6 +32,7 @@ export function getSidebarData(t: TFunction): SidebarData {
         title: t('nav.sections.operations'),
         items: [
           { title: t('nav.tasks'), url: '/tasks', icon: ListTodo },
+          { title: t('nav.schedules'), url: '/schedules', icon: CalendarClock },
           { title: t('nav.executions'), url: '/executions', icon: Activity },
           {
             title: t('nav.transfers'),

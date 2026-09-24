@@ -63,6 +63,14 @@ func (s *Scheduler) SetPaused(paused bool) {
 	<-s.mu
 }
 
+// IsPaused 返回当前暂停态（权威来源：Hub 下发 NODE_STATUS 经 OnNodeStatus → SetPaused）。
+// 供执行/部署指令的暂停态拒收门禁使用。
+func (s *Scheduler) IsPaused() bool {
+	s.mu <- struct{}{}
+	defer func() { <-s.mu }()
+	return s.paused
+}
+
 // UpdateSchedules 替换本地调度表
 func (s *Scheduler) UpdateSchedules(schedules []*models.Schedule) {
 	s.mu <- struct{}{}
@@ -255,6 +263,10 @@ func (s *Scheduler) nextRun(sch *models.Schedule, now time.Time) (time.Time, boo
 			return time.Time{}, false, nil
 		}
 		return t, false, nil
+	case models.ScheduleTypeOnStart:
+		// on_start 不走本地周期 tick：触发由 Agent 进程启动一次性路径负责，
+		// 这里显式返回未到期，避免被当作非法类型。
+		return time.Time{}, false, nil
 	}
 	return time.Time{}, false, nil
 }

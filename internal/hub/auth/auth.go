@@ -22,7 +22,9 @@ type Session struct {
 	UserID   string
 	Username string
 	Role     string
-	Expires  time.Time
+	// Avatar 头像 URL（OIDC picture claim 同步），小写 json key 供 /api/me、/api/login 输出；空值省略
+	Avatar  string `json:"avatar,omitempty"`
+	Expires time.Time
 }
 
 // Manager 认证管理器
@@ -118,6 +120,7 @@ func (m *Manager) Login(ctx context.Context, username, password string) (*Sessio
 		UserID:   u.ID,
 		Username: u.Username,
 		Role:     u.Role,
+		Avatar:   u.AvatarURL,
 		Expires:  time.Now().Add(m.sessionTTL),
 	}
 	m.mu.Lock()
@@ -152,9 +155,10 @@ func (m *Manager) Authenticate(ctx context.Context, token string) (*Session, boo
 		}
 		return nil, false
 	}
-	// 副本携带数据库当前角色/用户名，不污染共享会话
+	// 副本携带数据库当前角色/用户名/头像，不污染共享会话
 	snapshot.Role = u.Role
 	snapshot.Username = u.Username
+	snapshot.Avatar = u.AvatarURL
 	return &snapshot, true
 }
 
@@ -165,8 +169,9 @@ func (m *Manager) Logout(token string) {
 	m.mu.Unlock()
 }
 
-// SSOLogin 通过 OIDC 建立会话：不存在则自动创建本地用户
-func (m *Manager) SSOLogin(ctx context.Context, username, role string) (*Session, error) {
+// SSOLogin 通过 OIDC 建立会话：不存在则自动创建本地用户。
+// avatar 取自 IdP picture claim：有值才写入/刷新，空值不覆盖已有头像（本地用户头像不受影响）。
+func (m *Manager) SSOLogin(ctx context.Context, username, role, avatar string) (*Session, error) {
 	if username == "" || !ValidRole(role) {
 		return nil, ErrInvalidCredentials
 	}
@@ -174,24 +179,35 @@ func (m *Manager) SSOLogin(ctx context.Context, username, role string) (*Session
 	if err != nil {
 		// 自动创建
 		u = &models.User{
-			Username: username,
-			Role:     role,
+			Username:  username,
+			Role:      role,
+			AvatarURL: avatar,
 		}
 		if err := m.store.CreateUser(ctx, u); err != nil {
 			return nil, err
 		}
-	} else if u.Role != role {
-		// 按 IdP 最新 claim 同步角色
-		if err := m.store.UpdateUserRole(ctx, u.ID, role); err != nil {
-			return nil, err
+	} else {
+		if u.Role != role {
+			// 按 IdP 最新 claim 同步角色
+			if err := m.store.UpdateUserRole(ctx, u.ID, role); err != nil {
+				return nil, err
+			}
+			u.Role = role
 		}
-		u.Role = role
+		// 每次 SSO 登录刷新头像：picture 有值才更新，空值不动
+		if avatar != "" && avatar != u.AvatarURL {
+			if err := m.store.UpdateUserAvatar(ctx, u.ID, avatar); err != nil {
+				return nil, err
+			}
+			u.AvatarURL = avatar
+		}
 	}
 	s := &Session{
 		Token:    uuid.NewString(),
 		UserID:   u.ID,
 		Username: u.Username,
 		Role:     u.Role,
+		Avatar:   u.AvatarURL,
 		Expires:  time.Now().Add(m.sessionTTL),
 	}
 	m.mu.Lock()

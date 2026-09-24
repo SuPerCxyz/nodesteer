@@ -136,11 +136,18 @@ func (am *ArtifactManager) List(ctx context.Context) ([]*models.Artifact, error)
 // StoragePath 返回存储路径
 func (am *ArtifactManager) StoragePath() string { return am.storageDir }
 
+// ErrNodePaused 节点暂停（maintenance/disabled），任务型下发被拦截
+var ErrNodePaused = errors.New("node paused")
+
 // Prefetch 下发预取指令到节点
 func (am *ArtifactManager) Prefetch(ctx context.Context, nodeID, artifactID, baseURL string) error {
 	a, err := am.store.GetArtifact(ctx, artifactID)
 	if err != nil {
 		return err
+	}
+	// 暂停拦截：maintenance/disabled 节点不下发预取指令
+	if node, err := am.store.GetNode(ctx, nodeID); err == nil && !isDispatchableStatus(node.Status) {
+		return ErrNodePaused
 	}
 	url := fmt.Sprintf("%s/api/artifacts/%s/download", baseURL, a.ID)
 	conn, ok := am.sessions.Get(nodeID)

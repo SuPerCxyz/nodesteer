@@ -73,4 +73,20 @@ describe('useAuthStore', () => {
     expect(useAuthStoreAfterReload.getState().auth.user).toBeNull()
     expect(useAuthStoreAfterReload.getState().auth.accessToken).toBe('')
   })
+
+  it('sessionToUser 透传 /api/me 的 avatar，缺省时为 undefined', async () => {
+    const { sessionToUser } = await import('./auth-store')
+    const base = {
+      Token: 'token',
+      UserID: 'u-1',
+      Username: 'alice',
+      Role: 'viewer',
+      Expires: '2030-01-01T00:00:00Z',
+    }
+
+    expect(
+      sessionToUser({ ...base, avatar: 'https://idp.example/a.png' }).avatar
+    ).toBe('https://idp.example/a.png')
+    expect(sessionToUser(base).avatar).toBeUndefined()
+  })
 })

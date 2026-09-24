@@ -1,5 +1,8 @@
 .PHONY: build build-hub build-agent web web-build test lint docker docker-hub docker-agent clean
 
+# Agent 构建版本（HELLO 上报 agent_version 的编译注入值）
+AGENT_VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+
 # 构建二进制
 build: build-agent build-hub
 
@@ -8,7 +11,7 @@ build-hub: build-agent
 	sh packaging/bundle-agent.sh bin/nodesteer-hub bin/nodesteer-hub.unbundled amd64 bin/nodesteer-agent
 
 build-agent:
-	go build -buildvcs=false -o bin/nodesteer-agent ./cmd/agent
+	go build -buildvcs=false -ldflags "-X main.version=$(AGENT_VERSION)" -o bin/nodesteer-agent ./cmd/agent
 
 # Web 前端
 web:

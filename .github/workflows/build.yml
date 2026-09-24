@@ -77,8 +77,10 @@ jobs:
         run: |
           mkdir -p dist
           BUNDLE_ARGS=""
+          # Agent 版本注入：tag 构建用 tag 名，分支 push 用短 commit（HELLO 上报 agent_version）
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then AGENT_VERSION="$GITHUB_REF_NAME"; else AGENT_VERSION="$(printf '%s' "$GITHUB_SHA" | cut -c1-8)"; fi
           for arch in $TARGET_ARCHES; do
-            CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -buildvcs=false -ldflags='-s -w' -o dist/nodesteer-agent-linux-$arch ./cmd/agent
+            CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -buildvcs=false -ldflags="-s -w -X main.version=$AGENT_VERSION" -o dist/nodesteer-agent-linux-$arch ./cmd/agent
             BUNDLE_ARGS="$BUNDLE_ARGS $arch dist/nodesteer-agent-linux-$arch"
           done
           for arch in $TARGET_ARCHES; do

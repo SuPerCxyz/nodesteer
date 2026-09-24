@@ -15,6 +15,33 @@ import (
 
 var validConditionOperators = map[string]bool{"==": true, "!=": true, ">": true, "<": true, ">=": true, "<=": true}
 
+// validDeploymentModes HELLO 上报 deployment_mode 的枚举白名单。
+// 取值集合以 models 常量与 packaging/systemd/agent.yaml.example 注释
+// （native | docker | docker_host_integration）为准；"container" 仅为
+// host 适配器内部别名，不作为上报枚举。
+var validDeploymentModes = map[string]bool{
+	models.DeploymentModeNative:        true,
+	models.DeploymentModeDocker:        true,
+	models.DeploymentModeDockerHostInt: true,
+}
+
+// normalizeDeploymentMode 枚举白名单归一化：非法或空值统一归一化为 native，
+// 合法值原样返回。不拒绝 HELLO，避免升级窗口踢掉存量节点。
+func normalizeDeploymentMode(mode string) string {
+	if validDeploymentModes[mode] {
+		return mode
+	}
+	return models.DeploymentModeNative
+}
+
+// isDispatchableStatus 暂停（maintenance/disabled）拦截判定：任务型下发（执行、
+// 文件传输、制品预取）统一以该判定过滤；offline/pending 无会话自然不涉及。
+// ExecutionManager.createAndDispatch 的 online 门禁更严（非 online 一律拦），
+// 已覆盖本判定。
+func isDispatchableStatus(status string) bool {
+	return status != models.NodeStatusMaintenance && status != models.NodeStatusDisabled
+}
+
 func validateTarget(ctx context.Context, st store.Store, target models.Target) error {
 	switch target.Type {
 	case "node":
@@ -151,8 +178,11 @@ func validateSchedule(s *models.Schedule) error {
 		if s.RunAt.IsZero() {
 			return fmt.Errorf("run_at required")
 		}
+	case models.ScheduleTypeOnStart:
+		// on_start 由目标节点的 Agent 进程启动触发，无触发时间字段
+		// （不需要 expression / interval_sec / run_at / timezone）。
 	default:
-		return fmt.Errorf("schedule type must be cron, interval, or one_time")
+		return fmt.Errorf("schedule type must be cron, interval, one_time, or on_start")
 	}
 	if _, err := time.LoadLocation(s.Timezone); err != nil {
 		return fmt.Errorf("invalid timezone: %w", err)

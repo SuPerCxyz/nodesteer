@@ -142,6 +142,14 @@ func (m *FileTransferManager) dispatchSource(ctx context.Context, t *models.File
 	if t.Status == models.FileTransferSuccess || t.Status == models.FileTransferFailed || t.Status == models.FileTransferCanceled || t.SHA256 != "" {
 		return
 	}
+	// 暂停拦截：maintenance/disabled 节点不下发传输指令（settings/变更通知不受影响）
+	if node, err := m.store.GetNode(ctx, t.SourceNodeID); err == nil && !isDispatchableStatus(node.Status) {
+		if m.logger != nil {
+			m.logger.Info("file transfer upload dispatch skipped: node paused",
+				"transfer", t.ID, "node", t.SourceNodeID, "status", node.Status)
+		}
+		return
+	}
 	conn, ok := m.sessions.Get(t.SourceNodeID)
 	if !ok {
 		return
@@ -185,6 +193,14 @@ func (m *FileTransferManager) ResumeNode(ctx context.Context, nodeID string) {
 
 func (m *FileTransferManager) dispatchTarget(ctx context.Context, t *models.FileTransfer, target *models.FileTransferTarget) {
 	if t.SHA256 == "" || target.Status == models.FileTargetSuccess || target.Status == models.FileTargetCanceled || t.Status == models.FileTransferCanceled {
+		return
+	}
+	// 暂停拦截：maintenance/disabled 节点不下发交付指令
+	if node, err := m.store.GetNode(ctx, target.NodeID); err == nil && !isDispatchableStatus(node.Status) {
+		if m.logger != nil {
+			m.logger.Info("file transfer delivery dispatch skipped: node paused",
+				"transfer", t.ID, "node", target.NodeID, "status", node.Status)
+		}
 		return
 	}
 	conn, ok := m.sessions.Get(target.NodeID)

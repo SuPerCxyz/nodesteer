@@ -331,6 +331,14 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 			return fmt.Errorf("invalid credential")
 		}
 		node = &NodeWithCred{Node: existing, Cred: p.AgentCredential}
+		// credential 重连刷新 Agent 上报的运行时元数据：Agent 自升级重启后以既有
+		// credential 重连，此前该路径只写心跳，节点详情（agent_version/capabilities/
+		// deployment_mode）会滞留旧值。仅覆盖上报非空的字段（见 refreshNodeAgentMeta）；
+		// UpsertNode 的 ON CONFLICT 不写 status/last_seen，m/d 状态与心跳语义不受影响。
+		refreshNodeAgentMeta(node.Node, p)
+		if err := g.nodes.store.UpsertNode(ctx, node.Node); err != nil {
+			return err
+		}
 		// accepted：显式置 online（不依赖心跳副作用），maintenance/disabled 不被覆盖
 		if err := g.markConnected(ctx, node.Node); err != nil {
 			return err
@@ -354,8 +362,15 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 			conn.sendSync(ctx, protocol.NewEnvelope(protocol.MsgHelloAck, env.ID, protocol.HelloAckPayload{Accepted: false, Message: "invalid registration token"}))
 			return fmt.Errorf("invalid registration token")
 		}
+		// HELLO 上报 deployment_mode 枚举白名单归一化：非法/空 → native（不拒绝 HELLO，
+		// 避免升级窗口踢掉存量节点），合法值原样写入。
+		mode := normalizeDeploymentMode(p.DeploymentMode)
+		if mode != p.DeploymentMode {
+			g.logger.Info("normalized deployment mode from hello", "agent", p.AgentID,
+				"reported", p.DeploymentMode, "normalized", mode)
+		}
 		n, cred, isNew, err := g.nodes.RegisterOrUpdate(ctx, p.AgentID, p.Hostname, p.IP, p.OS, p.Arch,
-			p.AgentVersion, p.DeploymentMode, p.HostIntegration, p.Capabilities)
+			p.AgentVersion, mode, p.HostIntegration, p.Capabilities)
 		if err != nil {
 			return err
 		}
@@ -388,6 +403,24 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 		g.onAgentConn(node.Node.ID)
 	}
 	return nil
+}
+
+// refreshNodeAgentMeta 就地刷新 credential HELLO 携带的运行时元数据（非空覆盖）：
+// agent_version/capabilities 仅在上报非空时更新；deployment_mode 空值保留既有
+// （旧 Agent 未上报不误翻转形态），非法值经 normalizeDeploymentMode 归一化为
+// native（与注册路径同一白名单）；host_integration 由 Agent 按 deployment_mode
+// 派生成对上报，仅随模式一并同步，避免空载荷把 true 擦成 false。
+func refreshNodeAgentMeta(n *models.Node, p protocol.HelloPayload) {
+	if p.AgentVersion != "" {
+		n.AgentVersion = p.AgentVersion
+	}
+	if len(p.Capabilities) > 0 {
+		n.Capabilities = p.Capabilities
+	}
+	if p.DeploymentMode != "" {
+		n.DeploymentMode = normalizeDeploymentMode(p.DeploymentMode)
+		n.HostIntegration = p.HostIntegration
+	}
 }
 
 func (g *Gateway) handleHeartbeat(ctx context.Context, conn *wsConn, env protocol.Envelope) error {

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"testing"
 	"time"
@@ -190,6 +191,91 @@ func TestGetUserByID(t *testing.T) {
 	}
 	if _, err := s.GetUserByID(ctx, "missing-id"); err == nil {
 		t.Fatal("expected error for missing user")
+	}
+}
+
+// users.avatar_url 迁移对既有行兼容：迁移前写入的用户读出空 avatar，且新列可读写。
+func TestUserAvatarMigrationBackfillsEmpty(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	t.Cleanup(func() { db.Close() })
+
+	// 模拟 v1（无 avatar_url 列）时代的既有库与既有用户行
+	if _, err := db.Exec(`CREATE TABLE users (
+		id TEXT PRIMARY KEY,
+		username TEXT UNIQUE NOT NULL,
+		password_hash TEXT NOT NULL,
+		role TEXT NOT NULL DEFAULT 'viewer',
+		created_at TEXT NOT NULL
+	)`); err != nil {
+		t.Fatalf("create legacy users table: %v", err)
+	}
+	if _, err := db.Exec(`CREATE TABLE schema_migrations (
+		version INTEGER PRIMARY KEY,
+		name TEXT NOT NULL,
+		applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+	)`); err != nil {
+		t.Fatalf("create schema_migrations: %v", err)
+	}
+	for v := 1; v <= 8; v++ {
+		if _, err := db.Exec(`INSERT INTO schema_migrations (version, name) VALUES (?, 'legacy')`, v); err != nil {
+			t.Fatalf("mark migration %d applied: %v", v, err)
+		}
+	}
+	if _, err := db.Exec(`INSERT INTO users (id, username, password_hash, role, created_at)
+		VALUES ('u1', 'legacy-user', 'hash', 'viewer', '2024-01-01T00:00:00Z')`); err != nil {
+		t.Fatalf("insert legacy user: %v", err)
+	}
+
+	if err := Migrate(db); err != nil {
+		t.Fatalf("migrate: %v", err)
+	}
+
+	s := &SQLiteStore{db: db}
+	u, err := s.GetUserByUsername(context.Background(), "legacy-user")
+	if err != nil {
+		t.Fatalf("read legacy user after migration: %v", err)
+	}
+	if u.AvatarURL != "" {
+		t.Fatalf("legacy user avatar = %q, want empty", u.AvatarURL)
+	}
+
+	// 迁移后可正常更新头像
+	if err := s.UpdateUserAvatar(context.Background(), u.ID, "https://idp.example/a.png"); err != nil {
+		t.Fatalf("update avatar: %v", err)
+	}
+	u, err = s.GetUserByID(context.Background(), u.ID)
+	if err != nil {
+		t.Fatalf("re-read user: %v", err)
+	}
+	if u.AvatarURL != "https://idp.example/a.png" {
+		t.Fatalf("avatar = %q, want updated value", u.AvatarURL)
+	}
+}
+
+// CreateUser/GetUserByID/ListUsers 全覆盖 avatar_url 读写。
+func TestUserAvatarRoundTrip(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	u := &models.User{Username: "av", PasswordHash: "hash", Role: "administrator", AvatarURL: "https://idp.example/x.png"}
+	if err := s.CreateUser(ctx, u); err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+	got, err := s.GetUserByID(ctx, u.ID)
+	if err != nil {
+		t.Fatalf("get user by id: %v", err)
+	}
+	if got.AvatarURL != u.AvatarURL {
+		t.Fatalf("avatar by id = %q, want %q", got.AvatarURL, u.AvatarURL)
+	}
+	list, err := s.ListUsers(ctx)
+	if err != nil {
+		t.Fatalf("list users: %v", err)
+	}
+	if len(list) != 1 || list[0].AvatarURL != u.AvatarURL {
+		t.Fatalf("list users avatar mismatch: %+v", list)
 	}
 }
 

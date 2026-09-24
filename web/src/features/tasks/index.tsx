@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, getRouteApi } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Play, MoreHorizontal } from 'lucide-react'
+import { MoreHorizontal, Play, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import {
@@ -54,9 +54,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
-import { Schedules } from '@/features/catalog'
 import { DataTable } from '@/features/shared/data-table'
-import { TaskScheduleTabs } from '@/features/shared/task-schedule-tabs'
 import {
   DetailField,
   DetailGrid,
@@ -157,9 +155,9 @@ export function Tasks() {
         id: 'name',
         accessorFn: (row) => `${row.name} ${row.id}`,
         header: t('common.name'),
-        size: 280,
-        minSize: 220,
-        maxSize: 360,
+        size: 270,
+        minSize: 215,
+        maxSize: 350,
         cell: ({ row }) => (
           <div className='min-w-0'>
             <a
@@ -175,8 +173,8 @@ export function Tasks() {
       {
         accessorKey: 'type',
         header: t('common.type'),
-        size: 100,
-        minSize: 88,
+        size: 88,
+        minSize: 80,
         cell: ({ row }) => (
           <span className='font-mono text-xs'>
             {t(`tasks.types.${row.original.type}`, {
@@ -189,8 +187,8 @@ export function Tasks() {
         id: 'target',
         accessorFn: (row) => targetText(row, t),
         header: t('tasks.target'),
-        size: 180,
-        minSize: 140,
+        size: 175,
+        minSize: 145,
         cell: ({ row }) => (
           <span
             className='block truncate text-sm'
@@ -203,9 +201,8 @@ export function Tasks() {
       {
         accessorKey: 'timeout',
         header: t('scripts.timeout'),
-        size: 90,
-        minSize: 80,
-        meta: { align: 'end' },
+        size: 76,
+        minSize: 68,
         cell: ({ row }) => (
           <span className='font-mono text-xs'>{row.original.timeout}s</span>
         ),
@@ -213,8 +210,8 @@ export function Tasks() {
       {
         accessorKey: 'offline_policy',
         header: t('tasks.offlinePolicy'),
-        size: 170,
-        minSize: 150,
+        size: 165,
+        minSize: 145,
         cell: ({ row }) => (
           <span className='font-mono text-xs'>
             {t(`tasks.offlinePolicies.${row.original.offline_policy}`, {
@@ -226,9 +223,8 @@ export function Tasks() {
       {
         accessorKey: 'revision',
         header: t('tasks.revision'),
-        size: 100,
-        minSize: 88,
-        meta: { align: 'center' },
+        size: 80,
+        minSize: 72,
         cell: ({ row }) => (
           <span className='font-mono text-xs'>r{row.original.revision}</span>
         ),
@@ -237,9 +233,8 @@ export function Tasks() {
         id: 'status',
         accessorFn: (row) => (row.enabled ? 'enabled' : 'disabled'),
         header: t('common.status'),
-        size: 104,
-        minSize: 96,
-        meta: { align: 'center' },
+        size: 96,
+        minSize: 88,
         cell: ({ row }) => (
           <StatusBadge status={row.original.enabled ? 'enabled' : 'disabled'} />
         ),
@@ -250,7 +245,6 @@ export function Tasks() {
         header: '',
         size: 72,
         minSize: 64,
-        meta: { align: 'end' },
         cell: ({ row }) => (
           <TaskRowActions
             task={row.original}
@@ -279,7 +273,6 @@ export function Tasks() {
         }
       />
       <Main className='flex flex-1 flex-col gap-6'>
-        <TaskScheduleTabs value='tasks' />
         {query.isError ? (
           <ErrorState error={query.error} onRetry={() => query.refetch()} />
         ) : (
@@ -293,14 +286,6 @@ export function Tasks() {
       </Main>
     </>
   )
-}
-
-const tasksRoute = getRouteApi('/_authenticated/tasks/')
-
-/** 任务页：任务定义 / 调度 两个视图 */
-export function TaskSchedules() {
-  const { view } = tasksRoute.useSearch()
-  return view === 'schedules' ? <Schedules /> : <Tasks />
 }
 
 export function TaskDetail() {
@@ -450,7 +435,19 @@ export function TaskDetail() {
         <SectionCard title={t('tasks.executionsTab')}>
           <ExecutionHistory executions={executions.data || []} />
         </SectionCard>
-        <SectionCard title={t('tasks.scheduleTab')}>
+        <SectionCard
+          title={t('tasks.scheduleTab')}
+          action={
+            canWrite ? (
+              <Button asChild variant='outline' size='sm'>
+                <Link to='/schedules/new' search={{ task_id: item.id }}>
+                  <Plus className='me-1 size-3.5' />
+                  {t('schedules.newSchedule')}
+                </Link>
+              </Button>
+            ) : null
+          }
+        >
           {schedules.data?.length ? (
             schedules.data.map((schedule) => (
               <div
@@ -493,13 +490,13 @@ function ExecutionHistory({ executions }: { executions: Execution[] }) {
     <TableCard>
       <Table className='min-w-[460px] table-fixed'>
         <colgroup>
-          <col className='w-[30%]' />
-          <col className='w-[55%]' />
-          <col className='w-[15%]' />
+          <col className='w-[22%]' />
+          <col className='w-[56%]' />
+          <col className='w-[22%]' />
         </colgroup>
         <TableHeader>
           <TableRow>
-            <TableHead className='text-center'>{t('common.status')}</TableHead>
+            <TableHead>{t('common.status')}</TableHead>
             <TableHead>{t('executions.start')}</TableHead>
             <TableHead />
           </TableRow>
@@ -507,13 +504,13 @@ function ExecutionHistory({ executions }: { executions: Execution[] }) {
         <TableBody>
           {executions.map((execution) => (
             <TableRow key={execution.id}>
-              <TableCell className='text-center'>
+              <TableCell>
                 <StatusBadge status={execution.status} />
               </TableCell>
               <TableCell>
                 <TimeValue value={execution.start_time} />
               </TableCell>
-              <TableCell className='text-end'>
+              <TableCell>
                 <a
                   className='text-sm text-primary hover:underline'
                   href={`/executions/${execution.id}`}

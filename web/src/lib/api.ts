@@ -102,6 +102,16 @@ export const api = {
       body: body ? JSON.stringify(body) : undefined,
     }),
   del: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+  /**
+   * 批量触发 Agent 自升级：POST /nodes/upgrade {node_ids:[...]}。
+   * 逐节点返回独立终态（docker 等非 native 与暂停节点为 SKIPPED、离线为 FAILED、
+   * 在途去重返回既有记录），不因单节点失败中断整批。
+   */
+  upgradeNodes: (nodeIds: string[]) =>
+    request<NodeUpgradeResult[]>('/nodes/upgrade', {
+      method: 'POST',
+      body: JSON.stringify({ node_ids: nodeIds }),
+    }),
 }
 
 export interface Node {
@@ -123,6 +133,19 @@ export interface Node {
   last_seen: string
   first_seen: string
   inventory?: Inventory
+}
+
+/** 批量升级的逐节点结果（POST /nodes/upgrade） */
+export interface NodeUpgradeResult {
+  node_id: string
+  execution_id?: string
+  /** 终态/在途态：PENDING/RUNNING/SKIPPED/FAILED 等 */
+  status: string
+  /** SKIPPED/FAILED 原因（docker 不支持、node paused、节点离线等） */
+  block_reason?: string
+  dispatched?: boolean
+  /** 已有在途升级、返回既有记录 */
+  deduplicated?: boolean
 }
 
 export interface NodeEnrollment {
@@ -370,6 +393,8 @@ export interface User {
   username: string
   role: string
   created_at: string
+  /** OIDC picture claim 同步的头像，缺省表示无 */
+  avatar?: string
 }
 
 export interface Settings {
@@ -382,4 +407,6 @@ export interface SessionInfo {
   Username: string
   Role: string
   Expires: string
+  /** 头像 URL（OIDC picture claim），空值时后端省略该字段 */
+  avatar?: string
 }

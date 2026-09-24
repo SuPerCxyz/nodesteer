@@ -129,6 +129,8 @@ func (s *Server) Routes() http.Handler {
 	// Nodes
 	mux.HandleFunc("/api/nodes/enrollment", s.withAuth(s.handleNodeEnrollment, "read"))
 	mux.HandleFunc("/api/nodes", s.withAuth(s.handleNodes, "read"))
+	// 批量/单点 Agent 自升级：字面量 pattern 优先于 /api/nodes/ 子树匹配
+	mux.HandleFunc("/api/nodes/upgrade", s.withAuth(s.handleNodesUpgrade, "read"))
 	mux.HandleFunc("/api/nodes/", s.withAuth(s.handleNodeByID, "read"))
 
 	// Public Agent binary payload used by generated enrollment commands.
@@ -498,13 +500,13 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, oidcFailureURL(s.oidc), http.StatusFound)
 		return
 	}
-	username, role, err := s.oidc.Exchange(r.Context(), state, code)
+	username, role, avatar, err := s.oidc.Exchange(r.Context(), state, code)
 	if err != nil {
 		s.logger.Error("oidc exchange", "error", err)
 		http.Redirect(w, r, oidcFailureURL(s.oidc), http.StatusFound)
 		return
 	}
-	sess, err := s.auth.SSOLogin(r.Context(), username, role)
+	sess, err := s.auth.SSOLogin(r.Context(), username, role, avatar)
 	if err != nil {
 		s.logger.Error("oidc sso login", "user", username, "error", err)
 		http.Redirect(w, r, oidcFailureURL(s.oidc), http.StatusFound)
@@ -633,7 +635,9 @@ func (s *Server) handleNodeEnrollment(w http.ResponseWriter, r *http.Request) {
 	if agentID != "" {
 		agentIDConfig = fmt.Sprintf("agent_id: %q\n", agentID)
 	}
-	config := fmt.Sprintf("hub_url: %q\nregistration_token: %q\n%snode_name: %q\nnode_ip: %q\ndeployment_mode: native\nhost_integration: false\ndata_dir: /var/lib/nodesteer\nagent_version: 0.1.0\n", wsURL, s.RegistrationToken, agentIDConfig, nodeName, nodeIP)
+	// 运行参数（deployment_mode/host_integration/agent_version/data_dir）不再硬编码：
+	// 由 Agent 启动时自动探测/推导/编译注入，旧配置文件仍可解析（默认值兜底）。
+	config := fmt.Sprintf("hub_url: %q\nregistration_token: %q\n%snode_name: %q\nnode_ip: %q\n", wsURL, s.RegistrationToken, agentIDConfig, nodeName, nodeIP)
 	native := fmt.Sprintf(`set -eu
 case "$(uname -m)" in
   x86_64|amd64) detected_arch=amd64 ;;
@@ -903,6 +907,66 @@ func (s *Server) handleNodeByID(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleTransfers 文件中继任务列表与创建。
+// handleNodesUpgrade 批量/单点 Agent 自升级触发：POST {node_ids:[...]}
+// （先例见应用 assign/deploy 的 node_ids 数组；单节点传一个 ID 即同一执行路径）。
+// 逐节点返回独立终态/在途状态与原因；docker 等非 native 形态由 Hub 过滤为
+// SKIPPED 终态且不下发（Agent 侧另有双保险拒绝）。版本粒度固定「升至 Hub 同版本」。
+func (s *Server) handleNodesUpgrade(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	if !s.canRun(r) {
+		writeErr(w, http.StatusForbidden, "permission denied")
+		return
+	}
+	if s.execs == nil || s.nodes == nil {
+		writeErr(w, http.StatusServiceUnavailable, "node upgrade is not configured")
+		return
+	}
+	var req struct {
+		NodeIDs []string `json:"node_ids"`
+	}
+	if err := readJSON(r, &req); err != nil {
+		writeErr(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+	// 批内去重保序：同一批内重复 ID 只触发一次
+	seen := map[string]bool{}
+	nodeIDs := make([]string, 0, len(req.NodeIDs))
+	for _, id := range req.NodeIDs {
+		if id == "" {
+			writeErr(w, http.StatusBadRequest, "node_ids contains empty id")
+			return
+		}
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
+		nodeIDs = append(nodeIDs, id)
+	}
+	if len(nodeIDs) == 0 {
+		writeErr(w, http.StatusBadRequest, "node_ids required")
+		return
+	}
+	// 输入级错误（不存在的节点）先整体拒绝，避免部分提交
+	for _, id := range nodeIDs {
+		if _, err := s.nodes.GetNode(r.Context(), id); err != nil {
+			writeErr(w, http.StatusBadRequest, "node not found: "+id)
+			return
+		}
+	}
+	results, err := s.execs.UpgradeNodes(r.Context(), nodeIDs, s.baseURL)
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	for _, id := range nodeIDs {
+		s.audit(r, "node", id, "upgrade")
+	}
+	writeJSON(w, http.StatusOK, results)
+}
+
 func (s *Server) handleTransfers(w http.ResponseWriter, r *http.Request) {
 	if s.transfers == nil {
 		writeErr(w, http.StatusServiceUnavailable, "file transfer is not configured")
