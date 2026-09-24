@@ -10,8 +10,13 @@ import (
 	"syscall"
 
 	"github.com/SuPerCxyz/nodesteer/internal/agent"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
 	"gopkg.in/yaml.v3"
 )
+
+// version 编译期注入版本（ldflags -X main.version=...），默认 dev。
+// HELLO 上报的 agent_version 以该值为准，yaml/env 的 agent_version 旧键保留解析兼容但忽略。
+var version = "dev"
 
 // Config Agent 配置
 type Config struct {
@@ -26,18 +31,18 @@ type Config struct {
 	HostRoot          string   `yaml:"host_root"`
 	HostPathAllowlist []string `yaml:"host_path_allowlist"`
 	TLSCAFile         string   `yaml:"tls_ca_file"`
-	AgentVersion      string   `yaml:"agent_version"`
-	HeartbeatSec      int      `yaml:"heartbeat_sec"`
-	RevisionCheckSec  int      `yaml:"revision_check_sec"`
-	MaxLogBytes       int      `yaml:"max_log_bytes"`
+	// AgentVersion 旧配置键：保留解析兼容；上报值由编译注入版本决定（见 resolveAgentVersion）
+	AgentVersion     string `yaml:"agent_version"`
+	HeartbeatSec     int    `yaml:"heartbeat_sec"`
+	RevisionCheckSec int    `yaml:"revision_check_sec"`
+	MaxLogBytes      int    `yaml:"max_log_bytes"`
 }
 
 // DefaultConfig 默认配置
 func DefaultConfig() Config {
 	return Config{
-		DeploymentMode:   "native",
+		// DeploymentMode 留空：未显式配置时由 resolveDeploymentMode 自动探测（显式配置优先）
 		DataDir:          "/var/lib/nodesteer",
-		AgentVersion:     "0.1.0",
 		HeartbeatSec:     30,
 		RevisionCheckSec: 45,
 		MaxLogBytes:      1 << 20,
@@ -63,6 +68,11 @@ func main() {
 		}
 	}
 	applyEnv(&cfg)
+
+	// deployment_mode：显式配置（yaml/env）> 自动探测 > native
+	cfg.DeploymentMode = resolveDeploymentMode(cfg.DeploymentMode, detectDeploymentMode)
+	// agent_version：编译注入值 > "dev" 回退；yaml/env agent_version 旧键忽略
+	cfg.AgentVersion = resolveAgentVersion(version, cfg.AgentVersion)
 
 	if cfg.HubURL == "" {
 		fmt.Fprintln(os.Stderr, "hub_url is required")
@@ -108,7 +118,7 @@ func main() {
 	}()
 
 	logger.Info("nodesteer agent starting",
-		"hub", cfg.HubURL, "mode", cfg.DeploymentMode, "data_dir", cfg.DataDir)
+		"version", cfg.AgentVersion, "hub", cfg.HubURL, "mode", cfg.DeploymentMode, "data_dir", cfg.DataDir)
 
 	if err := a.Run(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "agent run: %v\n", err)
@@ -149,6 +159,35 @@ func applyEnv(cfg *Config) {
 		cfg.TLSCAFile = v
 	}
 	if v := os.Getenv("NODESTEER_AGENT_VERSION"); v != "" {
+		// 旧键：保留解析兼容，上报值由编译注入版本覆盖（resolveAgentVersion）
 		cfg.AgentVersion = v
 	}
+}
+
+// detectDeploymentMode 运行时容器环境探测（路径常量集中于此，便于测试注入替换）
+func detectDeploymentMode() string {
+	return agent.DetectDeploymentMode(agent.DefaultDockerEnvPath, agent.DefaultCgroupPath)
+}
+
+// resolveDeploymentMode 部署模式优先级：显式配置（yaml/env）> 自动探测 > native。
+func resolveDeploymentMode(explicit string, detect func() string) string {
+	if explicit != "" {
+		return explicit
+	}
+	if detect != nil {
+		if m := detect(); m != "" {
+			return m
+		}
+	}
+	return models.DeploymentModeNative
+}
+
+// resolveAgentVersion HELLO 上报的 agent_version：编译注入值优先，空值回退 "dev"；
+// configured（yaml/env agent_version 旧键）仅保留解析兼容，不参与上报。
+func resolveAgentVersion(compiled, configured string) string {
+	_ = configured
+	if compiled == "" {
+		return "dev"
+	}
+	return compiled
 }
