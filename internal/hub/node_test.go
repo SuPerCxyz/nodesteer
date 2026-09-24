@@ -93,7 +93,7 @@ func TestPreparedEnrollmentReusesNodeOnFirstHello(t *testing.T) {
 	if err != nil {
 		t.Fatalf("prepare enrollment: %v", err)
 	}
-	if pending.Status != models.NodeStatusOffline || pending.AgentID == "" ||
+	if pending.Status != models.NodeStatusPending || pending.AgentID == "" ||
 		pending.AgentVersion != "" || pending.Arch != "" || pending.DeploymentMode != "" {
 		t.Fatalf("unexpected pending node: %+v", pending)
 	}
@@ -175,7 +175,7 @@ func TestReenrollmentReusesExistingNodeIdentity(t *testing.T) {
 	if again.ID != first.ID || again.AgentID != first.AgentID {
 		t.Fatalf("expected node/agent id reuse, got %s/%s want %s/%s", again.ID, again.AgentID, first.ID, first.AgentID)
 	}
-	if again.Status != models.NodeStatusOffline || again.SyncStatus != "pending" {
+	if again.Status != models.NodeStatusPending || again.SyncStatus != "pending" {
 		t.Fatalf("unexpected status after re-enrollment: %+v", again)
 	}
 	if again.Labels["env"] != "prod" {
@@ -199,5 +199,34 @@ func TestReenrollmentReusesExistingNodeIdentity(t *testing.T) {
 	}
 	if isNew || registered.ID != first.ID || credential == "" {
 		t.Fatalf("expected reuse after re-enroll hello, node=%s isNew=%t", registered.ID, isNew)
+	}
+}
+
+// TestSetNodeStatusAcceptsPending 验证 pending 进入合法状态枚举（R4 状态机 1.1）：
+// 纳管创建后可显式置 pending，非法值仍被拒绝。
+func TestSetNodeStatusAcceptsPending(t *testing.T) {
+	ctx := context.Background()
+	st, err := store.OpenInMemory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	nm := NewNodeManager(st, NewRevisionManager(st))
+	n := &models.Node{ID: "node-pending-valid", AgentID: "agent-pv", Hostname: "host-pv", Status: models.NodeStatusOffline}
+	if err := st.UpsertNode(ctx, n); err != nil {
+		t.Fatal(err)
+	}
+	if err := nm.SetNodeStatus(ctx, n.ID, models.NodeStatusPending); err != nil {
+		t.Fatalf("pending should be a valid node status: %v", err)
+	}
+	got, err := nm.GetNode(ctx, n.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != models.NodeStatusPending {
+		t.Fatalf("expected pending status, got %s", got.Status)
+	}
+	if err := nm.SetNodeStatus(ctx, n.ID, "not-a-status"); err == nil {
+		t.Fatal("invalid node status must still be rejected")
 	}
 }

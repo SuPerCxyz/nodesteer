@@ -154,6 +154,9 @@ func TestNodeEnrollmentMetadata(t *testing.T) {
 		!strings.Contains(result["native"], "node_name: \"edge-node-01\"") ||
 		!strings.Contains(result["native"], "node_ip: \"203.0.113.10\"") ||
 		!strings.Contains(result["native"], "registration_token: \"registration-test\"") ||
+		!strings.Contains(result["native"], "systemctl restart nodesteer-agent") ||
+		strings.Contains(result["native"], "enable --now") ||
+		!strings.Contains(result["docker_run"], "docker rm -f nodesteer-agent 2>/dev/null || true; docker run") ||
 		!strings.Contains(result["docker_run"], "NODESTEER_REGISTRATION_TOKEN='registration-test'") ||
 		!strings.Contains(result["docker_run"], "NODESTEER_NODE_NAME='edge-node-01'") ||
 		!strings.Contains(result["docker_run"], "NODESTEER_NODE_IP='203.0.113.10'") ||
@@ -261,7 +264,7 @@ func TestNodeEnrollmentCreatesPendingNode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(nodes) != 1 || nodes[0].Hostname != "docker-node" || nodes[0].Status != models.NodeStatusOffline || nodes[0].AgentID != result["agent_id"] {
+	if len(nodes) != 1 || nodes[0].Hostname != "docker-node" || nodes[0].Status != models.NodeStatusPending || nodes[0].AgentID != result["agent_id"] {
 		t.Fatalf("unexpected pending nodes: %+v", nodes)
 	}
 }

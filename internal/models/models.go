@@ -40,6 +40,7 @@ const (
 
 // Node 状态
 const (
+	NodeStatusPending     = "pending"
 	NodeStatusOnline      = "online"
 	NodeStatusOffline     = "offline"
 	NodeStatusMaintenance = "maintenance"

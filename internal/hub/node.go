@@ -2,6 +2,7 @@ package hub
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -49,7 +50,8 @@ func (nm *NodeManager) PrepareEnrollment(ctx context.Context, hostname, ip strin
 		if ip != "" {
 			existing.IP = ip
 		}
-		existing.Status = models.NodeStatusOffline
+		// 纳管创建 = 等待接入：状态进入 pending，等首次 HELLO 被接受后再置 online
+		existing.Status = models.NodeStatusPending
 		existing.SyncStatus = "pending"
 		existing.AgentVersion = ""
 		existing.OS = ""
@@ -68,7 +70,7 @@ func (nm *NodeManager) PrepareEnrollment(ctx context.Context, hostname, ip strin
 		_ = nm.store.DeleteSetting(ctx, "revoked:"+existing.ID)
 		return existing, nil
 	}
-	n, _, err := nm.createNode(ctx, hostname, ip, "", "", "", "", false, nil, models.NodeStatusOffline, "pending")
+	n, _, err := nm.createNode(ctx, hostname, ip, "", "", "", "", false, nil, models.NodeStatusPending, "pending")
 	return n, err
 }
 
@@ -152,7 +154,10 @@ func (nm *NodeManager) RegisterOrUpdate(ctx context.Context, agentID, hostname, 
 		existing.DeploymentMode = mode
 		existing.HostIntegration = hostInt
 		existing.LastSeen = time.Now()
-		existing.Status = models.NodeStatusOnline
+		// accepted HELLO 不得覆盖 maintenance/disabled（与心跳 CASE 语义一致）
+		if existing.Status != models.NodeStatusMaintenance && existing.Status != models.NodeStatusDisabled {
+			existing.Status = models.NodeStatusOnline
+		}
 		if err := nm.store.UpsertNode(ctx, existing); err != nil {
 			return nil, "", false, err
 		}
@@ -195,7 +200,7 @@ func (nm *NodeManager) SetNodeStatus(ctx context.Context, id, status string) err
 
 func validNodeStatus(status string) bool {
 	switch status {
-	case models.NodeStatusOnline, models.NodeStatusOffline, models.NodeStatusMaintenance, models.NodeStatusDisabled:
+	case models.NodeStatusPending, models.NodeStatusOnline, models.NodeStatusOffline, models.NodeStatusMaintenance, models.NodeStatusDisabled:
 		return true
 	default:
 		return false
@@ -205,6 +210,22 @@ func validNodeStatus(status string) bool {
 // UpdateHeartbeat 心跳更新
 func (nm *NodeManager) UpdateHeartbeat(ctx context.Context, id string, lastSeen time.Time) error {
 	return nm.store.UpdateNodeHeartbeat(ctx, id, lastSeen)
+}
+
+// MarkOffline 将节点置为 offline，语义与 Gateway.markDisconnected 一致：
+// maintenance/disabled 为人工设置状态不被覆盖；节点记录已删除时视为无需处理。
+func (nm *NodeManager) MarkOffline(ctx context.Context, id string) error {
+	node, err := nm.store.GetNode(ctx, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+	if node.Status == models.NodeStatusMaintenance || node.Status == models.NodeStatusDisabled {
+		return nil
+	}
+	return nm.SetNodeStatus(ctx, id, models.NodeStatusOffline)
 }
 
 // UpdateSyncState 同步状态更新

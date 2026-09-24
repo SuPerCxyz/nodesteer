@@ -656,14 +656,14 @@ sudo sh -c 'cat > /etc/systemd/system/nodesteer-agent.service' <<'EOF'
 %sEOF
 sudo sh -c 'cat > /etc/nodesteer/agent.yaml' <<'EOF'
 %sEOF
-sudo systemctl daemon-reload && sudo systemctl enable --now nodesteer-agent`,
+sudo systemctl daemon-reload && sudo systemctl enable nodesteer-agent && sudo systemctl restart nodesteer-agent`,
 		shellQuote(binaryURLBase), agentServiceUnit, config)
 	agentImage := "ghcr.io/supercxyz/nodesteer-agent:latest"
 	agentIDEnv := ""
 	if agentID != "" {
 		agentIDEnv = fmt.Sprintf(" -e NODESTEER_AGENT_ID=%s", shellQuote(agentID))
 	}
-	dockerRun := fmt.Sprintf("docker run -d --name nodesteer-agent --restart unless-stopped -e NODESTEER_HUB_URL=%s -e NODESTEER_REGISTRATION_TOKEN=%s -e NODESTEER_NODE_NAME=%s -e NODESTEER_NODE_IP=%s%s -e NODESTEER_DEPLOYMENT_MODE=docker -v nodesteer-agent-data:/var/lib/nodesteer %s", shellQuote(wsURL), shellQuote(s.RegistrationToken), shellQuote(nodeName), shellQuote(nodeIP), agentIDEnv, agentImage)
+	dockerRun := fmt.Sprintf("docker rm -f nodesteer-agent 2>/dev/null || true; docker run -d --name nodesteer-agent --restart unless-stopped -e NODESTEER_HUB_URL=%s -e NODESTEER_REGISTRATION_TOKEN=%s -e NODESTEER_NODE_NAME=%s -e NODESTEER_NODE_IP=%s%s -e NODESTEER_DEPLOYMENT_MODE=docker -v nodesteer-agent-data:/var/lib/nodesteer %s", shellQuote(wsURL), shellQuote(s.RegistrationToken), shellQuote(nodeName), shellQuote(nodeIP), agentIDEnv, agentImage)
 	agentIDCompose := ""
 	if agentID != "" {
 		agentIDCompose = fmt.Sprintf("      NODESTEER_AGENT_ID: %q\n", agentID)

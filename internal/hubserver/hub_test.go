@@ -125,7 +125,7 @@ func mustStore(t *testing.T) store.Store {
 	return s
 }
 
-func newTestHub(t *testing.T) {
+func newTestHub(t *testing.T) *Hub {
 	t.Helper()
 	dir := t.TempDir()
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
@@ -147,4 +147,77 @@ func newTestHub(t *testing.T) {
 		t.Fatalf("new hub: %v", err)
 	}
 	t.Cleanup(func() { h.Close() })
+	return h
+}
+
+// TestStartupResetsOrphanOnlineNodes 验证启动复位（R4 状态机 1.4）：
+// 无活跃会话的 online 复位 offline；持有活跃会话的 online 保留；maintenance 不受影响。
+func TestStartupResetsOrphanOnlineNodes(t *testing.T) {
+	h := newTestHub(t)
+	ctx := context.Background()
+	upsert := func(id, status string) {
+		t.Helper()
+		if err := h.Store().UpsertNode(ctx, &models.Node{ID: id, AgentID: "agent-" + id, Hostname: id, Status: status}); err != nil {
+			t.Fatalf("upsert %s: %v", id, err)
+		}
+	}
+	upsert("n-orphan", models.NodeStatusOnline)
+	upsert("n-active", models.NodeStatusOnline)
+	upsert("n-maint", models.NodeStatusMaintenance)
+	// 伪造活跃会话：该节点的 online 必须在启动复位中保留
+	h.Sessions().Register(&fakeAgentConn{nodeID: "n-active"})
+
+	if err := h.Start(); err != nil {
+		t.Fatalf("start hub: %v", err)
+	}
+
+	want := map[string]string{
+		"n-orphan": models.NodeStatusOffline,
+		"n-active": models.NodeStatusOnline,
+		"n-maint":  models.NodeStatusMaintenance,
+	}
+	for id, expect := range want {
+		n, err := h.Nodes().GetNode(ctx, id)
+		if err != nil {
+			t.Fatalf("get node %s: %v", id, err)
+		}
+		if n.Status != expect {
+			t.Fatalf("after startup reset node %s status = %s, want %s", id, n.Status, expect)
+		}
+	}
+}
+
+// TestHeartbeatTimeoutCallbackProtectsStatus 验证超时回调（R4 状态机 1.5）：
+// online 超时置 offline；maintenance/disabled 不被字面量覆盖。
+func TestHeartbeatTimeoutCallbackProtectsStatus(t *testing.T) {
+	h := newTestHub(t)
+	ctx := context.Background()
+	upsert := func(id, status string) {
+		t.Helper()
+		if err := h.Store().UpsertNode(ctx, &models.Node{ID: id, AgentID: "agent-" + id, Hostname: id, Status: status}); err != nil {
+			t.Fatalf("upsert %s: %v", id, err)
+		}
+	}
+	upsert("n-timeout-online", models.NodeStatusOnline)
+	upsert("n-timeout-maint", models.NodeStatusMaintenance)
+	upsert("n-timeout-disabled", models.NodeStatusDisabled)
+
+	for _, id := range []string{"n-timeout-online", "n-timeout-maint", "n-timeout-disabled"} {
+		h.handleHeartbeatTimeout(id)
+	}
+
+	want := map[string]string{
+		"n-timeout-online":   models.NodeStatusOffline,
+		"n-timeout-maint":    models.NodeStatusMaintenance,
+		"n-timeout-disabled": models.NodeStatusDisabled,
+	}
+	for id, expect := range want {
+		n, err := h.Nodes().GetNode(ctx, id)
+		if err != nil {
+			t.Fatalf("get node %s: %v", id, err)
+		}
+		if n.Status != expect {
+			t.Fatalf("heartbeat timeout node %s status = %s, want %s", id, n.Status, expect)
+		}
+	}
 }

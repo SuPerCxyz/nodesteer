@@ -176,15 +176,44 @@ func (g *Gateway) handleDisconnect(nodeID string, conn AgentConn) {
 }
 
 func (g *Gateway) markDisconnected(ctx context.Context, nodeID string) error {
+	// 统一走 NodeManager.MarkOffline：含 maintenance/disabled 保护与已删除节点容忍。
+	return g.nodes.MarkOffline(ctx, nodeID)
+}
+
+// markConnected accepted HELLO 后显式将节点置为 online（不依赖心跳写入的副作用）。
+// 与 UpdateNodeHeartbeat 的 CASE 语义一致：maintenance/disabled 为人工设置状态，不被会话接受覆盖。
+func (g *Gateway) markConnected(ctx context.Context, n *models.Node) error {
+	if n.Status == models.NodeStatusOnline ||
+		n.Status == models.NodeStatusMaintenance ||
+		n.Status == models.NodeStatusDisabled {
+		return nil
+	}
+	if err := g.nodes.SetNodeStatus(ctx, n.ID, models.NodeStatusOnline); err != nil {
+		return err
+	}
+	n.Status = models.NodeStatusOnline
+	return nil
+}
+
+// markDisconnectedIfOnline 仅当节点当前为 online 时在拒绝返回前降级 offline。
+// 用于 HELLO 拒绝分支（credential 无效 / token 不匹配）防滞留：能定位到节点但该连接
+// 不合法时不残留 online；从未成功会话的新节点（pending/offline）保持原状态不动。
+// 活跃会话守卫：拒绝只证明「该连接不合法」，不证明「节点无会话」——存在活跃合法会话时
+// 不降级，避免 ≤30s 假离线。注意本守卫只属于拒绝降级路径：
+// markDisconnected（连接断开 defer 路径，断开即会话终结）不得引入此守卫。
+func (g *Gateway) markDisconnectedIfOnline(ctx context.Context, nodeID string) error {
+	if _, ok := g.sessions.Get(nodeID); ok {
+		// 节点仍有活跃合法会话，其 online 是真实状态，拒绝不构成降级依据。
+		return nil
+	}
 	node, err := g.nodes.GetNode(ctx, nodeID)
 	if err != nil {
-		// 节点记录已被删除时无需再标记状态，避免删除后产生无意义告警。
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil
 		}
 		return err
 	}
-	if node.Status == models.NodeStatusMaintenance || node.Status == models.NodeStatusDisabled {
+	if node.Status != models.NodeStatusOnline {
 		return nil
 	}
 	return g.nodes.SetNodeStatus(ctx, nodeID, models.NodeStatusOffline)
@@ -293,16 +322,35 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 		}
 		ok := g.nodes.AuthenticateAgent(ctx, existing.ID, p.AgentCredential)
 		if !ok {
+			// 拒绝返回前先解除滞留 online：能定位到节点且其当前 online → 置 offline；
+			// 从未成功会话的 pending 节点保持 pending。
+			if err := g.markDisconnectedIfOnline(ctx, existing.ID); err != nil {
+				g.logger.Warn("demote online on rejected hello failed", "node", existing.ID, "error", err)
+			}
 			conn.sendSync(ctx, protocol.NewEnvelope(protocol.MsgHelloAck, env.ID, protocol.HelloAckPayload{Accepted: false, Message: "invalid credential"}))
 			return fmt.Errorf("invalid credential")
 		}
 		node = &NodeWithCred{Node: existing, Cred: p.AgentCredential}
+		// accepted：显式置 online（不依赖心跳副作用），maintenance/disabled 不被覆盖
+		if err := g.markConnected(ctx, node.Node); err != nil {
+			return err
+		}
 		if err := g.nodes.UpdateHeartbeat(ctx, existing.ID, time.Now()); err != nil {
 			return err
 		}
 	} else {
 		// 首次注册
 		if p.RegistrationKey == "" || p.RegistrationKey != g.cfg.RegistrationToken {
+			// token 拒绝同样可归属既有节点：HELLO 携带的 agent_id 是纳管预分配身份，
+			// 查到行才走降级（与 invalid credential 分支同语义，含活跃会话守卫）；
+			// agent_id 查无行（含空值）则不写。降级须在拒绝返回前完成。
+			if existing, err := g.nodes.store.GetNodeByAgentID(ctx, p.AgentID); err == nil {
+				if err := g.markDisconnectedIfOnline(ctx, existing.ID); err != nil {
+					g.logger.Warn("demote online on rejected hello failed", "node", existing.ID, "error", err)
+				}
+			} else if !errors.Is(err, sql.ErrNoRows) {
+				g.logger.Warn("locate node on rejected hello failed", "agent", p.AgentID, "error", err)
+			}
 			conn.sendSync(ctx, protocol.NewEnvelope(protocol.MsgHelloAck, env.ID, protocol.HelloAckPayload{Accepted: false, Message: "invalid registration token"}))
 			return fmt.Errorf("invalid registration token")
 		}
@@ -313,6 +361,10 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 		}
 		node = &NodeWithCred{Node: n, Cred: cred}
 		_ = isNew
+		// accepted：显式置 online（注册路径已写库，此处幂等），maintenance/disabled 不被覆盖
+		if err := g.markConnected(ctx, node.Node); err != nil {
+			return err
+		}
 	}
 
 	conn.meta.nodeID = node.Node.ID

@@ -118,7 +118,7 @@ func validateCondition(ctx context.Context, st store.Store, c *models.Condition)
 		if c.Remote.Property == "online" {
 			value := strings.ToLower(c.Remote.Value)
 			switch value {
-			case models.NodeStatusOnline, models.NodeStatusOffline, models.NodeStatusMaintenance, models.NodeStatusDisabled, protocolUnknown:
+			case models.NodeStatusPending, models.NodeStatusOnline, models.NodeStatusOffline, models.NodeStatusMaintenance, models.NodeStatusDisabled, protocolUnknown:
 			default:
 				return store.ErrInvalidTask("invalid online condition value")
 			}

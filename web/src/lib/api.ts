@@ -114,7 +114,8 @@ export interface Node {
   agent_version: string
   deployment_mode: string
   host_integration: boolean
-  status: string
+  /** 在线状态；pending＝纳管创建后、Agent 尚未成功登录 */
+  status: 'online' | 'offline' | 'maintenance' | 'disabled' | 'pending'
   labels: Record<string, string>
   capabilities: Record<string, boolean>
   global_revision: number

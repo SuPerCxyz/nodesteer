@@ -14,6 +14,7 @@ import (
 	"github.com/SuPerCxyz/nodesteer/internal/hub/api"
 	"github.com/SuPerCxyz/nodesteer/internal/hub/auth"
 	"github.com/SuPerCxyz/nodesteer/internal/metrics"
+	"github.com/SuPerCxyz/nodesteer/internal/models"
 	"github.com/SuPerCxyz/nodesteer/internal/store"
 )
 
@@ -283,14 +284,45 @@ func (h *Hub) SetDefaults(ctx context.Context) {
 	}
 }
 
+// handleHeartbeatTimeout 心跳超时回调：将节点置 offline。
+// 走 NodeManager.MarkOffline（与断开清理同语义），maintenance/disabled 不被字面量覆盖。
+func (h *Hub) handleHeartbeatTimeout(nodeID string) {
+	if err := h.nodes.MarkOffline(h.ctx, nodeID); err != nil {
+		h.logger.Warn("mark offline failed", "node", nodeID, "error", err)
+		return
+	}
+	h.logger.Info("node marked offline", "node", nodeID)
+}
+
+// resetOrphanOnlineNodes 将「无活跃会话且 status=online」的节点复位为 offline。
+// 启动阶段会话表为空，覆盖崩溃/重启残留的孤儿 online；持有活跃会话的 online 节点保留。
+func (h *Hub) resetOrphanOnlineNodes(ctx context.Context) {
+	nodes, err := h.store.ListNodes(ctx)
+	if err != nil {
+		h.logger.Warn("list nodes for online reset failed", "error", err)
+		return
+	}
+	active := map[string]bool{}
+	for _, id := range h.sessions.ConnectedNodeIDs() {
+		active[id] = true
+	}
+	for _, n := range nodes {
+		if n.Status != models.NodeStatusOnline || active[n.ID] {
+			continue
+		}
+		if err := h.nodes.SetNodeStatus(ctx, n.ID, models.NodeStatusOffline); err != nil {
+			h.logger.Warn("reset orphan online node failed", "node", n.ID, "error", err)
+		}
+	}
+}
+
 // Start 启动所有服务
 func (h *Hub) Start() error {
-	h.sessions.StartHeartbeatChecker(h.ctx, h.cfg.HeartbeatTimeout, func(nodeID string) {
-		if err := h.nodes.SetNodeStatus(h.ctx, nodeID, "offline"); err != nil {
-			h.logger.Warn("mark offline failed", "node", nodeID, "error", err)
-		}
-		h.logger.Info("node marked offline", "node", nodeID)
-	})
+	// 启动复位：进程刚起、内存会话表为空，DB 中残留 status=online 的节点没有
+	// 对应活跃会话（孤儿 online），一次性复位 offline；maintenance/disabled 不受影响。
+	h.resetOrphanOnlineNodes(h.ctx)
+
+	h.sessions.StartHeartbeatChecker(h.ctx, h.cfg.HeartbeatTimeout, h.handleHeartbeatTimeout)
 
 	interval := time.Duration(h.cfg.RevisionCheckSec) * time.Second
 	h.schedules.StartHubScheduler(h.ctx, interval)
