@@ -64,12 +64,22 @@ The Web UI SHALL present every registered NodeSteer page and state with consiste
 
 ### Requirement: Usable data tables
 
-The Web UI SHALL use stable, role-appropriate column sizing and pagination for large or dense tables while preserving semantic table structure and mobile usability.
+The Web UI SHALL use stable, role-appropriate column sizing and pagination for large or dense tables while preserving semantic table structure and mobile usability. Within every list table, each column header SHALL share the same left baseline as that column's content, and header labels SHALL render without truncation at supported desktop viewports. The table SHALL adapt column widths to the available container width and SHALL introduce horizontal scrolling only when the columns' minimum readable widths cannot fit; the row-action column SHALL remain reachable. Row-action content SHALL be left-aligned consistently across list pages.
 
 #### Scenario: Dense table sizing
 
 - **WHEN** a user views Tasks, Executions, Nodes, Transfers, Schedules, Scripts, Groups, Applications, Artifacts, Audit, Users, or dashboard tables
-- **THEN** primary text and long technical content receive flexible readable space, status/time/numeric/action columns remain stable, and header/cell boundaries and alignment match
+- **THEN** primary text and long technical content receive flexible readable space, status/time/numeric/action columns remain stable, each column header and its cell content share the same left baseline, and header labels are fully visible
+
+#### Scenario: Adaptive table width
+
+- **WHEN** the available container is narrower than the sum of the columns' comfortable widths but still fits their minimum readable widths
+- **THEN** the table shrinks its columns proportionally to fit the container without horizontal scrolling, without a cut-off right-most column, and without sticky action controls covering adjacent cell content
+
+#### Scenario: Table wider than the container
+
+- **WHEN** the available container is narrower than the sum of the columns' minimum readable widths
+- **THEN** the table scrolls horizontally with a visible scroll affordance, and the row-action column remains fixed and usable
 
 #### Scenario: Large execution history
 
@@ -79,7 +89,7 @@ The Web UI SHALL use stable, role-appropriate column sizing and pagination for l
 #### Scenario: Long and narrow content
 
 - **WHEN** a cell contains a long name, path, ID, hash, target list, or badge
-- **THEN** the table does not break the page layout, compact labels remain on one line, and the complete value remains available to keyboard, pointer, and touch users
+- **THEN** the table does not break the page layout, compact labels remain on one line, and the complete value remains available to keyboard, pointer, and touch users through truncation disclosure such as a hover/focus title
 
 ### Requirement: Complete task run navigation
 
@@ -258,7 +268,6 @@ The Groups page SHALL calculate a Label Group member count from the current Node
 - **WHEN** 打开 Task 编辑页
 - **THEN** 可查看关联 Schedules、按 task_id 查看执行历史
 
-
 ### Requirement: 节点批量操作
 
 节点列表 SHALL 支持多选节点并执行批量操作：批量升级 Agent（仅 native 形态节点可选）、批量暂停与批量恢复。批量操作 SHALL 逐节点产出独立结果反馈，单节点失败不影响其余节点的结果记录。
@@ -278,3 +287,19 @@ The Groups page SHALL calculate a Label Group member count from the current Node
 
 - **WHEN** 管理员对所选节点执行批量暂停或恢复
 - **THEN** 所选节点状态统一变更并给出整体结果反馈
+
+### Requirement: Node list column order
+
+The Node list SHALL present its columns in the order: status, hostname, OS, groups, node address, architecture, agent version, deployment mode, last seen, and actions, keeping the OS value adjacent to the hostname, while all Node fields required by the product baseline remain present in the table or in the column visibility controls.
+
+#### Scenario: Node list column order
+
+- **WHEN** an administrator opens the Node list
+- **THEN** the columns appear in the order status, hostname, OS, groups, node address, architecture, agent version, deployment mode, last seen, actions
+- **AND** the OS column is directly adjacent to the hostname column
+
+#### Scenario: Node list required fields
+
+- **WHEN** an administrator opens the Node list
+- **THEN** hostname, address, OS, architecture, agent version, deployment mode, status, and last-seen values remain available either as visible columns or through the column visibility controls
+
