@@ -201,8 +201,8 @@ export function Tasks() {
       {
         accessorKey: 'timeout',
         header: t('scripts.timeout'),
-        size: 76,
-        minSize: 68,
+        size: 80,
+        minSize: 76,
         cell: ({ row }) => (
           <span className='font-mono text-xs'>{row.original.timeout}s</span>
         ),
@@ -223,8 +223,8 @@ export function Tasks() {
       {
         accessorKey: 'revision',
         header: t('tasks.revision'),
-        size: 80,
-        minSize: 72,
+        size: 92,
+        minSize: 92,
         cell: ({ row }) => (
           <span className='font-mono text-xs'>r{row.original.revision}</span>
         ),
@@ -243,8 +243,8 @@ export function Tasks() {
         id: 'actions',
         enableHiding: false,
         header: '',
-        size: 72,
-        minSize: 64,
+        size: 96,
+        minSize: 88,
         cell: ({ row }) => (
           <TaskRowActions
             task={row.original}
@@ -1496,7 +1496,7 @@ function TaskRowActions({
   const { t } = useTranslation()
   const [deleteOpen, setDeleteOpen] = useState(false)
   return (
-    <div className='flex items-center justify-end gap-1'>
+    <div className='flex items-center gap-1'>
       {canRun ? (
         <Button
           asChild

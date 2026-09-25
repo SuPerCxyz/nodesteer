@@ -88,7 +88,7 @@ export function FileTransfers() {
           `${nodeNames.get(row.source_node_id) || ''} ${row.id}`,
         header: t('transfers.source'),
         size: 130,
-        minSize: 110,
+        minSize: 108,
         cell: ({ row }: { row: { original: FileTransfer } }) =>
           nodeNames.get(row.original.source_node_id) || t('common.unknownNode'),
       },
@@ -96,7 +96,7 @@ export function FileTransfers() {
         accessorKey: 'source_path',
         header: t('transfers.sourcePath'),
         size: 310,
-        minSize: 235,
+        minSize: 170,
         maxSize: 470,
         cell: ({ row }: { row: { original: FileTransfer } }) => (
           <span
@@ -124,7 +124,7 @@ export function FileTransfers() {
             .join(' ')}`,
         header: t('transfers.errorReason'),
         size: 280,
-        minSize: 210,
+        minSize: 170,
         maxSize: 460,
         cell: ({ row }: { row: { original: FileTransfer } }) =>
           row.original.error ? (
@@ -142,7 +142,7 @@ export function FileTransfers() {
         id: 'targets',
         header: t('transfers.targets'),
         size: 255,
-        minSize: 205,
+        minSize: 160,
         cell: ({ row }: { row: { original: FileTransfer } }) => (
           <div className='flex flex-wrap gap-x-3 gap-y-2'>
             {row.original.targets.map((target) => (
@@ -178,7 +178,7 @@ export function FileTransfers() {
         accessorKey: 'updated_at',
         header: t('common.time'),
         size: 175,
-        minSize: 160,
+        minSize: 120,
         cell: ({ row }: { row: { original: FileTransfer } }) => (
           <TimeValue value={row.original.updated_at} />
         ),

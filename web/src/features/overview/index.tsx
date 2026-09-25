@@ -401,8 +401,12 @@ export function Dashboard() {
                         <TableRow key={execution.id}>
                           <TableCell>
                             <a
-                              className='font-medium hover:underline'
+                              className='block truncate font-medium hover:underline'
                               href={`/executions/${execution.id}`}
+                              title={
+                                taskName.get(execution.task_id) ||
+                                t('common.unknownTask')
+                              }
                             >
                               {taskName.get(execution.task_id) ||
                                 t('common.unknownTask')}

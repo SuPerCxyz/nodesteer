@@ -1,5 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import i18n from '@/i18n'
+import '@/styles/index.css'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
@@ -77,5 +78,38 @@ describe('DataTable 行多选基建', () => {
     await expect
       .element(getByRole('checkbox', { name: '选择该行' }))
       .not.toBeInTheDocument()
+  })
+})
+
+describe('DataTable 列宽与表头对齐', () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage('zh')
+  })
+
+  it('表格最小宽度等于各列最小宽之和，容器可容纳时不横向滚动', async () => {
+    const { container } = await renderTable(false)
+    const table = container.querySelector('table') as HTMLTableElement
+    // 名称 minSize 120 + 操作 minSize 64
+    expect(table.style.minWidth).toBe('184px')
+
+    const scroller = table.parentElement as HTMLDivElement
+    expect(table.getBoundingClientRect().width).toBeLessThanOrEqual(
+      scroller.clientWidth + 1
+    )
+  })
+
+  it('可排序表头标签与单元格内容同左基线', async () => {
+    const { container } = await renderTable(false)
+    const th = container.querySelector('thead th') as HTMLTableCellElement
+    const label = th.querySelector('button span') as HTMLSpanElement
+    const td = container.querySelector('tbody td') as HTMLTableCellElement
+
+    const range = document.createRange()
+    range.selectNodeContents(td.firstChild as Node)
+    const cellLeft = range.getBoundingClientRect().left
+
+    expect(
+      Math.abs(label.getBoundingClientRect().left - cellLeft)
+    ).toBeLessThanOrEqual(1)
   })
 })

@@ -191,8 +191,12 @@ export function DataTable<TData>({
       maxSize: 640,
     },
   })
-  const totalSize = table.getTotalSize()
-  const columnWidth = (size: number) => `${(size / totalSize) * 100}%`
+  // 列宽基准取各列 minSize（最小可读宽）：固定布局下它是列的基准宽度，
+  // 表格在容器内拉伸时多余空间分配给各列；容器小于最小宽之和时才横向滚动。
+  const minTotalSize = table
+    .getVisibleLeafColumns()
+    .reduce((sum, column) => sum + (column.columnDef.minSize ?? 60), 0)
+  const columnWidth = (minSize?: number) => `${minSize ?? 60}px`
 
   return (
     <div className={`flex flex-1 flex-col gap-4 ${className}`}>
@@ -202,7 +206,10 @@ export function DataTable<TData>({
         hideSearch={hideSearch}
       />
       <div className='overflow-hidden rounded-md border'>
-        <Table className='table-fixed' style={{ minWidth: `${totalSize}px` }}>
+        <Table
+          className='table-fixed'
+          style={{ minWidth: `${minTotalSize}px` }}
+        >
           <TableHeader>
             {table.getHeaderGroups().map((group) => (
               <TableRow key={group.id}>
@@ -224,8 +231,7 @@ export function DataTable<TData>({
                           : undefined
                       }
                       style={{
-                        width: columnWidth(header.column.getSize()),
-                        minWidth: `${header.column.columnDef.minSize || 60}px`,
+                        width: columnWidth(header.column.columnDef.minSize),
                       }}
                       className={cn(
                         header.column.columnDef.meta?.thClassName,
@@ -256,8 +262,7 @@ export function DataTable<TData>({
                     <TableCell
                       key={cell.id}
                       style={{
-                        width: columnWidth(cell.column.getSize()),
-                        minWidth: `${cell.column.columnDef.minSize || 60}px`,
+                        width: columnWidth(cell.column.columnDef.minSize),
                       }}
                       className={cn(
                         cell.column.columnDef.meta?.tdClassName,

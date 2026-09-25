@@ -151,7 +151,7 @@ export function Executions() {
           `${taskNames.get(row.task_id) || ''} ${row.task_id}`,
         header: t('dashboard.task'),
         size: 290,
-        minSize: 225,
+        minSize: 215,
         maxSize: 380,
         cell: ({ row }) => {
           const name = taskNames.get(row.original.task_id)
@@ -200,7 +200,7 @@ export function Executions() {
         accessorKey: 'trigger_type',
         header: t('dashboard.trigger'),
         size: 115,
-        minSize: 100,
+        minSize: 108,
         cell: ({ row }) => {
           const trigger =
             labels[row.original.trigger_type as keyof typeof labels] ||
@@ -235,8 +235,8 @@ export function Executions() {
       {
         accessorKey: 'exit_code',
         header: t('dashboard.exit'),
-        size: 76,
-        minSize: 68,
+        size: 92,
+        minSize: 92,
         cell: ({ row }) => (
           <span className='font-mono text-xs'>
             {row.original.exit_code ?? '-'}

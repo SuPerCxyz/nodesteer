@@ -32,22 +32,29 @@ export function DataTableColumnHeader<TData, TValue>({
         ? t('common.clearSorting')
         : t('common.sortAscending')
   return (
-    <div className={cn('flex items-center justify-start', className)}>
+    <div className={cn('flex min-w-0 items-center justify-start', className)}>
       <Button
         variant='ghost'
         size='sm'
-        className='h-8 max-w-full data-[state=open]:bg-accent'
+        // 负外边距抵消 th 的 px-2，ps-2 复位后标签与单元格文本左对齐；
+        // has-[>svg]:px-2.5 特异性更高，这里用内联样式固定内边距。
+        style={{
+          marginInlineStart: '-0.5rem',
+          paddingInlineStart: '0.5rem',
+          paddingInlineEnd: '0.25rem',
+        }}
+        className='h-8 w-[calc(100%+0.5rem)] shrink-0 justify-start gap-1 rounded-md data-[state=open]:bg-accent'
         onClick={() => column.toggleSorting()}
         title={`${title}: ${nextAction}`}
         aria-label={`${title}: ${nextAction}`}
       >
         <span className='truncate'>{title}</span>
         {sorted === 'desc' ? (
-          <ArrowDownIcon className='ms-2 size-4 shrink-0' />
+          <ArrowDownIcon className='size-4 shrink-0' />
         ) : sorted === 'asc' ? (
-          <ArrowUpIcon className='ms-2 size-4 shrink-0' />
+          <ArrowUpIcon className='size-4 shrink-0' />
         ) : (
-          <CaretSortIcon className='ms-2 size-4 shrink-0' />
+          <CaretSortIcon className='size-4 shrink-0' />
         )}
       </Button>
     </div>

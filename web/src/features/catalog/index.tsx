@@ -125,8 +125,8 @@ export function Agents() {
       {
         accessorKey: 'status',
         header: t('common.status'),
-        size: 116,
-        minSize: 108,
+        size: 112,
+        minSize: 88,
         cell: ({ row }: { row: { original: Node } }) => (
           <StatusBadge status={row.original.status} />
         ),
@@ -135,8 +135,8 @@ export function Agents() {
         id: 'hostname',
         accessorFn: (row) => `${row.hostname} ${row.id}`,
         header: t('dashboard.hostname'),
-        size: 250,
-        minSize: 205,
+        size: 230,
+        minSize: 140,
         maxSize: 340,
         cell: ({ row }: { row: { original: Node } }) => (
           <div>
@@ -151,11 +151,22 @@ export function Agents() {
         ),
       },
       {
+        accessorKey: 'os',
+        header: t('dashboard.os'),
+        size: 220,
+        minSize: 180,
+        cell: ({ row }: { row: { original: Node } }) => (
+          <span className='block truncate' title={row.original.os || '-'}>
+            {row.original.os || '-'}
+          </span>
+        ),
+      },
+      {
         id: 'groups',
         header: t('nodes.groups'),
         enableSorting: false,
-        size: 160,
-        minSize: 130,
+        size: 150,
+        minSize: 86,
         cell: ({ row }: { row: { original: Node } }) => {
           const names = groupNamesByNode.get(row.original.id)?.join(', ')
           return (
@@ -169,23 +180,21 @@ export function Agents() {
         accessorKey: 'ip',
         header: t('dashboard.ip'),
         size: 140,
-        minSize: 120,
+        minSize: 124,
         cell: ({ row }: { row: { original: Node } }) => (
-          <span className='font-mono text-xs'>{row.original.ip || '-'}</span>
+          <span
+            className='block truncate font-mono text-xs'
+            title={row.original.ip || '-'}
+          >
+            {row.original.ip || '-'}
+          </span>
         ),
-      },
-      {
-        accessorKey: 'os',
-        header: t('dashboard.os'),
-        size: 150,
-        minSize: 130,
-        cell: ({ row }: { row: { original: Node } }) => row.original.os || '-',
       },
       {
         accessorKey: 'arch',
         header: t('nodes.architecture'),
-        size: 88,
-        minSize: 80,
+        size: 92,
+        minSize: 76,
         cell: ({ row }: { row: { original: Node } }) => (
           <span className='font-mono text-xs'>{row.original.arch || '-'}</span>
         ),
@@ -193,20 +202,20 @@ export function Agents() {
       {
         accessorKey: 'agent_version',
         header: t('nodes.agentVersion'),
-        size: 100,
-        minSize: 88,
+        size: 128,
+        minSize: 124,
       },
       {
         accessorKey: 'deployment_mode',
         header: t('nodes.deploymentMode'),
-        size: 135,
-        minSize: 110,
+        size: 132,
+        minSize: 108,
       },
       {
         accessorKey: 'last_seen',
         header: t('dashboard.lastSeen'),
-        size: 170,
-        minSize: 155,
+        size: 160,
+        minSize: 110,
         cell: ({ row }: { row: { original: Node } }) => (
           <TimeValue value={row.original.last_seen} />
         ),
@@ -215,8 +224,8 @@ export function Agents() {
         id: 'actions',
         header: '',
         enableHiding: false,
-        size: 72,
-        minSize: 64,
+        size: 64,
+        minSize: 56,
         cell: ({ row }: { row: { original: Node } }) =>
           canWrite ? (
             <MoreMenu>
@@ -936,7 +945,8 @@ function ExecutionRows({
                 {taskNames.get(execution.task_id) ? (
                   <a
                     href={`/tasks/${execution.task_id}`}
-                    className='font-medium hover:underline'
+                    className='block truncate font-medium hover:underline'
+                    title={taskNames.get(execution.task_id)}
                   >
                     {taskNames.get(execution.task_id)}
                   </a>
@@ -1040,7 +1050,7 @@ export function Schedules() {
           `${tasks.data?.find((task) => task.id === row.task_id)?.name || ''} ${row.task_id}`,
         header: t('schedules.task'),
         size: 250,
-        minSize: 210,
+        minSize: 200,
         maxSize: 340,
         cell: ({ row }: { row: { original: Schedule } }) => (
           <a
@@ -1070,7 +1080,7 @@ export function Schedules() {
         accessorKey: 'expression',
         header: t('tasks.expression'),
         size: 165,
-        minSize: 140,
+        minSize: 106,
         cell: ({ row }: { row: { original: Schedule } }) => {
           const text =
             row.original.type === 'interval'
@@ -1086,8 +1096,8 @@ export function Schedules() {
       {
         accessorKey: 'timezone',
         header: t('schedules.timezone'),
-        size: 130,
-        minSize: 110,
+        size: 140,
+        minSize: 126,
       },
       {
         accessorKey: 'execution_owner',
@@ -1103,7 +1113,7 @@ export function Schedules() {
         accessorKey: 'offline_policy',
         header: t('schedules.offline'),
         size: 150,
-        minSize: 130,
+        minSize: 105,
         cell: ({ row }: { row: { original: Schedule } }) =>
           t(`schedules.offlinePolicies.${row.original.offline_policy}`, {
             defaultValue: row.original.offline_policy,
@@ -1112,8 +1122,8 @@ export function Schedules() {
       {
         accessorKey: 'misfire_policy',
         header: t('tasks.misfire'),
-        size: 130,
-        minSize: 110,
+        size: 140,
+        minSize: 125,
         cell: ({ row }: { row: { original: Schedule } }) =>
           t(`schedules.misfirePolicies.${row.original.misfire_policy}`, {
             defaultValue: row.original.misfire_policy,
@@ -1123,7 +1133,7 @@ export function Schedules() {
         accessorKey: 'enabled',
         header: t('common.status'),
         size: 96,
-        minSize: 88,
+        minSize: 76,
         cell: ({ row }: { row: { original: Schedule } }) => (
           <StatusBadge status={row.original.enabled ? 'enabled' : 'disabled'} />
         ),
@@ -1132,8 +1142,8 @@ export function Schedules() {
         id: 'actions',
         header: '',
         enableHiding: false,
-        size: 72,
-        minSize: 64,
+        size: 64,
+        minSize: 56,
         cell: ({ row }: { row: { original: Schedule } }) => {
           const schedule = row.original
           const taskName =
@@ -1244,12 +1254,16 @@ export function Scripts() {
           <div>
             <a
               href={`/scripts/${row.original.id}`}
-              className='font-medium hover:underline'
+              className='block truncate font-medium hover:underline'
+              title={row.original.name}
             >
               {row.original.name}
             </a>
             {row.original.description ? (
-              <span className='block truncate text-xs text-muted-foreground'>
+              <span
+                className='block truncate text-xs text-muted-foreground'
+                title={row.original.description}
+              >
                 {row.original.description}
               </span>
             ) : null}
@@ -1273,8 +1287,8 @@ export function Scripts() {
       {
         accessorKey: 'revision',
         header: t('tasks.revision'),
-        size: 76,
-        minSize: 68,
+        size: 92,
+        minSize: 92,
         cell: ({ row }: { row: { original: Script } }) => (
           <span className='font-mono text-xs'>r{row.original.revision}</span>
         ),
@@ -1282,8 +1296,8 @@ export function Scripts() {
       {
         accessorKey: 'timeout',
         header: t('scripts.timeout'),
-        size: 76,
-        minSize: 68,
+        size: 80,
+        minSize: 76,
         cell: ({ row }: { row: { original: Script } }) =>
           `${row.original.timeout}s`,
       },
@@ -1291,9 +1305,9 @@ export function Scripts() {
         accessorKey: 'sha256',
         header: t('scripts.sha256'),
         size: 160,
-        minSize: 140,
+        minSize: 148,
         cell: ({ row }: { row: { original: Script } }) => (
-          <span className='font-mono text-xs'>
+          <span className='font-mono text-xs' title={row.original.sha256}>
             {row.original.sha256.slice(0, 16)}…
           </span>
         ),
@@ -1400,7 +1414,12 @@ export function Groups() {
         minSize: 190,
         maxSize: 320,
         cell: ({ row }: { row: { original: Group } }) => (
-          <span className='font-medium'>{row.original.name}</span>
+          <span
+            className='block truncate font-medium'
+            title={row.original.name}
+          >
+            {row.original.name}
+          </span>
         ),
       },
       {
@@ -1433,8 +1452,8 @@ export function Groups() {
               ).length
             : row.members?.length || 0,
         header: t('groups.members'),
-        size: 76,
-        minSize: 68,
+        size: 84,
+        minSize: 76,
         cell: ({ row }: { row: { original: Group } }) =>
           row.original.type === 'label'
             ? (nodes.data || []).filter(
@@ -1528,7 +1547,8 @@ export function Applications() {
         cell: ({ row }: { row: { original: Application } }) => (
           <a
             href={`/applications/${row.original.id}`}
-            className='font-medium hover:underline'
+            className='block truncate font-medium hover:underline'
+            title={row.original.name}
           >
             {row.original.name}
           </a>
@@ -1573,8 +1593,8 @@ export function Applications() {
       {
         accessorKey: 'revision',
         header: t('tasks.revision'),
-        size: 76,
-        minSize: 68,
+        size: 92,
+        minSize: 92,
         cell: ({ row }: { row: { original: Application } }) => (
           <span className='font-mono text-xs'>r{row.original.revision}</span>
         ),
@@ -1717,8 +1737,8 @@ export function Artifacts() {
       {
         accessorKey: 'size',
         header: t('artifacts.size'),
-        size: 76,
-        minSize: 68,
+        size: 84,
+        minSize: 78,
         cell: ({ row }: { row: { original: Artifact } }) =>
           `${Math.round(row.original.size / 1024)} KB`,
       },
@@ -1962,7 +1982,12 @@ export function Users() {
         minSize: 200,
         maxSize: 320,
         cell: ({ row }: { row: { original: User } }) => (
-          <span className='font-medium'>{row.original.username}</span>
+          <span
+            className='block truncate font-medium'
+            title={row.original.username}
+          >
+            {row.original.username}
+          </span>
         ),
       },
       {
