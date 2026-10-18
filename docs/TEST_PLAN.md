@@ -496,9 +496,12 @@ Dashboard
 - 不存在资源：404。
 - 错误 JSON：400。
 - 缺少必填字段：400。
-- 非法方法：405；`/api/me`、`/api/audit`、`/metrics`、`/api/logout`、`/api/users`、`/api/users/{id}`、`/api/executions/{id}`、`/api/nodes/{id}`、`/api/transfers/{id}` 须带 `Allow`；方法守卫先于角色鉴权与存在性判定（未认证仍 401）。
+- 非法方法：405，且所有 405 响应一律带 `Allow` 头（逐端点校验精确值；此前部分端点缺失，缺陷 QA-20261018-F6）；方法守卫先于角色鉴权与存在性判定（未认证仍 401）。
+- 方法语义收紧：`/api/login` 仅 `POST`（其它方法 405 + `Allow: POST` 且不建立会话）；`/api/tasks/{id}/run` 仅 `POST`（`GET` 等 405 + `Allow: POST` 且零执行记录）；`/api/applications/{id}/revisions`、`/nodes` 仅 `GET`（`DELETE` 等 405 + `Allow: GET`）；`/assign`、`/deploy` 仅 `POST`（`GET` 等 405 + `Allow: POST`）；`/api/scripts/{id}/revisions` 仅 `GET`（`PUT` 等 405 + `Allow: GET`，不得落入脚本本体写路径）；`/api/artifacts/{id}/download` 仅 `GET`/`HEAD`（其它方法 405 + `Allow: GET, HEAD`，不得返回文件内容）。
+- 资源子路径：`/api/<resource>/{id}/<未知子路径>` 任意方法 → 404 归一化文案且零副作用（不得读取/改写/删除基础资源）；已知子路径追加多余段（`/run/extra` 等）→ 404；末尾斜杠归一为同一资源（`/api/tasks/{id}/` 等价于 `/api/tasks/{id}`）。
 - `DELETE` 不存在的 scripts/tasks/schedules/groups/artifacts/applications id：404（不得静默 200）；users/executions 的 `DELETE`：405 + `Allow`。
-- 存储忙锁：503 `storage busy, please retry`；其它内部错误：500 `internal error`（OIDC 启动失败等专用路径除外）；响应体不得出现 SQLite/驱动原文，Hub 日志须有 error 级记录。
+- 不存在资源归一化 404（不得 500 / 400+SQL 原文 / 200 静默成功）：`POST /api/nodes`（status 与 labels 两路径）、`POST /api/nodes/{id}/revoke-credential`、`POST /api/transfers/{id}/retry|cancel`、`POST /api/executions/{id}/cancel`、`PUT /api/users/{id}`；`POST /api/nodes` 非法 status → 400 `invalid node status: <值>`。
+- 存储忙锁：503 `storage busy, please retry`（含并发 `DELETE /api/schedules/{id}` 路径）；其它内部错误：500 `internal error`（OIDC 启动失败等专用路径除外）；响应体不得出现 SQLite/驱动原文，Hub 日志须有 error 级记录；连接已关闭/客户端取消（`context canceled` 等）不记 error 级日志。
 - `/api/me` 与 `/api/login` 的 `user`：键名 `token`/`user_id`/`username`/`role`/`expires`（可选 `avatar`），不得出现 PascalCase 键。
 - `GET /api/applications/{id}/nodes` 无绑定节点：返回 `[]` 而非 `null`。
 - `X-Total-Count` 只出现在 `/api/executions`、`/api/audit`；其余列表端点不得出现该头。
@@ -508,7 +511,7 @@ Dashboard
 - `/api/nodes/{id}` 存在性 oracle：`DELETE`/`POST`/`PUT` 对 operator/viewer 在存在/不存在 id 上均 403；admin 不存在 id → 404 `node not found`（无存储层原文）。
 - 成功响应结构、Content-Type、状态码。
 - 成功后的数据库、Revision、Audit、Agent 状态。
-- 重复请求的幂等性和并发安全（删除类重复请求按 404 语义校验）。
+- 重复请求的幂等性和并发安全（删除类重复请求按 404 语义校验）；存储并发不得挂起：≥8 并发 `GET /api/transfers` 须在超时内返回，16 并发 `DELETE /api/nodes/{id}` 全部成功，16 并发 `DELETE /api/schedules/{id}` 全部 200 或 503 `storage busy, please retry`（响应体不得含 SQLite/驱动原文，BUSY 时须有 error 级日志）。
 
 ### 8.3 三角色矩阵
 
@@ -613,8 +616,8 @@ Dashboard
 
 ### SYS-59 至 SYS-67
 
-- [ ] SYS-59 源 Agent 身份认证、源节点只能上传。
-- [ ] SYS-60 目标 Agent 身份认证、目标只能下载自己的目标。
+- [ ] SYS-59 源 Agent 身份认证、源节点只能上传；`/agent/transfers/{id}/upload` 非 `POST` → 405 + `Allow: POST`。
+- [ ] SYS-60 目标 Agent 身份认证、目标只能下载自己的目标；`/agent/transfers/{id}/download` 非 `GET` → 405 + `Allow: GET`。
 - [ ] SYS-61 大小校验、SHA256 校验、Hub staged blob 原子提升。
 - [ ] SYS-62 目标文件 `.tmp` 下载、校验、原子替换。
 - [ ] SYS-63 多目标同时成功，整体 SUCCESS。

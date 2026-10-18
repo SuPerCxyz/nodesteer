@@ -1009,6 +1009,8 @@ Hub 可提前发送 PREFETCH，让 Agent 在真正执行前下载并校验 Artif
 
 二进制使用 Agent Gateway 的 HTTPS 数据端点，控制长连接只传输元数据和状态。
 
+数据端点方法固定：`/agent/transfers/{id}/upload` 仅 `POST`、`/agent/transfers/{id}/download` 仅 `GET`；其它方法 → 405 + `Allow: POST` / `Allow: GET`；未知动作或多余路径段 → 404（不得被当作已知动作执行）。
+
 目标节点不得等于源节点：`POST /api/transfers` 命中自传（目标=源）时整批拒绝并返回 `400 self transfer is not allowed`，不落任何目标记录；前端裁剪不构成服务端保证。
 
 ---
@@ -1383,9 +1385,13 @@ Web UI 调用真实 API。
 
 方法语义：
 - `/api/audit`、`/api/me`、`/metrics` 仅接受 `GET`（其它方法 → 405 + `Allow: GET`）
-- `/api/logout` 仅接受 `POST`（其它方法 → 405 + `Allow: POST`；`GET` 不再注销）
+- `/api/logout`、`/api/login` 仅接受 `POST`（其它方法 → 405 + `Allow: POST`；`GET /api/logout` 不再注销，非 `POST` 的 `/api/login` 不再建立会话）
+- `/api/tasks/{id}/run` 仅接受 `POST`（`GET`/`PUT` 等 → 405 + `Allow: POST`，且不进入 RunNow、不产生执行记录）
+- `/api/applications/{id}/revisions`、`/api/applications/{id}/nodes` 仅接受 `GET`（其它方法 → 405 + `Allow: GET`）；`/api/applications/{id}/assign`、`/api/applications/{id}/deploy` 仅接受 `POST`（其它方法 → 405 + `Allow: POST`）
+- `/api/scripts/{id}/revisions`（含 `/{版本号}`）仅接受 `GET`（`PUT` 等 → 405 + `Allow: GET`，不再落入脚本本体写路径）
+- `/api/artifacts/{id}/download` 仅接受 `GET`/`HEAD`（其它方法 → 405 + `Allow: GET, HEAD`，且不返回文件内容）
 - 其余端点方法不支持一律 405；方法守卫先于角色鉴权与存在性判定，不因权限差异把 405 退化为 403（未认证仍是 401）
-- 405 已附 `Allow` 的端点：`/api/users`（`GET, POST`）、`/api/users/{id}`（`PUT`）、`/api/executions/{id}`（`GET`）、`/api/nodes/{id}`（`GET, POST, PUT, DELETE`；`revoke-credential` 为 `POST`）、`/api/transfers/{id}`（`GET, POST`；动作子路径为 `POST`）；scripts/tasks/schedules/groups/artifacts/applications 等其余端点暂不带 `Allow`（现状保留）
+- 405 一律附 `Allow` 头（全端点统一，不再有例外；此前 scripts/tasks/schedules/groups/artifacts/applications/login 等端点缺失，缺陷 QA-20261018-F6 已补齐），如 `/api/users`（`GET, POST`）、`/api/users/{id}`（`PUT`）、`/api/executions/{id}`（`GET`）、`/api/nodes/{id}`（`GET, POST, PUT, DELETE`；`revoke-credential` 为 `POST`）、`/api/transfers/{id}`（`GET, POST`；动作子路径为 `POST`）
 
 会话与响应键名：
 - `/api/login`（本地密码登录）返回 `{"token": "...", "user": <会话对象>}`；`/api/me` 直接返回会话对象
@@ -1397,9 +1403,13 @@ Web UI 调用真实 API。
 - `POST /api/schedules`（`type=one_time`）：`run_at` 在过去 → 400 `run_at must be in the future`；`PUT /api/schedules/{id}` 仅在 `run_at` 实际变化时拒绝（未改值的历史过去时间记录放行，仍可编辑/禁用）
 - `DELETE /api/scripts/{id}` / `/api/tasks/{id}` / `/api/schedules/{id}` / `/api/groups/{id}` / `/api/artifacts/{id}` / `/api/applications/{id}`：id 不存在 → 404 + 归一化 not found 文案（不再静默返回 200）；客户端删除重试必须按 404 处理
 - `/api/nodes/{id}`：`DELETE`/`POST`/`PUT` 先鉴权后存在性——operator/viewer 对存在与不存在的 id 均 403（不通过状态码差异泄露存在性）；admin 对不存在 id → 404 `node not found`
+- `POST /api/nodes`（集合写路径）：id 不存在 → 404 `node not found`（状态与标签两路径一致，不再 500 / 静默 200）；status 非法字符串 → 400 `invalid node status: <值>`
+- 子资源写端点不存在 id → 404 归一化文案（不再 400 + `sql: no rows in result set`）：`POST /api/nodes/{id}/revoke-credential` → `node not found`；`POST /api/transfers/{id}/retry`、`/cancel` → `transfer not found`；`POST /api/executions/{id}/cancel` → `execution not found`；业务错误（如 transfer 已取消）仍保持 400 + 业务文案
+- `PUT /api/users/{id}`：用户不存在 → 404 `user not found`（不再静默 200）；其余持久化失败保持 500
+- 资源子路径：`/api/<resource>/{id}/<未知子路径>` 一律 404 + 归一化 not found 文案（任意方法），不落入基础资源分支被读取/改写/删除；已知子路径追加多余段（如 `/run/extra`、`/revisions/1/extra`）同样 404；末尾斜杠归一为同一资源（`/api/tasks/{id}/` 等价于 `/api/tasks/{id}`）
 - `/api/users/{id}`、`/api/executions/{id}`：不支持 `DELETE` → 405 + `Allow`（`Allow: PUT` / `Allow: GET`）
 - `POST /api/users`：用户名重复 → 400 `username already exists`（不返回数据库层 UNIQUE 原文；并发创建由唯一索引兜底为同文案）
-- 存储层与内部错误：SQLITE_BUSY/LOCKED 家族 → 503 `storage busy, please retry`（可重试语义）；其余 → 500 `internal error`（OIDC 启动失败等专用路径保留自身文案）；驱动原文只进 Hub 日志，不回响应体，且 Hub 对内部错误写 error 级日志
+- 存储层与内部错误：SQLITE_BUSY/LOCKED 家族 → 503 `storage busy, please retry`（可重试语义；全写路径归一化，含并发 `DELETE /api/schedules/{id}` 路径）；其余 → 500 `internal error`（OIDC 启动失败等专用路径保留自身文案）；驱动原文只进 Hub 日志，不回响应体，且 Hub 对内部错误写 error 级日志；连接已关闭/客户端取消（`context.Canceled`、`net.ErrClosed`、`io.EOF` 等）仅日志降级（不写 error 级日志），HTTP 响应语义不变
 - `POST /api/transfers` 自传（目标=源）→ 400 `self transfer is not allowed`，不落库
 - 派发/手动运行命中 disabled 节点 → 400 `node <id> is disabled`
 - `POST /api/groups`：name 缺失或空白 → 400；组名忽略大小写与首尾空白判重
@@ -1446,6 +1456,8 @@ Agent SQLite 使用 WAL，连接以 `_txlock=immediate` 打开写事务（BEGIN 
 - artifacts
 - executions
 - deployments
+
+部署 journal 只读查询面：恢复结束后 Agent 在 `<data_dir>/deployments-summary.json` 原子输出摘要（非 `deployed` 的 `DONE` 行按 `completed_kind` 计数 + 仍活动行 id/应用/阶段/时间），供运维查看不可重放记录。
 
 ---
 

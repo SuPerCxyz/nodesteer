@@ -717,6 +717,8 @@ SQLite + WAL
 
 关键同步修改必须用事务。
 
+只读运维查询面：每次部署恢复结束后，Agent 把部署 journal 摘要原子写入 `<data_dir>/deployments-summary.json`（先写 `.tmp` 再 rename）——含「非 `deployed` 的 `DONE` 行按 `completed_kind` 计数」与「仍活动行的 id/应用/阶段/`started_at`」，供运维直接查看不可重放记录（CR-3 终态化后的可见性出口；写失败只记 ERROR，不影响恢复）。
+
 事务与锁：连接使用 `_txlock=immediate`，写事务在 BEGIN 阶段即取写锁，配合 WAL 与 `busy_timeout=5000`，避免 deferred 事务「先读后写」升级写锁时不受 busy_timeout 保护的 `SQLITE_BUSY`/`BUSY_SNAPSHOT`。
 
 ---
@@ -1354,6 +1356,15 @@ Definition JSON
 
 存储层错误不回传客户端：SQLITE_BUSY/LOCKED 家族归一化为 503 `storage busy, please retry`，其余内部错误归一化为 500 `internal error`；驱动原文只写 error 级结构化日志。
 
+存储层并发约束（硬约束；违反会造成连接池死锁挂起，缺陷 QA-20261018-F1/F2 的根因）：
+- 禁止在持有 `rows`（未关闭的查询结果，占用 1 条池连接）时再发起需要第二条池连接的查询：列表读取必须单条 SQL 一次取回（如 `file_transfers LEFT JOIN file_transfer_targets`），不得在 `rows.Next()` 循环内嵌套查询。
+- 写事务闭包（`runMutationTx`/`WithTx`）内只允许用事务上下文（`txctx`）调 store——`queryer(ctx)`/`execer(ctx)` 在事务上下文中复用事务连接；禁止用外层 `ctx` 在事务内发起新的存储调用（等于持写锁再向连接池借第二条连接）。
+- 连接池固定 `SetMaxOpenConns(8)`；上述两类嵌套借用都会在 ≥8 并发时耗尽连接池并死锁挂起（只能靠客户端断开释放），挂起期间拖垮全库端点。
+
+资源写路径（UPDATE/DELETE）校验命中行数（`execExpectRow`）：零行命中返回 `sql.ErrNoRows`，由 API 层归一化为 404，不得静默成功（缺陷 QA-20261018-F5）。
+
+适用范围（与实现一致）：**对外 API 可见的资源写方法必须校验**（已接入 15 个 store 方法，覆盖 nodes/groups/scripts/tasks/schedules/artifacts/applications 的更新与删除）。其余直连 `s.db` 的写方法经审计确认调用点全在事务外、且语义为幂等删除或内部状态机（无对外 404 语义需求），当前视为安全；后续统一改造方向为全量 `queryer(ctx)/execer(ctx)` + CI 静态禁令 + 池=1 表驱动守卫（见 QA-20261018 代码评审 minor-04）。
+
 ---
 
 ## 55. Hub Revision Transaction
@@ -1524,6 +1535,8 @@ Agent：
 - Sync Logs
 
 内部与存储层错误必须写 error 级结构化日志（至少 method、path、error 原文；不含 query，避免 `agent_token` 等敏感值），响应侧同时归一化，不回传驱动原文。
+
+日志级别语义：连接已关闭/客户端取消（`context.Canceled`、`net.ErrClosed`、`io.EOF`、`use of closed network connection`、`connection reset by peer`、`broken pipe` 等，经 `hub.IsConnectionGone` 统一判定）属于正常清理场景，不是服务端错误——API 错误路径降级为 Debug（`api request canceled or connection gone`，仅 method/path；HTTP 响应仍为归一化状态码），Gateway 在途写失败降级为 WARN；真实错误（如 `io.ErrUnexpectedEOF`、websocket 写限额超限）仍保持 error 级（缺陷 QA-20261018-F8、OBS-20261018-SCALE-02）。
 
 NodeSteer 不建设完整监控平台。
 
