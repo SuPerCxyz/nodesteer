@@ -54,7 +54,7 @@ test.describe('P01 登录页', () => {
     }
   })
 
-  test('P01-07 SSO-only 模式（enabled:true, local_fallback:false）仅显示 SSO 入口', async ({
+  test('P01-07 [UI_MOCK] SSO-only 模式（enabled:true, local_fallback:false）仅显示 SSO 入口', async ({
     page,
   }) => {
     await page.route('**/api/oidc/state', async (route) => {
@@ -70,7 +70,7 @@ test.describe('P01 登录页', () => {
     await expect(page.getByLabel(/password|密码/i)).toHaveCount(0)
   })
 
-  test('P01-08 本地模式（enabled:false, local_fallback:true）仅显示本地表单', async ({
+  test('P01-08 [UI_MOCK] 本地模式（enabled:false, local_fallback:true）仅显示本地表单', async ({
     page,
   }) => {
     await page.route('**/api/oidc/state', async (route) => {
@@ -90,7 +90,7 @@ test.describe('P01 登录页', () => {
     ).toHaveCount(0)
   })
 
-  test('P01-09 本地登录被后端拒绝（403）时显示错误提示', async ({ page }) => {
+  test('P01-09 [UI_MOCK] 本地登录被后端拒绝（403）时显示错误提示', async ({ page }) => {
     await page.route('**/api/oidc/state', async (route) => {
       await route.fulfill({
         status: 200,

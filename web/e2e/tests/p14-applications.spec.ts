@@ -16,7 +16,7 @@ test.describe('P15 托管应用编辑器', () => {
     await loginViaApi(page)
     await page.goto('/applications/new')
     await page.waitForTimeout(1000)
-    const nameInput = page.getByLabel(/name|名称/i)
+    const nameInput = page.getByLabel(/^name$|^名称$/i)
     await expect(nameInput).toBeVisible()
   })
 })

@@ -21,21 +21,17 @@ test.describe('P02 布局与导航', () => {
       await page.waitForURL(new RegExp(item.url), { timeout: 10_000 })
       await expect(page).toHaveURL(new RegExp(item.url))
     }
-    // 调度已合并到任务页的「调度」视图，侧边栏不再有独立入口
-    await expect(sidebar.getByRole('link', { name: /调度/ })).toHaveCount(0)
+    await expect(sidebar.getByRole('link', { name: /调度/ })).toBeVisible()
   })
 
-  test('P02-05 任务页调度视图与旧路由重定向', async ({ page }) => {
+  test('P02-05 独立调度与旧入口重定向', async ({ page }) => {
     await loginViaApi(page)
-    await page.goto(TEST_URLS.tasks)
-    await page.waitForTimeout(1500)
-    await page.getByRole('tab', { name: /schedules|调度/i }).click()
-    await page.waitForURL(/view=schedules/, { timeout: 10_000 })
+    await page.goto('/tasks?view=schedules')
+    await expect(page).toHaveURL(/\/schedules$/)
     await expect(page.getByRole('heading', { name: /schedules|调度/i }).first()).toBeVisible()
-    // 旧路由重定向
-    await page.goto('/schedules')
-    await page.waitForURL(/\/tasks\?view=schedules/, { timeout: 10_000 })
-    await expect(page).toHaveURL(/\/tasks\?view=schedules/)
+    await page.reload()
+    await expect(page).toHaveURL(/\/schedules$/)
+    await expect(page.getByRole('heading', { name: /schedules|调度/i }).first()).toBeVisible()
   })
 
   test('P02-04 token 过期跳登录', async ({ page }) => {

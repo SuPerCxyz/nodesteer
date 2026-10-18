@@ -1,5 +1,5 @@
 import { test, expect } from 'playwright/test'
-import { loginViaApi, TEST_URLS } from './fixtures'
+import { apiRequest, cleanupByIds, loginViaApi, testName, TEST_URLS } from './fixtures'
 
 test.describe('P04 节点列表', () => {
   test('P04-01 节点列表渲染', async ({ page }) => {
@@ -24,21 +24,27 @@ test.describe('P04 节点列表', () => {
     await expect(page).toHaveURL(/\/agents\//)
   })
 
-  test('P04-03 维护/恢复按钮', async ({ page }) => {
+  test('P04-03 本轮pending节点维护/恢复按钮', async ({ page }) => {
     await loginViaApi(page)
-    await page.goto(TEST_URLS.nodes)
-    await page.waitForTimeout(2000)
-    const actionMenu = page.getByRole('button', { name: /actions|操作/i }).first()
-    await expect(actionMenu).toBeVisible()
-    await actionMenu.click()
-    await page.getByRole('menuitem', { name: /maintain|维护/i }).click()
-    await page.waitForTimeout(1000)
-    await actionMenu.click()
-    await page.getByRole('menuitem', { name: /restore|恢复/i }).click()
-    await page.waitForTimeout(1000)
+    const created = await apiRequest(page, '/api/nodes/enrollment', { method: 'POST', data: {
+      node_name: testName('p0403'), node_ip: '127.0.0.1', hub_address: process.env.BASE_URL,
+    } })
+    expect(created.ok).toBeTruthy()
+    const id = (created.body as { node_id: string }).node_id
+    try {
+      await page.goto(TEST_URLS.nodes)
+      const row = page.locator(`tr:has(a[href="/agents/${id}"])`)
+      await expect(row).toBeVisible()
+      await row.getByRole('button', { name: /actions|操作/i }).click()
+      await page.getByRole('menuitem', { name: /maintain|维护/i }).click()
+      await expect.poll(async () => (await apiRequest(page, `/api/nodes/${id}`)).body).toMatchObject({ status: 'maintenance' })
+      await row.getByRole('button', { name: /actions|操作/i }).click()
+      await page.getByRole('menuitem', { name: /resume|restore|恢复/i }).click()
+      await expect.poll(async () => (await apiRequest(page, `/api/nodes/${id}`)).body).toMatchObject({ status: 'online' })
+    } finally { await cleanupByIds(page, [`/api/nodes/${id}`]) }
   })
 
-  test('P04-04 删除菜单关闭并显示确认弹窗', async ({ page }) => {
+  test('P04-04 [UI_MOCK] 删除菜单关闭并显示确认弹窗', async ({ page }) => {
     await loginViaApi(page)
     await page.route('**/api/nodes/*', async (route) => {
       if (route.request().method() === 'DELETE') {
@@ -79,7 +85,7 @@ test.describe('P05 节点详情', () => {
     expect(content).toBeTruthy()
   })
 
-  test('P05-08 添加节点命令', async ({ page }) => {
+  test('P05-08 [UI_MOCK] 添加节点命令', async ({ page }) => {
     await loginViaApi(page)
     await page.context().grantPermissions(
       ['clipboard-read', 'clipboard-write'],
@@ -105,7 +111,7 @@ test.describe('P05 节点详情', () => {
     await page.waitForTimeout(1000)
     const dialog = page.locator('[role="dialog"]')
     await expect(dialog).toBeVisible()
-    await dialog.getByLabel(/节点名称|node name/i).fill(`e2e-node-${Date.now()}`)
+    await dialog.getByLabel(/节点名称|node name/i).fill(testName('mock-node'))
     await dialog.getByLabel(/节点地址|node address/i).fill('192.168.100.212')
     await dialog.getByLabel(/Hub 地址|hub address/i).fill(process.env.BASE_URL || 'http://192.168.100.209:8080')
     await dialog.getByRole('button', { name: /生成安装命令|generate/i }).click()

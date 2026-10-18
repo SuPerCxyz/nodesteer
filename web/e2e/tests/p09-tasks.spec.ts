@@ -1,21 +1,28 @@
 import { test, expect } from 'playwright/test'
-import { loginViaApi } from './fixtures'
+import { apiRequest, captureCreated, cleanupByIds, getNodeIds, loginViaApi, testName } from './fixtures'
 
 test.describe('P10 任务编辑器', () => {
   test('P10-01 新建 command 任务', async ({ page }) => {
     await loginViaApi(page)
     await page.goto('/tasks/new')
     await page.waitForTimeout(1000)
-    const nameInput = page.getByLabel(/name|名称/i)
+    const nameInput = page.getByLabel(/^name$|^名称$/i)
     await expect(nameInput).toBeVisible()
-    await nameInput.fill('test-e2e-task')
+    const name = testName('p1001')
+    await nameInput.fill(name)
     const commandInput = page.getByRole('textbox', { name: /command|命令/i })
     await expect(commandInput).toBeVisible()
     await commandInput.fill('echo hello')
     const saveBtn = page.getByRole('button', { name: /save|保存/i }).first()
     await expect(saveBtn).toBeVisible()
-    await saveBtn.click()
-    await page.waitForTimeout(3000)
+    const nodeIds = await getNodeIds(page)
+    expect(nodeIds.length).toBeGreaterThan(0)
+    const nodes = (await apiRequest(page, '/api/nodes')).body as { id: string; hostname: string }[]
+    const node = nodes.find((item) => item.id === nodeIds[0])!
+    await page.locator('label').filter({ hasText: node.hostname }).getByRole('checkbox').check()
+    const id = await captureCreated(page, '/api/tasks', () => saveBtn.click())
+    try { await page.waitForURL(/\/tasks$/); await page.getByRole('textbox', { name: /搜索任务|search tasks/i }).fill(name); await expect(page.locator(`a[href="/tasks/${id}"]`)).toBeVisible() }
+    finally { await cleanupByIds(page, [`/api/tasks/${id}`]) }
   })
 
   /**
@@ -24,7 +31,7 @@ test.describe('P10 任务编辑器', () => {
    * 测试环境无托管应用数据时无法通过真实后端校验（application_id 400），
    * 故 route mock 拦截 POST /api/tasks 直接断言 payload。
    */
-  test('P10-02 托管应用部署任务默认 deploy 并保存', async ({ page }) => {
+  test('P10-02 [UI_MOCK] 托管应用部署任务默认 deploy 并保存', async ({ page }) => {
     await loginViaApi(page)
 
     let posted: Record<string, unknown> | null = null
@@ -40,9 +47,9 @@ test.describe('P10 任务编辑器', () => {
     })
 
     await page.goto('/tasks/new')
-    const nameInput = page.getByLabel(/name|名称/i)
+    const nameInput = page.getByLabel(/^name$|^名称$/i)
     await expect(nameInput).toBeVisible()
-    await nameInput.fill('e2e-app-deploy-task')
+    await nameInput.fill(testName('mock-app'))
 
     // 类型切换为托管应用部署
     await page.getByRole('combobox').first().click()

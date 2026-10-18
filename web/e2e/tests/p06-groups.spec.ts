@@ -18,7 +18,7 @@ test.describe('P06 分组', () => {
     await expect(createBtn).toBeVisible()
     await createBtn.click()
     await page.waitForURL(/\/groups\/new/, { timeout: 10_000 })
-    const nameInput = page.getByLabel(/name|名称/i)
+    const nameInput = page.getByLabel(/^name$|^名称$/i)
     await expect(nameInput).toBeVisible()
   })
 

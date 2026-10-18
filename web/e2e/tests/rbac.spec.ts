@@ -1,5 +1,5 @@
 import { test, expect } from 'playwright/test'
-import { apiRequest, loginViaApi, TEST_URLS, TEST_USER } from './fixtures'
+import { apiRequest, cleanupByIds, loginViaApi, testName, TEST_URLS, TEST_USER } from './fixtures'
 
 const OPERATOR_USER = process.env.NODESTEER_E2E_OPERATOR_USERNAME || 'test-operator'
 const VIEWER_USER = process.env.NODESTEER_E2E_VIEWER_USERNAME || 'test-viewer'
@@ -39,7 +39,7 @@ test.describe('RBAC 权限矩阵', () => {
     await loginViaApi(page, VIEWER_USER, RBAC_PASSWORD)
     const createScriptResp = await apiRequest(page, '/api/scripts', {
       method: 'POST',
-      data: { name: 'rbac-test', interpreter: 'bash', content: 'echo test' },
+      data: { name: testName('rbac-denied'), interpreter: 'bash', content: 'echo test' },
     })
     expect(createScriptResp.status).toBe(403)
   })
@@ -48,27 +48,30 @@ test.describe('RBAC 权限矩阵', () => {
     await loginViaApi(page, OPERATOR_USER, RBAC_PASSWORD)
     const createScriptResp = await apiRequest(page, '/api/scripts', {
       method: 'POST',
-      data: { name: 'rbac-test', interpreter: 'bash', content: 'echo test' },
+      data: { name: testName('rbac-denied'), interpreter: 'bash', content: 'echo test' },
     })
     expect(createScriptResp.status).toBe(403)
   })
 
-  test('RBAC-04 Operator 节点状态修改被拒', async ({ page }) => {
-    await loginViaApi(page, OPERATOR_USER, RBAC_PASSWORD)
-    const nodesResp = await apiRequest(page, '/api/nodes')
-    if (nodesResp.ok) {
-      const nodes = Array.isArray(nodesResp.body) ? nodesResp.body : []
-      if (nodes.length > 0) {
-        const statusResp = await apiRequest(page, `/api/nodes/${nodes[0].id}`, {
-          method: 'POST',
-          data: { status: 'maintenance' },
-        })
-        expect(statusResp.status).toBe(403)
-      }
+  test('RBAC-04 Operator 本轮节点状态修改被拒', async ({ page }) => {
+    await loginViaApi(page)
+    const created = await apiRequest(page, '/api/nodes/enrollment', { method: 'POST', data: {
+      node_name: testName('rbac-node'), node_ip: '127.0.0.1', hub_address: process.env.BASE_URL,
+    } })
+    expect(created.ok).toBeTruthy()
+    const id = (created.body as { node_id: string }).node_id
+    try {
+      await loginViaApi(page, OPERATOR_USER, RBAC_PASSWORD)
+      const response = await apiRequest(page, `/api/nodes/${id}`, { method: 'POST', data: { status: 'maintenance' } })
+      expect(response.status).toBe(403)
+    } finally {
+      await loginViaApi(page)
+      await cleanupByIds(page, [`/api/nodes/${id}`])
     }
   })
 
-  test('RBAC-05 Operator 用户/设置被拒', async ({ page }) => {
+  test('RBAC-05 [SHARED_SETTING] Operator 用户/设置被拒', async ({ page }) => {
+    test.skip(process.env.NODESTEER_E2E_ALLOW_SHARED_SETTINGS !== '1', '共享Settings拒绝写验证由主控串行执行')
     await loginViaApi(page, OPERATOR_USER, RBAC_PASSWORD)
     const settingsResp = await apiRequest(page, '/api/settings', {
       method: 'PUT',
@@ -77,7 +80,7 @@ test.describe('RBAC 权限矩阵', () => {
     expect(settingsResp.status).toBe(403)
     const createUserResp = await apiRequest(page, '/api/users', {
       method: 'POST',
-      data: { username: 'should-not-exist', password: 'test', role: 'viewer' },
+      data: { username: testName('rbac-denied-user'), password: 'test', role: 'viewer' },
     })
     expect(createUserResp.status).toBe(403)
   })

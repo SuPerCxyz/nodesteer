@@ -1,5 +1,5 @@
 import { test, expect } from 'playwright/test'
-import { cleanupByName, loginViaApi, TEST_URLS } from './fixtures'
+import { apiRequest, captureCreated, cleanupByIds, loginViaApi, testName, TEST_URLS } from './fixtures'
 
 test.describe('P07 脚本列表', () => {
   test('P07-01 列表渲染', async ({ page }) => {
@@ -21,21 +21,26 @@ test.describe('P07 脚本列表', () => {
     await expect(page).toHaveURL(/\/scripts\/new/)
   })
 
-  test('P07-04 启用/禁用', async ({ page }) => {
+  test('P07-04 启用/禁用本轮脚本', async ({ page }) => {
     await loginViaApi(page)
-    await page.goto(TEST_URLS.scripts)
-    await page.waitForTimeout(2000)
-    const actionMenu = page.getByRole('button', { name: /actions|操作/i }).first()
-    await expect(actionMenu).toBeVisible()
-    await actionMenu.click()
-    const toggleItem = page.getByRole('menuitem', { name: /enable|disable|启用|禁用/i }).first()
-    await expect(toggleItem).toBeVisible()
-    const textBefore = await toggleItem.textContent()
-    await toggleItem.click()
-    await page.waitForTimeout(1000)
-    await actionMenu.click()
-    const textAfter = await page.getByRole('menuitem', { name: /enable|disable|启用|禁用/i }).first().textContent()
-    expect(textAfter).not.toEqual(textBefore)
+    const created = await apiRequest(page, '/api/scripts', { method: 'POST', data: {
+      name: testName('p0704'), interpreter: 'shell', content: 'echo qa', enabled: true,
+    } })
+    expect(created.ok).toBeTruthy()
+    const id = (created.body as { id: string }).id
+    try {
+      await page.goto(TEST_URLS.scripts)
+      const row = page.locator(`tr:has(a[href="/scripts/${id}"])`)
+      await expect(row).toBeVisible()
+      await row.getByRole('button', { name: /actions|操作/i }).click()
+      await page.getByRole('menuitem', { name: /disable|禁用/i }).click()
+      await expect.poll(async () => (await apiRequest(page, `/api/scripts/${id}`)).body)
+        .toMatchObject({ enabled: false })
+      await row.getByRole('button', { name: /actions|操作/i }).click()
+      await page.getByRole('menuitem', { name: /enable|启用/i }).click()
+      await expect.poll(async () => (await apiRequest(page, `/api/scripts/${id}`)).body)
+        .toMatchObject({ enabled: true })
+    } finally { await cleanupByIds(page, [`/api/scripts/${id}`]) }
   })
 })
 
@@ -44,31 +49,35 @@ test.describe('P08 脚本编辑器', () => {
     await loginViaApi(page)
     await page.goto('/scripts/new')
     await page.waitForTimeout(1000)
-    const nameInput = page.getByLabel(/name|名称/i)
+    const nameInput = page.getByLabel(/^name$|^名称$/i)
     await expect(nameInput).toBeVisible()
-    await nameInput.fill('test-e2e-script')
+    await nameInput.fill(testName('p0801'))
     const contentArea = page.locator('textarea, [role="textbox"]').first()
     await expect(contentArea).toBeVisible()
     await contentArea.fill('#!/bin/bash\necho hello')
     const saveBtn = page.getByRole('button', { name: /save|保存/i }).first()
     await expect(saveBtn).toBeVisible()
-    await saveBtn.click()
-    await page.waitForTimeout(3000)
-    // 清理：删除本用例创建的脚本，避免环境累积
-    await cleanupByName(page, { scripts: ['test-e2e-script'] })
+    const id = await captureCreated(page, '/api/scripts', () => saveBtn.click())
+    try { await page.waitForURL(TEST_URLS.scripts); await expect(page.locator(`a[href="/scripts/${id}"]`)).toBeVisible() }
+    finally { await cleanupByIds(page, [`/api/scripts/${id}`]) }
   })
 
-  test('P08-08 取消编辑', async ({ page }) => {
+  test('P08-08 取消编辑无写请求', async ({ page }) => {
     await loginViaApi(page)
-    await page.goto(TEST_URLS.scripts)
-    await page.waitForTimeout(2000)
-    const nameLink = page.locator('table tbody tr a').first()
-    await expect(nameLink).toBeVisible()
-    await nameLink.click()
-    await page.waitForTimeout(1500)
-    const cancelBtn = page.getByRole('link', { name: /cancel|取消/i }).first()
-    await expect(cancelBtn).toBeVisible()
-    await cancelBtn.click()
-    await page.waitForURL(TEST_URLS.scripts, { timeout: 10_000 })
+    const created = await apiRequest(page, '/api/scripts', { method: 'POST', data: {
+      name: testName('p0808'), interpreter: 'shell', content: 'echo cancel', enabled: true,
+    } })
+    expect(created.ok).toBeTruthy()
+    const id = (created.body as { id: string }).id
+    try {
+      await page.goto(`/scripts/${id}`)
+      await page.getByLabel(/^名称$|^name$/i).fill(testName('unsaved'))
+      let writes = 0
+      page.on('request', (r) => { if (new URL(r.url()).pathname === `/api/scripts/${id}` && r.method() === 'PUT') writes++ })
+      await page.getByRole('link', { name: /^取消$|^cancel$/i }).click()
+      await page.waitForURL(TEST_URLS.scripts)
+      expect(writes).toBe(0)
+      expect((await apiRequest(page, `/api/scripts/${id}`)).body).toMatchObject({ revision: 1 })
+    } finally { await cleanupByIds(page, [`/api/scripts/${id}`]) }
   })
 })

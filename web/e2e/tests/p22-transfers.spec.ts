@@ -20,7 +20,7 @@ test.describe('P22 文件传输', () => {
    * TestFileTransferCompleteUploadFailureTerminalizesTargets 覆盖，
    * 「节点删除不再 409」由该 Go 用例的真实 NodeManager.Delete 断言。
    */
-  test('P22-02 FAILED 传输行菜单可取消并变为 CANCELED', async ({ page }) => {
+  test('P22-02 [UI_MOCK] FAILED 传输行菜单可取消并变为 CANCELED', async ({ page }) => {
     await loginViaApi(page)
 
     const now = new Date().toISOString()

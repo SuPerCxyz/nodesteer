@@ -38,7 +38,8 @@ test.describe('P21 设置', () => {
     expect(content).toBeTruthy()
   })
 
-  test('P21-02 保存设置', async ({ page }) => {
+  test('P21-02 [SHARED_SETTING] 保存设置', async ({ page }) => {
+    test.skip(process.env.NODESTEER_E2E_ALLOW_SHARED_SETTINGS !== '1', '共享Settings由主控串行验证；默认suite不修改')
     await loginViaApi(page)
     await page.goto(TEST_URLS.settings)
     await page.waitForTimeout(2000)
