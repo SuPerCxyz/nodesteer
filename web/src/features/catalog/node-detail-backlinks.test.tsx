@@ -139,3 +139,35 @@ describe('节点详情任务/调度/应用回链（OBS-20261017-CROSSPAGE-LINK-G
       .toHaveAttribute('href', '/applications/app-1')
   })
 })
+
+describe('节点详情标签输入可访问名（P17 a11y：placeholder-only 输入补 aria-label）', () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage('zh')
+  })
+
+  beforeEach(() => {
+    get.mockReset()
+    window.history.replaceState({}, '', '/agents/node-1')
+    get.mockImplementation(async (path: string) => {
+      if (path === '/nodes/node-1') return NODE
+      if (path.startsWith('/executions?')) return []
+      if (path === '/tasks') return [TASK]
+      if (path === '/groups') return []
+      if (path === '/schedules') return [SCHEDULE]
+      if (path === '/applications') return [APPLICATION]
+      if (path === '/applications/app-1/nodes') return ['node-1']
+      return []
+    })
+  })
+
+  it('标签键/值输入有可访问名，不再仅靠 placeholder', async () => {
+    const page = await renderDetail()
+
+    await expect
+      .element(page.getByRole('textbox', { name: i18n.t('nodes.labelKey') }))
+      .toBeVisible()
+    await expect
+      .element(page.getByRole('textbox', { name: i18n.t('nodes.labelValue') }))
+      .toBeVisible()
+  })
+})

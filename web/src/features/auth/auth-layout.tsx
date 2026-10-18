@@ -3,7 +3,7 @@ import { LanguageSwitch } from '@/components/language-switch'
 
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className='relative container flex h-svh max-w-none items-center justify-center'>
+    <main className='relative container flex h-svh max-w-none items-center justify-center'>
       <div className='absolute end-4 top-4'>
         <LanguageSwitch />
       </div>
@@ -14,6 +14,6 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         </div>
         {children}
       </div>
-    </div>
+    </main>
   )
 }

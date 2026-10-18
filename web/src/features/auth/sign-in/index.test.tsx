@@ -79,3 +79,20 @@ describe('SignIn OIDC 状态渲染', () => {
     await expect.element(getByLabelText('密码')).not.toBeInTheDocument()
   })
 })
+
+describe('登录页地标（P11 a11y：landmark-one-main / region）', () => {
+  beforeAll(() => void i18n.changeLanguage('zh'))
+  beforeEach(() => {
+    get.mockReset()
+    window.history.replaceState({}, '', '/sign-in')
+  })
+
+  it('登录表单位于 main 地标内', async () => {
+    get.mockResolvedValue({ enabled: false, local_fallback: true })
+    const page = await renderSignIn()
+
+    const main = page.getByRole('main')
+    await expect.element(main).toBeVisible()
+    expect(main.element().contains(page.getByLabelText('用户名').element())).toBe(true)
+  })
+})

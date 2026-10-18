@@ -179,7 +179,7 @@ function Sidebar({
 
   if (isMobile) {
     return (
-      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+      <Sheet open={openMobile} onOpenChange={setOpenMobile}>
         <SheetContent
           data-sidebar='sidebar'
           data-slot='sidebar'
@@ -196,7 +196,10 @@ function Sidebar({
             <SheetTitle>Sidebar</SheetTitle>
             <SheetDescription>Displays the mobile sidebar.</SheetDescription>
           </SheetHeader>
-          <div className='flex h-full w-full flex-col'>{children}</div>
+          {/* 透传调用方属性（如 role/aria-label）到移动端侧栏容器，保持与桌面端一致的地标语义 */}
+          <div className='flex h-full w-full flex-col' {...props}>
+            {children}
+          </div>
         </SheetContent>
       </Sheet>
     )

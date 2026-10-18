@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { getToken, setToken, type SessionInfo } from '@/lib/api'
+import { notifySessionInvalidated } from '@/lib/session-sync'
 
 export type AuthUser = {
   accountNo: string
@@ -51,6 +52,8 @@ export const useAuthStore = create<AuthState>()((set) => ({
     reset: () => {
       setToken(null)
       set((state) => ({ auth: { ...state.auth, user: null, accessToken: '' } }))
+      // 会话已在本标签失效（退出登录 / 401）：广播信号，其它标签立即收敛。
+      notifySessionInvalidated()
     },
   },
 }))

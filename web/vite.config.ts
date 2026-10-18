@@ -47,6 +47,11 @@ export default defineConfig({
     silent: 'passed-only',
     unstubEnvs: true,
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // 应用代码在保存成功后会调用 window.location.assign（真实导航）。
+    // 浏览器模式下并行文件共享同一 iframe：任一文件触发真实导航会让同批其它文件
+    // 报 "Cannot connect to the iframe" 而整体失败（间歇性 flake，非产品缺陷）。
+    // 串行执行（约 24s）换取确定性；如后续改为在测试中 stub 导航可恢复并行。
+    fileParallelism: false,
     browser: {
       enabled: true,
       provider: playwright(),

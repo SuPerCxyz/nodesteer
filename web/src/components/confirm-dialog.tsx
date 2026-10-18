@@ -1,3 +1,4 @@
+import * as React from 'react'
 import { cn } from '@/lib/utils'
 import {
   AlertDialog,
@@ -22,6 +23,8 @@ type ConfirmDialogProps = {
   isLoading?: boolean
   className?: string
   children?: React.ReactNode
+  /** 关闭后显式还焦点的目标（无 trigger 的 Radix 弹窗默认会把焦点丢给 body） */
+  returnFocusTo?: React.RefObject<HTMLElement | null>
 } & (
   | { form: string; handleConfirm?: undefined }
   | { form?: undefined; handleConfirm: () => void }
@@ -40,11 +43,30 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
     disabled = false,
     form,
     handleConfirm,
+    returnFocusTo,
     ...actions
   } = props
+  // Radix 弹窗在无 trigger 时关闭后会 preventDefault 焦点恢复，把焦点丢给 body；
+  // 这里记录打开前的焦点元素，关闭后显式恢复，保证键盘用户回到触发按钮。
+  const previouslyFocusedRef = React.useRef<HTMLElement | null>(null)
   return (
     <AlertDialog {...actions}>
-      <AlertDialogContent className={cn(className && className)}>
+      <AlertDialogContent
+        className={cn(className && className)}
+        onOpenAutoFocus={() => {
+          previouslyFocusedRef.current =
+            document.activeElement instanceof HTMLElement
+              ? document.activeElement
+              : null
+        }}
+        onCloseAutoFocus={(event) => {
+          const target = returnFocusTo?.current ?? previouslyFocusedRef.current
+          if (target && target.isConnected) {
+            event.preventDefault()
+            target.focus()
+          }
+        }}
+      >
         <AlertDialogHeader className='text-start'>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription asChild>

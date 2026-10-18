@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from 'react'
 import {
@@ -62,6 +63,7 @@ export function StatusBadge({ status }: { status?: string | null }) {
           ? 'secondary'
           : 'outline'
   const label = statusLabel(status)
+  // 颜色在明暗两种主题下均需满足 4.5:1（white 文字），不再使用更浅的 dark:* 底色
   const colorClass = [
     'online',
     'healthy',
@@ -70,7 +72,7 @@ export function StatusBadge({ status }: { status?: string | null }) {
     'completed',
     'synced',
   ].includes(key)
-    ? 'border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500 dark:text-white'
+    ? 'border-emerald-700 bg-emerald-700 text-white'
     : [
           'offline',
           'unhealthy',
@@ -79,11 +81,11 @@ export function StatusBadge({ status }: { status?: string | null }) {
           'timed_out',
           'timeout',
         ].includes(key)
-      ? 'border-red-600 bg-red-600 text-white dark:border-red-500 dark:bg-red-500 dark:text-white'
+      ? 'border-red-600 bg-red-600 text-white'
       : ['running', 'busy', 'info'].includes(key)
-        ? 'border-blue-600 bg-blue-600 text-white dark:border-blue-500 dark:bg-blue-500 dark:text-white'
+        ? 'border-blue-600 bg-blue-600 text-white'
         : ['degraded', 'blocked', 'outdated'].includes(key)
-          ? 'border-amber-700 bg-amber-700 text-white dark:border-amber-600 dark:bg-amber-600 dark:text-white'
+          ? 'border-amber-700 bg-amber-700 text-white'
           : ''
   return (
     <Badge variant={variant} className={colorClass}>
@@ -136,7 +138,7 @@ export function ErrorState({
   const message = errorMessage(error) || t('common.noData')
   return (
     <div
-      className='flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive'
+      className='flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-red-700 dark:text-destructive'
       role='alert'
     >
       <span>{message}</span>
@@ -210,6 +212,7 @@ export function SearchToolbar({
     <div className='flex flex-wrap items-center gap-2'>
       <Input
         className='h-8 w-full sm:w-64'
+        aria-label={placeholder}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -286,6 +289,7 @@ export function DetailField({
 export function MoreMenu({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const [confirmation, setConfirmation] = useState<{
     title?: string
     description?: string
@@ -309,6 +313,7 @@ export function MoreMenu({ children }: { children: React.ReactNode }) {
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
           <Button
+            ref={triggerRef}
             variant='ghost'
             size='icon'
             className='size-8'
@@ -330,6 +335,7 @@ export function MoreMenu({ children }: { children: React.ReactNode }) {
         confirmText={t('common.delete')}
         destructive
         handleConfirm={confirm}
+        returnFocusTo={triggerRef}
       />
     </MoreMenuContext.Provider>
   )

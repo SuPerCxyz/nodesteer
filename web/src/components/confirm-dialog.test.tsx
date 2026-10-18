@@ -1,3 +1,4 @@
+import * as React from 'react'
 import type { SubmitEvent } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
@@ -214,5 +215,37 @@ describe('ConfirmDialog', () => {
     const deleteBtn = getByRole('button', { name: 'Delete' })
     await expect.element(deleteBtn).toBeDisabled()
     expect(handleFormSubmit).not.toHaveBeenCalled()
+  })
+})
+
+describe('ConfirmDialog 关闭后焦点恢复（P11 a11y：无 trigger 的弹窗需显式还焦点）', () => {
+  it('关闭后焦点回到打开前的触发按钮，而不是落到 body', async () => {
+    function Harness() {
+      const [open, setOpen] = React.useState(false)
+      return (
+        <div>
+          <button type='button' onClick={() => setOpen(true)}>
+            删除节点
+          </button>
+          <ConfirmDialog
+            open={open}
+            onOpenChange={setOpen}
+            title='删除节点'
+            desc='确认删除？'
+            handleConfirm={() => setOpen(false)}
+          />
+        </div>
+      )
+    }
+    const page = await render(<Harness />)
+    const trigger = page.getByRole('button', { name: '删除节点' })
+
+    await userEvent.click(trigger)
+    await expect.element(page.getByRole('alertdialog')).toBeVisible()
+
+    await userEvent.keyboard('{Escape}')
+    await expect.element(page.getByRole('alertdialog')).not.toBeInTheDocument()
+
+    expect(document.activeElement).toBe(trigger.element())
   })
 })

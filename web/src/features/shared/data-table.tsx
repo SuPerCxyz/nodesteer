@@ -292,9 +292,12 @@ export function DataTable<TData>({
                           column={header.column}
                           title={headerDef.header as string}
                         />
-                      ) : (
+                      ) : headerDef.header ? (
                         flexRender(headerDef.header, header.getContext())
-                      )}
+                      ) : header.column.id === 'actions' ? (
+                        // 操作列无可见表头，补读屏文案，避免空表头（WCAG 1.3.1）
+                        <span className='sr-only'>{t('common.actions')}</span>
+                      ) : null}
                     </TableHead>
                   )
                 })}

@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import i18n from '@/i18n'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
-import { userEvent } from 'vitest/browser'
+import { page as browserPage, userEvent } from 'vitest/browser'
 import { setToken } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { AuthenticatedLayout } from './authenticated-layout'
@@ -19,7 +19,15 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
   return {
     ...actual,
     useNavigate: () => vi.fn(),
-    useLocation: () => ({ pathname: '/nodes', search: '', hash: '' }),
+    useLocation: (options?: { select?: (location: { pathname: string; search: string; hash: string; href: string }) => unknown }) => {
+      const location = {
+        pathname: '/nodes',
+        search: '',
+        hash: '',
+        href: '/nodes',
+      }
+      return options?.select ? options.select(location) : location
+    },
     Link: ({ children, to }: { children?: ReactNode; to?: string }) => (
       <a href={typeof to === 'string' ? to : '#'}>{children}</a>
     ),
@@ -63,4 +71,53 @@ describe('跳转主内容链接（SkipToMain）', () => {
     await userEvent.click(skipLink)
     expect(document.activeElement).toBe(target)
   })
+})
+
+describe('侧栏导航地标（P11 a11y：内容需位于 landmark 内）', () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage('zh')
+  })
+
+  // 侧栏在 md 以下断点隐藏（hidden md:block），用桌面视口验证地标
+  beforeEach(async () => {
+    await browserPage.viewport(1280, 800)
+  })
+
+  afterEach(async () => {
+    await browserPage.viewport(1280, 800)
+  })
+
+  beforeEach(() => {
+    setToken('layout-test-session')
+    useAuthStore.getState().auth.setAccessToken('layout-test-session')
+    get.mockReset()
+    get.mockResolvedValue({
+      token: 'layout-test-session',
+      user_id: 'admin',
+      username: 'admin',
+      role: 'administrator',
+      expires: '2099-01-01T00:00:00Z',
+    })
+  })
+
+  it('侧栏渲染为具名导航地标，侧栏内链接与用户菜单均在地标内', async () => {
+    const page = await render(
+      <AuthenticatedLayout>
+        <p>正文内容</p>
+      </AuthenticatedLayout>
+    )
+
+    const nav = page.getByRole('navigation', { name: i18n.t('nav.primary') })
+    await expect.element(nav).toBeVisible()
+    expect(nav.element().contains(page.getByRole('link', { name: '仪表盘' }).element())).toBe(true)
+    expect(
+      nav.element().contains(page.getByRole('button', { name: /admin/i }).element())
+    ).toBe(true)
+  })
+})
+
+// 会话写在同源 localStorage 上，跨测试文件共享；用例结束必须清理，避免污染其它测试
+afterEach(() => {
+  setToken(null)
+  useAuthStore.getState().auth.reset()
 })

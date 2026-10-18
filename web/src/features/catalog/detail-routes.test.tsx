@@ -190,3 +190,29 @@ describe('用户列表跳转详情（OBS-20261017-CROSSPAGE-LINK-GAPS ③）', (
       .toHaveAttribute('href', '/users/u-1')
   })
 })
+
+describe('用户列表角色选择器可访问名（P11 a11y：combobox 需要作者提供的名称）', () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage('zh')
+  })
+
+  beforeEach(() => {
+    get.mockReset()
+    get.mockImplementation(async (path: string) => {
+      if (path === '/users') return USERS
+      return []
+    })
+  })
+
+  it('每行角色选择器的可访问名包含用户名，不再是无名 combobox', async () => {
+    const page = await renderPage(<Users />)
+
+    await expect
+      .element(
+        page.getByRole('combobox', {
+          name: `${i18n.t('misc.role')}: alice`,
+        })
+      )
+      .toBeVisible()
+  })
+})

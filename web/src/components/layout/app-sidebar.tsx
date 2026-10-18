@@ -34,7 +34,12 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible={collapsible} variant={variant}>
+    <Sidebar
+      collapsible={collapsible}
+      variant={variant}
+      role='navigation'
+      aria-label={t('nav.primary')}
+    >
       <SidebarHeader>
         <AppTitle />
       </SidebarHeader>

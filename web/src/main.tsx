@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { ApiError } from '@/lib/api'
 import { handleServerError } from '@/lib/handle-server-error'
 import { currentPath, isSignInPath } from '@/lib/navigation'
+import { installCrossTabSessionConvergence } from '@/lib/session-convergence'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'
@@ -91,8 +92,13 @@ const router = createRouter({
 })
 
 function handleUnauthorized() {
-  const redirect = currentPath()
   useAuthStore.getState().auth.reset()
+  convergeToSignIn()
+}
+
+/** 清查询缓存并跳转登录页（保留当前路径作为登录后回跳目标）。 */
+function convergeToSignIn() {
+  const redirect = currentPath()
   queryClient.clear()
   if (!isSignInPath(redirect)) {
     void router.navigate({
@@ -104,10 +110,13 @@ function handleUnauthorized() {
 }
 
 window.addEventListener('nodesteer-unauthorized', handleUnauthorized)
+// 跨标签会话失效收敛：其它标签退出 / 会话被吊销后，本标签立即清会话并跳转登录页。
+const unsubscribeCrossTabSession = installCrossTabSessionConvergence(convergeToSignIn)
 if (import.meta.hot) {
-  import.meta.hot.dispose(() =>
+  import.meta.hot.dispose(() => {
     window.removeEventListener('nodesteer-unauthorized', handleUnauthorized)
-  )
+    unsubscribeCrossTabSession()
+  })
 }
 
 // Register the router instance for type safety

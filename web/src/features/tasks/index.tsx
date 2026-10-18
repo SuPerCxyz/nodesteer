@@ -933,7 +933,7 @@ export function TaskEditor() {
             <Separator />
             <div className='grid gap-3'>
               <div>
-                <h3 className='text-sm font-medium'>{t('tasks.targetsTab')}</h3>
+                <h2 className='text-sm font-medium'>{t('tasks.targetsTab')}</h2>
                 <p className='text-sm text-muted-foreground'>
                   {selectedNodes.length} {t('common.selected')}
                 </p>
@@ -1098,6 +1098,7 @@ export function TaskEditor() {
           <CardContent className='grid gap-4'>
             <div className='grid gap-3 sm:grid-cols-[1fr_140px_1fr_auto_auto]'>
               <Input
+                aria-label={t('tasks.paramName')}
                 placeholder={t('tasks.paramName')}
                 value={parameter.name}
                 onChange={(event) =>
@@ -1110,7 +1111,13 @@ export function TaskEditor() {
                   setParameter({ ...parameter, type: value })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger
+                  aria-label={
+                    parameter.name
+                      ? `${t('tasks.paramType')}: ${parameter.name}`
+                      : t('tasks.paramType')
+                  }
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1123,6 +1130,7 @@ export function TaskEditor() {
               </Select>
               <Input
                 type={parameter.type === 'secret' ? 'password' : 'text'}
+                aria-label={t('tasks.paramDefault')}
                 placeholder={t('tasks.paramDefault')}
                 value={parameter.default || ''}
                 onChange={(event) =>
@@ -1207,7 +1215,7 @@ export function TaskEditor() {
                 setLocalCondition({ ...localCondition, metric: value })
               }
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label={t('tasks.conditionMetric')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -1233,7 +1241,7 @@ export function TaskEditor() {
                 setLocalCondition({ ...localCondition, operator: value })
               }
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label={t('tasks.conditionOperator')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -1245,6 +1253,7 @@ export function TaskEditor() {
               </SelectContent>
             </Select>
             <Input
+              aria-label={t('tasks.localConditionValue')}
               placeholder='value'
               value={localCondition.value}
               onChange={(event) =>
@@ -1260,6 +1269,7 @@ export function TaskEditor() {
               localCondition.metric === 'process_exists' ||
               localCondition.metric === 'port_listening') && (
               <Input
+                aria-label={t('tasks.conditionPath')}
                 placeholder={t('tasks.conditionPath')}
                 value={localCondition.path}
                 onChange={(event) =>
@@ -1272,6 +1282,7 @@ export function TaskEditor() {
             )}
             {localCondition.metric === 'command_result' && (
               <Input
+                aria-label={t('tasks.conditionCommand')}
                 placeholder={t('tasks.conditionCommand')}
                 value={localCondition.command}
                 onChange={(event) =>
@@ -1317,7 +1328,7 @@ export function TaskEditor() {
                 setRemoteCondition({ ...remoteCondition, node_id: value })
               }
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label={t('tasks.conditionNode')}>
                 <SelectValue placeholder={t('tasks.selectNode')} />
               </SelectTrigger>
               <SelectContent>
@@ -1334,7 +1345,7 @@ export function TaskEditor() {
                 setRemoteCondition({ ...remoteCondition, property: value })
               }
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label={t('tasks.conditionProperty')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -1347,6 +1358,7 @@ export function TaskEditor() {
             {remoteCondition.property === 'last_execution' && (
               <Input
                 className='font-mono text-xs'
+                aria-label={t('tasks.conditionTaskId')}
                 placeholder='task_id'
                 value={remoteCondition.task_id}
                 onChange={(event) =>
@@ -1363,7 +1375,7 @@ export function TaskEditor() {
                 setRemoteCondition({ ...remoteCondition, operator: value })
               }
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label={t('tasks.conditionOperator')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -1372,6 +1384,7 @@ export function TaskEditor() {
               </SelectContent>
             </Select>
             <Input
+              aria-label={t('tasks.remoteConditionValue')}
               placeholder='value'
               value={remoteCondition.value}
               onChange={(event) =>

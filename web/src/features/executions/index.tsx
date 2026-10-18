@@ -676,6 +676,7 @@ function LogViewer({
         <div className='flex flex-wrap items-center gap-2'>
           <Input
             className='h-8 max-w-sm'
+            aria-label={t('common.searchLogs')}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={t('common.searchLogs')}

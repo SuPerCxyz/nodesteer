@@ -612,8 +612,8 @@ export function ScriptEditor() {
                 />
               </label>
             </div>
-            <div className='grid gap-2 text-sm font-medium'>
-              <span>{t('scripts.content')}</span>
+            <label className='grid gap-2 text-sm font-medium'>
+              {t('scripts.content')}
               <Textarea
                 className='min-h-72 font-mono text-xs leading-6'
                 value={form.content || ''}
@@ -621,7 +621,7 @@ export function ScriptEditor() {
                   setForm({ ...form, content: event.target.value })
                 }
               />
-            </div>
+            </label>
             <div className='grid gap-4 sm:grid-cols-2'>
               <label className='grid gap-2 text-sm font-medium'>
                 {t('scripts.workingDir')}
@@ -664,6 +664,7 @@ export function ScriptEditor() {
           <CardContent className='grid gap-4'>
             <div className='grid gap-3 sm:grid-cols-[1fr_140px_1fr_auto]'>
               <Input
+                aria-label={`${t('scripts.parameters')}: ${t('scripts.paramName')}`}
                 placeholder={t('scripts.paramName')}
                 value={parameter.name}
                 onChange={(event) =>
@@ -676,7 +677,14 @@ export function ScriptEditor() {
                   setParameter({ ...parameter, type: value })
                 }
               >
-                <SelectTrigger className='w-full min-w-0'>
+                <SelectTrigger
+                  className='w-full min-w-0'
+                  aria-label={
+                    parameter.name
+                      ? `${t('scripts.paramType')}: ${parameter.name}`
+                      : t('scripts.paramType')
+                  }
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -689,6 +697,7 @@ export function ScriptEditor() {
               </Select>
               <Input
                 type={parameter.type === 'secret' ? 'password' : 'text'}
+                aria-label={`${t('scripts.parameters')}: ${t('scripts.paramDefault')}`}
                 placeholder={t('scripts.paramDefault')}
                 value={parameter.default || ''}
                 onChange={(event) =>
@@ -746,6 +755,7 @@ export function ScriptEditor() {
           <CardContent className='grid gap-4'>
             <div className='grid gap-3 sm:grid-cols-[1fr_1fr_auto]'>
               <Input
+                aria-label={`${t('scripts.environment')}: ${t('common.key')}`}
                 placeholder='KEY'
                 value={environment.key}
                 onChange={(event) =>
@@ -753,6 +763,7 @@ export function ScriptEditor() {
                 }
               />
               <Input
+                aria-label={`${t('scripts.environment')}: ${t('common.value')}`}
                 placeholder='VALUE'
                 value={environment.value}
                 onChange={(event) =>
@@ -1364,7 +1375,10 @@ export function ApplicationEditor() {
                     })
                   }}
                 >
-                  <SelectTrigger className='w-full min-w-0'>
+                  <SelectTrigger
+                    className='w-full min-w-0'
+                    aria-label={t('apps.artifact')}
+                  >
                     <SelectValue placeholder={t('apps.selectArtifact')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1399,6 +1413,7 @@ export function ApplicationEditor() {
                       <Input
                         required
                         name='name'
+                        aria-label={`${t('apps.artifact')}: ${t('common.name')}`}
                         placeholder={t('common.name')}
                         value={uploadName}
                         onChange={(event) => setUploadName(event.target.value)}
@@ -1406,6 +1421,7 @@ export function ApplicationEditor() {
                       <Input
                         required
                         name='version'
+                        aria-label={`${t('apps.artifact')}: ${t('common.version')}`}
                         placeholder={t('common.version')}
                         value={uploadVersion}
                         onChange={(event) =>
@@ -1525,6 +1541,7 @@ export function ApplicationEditor() {
               <div className='flex items-center gap-2'>
                 <Input
                   className='font-mono text-xs'
+                  aria-label={t('apps.arguments')}
                   value={arg}
                   onChange={(event) => setArg(event.target.value)}
                   placeholder='--port 8080'
@@ -1566,6 +1583,7 @@ export function ApplicationEditor() {
               <div className='grid gap-2 sm:grid-cols-[1fr_1fr_auto]'>
                 <Input
                   className='font-mono text-xs'
+                  aria-label={`${t('apps.env')}: ${t('common.key')}`}
                   value={env.key}
                   onChange={(event) =>
                     setEnv({ ...env, key: event.target.value })
@@ -1574,6 +1592,7 @@ export function ApplicationEditor() {
                 />
                 <Input
                   className='font-mono text-xs'
+                  aria-label={`${t('apps.env')}: ${t('common.value')}`}
                   value={env.value}
                   onChange={(event) =>
                     setEnv({ ...env, value: event.target.value })
@@ -1759,7 +1778,7 @@ export function ApplicationEditor() {
                     onValueChange={setOperation}
                     disabled={!canRun}
                   >
-                    <SelectTrigger className='w-40'>
+                    <SelectTrigger className='w-40' aria-label={t('apps.operation')}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

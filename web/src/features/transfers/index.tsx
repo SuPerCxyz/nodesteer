@@ -200,7 +200,7 @@ export function FileTransfers() {
         minSize: 104,
         cell: ({ row }: { row: { original: FileTransfer } }) => {
           const canRetry = row.original.status === 'FAILED'
-          const canCancel = !['SUCCESS', 'CANCELED'].includes(
+          const canCancel = !['SUCCESS', 'FAILED', 'CANCELED'].includes(
             row.original.status
           )
           const hasActions = canWrite && (canRetry || canCancel)
@@ -484,7 +484,7 @@ export function TransferDetail() {
   const nodeName = (nodeId: string) =>
     nodeNames.get(nodeId) || t('common.unknownNode')
   const canRetry = item.status === 'FAILED'
-  const canCancel = !['SUCCESS', 'CANCELED'].includes(item.status)
+  const canCancel = !['SUCCESS', 'FAILED', 'CANCELED'].includes(item.status)
   return (
     <>
       <NodeSteerHeader

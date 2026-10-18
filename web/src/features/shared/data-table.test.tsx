@@ -309,3 +309,30 @@ describe('DataTable 每页条数越界显示（OBS-20261014-PAGESIZE-PERSISTED-O
     await expect.element(page.getByRole('combobox')).toHaveTextContent('20')
   })
 })
+
+describe('DataTable 可访问性（P11 a11y：分页选择器可访问名 / 操作列读屏表头）', () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage('zh')
+  })
+
+  it('每页行数选择器具备可访问名，而不是只靠可见数字', async () => {
+    const page = await renderTable(false)
+
+    await expect
+      .element(
+        page.getByRole('combobox', { name: i18n.t('common.rowsPerPage') })
+      )
+      .toBeVisible()
+  })
+
+  it('操作列表头为空时提供读屏文案，列头可被辅助技术识别', async () => {
+    // vitest 浏览器模式的 role 查询不映射 th→columnheader，直接断言表头 DOM；
+    // 真实浏览器中的可访问名由 Playwright 扫描（keyboard/axe 复扫）覆盖。
+    const page = await renderTable(false)
+
+    const actionsTh = [...page.container.querySelectorAll('th')].find((th) =>
+      th.querySelector('.sr-only')
+    )
+    expect(actionsTh?.textContent?.trim()).toBe(i18n.t('common.actions'))
+  })
+})

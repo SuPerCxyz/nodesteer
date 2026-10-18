@@ -115,4 +115,16 @@ describe('Execution 详情页 Script 回链（OBS-20261012-EXECUTION-SCRIPT-BACK
       .element(page.getByRole('link', { name: 'sc-1' }))
       .not.toBeInTheDocument()
   })
+
+  it('日志搜索输入有可访问名（P17 a11y：placeholder-only 输入补 aria-label）', async () => {
+    const page = await renderDetail()
+
+    const input = page.getByRole('textbox', {
+      name: i18n.t('common.searchLogs'),
+    })
+    await expect.element(input).toBeVisible()
+    await expect
+      .element(input)
+      .toHaveAttribute('aria-label', i18n.t('common.searchLogs'))
+  })
 })

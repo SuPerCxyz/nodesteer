@@ -688,7 +688,7 @@ export function AgentDetail() {
               </DetailGrid>
               <Separator />
               <section className='space-y-3'>
-                <h3 className='text-sm font-medium'>{t('nodes.labels')}</h3>
+                <h2 className='text-sm font-medium'>{t('nodes.labels')}</h2>
                 <div className='flex min-h-5 flex-wrap gap-x-4 gap-y-1'>
                   {Object.keys(item.labels || {}).length ? (
                     Object.entries(item.labels || {}).map(([key, value]) => (
@@ -709,12 +709,14 @@ export function AgentDetail() {
                   <div className='flex flex-wrap gap-2'>
                     <Input
                       className='h-8 w-32 font-mono text-xs'
+                      aria-label={t('nodes.labelKey')}
                       placeholder='key'
                       value={labelKey}
                       onChange={(event) => setLabelKey(event.target.value)}
                     />
                     <Input
                       className='h-8 w-32 font-mono text-xs'
+                      aria-label={t('nodes.labelValue')}
                       placeholder='value'
                       value={labelValue}
                       onChange={(event) => setLabelValue(event.target.value)}
@@ -788,9 +790,9 @@ export function AgentDetail() {
               )}
               <Separator />
               <section className='space-y-3'>
-                <h3 className='text-sm font-medium'>
+                <h2 className='text-sm font-medium'>
                   {t('nodes.capabilities')}
-                </h3>
+                </h2>
                 <div className='grid gap-2 sm:grid-cols-2'>
                   {Object.entries(item.capabilities || {}).map(
                     ([key, value]) => (
@@ -951,7 +953,9 @@ function ExecutionRows({
             <TableHead>{t('common.status')}</TableHead>
             <TableHead>{t('executions.start')}</TableHead>
             <TableHead>{t('executions.duration')}</TableHead>
-            <TableHead />
+            <TableHead>
+              <span className='sr-only'>{t('common.actions')}</span>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -2199,7 +2203,10 @@ export function Users() {
             value={row.original.role}
             onValueChange={(role) => setUserRole({ user: row.original, role })}
           >
-            <SelectTrigger className='h-8 w-36'>
+            <SelectTrigger
+              className='h-8 w-36'
+              aria-label={`${t('misc.role')}: ${row.original.username}`}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
