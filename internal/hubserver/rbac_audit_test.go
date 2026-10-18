@@ -130,10 +130,11 @@ func TestRoleChangeAppliesToExistingSession(t *testing.T) {
 	}
 	opsToken := apiLogin(t, base, "ops1", "ops123")
 
-	// operator 会话通过 canRun：无对应执行记录时为 400（而非 403）
+	// operator 会话通过 canRun：无对应执行记录时为 404（权限已授予、资源不存在；
+	// 缺陷 QA-20261018-F4 后不再回 400 + sql 原文）
 	status, _ = apiDo(t, base, http.MethodPost, "/api/executions/"+uuid.NewString()+"/cancel", opsToken, "")
-	if status != http.StatusBadRequest {
-		t.Fatalf("operator cancel probe: status %d, want 400 (permission granted)", status)
+	if status != http.StatusNotFound {
+		t.Fatalf("operator cancel probe: status %d, want 404 (permission granted, execution missing)", status)
 	}
 
 	// 管理员降权为 viewer

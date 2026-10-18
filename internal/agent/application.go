@@ -859,6 +859,8 @@ func (am *ApplicationManager) RecoverDeployments(ctx context.Context) {
 		}
 	}
 	am.logRecoverySummary(closed, pending)
+	// 恢复完成后刷新部署 journal 只读汇总文件（CR-3 查询面），失败不影响恢复结果。
+	am.writeDeploymentsSummary(ctx)
 }
 
 // closeUnreplayable 把恢复阶段判定为不可重放的 journal 行落终态（DONE + completed_kind），

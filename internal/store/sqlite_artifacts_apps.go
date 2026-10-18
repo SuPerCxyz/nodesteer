@@ -60,8 +60,7 @@ func (s *SQLiteStore) ListArtifacts(ctx context.Context) ([]*models.Artifact, er
 }
 
 func (s *SQLiteStore) DeleteArtifact(ctx context.Context, id string) error {
-	_, err := s.db.ExecContext(ctx, `DELETE FROM artifacts WHERE id = ?`, id)
-	return err
+	return execExpectRow(ctx, s.execer(ctx), `DELETE FROM artifacts WHERE id = ?`, id)
 }
 
 // ---------- Applications ----------
@@ -114,7 +113,8 @@ func (s *SQLiteStore) UpdateApplication(ctx context.Context, a *models.Applicati
 		defer tx.Rollback()
 	}
 	execer := s.execer(ctx)
-	if _, err := execer.ExecContext(ctx, `
+	// 应用行零行命中 → sql.ErrNoRows（不得写孤儿历史版本或并发删除后静默 200，F5 同族）。
+	if err := execExpectRow(ctx, execer, `
 		UPDATE applications SET name=?, definition_json=?, revision=?, updated_at=? WHERE id=?`,
 		a.Name, def, a.Revision, now(), a.ID); err != nil {
 		return err
@@ -139,7 +139,7 @@ func scanAppFromJSON(def string) (*models.Application, error) {
 }
 
 func (s *SQLiteStore) GetApplication(ctx context.Context, id string) (*models.Application, error) {
-	row := s.db.QueryRowContext(ctx, `
+	row := s.queryer(ctx).QueryRowContext(ctx, `
 		SELECT id, name, definition_json, revision, updated_at, created_at FROM applications WHERE id = ?`, id)
 	var aID, name, def, updated, created string
 	var revision int64
@@ -158,7 +158,7 @@ func (s *SQLiteStore) GetApplication(ctx context.Context, id string) (*models.Ap
 }
 
 func (s *SQLiteStore) ListApplications(ctx context.Context) ([]*models.Application, error) {
-	rows, err := s.db.QueryContext(ctx, `
+	rows, err := s.queryer(ctx).QueryContext(ctx, `
 		SELECT id, name, definition_json, revision, updated_at, created_at FROM applications ORDER BY name`)
 	if err != nil {
 		return nil, err
@@ -224,7 +224,8 @@ func (s *SQLiteStore) DeleteApplication(ctx context.Context, id string) error {
 	if _, err := execer.ExecContext(ctx, `DELETE FROM application_node_state WHERE application_id = ?`, id); err != nil {
 		return err
 	}
-	if _, err := execer.ExecContext(ctx, `DELETE FROM applications WHERE id = ?`, id); err != nil {
+	// 应用行零行命中 → sql.ErrNoRows（不存在资源不得静默成功，F5 同族）。
+	if err := execExpectRow(ctx, execer, `DELETE FROM applications WHERE id = ?`, id); err != nil {
 		return err
 	}
 	if tx != nil {
@@ -245,7 +246,7 @@ func (s *SQLiteStore) SetApplicationAssignment(ctx context.Context, appID, nodeI
 }
 
 func (s *SQLiteStore) GetApplicationNodes(ctx context.Context, appID string) ([]string, error) {
-	rows, err := s.db.QueryContext(ctx,
+	rows, err := s.queryer(ctx).QueryContext(ctx,
 		`SELECT node_id FROM application_assignments WHERE application_id = ?`, appID)
 	if err != nil {
 		return nil, err

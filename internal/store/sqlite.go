@@ -135,6 +135,34 @@ func IsUniqueViolation(err error) bool {
 		strings.Contains(msg, "constraint failed: unique")
 }
 
+// IsDriverError 判定错误来自数据库驱动层（sqlite / database/sql），而非上层业务校验。
+// 用于 API 错误归一化：驱动原文（如 "sql: database is closed"、UNIQUE 约束原文）
+// 不得回给客户端，只能进日志；业务校验错误仍保留既有 4xx 文案。
+// 注意：调用方应先处理 sql.ErrNoRows（存在性语义），本函数对 ErrNoRows 返回 false。
+func IsDriverError(err error) bool {
+	if err == nil || errors.Is(err, sql.ErrNoRows) {
+		return false
+	}
+	var se *sqlite.Error
+	if errors.As(err, &se) {
+		return true
+	}
+	msg := strings.ToLower(err.Error())
+	if strings.Contains(msg, "sqlite") || strings.Contains(msg, "sql:") {
+		return true
+	}
+	// 驱动错误文本可能不含 "sqlite"（如 UNIQUE/约束类），按已知 SQLite 文案兜底。
+	for _, marker := range []string{
+		"constraint failed", "no such table", "no such column", "datatype mismatch",
+		"database disk image is malformed", "database is locked", "file is not a database",
+	} {
+		if strings.Contains(msg, marker) {
+			return true
+		}
+	}
+	return false
+}
+
 // DB 暴露底层连接（供测试与扩展使用）
 func (s *SQLiteStore) DB() *sql.DB { return s.db }
 

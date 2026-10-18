@@ -846,6 +846,28 @@ func (s *LocalStore) ListAllDeployments(ctx context.Context) ([]*DeploymentRow, 
 	return out, rows.Err()
 }
 
+// CountClosedDeploymentsByKind 统计非成功终态（DONE 且 completed_kind != deployed）的行数，
+// 供部署 journal 只读汇总（deployments-summary.json）使用。只读查询，不改变既有语义；
+// 旧行 completed_kind 为空时按空字符串返回，由汇总侧归一为 unknown。
+func (s *LocalStore) CountClosedDeploymentsByKind(ctx context.Context) (map[string]int, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT completed_kind, COUNT(*) FROM deployments
+		WHERE phase = 'DONE' AND completed_kind <> ? GROUP BY completed_kind`, CompletedKindDeployed)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	counts := map[string]int{}
+	for rows.Next() {
+		var kind string
+		var n int
+		if err := rows.Scan(&kind, &n); err != nil {
+			return nil, err
+		}
+		counts[kind] = n
+	}
+	return counts, rows.Err()
+}
+
 // MarshalJSON 辅助
 func marshalJSON(v any) []byte {
 	b, err := json.Marshal(v)

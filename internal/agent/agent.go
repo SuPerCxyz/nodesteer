@@ -52,29 +52,29 @@ type Config struct {
 
 // Agent Agent 主结构
 type Agent struct {
-	cfg            Config
-	store          *LocalStore
-	conn           *connection.Manager
-	runner         *execution.Runner
-	cond           *condition.Engine
-	sch            *scheduler.Scheduler
-	host           host.HostAdapter
-	artifact       *ArtifactCache
-	appMgr         *ApplicationManager
-	upgrade        *upgradeRunner
-	logger         *slog.Logger
-	logState       *connection.ConnectionLogState
-	nodeID         string
-	agentID        string
-	credential     string
-	ctx            context.Context
-	cancel         context.CancelFunc
-	ready          bool
-	remoteMu       sync.Mutex
-	remoteWait     map[string]chan protocol.RemoteStatePayload
-	settingsMu     sync.RWMutex
-	transferMu     sync.Mutex
-	transferCancel map[string]context.CancelFunc
+	cfg              Config
+	store            *LocalStore
+	conn             *connection.Manager
+	runner           *execution.Runner
+	cond             *condition.Engine
+	sch              *scheduler.Scheduler
+	host             host.HostAdapter
+	artifact         *ArtifactCache
+	appMgr           *ApplicationManager
+	upgrade          *upgradeRunner
+	logger           *slog.Logger
+	logState         *connection.ConnectionLogState
+	nodeID           string
+	agentID          string
+	credential       string
+	ctx              context.Context
+	cancel           context.CancelFunc
+	ready            bool
+	remoteMu         sync.Mutex
+	remoteWait       map[string]chan protocol.RemoteStatePayload
+	settingsMu       sync.RWMutex
+	transferMu       sync.Mutex
+	transferAttempts map[string]*transferAttempt
 	// on_start 触发状态：startedAt 为本进程启动时刻（作为触发 slot 保证跨启动不同、
 	// 同启动幂等）；onStartMu/onStartDone 保证同一次进程启动内至多触发一批。
 	startedAt   time.Time
@@ -102,18 +102,18 @@ func New(cfg Config, logger *slog.Logger) (*Agent, error) {
 	}
 
 	a := &Agent{
-		cfg:            cfg,
-		store:          store,
-		runner:         execution.New(),
-		cond:           condition.New(condition.OSProvider{}),
-		host:           host.DefaultHostAdapter(cfg.DeploymentMode),
-		logger:         logger,
-		logState:       connection.NewConnectionLogState(),
-		ctx:            ctx,
-		cancel:         cancel,
-		remoteWait:     map[string]chan protocol.RemoteStatePayload{},
-		transferCancel: map[string]context.CancelFunc{},
-		startedAt:      time.Now(),
+		cfg:              cfg,
+		store:            store,
+		runner:           execution.New(),
+		cond:             condition.New(condition.OSProvider{}),
+		host:             host.DefaultHostAdapter(cfg.DeploymentMode),
+		logger:           logger,
+		logState:         connection.NewConnectionLogState(),
+		ctx:              ctx,
+		cancel:           cancel,
+		remoteWait:       map[string]chan protocol.RemoteStatePayload{},
+		transferAttempts: map[string]*transferAttempt{},
+		startedAt:        time.Now(),
 	}
 	// 加载身份
 	a.agentID, _ = store.GetIdentity("agent_id")
@@ -1229,7 +1229,7 @@ func (a *Agent) OnFileUploadRequest(env protocol.Envelope) {
 	go func() {
 		defer done()
 		err := a.uploadFile(ctx, p)
-		a.sendFileUploadResult(p.TransferID, err)
+		a.sendFileUploadResult(p.TransferID, p.Attempt, err)
 	}()
 }
 
@@ -1313,7 +1313,7 @@ func (a *Agent) OnFileDeliveryRequest(env protocol.Envelope) {
 	go func() {
 		defer done()
 		err := a.downloadFile(ctx, p)
-		a.sendFileDeliveryResult(p.TransferID, err)
+		a.sendFileDeliveryResult(p.TransferID, p.Attempt, err)
 	}()
 }
 
@@ -1389,45 +1389,59 @@ func (a *Agent) OnFileTransferCancel(env protocol.Envelope) {
 		return
 	}
 	a.transferMu.Lock()
-	if cancel := a.transferCancel[p.TransferID]; cancel != nil {
-		cancel()
+	if attempt := a.transferAttempts[p.TransferID]; attempt != nil {
+		attempt.cancel()
 	}
 	a.transferMu.Unlock()
 }
 
+// transferAttempt 是同一次传输当前在飞尝试的取消登记。
+// 用指针身份区分世代：被取代的旧尝试收尾时不得清掉新尝试的登记。
+type transferAttempt struct {
+	cancel context.CancelFunc
+}
+
+// startFileTransfer 为一次上传/交付尝试创建可取消上下文，并取消同一传输上仍在飞的旧尝试。
+//
+// 返回的 done 只清理本尝试自己的登记：旧尝试结束时若删除新尝试的登记，
+// 后续 OnFileTransferCancel 会取消不到仍在进行的尝试（缺陷 SOAK-20261018-01 同源问题）。
 func (a *Agent) startFileTransfer(id string) (context.Context, func()) {
 	ctx, cancel := context.WithCancel(a.ctx)
+	attempt := &transferAttempt{cancel: cancel}
 	a.transferMu.Lock()
-	if old := a.transferCancel[id]; old != nil {
-		old()
+	if old := a.transferAttempts[id]; old != nil {
+		old.cancel()
 	}
-	a.transferCancel[id] = cancel
+	a.transferAttempts[id] = attempt
 	a.transferMu.Unlock()
 	return ctx, func() {
 		a.transferMu.Lock()
-		if current := a.transferCancel[id]; current != nil {
-			delete(a.transferCancel, id)
+		if current := a.transferAttempts[id]; current == attempt {
+			delete(a.transferAttempts, id)
 		}
 		a.transferMu.Unlock()
 	}
 }
 
-func (a *Agent) sendFileUploadResult(id string, err error) {
+// sendFileUploadResult 上报源上传结果。attempt 为 Hub 下发请求携带的世代号，
+// 原样回传使 Hub 能忽略被取代的旧尝试结果（缺陷 SOAK-20261018-01）。
+func (a *Agent) sendFileUploadResult(id string, attempt uint64, err error) {
 	if !a.conn.IsConnected() {
 		return
 	}
-	p := protocol.FileUploadResultPayload{TransferID: id, OK: err == nil}
+	p := protocol.FileUploadResultPayload{TransferID: id, OK: err == nil, Attempt: attempt}
 	if err != nil {
 		p.Error = err.Error()
 	}
 	a.conn.Send(protocol.NewEnvelope(protocol.MsgFileUploadResult, id, p))
 }
 
-func (a *Agent) sendFileDeliveryResult(id string, err error) {
+// sendFileDeliveryResult 上报目标交付结果，attempt 语义同 sendFileUploadResult。
+func (a *Agent) sendFileDeliveryResult(id string, attempt uint64, err error) {
 	if !a.conn.IsConnected() {
 		return
 	}
-	p := protocol.FileDeliveryResultPayload{TransferID: id, OK: err == nil}
+	p := protocol.FileDeliveryResultPayload{TransferID: id, OK: err == nil, Attempt: attempt}
 	if err != nil {
 		p.Error = err.Error()
 	}

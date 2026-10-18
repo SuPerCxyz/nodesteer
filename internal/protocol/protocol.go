@@ -252,12 +252,17 @@ type ArtifactPrefetchPayload struct {
 }
 
 // FileUploadRequestPayload Hub 要求源 Agent 上传文件。
+//
+// Attempt 是 Hub 为本次上传尝试分配的世代号（单调递增）。Agent 必须在结果回执中
+// 原样回传，Hub 只接受「当前世代」的结果；断连重连后 ResumeNode 重投会分配新世代，
+// 被取代的旧尝试的取消/失败回执据此被忽略（缺陷 SOAK-20261018-01）。
 type FileUploadRequestPayload struct {
 	TransferID string `json:"transfer_id"`
 	SourcePath string `json:"source_path"`
 	UploadURL  string `json:"upload_url"`
 	Offset     int64  `json:"offset"`
 	MaxBytes   int64  `json:"max_bytes"`
+	Attempt    uint64 `json:"attempt,omitempty"`
 }
 
 // FileUploadResultPayload 源 Agent 上传结果。
@@ -265,9 +270,14 @@ type FileUploadResultPayload struct {
 	TransferID string `json:"transfer_id"`
 	OK         bool   `json:"ok"`
 	Error      string `json:"error,omitempty"`
+	// Attempt 回传 FileUploadRequestPayload.Attempt，用于世代匹配。
+	Attempt uint64 `json:"attempt,omitempty"`
 }
 
 // FileDeliveryRequestPayload Hub 要求目标 Agent 下载并写入文件。
+//
+// Attempt 语义同 FileUploadRequestPayload：目标交付同样按世代号去重，
+// 被取代的旧下载尝试的取消回执不得把目标/传输拉回 FAILED。
 type FileDeliveryRequestPayload struct {
 	TransferID      string `json:"transfer_id"`
 	DownloadURL     string `json:"download_url"`
@@ -275,6 +285,7 @@ type FileDeliveryRequestPayload struct {
 	Size            int64  `json:"size"`
 	DestinationPath string `json:"destination_path"`
 	Mode            uint32 `json:"mode,omitempty"`
+	Attempt         uint64 `json:"attempt,omitempty"`
 }
 
 // FileDeliveryResultPayload 目标 Agent 交付结果。
@@ -282,6 +293,8 @@ type FileDeliveryResultPayload struct {
 	TransferID string `json:"transfer_id"`
 	OK         bool   `json:"ok"`
 	Error      string `json:"error,omitempty"`
+	// Attempt 回传 FileDeliveryRequestPayload.Attempt，用于世代匹配。
+	Attempt uint64 `json:"attempt,omitempty"`
 }
 
 // FileTransferCancelPayload 取消文件传输。

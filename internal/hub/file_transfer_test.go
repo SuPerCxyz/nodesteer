@@ -70,6 +70,9 @@ func TestFileTransferUploadAndDelivery(t *testing.T) {
 	if upload.TransferID != item.ID || upload.Offset != 0 {
 		t.Fatalf("unexpected upload request: %+v", upload)
 	}
+	if upload.Attempt == 0 {
+		t.Fatalf("upload request must carry a nonzero attempt: %+v", upload)
+	}
 
 	body := []byte("nodesteer-transfer")
 	req := httptest.NewRequest(http.MethodPost, "/agent/transfers/"+item.ID+"/upload", io.NopCloser(bytesReader(body)))
@@ -100,7 +103,7 @@ func TestFileTransferUploadAndDelivery(t *testing.T) {
 	if downloadRec.Code != http.StatusOK || downloadRec.Body.String() != string(body) {
 		t.Fatalf("download failed: status=%d body=%q", downloadRec.Code, downloadRec.Body.String())
 	}
-	if err := m.HandleDeliveryResult(ctx, target.ID, protocol.FileDeliveryResultPayload{TransferID: item.ID, OK: true}); err != nil {
+	if err := m.HandleDeliveryResult(ctx, target.ID, protocol.FileDeliveryResultPayload{TransferID: item.ID, OK: true, Attempt: delivery.Attempt}); err != nil {
 		t.Fatal(err)
 	}
 	final, err := m.Get(ctx, item.ID)
@@ -165,8 +168,12 @@ func TestFileTransferAllTargetsSuccess(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("upload status %d: %s", rec.Code, rec.Body.String())
 	}
-	<-targetAConn.sent
-	<-targetBConn.sent
+	deliveryA := <-targetAConn.sent
+	deliveryB := <-targetBConn.sent
+	var requestA, requestB protocol.FileDeliveryRequestPayload
+	if json.Unmarshal(deliveryA.Payload, &requestA) != nil || json.Unmarshal(deliveryB.Payload, &requestB) != nil {
+		t.Fatal("bad delivery request payload")
+	}
 
 	var wg sync.WaitGroup
 	errs := make(chan error, 2)
@@ -174,8 +181,8 @@ func TestFileTransferAllTargetsSuccess(t *testing.T) {
 		nodeID string
 		result protocol.FileDeliveryResultPayload
 	}{
-		{nodeID: targetA.ID, result: protocol.FileDeliveryResultPayload{TransferID: item.ID, OK: true}},
-		{nodeID: targetB.ID, result: protocol.FileDeliveryResultPayload{TransferID: item.ID, OK: true}},
+		{nodeID: targetA.ID, result: protocol.FileDeliveryResultPayload{TransferID: item.ID, OK: true, Attempt: requestA.Attempt}},
+		{nodeID: targetB.ID, result: protocol.FileDeliveryResultPayload{TransferID: item.ID, OK: true, Attempt: requestB.Attempt}},
 	} {
 		wg.Add(1)
 		go func(nodeID string, result protocol.FileDeliveryResultPayload) {
@@ -326,14 +333,19 @@ func TestFileTransferTargetFailureIsolatedAndRetryable(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("upload status %d", rec.Code)
 	}
-	<-targetConn.sent
+	deliveryA := <-targetConn.sent
+	var requestA protocol.FileDeliveryRequestPayload
+	if json.Unmarshal(deliveryA.Payload, &requestA) != nil {
+		t.Fatal("bad delivery request payload")
+	}
 	state, err := m.Get(ctx, item.ID)
 	if err != nil || targetStatus(state, targetB.ID) != models.FileTargetPending {
 		t.Fatalf("offline target should remain pending: %v %+v", err, state)
 	}
-	if err := m.HandleDeliveryResult(ctx, targetA.ID, protocol.FileDeliveryResultPayload{TransferID: item.ID, OK: true}); err != nil {
+	if err := m.HandleDeliveryResult(ctx, targetA.ID, protocol.FileDeliveryResultPayload{TransferID: item.ID, OK: true, Attempt: requestA.Attempt}); err != nil {
 		t.Fatal(err)
 	}
+	// targetB 从未收到下发（无连接）：世代号保持 0，未下发过的失败回执仍按原语义受理。
 	if err := m.HandleDeliveryResult(ctx, targetB.ID, protocol.FileDeliveryResultPayload{TransferID: item.ID, OK: false, Error: "offline"}); err != nil {
 		t.Fatal(err)
 	}
@@ -347,7 +359,15 @@ func TestFileTransferTargetFailureIsolatedAndRetryable(t *testing.T) {
 		t.Fatal(err)
 	}
 	select {
-	case <-targetBConn.sent:
+	case msg := <-targetBConn.sent:
+		var retried protocol.FileDeliveryRequestPayload
+		if msg.Type != protocol.MsgFileDeliveryRequest || json.Unmarshal(msg.Payload, &retried) != nil {
+			t.Fatalf("retry must dispatch delivery request, got %s", msg.Type)
+		}
+		// 重试重新下发必须分配新世代号，旧世代回执不再生效。
+		if retried.Attempt != 1 {
+			t.Fatalf("retried delivery attempt = %d, want 1", retried.Attempt)
+		}
 	case <-time.After(time.Second):
 		t.Fatal("retry did not dispatch to target")
 	}
@@ -442,7 +462,7 @@ func TestFileTransferSourceFailureTerminalizesTargets(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	<-sourceConn.sent
+	firstRequest := readUploadRequest(t, sourceConn)
 
 	// 传输仍在等待源上传时，节点删除必须被 409 前置校验阻断。
 	if err := nm.Delete(ctx, source.ID); err == nil || !strings.Contains(err.Error(), "active file transfer") {
@@ -450,7 +470,7 @@ func TestFileTransferSourceFailureTerminalizesTargets(t *testing.T) {
 	}
 
 	const uploadError = "open /var/lib/nodesteer/missing.txt: no such file or directory"
-	if err := m.HandleUploadResult(ctx, source.ID, protocol.FileUploadResultPayload{TransferID: item.ID, OK: false, Error: uploadError}); err != nil {
+	if err := m.HandleUploadResult(ctx, source.ID, protocol.FileUploadResultPayload{TransferID: item.ID, OK: false, Error: uploadError, Attempt: firstRequest.Attempt}); err != nil {
 		t.Fatal(err)
 	}
 	state, err := m.Get(ctx, item.ID)
@@ -492,8 +512,11 @@ func TestFileTransferSourceFailureTerminalizesTargets(t *testing.T) {
 	if targetStatus(retried, targetA.ID) != models.FileTargetFailed || targetStatus(retried, targetB.ID) != models.FileTargetFailed {
 		t.Fatalf("targets should stay terminal during source retry: %+v", retried)
 	}
-	<-sourceConn.sent
-	if err := m.HandleUploadResult(ctx, source.ID, protocol.FileUploadResultPayload{TransferID: item.ID, OK: false, Error: "retry failed"}); err != nil {
+	retryRequest := readUploadRequest(t, sourceConn)
+	if retryRequest.Attempt <= firstRequest.Attempt {
+		t.Fatalf("retry must allocate a newer attempt: first=%d retry=%d", firstRequest.Attempt, retryRequest.Attempt)
+	}
+	if err := m.HandleUploadResult(ctx, source.ID, protocol.FileUploadResultPayload{TransferID: item.ID, OK: false, Error: "retry failed", Attempt: retryRequest.Attempt}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -717,8 +740,12 @@ func TestFileTransferRetryWithoutFailedTargetKeepsState(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("upload status %d", rec.Code)
 	}
-	<-targetConn.sent
-	if err := m.HandleDeliveryResult(ctx, target.ID, protocol.FileDeliveryResultPayload{TransferID: item.ID, OK: true}); err != nil {
+	deliveryMsg := <-targetConn.sent
+	var deliveryRequest protocol.FileDeliveryRequestPayload
+	if json.Unmarshal(deliveryMsg.Payload, &deliveryRequest) != nil {
+		t.Fatal("bad delivery request payload")
+	}
+	if err := m.HandleDeliveryResult(ctx, target.ID, protocol.FileDeliveryResultPayload{TransferID: item.ID, OK: true, Attempt: deliveryRequest.Attempt}); err != nil {
 		t.Fatal(err)
 	}
 	// 重试已成功传输（或不存在/非失败目标）不应把终态推进为 DELIVERING。
@@ -735,6 +762,44 @@ func TestFileTransferRetryWithoutFailedTargetKeepsState(t *testing.T) {
 	}
 	if retried.Status != models.FileTransferSuccess {
 		t.Fatalf("retry with unknown target changed state: %+v", retried)
+	}
+}
+
+// readUploadRequest 读取并解析一次下发的源上传请求（含世代号）。
+func readUploadRequest(t *testing.T, conn *transferTestConn) protocol.FileUploadRequestPayload {
+	t.Helper()
+	select {
+	case msg := <-conn.sent:
+		if msg.Type != protocol.MsgFileUploadRequest {
+			t.Fatalf("expected upload request, got %s", msg.Type)
+		}
+		var p protocol.FileUploadRequestPayload
+		if err := json.Unmarshal(msg.Payload, &p); err != nil {
+			t.Fatal(err)
+		}
+		return p
+	case <-time.After(time.Second):
+		t.Fatal("upload request not dispatched")
+		return protocol.FileUploadRequestPayload{}
+	}
+}
+
+// readDeliveryRequest 读取并解析一次下发的目标交付请求（含世代号）。
+func readDeliveryRequest(t *testing.T, conn *transferTestConn) protocol.FileDeliveryRequestPayload {
+	t.Helper()
+	select {
+	case msg := <-conn.sent:
+		if msg.Type != protocol.MsgFileDeliveryRequest {
+			t.Fatalf("expected delivery request, got %s", msg.Type)
+		}
+		var p protocol.FileDeliveryRequestPayload
+		if err := json.Unmarshal(msg.Payload, &p); err != nil {
+			t.Fatal(err)
+		}
+		return p
+	case <-time.After(time.Second):
+		t.Fatal("delivery request not dispatched")
+		return protocol.FileDeliveryRequestPayload{}
 	}
 }
 

@@ -66,9 +66,26 @@ func (s *SQLiteStore) ListUsers(ctx context.Context) ([]*models.User, error) {
 	return out, rows.Err()
 }
 
+// execExpectRow 执行必须命中至少一行的 UPDATE/DELETE：缺行返回 sql.ErrNoRows，
+// 避免「更新不存在的资源仍返回成功」的静默成功（缺陷 QA-20261018-F5：
+// PUT /api/users/{id} 对不存在用户返回 200）。
+func execExpectRow(ctx context.Context, ex txExecer, query string, args ...any) error {
+	res, err := ex.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
 func (s *SQLiteStore) UpdateUserRole(ctx context.Context, id, role string) error {
-	_, err := s.execer(ctx).ExecContext(ctx, `UPDATE users SET role = ? WHERE id = ?`, role, id)
-	return err
+	return execExpectRow(ctx, s.execer(ctx), `UPDATE users SET role = ? WHERE id = ?`, role, id)
 }
 
 func (s *SQLiteStore) UpdateUserAvatar(ctx context.Context, id, avatarURL string) error {
@@ -77,8 +94,7 @@ func (s *SQLiteStore) UpdateUserAvatar(ctx context.Context, id, avatarURL string
 }
 
 func (s *SQLiteStore) UpdateUserPassword(ctx context.Context, id, passwordHash string) error {
-	_, err := s.execer(ctx).ExecContext(ctx, `UPDATE users SET password_hash = ? WHERE id = ?`, passwordHash, id)
-	return err
+	return execExpectRow(ctx, s.execer(ctx), `UPDATE users SET password_hash = ? WHERE id = ?`, passwordHash, id)
 }
 
 // ---------- Nodes ----------
@@ -180,32 +196,31 @@ func (s *SQLiteStore) ListNodes(ctx context.Context) ([]*models.Node, error) {
 }
 
 func (s *SQLiteStore) UpdateNodeStatus(ctx context.Context, id, status string) error {
-	_, err := s.execer(ctx).ExecContext(ctx, `UPDATE nodes SET status = ? WHERE id = ?`, status, id)
-	return err
+	return execExpectRow(ctx, s.execer(ctx), `UPDATE nodes SET status = ? WHERE id = ?`, status, id)
 }
 
 func (s *SQLiteStore) UpdateNodeSyncState(ctx context.Context, id string, rev int64, syncStatus string) error {
-	_, err := s.execer(ctx).ExecContext(ctx, `UPDATE nodes SET global_revision = ?, sync_status = ? WHERE id = ?`, rev, syncStatus, id)
-	return err
+	return execExpectRow(ctx, s.execer(ctx), `UPDATE nodes SET global_revision = ?, sync_status = ? WHERE id = ?`, rev, syncStatus, id)
 }
 
 func (s *SQLiteStore) UpdateNodeHeartbeat(ctx context.Context, id string, lastSeen time.Time) error {
-	// 仅当当前状态为 online 时更新为 online；maintenance/disabled 不被心跳覆盖
-	_, err := s.execer(ctx).ExecContext(ctx, `
+	// 仅当当前状态为 online 时更新为 online；maintenance/disabled 不被心跳覆盖。
+	// 零行命中（节点已被删除）返回 sql.ErrNoRows：Gateway 据此回收孤儿会话，
+	// 不再对不存在节点静默成功（同类缺陷审计，F5 同族）。
+	return execExpectRow(ctx, s.execer(ctx), `
 		UPDATE nodes SET last_seen = ?,
 			status = CASE WHEN status IN ('maintenance', 'disabled') THEN status ELSE ? END
 		WHERE id = ?`,
 		lastSeen.Format(time.RFC3339Nano), models.NodeStatusOnline, id)
-	return err
 }
 
 func (s *SQLiteStore) SetNodeLabels(ctx context.Context, id string, labels map[string]string) error {
 	b, _ := json.Marshal(labels)
-	_, err := s.execer(ctx).ExecContext(ctx, `UPDATE nodes SET labels_json = ? WHERE id = ?`, string(b), id)
-	return err
+	return execExpectRow(ctx, s.execer(ctx), `UPDATE nodes SET labels_json = ? WHERE id = ?`, string(b), id)
 }
 
 // DeleteNode 删除节点本身及其可安全清理的运行态关联；执行历史保留用于审计。
+// 节点行零行命中 → sql.ErrNoRows（不存在资源不得静默成功，F5 同族）。
 func (s *SQLiteStore) DeleteNode(ctx context.Context, id string) error {
 	execer := s.execer(ctx)
 	for _, query := range []string{
@@ -214,13 +229,12 @@ func (s *SQLiteStore) DeleteNode(ctx context.Context, id string) error {
 		`DELETE FROM application_node_state WHERE node_id = ?`,
 		`DELETE FROM agent_sync_state WHERE node_id = ?`,
 		`DELETE FROM remote_state WHERE node_id = ?`,
-		`DELETE FROM nodes WHERE id = ?`,
 	} {
 		if _, err := execer.ExecContext(ctx, query, id); err != nil {
 			return err
 		}
 	}
-	return nil
+	return execExpectRow(ctx, execer, `DELETE FROM nodes WHERE id = ?`, id)
 }
 
 // ---------- Groups ----------
@@ -375,7 +389,8 @@ func (s *SQLiteStore) DeleteGroup(ctx context.Context, id string) error {
 	if _, err := execer.ExecContext(ctx, `DELETE FROM node_group_members WHERE group_id = ?`, id); err != nil {
 		return err
 	}
-	if _, err := execer.ExecContext(ctx, `DELETE FROM node_groups WHERE id = ?`, id); err != nil {
+	// 组行零行命中 → sql.ErrNoRows（不存在资源不得静默成功，F5 同族）。
+	if err := execExpectRow(ctx, execer, `DELETE FROM node_groups WHERE id = ?`, id); err != nil {
 		return err
 	}
 	if tx != nil {

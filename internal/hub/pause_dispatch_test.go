@@ -57,24 +57,33 @@ func TestFileTransferDispatchBlockedByPause(t *testing.T) {
 		ID: "tr-pause", SourceNodeID: "n-pause-src",
 		SourcePath: "/tmp/src.txt", Status: models.FileTransferPending,
 	}
+	if err := st.CreateFileTransfer(ctx, src); err != nil {
+		t.Fatal(err)
+	}
 	m.dispatchSource(ctx, src)
 	expectNoEnvelope(t, srcConn)
-	if src.Status != models.FileTransferPending || src.Error != "" {
-		t.Fatalf("paused source dispatch must be a no-op, got status=%q error=%q", src.Status, src.Error)
+	persistedSrc, err := st.GetFileTransfer(ctx, src.ID)
+	if err != nil || persistedSrc.Status != models.FileTransferPending || persistedSrc.Error != "" {
+		t.Fatalf("paused source dispatch must be a no-op, got status=%q error=%q err=%v",
+			persistedSrc.Status, persistedSrc.Error, err)
 	}
 
 	upsertTestNode(t, st, "n-pause-tgt", models.NodeStatusDisabled)
 	tgtConn := &transferTestConn{nodeID: "n-pause-tgt", sent: make(chan protocol.Envelope, 2)}
 	sessions.Register(tgtConn)
-	tr := &models.FileTransfer{ID: "tr-pause-2", SHA256: "abc", Status: models.FileTransferUploading}
 	target := &models.FileTransferTarget{
-		TransferID: tr.ID, NodeID: "n-pause-tgt",
+		TransferID: "tr-pause-2", NodeID: "n-pause-tgt",
 		DestinationPath: "/tmp/dst.txt", Status: models.FileTargetPending,
+	}
+	tr := &models.FileTransfer{ID: "tr-pause-2", SHA256: "abc", Status: models.FileTransferUploading, Targets: []*models.FileTransferTarget{target}}
+	if err := st.CreateFileTransfer(ctx, tr); err != nil {
+		t.Fatal(err)
 	}
 	m.dispatchTarget(ctx, tr, target)
 	expectNoEnvelope(t, tgtConn)
-	if target.Status != models.FileTargetPending || target.Error != "" {
-		t.Fatalf("paused target dispatch must be a no-op, got status=%q error=%q", target.Status, target.Error)
+	persistedTr, err := st.GetFileTransfer(ctx, tr.ID)
+	if err != nil || targetStatus(persistedTr, "n-pause-tgt") != models.FileTargetPending || targetError(persistedTr, "n-pause-tgt") != "" {
+		t.Fatalf("paused target dispatch must be a no-op, got %+v err=%v", persistedTr, err)
 	}
 }
 
@@ -109,8 +118,9 @@ func TestFileTransferDispatchProceedsWhenOnline(t *testing.T) {
 	default:
 		t.Fatal("online source dispatch must send upload request")
 	}
-	if src.Status != models.FileTransferUploading {
-		t.Fatalf("online source status = %q, want uploading", src.Status)
+	persisted, err := st.GetFileTransfer(ctx, src.ID)
+	if err != nil || persisted.Status != models.FileTransferUploading {
+		t.Fatalf("online source status = %q err=%v, want uploading", persisted.Status, err)
 	}
 }
 

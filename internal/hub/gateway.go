@@ -737,6 +737,20 @@ func (w *wsConn) markUnavailable() {
 	w.doneOnce.Do(func() { close(w.done) })
 }
 
+// logWriteFailure 按错误类别记录写失败日志：
+//   - 连接已关闭/对端消失（IsConnectionGone，如心跳超时清理关闭连接）→ WARN，
+//     状态机仍按连接不可用处理，但不产生 ERROR 噪声（OBS-20261018-SCALE-02）；
+//   - 真实写失败 → ERROR，语义不变。
+func (w *wsConn) logWriteFailure(envType string, err error) {
+	if IsConnectionGone(err) {
+		w.gateway.logger.Warn("agent websocket write aborted; connection already closed",
+			"node", w.meta.nodeID, "type", envType, "error", err)
+		return
+	}
+	w.gateway.logger.Error("agent websocket write failed; closing connection",
+		"node", w.meta.nodeID, "type", envType, "error", err)
+}
+
 func (w *wsConn) writeLoop(ctx context.Context) {
 	for {
 		select {
@@ -751,8 +765,10 @@ func (w *wsConn) writeLoop(ctx context.Context) {
 				// 缓冲区满后发送方永久阻塞，表现为“指令已下发但 Agent 从未收到”、
 				// 传输永久停在 DELIVERING（缺陷 E2E-20261017-XFER-REMOTE-TARGET-STUCK-DELIVERING）。
 				// 关闭底层连接可让读循环立即失败 → 会话回收 → Agent 重连后按 ResumeNode 重投。
-				w.gateway.logger.Error("agent websocket write failed; closing connection",
-					"node", w.meta.nodeID, "type", env.Type, "error", err)
+				//
+				// 日志级别按错误类别区分：连接已关闭/对端消失（如心跳超时清理先关闭连接）
+				// 属正常清理场景，降级 WARN；真实写失败保持 ERROR（OBS-20261018-SCALE-02）。
+				w.logWriteFailure(env.Type, err)
 				w.markUnavailable()
 				// 写已失败，连接不可用：不做 close 握手（对端可能已失联），直接断开，
 				// 让读循环立刻返回并回收会话，Agent 重连后按 ResumeNode 重投。

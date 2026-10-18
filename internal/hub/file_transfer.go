@@ -52,6 +52,31 @@ func deliveryStallTimeout(size int64) time.Duration {
 	return defaultDeliveryStallTimeout + time.Duration(size/deliveryStallBytesPerSecond)*time.Second
 }
 
+// 源上传停滞阈值：传输处于 UPLOADING 且超过该时限无任何上传进展时，判定源上传失败并终态化。
+//
+// 为什么必须有：源上传的唯一终态化路径是 Agent 上报失败结果或上传 HTTP 报错。
+// 若当前尝试的失败结果丢失（进程被杀、网络中断且未触发回报），传输会永久停在
+// UPLOADING，DELETE /api/nodes/{id} 被 409 has active file transfer 永久阻断
+// （P15 评审 major-02；SOAK-20261018-01 修复后旧世代结果被忽略，不再有“误报兜底”）。
+//
+// 阈值与交付停滞同构：基线 30 分钟 + 按保守下限 1 MiB/s 折算上传时间。
+// 进展信号取「part 文件 mtime」与「传输 UpdatedAt（最近一次下发/分片写入）」的较新者：
+// 分片上传在持续写入 part 时 mtime 持续推进，重连重投会刷新 UpdatedAt（每次重投都给
+// 源端一个新的完整窗口）。仅作用于 UPLOADING；PENDING 表示“等节点重连”，属正常
+// 可恢复状态（离线持久化重试），不在此终结。
+const (
+	defaultUploadStallTimeout = 30 * time.Minute
+	uploadStallBytesPerSecond = int64(1 << 20)
+)
+
+// uploadStallTimeout 按文件大小计算源上传停滞阈值。
+func uploadStallTimeout(size int64) time.Duration {
+	if size <= 0 {
+		return defaultUploadStallTimeout
+	}
+	return defaultUploadStallTimeout + time.Duration(size/uploadStallBytesPerSecond)*time.Second
+}
+
 // ResolveGatewayBaseURL 返回 Agent 可访问的 Gateway HTTP 基址。
 func ResolveGatewayBaseURL(configured, webBaseURL, gatewayAddr string) string {
 	if configured != "" {
@@ -94,6 +119,13 @@ type FileTransferManager struct {
 	gatewayBaseURL string
 	maxBytes       int64
 	mu             sync.Mutex
+	// attemptMu 保护世代号表：dispatch（无 m.mu）与结果处理（持 m.mu）都会访问，
+	// 因此不能挂在 m.mu 下。uploadAttempts / deliveryAttempts 记录最近一次下发给
+	// Agent 的尝试世代号；只在内存中维护：Hub 重启后所有连接重建，ResumeNode 会
+	// 重新下发并建立新世代，迟到的旧世代结果一律被忽略。
+	attemptMu        sync.Mutex
+	uploadAttempts   map[string]uint64
+	deliveryAttempts map[string]uint64
 }
 
 // NewFileTransferManager 创建文件传输管理器。
@@ -105,7 +137,88 @@ func NewFileTransferManager(st store.Store, storageDir, gatewayBaseURL string, s
 	return &FileTransferManager{
 		store: st, storageDir: dir, sessions: sessions, nodes: nodes,
 		logger: logger, gatewayBaseURL: normalizeHTTPBaseURL(gatewayBaseURL), maxBytes: defaultMaxFileTransferBytes,
+		uploadAttempts: map[string]uint64{}, deliveryAttempts: map[string]uint64{},
 	}, nil
+}
+
+// 传输终态：进入后不可再被任何异步事件改写（缺陷 SOAK-20261018-02）。
+// 唯一允许的离开路径是显式管理动作 Retry（FAILED → 重新上传/交付）。
+func isTerminalTransferStatus(status string) bool {
+	switch status {
+	case models.FileTransferSuccess, models.FileTransferFailed, models.FileTransferCanceled:
+		return true
+	}
+	return false
+}
+
+// 目标终态：与传输同构，目标进入终态后不得被迟到结果/重投改写（P15 评审 major-01）。
+func isTerminalTargetStatus(status string) bool {
+	switch status {
+	case models.FileTargetSuccess, models.FileTargetFailed, models.FileTargetCanceled:
+		return true
+	}
+	return false
+}
+
+// errTransferTerminal 表示写入因传输已进入终态被拒绝。
+var errTransferTerminal = errors.New("transfer is in a terminal state")
+
+func deliveryAttemptKey(transferID, nodeID string) string {
+	return transferID + "\x00" + nodeID
+}
+
+// nextUploadAttempt / currentUploadAttempt 管理源上传世代号（见 attemptMu 注释）。
+func (m *FileTransferManager) nextUploadAttempt(id string) uint64 {
+	m.attemptMu.Lock()
+	defer m.attemptMu.Unlock()
+	m.uploadAttempts[id]++
+	return m.uploadAttempts[id]
+}
+
+func (m *FileTransferManager) currentUploadAttempt(id string) uint64 {
+	m.attemptMu.Lock()
+	defer m.attemptMu.Unlock()
+	return m.uploadAttempts[id]
+}
+
+func (m *FileTransferManager) nextDeliveryAttempt(key string) uint64 {
+	m.attemptMu.Lock()
+	defer m.attemptMu.Unlock()
+	m.deliveryAttempts[key]++
+	return m.deliveryAttempts[key]
+}
+
+func (m *FileTransferManager) currentDeliveryAttempt(key string) uint64 {
+	m.attemptMu.Lock()
+	defer m.attemptMu.Unlock()
+	return m.deliveryAttempts[key]
+}
+
+// logTerminalWriteRejected 记录被终态冻结拒绝的写入，便于观测迟到的结果/上传。
+func (m *FileTransferManager) logTerminalWriteRejected(t *models.FileTransfer, path string) {
+	if m.logger == nil {
+		return
+	}
+	m.logger.Warn("file transfer write rejected: terminal state frozen",
+		"transfer", t.ID, "status", t.Status, "path", path)
+}
+
+// logStaleAttemptIgnored 记录被取代的旧世代结果。
+func (m *FileTransferManager) logStaleAttemptIgnored(t *models.FileTransfer, path string, attempt, current uint64) {
+	if m.logger == nil {
+		return
+	}
+	m.logger.Warn("file transfer result ignored: superseded attempt",
+		"transfer", t.ID, "path", path, "attempt", attempt, "current_attempt", current)
+}
+
+// logTerminalTargetWriteRejected 记录被目标级终态冻结拒绝的写入。
+func (m *FileTransferManager) logTerminalTargetWriteRejected(t *models.FileTransfer, target *models.FileTransferTarget, path string) {
+	if m.logger == nil {
+		return
+	}
+	m.logger.Warn("file transfer target write rejected: terminal state frozen",
+		"transfer", t.ID, "node", target.NodeID, "status", target.Status, "path", path)
 }
 
 // SetMaxBytes 设置单文件传输上限。
@@ -115,7 +228,8 @@ func (m *FileTransferManager) SetMaxBytes(n int64) {
 	}
 }
 
-// StartDeliveryWatchdog 周期性终结停滞在 DELIVERING 的目标（见 deliveryStallTimeout）。
+// StartDeliveryWatchdog 周期性终结停滞在 DELIVERING 的目标（见 deliveryStallTimeout）
+// 与停滞在 UPLOADING 的源上传（见 uploadStallTimeout，P15 评审 major-02）。
 func (m *FileTransferManager) StartDeliveryWatchdog(ctx context.Context, interval time.Duration) {
 	if interval <= 0 {
 		interval = time.Minute
@@ -130,6 +244,9 @@ func (m *FileTransferManager) StartDeliveryWatchdog(ctx context.Context, interva
 			case <-t.C:
 				if _, err := m.SweepStalledDeliveries(ctx, time.Now()); err != nil {
 					m.logger.Warn("file delivery watchdog sweep failed", "error", err)
+				}
+				if _, err := m.SweepStalledUploads(ctx, time.Now()); err != nil {
+					m.logger.Warn("file upload watchdog sweep failed", "error", err)
 				}
 			}
 		}
@@ -149,8 +266,7 @@ func (m *FileTransferManager) SweepStalledDeliveries(ctx context.Context, now ti
 	stalled := 0
 	for _, t := range transfers {
 		// 未暂存（等源上传）、已取消、已终态的传输不涉及交付停滞。
-		if t.SHA256 == "" || t.Status == models.FileTransferCanceled ||
-			t.Status == models.FileTransferSuccess || t.Status == models.FileTransferFailed {
+		if t.SHA256 == "" || isTerminalTransferStatus(t.Status) {
 			continue
 		}
 		changed := false
@@ -192,6 +308,56 @@ func deliverySince(target *models.FileTransferTarget, t *models.FileTransfer) ti
 		return t.UpdatedAt
 	}
 	return t.CreatedAt
+}
+
+// SweepStalledUploads 把超过上传停滞阈值仍无进展的 UPLOADING 传输终结为 FAILED，
+// 并同步终结未暂存传输的全部非终态目标（释放节点删除）。返回被终结的传输数。
+// now 由调用方注入，便于测试确定性地跨过时限。
+//
+// 覆盖场景（P15 评审 major-02）：当前上传尝试失败但结果丢失（Agent 进程被杀、
+// 网络中断未触发回报），且没有下一次重连触发 ResumeNode 重投。被取代的旧尝试结果
+// 仍按世代号忽略（不误报），真失败/无进展由本兜底确定性终态化。
+func (m *FileTransferManager) SweepStalledUploads(ctx context.Context, now time.Time) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	transfers, err := m.store.ListFileTransfers(ctx)
+	if err != nil {
+		return 0, err
+	}
+	stalled := 0
+	for _, t := range transfers {
+		// 仅 UPLOADING（尝试已下发）：PENDING 是“等节点重连”的正常可恢复状态；
+		// 已暂存/终态传输不涉及源上传停滞。
+		if t.Status != models.FileTransferUploading || t.SHA256 != "" {
+			continue
+		}
+		since := uploadProgressSince(t, m.partPath(t.ID))
+		if since.IsZero() || now.Sub(since) < uploadStallTimeout(t.Size) {
+			continue
+		}
+		message := fmt.Sprintf("source upload timed out after %s without progress from the source agent",
+			uploadStallTimeout(t.Size).Truncate(time.Second))
+		if err := m.failTransfer(ctx, t, message); err != nil {
+			return stalled, err
+		}
+		stalled++
+		m.logger.Warn("source upload timed out; transfer marked failed",
+			"transfer", t.ID, "node", t.SourceNodeID, "since", since)
+	}
+	return stalled, nil
+}
+
+// uploadProgressSince 返回源上传最近一次进展的参考时刻：part 文件 mtime 与传输
+// UpdatedAt（最近一次下发/分片写入/完成）取较新者；全部缺失时返回零值（不判定停滞）。
+func uploadProgressSince(t *models.FileTransfer, partPath string) time.Time {
+	ref := t.UpdatedAt
+	if info, err := os.Stat(partPath); err == nil && info.Mode().IsRegular() && info.ModTime().After(ref) {
+		ref = info.ModTime()
+	}
+	if ref.IsZero() {
+		ref = t.CreatedAt
+	}
+	return ref
 }
 
 // Create 创建传输并尽快通知源 Agent。
@@ -248,8 +414,20 @@ func (m *FileTransferManager) List(ctx context.Context) ([]*models.FileTransfer,
 	return m.store.ListFileTransfers(ctx)
 }
 
+// dispatchSource 下发源上传指令。
+//
+// 不持有 m.mu：dispatch 由 Agent 读循环（ResumeNode 回调）触发，而 handleUpload
+// 在整个上传请求期间持有 m.mu；若在此抢锁，慢速大文件上传会把 Agent 读循环
+// （心跳/结果处理）阻塞到上传结束。终态保护改用「下发前以库内最新状态为准」：
+// 调用方（ResumeNode 等）可能先读取再下发，期间 Cancel 等已把传输写入终态，
+// 陈旧实例不得复活终态（CANCELED 之后不得复活）。
 func (m *FileTransferManager) dispatchSource(ctx context.Context, t *models.FileTransfer) {
-	if t.Status == models.FileTransferSuccess || t.Status == models.FileTransferFailed || t.Status == models.FileTransferCanceled || t.SHA256 != "" {
+	fresh, err := m.store.GetFileTransfer(ctx, t.ID)
+	if err != nil {
+		return
+	}
+	t = fresh
+	if isTerminalTransferStatus(t.Status) || t.SHA256 != "" {
 		return
 	}
 	// 暂停拦截：maintenance/disabled 节点不下发传输指令（settings/变更通知不受影响）
@@ -270,9 +448,12 @@ func (m *FileTransferManager) dispatchSource(ctx context.Context, t *models.File
 	if err := m.store.UpdateFileTransfer(ctx, t); err != nil {
 		return
 	}
+	// 每次实际下发分配新世代号：被取代的旧尝试回执因世代不匹配被忽略。
+	attempt := m.nextUploadAttempt(t.ID)
 	if err := conn.Send(protocol.NewEnvelope(protocol.MsgFileUploadRequest, t.ID, protocol.FileUploadRequestPayload{
 		TransferID: t.ID, SourcePath: t.SourcePath,
 		UploadURL: m.dataURL("/agent/transfers/" + t.ID + "/upload"), Offset: offset, MaxBytes: m.maxBytes,
+		Attempt: attempt,
 	})); err != nil {
 		t.Status = models.FileTransferPending
 		t.Error = err.Error()
@@ -290,7 +471,8 @@ func (m *FileTransferManager) ResumeNode(ctx context.Context, nodeID string) {
 		if t.SourceNodeID == nodeID && (t.Status == models.FileTransferPending || t.Status == models.FileTransferUploading) {
 			m.dispatchSource(ctx, t)
 		}
-		if t.SHA256 == "" || t.Status == models.FileTransferCanceled || t.Status == models.FileTransferSuccess {
+		// 终态（含 FAILED）不再自动重投：恢复路径只能是显式 Retry（终态冻结）。
+		if t.SHA256 == "" || isTerminalTransferStatus(t.Status) {
 			continue
 		}
 		for _, target := range t.Targets {
@@ -301,10 +483,28 @@ func (m *FileTransferManager) ResumeNode(ctx context.Context, nodeID string) {
 	}
 }
 
+// dispatchTarget 下发目标交付指令。不持有 m.mu（同 dispatchSource 的理由），
+// 以库内最新传输/目标状态为准，终态或已成功/已取消的目标不重投。
 func (m *FileTransferManager) dispatchTarget(ctx context.Context, t *models.FileTransfer, target *models.FileTransferTarget) {
-	if t.SHA256 == "" || target.Status == models.FileTargetSuccess || target.Status == models.FileTargetCanceled || t.Status == models.FileTransferCanceled {
+	fresh, err := m.store.GetFileTransfer(ctx, t.ID)
+	if err != nil {
 		return
 	}
+	t = fresh
+	if isTerminalTransferStatus(t.Status) || t.SHA256 == "" {
+		return
+	}
+	var current *models.FileTransferTarget
+	for _, item := range t.Targets {
+		if item.NodeID == target.NodeID {
+			current = item
+			break
+		}
+	}
+	if current == nil || isTerminalTargetStatus(current.Status) {
+		return
+	}
+	target = current
 	// 暂停拦截：maintenance/disabled 节点不下发交付指令
 	if node, err := m.store.GetNode(ctx, target.NodeID); err == nil && !isDispatchableStatus(node.Status) {
 		if m.logger != nil {
@@ -329,9 +529,12 @@ func (m *FileTransferManager) dispatchTarget(ctx context.Context, t *models.File
 	if mode == 0 {
 		mode = 0o644
 	}
+	// 每次实际下发分配新世代号：被取代的旧下载尝试回执因世代不匹配被忽略。
+	attempt := m.nextDeliveryAttempt(deliveryAttemptKey(t.ID, target.NodeID))
 	if err := conn.Send(protocol.NewEnvelope(protocol.MsgFileDeliveryRequest, t.ID, protocol.FileDeliveryRequestPayload{
 		TransferID: t.ID, DownloadURL: m.dataURL("/agent/transfers/" + t.ID + "/download"),
 		SHA256: t.SHA256, Size: t.Size, DestinationPath: target.DestinationPath, Mode: mode,
+		Attempt: attempt,
 	})); err != nil {
 		target.Status = models.FileTargetPending
 		target.Error = err.Error()
@@ -362,12 +565,16 @@ func (m *FileTransferManager) HandleAgentHTTP(w http.ResponseWriter, r *http.Req
 	switch action {
 	case "upload":
 		if r.Method != http.MethodPost {
+			// 405 必须携带 Allow（与 Hub 侧 methodNotAllowed 风格一致；
+			// 缺陷 P6 范围外观察：agent 文件传输端点 405 缺 Allow）。
+			w.Header().Set("Allow", "POST")
 			writeTransferJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 			return
 		}
 		m.handleUpload(w, r, id, node.ID)
 	case "download":
 		if r.Method != http.MethodGet {
+			w.Header().Set("Allow", "GET")
 			writeTransferJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 			return
 		}
@@ -391,6 +598,14 @@ func (m *FileTransferManager) handleUpload(w http.ResponseWriter, r *http.Reques
 	}
 	if t.Status == models.FileTransferCanceled {
 		writeTransferJSON(w, http.StatusConflict, map[string]string{"error": "transfer canceled"})
+		return
+	}
+	// 终态冻结（先于“已暂存”早退）：SUCCESS/FAILED 一律拒绝续传，
+	// 不依赖 SHA256 是否残留——failTransfer 会清空暂存标记，若把终态判断放在
+	// SHA 早退之后，FAILED 传输仍可能接受分片并写回 UPLOADING（P15 评审 major-01(1)）。
+	if isTerminalTransferStatus(t.Status) {
+		m.logTerminalWriteRejected(t, "upload_http")
+		writeTransferJSON(w, http.StatusGone, map[string]string{"error": "transfer is in terminal state " + t.Status})
 		return
 	}
 	if t.SHA256 != "" {
@@ -453,13 +668,21 @@ func (m *FileTransferManager) handleUpload(w http.ResponseWriter, r *http.Reques
 	}
 	next := offset + n
 	if next < total {
-		t.Status = models.FileTransferUploading
-		_ = m.store.UpdateFileTransfer(r.Context(), t)
+		// 分片续传写回 UPLOADING 前重新做终态判定（纵深防御：终态不得被写回进行中）。
+		if !m.markUploading(r.Context(), t) {
+			writeTransferJSON(w, http.StatusGone, map[string]string{"error": "transfer is in terminal state " + t.Status})
+			return
+		}
 		w.Header().Set("X-NodeSteer-Next-Offset", strconv.FormatInt(next, 10))
 		writeTransferJSON(w, http.StatusConflict, map[string]any{"status": t.Status, "next_offset": next})
 		return
 	}
 	if err := m.completeUpload(r.Context(), t, total); err != nil {
+		if errors.Is(err, errTransferTerminal) {
+			m.logTerminalWriteRejected(t, "complete_upload")
+			writeTransferJSON(w, http.StatusGone, map[string]string{"error": "transfer is in terminal state " + t.Status})
+			return
+		}
 		// 校验/暂存失败必须终态化：否则传输停留 UPLOADING、目标停留 PENDING，
 		// 源/目标节点删除会被 409 has active file transfer 永久阻断（缺陷 FAIL-M-001）。
 		message := sourceUploadErrorMessage(err.Error())
@@ -472,7 +695,26 @@ func (m *FileTransferManager) handleUpload(w http.ResponseWriter, r *http.Reques
 	writeTransferJSON(w, http.StatusOK, map[string]any{"status": t.Status, "size": t.Size, "sha256": t.SHA256})
 }
 
+// markUploading 在非终态前提下把传输写回 UPLOADING（分片续传进度落库）。
+// 终态返回 false 且不写入：failTransfer 会清空 SHA256，分片路径不得据此绕过终态冻结
+// （P15 评审 major-01(1)）。
+func (m *FileTransferManager) markUploading(ctx context.Context, t *models.FileTransfer) bool {
+	if isTerminalTransferStatus(t.Status) {
+		m.logTerminalWriteRejected(t, "upload_partial")
+		return false
+	}
+	t.Status = models.FileTransferUploading
+	_ = m.store.UpdateFileTransfer(ctx, t)
+	return true
+}
+
 func (m *FileTransferManager) completeUpload(ctx context.Context, t *models.FileTransfer, total int64) error {
+	// 终态冻结（纵深防御）：终态传输不得被续传完成复活为 DELIVERING。
+	// 校验必须先于任何落盘副作用（part→blob rename），避免为终态传输暂存文件。
+	if isTerminalTransferStatus(t.Status) {
+		m.logTerminalWriteRejected(t, "complete_upload")
+		return errTransferTerminal
+	}
 	part := m.partPath(t.ID)
 	info, err := os.Stat(part)
 	if err != nil || !info.Mode().IsRegular() || info.Size() != total {
@@ -539,8 +781,21 @@ func (m *FileTransferManager) HandleUploadResult(ctx context.Context, nodeID str
 	if err != nil {
 		return err
 	}
-	// 已取消、已成功或源文件已暂存的传输忽略迟到的失败结果，避免回退终态。
-	if t.SourceNodeID != nodeID || t.Status == models.FileTransferCanceled || t.Status == models.FileTransferSuccess || t.SHA256 != "" {
+	if t.SourceNodeID != nodeID {
+		return nil
+	}
+	// 终态冻结：已取消/已成功/已失败或源文件已暂存的传输忽略迟到的失败结果。
+	if isTerminalTransferStatus(t.Status) {
+		m.logTerminalWriteRejected(t, "upload_result")
+		return nil
+	}
+	if t.SHA256 != "" {
+		return nil
+	}
+	// 世代匹配：只接受最近一次下发尝试的结果。断连重连时旧尝试被取消
+	// （context canceled），其失败回执不得把仍在续传的传输误判为 FAILED（缺陷 SOAK-20261018-01）。
+	if current := m.currentUploadAttempt(t.ID); p.Attempt != current {
+		m.logStaleAttemptIgnored(t, "upload_result", p.Attempt, current)
 		return nil
 	}
 	return m.failTransfer(ctx, t, sourceUploadErrorMessage(p.Error))
@@ -548,6 +803,11 @@ func (m *FileTransferManager) HandleUploadResult(ctx context.Context, nodeID str
 
 // failTransfer 将传输终结为 FAILED 并同步终结所有非终态目标，返回首个持久化错误。
 func (m *FileTransferManager) failTransfer(ctx context.Context, t *models.FileTransfer, message string) error {
+	// 终态冻结（纵深防御）：终态不可回退，迟到失败不得改写既有终态。
+	if isTerminalTransferStatus(t.Status) {
+		m.logTerminalWriteRejected(t, "fail_transfer")
+		return nil
+	}
 	// completeUpload 可能在持久化失败前已把暂存元数据写进内存；
 	// 终态传输不得携带已回滚的 blob 信息，否则交付/重试路径会按“已暂存”处理。
 	t.Status, t.Error, t.SHA256 = models.FileTransferFailed, message, ""
@@ -562,8 +822,7 @@ func (m *FileTransferManager) failTransfer(ctx context.Context, t *models.FileTr
 func (m *FileTransferManager) failTargets(ctx context.Context, t *models.FileTransfer, message string) error {
 	var firstErr error
 	for _, target := range t.Targets {
-		switch target.Status {
-		case models.FileTargetSuccess, models.FileTargetFailed, models.FileTargetCanceled:
+		if isTerminalTargetStatus(target.Status) {
 			continue
 		}
 		target.Status, target.Error = models.FileTargetFailed, message
@@ -598,8 +857,28 @@ func (m *FileTransferManager) HandleDeliveryResult(ctx context.Context, nodeID s
 			break
 		}
 	}
-	if target == nil || t.Status == models.FileTransferCanceled || t.SHA256 == "" {
+	if target == nil {
+		return nil
+	}
+	// 目标级终态冻结：已成功/已失败/已取消的目标不得被迟到结果改写（含同世代重复回执）。
+	if isTerminalTargetStatus(target.Status) {
+		m.logTerminalTargetWriteRejected(t, target, "delivery_result")
+		return nil
+	}
+	// 传输级终态冻结：已取消/已成功/已失败（含源失败未暂存）的传输忽略迟到的目标结果。
+	if isTerminalTransferStatus(t.Status) {
+		m.logTerminalWriteRejected(t, "delivery_result")
+		return nil
+	}
+	if t.SHA256 == "" {
 		// 源文件未暂存（例如源上传失败）时不可能有合法交付，忽略迟到的目标结果。
+		return nil
+	}
+	// 世代匹配：只接受最近一次下发交付尝试的结果，被取代的旧下载尝试
+	// （断连重连被 cancel）的失败回执不得把目标/传输误判为 FAILED（SOAK-20261018-01 同源）。
+	key := deliveryAttemptKey(t.ID, nodeID)
+	if current := m.currentDeliveryAttempt(key); p.Attempt != current {
+		m.logStaleAttemptIgnored(t, "delivery_result", p.Attempt, current)
 		return nil
 	}
 	if p.OK {
@@ -622,6 +901,11 @@ func (m *FileTransferManager) HandleDeliveryResult(ctx context.Context, nodeID s
 // updateTransferAggregate 依据各目标状态推进传输聚合状态并持久化：
 // 全部成功 → SUCCESS；全部终态且存在失败 → FAILED；否则仍为 DELIVERING。
 func (m *FileTransferManager) updateTransferAggregate(ctx context.Context, t *models.FileTransfer) error {
+	// 终态冻结（纵深防御）：聚合不得改写既有终态。
+	if isTerminalTransferStatus(t.Status) {
+		m.logTerminalWriteRejected(t, "aggregate")
+		return nil
+	}
 	allSuccess, allTerminal, anyFailed := true, true, false
 	for _, item := range t.Targets {
 		switch item.Status {
@@ -649,6 +933,7 @@ func (m *FileTransferManager) updateTransferAggregate(ctx context.Context, t *mo
 }
 
 // Retry resets failed targets, or restarts an incomplete source upload.
+// Retry 是终态冻结的唯一显式恢复路径：FAILED 可被重试，CANCELED 不可。
 func (m *FileTransferManager) Retry(ctx context.Context, id, targetID string) (*models.FileTransfer, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -659,6 +944,10 @@ func (m *FileTransferManager) Retry(ctx context.Context, id, targetID string) (*
 	if t.Status == models.FileTransferCanceled {
 		return nil, errors.New("transfer canceled")
 	}
+	if t.Status == models.FileTransferSuccess {
+		// 成功是终态：重试不得把它拉回上传/交付（无目标可重启时保持原状态）。
+		return t, nil
+	}
 	if t.SHA256 == "" {
 		t.Status, t.Error = models.FileTransferPending, ""
 		if err := m.store.UpdateFileTransfer(ctx, t); err != nil {
@@ -667,7 +956,9 @@ func (m *FileTransferManager) Retry(ctx context.Context, id, targetID string) (*
 		m.dispatchSource(ctx, t)
 		return m.store.GetFileTransfer(ctx, id)
 	}
-	restarted := false
+	// 先重置并持久化目标与传输状态，再下发指令：dispatch 会以库内状态为准，
+	// 避免在传输仍是 FAILED 时下发交付（终态冻结会拒绝）。
+	var restarted []*models.FileTransferTarget
 	for _, target := range t.Targets {
 		if targetID == "" || target.NodeID == targetID {
 			if target.Status == models.FileTargetFailed {
@@ -675,12 +966,11 @@ func (m *FileTransferManager) Retry(ctx context.Context, id, targetID string) (*
 				if err := m.store.UpdateFileTransferTarget(ctx, target); err != nil {
 					return nil, err
 				}
-				m.dispatchTarget(ctx, t, target)
-				restarted = true
+				restarted = append(restarted, target)
 			}
 		}
 	}
-	if !restarted {
+	if len(restarted) == 0 {
 		// 没有目标可重启（例如误重试已成功的传输）时保持原状态，避免把已终结的传输推进为 DELIVERING 后永久悬挂。
 		return m.store.GetFileTransfer(ctx, id)
 	}
@@ -688,16 +978,30 @@ func (m *FileTransferManager) Retry(ctx context.Context, id, targetID string) (*
 	if err := m.store.UpdateFileTransfer(ctx, t); err != nil {
 		return nil, err
 	}
+	for _, target := range restarted {
+		m.dispatchTarget(ctx, t, target)
+	}
 	return m.store.GetFileTransfer(ctx, id)
 }
 
 // Cancel cancels pending work and notifies active Agents.
+//
+// 终态语义（P15 评审 major-01(2)）：终态不可被取消改写——CANCELED 幂等返回
+// （不重复下发取消、不重复清理）；SUCCESS/FAILED 返回业务错误（已结束的传输不允许
+// 改写为取消，恢复路径是显式 Retry）。仅非终态传输可进入 CANCELED。
 func (m *FileTransferManager) Cancel(ctx context.Context, id string) (*models.FileTransfer, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	t, err := m.store.GetFileTransfer(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+	switch t.Status {
+	case models.FileTransferCanceled:
+		return t, nil
+	case models.FileTransferSuccess, models.FileTransferFailed:
+		m.logTerminalWriteRejected(t, "cancel")
+		return nil, errors.New("transfer already finished: " + t.Status)
 	}
 	t.Status, t.Error = models.FileTransferCanceled, ""
 	if err := m.store.UpdateFileTransfer(ctx, t); err != nil {

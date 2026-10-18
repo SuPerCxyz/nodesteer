@@ -300,6 +300,29 @@ func writeErr(w http.ResponseWriter, status int, msg string) {
 	writeJSON(w, status, map[string]string{"error": msg})
 }
 
+// methodNotAllowed 统一 405 响应：必须携带 Allow 头（与既有正确端点一致；
+// 缺陷 QA-20261018-F6 补齐此前缺失 Allow 的端点）。
+func methodNotAllowed(w http.ResponseWriter, allow string) {
+	w.Header().Set("Allow", allow)
+	writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+}
+
+// splitResourcePath 解析 /api/<resource>/{id}[/<subpath...>] 形式的路径：
+// 返回 id 与子路径段；尾部斜杠归一（不产生空段，/api/tasks/{id}/ 等价于 /api/tasks/{id}）。
+// 调用方必须对未被显式支持的子路径返回 404：此前未知子路径会落入基础资源方法分支，
+// 导致 GET 读取基础资源、PUT 改写基础资源、DELETE 删除基础资源
+// （观察项 QA-20261018-OBS-UNKNOWN-SUBPATH-LENIENT，运行验证见 subpath_contract_test.go）。
+func splitResourcePath(path, prefix string) (string, []string) {
+	segments := strings.Split(strings.TrimPrefix(path, prefix), "/")
+	for len(segments) > 0 && segments[len(segments)-1] == "" {
+		segments = segments[:len(segments)-1]
+	}
+	if len(segments) == 0 {
+		return "", nil
+	}
+	return segments[0], segments[1:]
+}
+
 // writeInternalError 归一化内部/存储层错误响应并补 error 级日志：
 //   - SQLITE_BUSY/LOCKED 家族（可重试）→ 503 storage busy，客户端重试即可成功；
 //   - 其余 → 500 internal error。
@@ -307,8 +330,18 @@ func writeErr(w http.ResponseWriter, status int, msg string) {
 // 驱动原文（如 "database is locked (5) (SQLITE_BUSY)"）只进日志、不回客户端
 // （缺陷 OBS-20261016-G1-ENROLL-TRANSIENT-500 的次生问题①②：错误外泄 + 零日志）。
 // 日志仅含 method/path（不含 query，避免 agent_token 等敏感值）与错误原文。
+//
+// 连接已关闭/客户端取消（context.Canceled、net.ErrClosed、io.EOF 等，
+// 经 hub.IsConnectionGone 统一判定）不是服务端错误：降级为 Debug，不产生 ERROR
+// 噪声；其余错误的 ERROR 语义不变（缺陷 QA-20261018-F8，判定与 Gateway 写循环
+// 共用，OBS-20261018-SCALE-02）。
 func (s *Server) writeInternalError(w http.ResponseWriter, r *http.Request, err error) {
-	if s.logger != nil {
+	if hub.IsConnectionGone(err) {
+		if s.logger != nil {
+			s.logger.Debug("api request canceled or connection gone",
+				"method", r.Method, "path", r.URL.Path)
+		}
+	} else if s.logger != nil {
 		s.logger.Error("api request failed",
 			"method", r.Method,
 			"path", r.URL.Path,
@@ -321,14 +354,33 @@ func (s *Server) writeInternalError(w http.ResponseWriter, r *http.Request, err 
 	writeErr(w, http.StatusInternalServerError, "internal error")
 }
 
-// writeUpdateError 统一资源更新错误映射：不存在的 id（sql.ErrNoRows）映射为 404
-// 归一化文案，不把底层存储错误原文回给调用方；其余校验错误保留既有 400 契约文案。
-func writeUpdateError(w http.ResponseWriter, notFoundMsg string, err error) {
+// writeStoreError 归一化「可能是存储层」的写路径错误，保留既有业务 4xx 文案：
+//   - SQLITE_BUSY/LOCKED → 503 storage busy, please retry（ERROR 日志，原文只进日志）；
+//   - 其它驱动错误（sqlite / database/sql）→ 500 internal error（ERROR 日志）；
+//   - 5xx 目标状态码一律走 writeInternalError（不回原文）；
+//   - 业务校验错误 → status + 原文（业务文案契约不变）。
+func (s *Server) writeStoreError(w http.ResponseWriter, r *http.Request, status int, err error) {
+	if status >= http.StatusInternalServerError || store.IsBusyError(err) || store.IsDriverError(err) {
+		s.writeInternalError(w, r, err)
+		return
+	}
+	writeErr(w, status, err.Error())
+}
+
+// writeMutationError 统一资源写路径错误映射：不存在的 id（sql.ErrNoRows）映射为
+// 404 归一化文案，其余走 writeStoreError（驱动原文不外泄、BUSY 归一化、补日志）。
+func (s *Server) writeMutationError(w http.ResponseWriter, r *http.Request, status int, notFoundMsg string, err error) {
 	if errors.Is(err, sql.ErrNoRows) {
 		writeErr(w, http.StatusNotFound, notFoundMsg)
 		return
 	}
-	writeErr(w, http.StatusBadRequest, err.Error())
+	s.writeStoreError(w, r, status, err)
+}
+
+// writeUpdateError 统一资源更新错误映射：不存在的 id（sql.ErrNoRows）映射为 404
+// 归一化文案，不把底层存储错误原文回给调用方；其余校验错误保留既有 400 契约文案。
+func (s *Server) writeUpdateError(w http.ResponseWriter, r *http.Request, notFoundMsg string, err error) {
+	s.writeMutationError(w, r, http.StatusBadRequest, notFoundMsg, err)
 }
 
 // requireApplication 子资源路径（assign/deploy）的存在性前置检查。
@@ -345,12 +397,8 @@ func (s *Server) requireApplication(w http.ResponseWriter, r *http.Request, id s
 // writeApplicationSubresourceError 归一化 assign/deploy 的错误响应：
 // 记录不存在 → 404 归一化文案；其余为业务校验文案（节点不存在/离线/缺能力等），
 // 存储层原文不外泄。
-func writeApplicationSubresourceError(w http.ResponseWriter, err error) {
-	if errors.Is(err, sql.ErrNoRows) {
-		writeErr(w, http.StatusNotFound, "application not found")
-		return
-	}
-	writeErr(w, http.StatusBadRequest, err.Error())
+func (s *Server) writeApplicationSubresourceError(w http.ResponseWriter, r *http.Request, err error) {
+	s.writeMutationError(w, r, http.StatusBadRequest, "application not found", err)
 }
 
 func readJSON(r *http.Request, v any) error {
@@ -444,6 +492,12 @@ func loginFailKey(r *http.Request, username string) string {
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
+	// 登录是有副作用的操作，仅接受 POST：GET/PATCH 等一律 405 + Allow: POST，
+	// 不再让任意方法携带凭据完成登录（缺陷 QA-20261018-F7）。
+	if r.Method != http.MethodPost {
+		methodNotAllowed(w, "POST")
+		return
+	}
 	var req struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -521,7 +575,7 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 // enabled=SSO 是否为当前登录方式；local_fallback=本地密码登录是否可用（字段名保留兼容旧前端）。
 func (s *Server) handleOIDCState(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]bool{
@@ -533,7 +587,7 @@ func (s *Server) handleOIDCState(w http.ResponseWriter, r *http.Request) {
 // handleOIDCLogin 生成授权跳转 URL（本地模式下 OIDC 完全失效 → 404）
 func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET")
 		return
 	}
 	if !s.oidcActive() {
@@ -552,7 +606,7 @@ func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 // handleOIDCCallback 处理 IdP 回调：验证并建立会话
 func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET")
 		return
 	}
 	if !s.oidcActive() {
@@ -627,28 +681,36 @@ func (s *Server) handleNodes(w http.ResponseWriter, r *http.Request) {
 			writeErr(w, http.StatusBadRequest, "id required")
 			return
 		}
+		// 存在性前置检查：不存在的节点必须 404（此前状态路径经 SetNodeStatus 返回
+		// sql.ErrNoRows → 500；仅标签路径因 UPDATE 不校验行数而静默 200）。
+		if _, err := s.nodes.GetNode(r.Context(), req.ID); err != nil {
+			writeErr(w, http.StatusNotFound, "node not found")
+			return
+		}
 		if req.Status != "" {
 			if err := s.nodes.SetNodeStatus(r.Context(), req.ID, req.Status); err != nil {
-				s.writeInternalError(w, r, err)
+				s.writeMutationError(w, r, http.StatusBadRequest, "node not found", err)
 				return
 			}
 		}
 		if req.Labels != nil {
 			if err := s.nodes.SetLabels(r.Context(), req.ID, req.Labels); err != nil {
-				s.writeInternalError(w, r, err)
+				// 并发删除后标签更新零行命中 → 404（不再静默 200 / 500 原文，F5 同族）。
+				s.writeMutationError(w, r, http.StatusInternalServerError, "node not found", err)
 				return
 			}
 		}
 		s.audit(r, "node", req.ID, "update")
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 	default:
+		w.Header().Set("Allow", "GET, POST")
 		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
 }
 
 func (s *Server) handleNodeEnrollment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET, POST")
 		return
 	}
 	if !s.canAdmin(r) {
@@ -765,7 +827,7 @@ WantedBy=multi-user.target
 
 func (s *Server) handleAgentBinary(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET, HEAD")
 		return
 	}
 	architecture, err := normalizeArchitecture(r.URL.Query().Get("architecture"))
@@ -904,13 +966,16 @@ func shellQuote(value string) string {
 }
 
 func (s *Server) handleNodeByID(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/api/nodes/")
-	parts := strings.Split(path, "/")
-	id := parts[0]
-	if len(parts) >= 2 && parts[1] == "revoke-credential" {
+	id, rest := splitResourcePath(r.URL.Path, "/api/nodes/")
+	if len(rest) > 0 {
+		// 唯一已知子路径 revoke-credential；其余未知子路径一律 404，
+		// 不得落入基础资源分支被当作节点本体读取/改写/删除。
+		if len(rest) != 1 || rest[0] != "revoke-credential" {
+			writeErr(w, http.StatusNotFound, "node not found")
+			return
+		}
 		if r.Method != http.MethodPost {
-			w.Header().Set("Allow", "POST")
-			writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+			methodNotAllowed(w, "POST")
 			return
 		}
 		if !s.canAdmin(r) {
@@ -918,7 +983,7 @@ func (s *Server) handleNodeByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.nodes.RevokeCredential(r.Context(), id); err != nil {
-			writeErr(w, http.StatusBadRequest, err.Error())
+			s.writeMutationError(w, r, http.StatusBadRequest, "node not found", err)
 			return
 		}
 		s.audit(r, "node", id, "revoke_credential")
@@ -946,7 +1011,7 @@ func (s *Server) handleNodeByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.nodes.Delete(r.Context(), id); err != nil {
-			writeErr(w, http.StatusConflict, err.Error())
+			s.writeMutationError(w, r, http.StatusConflict, "node not found", err)
 			return
 		}
 		s.audit(r, "node", id, "delete")
@@ -970,13 +1035,14 @@ func (s *Server) handleNodeByID(w http.ResponseWriter, r *http.Request) {
 		}
 		if req.Status != "" {
 			if err := s.nodes.SetNodeStatus(r.Context(), id, req.Status); err != nil {
-				writeErr(w, http.StatusBadRequest, err.Error())
+				s.writeMutationError(w, r, http.StatusBadRequest, "node not found", err)
 				return
 			}
 		}
 		if req.Labels != nil {
 			if err := s.nodes.SetLabels(r.Context(), id, req.Labels); err != nil {
-				s.writeInternalError(w, r, err)
+				// 并发删除后标签更新零行命中 → 404（不再静默 200 / 500 原文，F5 同族）。
+				s.writeMutationError(w, r, http.StatusInternalServerError, "node not found", err)
 				return
 			}
 		}
@@ -995,6 +1061,7 @@ func (s *Server) handleNodeByID(w http.ResponseWriter, r *http.Request) {
 // SKIPPED 终态且不下发（Agent 侧另有双保险拒绝）。版本粒度固定「升至 Hub 同版本」。
 func (s *Server) handleNodesUpgrade(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
 		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
@@ -1040,7 +1107,7 @@ func (s *Server) handleNodesUpgrade(w http.ResponseWriter, r *http.Request) {
 	}
 	results, err := s.execs.UpgradeNodes(r.Context(), nodeIDs, s.baseURL)
 	if err != nil {
-		writeErr(w, http.StatusBadRequest, err.Error())
+		s.writeStoreError(w, r, http.StatusBadRequest, err)
 		return
 	}
 	for _, id := range nodeIDs {
@@ -1078,12 +1145,13 @@ func (s *Server) handleTransfers(w http.ResponseWriter, r *http.Request) {
 		}
 		item, err := s.transfers.Create(r.Context(), req.SourceNodeID, req.SourcePath, req.Targets)
 		if err != nil {
-			writeErr(w, http.StatusBadRequest, err.Error())
+			s.writeStoreError(w, r, http.StatusBadRequest, err)
 			return
 		}
 		s.audit(r, "file_transfer", item.ID, "create")
 		writeJSON(w, http.StatusOK, item)
 	default:
+		w.Header().Set("Allow", "GET, POST")
 		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
 }
@@ -1100,6 +1168,12 @@ func (s *Server) handleTransferByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := parts[0]
+	// 未知动作子路径先于方法守卫判定：路径不存在一律 404（任意方法），
+	// 不得落入基础资源分支，也不得因方法差异伪装成 405。
+	if len(parts) > 2 || (len(parts) == 2 && parts[1] != "retry" && parts[1] != "cancel") {
+		writeErr(w, http.StatusNotFound, "transfer action not found")
+		return
+	}
 	// 方法守卫先于鉴权与存在性：方法不支持一律 405 + Allow，不因权限差异
 	// 把方法错误伪装成 403（缺陷 OBS-20261015-API-CONTRACT-DEVIATIONS-LOW ③）。
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
@@ -1145,7 +1219,7 @@ func (s *Server) handleTransferByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		writeErr(w, http.StatusBadRequest, err.Error())
+		s.writeMutationError(w, r, http.StatusBadRequest, "transfer not found", err)
 		return
 	}
 	writeJSON(w, http.StatusOK, item)
@@ -1180,17 +1254,22 @@ func (s *Server) handleGroups(w http.ResponseWriter, r *http.Request) {
 			g.Type = "static"
 		}
 		if err := s.nodes.CreateGroup(r.Context(), &g); err != nil {
-			writeErr(w, http.StatusBadRequest, err.Error())
+			s.writeStoreError(w, r, http.StatusBadRequest, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, g)
 	default:
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET, POST")
 	}
 }
 
 func (s *Server) handleGroupByID(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimPrefix(r.URL.Path, "/api/groups/")
+	id, rest := splitResourcePath(r.URL.Path, "/api/groups/")
+	if len(rest) > 0 {
+		// 组无子资源：任何子路径都不存在 → 404，不得被当作组本体处理。
+		writeErr(w, http.StatusNotFound, "group not found")
+		return
+	}
 	switch r.Method {
 	case http.MethodGet:
 		g, err := s.store.GetGroup(r.Context(), id)
@@ -1220,11 +1299,7 @@ func (s *Server) handleGroupByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.nodes.UpdateGroup(r.Context(), &g); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				writeErr(w, http.StatusNotFound, "group not found")
-				return
-			}
-			writeErr(w, http.StatusBadRequest, err.Error())
+			s.writeMutationError(w, r, http.StatusBadRequest, "group not found", err)
 			return
 		}
 		writeJSON(w, http.StatusOK, g)
@@ -1238,12 +1313,12 @@ func (s *Server) handleGroupByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.nodes.DeleteGroup(r.Context(), id); err != nil {
-			writeErr(w, http.StatusConflict, err.Error())
+			s.writeMutationError(w, r, http.StatusConflict, "group not found", err)
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 	default:
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET, PUT, DELETE")
 	}
 }
 
@@ -1276,45 +1351,53 @@ func (s *Server) handleScripts(w http.ResponseWriter, r *http.Request) {
 			sc.Interpreter = "shell"
 		}
 		if err := s.scripts.Create(r.Context(), &sc); err != nil {
-			writeErr(w, http.StatusBadRequest, err.Error())
+			s.writeStoreError(w, r, http.StatusBadRequest, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, sc)
 	default:
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET, POST")
 	}
 }
 
 func (s *Server) handleScriptByID(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/api/scripts/")
-	parts := strings.Split(path, "/")
-	id := parts[0]
-	switch r.Method {
-	case http.MethodGet:
-		if len(parts) >= 2 && parts[1] == "revisions" {
-			if len(parts) == 2 {
-				// 列出全部历史版本
-				entries, err := s.scripts.ListRevisions(r.Context(), id)
-				if err != nil {
-					s.writeInternalError(w, r, err)
-					return
-				}
-				writeJSON(w, http.StatusOK, entries)
-				return
-			}
-			rev, err := strconv.ParseInt(parts[2], 10, 64)
-			if err != nil {
-				writeErr(w, http.StatusBadRequest, "invalid revision")
-				return
-			}
-			entry, err := s.scripts.GetRevision(r.Context(), id, rev)
-			if err != nil {
-				writeErr(w, http.StatusNotFound, "revision not found")
-				return
-			}
-			writeJSON(w, http.StatusOK, entry)
+	id, rest := splitResourcePath(r.URL.Path, "/api/scripts/")
+	if len(rest) > 0 {
+		// 唯一已知子路径 revisions（仅 GET，至多再带一个版本号）；其余未知子路径 404，
+		// 不得落入基础资源分支被当作脚本本体读取/改写/删除。
+		if rest[0] != "revisions" || len(rest) > 2 {
+			writeErr(w, http.StatusNotFound, "script not found")
 			return
 		}
+		if r.Method != http.MethodGet {
+			methodNotAllowed(w, "GET")
+			return
+		}
+		if len(rest) == 1 {
+			// 列出全部历史版本
+			entries, err := s.scripts.ListRevisions(r.Context(), id)
+			if err != nil {
+				s.writeInternalError(w, r, err)
+				return
+			}
+			writeJSON(w, http.StatusOK, entries)
+			return
+		}
+		rev, err := strconv.ParseInt(rest[1], 10, 64)
+		if err != nil {
+			writeErr(w, http.StatusBadRequest, "invalid revision")
+			return
+		}
+		entry, err := s.scripts.GetRevision(r.Context(), id, rev)
+		if err != nil {
+			writeErr(w, http.StatusNotFound, "revision not found")
+			return
+		}
+		writeJSON(w, http.StatusOK, entry)
+		return
+	}
+	switch r.Method {
+	case http.MethodGet:
 		sc, err := s.scripts.Get(r.Context(), id)
 		if err != nil {
 			writeErr(w, http.StatusNotFound, "script not found")
@@ -1333,7 +1416,7 @@ func (s *Server) handleScriptByID(w http.ResponseWriter, r *http.Request) {
 		}
 		sc.ID = id
 		if err := s.scripts.Update(r.Context(), &sc); err != nil {
-			writeUpdateError(w, "script not found", err)
+			s.writeUpdateError(w, r, "script not found", err)
 			return
 		}
 		writeJSON(w, http.StatusOK, sc)
@@ -1349,12 +1432,12 @@ func (s *Server) handleScriptByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.scripts.Delete(r.Context(), id); err != nil {
-			writeErr(w, http.StatusConflict, err.Error())
+			s.writeMutationError(w, r, http.StatusConflict, "script not found", err)
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 	default:
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET, PUT, DELETE")
 	}
 }
 
@@ -1384,22 +1467,30 @@ func (s *Server) handleTasks(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.tasks.Create(r.Context(), &t); err != nil {
-			writeErr(w, http.StatusBadRequest, err.Error())
+			s.writeStoreError(w, r, http.StatusBadRequest, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, t)
 	default:
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET, POST")
 	}
 }
 
 func (s *Server) handleTaskByID(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/api/tasks/")
-	parts := strings.Split(path, "/")
-	id := parts[0]
-
-	// Run Now
-	if len(parts) >= 2 && parts[1] == "run" {
+	id, rest := splitResourcePath(r.URL.Path, "/api/tasks/")
+	if len(rest) > 0 {
+		// 唯一已知子路径 run（仅 POST）；其余未知子路径一律 404，
+		// 不得落入基础资源分支被当作任务本体读取/改写/删除。
+		if len(rest) != 1 || rest[0] != "run" {
+			writeErr(w, http.StatusNotFound, "task not found")
+			return
+		}
+		// Run Now：有副作用的操作仅允许 POST（GET 等一律 405 + Allow: POST，
+		// 此前 GET /api/tasks/{id}/run 会直接执行 RunNow，缺陷 QA-20261018-F7）。
+		if r.Method != http.MethodPost {
+			methodNotAllowed(w, "POST")
+			return
+		}
 		if !s.canRun(r) {
 			writeErr(w, http.StatusForbidden, "permission denied")
 			return
@@ -1428,7 +1519,7 @@ func (s *Server) handleTaskByID(w http.ResponseWriter, r *http.Request) {
 		}
 		t.ID = id
 		if err := s.tasks.Update(r.Context(), &t); err != nil {
-			writeUpdateError(w, "task not found", err)
+			s.writeUpdateError(w, r, "task not found", err)
 			return
 		}
 		writeJSON(w, http.StatusOK, t)
@@ -1442,12 +1533,12 @@ func (s *Server) handleTaskByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.tasks.Delete(r.Context(), id); err != nil {
-			writeErr(w, http.StatusConflict, err.Error())
+			s.writeMutationError(w, r, http.StatusConflict, "task not found", err)
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 	default:
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET, PUT, DELETE")
 	}
 }
 
@@ -1498,7 +1589,7 @@ func (s *Server) handleRunNow(w http.ResponseWriter, r *http.Request, taskID str
 		}
 		execs, err := s.apps.DeployTask(r.Context(), task, nodeIDs, op)
 		if err != nil {
-			writeErr(w, http.StatusBadRequest, err.Error())
+			s.writeStoreError(w, r, http.StatusBadRequest, err)
 			return
 		}
 		s.audit(r, "task", taskID, "execute")
@@ -1508,7 +1599,7 @@ func (s *Server) handleRunNow(w http.ResponseWriter, r *http.Request, taskID str
 
 	execs, err := s.execs.RunManual(r.Context(), task, nodeIDs, req.Params)
 	if err != nil {
-		writeErr(w, http.StatusBadRequest, err.Error())
+		s.writeStoreError(w, r, http.StatusBadRequest, err)
 		return
 	}
 	s.audit(r, "task", taskID, "execute")
@@ -1546,17 +1637,22 @@ func (s *Server) handleSchedules(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.schedules.Create(r.Context(), &sc); err != nil {
-			writeErr(w, http.StatusBadRequest, err.Error())
+			s.writeStoreError(w, r, http.StatusBadRequest, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, sc)
 	default:
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET, POST")
 	}
 }
 
 func (s *Server) handleScheduleByID(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimPrefix(r.URL.Path, "/api/schedules/")
+	id, rest := splitResourcePath(r.URL.Path, "/api/schedules/")
+	if len(rest) > 0 {
+		// 调度无子资源：任何子路径都不存在 → 404，不得被当作调度本体处理。
+		writeErr(w, http.StatusNotFound, "schedule not found")
+		return
+	}
 	switch r.Method {
 	case http.MethodGet:
 		sc, err := s.schedules.Get(r.Context(), id)
@@ -1577,7 +1673,7 @@ func (s *Server) handleScheduleByID(w http.ResponseWriter, r *http.Request) {
 		}
 		sc.ID = id
 		if err := s.schedules.Update(r.Context(), &sc); err != nil {
-			writeUpdateError(w, "schedule not found", err)
+			s.writeUpdateError(w, r, "schedule not found", err)
 			return
 		}
 		writeJSON(w, http.StatusOK, sc)
@@ -1591,12 +1687,14 @@ func (s *Server) handleScheduleByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.schedules.Delete(r.Context(), id); err != nil {
-			writeErr(w, http.StatusConflict, err.Error())
+			// 并发删除下的 SQLITE_BUSY 走 503 storage busy（归一化 + 日志），
+			// 不再回 409 + 驱动原文（缺陷 QA-20261018-F2）。
+			s.writeMutationError(w, r, http.StatusConflict, "schedule not found", err)
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 	default:
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET, PUT, DELETE")
 	}
 }
 
@@ -1640,14 +1738,18 @@ func (s *Server) handleArtifacts(w http.ResponseWriter, r *http.Request) {
 		s.audit(r, "artifact", a.ID, "upload")
 		writeJSON(w, http.StatusOK, a)
 	default:
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET, POST")
 	}
 }
 
 func (s *Server) handleArtifactByID(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/api/artifacts/")
-	parts := strings.Split(path, "/")
-	id := parts[0]
+	id, rest := splitResourcePath(r.URL.Path, "/api/artifacts/")
+	if len(rest) > 0 {
+		// download 子路径由独立路由（/api/artifacts/{id}/download）处理；
+		// 到达本 handler 的任何子路径均不存在 → 404，不得落入基础资源分支。
+		writeErr(w, http.StatusNotFound, "artifact not found")
+		return
+	}
 
 	switch r.Method {
 	case http.MethodGet:
@@ -1667,18 +1769,24 @@ func (s *Server) handleArtifactByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.artifacts.Delete(r.Context(), id); err != nil {
-			writeErr(w, http.StatusConflict, err.Error())
+			s.writeMutationError(w, r, http.StatusConflict, "artifact not found", err)
 			return
 		}
 		s.audit(r, "artifact", id, "delete")
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 	default:
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET, DELETE")
 	}
 }
 
-// handleArtifactDownload Artifact 下载端点，供 Agent 部署时以 Agent 身份访问
+// handleArtifactDownload Artifact 下载端点，供 Agent 部署时以 Agent 身份访问。
+// 仅接受 GET/HEAD（与 /api/agent/binary 一致）：此前任意方法都会经 ServeContent
+// 返回文件内容（方法未拒绝）。
 func (s *Server) handleArtifactDownload(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		methodNotAllowed(w, "GET, HEAD")
+		return
+	}
 	id := r.PathValue("id")
 	a, rc, err := s.artifacts.Open(r.Context(), id)
 	if err != nil {
@@ -1728,25 +1836,29 @@ func (s *Server) handleApplications(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.apps.Create(r.Context(), &a); err != nil {
-			writeErr(w, http.StatusBadRequest, err.Error())
+			s.writeStoreError(w, r, http.StatusBadRequest, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, a)
 	default:
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET, POST")
 	}
 }
 
 func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/api/applications/")
-	parts := strings.Split(path, "/")
-	id := parts[0]
+	id, rest := splitResourcePath(r.URL.Path, "/api/applications/")
 
-	if len(parts) >= 2 {
-		switch parts[1] {
+	if len(rest) > 0 {
+		// 已知子路径仅 state/executions/revisions/assign/deploy/nodes；
+		// 其余未知子路径一律 404，不得落入基础资源分支被当作应用本体读取/改写/删除。
+		if len(rest) != 1 {
+			writeErr(w, http.StatusNotFound, "application not found")
+			return
+		}
+		switch rest[0] {
 		case "state":
 			if r.Method != http.MethodGet {
-				writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+				methodNotAllowed(w, "GET")
 				return
 			}
 			states, err := s.store.ListApplicationNodeStates(r.Context(), id)
@@ -1758,7 +1870,7 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 			return
 		case "executions":
 			if r.Method != http.MethodGet {
-				writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+				methodNotAllowed(w, "GET")
 				return
 			}
 			execs, err := s.applicationExecutions(r.Context(), id)
@@ -1769,6 +1881,10 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusOK, execs)
 			return
 		case "revisions":
+			if r.Method != http.MethodGet {
+				methodNotAllowed(w, "GET")
+				return
+			}
 			entries, err := s.store.ListApplicationRevisions(r.Context(), id)
 			if err != nil {
 				s.writeInternalError(w, r, err)
@@ -1777,6 +1893,10 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusOK, entries)
 			return
 		case "assign":
+			if r.Method != http.MethodPost {
+				methodNotAllowed(w, "POST")
+				return
+			}
 			if !s.canWrite(r) {
 				writeErr(w, http.StatusForbidden, "permission denied")
 				return
@@ -1795,12 +1915,16 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if err := s.apps.Assign(r.Context(), id, req.NodeIDs, !req.Remove); err != nil {
-				writeApplicationSubresourceError(w, err)
+				s.writeApplicationSubresourceError(w, r, err)
 				return
 			}
 			writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 			return
 		case "deploy":
+			if r.Method != http.MethodPost {
+				methodNotAllowed(w, "POST")
+				return
+			}
 			if !s.canRun(r) {
 				writeErr(w, http.StatusForbidden, "permission denied")
 				return
@@ -1822,19 +1946,26 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 			}
 			execs, err := s.apps.Deploy(r.Context(), id, req.NodeIDs, req.Operation)
 			if err != nil {
-				writeApplicationSubresourceError(w, err)
+				s.writeApplicationSubresourceError(w, r, err)
 				return
 			}
 			s.audit(r, "application", id, "deploy")
 			writeJSON(w, http.StatusOK, execs)
 			return
 		case "nodes":
+			if r.Method != http.MethodGet {
+				methodNotAllowed(w, "GET")
+				return
+			}
 			nodes, err := s.apps.GetNodes(r.Context(), id)
 			if err != nil {
 				s.writeInternalError(w, r, err)
 				return
 			}
 			writeJSON(w, http.StatusOK, nodes)
+			return
+		default:
+			writeErr(w, http.StatusNotFound, "application not found")
 			return
 		}
 	}
@@ -1859,7 +1990,7 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 		}
 		a.ID = id
 		if err := s.apps.Update(r.Context(), &a); err != nil {
-			writeUpdateError(w, "application not found", err)
+			s.writeUpdateError(w, r, "application not found", err)
 			return
 		}
 		writeJSON(w, http.StatusOK, a)
@@ -1873,12 +2004,12 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.apps.Delete(r.Context(), id); err != nil {
-			writeErr(w, http.StatusConflict, err.Error())
+			s.writeMutationError(w, r, http.StatusConflict, "application not found", err)
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 	default:
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET, PUT, DELETE")
 	}
 }
 
@@ -1941,52 +2072,39 @@ func (s *Server) handleExecutions(w http.ResponseWriter, r *http.Request) {
 		}
 		writeJSON(w, http.StatusOK, list)
 	default:
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET")
 	}
 }
 
 func (s *Server) handleExecutionByID(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/api/executions/")
-	parts := strings.Split(path, "/")
-	id := parts[0]
-
-	if len(parts) >= 2 && parts[1] == "logs" {
-		if r.Method != http.MethodGet {
-			writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+	id, rest := splitResourcePath(r.URL.Path, "/api/executions/")
+	if len(rest) > 0 {
+		// 已知子路径仅 logs（GET）与 cancel（POST）；其余未知子路径一律 404，
+		// 不得落入基础资源分支被当作执行记录本体读取。
+		if len(rest) != 1 {
+			writeErr(w, http.StatusNotFound, "execution not found")
 			return
 		}
-		chunks, err := s.execs.ListLogChunks(r.Context(), id)
-		if err != nil {
-			s.writeInternalError(w, r, err)
-			return
-		}
-		writeJSON(w, http.StatusOK, chunks)
-		return
-	}
-
-	if len(parts) >= 2 && parts[1] == "cancel" {
-		if r.Method != http.MethodPost {
-			writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
-			return
-		}
-		if !s.canRun(r) {
-			writeErr(w, http.StatusForbidden, "permission denied")
-			return
-		}
-		if err := s.execs.Cancel(r.Context(), id); err != nil {
-			writeErr(w, http.StatusBadRequest, err.Error())
-			return
-		}
-		detail := ""
-		if ex, err := s.execs.GetExecution(r.Context(), id); err == nil && ex != nil {
-			detail = ex.TaskID
-			if t, err := s.tasks.Get(r.Context(), ex.TaskID); err == nil && t != nil {
-				detail = t.Name
+		switch rest[0] {
+		case "logs":
+			if r.Method != http.MethodGet {
+				methodNotAllowed(w, "GET")
+				return
 			}
+			chunks, err := s.execs.ListLogChunks(r.Context(), id)
+			if err != nil {
+				s.writeInternalError(w, r, err)
+				return
+			}
+			writeJSON(w, http.StatusOK, chunks)
+			return
+		case "cancel":
+			s.handleExecutionCancel(w, r, id)
+			return
+		default:
+			writeErr(w, http.StatusNotFound, "execution not found")
+			return
 		}
-		s.auditDetail(r, "execution", id, "cancel", detail)
-		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
-		return
 	}
 
 	switch r.Method {
@@ -1999,9 +2117,33 @@ func (s *Server) handleExecutionByID(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, ex)
 	default:
 		// 执行记录不支持 DELETE（方法不支持统一 405 + Allow）。
-		w.Header().Set("Allow", "GET")
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET")
 	}
+}
+
+// handleExecutionCancel 执行取消子路径（仅 POST；其余方法 405 + Allow: POST）。
+func (s *Server) handleExecutionCancel(w http.ResponseWriter, r *http.Request, id string) {
+	if r.Method != http.MethodPost {
+		methodNotAllowed(w, "POST")
+		return
+	}
+	if !s.canRun(r) {
+		writeErr(w, http.StatusForbidden, "permission denied")
+		return
+	}
+	if err := s.execs.Cancel(r.Context(), id); err != nil {
+		s.writeMutationError(w, r, http.StatusBadRequest, "execution not found", err)
+		return
+	}
+	detail := ""
+	if ex, err := s.execs.GetExecution(r.Context(), id); err == nil && ex != nil {
+		detail = ex.TaskID
+		if t, err := s.tasks.Get(r.Context(), ex.TaskID); err == nil && t != nil {
+			detail = t.Name
+		}
+	}
+	s.auditDetail(r, "execution", id, "cancel", detail)
+	writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 }
 
 // ---------- Audit ----------
@@ -2100,7 +2242,7 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		s.notifySettings()
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 	default:
-		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		methodNotAllowed(w, "GET, PUT")
 	}
 }
 
@@ -2231,7 +2373,12 @@ func (s *Server) handleUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleUserByID(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimPrefix(r.URL.Path, "/api/users/")
+	id, rest := splitResourcePath(r.URL.Path, "/api/users/")
+	if len(rest) > 0 {
+		// 用户无子资源：任何子路径都不存在 → 404，不得被当作用户本体处理。
+		writeErr(w, http.StatusNotFound, "user not found")
+		return
+	}
 	if !s.canAdmin(r) {
 		writeErr(w, http.StatusForbidden, "permission denied")
 		return
@@ -2282,6 +2429,12 @@ func (s *Server) handleUserByID(w http.ResponseWriter, r *http.Request) {
 			err = update(r.Context())
 		}
 		if err != nil {
+			// 不存在的用户（UPDATE 零行命中 → sql.ErrNoRows）→ 404，
+			// 不再静默 200（缺陷 QA-20261018-F5）；其余持久化失败保持 500 语义。
+			if errors.Is(err, sql.ErrNoRows) {
+				writeErr(w, http.StatusNotFound, "user not found")
+				return
+			}
 			s.writeInternalError(w, r, err)
 			return
 		}
@@ -2290,8 +2443,7 @@ func (s *Server) handleUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 用户资源不支持 DELETE（方法不支持统一 405 + Allow）。
-	w.Header().Set("Allow", "PUT")
-	writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+	methodNotAllowed(w, "PUT")
 }
 
 // ---------- 辅助 ----------

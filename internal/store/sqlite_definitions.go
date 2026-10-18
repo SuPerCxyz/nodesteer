@@ -63,7 +63,9 @@ func (s *SQLiteStore) UpdateScript(ctx context.Context, sc *models.Script, prevR
 		defer tx.Rollback()
 	}
 	execer := s.execer(ctx)
-	if _, err := execer.ExecContext(ctx, `
+	// 脚本行零行命中 → sql.ErrNoRows：不得为不存在的脚本写入孤儿历史版本，
+	// 也不得让 PUT 在并发删除后静默 200（F5 同族，见 execExpectRow）。
+	if err := execExpectRow(ctx, execer, `
 		UPDATE scripts SET name=?, description=?, interpreter=?, content=?, parameters_json=?,
 			environment_json=?, working_dir=?, run_user=?, timeout=?, enabled=?, revision=?, sha256=?, updated_at=?
 		WHERE id=?`,
@@ -132,8 +134,7 @@ func (s *SQLiteStore) ListScripts(ctx context.Context) ([]*models.Script, error)
 }
 
 func (s *SQLiteStore) DeleteScript(ctx context.Context, id string) error {
-	_, err := s.execer(ctx).ExecContext(ctx, `DELETE FROM scripts WHERE id = ?`, id)
-	return err
+	return execExpectRow(ctx, s.execer(ctx), `DELETE FROM scripts WHERE id = ?`, id)
 }
 
 func (s *SQLiteStore) GetScriptRevision(ctx context.Context, id string, revision int64) (*ScriptRevisionEntry, error) {
@@ -218,7 +219,8 @@ func (s *SQLiteStore) UpdateTask(ctx context.Context, t *models.Task, prevRevisi
 		defer tx.Rollback()
 	}
 	execer := s.execer(ctx)
-	if _, err := execer.ExecContext(ctx, `
+	// 任务行零行命中 → sql.ErrNoRows（不得写孤儿历史版本或并发删除后静默 200，F5 同族）。
+	if err := execExpectRow(ctx, execer, `
 		UPDATE tasks SET name=?, definition_json=?, revision=?, updated_at=? WHERE id=?`,
 		t.Name, def, t.Revision, now(), t.ID); err != nil {
 		return err
@@ -243,7 +245,7 @@ func scanTaskFromJSON(jsonStr string) (*models.Task, error) {
 }
 
 func (s *SQLiteStore) GetTask(ctx context.Context, id string) (*models.Task, error) {
-	row := s.db.QueryRowContext(ctx,
+	row := s.queryer(ctx).QueryRowContext(ctx,
 		`SELECT id, name, definition_json, revision, updated_at, created_at FROM tasks WHERE id = ?`, id)
 	var tID, name, def, updated, created string
 	var revision int64
@@ -289,8 +291,7 @@ func (s *SQLiteStore) ListTasks(ctx context.Context) ([]*models.Task, error) {
 }
 
 func (s *SQLiteStore) DeleteTask(ctx context.Context, id string) error {
-	_, err := s.execer(ctx).ExecContext(ctx, `DELETE FROM tasks WHERE id = ?`, id)
-	return err
+	return execExpectRow(ctx, s.execer(ctx), `DELETE FROM tasks WHERE id = ?`, id)
 }
 
 // ---------- Schedules ----------
@@ -310,14 +311,14 @@ func (s *SQLiteStore) CreateSchedule(ctx context.Context, sch *models.Schedule) 
 }
 
 func (s *SQLiteStore) UpdateSchedule(ctx context.Context, sch *models.Schedule, prevRevision int64) error {
-	_, err := s.execer(ctx).ExecContext(ctx, `
+	// 调度行零行命中 → sql.ErrNoRows（并发删除后 PUT 不得静默 200，F5 同族）。
+	return execExpectRow(ctx, s.execer(ctx), `
 		UPDATE schedules SET task_id=?, revision=?, definition_json=?, enabled=?, updated_at=? WHERE id=?`,
 		sch.TaskID, sch.Revision, marshalOrEmpty(sch), boolToInt(sch.Enabled), now(), sch.ID)
-	return err
 }
 
 func (s *SQLiteStore) GetSchedule(ctx context.Context, id string) (*models.Schedule, error) {
-	row := s.db.QueryRowContext(ctx,
+	row := s.queryer(ctx).QueryRowContext(ctx,
 		`SELECT id, task_id, revision, definition_json, enabled, updated_at, created_at FROM schedules WHERE id = ?`, id)
 	var sch models.Schedule
 	var schID, taskID, def, updated, created string
@@ -369,8 +370,7 @@ func (s *SQLiteStore) ListSchedules(ctx context.Context) ([]*models.Schedule, er
 }
 
 func (s *SQLiteStore) DeleteSchedule(ctx context.Context, id string) error {
-	_, err := s.execer(ctx).ExecContext(ctx, `DELETE FROM schedules WHERE id = ?`, id)
-	return err
+	return execExpectRow(ctx, s.execer(ctx), `DELETE FROM schedules WHERE id = ?`, id)
 }
 
 var _ = fmt.Sprintf

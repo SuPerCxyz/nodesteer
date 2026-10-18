@@ -146,6 +146,17 @@ func (sm *ScheduleManager) Update(ctx context.Context, s *models.Schedule) error
 
 // Delete 删除 Schedule
 func (sm *ScheduleManager) Delete(ctx context.Context, id string) error {
+	// 审计 detail 必须在事务外读取：runMutationTx 是 _txlock=immediate 写事务，
+	// 事务内用外层 ctx 再读会持写锁同时向连接池申请第 2 条连接；16 并发删除时
+	// 池（8）被等待写锁的事务占满，等待者 busy_timeout 5s 后 SQLITE_BUSY
+	// （缺陷 QA-20261018-F2：约 33% 删除失败 + 驱动原文外泄）。
+	detail := ""
+	if sc, err := sm.store.GetSchedule(ctx, id); err == nil {
+		detail = sc.Expression
+		if detail == "" && sc.IntervalSec > 0 {
+			detail = fmt.Sprintf("interval %ds", sc.IntervalSec)
+		}
+	}
 	var rev int64
 	if err := runMutationTx(ctx, sm.store, func(txctx context.Context) error {
 		if err := sm.store.DeleteSchedule(txctx, id); err != nil {
@@ -161,13 +172,6 @@ func (sm *ScheduleManager) Delete(ctx context.Context, id string) error {
 		}
 		if err := sm.store.RecordTombstone(txctx, models.ObjectSchedule, id, rev); err != nil {
 			return err
-		}
-		detail := ""
-		if sc, err := sm.store.GetSchedule(ctx, id); err == nil {
-			detail = sc.Expression
-			if detail == "" && sc.IntervalSec > 0 {
-				detail = fmt.Sprintf("interval %ds", sc.IntervalSec)
-			}
 		}
 		return recordMutationAuditDetail(txctx, sm.store, "schedule", id, "delete", detail)
 	}); err != nil {
