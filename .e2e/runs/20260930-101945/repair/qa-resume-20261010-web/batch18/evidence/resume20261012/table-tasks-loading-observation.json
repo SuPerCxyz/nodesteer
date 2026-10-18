@@ -1,0 +1,41 @@
+{
+  "canonical": "TABLE-TASKS-ERROR",
+  "loading_observation": {
+    "method": "CDP Fetch.requestPaused + same-target Runtime.evaluate poll",
+    "path": "GET /api/tasks",
+    "paused_utc": "2026-10-12T13:06:28.156Z",
+    "poll_count": 20,
+    "observed_window_ms": 2000,
+    "dom": {
+      "route": "/tasks",
+      "navType": "reload",
+      "ready": "complete",
+      "skeletons": 0,
+      "rows": 1,
+      "alerts": 0,
+      "distinctLoadingText": false
+    },
+    "continued_utc": "2026-10-12T13:06:30.193Z",
+    "app_get_200_utc": "2026-10-12T13:06:30.197Z",
+    "Fetch_disabled": true,
+    "cache_restored": true
+  },
+  "source_definition": {
+    "file": "web/src/features/tasks/index.tsx",
+    "line": "Tasks query renders ErrorState when isError, otherwise DataTable; it has no isLoading branch. DataTable with zero rows renders common.noResults placeholder.",
+    "evidence": "web/src/features/tasks/index.tsx:234-264; web/src/features/shared/data-table.tsx:272-307"
+  },
+  "after_release": {
+    "alerts": 0,
+    "apiResources": [
+      200
+    ],
+    "navType": "reload",
+    "route": "/tasks",
+    "rowAnchors": 0,
+    "rows": 1,
+    "skeletons": 0
+  },
+  "interpretation": "While the fresh navigation GET was held before a response, the current implementation showed no loading skeleton/text; source takes pending query.data||[] into DataTable. This is a documented loading-feedback gap/remaining partial dimension, not a fabricated error or product FAIL.",
+  "observed_utc": "2026-10-12T13:07:11.118773+00:00"
+}

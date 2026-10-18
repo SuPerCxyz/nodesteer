@@ -1,0 +1,22 @@
+{
+  "method": "POST",
+  "path": "/api/tasks",
+  "payload": {
+    "name": "qa-resume-20261009-remote-history-300b79a8",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "15961ef7-81b4-43f3-80c8-1b6977ca2aea"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport hashlib,json,os,stat\nfrom pathlib import Path\nC=json.loads('{\"node_id\":\"15961ef7-81b4-43f3-80c8-1b6977ca2aea\",\"agent_id\":\"agent-ab15a133-73cd-4025-8c97-f2ff37e000f5\",\"owner_dir\":\"/tmp/qa-resume-20261008-child-ciivjupc\",\"owner_manifest_sha256\":\"7a5bf21f70ec2610527f054809f40fbc17bb5dcbfd24f8af804237bc811f7cfc\",\"directory\":{\"dev\":33,\"ino\":135,\"uid\":65534,\"mode\":\"0o700\"},\"child\":{\"pid\":44933,\"starttime\":123677943,\"uid\":65534,\"uid_matches\":true,\"exe_path\":\"/tmp/qa-resume-20261008-child-ciivjupc/nodesteer-agent\",\"exe_sha256\":\"d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add\",\"exe_sha_matches\":true,\"starttime_matches\":true,\"argv_owner_path_matches\":true},\"supervisor\":{\"pid\":44932,\"starttime\":123677922,\"uid\":65534,\"uid_matches\":true,\"exe_path\":\"/usr/bin/python3.13\",\"exe_sha256\":\"078fc5e8711442c8051d8c515a3f57bc1d22dcdb90e9b384af0c50916125b531\",\"exe_sha_matches\":true,\"starttime_matches\":true,\"argv_owner_path_matches\":true},\"proxy\":{\"ip\":\"127.69.212.143\",\"port\":35095,\"listening\":true,\"owned_by_supervisor\":true}}'); D=Path(C[\"owner_dir\"]); M=D/\"owner-manifest.json\"\ndef sha(p):\n h=hashlib.sha256()\n with open(p,\"rb\") as f:\n  for b in iter(lambda:f.read(1048576),b\"\"): h.update(b)\n return h.hexdigest()\ndef verify_proc(p):\n pid=p[\"pid\"]; raw=Path(\"/proc\",str(pid),\"stat\").read_text(); start=int(raw[raw.rfind(\")\")+2:].split()[19])\n status=Path(\"/proc\",str(pid),\"status\").read_text().splitlines(); uid=tuple(map(int,next(x for x in status if x.startswith(\"Uid:\")).split()[1:3]))\n exe=os.readlink(\"/proc/\"+str(pid)+\"/exe\"); argv=[x.decode(errors=\"replace\") for x in Path(\"/proc\",str(pid),\"cmdline\").read_bytes().split(b\"\\0\") if x]\n if start!=p[\"starttime\"] or uid!=(p[\"uid\"],p[\"uid\"]) or sha(exe)!=p[\"exe_sha256\"] or not any(x==str(D) or x.startswith(str(D)+os.sep) for x in argv): raise RuntimeError(\"owned_process_identity_failed\")\nst=D.lstat(); raw=M.read_bytes(); m=json.loads(raw)\nif stat.S_ISLNK(st.st_mode) or D.resolve()!=D or (st.st_dev,st.st_ino,st.st_uid,stat.S_IMODE(st.st_mode))!=(C[\"directory\"][\"dev\"],C[\"directory\"][\"ino\"],C[\"directory\"][\"uid\"],int(C[\"directory\"][\"mode\"],8)): raise RuntimeError(\"owner_directory_identity_failed\")\nif hashlib.sha256(raw).hexdigest()!=C[\"owner_manifest_sha256\"] or m.get(\"node_id\")!=C[\"node_id\"] or m.get(\"agent_id\")!=C[\"agent_id\"]: raise RuntimeError(\"owner_manifest_identity_failed\")\nverify_proc(C[\"child\"]); verify_proc(C[\"supervisor\"])\n\nroot=D/\"data\"/\"qa-be-remote-ttl\"\nif root.is_symlink() or not root.resolve().is_relative_to(D.resolve()): raise RuntimeError(\"owned_test_root_escape\")\nroot.mkdir(mode=0o700,parents=True,exist_ok=True)\nfolder=Path('/tmp/qa-resume-20261008-child-ciivjupc/data/qa-be-remote-ttl/300b79a8')\nif folder.parent.resolve()!=root.resolve(): raise RuntimeError(\"owned_case_parent_mismatch\")\nfolder.mkdir(mode=0o700,parents=False,exist_ok=False)\nif folder.is_symlink() or not folder.resolve().is_relative_to(root.resolve()) or folder.stat().st_uid!=C[\"directory\"][\"uid\"]: raise RuntimeError(\"owned_case_directory_escape\")\np=folder/'history.txt'; fd=os.open(p,os.O_WRONLY|os.O_CREAT|os.O_EXCL|getattr(os,\"O_NOFOLLOW\",0),0o600)\nwith os.fdopen(fd,\"wb\") as f: f.write('history-success'.encode())\nst=p.stat()\nprint(json.dumps({\"status\":\"PASS\",\"path\":str(p),\"realpath\":str(p.resolve()),\"exists\":p.is_file(),\"sha256\":sha(p),\"mode\":oct(stat.S_IMODE(st.st_mode)),\"uid\":st.st_uid},separators=(\",\",\":\")))\nPY",
+    "timeout": 30,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "4fca11b87a3771b81b2e54aca1adf50d1407c6bbbde0216db50b7692c7c1bc7d"
+}

@@ -1,0 +1,1255 @@
+{
+  "result": {
+    "id": "feature.condition.unknown-nested-offline",
+    "name": "Local UNKNOWN/多层AND/remote FAILED/离线FailClosed",
+    "started_at": "2026-10-01T01:49:46.660402+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-10-01T01:50:07.027900+00:00",
+    "evidence": "backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json"
+  },
+  "events": [
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-nested-condition-0a3b82",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be; printf effect > /var/lib/nodesteer/qa-20260930-101945-be/nested-542536",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "condition": {
+          "type": "local",
+          "local": {
+            "metric": "command_result",
+            "command": "printf unavailable >&2; exit 3",
+            "operator": "==",
+            "value": "yes"
+          }
+        }
+      },
+      "response": {
+        "id": "75e2005b-3abd-4724-bef5-ea7e621958a2",
+        "name": "qa-20260930-101945-be-nested-condition-0a3b82",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be; printf effect > /var/lib/nodesteer/qa-20260930-101945-be/nested-542536",
+        "condition": {
+          "type": "local",
+          "local": {
+            "metric": "command_result",
+            "operator": "==",
+            "value": "yes",
+            "command": "printf unavailable >&2; exit 3"
+          }
+        },
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:49:46 GMT",
+        "Content-Length": "682",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/75e2005b-3abd-4724-bef5-ea7e621958a2/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "b16d12c6-cd79-49a3-ae68-0accfd7b6fea",
+          "task_id": "75e2005b-3abd-4724-bef5-ea7e621958a2",
+          "task_revision": 1,
+          "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:49:46 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/b16d12c6-cd79-49a3-ae68-0accfd7b6fea",
+      "terminal": {
+        "id": "b16d12c6-cd79-49a3-ae68-0accfd7b6fea",
+        "task_id": "75e2005b-3abd-4724-bef5-ea7e621958a2",
+        "task_revision": 1,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-10-01T01:49:46.715899487Z",
+        "end_time": "2026-10-01T01:49:46.723529324Z",
+        "status": "BLOCKED",
+        "exit_code": -1,
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true,
+        "block_reason": "condition unknown: exit status 3"
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"b16d12c6-cd79-49a3-ae68-0accfd7b6fea\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"b16d12c6-cd79-49a3-ae68-0accfd7b6fea\", \"task_id\": \"75e2005b-3abd-4724-bef5-ea7e621958a2\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"BLOCKED\", \"exit_code\": -1, \"scheduled_time\": \"\", \"synced\": 1, \"offline\": 1, \"block_reason\": \"condition unknown: exit status 3\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "test ! -e /var/lib/nodesteer/qa-20260930-101945-be/nested-542536\n",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-nested-condition-b8eb76",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be; printf effect > /var/lib/nodesteer/qa-20260930-101945-be/nested-0aa715",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "condition": {
+          "type": "and",
+          "and": [
+            {
+              "type": "local",
+              "local": {
+                "metric": "command_result",
+                "command": "printf yes",
+                "operator": "==",
+                "value": "yes"
+              }
+            },
+            {
+              "type": "and",
+              "and": [
+                {
+                  "type": "local",
+                  "local": {
+                    "metric": "command_result",
+                    "command": "printf yes",
+                    "operator": "==",
+                    "value": "yes"
+                  }
+                },
+                {
+                  "type": "and",
+                  "and": [
+                    {
+                      "type": "local",
+                      "local": {
+                        "metric": "command_result",
+                        "command": "printf yes",
+                        "operator": "==",
+                        "value": "yes"
+                      }
+                    },
+                    {
+                      "type": "local",
+                      "local": {
+                        "metric": "command_result",
+                        "command": "printf yes",
+                        "operator": "==",
+                        "value": "yes"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "response": {
+        "id": "2db2fd16-b5f0-47c0-9c97-1c9f94028ce4",
+        "name": "qa-20260930-101945-be-nested-condition-b8eb76",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be; printf effect > /var/lib/nodesteer/qa-20260930-101945-be/nested-0aa715",
+        "condition": {
+          "type": "and",
+          "and": [
+            {
+              "type": "local",
+              "local": {
+                "metric": "command_result",
+                "operator": "==",
+                "value": "yes",
+                "command": "printf yes"
+              }
+            },
+            {
+              "type": "and",
+              "and": [
+                {
+                  "type": "local",
+                  "local": {
+                    "metric": "command_result",
+                    "operator": "==",
+                    "value": "yes",
+                    "command": "printf yes"
+                  }
+                },
+                {
+                  "type": "and",
+                  "and": [
+                    {
+                      "type": "local",
+                      "local": {
+                        "metric": "command_result",
+                        "operator": "==",
+                        "value": "yes",
+                        "command": "printf yes"
+                      }
+                    },
+                    {
+                      "type": "local",
+                      "local": {
+                        "metric": "command_result",
+                        "operator": "==",
+                        "value": "yes",
+                        "command": "printf yes"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:49:49 GMT",
+        "Content-Length": "1039",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/2db2fd16-b5f0-47c0-9c97-1c9f94028ce4/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "f00bfb06-4741-4f89-b5bc-5abaf743e416",
+          "task_id": "2db2fd16-b5f0-47c0-9c97-1c9f94028ce4",
+          "task_revision": 1,
+          "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:49:49 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/f00bfb06-4741-4f89-b5bc-5abaf743e416",
+      "terminal": {
+        "id": "f00bfb06-4741-4f89-b5bc-5abaf743e416",
+        "task_id": "2db2fd16-b5f0-47c0-9c97-1c9f94028ce4",
+        "task_revision": 1,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-10-01T01:49:49.232041424Z",
+        "end_time": "2026-10-01T01:49:49.256270462Z",
+        "status": "SUCCESS",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"f00bfb06-4741-4f89-b5bc-5abaf743e416\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"f00bfb06-4741-4f89-b5bc-5abaf743e416\", \"task_id\": \"2db2fd16-b5f0-47c0-9c97-1c9f94028ce4\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"offline\": 0, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "cat -- /var/lib/nodesteer/qa-20260930-101945-be/nested-0aa715\n",
+      "exit_code": 0,
+      "stdout": "effect",
+      "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-nested-condition-65af4a",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be; printf effect > /var/lib/nodesteer/qa-20260930-101945-be/nested-5d1495",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "condition": {
+          "type": "and",
+          "and": [
+            {
+              "type": "local",
+              "local": {
+                "metric": "command_result",
+                "command": "printf yes",
+                "operator": "==",
+                "value": "yes"
+              }
+            },
+            {
+              "type": "local",
+              "local": {
+                "metric": "command_result",
+                "command": "printf unavailable >&2; exit 3",
+                "operator": "==",
+                "value": "yes"
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "id": "e1e9aaa7-53c6-4760-8c55-a5386fabaf63",
+        "name": "qa-20260930-101945-be-nested-condition-65af4a",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be; printf effect > /var/lib/nodesteer/qa-20260930-101945-be/nested-5d1495",
+        "condition": {
+          "type": "and",
+          "and": [
+            {
+              "type": "local",
+              "local": {
+                "metric": "command_result",
+                "operator": "==",
+                "value": "yes",
+                "command": "printf yes"
+              }
+            },
+            {
+              "type": "local",
+              "local": {
+                "metric": "command_result",
+                "operator": "==",
+                "value": "yes",
+                "command": "printf unavailable >&2; exit 3"
+              }
+            }
+          ]
+        },
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:49:51 GMT",
+        "Content-Length": "811",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/e1e9aaa7-53c6-4760-8c55-a5386fabaf63/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "e50f430c-cc4b-4e25-ab8e-e35dbfca97d8",
+          "task_id": "e1e9aaa7-53c6-4760-8c55-a5386fabaf63",
+          "task_revision": 1,
+          "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:49:51 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/e50f430c-cc4b-4e25-ab8e-e35dbfca97d8",
+      "terminal": {
+        "id": "e50f430c-cc4b-4e25-ab8e-e35dbfca97d8",
+        "task_id": "e1e9aaa7-53c6-4760-8c55-a5386fabaf63",
+        "task_revision": 1,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-10-01T01:49:51.450167164Z",
+        "end_time": "2026-10-01T01:49:51.467637185Z",
+        "status": "BLOCKED",
+        "exit_code": -1,
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true,
+        "block_reason": "condition unknown: exit status 3"
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"e50f430c-cc4b-4e25-ab8e-e35dbfca97d8\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"e50f430c-cc4b-4e25-ab8e-e35dbfca97d8\", \"task_id\": \"e1e9aaa7-53c6-4760-8c55-a5386fabaf63\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"BLOCKED\", \"exit_code\": -1, \"scheduled_time\": \"\", \"synced\": 1, \"offline\": 1, \"block_reason\": \"condition unknown: exit status 3\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "test ! -e /var/lib/nodesteer/qa-20260930-101945-be/nested-5d1495\n",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-failed-history-d059db",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "printf history-failed >&2; exit 9",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "61edf2d2-b98e-4890-a447-581354d2451d",
+        "name": "qa-20260930-101945-be-failed-history-d059db",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "printf history-failed >&2; exit 9",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:49:53 GMT",
+        "Content-Length": "449",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/61edf2d2-b98e-4890-a447-581354d2451d/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "0c762f1a-2203-45c2-b7cd-bfd6d73658b2",
+          "task_id": "61edf2d2-b98e-4890-a447-581354d2451d",
+          "task_revision": 1,
+          "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:49:53 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/0c762f1a-2203-45c2-b7cd-bfd6d73658b2",
+      "terminal": {
+        "id": "0c762f1a-2203-45c2-b7cd-bfd6d73658b2",
+        "task_id": "61edf2d2-b98e-4890-a447-581354d2451d",
+        "task_revision": 1,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-10-01T01:49:53.481213583Z",
+        "end_time": "2026-10-01T01:49:53.488663754Z",
+        "status": "FAILED",
+        "exit_code": 9,
+        "stdout": "",
+        "stderr": "history-failed",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"0c762f1a-2203-45c2-b7cd-bfd6d73658b2\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"0c762f1a-2203-45c2-b7cd-bfd6d73658b2\", \"task_id\": \"61edf2d2-b98e-4890-a447-581354d2451d\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"FAILED\", \"exit_code\": 9, \"scheduled_time\": \"\", \"synced\": 1, \"offline\": 0, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-remote-failed-547235",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "printf failed-history-real",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "condition": {
+          "type": "remote",
+          "remote": {
+            "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+            "property": "last_execution",
+            "task_id": "61edf2d2-b98e-4890-a447-581354d2451d",
+            "operator": "==",
+            "value": "FAILED"
+          }
+        }
+      },
+      "response": {
+        "id": "3579878d-8000-4db7-a76c-221924b32df1",
+        "name": "qa-20260930-101945-be-remote-failed-547235",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "printf failed-history-real",
+        "condition": {
+          "type": "remote",
+          "remote": {
+            "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+            "property": "last_execution",
+            "task_id": "61edf2d2-b98e-4890-a447-581354d2451d",
+            "operator": "==",
+            "value": "FAILED"
+          }
+        },
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:49:55 GMT",
+        "Content-Length": "631",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/3579878d-8000-4db7-a76c-221924b32df1/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "9451c265-cafc-4cc8-80be-442a2899d84a",
+          "task_id": "3579878d-8000-4db7-a76c-221924b32df1",
+          "task_revision": 1,
+          "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:49:55 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/9451c265-cafc-4cc8-80be-442a2899d84a",
+      "terminal": {
+        "id": "9451c265-cafc-4cc8-80be-442a2899d84a",
+        "task_id": "3579878d-8000-4db7-a76c-221924b32df1",
+        "task_revision": 1,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-10-01T01:49:55.065463046Z",
+        "end_time": "2026-10-01T01:49:55.092516359Z",
+        "status": "SUCCESS",
+        "stdout": "failed-history-real",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"9451c265-cafc-4cc8-80be-442a2899d84a\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"9451c265-cafc-4cc8-80be-442a2899d84a\", \"task_id\": \"3579878d-8000-4db7-a76c-221924b32df1\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"offline\": 0, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-remote-failed-false-f0243c",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "printf forbidden",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "condition": {
+          "type": "remote",
+          "remote": {
+            "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+            "property": "last_execution",
+            "task_id": "61edf2d2-b98e-4890-a447-581354d2451d",
+            "operator": "==",
+            "value": "FAILED"
+          }
+        }
+      },
+      "response": {
+        "id": "80c5461d-4e0e-4003-90ba-696385a92964",
+        "name": "qa-20260930-101945-be-remote-failed-false-f0243c",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "printf forbidden",
+        "condition": {
+          "type": "remote",
+          "remote": {
+            "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+            "property": "last_execution",
+            "task_id": "61edf2d2-b98e-4890-a447-581354d2451d",
+            "operator": "!=",
+            "value": "FAILED"
+          }
+        },
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:49:56 GMT",
+        "Content-Length": "627",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/80c5461d-4e0e-4003-90ba-696385a92964/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "a4e109eb-7306-427c-afec-e0d6cc4952bd",
+          "task_id": "80c5461d-4e0e-4003-90ba-696385a92964",
+          "task_revision": 1,
+          "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:49:56 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/a4e109eb-7306-427c-afec-e0d6cc4952bd",
+      "terminal": {
+        "id": "a4e109eb-7306-427c-afec-e0d6cc4952bd",
+        "task_id": "80c5461d-4e0e-4003-90ba-696385a92964",
+        "task_revision": 1,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-10-01T01:49:56.688395598Z",
+        "end_time": "2026-10-01T01:49:56.709049055Z",
+        "status": "SKIPPED",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true,
+        "block_reason": "condition not satisfied"
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"a4e109eb-7306-427c-afec-e0d6cc4952bd\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"a4e109eb-7306-427c-afec-e0d6cc4952bd\", \"task_id\": \"80c5461d-4e0e-4003-90ba-696385a92964\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"SKIPPED\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"offline\": 1, \"block_reason\": \"condition not satisfied\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 400,
+      "request": {
+        "name": "qa-20260930-101945-be-invalid-and-d05062",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "printf forbidden",
+        "timeout": 5,
+        "retry": 0,
+        "enabled": true,
+        "condition": {
+          "type": "and",
+          "and": []
+        }
+      },
+      "response": {
+        "error": "invalid task: and condition requires at least one child"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:49:58 GMT",
+        "Content-Length": "68",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 400,
+      "request": {
+        "name": "qa-20260930-101945-be-invalid-and-350b46",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "printf forbidden",
+        "timeout": 5,
+        "retry": 0,
+        "enabled": true,
+        "condition": {
+          "type": "and",
+          "and": [
+            {
+              "type": "bad"
+            }
+          ]
+        }
+      },
+      "response": {
+        "error": "invalid task: condition type must be local, remote, or and"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:49:58 GMT",
+        "Content-Length": "71",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-remote-offline-c91e68",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "printf forbidden > /var/lib/nodesteer/qa-20260930-101945-be/remote-offline-1f3686",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "condition": {
+          "type": "remote",
+          "remote": {
+            "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+            "property": "last_execution",
+            "task_id": "61edf2d2-b98e-4890-a447-581354d2451d",
+            "operator": "==",
+            "value": "FAILED"
+          }
+        }
+      },
+      "response": {
+        "id": "fdbfee6f-a9c3-4644-b45c-3cf7588f7b80",
+        "name": "qa-20260930-101945-be-remote-offline-c91e68",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "printf forbidden > /var/lib/nodesteer/qa-20260930-101945-be/remote-offline-1f3686",
+        "condition": {
+          "type": "remote",
+          "remote": {
+            "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+            "property": "last_execution",
+            "task_id": "61edf2d2-b98e-4890-a447-581354d2451d",
+            "operator": "==",
+            "value": "FAILED"
+          }
+        },
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:49:58 GMT",
+        "Content-Length": "692",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/schedules",
+      "status": 200,
+      "request": {
+        "task_id": "fdbfee6f-a9c3-4644-b45c-3cf7588f7b80",
+        "type": "one_time",
+        "run_at": "2026-10-01T01:50:02.298369+00:00",
+        "timezone": "UTC",
+        "execution_owner": "agent",
+        "offline_policy": "allow_offline",
+        "misfire_policy": "run_once",
+        "enabled": true
+      },
+      "response": {
+        "id": "b7b8195e-e5ac-4fd8-bf42-1a15ec090491",
+        "task_id": "fdbfee6f-a9c3-4644-b45c-3cf7588f7b80",
+        "revision": 1,
+        "type": "one_time",
+        "expression": "",
+        "run_at": "2026-10-01T01:50:02.298369Z",
+        "timezone": "UTC",
+        "execution_owner": "agent",
+        "offline_policy": "allow_offline",
+        "misfire_policy": "run_once",
+        "enabled": true,
+        "created_at": "2026-10-01T01:49:58.29965965Z",
+        "updated_at": "2026-10-01T01:49:58.29965976Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:49:58 GMT",
+        "Content-Length": "390",
+        "Connection": "close"
+      }
+    },
+    {
+      "control": "docker stop -t 2 qa-20260930-101945-env-hub",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-env-hub\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,status,offline,synced,scheduled_time FROM executions WHERE task_id=?' '[\"fdbfee6f-a9c3-4644-b45c-3cf7588f7b80\"]'",
+      "exit_code": 0,
+      "stdout": "[]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,status,offline,synced,scheduled_time FROM executions WHERE task_id=?' '[\"fdbfee6f-a9c3-4644-b45c-3cf7588f7b80\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"afa5c685-5f14-4a8b-b31f-f345f8bc53b3\", \"status\": \"BLOCKED\", \"offline\": 1, \"synced\": 0, \"scheduled_time\": \"2026-10-01T01:50:02Z\"}]\n",
+      "stderr": ""
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "test ! -e /var/lib/nodesteer/qa-20260930-101945-be/remote-offline-1f3686\n",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "control": "docker start qa-20260930-101945-env-hub",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-env-hub\n",
+      "stderr": ""
+    },
+    {
+      "api": "GET /readyz",
+      "status": 200,
+      "request": null,
+      "response": {
+        "bytes": 5,
+        "sha256": "b24d6d33736ecd5604a4b17bc9c6481039fac362bb7df044ef1c10a2bfd21db6"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Date": "Thu, 01 Oct 2026 01:50:05 GMT",
+        "Content-Length": "5",
+        "Content-Type": "text/plain; charset=utf-8",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/login",
+      "status": 200,
+      "request": {
+        "username": "qa-20260930-101945-env-admin",
+        "password": "[redacted]"
+      },
+      "response": {
+        "token": "[redacted]",
+        "user": {
+          "Token": "[redacted]",
+          "UserID": "3ba8a380-5470-4ef1-90d7-2e8445fde48b",
+          "Username": "qa-20260930-101945-env-admin",
+          "Role": "administrator",
+          "Expires": "2026-10-02T01:50:06.038261913Z"
+        }
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:50:06 GMT",
+        "Content-Length": "261",
+        "Connection": "close"
+      }
+    },
+    {
+      "core_node": {
+        "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "hostname": "qa-20260930-101945-env-docker-agent",
+        "ip": "192.168.100.209",
+        "os": "Alpine Linux v3.20",
+        "arch": "amd64",
+        "agent_version": "dddee4f0",
+        "deployment_mode": "docker",
+        "host_integration": false,
+        "status": "online",
+        "labels": {},
+        "capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        },
+        "global_revision": 199,
+        "sync_status": "synced",
+        "last_seen": "2026-10-01T01:50:05.668170151Z",
+        "first_seen": "2026-09-30T02:36:32.656149623Z"
+      }
+    },
+    {
+      "api": "GET /api/executions/afa5c685-5f14-4a8b-b31f-f345f8bc53b3",
+      "terminal": {
+        "id": "afa5c685-5f14-4a8b-b31f-f345f8bc53b3",
+        "task_id": "fdbfee6f-a9c3-4644-b45c-3cf7588f7b80",
+        "task_revision": 1,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "schedule",
+        "scheduled_time": "2026-10-01T01:50:02Z",
+        "start_time": "2026-10-01T01:50:02.339915308Z",
+        "end_time": "2026-10-01T01:50:02.346902366Z",
+        "status": "BLOCKED",
+        "exit_code": -1,
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": true,
+        "synced": true,
+        "block_reason": "condition unknown: <nil>"
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"afa5c685-5f14-4a8b-b31f-f345f8bc53b3\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"afa5c685-5f14-4a8b-b31f-f345f8bc53b3\", \"task_id\": \"fdbfee6f-a9c3-4644-b45c-3cf7588f7b80\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"BLOCKED\", \"exit_code\": -1, \"scheduled_time\": \"2026-10-01T01:50:02Z\", \"synced\": 1, \"offline\": 1, \"block_reason\": \"condition unknown: <nil>\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "api": "DELETE /api/schedules/b7b8195e-e5ac-4fd8-bf42-1a15ec090491",
+      "status": 200,
+      "request": null,
+      "response": {
+        "ok": "true"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:50:07 GMT",
+        "Content-Length": "14",
+        "Connection": "close"
+      }
+    }
+  ]
+}

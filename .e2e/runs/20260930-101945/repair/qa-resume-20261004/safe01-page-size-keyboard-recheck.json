@@ -1,0 +1,49 @@
+{
+  "case": "SAFE-01 page-size keyboard selection/persistence",
+  "tool": "agent-browser",
+  "method": "Accessible focus and arrow keys, confirm focused option before Enter; no forced click",
+  "secret_included": false,
+  "agents": {
+    "route": "agents",
+    "initial_size": "10",
+    "selection": {
+      "initial": "10",
+      "selected": "40",
+      "keyboard_steps": [
+        "ArrowDown",
+        "ArrowDown",
+        "ArrowDown"
+      ]
+    },
+    "ui_row_count": 4,
+    "requests_after_selection": [],
+    "persisted_after_hard_reload": true,
+    "requests_after_reload": [
+      "[119627.2216] GET http://192.168.100.209:18080/api/nodes (Fetch) 200"
+    ]
+  },
+  "audit": {
+    "route": "audit",
+    "initial_size": "10",
+    "selection": {
+      "initial": "10",
+      "selected": "40",
+      "keyboard_steps": [
+        "ArrowDown",
+        "ArrowDown",
+        "ArrowDown"
+      ]
+    },
+    "ui_row_count": 40,
+    "requests_after_selection": [
+      "[119627.2273] GET http://192.168.100.209:18080/api/audit?limit=40&offset=0&q= (Fetch) 200"
+    ],
+    "persisted_after_hard_reload": true,
+    "requests_after_reload": [
+      "[119627.2273] GET http://192.168.100.209:18080/api/audit?limit=40&offset=0&q= (Fetch) 200",
+      "[119627.2324] GET http://192.168.100.209:18080/api/audit?limit=40&offset=0&q= (Fetch) 200"
+    ]
+  },
+  "audit_limit_40_http_200": true,
+  "status": "passed"
+}

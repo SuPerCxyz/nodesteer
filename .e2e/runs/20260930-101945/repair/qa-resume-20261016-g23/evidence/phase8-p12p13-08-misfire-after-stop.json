@@ -1,0 +1,145 @@
+{
+  "at_utc": "2026-10-16T09:37:42Z",
+  "scenario": "agent-owned interval schedules (30s), one misfire_policy=run_once and one skip, on the same owned child; the Agent process is really stopped across >=3 slots and then restarted",
+  "baseline": {
+    "counts": {
+      "runonce": 1,
+      "skip": 1
+    },
+    "wait": {
+      "complete": true,
+      "seconds": 21.764
+    },
+    "runonce_rows": [
+      {
+        "id": "d79c3efd-1fbf-4553-9996-6fc212e7333b",
+        "scheduled_time": "2026-10-16T09:34:29Z"
+      }
+    ]
+  },
+  "stop_window": {
+    "stop_at_utc": "2026-10-16T09:35:04Z",
+    "stop_result": {
+      "signalled": [
+        130815
+      ],
+      "remaining": [],
+      "stopped_at_utc": "2026-10-16T09:35:04Z"
+    },
+    "stopped_seconds": 95,
+    "restart_at_utc": "2026-10-16T09:36:41Z",
+    "start_result": {
+      "launcher_pid": 131549,
+      "owned_processes": [
+        "131550 /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent --config /var/lib/nodesteer-qa-g23-d08f3dbc-a/child.yaml"
+      ]
+    },
+    "child_clock_offset": {
+      "offset_sec_median": -0.03498959541320801,
+      "samples": [
+        -0.036,
+        -0.0304,
+        -0.0365,
+        -0.0327,
+        -0.035
+      ],
+      "rtt_sec_median": 0.16790771484375
+    },
+    "stop_at_child_clock": "2026-10-16T09:35:04Z",
+    "restart_at_child_clock": "2026-10-16T09:36:41Z",
+    "node_back": {
+      "status": "online",
+      "sync_status": "synced",
+      "global_revision": 3487
+    },
+    "node_back_wait_seconds": 0.002
+  },
+  "after_restart": {
+    "last_pre_stop_runonce_row": {
+      "id": "d79c3efd-1fbf-4553-9996-6fc212e7333b",
+      "scheduled_time": "2026-10-16T09:34:29Z",
+      "start_time": "2026-10-16T09:34:42.010413611Z"
+    },
+    "first_post_restart_runonce_row": {
+      "id": "b0f2ae10-25d3-447b-8abd-9b098960b322",
+      "scheduled_time": "2026-10-16T09:36:29Z",
+      "start_time": "2026-10-16T09:36:40.157695626Z"
+    },
+    "missed_boundaries_between_last_pre_and_catchup": 3,
+    "runonce_new_rows": [
+      {
+        "id": "b0f2ae10-25d3-447b-8abd-9b098960b322",
+        "status": "SUCCESS",
+        "scheduled_time": "2026-10-16T09:36:29Z",
+        "start_time": "2026-10-16T09:36:40.157695626Z",
+        "trigger_type": "schedule"
+      },
+      {
+        "id": "73ee50bd-4382-4c4a-9826-c88b09cd316c",
+        "status": "SUCCESS",
+        "scheduled_time": "2026-10-16T09:37:10Z",
+        "start_time": "2026-10-16T09:37:11.157672627Z",
+        "trigger_type": "schedule"
+      }
+    ],
+    "runonce_catchup_rows": [
+      {
+        "id": "b0f2ae10-25d3-447b-8abd-9b098960b322",
+        "scheduled_time": "2026-10-16T09:36:29Z",
+        "start_time": "2026-10-16T09:36:40.157695626Z",
+        "slot_is_inside_stopped_window": true,
+        "start_lag_after_slot_sec": 11.158
+      }
+    ],
+    "runonce_normal_cadence_rows": [
+      "73ee50bd-4382-4c4a-9826-c88b09cd316c"
+    ],
+    "skip_new_rows": [
+      {
+        "id": "bf1c2ce7-c0d8-436a-bbc3-f77d078fe639",
+        "status": "SUCCESS",
+        "scheduled_time": "2026-10-16T09:36:59Z",
+        "start_time": "2026-10-16T09:37:00.158273799Z"
+      },
+      {
+        "id": "22dd2284-6572-4fa6-a4d7-f9a70a4b21a2",
+        "status": "SUCCESS",
+        "scheduled_time": "2026-10-16T09:37:30Z",
+        "start_time": "2026-10-16T09:37:31.15851616Z"
+      }
+    ],
+    "skip_catchup_rows": [],
+    "skip_normal_cadence_rows": [
+      "bf1c2ce7-c0d8-436a-bbc3-f77d078fe639",
+      "22dd2284-6572-4fa6-a4d7-f9a70a4b21a2"
+    ],
+    "hub_catchup_rows_runonce": [
+      {
+        "id": "b0f2ae10-25d3-447b-8abd-9b098960b322",
+        "status": "SUCCESS",
+        "scheduled_time": "2026-10-16T09:36:29Z"
+      }
+    ],
+    "hub_catchup_rows_skip": [],
+    "runonce_total_rows_child": 3,
+    "skip_total_rows_child": 3,
+    "runonce_total_rows_hub": 3,
+    "skip_total_rows_hub": 3
+  },
+  "assertions": {
+    "runonce_catchup_single_execution": true,
+    "runonce_first_post_restart_row_is_the_compensation": true,
+    "runonce_catchup_slot_is_inside_stopped_window": true,
+    "runonce_catchup_covers_many_missed_slots": true,
+    "runonce_catchup_ran_soon_after_restart": true,
+    "runonce_resumes_normal_cadence": true,
+    "runonce_catchup_visible_on_hub": true,
+    "skip_does_not_catch_up": true,
+    "skip_resumes_normal_cadence": true,
+    "runonce_no_duplicate_slots": true,
+    "skip_no_duplicate_slots": true,
+    "business_effect_lines_match_rows": true,
+    "child_resynced_after_restart": true
+  },
+  "assertions_pass": true
+}

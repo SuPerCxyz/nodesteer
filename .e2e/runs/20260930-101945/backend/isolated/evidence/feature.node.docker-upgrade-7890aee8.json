@@ -1,0 +1,51 @@
+{
+  "result": {
+    "id": "feature.node.docker-upgrade",
+    "name": "Docker Agent自升级拒绝/批内去重/无实际替换",
+    "started_at": "2026-09-30T07:31:51.105337+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "failed",
+    "reason": "Docker拒绝升级缺少原因",
+    "traceback": "Traceback (most recent call last):\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/runner.py\", line 567, in execute\n    self.normal_case(case['id'])\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated_runner.py\", line 524, in normal_case\n    assert result[0].get('reason') or result[0].get('message'), 'Docker拒绝升级缺少原因'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Docker拒绝升级缺少原因\n",
+    "finished_at": "2026-09-30T07:31:51.651085+00:00",
+    "evidence": "backend/isolated/evidence/feature.node.docker-upgrade-7890aee8.json"
+  },
+  "events": [
+    {
+      "control": "docker exec qa-20260930-101945-env-agent sha256sum /usr/local/bin/nodesteer-agent",
+      "exit_code": 0,
+      "stdout": "43bf33d06e775bd6581f120a002d6d904de36de6c6d4e18eaef90f6862fb6998  /usr/local/bin/nodesteer-agent\n",
+      "stderr": ""
+    },
+    {
+      "api": "POST /api/nodes/upgrade",
+      "status": 200,
+      "request": {
+        "node_ids": [
+          "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "d940ab68-9f29-434b-bfe8-5d075a519edc"
+        ]
+      },
+      "response": [
+        {
+          "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "execution_id": "d676ed33-cae4-4b0f-b434-17bc334c7878",
+          "status": "SKIPPED",
+          "block_reason": "self-upgrade unsupported for deployment mode docker"
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 07:31:51 GMT",
+        "Content-Length": "195",
+        "Connection": "close"
+      }
+    }
+  ]
+}

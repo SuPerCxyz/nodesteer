@@ -1,0 +1,375 @@
+{
+  "at_utc": "2026-10-15T13:11:50Z",
+  "ui_session": {
+    "path_at_start": "/settings",
+    "fields_rendered_at_start": {
+      "修订检查间隔（秒）": "5",
+      "变更日志窗口": "5000",
+      "心跳间隔（秒）": "3",
+      "最大日志字节数": "2048"
+    },
+    "save_button_present": true,
+    "api_settings_at_start": {
+      "changelog_window": "5000",
+      "heartbeat_interval_sec": "3",
+      "max_log_bytes": "2048",
+      "revision_check_interval_sec": "5"
+    }
+  },
+  "ui_invalid_cases": [
+    {
+      "dimension": "non_numeric",
+      "field": "心跳间隔（秒）",
+      "value_tried": "abc",
+      "ui_set": {
+        "key": "心跳间隔（秒）",
+        "now": "abc",
+        "ok": true
+      },
+      "ui_input_value_before_save": "abc",
+      "ui_save_click": {
+        "ok": true,
+        "was_disabled": false
+      },
+      "toasts_before_attempt": [],
+      "toasts_after_save": [
+        "heartbeat_interval_sec must be between 1 and 86400"
+      ],
+      "expected_error_message": "heartbeat_interval_sec must be between 1 and 86400",
+      "expected_error_shown": true,
+      "error_toast_present": true,
+      "api_settings_after_attempt": {
+        "changelog_window": "5000",
+        "heartbeat_interval_sec": "3",
+        "max_log_bytes": "2048",
+        "revision_check_interval_sec": "5"
+      },
+      "not_persisted": true,
+      "ui_field_value_after_failed_save": "abc"
+    },
+    {
+      "dimension": "zero",
+      "field": "心跳间隔（秒）",
+      "value_tried": "0",
+      "ui_set": {
+        "key": "心跳间隔（秒）",
+        "now": "0",
+        "ok": true
+      },
+      "ui_input_value_before_save": "0",
+      "ui_save_click": {
+        "ok": true,
+        "was_disabled": false
+      },
+      "toasts_before_attempt": [
+        "heartbeat_interval_sec must be between 1 and 86400"
+      ],
+      "toasts_after_save": [
+        "heartbeat_interval_sec must be between 1 and 86400",
+        "heartbeat_interval_sec must be between 1 and 86400"
+      ],
+      "expected_error_message": "heartbeat_interval_sec must be between 1 and 86400",
+      "expected_error_shown": true,
+      "error_toast_present": true,
+      "api_settings_after_attempt": {
+        "changelog_window": "5000",
+        "heartbeat_interval_sec": "3",
+        "max_log_bytes": "2048",
+        "revision_check_interval_sec": "5"
+      },
+      "not_persisted": true,
+      "ui_field_value_after_failed_save": "0"
+    },
+    {
+      "dimension": "negative",
+      "field": "心跳间隔（秒）",
+      "value_tried": "-5",
+      "ui_set": {
+        "key": "心跳间隔（秒）",
+        "now": "-5",
+        "ok": true
+      },
+      "ui_input_value_before_save": "-5",
+      "ui_save_click": {
+        "ok": true,
+        "was_disabled": false
+      },
+      "toasts_before_attempt": [
+        "heartbeat_interval_sec must be between 1 and 86400",
+        "heartbeat_interval_sec must be between 1 and 86400"
+      ],
+      "toasts_after_save": [
+        "heartbeat_interval_sec must be between 1 and 86400",
+        "heartbeat_interval_sec must be between 1 and 86400"
+      ],
+      "expected_error_message": "heartbeat_interval_sec must be between 1 and 86400",
+      "expected_error_shown": true,
+      "error_toast_present": true,
+      "api_settings_after_attempt": {
+        "changelog_window": "5000",
+        "heartbeat_interval_sec": "3",
+        "max_log_bytes": "2048",
+        "revision_check_interval_sec": "5"
+      },
+      "not_persisted": true,
+      "ui_field_value_after_failed_save": "-5"
+    },
+    {
+      "dimension": "oversized",
+      "field": "心跳间隔（秒）",
+      "value_tried": "99999999",
+      "ui_set": {
+        "key": "心跳间隔（秒）",
+        "now": "99999999",
+        "ok": true
+      },
+      "ui_input_value_before_save": "99999999",
+      "ui_save_click": {
+        "ok": true,
+        "was_disabled": false
+      },
+      "toasts_before_attempt": [
+        "heartbeat_interval_sec must be between 1 and 86400",
+        "heartbeat_interval_sec must be between 1 and 86400"
+      ],
+      "toasts_after_save": [
+        "heartbeat_interval_sec must be between 1 and 86400",
+        "heartbeat_interval_sec must be between 1 and 86400"
+      ],
+      "expected_error_message": "heartbeat_interval_sec must be between 1 and 86400",
+      "expected_error_shown": true,
+      "error_toast_present": true,
+      "api_settings_after_attempt": {
+        "changelog_window": "5000",
+        "heartbeat_interval_sec": "3",
+        "max_log_bytes": "2048",
+        "revision_check_interval_sec": "5"
+      },
+      "not_persisted": true,
+      "ui_field_value_after_failed_save": "99999999"
+    },
+    {
+      "dimension": "below_min_revision",
+      "field": "修订检查间隔（秒）",
+      "value_tried": "1",
+      "ui_set": {
+        "key": "修订检查间隔（秒）",
+        "now": "1",
+        "ok": true
+      },
+      "ui_input_value_before_save": "1",
+      "ui_save_click": {
+        "ok": true,
+        "was_disabled": false
+      },
+      "toasts_before_attempt": [
+        "heartbeat_interval_sec must be between 1 and 86400",
+        "heartbeat_interval_sec must be between 1 and 86400"
+      ],
+      "toasts_after_save": [
+        "revision_check_interval_sec must be between 5 and 86400",
+        "heartbeat_interval_sec must be between 1 and 86400"
+      ],
+      "expected_error_message": "revision_check_interval_sec must be between 5 and 86400",
+      "expected_error_shown": true,
+      "error_toast_present": true,
+      "api_settings_after_attempt": {
+        "changelog_window": "5000",
+        "heartbeat_interval_sec": "3",
+        "max_log_bytes": "2048",
+        "revision_check_interval_sec": "5"
+      },
+      "not_persisted": true,
+      "ui_field_value_after_failed_save": "1"
+    },
+    {
+      "dimension": "below_min_max_log",
+      "field": "最大日志字节数",
+      "value_tried": "100",
+      "ui_set": {
+        "key": "最大日志字节数",
+        "now": "100",
+        "ok": true
+      },
+      "ui_input_value_before_save": "100",
+      "ui_save_click": {
+        "ok": true,
+        "was_disabled": false
+      },
+      "toasts_before_attempt": [
+        "revision_check_interval_sec must be between 5 and 86400",
+        "heartbeat_interval_sec must be between 1 and 86400"
+      ],
+      "toasts_after_save": [
+        "max_log_bytes must be between 1024 and 17179869184",
+        "revision_check_interval_sec must be between 5 and 86400"
+      ],
+      "expected_error_message": "max_log_bytes must be between 1024 and 17179869184",
+      "expected_error_shown": true,
+      "error_toast_present": true,
+      "api_settings_after_attempt": {
+        "changelog_window": "5000",
+        "heartbeat_interval_sec": "3",
+        "max_log_bytes": "2048",
+        "revision_check_interval_sec": "5"
+      },
+      "not_persisted": true,
+      "ui_field_value_after_failed_save": "100"
+    },
+    {
+      "dimension": "zero_changelog",
+      "field": "变更日志窗口",
+      "value_tried": "0",
+      "ui_set": {
+        "key": "变更日志窗口",
+        "now": "0",
+        "ok": true
+      },
+      "ui_input_value_before_save": "0",
+      "ui_save_click": {
+        "ok": true,
+        "was_disabled": false
+      },
+      "toasts_before_attempt": [
+        "max_log_bytes must be between 1024 and 17179869184",
+        "revision_check_interval_sec must be between 5 and 86400"
+      ],
+      "toasts_after_save": [
+        "changelog_window must be between 1 and 1000000000",
+        "max_log_bytes must be between 1024 and 17179869184"
+      ],
+      "expected_error_message": "changelog_window must be between 1 and 1000000000",
+      "expected_error_shown": true,
+      "error_toast_present": true,
+      "api_settings_after_attempt": {
+        "changelog_window": "5000",
+        "heartbeat_interval_sec": "3",
+        "max_log_bytes": "2048",
+        "revision_check_interval_sec": "5"
+      },
+      "not_persisted": true,
+      "ui_field_value_after_failed_save": "0"
+    }
+  ],
+  "api_invalid_gateway_url": [
+    {
+      "value": "not-a-url",
+      "http": 400,
+      "body": {
+        "error": "agent_gateway_base_url must be an http or https URL"
+      },
+      "agent_gateway_base_url_still_absent": true,
+      "api_settings_unchanged": true
+    },
+    {
+      "value": "ftp://example.com",
+      "http": 400,
+      "body": {
+        "error": "agent_gateway_base_url must be an http or https URL"
+      },
+      "agent_gateway_base_url_still_absent": true,
+      "api_settings_unchanged": true
+    },
+    {
+      "value": "http://",
+      "http": 400,
+      "body": {
+        "error": "agent_gateway_base_url must be an http or https URL"
+      },
+      "agent_gateway_base_url_still_absent": true,
+      "api_settings_unchanged": true
+    },
+    {
+      "value": "",
+      "http": 400,
+      "body": {
+        "error": "agent_gateway_base_url must be an http or https URL"
+      },
+      "agent_gateway_base_url_still_absent": true,
+      "api_settings_unchanged": true
+    }
+  ],
+  "api_invalid_numbers": [
+    {
+      "key": "heartbeat_interval_sec",
+      "value": "0",
+      "http": 400,
+      "body": {
+        "error": "heartbeat_interval_sec must be between 1 and 86400"
+      },
+      "unchanged": true
+    },
+    {
+      "key": "heartbeat_interval_sec",
+      "value": "-1",
+      "http": 400,
+      "body": {
+        "error": "heartbeat_interval_sec must be between 1 and 86400"
+      },
+      "unchanged": true
+    },
+    {
+      "key": "revision_check_interval_sec",
+      "value": "4",
+      "http": 400,
+      "body": {
+        "error": "revision_check_interval_sec must be between 5 and 86400"
+      },
+      "unchanged": true
+    },
+    {
+      "key": "max_log_bytes",
+      "value": "1023",
+      "http": 400,
+      "body": {
+        "error": "max_log_bytes must be between 1024 and 17179869184"
+      },
+      "unchanged": true
+    },
+    {
+      "key": "changelog_window",
+      "value": "-1",
+      "http": 400,
+      "body": {
+        "error": "changelog_window must be between 1 and 1000000000"
+      },
+      "unchanged": true
+    }
+  ],
+  "assertions": {
+    "every_ui_invalid_input_rejected_with_expected_error_and_not_persisted": true,
+    "every_api_invalid_gateway_url_rejected_400_not_persisted": true,
+    "every_api_invalid_number_rejected_400_not_persisted": true
+  },
+  "per_dimension": {
+    "non_numeric": {
+      "not_persisted": true,
+      "expected_error_shown": true
+    },
+    "zero": {
+      "not_persisted": true,
+      "expected_error_shown": true
+    },
+    "negative": {
+      "not_persisted": true,
+      "expected_error_shown": true
+    },
+    "oversized": {
+      "not_persisted": true,
+      "expected_error_shown": true
+    },
+    "below_min_revision": {
+      "not_persisted": true,
+      "expected_error_shown": true
+    },
+    "below_min_max_log": {
+      "not_persisted": true,
+      "expected_error_shown": true
+    },
+    "zero_changelog": {
+      "not_persisted": true,
+      "expected_error_shown": true
+    }
+  },
+  "passed": true
+}

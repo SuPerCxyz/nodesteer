@@ -1,0 +1,27 @@
+{
+  "case_id": "P11-02",
+  "updated_at_utc": "2026-10-10T11:18:17Z",
+  "attempt03_existing_evidence": "attempt03/replacement/case-result.json and ../../prepared-proof-attempt03.json",
+  "observed_attempt03_safe_fields": {
+    "safe_error": "run_page_task_name_not_visible",
+    "task_exact_scope_verified": true,
+    "run_clicked": false,
+    "browser_session_closed": true,
+    "browser_profile_removed": true
+  },
+  "not_persisted_by_attempt03": [
+    "actual browser location.pathname at failed assertion",
+    "browser observer /api/tasks/{id} HTTP status",
+    "DOM loading/error classification",
+    "page text or snapshot"
+  ],
+  "source_facts": {
+    "component": "web/src/features/tasks/index.tsx:1375",
+    "query": "web/src/features/tasks/index.tsx:1380-1385 fetches task by ID",
+    "loading_and_error_branches": "web/src/features/tasks/index.tsx:1396-1413",
+    "task_name_title": "web/src/features/tasks/index.tsx:1433-1435",
+    "driver_old_check": "ui_driver.py previously opened route then read once before asserting name; no wait or task GET status persisted"
+  },
+  "change": "ui_driver.py now waits up to 5s for exact route, observer task GET 200, and task name in document body; records path/status/readiness class before assertion. networkidle wait remains bounded and best-effort. No Run/UI/API was performed.",
+  "source_sha256": "5e3f408f9757629be2f9366bbb09b65d4635267b2cbdbc6589da4d49a8bf88c4"
+}

@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "BE-REMOTE-TTL-004-value_unknown-clear-ddd5a6a274",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport hashlib,json,os\nfrom pathlib import Path\np=Path(\"/tmp/qa-resume-20261008-child-ciivjupc\");mp=p/\"owner-manifest.json\";m=json.loads(mp.read_bytes());c=p/\"controls.json\"\ndef sha(x):return hashlib.sha256(Path(x).read_bytes()).hexdigest()\nif sha(mp)!='7a5bf21f70ec2610527f054809f40fbc17bb5dcbfd24f8af804237bc811f7cfc' or m[\"node_id\"]!=\"15961ef7-81b4-43f3-80c8-1b6977ca2aea\":raise RuntimeError(\"owner_guard_failed\")\nif json.loads(c.read_text())!={\"remote_override\":{'target_node_id': '15961ef7-81b4-43f3-80c8-1b6977ca2aea', 'property': 'last_execution', 'task_id': '63398619-5ee3-4799-906b-29c0c9c41bb9', 'delay_ms': 500, 'value': 'UNKNOWN'}}:raise RuntimeError(\"exact_rule_guard_failed\")\nt=c.with_suffix(\".json.tmp\");t.write_text(\"{}\");os.chmod(t,0o600);os.chown(t,65534,65534);t.replace(c)\nprint(json.dumps({\"status\":\"PASS\",\"controls_empty\":True,\"controls_sha256\":sha(c)},separators=(\",\",\":\")))\nPY",
+    "timeout": 20,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "4bc5584df9aba3b199af5aaaf3a37995ebce38b94a241f74bb346a5083626d98",
+  "source_contains_connection_token": false
+}

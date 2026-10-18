@@ -1,0 +1,46 @@
+--- .e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/attempt02/run_preparing_fault_attempt02.py
++++ .e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/attempt03/run_preparing_fault_attempt03.py
+@@ -12,7 +12,7 @@
+ 
+ HERE = Path(__file__).resolve().parent
+ PRIVATE = Path('/tmp/nodesteer-e2e-resume-20261009-Qv9AYO')
+-OUT = HERE / 'p0-preparing-fault-attempt02-evidence.json'
++OUT = HERE / 'p0-preparing-fault-attempt03-evidence.json'
+ BASELINE = json.loads((HERE.parent / 'app-v1-baseline-evidence.json').read_text())
+ V2 = json.loads((HERE / 'prepare-evidence.json').read_text())
+ PARENT_NODE = '91f44866-8a28-435e-bbda-2f2367126c00'
+@@ -118,14 +118,14 @@
+ 
+     if BASELINE.get('stage_status') != 'V1_BASELINE_READY':
+         raise SystemExit('blocked: v1 physical baseline is not ready')
+-    if V2.get('stage_status') != 'V2_ATTEMPT02_READY_FOR_PARENT_FAULT_REVIEW':
++    if V2.get('stage_status') != 'V2_ATTEMPT03_READY_FOR_GUARDED_FAULT':
+         raise SystemExit('blocked: v2 cache prefetch is not verified')
+     if V2.get('deploy_v2_invoked') is not False or V2.get('fault_injected') is not False:
+         raise SystemExit('blocked: v2 deployment/fault already attempted')
+     child_before = node_state(CHILD_NODE)
+     app, = [api('GET', '/api/applications/' + APP_ID)[1]]
+     if (child_before.get('status') != 'online' or child_before.get('sync_status') != 'synced' or
+-            app.get('version') != 'v2-attempt2' or app.get('artifact_id') != V2_ARTIFACT_ID):
++            app.get('version') != 'v2-attempt3' or app.get('artifact_id') != V2_ARTIFACT_ID):
+         raise SystemExit('blocked: child/App desired state does not match approved fixture')
+     states = api('GET', '/api/applications/' + APP_ID + '/state')[1]
+     if not any(s.get('node_id') == CHILD_NODE and s.get('version') == 'v1' and
+@@ -134,7 +134,7 @@
+     if V2_ARTIFACT_SHA != V2.get('v2_artifact', {}).get('sha256'):
+         raise SystemExit('blocked: v2 Artifact SHA differs from reviewed evidence')
+ 
+-    source = (HERE / 'preparing_fault_observer_attempt02.py').read_text()
++    source = (HERE / 'preparing_fault_observer_attempt03.py').read_text()
+     source_sha = hashlib.sha256(source.encode()).hexdigest()
+     command = ('python3 -c ' + shlex.quote(source) +
+                ' --execute-fault --owner-nonce ' + shlex.quote(NONCE))
+@@ -161,7 +161,7 @@
+         'application_id': APP_ID,
+         'v2_artifact_id': V2_ARTIFACT_ID,
+         'v2_artifact_sha256': V2_ARTIFACT_SHA,
+-        'observer_source_file': 'preparing_fault_observer_attempt02.py',
++        'observer_source_file': 'preparing_fault_observer_attempt03.py',
+         'observer_source_sha256': source_sha,
+         'observer_task_command_sha256': command_sha,
+         'observer_task_definition': {k: v for k, v in task.items() if k != 'command'},

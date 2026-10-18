@@ -1,0 +1,152 @@
+{
+  "result": {
+    "id": "condition.disk_usage",
+    "name": "条件 disk_usage 的客户机实际效果与执行终态",
+    "started_at": "2026-09-30T02:31:27.101658+00:00",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-09-30T02:31:28.617525+00:00",
+    "evidence": "backend/evidence/condition.disk_usage.json"
+  },
+  "events": [
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-disk_usage-d612c5",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "56765828-4896-492b-b562-64afdc0fb8d6"
+          ]
+        },
+        "command": "mkdir -p /tmp/qa-20260930-101945-be; printf condition-ok > /tmp/qa-20260930-101945-be/condition-disk_usage",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "condition": {
+          "type": "local",
+          "local": {
+            "metric": "disk_usage",
+            "operator": ">=",
+            "value": "0",
+            "path": "/tmp"
+          }
+        }
+      },
+      "response": {
+        "id": "f3174787-e371-4d38-a54c-028862762d4e",
+        "name": "qa-20260930-101945-be-disk_usage-d612c5",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "56765828-4896-492b-b562-64afdc0fb8d6"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /tmp/qa-20260930-101945-be; printf condition-ok > /tmp/qa-20260930-101945-be/condition-disk_usage",
+        "condition": {
+          "type": "local",
+          "local": {
+            "metric": "disk_usage",
+            "operator": ">=",
+            "value": "0",
+            "path": "/tmp"
+          }
+        },
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:31:27 GMT",
+        "Content-Length": "621",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/f3174787-e371-4d38-a54c-028862762d4e/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "1c1c420a-a69f-4857-adbd-8e144d96731e",
+          "task_id": "f3174787-e371-4d38-a54c-028862762d4e",
+          "task_revision": 1,
+          "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:31:27 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/1c1c420a-a69f-4857-adbd-8e144d96731e",
+      "terminal": {
+        "id": "1c1c420a-a69f-4857-adbd-8e144d96731e",
+        "task_id": "f3174787-e371-4d38-a54c-028862762d4e",
+        "task_revision": 1,
+        "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T02:31:27.026500196Z",
+        "end_time": "2026-09-30T02:31:27.033275622Z",
+        "status": "SUCCESS",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "agent": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "read_command": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; r=c.execute('\"'\"'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?'\"'\"',(sys.argv[2],)).fetchone(); print(json.dumps(dict(r) if r else None))' /var/lib/nodesteer 1c1c420a-a69f-4857-adbd-8e144d96731e\n",
+      "exit_code": 0,
+      "stdout": "{\"id\": \"1c1c420a-a69f-4857-adbd-8e144d96731e\", \"task_id\": \"f3174787-e371-4d38-a54c-028862762d4e\", \"node_id\": \"56765828-4896-492b-b562-64afdc0fb8d6\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}\n",
+      "stderr": ""
+    },
+    {
+      "agent": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "read_command": "cat -- /tmp/qa-20260930-101945-be/condition-disk_usage\n",
+      "exit_code": 0,
+      "stdout": "condition-ok",
+      "stderr": ""
+    }
+  ]
+}

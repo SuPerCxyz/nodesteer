@@ -1,0 +1,164 @@
+{
+ "nonce": "tail20261017231700",
+ "at_utc": "2026-10-17T15:17:00Z",
+ "authority": "http://192.168.100.209:18080",
+ "steps": [
+  {
+   "step": "create owned node (enrollment)",
+   "http": 200,
+   "body": {
+    "id": "063c53d1-0f35-42ac-a92c-39f46f48fd53"
+   }
+  },
+  {
+   "step": "create script",
+   "http": 200,
+   "body": {
+    "id": "e791c2cc-bad6-40e3-b1a4-f0c2c4e10a55"
+   }
+  },
+  {
+   "step": "create task",
+   "http": 200,
+   "body": {
+    "id": "c50e9a3f-4546-44e0-9acd-d74044fadb88",
+    "err": null
+   }
+  },
+  {
+   "step": "POST /api/schedules type=interval interval_sec=0",
+   "http": 400,
+   "body": {
+    "error": "interval_sec must be positive"
+   }
+  },
+  {
+   "step": "POST /api/schedules type=interval interval_sec=-1",
+   "http": 400,
+   "body": {
+    "error": "interval_sec must be positive"
+   }
+  },
+  {
+   "step": "POST /api/schedules type=one_time run_at=2026-10-16T15:17:00Z (24h in the past)",
+   "http": 200,
+   "body": {
+    "id": "91c4a485-41cd-46e5-8701-d9eebc5c7f7e",
+    "task_id": "c50e9a3f-4546-44e0-9acd-d74044fadb88",
+    "revision": 1,
+    "type": "one_time",
+    "expression": "",
+    "run_at": "2026-10-16T15:17:00Z",
+    "timezone": "Asia/Shanghai",
+    "execution_owner": "agent",
+    "offline_policy": "allow_offline",
+    "misfire_policy": "run_once",
+    "enabled": true,
+    "created_at": "2026-10-17T23:17:00.157790184+08:00",
+    "updated_at": "2026-10-17T23:17:00.157790282+08:00"
+   }
+  },
+  {
+   "step": "POST /api/schedules type=one_time run_at=2020-01-01T00:00:00Z",
+   "http": 200,
+   "body": {
+    "id": "5aa0e4dc-e513-44f9-8fe8-3e221a3e2c5b",
+    "task_id": "c50e9a3f-4546-44e0-9acd-d74044fadb88",
+    "revision": 1,
+    "type": "one_time",
+    "expression": "",
+    "run_at": "2020-01-01T00:00:00Z",
+    "timezone": "Asia/Shanghai",
+    "execution_owner": "agent",
+    "offline_policy": "allow_offline",
+    "misfire_policy": "run_once",
+    "enabled": true,
+    "created_at": "2026-10-17T23:17:00.178464075+08:00",
+    "updated_at": "2026-10-17T23:17:00.178464197+08:00"
+   }
+  },
+  {
+   "step": "POST /api/schedules type=one_time without run_at (expect 400)",
+   "http": 400,
+   "body": {
+    "error": "run_at required"
+   }
+  },
+  {
+   "step": "cleanup schedule 5aa0e4dc-e513-44f9-8fe8-3e221a3e2c5b",
+   "http": 200,
+   "body": {
+    "deleted": true
+   }
+  },
+  {
+   "step": "cleanup schedule 91c4a485-41cd-46e5-8701-d9eebc5c7f7e",
+   "http": 200,
+   "body": {
+    "deleted": true
+   }
+  },
+  {
+   "step": "cleanup task c50e9a3f-4546-44e0-9acd-d74044fadb88",
+   "http": 200,
+   "body": {
+    "deleted": true
+   }
+  },
+  {
+   "step": "cleanup script e791c2cc-bad6-40e3-b1a4-f0c2c4e10a55",
+   "http": 200,
+   "body": {
+    "deleted": true
+   }
+  },
+  {
+   "step": "cleanup node 063c53d1-0f35-42ac-a92c-39f46f48fd53",
+   "http": 200,
+   "body": {
+    "deleted": true
+   }
+  },
+  {
+   "step": "verify 404 node 063c53d1-0f35-42ac-a92c-39f46f48fd53",
+   "http": 404,
+   "body": {
+    "expect": 404
+   }
+  },
+  {
+   "step": "verify 404 script e791c2cc-bad6-40e3-b1a4-f0c2c4e10a55",
+   "http": 404,
+   "body": {
+    "expect": 404
+   }
+  },
+  {
+   "step": "verify 404 task c50e9a3f-4546-44e0-9acd-d74044fadb88",
+   "http": 404,
+   "body": {
+    "expect": 404
+   }
+  },
+  {
+   "step": "verify 404 schedule 91c4a485-41cd-46e5-8701-d9eebc5c7f7e",
+   "http": 404,
+   "body": {
+    "expect": 404
+   }
+  },
+  {
+   "step": "verify 404 schedule 5aa0e4dc-e513-44f9-8fe8-3e221a3e2c5b",
+   "http": 404,
+   "body": {
+    "expect": 404
+   }
+  }
+ ],
+ "past_one_time_accepted": true,
+ "past_one_time_record": {
+  "id": "91c4a485-41cd-46e5-8701-d9eebc5c7f7e",
+  "run_at": "2026-10-16T15:17:00Z",
+  "enabled": true
+ }
+}

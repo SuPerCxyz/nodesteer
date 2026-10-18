@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "qa-resume-20261008-native4-child-connectivity-diagnostic-88ea564e18",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport hashlib,json,os,socket,stat\nfrom pathlib import Path\np=Path(\"/tmp/qa-resume-20261008-child-ciivjupc\"); m=json.loads((p/\"owner-manifest.json\").read_text()); token=None\nconf=Path(m[\"config\"][\"path\"]); rows=conf.read_text().splitlines(); tokenrow=[x for x in rows if x.startswith(\"registration_token:\")]; hubrow=[x for x in rows if x.startswith(\"hub_url:\")]; token=__import__(\"json\").loads(tokenrow[0].split(\":\",1)[1].strip()) if len(tokenrow)==1 else \"\"\ndef proc(row):\n try:\n  pid=row[\"pid\"];raw=Path(\"/proc\",str(pid),\"stat\").read_text();st=int(raw[raw.rfind(\")\")+2:].split()[19]); uid=os.stat(\"/proc/\"+str(pid)).st_uid; exe=os.readlink(\"/proc/\"+str(pid)+\"/exe\"); sha=hashlib.sha256(Path(exe).read_bytes()).hexdigest(); return {\"pid\":pid,\"starttime_matches\":st==row[\"starttime\"],\"uid_matches\":uid==row[\"uid\"],\"exe_sha_matches\":sha==row[\"exe_sha256\"]}\n except Exception: return {\"pid\":row.get(\"pid\"),\"alive\":False}\nport=m[\"proxy\"][\"port\"]; sock=socket.socket(); sock.settimeout(1);\ntry: sock.connect((m[\"proxy\"][\"bind_ip\"],port)); listen=True\nexcept Exception: listen=False\nfinally: sock.close()\ndef tail(path):\n try: lines=Path(path).read_text(errors=\"replace\").splitlines()[-40:]\n except Exception: return []\n out=[]\n for line in lines:\n  low=line.lower()\n  if any(w in low for w in [\"error\",\"failed\",\"invalid\",\"panic\",\"disconnect\",\"connection\"]):\n   line=line.replace(token,\"[redacted]\") if token else line\n   out.append(line[-220:])\n return out[-10:]\nprint(json.dumps({\"node_id\":m[\"node_id\"],\"agent_id\":m[\"agent_id\"],\"manifest_sha256\":hashlib.sha256((p/\"owner-manifest.json\").read_bytes()).hexdigest(),\"proxy_port\":port,\"proxy_listening\":listen,\"config_mode\":oct(stat.S_IMODE(conf.stat().st_mode)),\"config_uid\":conf.stat().st_uid,\"hub_url_scheme\":hubrow[0].split(\":\",1)[1].strip().split(\":\",1)[0] if len(hubrow)==1 else None,\"token_fingerprint_matches\":hashlib.sha256(token.encode()).hexdigest()[:16]==m[\"registration_token_fingerprint\"],\"child\":proc(m[\"child\"]),\"supervisor\":proc(m[\"supervisor\"]),\"agent_log_errors\":tail(p/\"agent.log\"),\"supervisor_log_errors\":tail(p/\"supervisor.log\")},separators=(\",\",\":\")))\nPY",
+    "timeout": 30,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "86abcd4092fe197f4513ee3ec5a42d5a5274bf87469c3b5ce10be0092741158c",
+  "source_contains_connection_token": false
+}

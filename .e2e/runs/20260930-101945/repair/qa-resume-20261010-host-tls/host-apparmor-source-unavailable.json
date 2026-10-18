@@ -1,0 +1,129 @@
+{
+  "status": "NO_RELIABLE_DOCKER_DEFAULT_PROFILE_SOURCE_AVAILABLE",
+  "actual_at": "2026-10-10T03:05:39Z",
+  "decision": "Do not create a local AppArmor profile/patch from guessed or reconstructed rules. Root must provide/approve an authentic source or leave Host runtime validation PARTIAL.",
+  "observed_environment": {
+    "apparmor_parser": {
+      "path": "/usr/sbin/apparmor_parser",
+      "version": {
+        "rc": 0,
+        "first_line": "AppArmor parser version 4.1.0",
+        "stderr_chars": 0
+      }
+    },
+    "aa_status_enabled": {
+      "path": "/usr/sbin/aa-status",
+      "enabled": {
+        "rc": 0,
+        "first_line": "",
+        "stderr_chars": 0
+      }
+    },
+    "HostPID1_profile": "unconfined",
+    "HostContainer_profile": "docker-default (enforce)",
+    "docker_inspect_AppArmorProfile": "docker-default",
+    "Docker_security_options": {
+      "rc": 0,
+      "first_line": "[\"name=apparmor\",\"name=seccomp,profile=builtin\",\"name=cgroupns\"]",
+      "stderr_chars": 0
+    },
+    "Yama_ptrace_scope": "0",
+    "Host001_process": {
+      "pid": 731062,
+      "starttime": 136645572,
+      "uid": 0,
+      "cap_eff": "00000000002c0000",
+      "cap_bnd": "00000000002c0000",
+      "no_new_privs": "1",
+      "seccomp": "2",
+      "apparmor_current": "docker-default (enforce)"
+    },
+    "container_root_access_denied": true,
+    "container_capEff": "00000000002c0000 (SYS_ADMIN,SYS_CHROOT,SYS_PTRACE)",
+    "NoNewPrivs": "1",
+    "Seccomp": "2 with one filter"
+  },
+  "policy_source_search": {
+    "status": "NO_MATCHING_SOURCE",
+    "exact_docker_default_source_candidates": [],
+    "filtered_candidate_source_metadata": [
+      {
+        "path": "/usr/libexec/docker/docker-init",
+        "type": "file",
+        "mode": "0o755",
+        "uid": 0,
+        "size": 743016,
+        "sha256": "8fe85423c43ca447ce808840212c98ad5a37c69098269129e8a20807bd362e3b"
+      }
+    ],
+    "package_filelist_docker_ce": [],
+    "searched_directories": [
+      "/etc/apparmor.d",
+      "/etc/apparmor.d/abstractions",
+      "/usr/share/apparmor",
+      "/usr/share/docker",
+      "/usr/libexec/docker"
+    ],
+    "relevant_loaded_profile_names": [
+      [
+        "docker-default",
+        "(enforce)"
+      ]
+    ],
+    "profile_policy_content_read_or_emitted": false
+  },
+  "audit": {
+    "journal_kernel_window_utc": [
+      "2026-10-10T02:50:00Z",
+      "2026-10-10T03:05:00Z"
+    ],
+    "journal_relevant_DENIED_records": 0,
+    "auditctl_ausearch_auditd_installed": {
+      "auditctl": null,
+      "ausearch": null,
+      "auditd": null
+    },
+    "audit_log_files": [],
+    "filtered_auditlog_DENIED_records": [],
+    "attribution": "The observable nsenter error is Permission denied while the container is under docker-default(enforce); neither journal nor auditd provided a matching denial record, so AppArmor causation is not independently confirmed."
+  },
+  "current_resources": {
+    "host001_node_id": "f6a79d23-2410-450c-ac39-64dd70c9daa1",
+    "host001_node_status": "online",
+    "host001_node_sync": "synced",
+    "container_id": "fc2a37d3e7219370ed837b828ddac76916389ce8a076041ec0d5b9591b07bbe2",
+    "container_running": true,
+    "application_id": null,
+    "artifact_id": null,
+    "target_unit_written": false,
+    "owned_resources_retained_for_decision": true
+  },
+  "original_four_nodes": [
+    {
+      "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "status": "online",
+      "sync_status": "synced"
+    },
+    {
+      "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+      "status": "online",
+      "sync_status": "synced"
+    },
+    {
+      "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+      "status": "online",
+      "sync_status": "synced"
+    },
+    {
+      "node_id": "03cb50cc-eab6-4afd-bbe0-f73c4e326773",
+      "status": "online",
+      "sync_status": "synced"
+    }
+  ],
+  "host002": "NOT_RUN",
+  "no_unconfined_no_privileged_no_capability_expansion": true,
+  "next_review_options": [
+    "Root supplies an authentic, version-matched docker-default AppArmor profile source and approves a narrowly scoped derived profile/loading lifecycle.",
+    "Keep this Host case PARTIAL/BLOCKED and perform exact approved cleanup when Root directs; no safe policy patch can be prepared from current installed files."
+  ]
+}

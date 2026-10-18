@@ -1,0 +1,8 @@
+{
+  "post_run_additions": [
+    "evidence/phase5b-out-of-order-delivery-order.json - derived (read-only post-processing of the same run's raw proxy ledger) sub-second ordering proof: the older CHANGE_NOTIFICATION (global_revision 2647) was released to the Agent 0.235 s AFTER the newer one (global_revision 2648).",
+    "evidence/attempt01-cleanup-bookkeeping-bug/ - artifacts of the first attempt, kept unmodified. All phases passed with identical assertions; it failed only in the cleanup bookkeeping (a KeyError while assembling the GET404 summary for fixtures deleted inside the prune probe). The bug was fixed and the whole batch re-run (EXIT=0); the report above is the second run.",
+    "Feasibility finding for SYS-07/AR-14/AR-15: the Full Resync branch is `since > 0 && (current - since) > changelog_window`. With the repair Hub global revision around 2650 and changelog_window = 5000, the largest revision that could ever fall outside the window is current - window - 1, which is negative; therefore full_resync=true is arithmetically unreachable in this environment without writing the global changelog_window setting or advancing the global revision by more than 2349 steps - both excluded by the batch constraints. Evidence: evidence/phase7-sys07-ar14-window-boundary.json -> boundary_proof, plus two real boundary observations (since=1 and since=0) that both returned full_resync=false with a complete desired snapshot."
+  ],
+  "claims_changed": false
+}

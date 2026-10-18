@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "BE-REMOTE-TTL-004-observed_at_malformed-proxy-events-b6da7e773e",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport json\nfrom pathlib import Path\nsince=1791471212.292708;rows=[]\nfor line in Path(\"/tmp/qa-resume-20261008-child-ciivjupc/proxy-events.jsonl\").read_text().splitlines():\n try:\n  x=json.loads(line)\n  if x.get(\"time\",0)>=since and x.get(\"event\") in {\"remote_request\",\"remote_override\",\"remote_delivery_delay\"}:rows.append(x)\n except Exception:pass\nprint(json.dumps(rows,separators=(\",\",\":\")))\nPY",
+    "timeout": 25,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "1b16e6b0b0063487283d701c743f971dfdb24c855081db104b4201e4b701ca30",
+  "source_contains_connection_token": false
+}

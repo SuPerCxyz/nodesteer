@@ -1,0 +1,153 @@
+{
+  "result": {
+    "id": "condition.file_exists",
+    "name": "条件 file_exists 的客户机实际效果与执行终态",
+    "started_at": "2026-10-04T05:29:24.195792+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-10-04T05:29:25.685222+00:00",
+    "evidence": "backend-runner/evidence/condition.file_exists-d856cc11.json"
+  },
+  "events": [
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-file_exists-0167d9",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "91f44866-8a28-435e-bbda-2f2367126c00"
+          ]
+        },
+        "command": "mkdir -p /tmp/qa-20260930-101945-be; printf condition-ok > /tmp/qa-20260930-101945-be/condition-file_exists",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "condition": {
+          "type": "local",
+          "local": {
+            "metric": "file_exists",
+            "operator": "==",
+            "value": "false",
+            "path": "/tmp/qa-20260930-101945-be/missing-cc31955f66e74c75a8ba591068734b11"
+          }
+        }
+      },
+      "response": {
+        "id": "bf8c0cf0-18ff-464a-a5ac-cdf8f12ed506",
+        "name": "qa-20260930-101945-be-file_exists-0167d9",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "91f44866-8a28-435e-bbda-2f2367126c00"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /tmp/qa-20260930-101945-be; printf condition-ok > /tmp/qa-20260930-101945-be/condition-file_exists",
+        "condition": {
+          "type": "local",
+          "local": {
+            "metric": "file_exists",
+            "operator": "==",
+            "value": "false",
+            "path": "/tmp/qa-20260930-101945-be/missing-cc31955f66e74c75a8ba591068734b11"
+          }
+        },
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Sun, 04 Oct 2026 05:29:24 GMT",
+        "Content-Length": "686",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/bf8c0cf0-18ff-464a-a5ac-cdf8f12ed506/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "2634662f-5d16-4672-a7c0-98f81f1e9868",
+          "task_id": "bf8c0cf0-18ff-464a-a5ac-cdf8f12ed506",
+          "task_revision": 1,
+          "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Sun, 04 Oct 2026 05:29:24 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/2634662f-5d16-4672-a7c0-98f81f1e9868",
+      "terminal": {
+        "id": "2634662f-5d16-4672-a7c0-98f81f1e9868",
+        "task_id": "bf8c0cf0-18ff-464a-a5ac-cdf8f12ed506",
+        "task_revision": 1,
+        "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-10-04T05:29:24.165878831Z",
+        "end_time": "2026-10-04T05:29:24.175275901Z",
+        "status": "SUCCESS",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "agent": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "read_command": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; r=c.execute('\"'\"'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?'\"'\"',(sys.argv[2],)).fetchone(); print(json.dumps(dict(r) if r else None))' /var/lib/nodesteer-repair-20260930-101945/native-1 2634662f-5d16-4672-a7c0-98f81f1e9868\n",
+      "exit_code": 0,
+      "stdout": "{\"id\": \"2634662f-5d16-4672-a7c0-98f81f1e9868\", \"task_id\": \"bf8c0cf0-18ff-464a-a5ac-cdf8f12ed506\", \"node_id\": \"91f44866-8a28-435e-bbda-2f2367126c00\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}\n",
+      "stderr": ""
+    },
+    {
+      "agent": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "read_command": "cat -- /tmp/qa-20260930-101945-be/condition-file_exists\n",
+      "exit_code": 0,
+      "stdout": "condition-ok",
+      "stderr": ""
+    }
+  ]
+}

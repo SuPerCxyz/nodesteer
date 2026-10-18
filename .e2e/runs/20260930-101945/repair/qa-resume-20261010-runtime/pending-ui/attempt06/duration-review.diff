@@ -1,0 +1,87 @@
+--- attempt05/arm_control.py
++++ attempt06/arm_control.py
+@@ -163,7 +163,9 @@
+ 
+ 
+ def ensure_watchdog_source(root: Path, source: bytes, source_sha256: str, uid: int, gid: int) -> tuple[Path, bool]:
+-    path = root / "qa-pending-ui-watchdog.py"
++    if not re.fullmatch(r"[0-9a-f]{64}", source_sha256) or sha_bytes(source) != source_sha256:
++        raise RuntimeError("watchdog_source_sha_invalid")
++    path = root / ("qa-pending-ui-watchdog-" + source_sha256 + ".py")
+     if path.exists() or path.is_symlink():
+         st = path.lstat()
+         if stat.S_ISLNK(st.st_mode) or not stat.S_ISREG(st.st_mode) or (st.st_uid, st.st_gid, stat.S_IMODE(st.st_mode)) != (uid, gid, 0o700) or sha_file(path) != source_sha256:
+@@ -332,13 +334,13 @@
+             raise RuntimeError("controls_changed_before_arm")
+         control_value = {"hold_types": ["RUN_EXECUTION"], "qa_hold_nonce": args.hold_nonce, "qa_hold_task_id": args.task_id}
+         arm_start_monotonic = time.monotonic()
+-        deadline_monotonic = arm_start_monotonic + 8.0
++        deadline_monotonic = arm_start_monotonic + 15.0
+         atomic_write(controls, before, json.dumps(control_value, separators=(",", ":")).encode() + b"\n", cst.st_uid, cst.st_gid)
+         readback = json.loads(controls.read_text())
+         if readback != control_value:
+             raise RuntimeError("hold_control_readback_mismatch")
+         armed_at_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+-        write_unique_json(arm_state, {"task_id": args.task_id, "hold_nonce": args.hold_nonce, "armed_at_utc": armed_at_utc, "deadline_monotonic": deadline_monotonic, "duration_seconds": 8}, args.root_uid, args.root_gid)
++        write_unique_json(arm_state, {"task_id": args.task_id, "hold_nonce": args.hold_nonce, "armed_at_utc": armed_at_utc, "deadline_monotonic": deadline_monotonic, "duration_seconds": 15}, args.root_uid, args.root_gid)
+         fcntl.flock(lock_fd, fcntl.LOCK_UN)
+         os.close(lock_fd)
+         lock_fd = None
+@@ -349,7 +351,7 @@
+             "controls_sha256": sha_file(controls),
+             "watchdog_started_before_controls_write": True,
+             "watchdog_ready_before_controls_write": True,
+-            "watchdog_wait_seconds": 8,
++            "watchdog_wait_seconds": 15,
+             "watchdog_deadline_monotonic": deadline_monotonic,
+             "child_process": {"pid": child["pid"], "startticks": child["startticks"], "uid": child["uid"], "exe_sha256": child["exe_sha256"]},
+             "proxy_process": {"pid": proxy["pid"], "startticks": proxy["startticks"], "uid": proxy["uid"], "exe_sha256": proxy["exe_sha256"]},
+--- attempt05/watchdog.py
++++ attempt06/watchdog.py
+@@ -10,6 +10,19 @@
+ import sys
+ import time
+ from pathlib import Path
++
++MAX_HOLD_SECONDS = 15.0
++
++
++def valid_arm_deadline(armed: dict, task_id: str, hold_nonce: str, now: float) -> bool:
++    deadline = armed.get("deadline_monotonic")
++    return (
++        armed.get("hold_nonce") == hold_nonce
++        and armed.get("task_id") == task_id
++        and armed.get("duration_seconds") == MAX_HOLD_SECONDS
++        and isinstance(deadline, (int, float))
++        and 0.0 <= float(deadline) - now <= MAX_HOLD_SECONDS
++    )
+ 
+ 
+ def sha_file(path: Path) -> str:
+@@ -169,11 +182,11 @@
+                 armed = json.loads(arm_state_path.read_text())
+             except (FileNotFoundError, json.JSONDecodeError):
+                 armed = {}
+-            valid_arm = armed.get("hold_nonce") == args.hold_nonce and armed.get("task_id") == args.task_id and isinstance(armed.get("deadline_monotonic"), (int, float))
++            now = time.monotonic()
++            valid_arm = valid_arm_deadline(armed, args.task_id, args.hold_nonce, now)
+             if valid_arm:
+-                remaining = float(armed["deadline_monotonic"]) - time.monotonic()
+-                if remaining > 0:
+-                    time.sleep(remaining)
++                remaining = float(armed["deadline_monotonic"]) - now
++                time.sleep(remaining)
+             else:
+                 evidence["safe_release_reason"] = "matching_hold_without_valid_arm_deadline"
+             # The armer cannot write after watchdog expiry: both sides held the same flock.
+--- attempt05/ui_driver.py
++++ attempt06/ui_driver.py
+@@ -26,7 +26,7 @@
+ AGENT = "agent-ab15a133-73cd-4025-8c97-f2ff37e000f5"
+ SESSION = "nodesteer-pending-ui-20261010"
+ PROFILE_DIR = None
+-MAX_PENDING_SECONDS = 8.0
++MAX_PENDING_SECONDS = 15.0
+ opener = build_opener(ProxyHandler({}))
+ 
+ 

@@ -1,0 +1,122 @@
+{
+ "case_id": "G04-03",
+ "at_utc": "2026-10-17T14:36:32Z",
+ "authority": "http://192.168.100.209:18080 (repair)",
+ "owned_group_names": [
+  "qa-prst-621bfad5-grp-a",
+  "qa-prst-621bfad5-grp-b"
+ ],
+ "checks": {
+  "create_g1_ok": {
+   "ok": true,
+   "detail": {
+    "http": 200,
+    "name": "qa-prst-621bfad5-grp-a"
+   }
+  },
+  "dup_exact_http400": {
+   "ok": true,
+   "detail": {
+    "http": 400,
+    "body": {
+     "error": "group name already exists: qa-prst-621bfad5-grp-a"
+    }
+   }
+  },
+  "dup_exact_normalized_text": {
+   "ok": true,
+   "detail": {
+    "error": "group name already exists: qa-prst-621bfad5-grp-a",
+    "expected": "group name already exists: qa-prst-621bfad5-grp-a"
+   }
+  },
+  "dup_exact_no_sql_leak": {
+   "ok": true,
+   "detail": {
+    "sql_markers": []
+   }
+  },
+  "dup_variant_http400": {
+   "ok": true,
+   "detail": {
+    "http": 400,
+    "sent_name": " QA-PRST-621BFAD5-GRP-A ",
+    "body": {
+     "error": "group name already exists: QA-PRST-621BFAD5-GRP-A"
+    }
+   }
+  },
+  "dup_variant_normalized_text": {
+   "ok": true,
+   "detail": {
+    "error": "group name already exists: QA-PRST-621BFAD5-GRP-A"
+   }
+  },
+  "dup_variant_no_sql_leak": {
+   "ok": true,
+   "detail": {
+    "sql_markers": []
+   }
+  },
+  "create_g2_ok": {
+   "ok": true,
+   "detail": {
+    "http": 200,
+    "id": "2b88ff45-0f8d-4dc7-90fa-f27511da6b67"
+   }
+  },
+  "rename_dup_http400": {
+   "ok": true,
+   "detail": {
+    "http": 400,
+    "body": {
+     "error": "group name already exists: qa-prst-621bfad5-grp-a"
+    }
+   }
+  },
+  "rename_dup_normalized_text": {
+   "ok": true,
+   "detail": {
+    "error": "group name already exists: qa-prst-621bfad5-grp-a"
+   }
+  },
+  "rename_dup_no_sql_leak": {
+   "ok": true,
+   "detail": {
+    "sql_markers": []
+   }
+  },
+  "rename_rejected_g2_unchanged": {
+   "ok": true,
+   "detail": {
+    "http": 200,
+    "name": "qa-prst-621bfad5-grp-b"
+   }
+  },
+  "empty_name_http400_specific": {
+   "ok": true,
+   "detail": {
+    "http": 400,
+    "error": "name required"
+   }
+  },
+  "put_not_found_404_specific": {
+   "ok": true,
+   "detail": {
+    "http": 404,
+    "body": {
+     "error": "group not found"
+    },
+    "sql_markers": [],
+    "defect_ref": "E2E-20261015-SQL-ERROR-LEAK-ON-PUT-NOTFOUND regression dimension"
+   }
+  },
+  "put_not_found_no_sql_leak": {
+   "ok": true,
+   "detail": {
+    "sql_markers": []
+   }
+  }
+ },
+ "api_verdict": "PASS"
+}

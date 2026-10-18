@@ -1,0 +1,82 @@
+{
+  "checked_at": "2026-10-03T23:53:09.569283+00:00",
+  "classification": "LOCAL_GO_REGRESSION_NOT_LIVE_E2E",
+  "command": "go test -buildvcs=false ./internal/store ./internal/hub ./internal/hub/api",
+  "exit_code": 0,
+  "packages": [
+    "internal/store",
+    "internal/hub",
+    "internal/hub/api"
+  ],
+  "covered": [
+    "re-enrollment DB pending/old credential rejection",
+    "re-enrollment transaction rollback on revoked flag deletion failure",
+    "User empty-password/invalid-role rejection before writes/audit",
+    "User invalid-role or failed bcrypt leaves role/password unchanged",
+    "User database failure rolls back role",
+    "Execution/Audit literal q before pagination and consistent counts"
+  ],
+  "known_test_harness_correction": "new hub test wrapper initially needed concrete SQLiteStore type assertion; corrected and re-run passed",
+  "live_regression_status": "NOT_RUN",
+  "whole_repository_go_test": {
+    "command": "go test -buildvcs=false ./...",
+    "exit_code": 0,
+    "classification": "LOCAL_REGRESSION_NOT_LIVE_E2E"
+  },
+  "whole_repository_diff_check": {
+    "command": "git diff --check -- internal/agent internal/hub internal/store web/src",
+    "exit_code": 0
+  },
+  "updated_at": "2026-10-04T00:00:33.576700+00:00",
+  "whole_repository_go_vet": {
+    "command": "go vet -buildvcs=false ./...",
+    "exit_code": 0
+  },
+  "frontend_production_build": {
+    "command": "pnpm run build",
+    "cwd": "web",
+    "exit_code": 0,
+    "output": "web/dist",
+    "classification": "LOCAL_BUILD_NOT_LIVE_E2E"
+  },
+  "frontend_browser_regression": {
+    "executor": "luna_result_audit",
+    "model": "gpt-6-luna",
+    "files": 4,
+    "tests_passed": 14,
+    "exit_code": 0,
+    "evidence": "repair/qa/vitest-run.json",
+    "classification": "LOCAL_BROWSER_UNIT_NOT_LIVE_E2E"
+  },
+  "agent_after_terminal_secret_fix": {
+    "command": "go test -buildvcs=false ./internal/agent/...",
+    "exit_code": 0,
+    "agent_seconds": 30.044
+  },
+  "secret_concurrency_check": {
+    "executor": "backend_fix_review",
+    "reported_exit_code": 0,
+    "classification": "LOCAL_GO_RACE_NOT_LIVE_E2E"
+  },
+  "frontend_review_followups": [
+    "Preserve retry/long-output chunk history at terminal state, add authoritative missing-output supplement",
+    "Refresh actual App history/health even when POST partially dispatched then failed"
+  ],
+  "final_frontend_production_build": {
+    "command": "pnpm run build",
+    "cwd": "web",
+    "exit_code": 0,
+    "output": "web/dist",
+    "all_final_source_fixes_included": true
+  },
+  "final_frontend_browser_regression": {
+    "executor": "luna_result_audit",
+    "model": "gpt-6-luna",
+    "files": 7,
+    "tests_passed": 22,
+    "exit_code": 0,
+    "evidence": "repair/qa/vitest-final-run-cwd-web.json",
+    "classification": "LOCAL_BROWSER_UNIT_NOT_LIVE_E2E"
+  },
+  "fresh_build_manifest": "repair/build-manifest.json"
+}

@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "BE-SCRIPT-SHA-002-v2-recovery-db-c1a567785d",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport json,sqlite3,pathlib,time\nroot=pathlib.Path(\"/tmp/qa-resume-20261008-child-ciivjupc/data\")\ndb=root/\"state.db\"\nend=time.monotonic()+20\nrows=[]\nwhile time.monotonic()<end:\n c=sqlite3.connect(\"file:\"+str(db)+\"?mode=ro\",uri=True,timeout=3); c.row_factory=sqlite3.Row\n try: rows=[dict(r) for r in c.execute('SELECT id,content,revision,sha256 FROM scripts WHERE id IN (?,?) ORDER BY id',('6d3f43cb-cdf1-4729-b3f1-53a3d69ab0b1', '92c0e242-0f67-4553-92e0-f7b8ffe675e4')).fetchall()]\n finally: c.close()\n if len(rows)>=2: break\n time.sleep(.25)\nprint(json.dumps({\"rows\":rows,\"expected_count\":2,\"ready\":len(rows)>=2},separators=(\",\",\":\")))\nPY",
+    "timeout": 30,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "e5cdd53774eb095057b0ff9da03f43a50815fa42251ef3b8293cbcfa11187fad",
+  "source_contains_connection_token": false
+}

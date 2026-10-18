@@ -1,0 +1,109 @@
+{
+  "at_utc": "2026-10-14T10:06:29Z",
+  "node_b": "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889",
+  "configured_allowlist": [
+    "/opt/qa-sysb12-530b8e2c5b77"
+  ],
+  "cases": [
+    {
+      "label": "outside_allowlist_destination",
+      "create_http": 200,
+      "destination_path": "/etc/qa-sysb12-530b8e2c5b77/evil.txt",
+      "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin",
+      "expected_allowlist_allowed": false,
+      "transfer_id": "394e2f1e-e826-4cfb-858d-8d6e2786fdb0",
+      "final_status": "FAILED",
+      "target": {
+        "transfer_id": "394e2f1e-e826-4cfb-858d-8d6e2786fdb0",
+        "node_id": "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889",
+        "destination_path": "/etc/qa-sysb12-530b8e2c5b77/evil.txt",
+        "mode": 420,
+        "status": "FAILED",
+        "error": "destination path: path is outside configured allowlist: /etc/qa-sysb12-530b8e2c5b77/evil.txt",
+        "updated_at": "2026-10-14T10:06:29.530378075Z"
+      },
+      "probe_b": {
+        "at_utc": "2026-10-14T10:06:29Z",
+        "files": {
+          "/etc/qa-sysb12-530b8e2c5b77/evil.txt": {
+            "lexists": false,
+            "exists": false,
+            "is_symlink": false
+          }
+        },
+        "dirs": {
+          "/etc/qa-sysb12-530b8e2c5b77": {
+            "lexists": false,
+            "is_dir": false
+          }
+        },
+        "tmp_dev": 33,
+        "root_dev": 65025,
+        "mounts": []
+      },
+      "target_status": "FAILED",
+      "target_error": "destination path: path is outside configured allowlist: /etc/qa-sysb12-530b8e2c5b77/evil.txt"
+    },
+    {
+      "label": "inside_allowlist_positive_control",
+      "create_http": 200,
+      "destination_path": "/opt/qa-sysb12-530b8e2c5b77/allow/ok.txt",
+      "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin",
+      "expected_allowlist_allowed": true,
+      "transfer_id": "a8c4e8b2-3580-46db-9796-75c5f84d48a3",
+      "final_status": "SUCCESS",
+      "target": {
+        "transfer_id": "a8c4e8b2-3580-46db-9796-75c5f84d48a3",
+        "node_id": "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889",
+        "destination_path": "/opt/qa-sysb12-530b8e2c5b77/allow/ok.txt",
+        "mode": 420,
+        "status": "SUCCESS",
+        "updated_at": "2026-10-14T10:06:29.980286491Z"
+      },
+      "probe_b": {
+        "at_utc": "2026-10-14T10:06:30Z",
+        "files": {
+          "/opt/qa-sysb12-530b8e2c5b77/allow/ok.txt": {
+            "lexists": true,
+            "exists": true,
+            "is_symlink": false,
+            "is_dir": false,
+            "mode": "0o644",
+            "size": 25,
+            "uid": 0,
+            "dev": 65025,
+            "mtime": 1791972389.8247843,
+            "sha256": "f5331f1680aeeac0dc2d7336cdad2613d7804ecefb0b9b1ce3c141ded3c4bd26"
+          }
+        },
+        "dirs": {
+          "/opt/qa-sysb12-530b8e2c5b77/allow": {
+            "lexists": true,
+            "is_dir": true,
+            "mode": "0o755",
+            "dev": 65025,
+            "statvfs": {
+              "bsize": 4096,
+              "frsize": 4096,
+              "blocks": 1293824,
+              "bfree": 733803,
+              "bavail": 733803
+            },
+            "lsattr": "---------------------- /opt/qa-sysb12-530b8e2c5b77/allow",
+            "entries": [
+              "ok.txt"
+            ]
+          }
+        },
+        "tmp_dev": 33,
+        "root_dev": 65025,
+        "mounts": []
+      },
+      "target_status": "SUCCESS",
+      "target_error": null
+    }
+  ],
+  "outside_blocked": true,
+  "outside_allowlist_dir_absent": true,
+  "inside_ok": true
+}

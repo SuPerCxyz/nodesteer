@@ -1,0 +1,112 @@
+{
+  "captured_at_utc": "2026-10-10T14:41:26Z",
+  "case_id": "P11-02",
+  "attempt_nonce": "c2ce573d4aea",
+  "execution_id": "e7a4ce07-4a10-420c-909f-f2e96a91738d",
+  "root_cause_review": {
+    "canonical_badge_mapping": {
+      "PENDING": {
+        "actual_card_text": "状态\\n等待中",
+        "source": "attempt06/ui_driver.py:475"
+      },
+      "RUNNING": {
+        "actual_card_text": "状态\\n运行中",
+        "source": "attempt06/ui_driver.py:477"
+      },
+      "SUCCESS": {
+        "actual_card_text": "状态\\n成功",
+        "source": "attempt06/ui_driver.py:479"
+      }
+    },
+    "api_statuses": {
+      "initial": "PENDING",
+      "final": "SUCCESS",
+      "execution_id": "e7a4ce07-4a10-420c-909f-f2e96a91738d",
+      "task_id": "61709c81-66b6-4e0f-8c5b-a969b721b222",
+      "node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea"
+    },
+    "ui_status_timeline": [
+      {
+        "status": "PENDING",
+        "card_text": "状态\\n等待中",
+        "at_utc": "2026-10-10T14:35:28Z",
+        "detail_elapsed_monotonic_seconds": 0.115
+      },
+      {
+        "status": "RUNNING",
+        "card_text": "状态\\n运行中",
+        "at_utc": "2026-10-10T14:35:43Z",
+        "detail_elapsed_monotonic_seconds": 15.1751
+      },
+      {
+        "status": "SUCCESS",
+        "card_text": "状态\\n成功",
+        "at_utc": "2026-10-10T14:35:46Z",
+        "detail_elapsed_monotonic_seconds": 18.2626
+      }
+    ],
+    "same_detail": {
+      "initial_path": "/executions/e7a4ce07-4a10-420c-909f-f2e96a91738d",
+      "final_path": "/executions/e7a4ce07-4a10-420c-909f-f2e96a91738d",
+      "time_origin_initial": 1791642927766.7,
+      "time_origin_final": 1791642927766.7,
+      "navigation_entries": 1,
+      "no_reload": true
+    },
+    "screenshots": {
+      "pending": "pending-execution-c2ce573d4aea.png",
+      "success": "success-execution-c2ce573d4aea.png",
+      "pending_visual_id_and_badge_confirmed": true,
+      "success_visual_id_and_badge_confirmed": true
+    },
+    "driver_status_explanation": "ui_driver.py:623-637 takes visible_text before/alongside the first populated statusCard and sets PENDING_UI_NOT_OBSERVED if the exact ExecutionID is absent from that one text sample. In this run the API identity, current detail URL, screenshot ID and status badge prove same ID; the screenshot contains the ID although the early text sample did not. Driver status is therefore a false-negative classification gate, not evidence that PENDING was absent.",
+    "run_post_and_detail_timing_path": {
+      "ui_driver_source": "attempt06/ui_driver.py:594-618",
+      "run_click_once_to_link_poll_max_seconds": 1.5,
+      "execution_detail_initial_badge_poll_max_seconds": 1.5,
+      "observed_detail_first_badge_elapsed_seconds": 0.115,
+      "networkidle_wait_after_click": false
+    }
+  },
+  "hold_and_execution_timeline": {
+    "helper_execution_id": "6b108473-29b5-40d2-afa7-85068b0aa528",
+    "helper_start_utc": "2026-10-10T14:35:26.163195414Z",
+    "helper_end_utc": "2026-10-10T14:35:26.510625859Z",
+    "hold_armed_at_utc_second_precision": "2026-10-10T14:35:26Z",
+    "watchdog_deadline_monotonic": 1408658.205041238,
+    "watchdog_duration_seconds": 15,
+    "child_execution_start_time_utc": "2026-10-10T14:35:41.523173909Z",
+    "child_execution_end_time_utc": "2026-10-10T14:35:45.528749614Z",
+    "delta_child_start_minus_helper_end_seconds": 15.01254805,
+    "task_duration_seconds": 4.005575705,
+    "interpretation": "Exact ~15s from successful arm-helper completion to Agent execution start matches the independent watchdog deadline/release and provides strong full-timing evidence that the PENDING execution waited until release. arm UTC is second precision and monotonic deadline has no wall-time conversion, so the proxy hold event itself is still the decisive direct frame oracle.",
+    "created_at_api_field": "not exposed on the preserved Execution API row; observed PENDING UI/API at 14:35:28Z before start_time."
+  },
+  "wire_and_proxy_semantics": {
+    "wire_type": "RUN_EXECUTION",
+    "protocol_source": "internal/protocol/protocol.go:23",
+    "hub_dispatch_source": "internal/hub/execution.go:335",
+    "owned_proxy_source_sha_last_recorded": "d9ac209a20ddda8a6101e80a9d42ddaa9be49af7892f403a98ef6e3b57c0cd57",
+    "source_provenance": "Native4 proxy source persisted in BE-SCRIPT-SHA-002-repair-proxy-import result; subsequent child restart record says only child owner row updated. Proxy logic reconstructed from the embedded Native4 setup source and later source patches; latest exact remote source file is not present in this local workspace.",
+    "proxy_source_control_semantics": {
+      "control_types_includes_RUN_EXECUTION": true,
+      "downstream_only": "direction == down and type is in CONTROL_TYPES",
+      "hold_check": "kind in controls.get(hold_types, [])",
+      "hold_action": "append (writer, raw_frame, kind) to held queue; log hold; continue before writer.write/drain",
+      "release": "100ms polling loop checks current controls; when RUN_EXECUTION leaves hold_types, write raw frame, await drain, remove from held and log release_held",
+      "embedded_source_lines": "setup task embedded PROXY_SOURCE lines 10, 91-98, 144-155"
+    },
+    "direct_frame_event_evidence": "No attempt06 proxy-events.jsonl hold/release entry has been read locally yet. Controls/HOLD_ARMED alone are not being counted as proof that the frame was held; Root-coordinated read-only physical event/control inspection is still required for direct queue evidence."
+  },
+  "driver_outcome": "PENDING_UI_NOT_OBSERVED because early text sample omitted ID; actual UI status badges, screenshots, API identity, same URL and same timeOrigin show PENDING→RUNNING→SUCCESS on one execution detail document.",
+  "cleanup": {
+    "child_task_get404": true,
+    "helper_task_get404": true,
+    "dedicated_logout_status": 200,
+    "same_token_me_status": 401,
+    "browser_closed": true,
+    "profile_removed": true,
+    "physical_controls_watchdog_final_readback": "Root-coordinated read-only inspection pending"
+  },
+  "overall_disposition": "Do not call product FAIL. UI state transition and exact time sequence observed; direct proxy held/release event remains unconfirmed. No additional Run."
+}

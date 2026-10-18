@@ -1,0 +1,295 @@
+[
+  {
+    "key": "and-empty",
+    "task_name": "qa-sysb09-7f31ac2e-reject-and-empty",
+    "condition": {
+      "type": "and",
+      "and": []
+    },
+    "http": 400,
+    "body": {
+      "error": "invalid task: and condition requires at least one child"
+    },
+    "expected_fragment": "and condition requires at least one child",
+    "rejected": true,
+    "fragment_match": true
+  },
+  {
+    "key": "local-missing",
+    "task_name": "qa-sysb09-7f31ac2e-reject-local-missing",
+    "condition": {
+      "type": "local"
+    },
+    "http": 400,
+    "body": {
+      "error": "invalid task: local condition is missing"
+    },
+    "expected_fragment": "local condition is missing",
+    "rejected": true,
+    "fragment_match": true
+  },
+  {
+    "key": "local-bad-operator",
+    "task_name": "qa-sysb09-7f31ac2e-reject-local-bad-operator",
+    "condition": {
+      "type": "local",
+      "local": {
+        "metric": "file_exists",
+        "operator": "~=",
+        "path": "/etc/hostname",
+        "value": "true"
+      }
+    },
+    "http": 400,
+    "body": {
+      "error": "invalid task: invalid local condition operator"
+    },
+    "expected_fragment": "invalid local condition operator",
+    "rejected": true,
+    "fragment_match": true
+  },
+  {
+    "key": "cpu-nonnumeric",
+    "task_name": "qa-sysb09-7f31ac2e-reject-cpu-nonnumeric",
+    "condition": {
+      "type": "local",
+      "local": {
+        "metric": "cpu_usage",
+        "operator": ">",
+        "value": "abc"
+      }
+    },
+    "http": 400,
+    "body": {
+      "error": "invalid task: numeric local condition requires numeric value"
+    },
+    "expected_fragment": "numeric local condition requires numeric value",
+    "rejected": true,
+    "fragment_match": true
+  },
+  {
+    "key": "file-missing-path",
+    "task_name": "qa-sysb09-7f31ac2e-reject-file-missing-path",
+    "condition": {
+      "type": "local",
+      "local": {
+        "metric": "file_exists",
+        "operator": "==",
+        "value": "true"
+      }
+    },
+    "http": 400,
+    "body": {
+      "error": "invalid task: local condition requires path"
+    },
+    "expected_fragment": "local condition requires path",
+    "rejected": true,
+    "fragment_match": true
+  },
+  {
+    "key": "port-invalid",
+    "task_name": "qa-sysb09-7f31ac2e-reject-port-invalid",
+    "condition": {
+      "type": "local",
+      "local": {
+        "metric": "port_listening",
+        "operator": "==",
+        "path": "99999",
+        "value": "true"
+      }
+    },
+    "http": 400,
+    "body": {
+      "error": "invalid task: port_listening path must be a valid port"
+    },
+    "expected_fragment": "port_listening path must be a valid port",
+    "rejected": true,
+    "fragment_match": true
+  },
+  {
+    "key": "command-missing",
+    "task_name": "qa-sysb09-7f31ac2e-reject-command-missing",
+    "condition": {
+      "type": "local",
+      "local": {
+        "metric": "command_result",
+        "operator": "==",
+        "value": "ok"
+      }
+    },
+    "http": 400,
+    "body": {
+      "error": "invalid task: command_result requires command"
+    },
+    "expected_fragment": "command_result requires command",
+    "rejected": true,
+    "fragment_match": true
+  },
+  {
+    "key": "unknown-metric",
+    "task_name": "qa-sysb09-7f31ac2e-reject-unknown-metric",
+    "condition": {
+      "type": "local",
+      "local": {
+        "metric": "gpu_usage",
+        "operator": ">",
+        "value": "1"
+      }
+    },
+    "http": 400,
+    "body": {
+      "error": "invalid task: unknown local condition metric"
+    },
+    "expected_fragment": "unknown local condition metric",
+    "rejected": true,
+    "fragment_match": true
+  },
+  {
+    "key": "remote-missing",
+    "task_name": "qa-sysb09-7f31ac2e-reject-remote-missing",
+    "condition": {
+      "type": "remote"
+    },
+    "http": 400,
+    "body": {
+      "error": "invalid task: remote condition is missing"
+    },
+    "expected_fragment": "remote condition is missing",
+    "rejected": true,
+    "fragment_match": true
+  },
+  {
+    "key": "remote-no-node",
+    "task_name": "qa-sysb09-7f31ac2e-reject-remote-no-node",
+    "condition": {
+      "type": "remote",
+      "remote": {
+        "node_id": "",
+        "property": "online",
+        "operator": "==",
+        "value": "online"
+      }
+    },
+    "http": 400,
+    "body": {
+      "error": "invalid task: remote condition requires node_id"
+    },
+    "expected_fragment": "remote condition requires node_id",
+    "rejected": true,
+    "fragment_match": true
+  },
+  {
+    "key": "remote-node-missing",
+    "task_name": "qa-sysb09-7f31ac2e-reject-remote-node-missing",
+    "condition": {
+      "type": "remote",
+      "remote": {
+        "node_id": "00000000-0000-0000-0000-000000000000",
+        "property": "online",
+        "operator": "==",
+        "value": "online"
+      }
+    },
+    "http": 400,
+    "body": {
+      "error": "invalid task: remote condition node not found"
+    },
+    "expected_fragment": "remote condition node not found",
+    "rejected": true,
+    "fragment_match": true
+  },
+  {
+    "key": "remote-bad-property",
+    "task_name": "qa-sysb09-7f31ac2e-reject-remote-bad-property",
+    "condition": {
+      "type": "remote",
+      "remote": {
+        "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+        "property": "disk",
+        "operator": "==",
+        "value": "online"
+      }
+    },
+    "http": 400,
+    "body": {
+      "error": "invalid task: unknown remote condition property"
+    },
+    "expected_fragment": "unknown remote condition property",
+    "rejected": true,
+    "fragment_match": true
+  },
+  {
+    "key": "remote-last-exec-missing-task",
+    "task_name": "qa-sysb09-7f31ac2e-reject-remote-last-exec-missing-task",
+    "condition": {
+      "type": "remote",
+      "remote": {
+        "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+        "property": "last_execution",
+        "operator": "==",
+        "value": "SUCCESS"
+      }
+    },
+    "http": 400,
+    "body": {
+      "error": "invalid task: last_execution condition requires task_id"
+    },
+    "expected_fragment": "last_execution condition requires task_id",
+    "rejected": true,
+    "fragment_match": true
+  },
+  {
+    "key": "remote-bad-operator",
+    "task_name": "qa-sysb09-7f31ac2e-reject-remote-bad-operator",
+    "condition": {
+      "type": "remote",
+      "remote": {
+        "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+        "property": "online",
+        "operator": ">",
+        "value": "online"
+      }
+    },
+    "http": 400,
+    "body": {
+      "error": "invalid task: remote condition operator must be == or !="
+    },
+    "expected_fragment": "remote condition operator must be == or !=",
+    "rejected": true,
+    "fragment_match": true
+  },
+  {
+    "key": "remote-online-bogus-value",
+    "task_name": "qa-sysb09-7f31ac2e-reject-remote-online-bogus-value",
+    "condition": {
+      "type": "remote",
+      "remote": {
+        "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+        "property": "online",
+        "operator": "==",
+        "value": "bogus"
+      }
+    },
+    "http": 400,
+    "body": {
+      "error": "invalid task: invalid online condition value"
+    },
+    "expected_fragment": "invalid online condition value",
+    "rejected": true,
+    "fragment_match": true
+  },
+  {
+    "key": "unknown-type",
+    "task_name": "qa-sysb09-7f31ac2e-reject-unknown-type",
+    "condition": {
+      "type": "xor"
+    },
+    "http": 400,
+    "body": {
+      "error": "invalid task: condition type must be local, remote, or and"
+    },
+    "expected_fragment": "condition type must be local, remote, or and",
+    "rejected": true,
+    "fragment_match": true
+  }
+]

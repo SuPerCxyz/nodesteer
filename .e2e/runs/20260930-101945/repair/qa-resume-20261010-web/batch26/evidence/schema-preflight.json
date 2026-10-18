@@ -1,0 +1,23 @@
+{
+  "captured_at_utc": "2026-10-12T15:38:38Z",
+  "grant_id": "ROOT-WEB-LIST-METADATA-20261012-01",
+  "status": "BLOCKED_BEFORE_MUTATION_SCHEMA_CONFLICT",
+  "source_checked": [
+    "internal/models/models.go:179-210 — Task JSON fields and Target schema",
+    "internal/hub/validation.go:45-73 — node target requires at least one node_id; label target requires label_key",
+    "internal/hub/api/api.go:1237-1265 — POST /api/tasks decodes Task, validates via TaskManager, and returns 400 on invalid target",
+    "internal/models/models.go:234-252 — Schedule fields, including interval_sec, timezone, execution_owner, offline_policy, misfire_policy, enabled",
+    "internal/hub/validation.go:174-205 — interval_sec must be positive and schedule enum values/timezone must validate"
+  ],
+  "grant_task_target": {
+    "type": "node",
+    "node_ids": []
+  },
+  "source_validation_result": "Rejected: node target requires node_ids; empty node_ids is invalid.",
+  "request_attempted": false,
+  "server_mutations": 0,
+  "fixtures_created": 0,
+  "reason_for_stop": "The exact authorized Task shape cannot be created under current server validation. Changing target to group/label or adding a Node would exceed the concrete grant; malformed POST probing is not authorized.",
+  "schedule_dependency": "No Task ID exists; schedule must not be created because its API requires a valid existing task_id.",
+  "raw_credentials_or_bodies_saved": false
+}

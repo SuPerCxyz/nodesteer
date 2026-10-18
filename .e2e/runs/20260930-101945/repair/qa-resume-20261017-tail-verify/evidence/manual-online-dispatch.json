@@ -1,0 +1,79 @@
+{
+ "instance": "nodesteer-qa-tail202610177588afab",
+ "port": 18088,
+ "at_utc": "2026-10-17T15:10:21Z",
+ "steps": [
+  {
+   "step": "PUT /api/nodes/{id} {status:online}",
+   "http": 200
+  },
+  {
+   "step": "status after manual online",
+   "http": 200,
+   "status": "online",
+   "capabilities": null
+  },
+  {
+   "step": "direct DB: set capabilities_json (isolated instance only)",
+   "rc": 0,
+   "out": "rows 1",
+   "err": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts."
+  },
+  {
+   "step": "status+capabilities after DB tweak",
+   "http": 200,
+   "status": "online",
+   "capabilities": {
+    "script": true
+   }
+  },
+  {
+   "step": "create script+task",
+   "script": "63943efb-1bef-410f-9473-06eb89a20438",
+   "task": "3130cc4c-030b-4e6c-8620-d1f891b16825"
+  },
+  {
+   "step": "POST /api/tasks/{id}/run → manual-online node without session",
+   "http": 400,
+   "body": {
+    "error": "agent offline"
+   },
+   "elapsed_s": 0.01
+  },
+  {
+   "step": "GET executions (判定：FAILED+block_reason 明确报错 / PENDING 静默挂起)",
+   "http": 200,
+   "executions": [
+    {
+     "id": "5478642a-a5e1-49b4-b771-c6ceaab32f12",
+     "status": "FAILED",
+     "block_reason": "agent offline",
+     "node_id": "05906ab2-92a2-4964-8a90-7da4da03022c",
+     "offline": false
+    }
+   ]
+  },
+  {
+   "step": "GET /api/applications",
+   "http": 200,
+   "count": 0
+  },
+  {
+   "step": "cleanup task",
+   "http": 200
+  },
+  {
+   "step": "cleanup script",
+   "http": 200
+  },
+  {
+   "step": "cleanup node",
+   "http": 200
+  },
+  {
+   "step": "GET node after cleanup (expect 404)",
+   "http": 404
+  }
+ ],
+ "node": "05906ab2-92a2-4964-8a90-7da4da03022c"
+}

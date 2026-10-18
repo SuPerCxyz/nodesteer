@@ -1,0 +1,319 @@
+{
+  "result": {
+    "id": "feature.process.native",
+    "name": "Native忽略TERM后代cancel/timeout与PID收割",
+    "started_at": "2026-10-04T05:32:38.325100+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-10-04T05:32:51.211062+00:00",
+    "evidence": "backend-runner/evidence/feature.process.native-e368bf82.json"
+  },
+  "events": [
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-native-pg-cancel-6b69d4",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "91f44866-8a28-435e-bbda-2f2367126c00"
+          ]
+        },
+        "command": "mkdir -p /tmp/qa-20260930-101945-be/native-pg-cancel-e5b421; sh -c 'trap \"\" TERM; sleep 120 & printf %s \"$!\" > /tmp/qa-20260930-101945-be/native-pg-cancel-e5b421/child; wait' & child=$!; printf %s \"$child\" > /tmp/qa-20260930-101945-be/native-pg-cancel-e5b421/parent; wait \"$child\"",
+        "timeout": 130,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "95ed6405-c558-4466-8e79-8df6bf903cf1",
+        "name": "qa-20260930-101945-be-native-pg-cancel-6b69d4",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "91f44866-8a28-435e-bbda-2f2367126c00"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /tmp/qa-20260930-101945-be/native-pg-cancel-e5b421; sh -c 'trap \"\" TERM; sleep 120 & printf %s \"$!\" > /tmp/qa-20260930-101945-be/native-pg-cancel-e5b421/child; wait' & child=$!; printf %s \"$child\" > /tmp/qa-20260930-101945-be/native-pg-cancel-e5b421/parent; wait \"$child\"",
+        "timeout": 130,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Sun, 04 Oct 2026 05:32:38 GMT",
+        "Content-Length": "717",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/95ed6405-c558-4466-8e79-8df6bf903cf1/run",
+      "status": 200,
+      "request": {},
+      "response": [
+        {
+          "id": "b416a99b-e220-407d-977b-be3b73602cb4",
+          "task_id": "95ed6405-c558-4466-8e79-8df6bf903cf1",
+          "task_revision": 1,
+          "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Sun, 04 Oct 2026 05:32:38 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/executions/b416a99b-e220-407d-977b-be3b73602cb4/cancel",
+      "status": 200,
+      "request": {},
+      "response": {
+        "ok": "true"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Sun, 04 Oct 2026 05:32:39 GMT",
+        "Content-Length": "14",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/b416a99b-e220-407d-977b-be3b73602cb4",
+      "terminal": {
+        "id": "b416a99b-e220-407d-977b-be3b73602cb4",
+        "task_id": "95ed6405-c558-4466-8e79-8df6bf903cf1",
+        "task_revision": 1,
+        "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-10-04T05:32:38.312648398Z",
+        "end_time": "2026-10-04T05:32:41.325546485Z",
+        "status": "CANCELED",
+        "exit_code": -1,
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "agent": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "read_command": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; r=c.execute('\"'\"'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?'\"'\"',(sys.argv[2],)).fetchone(); print(json.dumps(dict(r) if r else None))' /var/lib/nodesteer-repair-20260930-101945/native-1 b416a99b-e220-407d-977b-be3b73602cb4\n",
+      "exit_code": 0,
+      "stdout": "{\"id\": \"b416a99b-e220-407d-977b-be3b73602cb4\", \"task_id\": \"95ed6405-c558-4466-8e79-8df6bf903cf1\", \"node_id\": \"91f44866-8a28-435e-bbda-2f2367126c00\", \"status\": \"CANCELED\", \"exit_code\": -1, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}\n",
+      "stderr": ""
+    },
+    {
+      "agent": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "read_command": "cat /tmp/qa-20260930-101945-be/native-pg-cancel-e5b421/parent\n",
+      "exit_code": 0,
+      "stdout": "36930",
+      "stderr": ""
+    },
+    {
+      "agent": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "read_command": "cat /tmp/qa-20260930-101945-be/native-pg-cancel-e5b421/child\n",
+      "exit_code": 0,
+      "stdout": "36931",
+      "stderr": ""
+    },
+    {
+      "agent": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "read_command": "if test -r /proc/36930/stat; then cat /proc/36930/stat; fi; if test -r /proc/36931/stat; then cat /proc/36931/stat; fi\n",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "native_process_group_effect": {
+        "action": "cancel",
+        "pids": [
+          36930,
+          36931
+        ],
+        "remaining_proc_stat": ""
+      }
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-native-pg-timeout-070f84",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "91f44866-8a28-435e-bbda-2f2367126c00"
+          ]
+        },
+        "command": "mkdir -p /tmp/qa-20260930-101945-be/native-pg-timeout-763abe; sh -c 'trap \"\" TERM; sleep 120 & printf %s \"$!\" > /tmp/qa-20260930-101945-be/native-pg-timeout-763abe/child; wait' & child=$!; printf %s \"$child\" > /tmp/qa-20260930-101945-be/native-pg-timeout-763abe/parent; wait \"$child\"",
+        "timeout": 4,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "df64467a-a6d4-4388-8642-5d8c3fa61f42",
+        "name": "qa-20260930-101945-be-native-pg-timeout-070f84",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "91f44866-8a28-435e-bbda-2f2367126c00"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /tmp/qa-20260930-101945-be/native-pg-timeout-763abe; sh -c 'trap \"\" TERM; sleep 120 & printf %s \"$!\" > /tmp/qa-20260930-101945-be/native-pg-timeout-763abe/child; wait' & child=$!; printf %s \"$child\" > /tmp/qa-20260930-101945-be/native-pg-timeout-763abe/parent; wait \"$child\"",
+        "timeout": 4,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Sun, 04 Oct 2026 05:32:43 GMT",
+        "Content-Length": "719",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/df64467a-a6d4-4388-8642-5d8c3fa61f42/run",
+      "status": 200,
+      "request": {},
+      "response": [
+        {
+          "id": "8e234a52-d21c-4473-b6de-5678ff851a04",
+          "task_id": "df64467a-a6d4-4388-8642-5d8c3fa61f42",
+          "task_revision": 1,
+          "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Sun, 04 Oct 2026 05:32:43 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/8e234a52-d21c-4473-b6de-5678ff851a04",
+      "terminal": {
+        "id": "8e234a52-d21c-4473-b6de-5678ff851a04",
+        "task_id": "df64467a-a6d4-4388-8642-5d8c3fa61f42",
+        "task_revision": 1,
+        "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-10-04T05:32:43.24830421Z",
+        "end_time": "2026-10-04T05:32:49.268688277Z",
+        "status": "TIMED_OUT",
+        "exit_code": -1,
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "agent": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "read_command": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; r=c.execute('\"'\"'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?'\"'\"',(sys.argv[2],)).fetchone(); print(json.dumps(dict(r) if r else None))' /var/lib/nodesteer-repair-20260930-101945/native-1 8e234a52-d21c-4473-b6de-5678ff851a04\n",
+      "exit_code": 0,
+      "stdout": "{\"id\": \"8e234a52-d21c-4473-b6de-5678ff851a04\", \"task_id\": \"df64467a-a6d4-4388-8642-5d8c3fa61f42\", \"node_id\": \"91f44866-8a28-435e-bbda-2f2367126c00\", \"status\": \"TIMED_OUT\", \"exit_code\": -1, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}\n",
+      "stderr": ""
+    },
+    {
+      "agent": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "read_command": "cat /tmp/qa-20260930-101945-be/native-pg-timeout-763abe/parent\n",
+      "exit_code": 0,
+      "stdout": "37061",
+      "stderr": ""
+    },
+    {
+      "agent": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "read_command": "cat /tmp/qa-20260930-101945-be/native-pg-timeout-763abe/child\n",
+      "exit_code": 0,
+      "stdout": "37062",
+      "stderr": ""
+    },
+    {
+      "agent": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "read_command": "if test -r /proc/37061/stat; then cat /proc/37061/stat; fi; if test -r /proc/37062/stat; then cat /proc/37062/stat; fi\n",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "native_process_group_effect": {
+        "action": "timeout",
+        "pids": [
+          37061,
+          37062
+        ],
+        "remaining_proc_stat": ""
+      }
+    }
+  ]
+}

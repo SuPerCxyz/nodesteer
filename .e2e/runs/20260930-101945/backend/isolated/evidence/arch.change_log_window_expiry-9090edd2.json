@@ -1,0 +1,35 @@
+{
+  "result": {
+    "id": "arch.change_log_window_expiry",
+    "name": "Change Log Window Expiry",
+    "started_at": "2026-09-30T06:40:02.173741+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "failed",
+    "reason": "core原Node未恢复online/synced",
+    "traceback": "Traceback (most recent call last):\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/runner.py\", line 567, in execute\n    self.normal_case(case['id'])\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated_runner.py\", line 286, in normal_case\n    self.start_proxy()\n    ~~~~~~~~~~~~~~~~^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated_runner.py\", line 162, in start_proxy\n    self.wait_online()\n    ~~~~~~~~~~~~~~~~^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated_runner.py\", line 96, in wait_online\n    raise AssertionError('core原Node未恢复online/synced')\nAssertionError: core原Node未恢复online/synced\n",
+    "finished_at": "2026-09-30T06:40:49.936104+00:00",
+    "evidence": "backend/isolated/evidence/arch.change_log_window_expiry-9090edd2.json"
+  },
+  "events": [
+    {
+      "control": "python3 -c 'import pathlib,sys;pathlib.Path(sys.argv[1]).write_text(sys.argv[2])' /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.controls.json '{}'",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "control": "docker rm -f qa-20260930-101945-env-agent",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-env-agent\n",
+      "stderr": ""
+    },
+    {
+      "control": "docker run -d --name qa-20260930-101945-env-agent --network qa-20260930-101945-env-net --restart unless-stopped --hostname 6f6041279833 -v qa-20260930-101945-env-agentdata:/var/lib/nodesteer -e NODESTEER_NODE_IP=192.168.100.209 -e NODESTEER_DEPLOYMENT_MODE=docker -e NODESTEER_DATA_DIR=/var/lib/nodesteer -e PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin -e NODESTEER_HUB_URL=ws://192.168.100.209:18084/ws -e NODESTEER_REGISTRATION_TOKEN=[redacted] -e NODESTEER_AGENT_ID=agent-9b83b1d6-e376-4e76-a46f-f5c45e495329 -e NODESTEER_NODE_NAME=qa-20260930-101945-env-docker-agent qa-20260930-101945-env-agent:dddee4f0",
+      "exit_code": 0,
+      "stdout": "1ef06053698afa3564f8fd36a001accc1e1b36d0aa05047594ecc04b4e0c5482\n",
+      "stderr": ""
+    }
+  ]
+}

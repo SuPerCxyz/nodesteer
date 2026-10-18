@@ -1,0 +1,194 @@
+{
+ "at_utc": "2026-10-17T15:44:58Z",
+ "authority": "http://192.168.100.209:18080",
+ "probes": [
+  {
+   "probe": "audit POST (expect 405 now)",
+   "method": "POST",
+   "path": "/api/audit",
+   "http": 405,
+   "body": "{\"error\": \"method not allowed\"}"
+  },
+  {
+   "probe": "me POST (expect 405 now)",
+   "method": "POST",
+   "path": "/api/me",
+   "http": 405,
+   "body": "{\"error\": \"method not allowed\"}"
+  },
+  {
+   "probe": "metrics POST (expect 405 now)",
+   "method": "POST",
+   "path": "/metrics",
+   "http": 405,
+   "allow": "GET",
+   "expose": "X-Total-Count",
+   "total_count": null,
+   "body_head": "{\"error\":\"method not allowed\"}\n"
+  },
+  {
+   "probe": "metrics GET (baseline)",
+   "method": "GET",
+   "path": "/metrics",
+   "http": 200,
+   "allow": null,
+   "expose": "X-Total-Count",
+   "total_count": null,
+   "body_head": "# HELP nodesteer_connected_agents Number of connected agents\n# TYPE nodesteer_connected_agents gauge\nnodesteer_connected"
+  },
+  {
+   "probe": "logout GET (expect 405 now)",
+   "method": "GET",
+   "path": "/api/logout",
+   "http": 405,
+   "body": "{\"error\": \"method not allowed\"}"
+  },
+  {
+   "probe": "transfers/{id} PUT (expect 405, observed 403)",
+   "method": "PUT",
+   "path": "/api/transfers/00000000-0000-0000-0000-0000000000ff",
+   "http": 403,
+   "body": "{\"error\": \"permission denied\"}"
+  },
+  {
+   "probe": "transfers/{id}/cancel GET (expect 405, observed 403)",
+   "method": "GET",
+   "path": "/api/transfers/00000000-0000-0000-0000-0000000000ff/cancel",
+   "http": 403,
+   "body": "{\"error\": \"permission denied\"}"
+  },
+  {
+   "probe": "DELETE /api/nodes/{missing} as admin",
+   "method": "DELETE",
+   "path": "/api/nodes/00000000-0000-0000-0000-0000000000ff",
+   "http": 404,
+   "body": "{\"error\": \"node not found\"}"
+  },
+  {
+   "probe": "DELETE /api/scripts/{missing}",
+   "method": "DELETE",
+   "path": "/api/scripts/00000000-0000-0000-0000-0000000000ff",
+   "http": 200,
+   "body": "{\"ok\": \"true\"}"
+  },
+  {
+   "probe": "GET /api/me (key shape)",
+   "method": "GET",
+   "path": "/api/me",
+   "http": 200,
+   "body": "{\"Token\": \"21adf7a0-aafe-4546-bcfe-7dfdf3a5bc9f\", \"UserID\": \"cd5945f0-56b4-4cf7-8b71-c4d4751ebb09\", \"Username\": \"qa-repair-20260930-101945-admin\", \"Role\": \"administrator\", \"Expires\": \"2026-10-18T23:44"
+  },
+  {
+   "probe": "X-Total-Count /api/executions?limit=1",
+   "method": "GET",
+   "path": "/api/executions?limit=1",
+   "http": 200,
+   "allow": null,
+   "expose": "X-Total-Count",
+   "total_count": "1554",
+   "body_head": "[{\"id\":\"c4b9f46a-6a2a-4ec4-9792-c432e1de06cd\",\"task_id\":\"1f7a79f5-7b51-480e-93c7-295868779dba\",\"task_revision\":1,\"node_i"
+  },
+  {
+   "probe": "X-Total-Count /api/audit?limit=1",
+   "method": "GET",
+   "path": "/api/audit?limit=1",
+   "http": 200,
+   "allow": null,
+   "expose": "X-Total-Count",
+   "total_count": "7172",
+   "body_head": "[{\"id\":\"a452fb94-cb99-438a-8a8f-6257c9bb238d\",\"user_id\":\"cd5945f0-56b4-4cf7-8b71-c4d4751ebb09\",\"username\":\"qa-repair-202"
+  },
+  {
+   "probe": "X-Total-Count /api/nodes",
+   "method": "GET",
+   "path": "/api/nodes",
+   "http": 200,
+   "allow": null,
+   "expose": "X-Total-Count",
+   "total_count": null,
+   "body_head": "[{\"id\":\"91f44866-8a28-435e-bbda-2f2367126c00\",\"agent_id\":\"agent-d21d5e7d-0ff0-4355-b8de-4889dc865343\",\"hostname\":\"qa-rep"
+  },
+  {
+   "probe": "X-Total-Count /api/tasks",
+   "method": "GET",
+   "path": "/api/tasks",
+   "http": 200,
+   "allow": null,
+   "expose": "X-Total-Count",
+   "total_count": null,
+   "body_head": "[]\n"
+  },
+  {
+   "probe": "X-Total-Count /api/scripts",
+   "method": "GET",
+   "path": "/api/scripts",
+   "http": 200,
+   "allow": null,
+   "expose": "X-Total-Count",
+   "total_count": null,
+   "body_head": "[{\"id\":\"90c4700e-ce8d-41f9-87c5-200b771545c0\",\"name\":\"qa-web-b05-original-20261010-1115\",\"description\":\"QA batch05 edite"
+  },
+  {
+   "probe": "X-Total-Count /api/applications",
+   "method": "GET",
+   "path": "/api/applications",
+   "http": 200,
+   "allow": null,
+   "expose": "X-Total-Count",
+   "total_count": null,
+   "body_head": "[{\"id\":\"804e6b14-eb84-4dda-90de-8bcab9586c4c\",\"name\":\"qa-repair-20260930-101945-app-async-live-6a32f\",\"description\":\"\",\""
+  },
+  {
+   "probe": "X-Total-Count /api/schedules",
+   "method": "GET",
+   "path": "/api/schedules",
+   "http": 200,
+   "allow": null,
+   "expose": "X-Total-Count",
+   "total_count": null,
+   "body_head": "[]\n"
+  },
+  {
+   "probe": "X-Total-Count /api/users",
+   "method": "GET",
+   "path": "/api/users",
+   "http": 200,
+   "allow": null,
+   "expose": "X-Total-Count",
+   "total_count": null,
+   "body_head": "[{\"id\":\"cd5945f0-56b4-4cf7-8b71-c4d4751ebb09\",\"username\":\"qa-repair-20260930-101945-admin\",\"role\":\"administrator\",\"creat"
+  },
+  {
+   "probe": "X-Total-Count /api/transfers",
+   "method": "GET",
+   "path": "/api/transfers",
+   "http": 200,
+   "allow": null,
+   "expose": "X-Total-Count",
+   "total_count": null,
+   "body_head": "[{\"id\":\"ee69eb19-336d-4f83-9f45-3e8dcb06ebba\",\"source_node_id\":\"65b385be-0fcd-4a58-ba2c-296cd6cdfe71\",\"source_path\":\"/va"
+  },
+  {
+   "probe": "OPTIONS /api/nodes",
+   "method": "OPTIONS",
+   "path": "/api/nodes",
+   "http": 204,
+   "allow": null,
+   "expose": "X-Total-Count",
+   "total_count": null,
+   "body_head": ""
+  }
+ ],
+ "summary": {
+  "audit_method_switch": 405,
+  "me_method_switch": 405,
+  "metrics_method_switch": 405,
+  "logout_get": 405,
+  "transfers_put": 403,
+  "me_keys": null,
+  "total_count_endpoints": [
+   "/api/executions?limit=1",
+   "/api/audit?limit=1"
+  ]
+ }
+}

@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "BE-SCRIPT-SHA-002-baseline-db-200d83-7afe567a29",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport json,sqlite3,pathlib\nroot=pathlib.Path(\"/tmp/qa-resume-20261008-child-ciivjupc/data\")\ndb=root/\"state.db\"\nc=sqlite3.connect(\"file:\"+str(db)+\"?mode=ro\",uri=True,timeout=3)\nc.row_factory=sqlite3.Row\nrows=[dict(r) for r in c.execute('SELECT id,name,content,revision,sha256 FROM scripts WHERE id IN (?,?) ORDER BY id',('6d3f43cb-cdf1-4729-b3f1-53a3d69ab0b1', '92c0e242-0f67-4553-92e0-f7b8ffe675e4')).fetchall()]\nprint(json.dumps(rows,separators=(\",\",\":\")))\nPY",
+    "timeout": 60,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "ff8787c8c1b0c7efc6dfc99fc54593053f6a23e14b704c73c33e4529cba13ce9",
+  "source_contains_connection_token": false
+}

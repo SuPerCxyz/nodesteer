@@ -1,0 +1,301 @@
+{
+ "at_utc": "2026-10-16T10:14:39Z",
+ "steps": {
+  "hub_path_rejections": {
+   "relative": {
+    "http": 400,
+    "body": {
+     "error": "binary_path: invalid application path"
+    }
+   },
+   "dotdot": {
+    "http": 400,
+    "body": {
+     "error": "binary_path: invalid application path"
+    }
+   },
+   "nul": {
+    "http": 400,
+    "body": {
+     "error": "binary_path: invalid application path"
+    }
+   }
+  },
+  "row_count_before_after": [
+   9,
+   9
+  ],
+  "symlink_destination": {
+   "victim": "/opt/qa-cr1-a8392f15-app/nc-victim.bin",
+   "victim_sha_before": "7ce152ace274d521d35277cd5c13f0ecaafc88586f1c5fea87f2f48003308e82",
+   "deploy": {
+    "http": 200,
+    "execution_id": "621727b2-cf39-420e-80c1-a0aa5f6e1dae",
+    "status": "FAILED",
+    "error": null,
+    "block_reason": "install binary failed: destination is a symlink: /opt/qa-cr1-a8392f15-app/bin-nc-app/app; rollback failed",
+    "started_at": "2026-10-16T10:14:39.996515294Z",
+    "finished_at": "2026-10-16T18:14:40.507960804+08:00"
+   },
+   "host": "lrwxrwxrwx 1 root root 38 Oct 16 18:14 /opt/qa-cr1-a8392f15-app/bin-nc-app/app -> /opt/qa-cr1-a8392f15-app/nc-victim.bin\n7ce152ace274d521d35277cd5c13f0ecaafc88586f1c5fea87f2f48003308e82  /opt/qa-cr1-a8392f15-app/nc-victim.bin",
+   "victim_sha_after": "7ce152ace274d521d35277cd5c13f0ecaafc88586f1c5fea87f2f48003308e82",
+   "journal_latest": {
+    "id": "5bfb1393-362f-4eea-bfe9-3e7942c8eb63",
+    "phase": "ROLLBACK_FAILED",
+    "completed_kind": "",
+    "from_version": "v1",
+    "to_version": "v1",
+    "app_revision": 1,
+    "binary_path": "/opt/qa-cr1-a8392f15-app/bin-nc-app/app",
+    "started_at": "2026-10-16T10:14:40.00514147Z",
+    "updated_at": "2026-10-16T10:14:40.342927381Z"
+   },
+   "victim_unchanged": true
+  },
+  "agent_nonclean_paths": {
+   "double_slash": {
+    "raw_path": "/opt/qa-cr1-a8392f15-app//bin-nc-a/app",
+    "def_put_http": 200,
+    "deploy_status": "FAILED",
+    "deploy_error": null,
+    "journal_phase": "DONE",
+    "journal_kind": "prepare_failed",
+    "raw_exists": "ABSENT",
+    "cleaned_exists": "ABSENT"
+   },
+   "dot_slash": {
+    "raw_path": "/opt/qa-cr1-a8392f15-app/./bin-nc-b/app",
+    "def_put_http": 200,
+    "deploy_status": "FAILED",
+    "deploy_error": null,
+    "journal_phase": "DONE",
+    "journal_kind": "prepare_failed",
+    "raw_exists": "ABSENT",
+    "cleaned_exists": "ABSENT"
+   },
+   "trailing_slash": {
+    "raw_path": "/opt/qa-cr1-a8392f15-app/bin-nc-c/",
+    "def_put_http": 200,
+    "deploy_status": "FAILED",
+    "deploy_error": null,
+    "journal_phase": "DONE",
+    "journal_kind": "prepare_failed",
+    "raw_exists": "ABSENT",
+    "cleaned_exists": "ABSENT"
+   }
+  },
+  "transfers": {
+   "dest_relative": {
+    "http": 400,
+    "body": {
+     "error": "destination path: absolute path required"
+    }
+   },
+   "dest_dotdot": {
+    "http": 400,
+    "body": {
+     "error": "destination path: path traversal is not allowed"
+    }
+   },
+   "dest_nul": {
+    "http": 400,
+    "body": {
+     "error": "destination path: absolute path required"
+    }
+   },
+   "dest_double_slash": {
+    "http": 200,
+    "body": {
+     "id": "9ac5218b-8a22-435b-85c1-3e41436de51b",
+     "source_node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+     "source_path": "/etc/hostname",
+     "size": 0,
+     "status": "UPLOADING",
+     "created_at": "2026-10-16T10:14:45.532287756Z",
+     "updated_at": "2026-10-16T10:14:45.537978991Z",
+     "targets": [
+      {
+       "transfer_id": "9ac5218b-8a22-435b-85c1-3e41436de51b",
+       "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+       "destination_path": "/opt/qa-cr1-a8392f15-app//xfer",
+       "status": "PENDING",
+       "updated_at": "2026-10-16T10:14:45.532287756Z"
+      }
+     ]
+    },
+    "final": {
+     "http": 200,
+     "transfer_id": "9ac5218b-8a22-435b-85c1-3e41436de51b",
+     "status": "FAILED",
+     "target_status": "FAILED",
+     "target_error": "destination path: invalid absolute path: /opt/qa-cr1-a8392f15-app//xfer",
+     "destination_path": "/opt/qa-cr1-a8392f15-app//xfer"
+    }
+   },
+   "outside_allowlist_probe": {
+    "source": "/root/qa-cr1-a8392f15-probe-nonexistent.txt",
+    "http": 200,
+    "body": {
+     "id": "4ab0f3d8-6544-47f7-9eb0-865e6bf4a00e",
+     "source_node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+     "source_path": "/root/qa-cr1-a8392f15-probe-nonexistent.txt",
+     "size": 0,
+     "status": "UPLOADING",
+     "created_at": "2026-10-16T10:14:45.548421076Z",
+     "updated_at": "2026-10-16T10:14:45.552466864Z",
+     "targets": [
+      {
+       "transfer_id": "4ab0f3d8-6544-47f7-9eb0-865e6bf4a00e",
+       "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+       "destination_path": "/opt/qa-cr1-a8392f15-app/xfer-probe",
+       "status": "PENDING",
+       "updated_at": "2026-10-16T10:14:45.548421076Z"
+      }
+     ]
+    },
+    "target_created": "ABSENT",
+    "final": {
+     "status": "FAILED",
+     "error": "source upload failed: open /root/qa-cr1-a8392f15-probe-nonexistent.txt: no such file or directory",
+     "target_status": "FAILED",
+     "target_error": "source upload failed: open /root/qa-cr1-a8392f15-probe-nonexistent.txt: no such file or directory"
+    }
+   }
+  },
+  "agent_nonclean_paths_rerun": {
+   "double_slash": {
+    "raw_path": "/opt/qa-cr1-a8392f15-app//bin-nc-a/app",
+    "def_put_http": 200,
+    "deploy": {
+     "http": 200,
+     "execution_id": "12b8f972-7bf1-4bf2-9ee9-4c6b38778112",
+     "status": "FAILED",
+     "error": null,
+     "block_reason": "invalid deployment path: invalid absolute path: /opt/qa-cr1-a8392f15-app//bin-nc-a/app"
+    },
+    "journal_phase": "DONE",
+    "journal_kind": "prepare_failed",
+    "raw_exists": "ABSENT",
+    "cleaned_exists": "ABSENT"
+   },
+   "dot_slash": {
+    "raw_path": "/opt/qa-cr1-a8392f15-app/./bin-nc-b/app",
+    "def_put_http": 200,
+    "deploy": {
+     "http": 200,
+     "execution_id": "5e70315c-1980-46fb-a57b-7771965c9f4d",
+     "status": "FAILED",
+     "error": null,
+     "block_reason": "invalid deployment path: invalid absolute path: /opt/qa-cr1-a8392f15-app/./bin-nc-b/app"
+    },
+    "journal_phase": "DONE",
+    "journal_kind": "prepare_failed",
+    "raw_exists": "ABSENT",
+    "cleaned_exists": "ABSENT"
+   },
+   "trailing_slash": {
+    "raw_path": "/opt/qa-cr1-a8392f15-app/bin-nc-c/",
+    "def_put_http": 200,
+    "deploy": {
+     "http": 200,
+     "execution_id": "0abf600b-8b99-4628-bbe3-fd7cbdfd1942",
+     "status": "FAILED",
+     "error": null,
+     "block_reason": "invalid deployment path: invalid absolute path: /opt/qa-cr1-a8392f15-app/bin-nc-c/"
+    },
+    "journal_phase": "DONE",
+    "journal_kind": "prepare_failed",
+    "raw_exists": "ABSENT",
+    "cleaned_exists": "ABSENT"
+   }
+  }
+ },
+ "oracles": {
+  "hub_rejects_illegal_app_paths_no_rows": true,
+  "hub_rejection_messages": {
+   "relative": {
+    "error": "binary_path: invalid application path"
+   },
+   "dotdot": {
+    "error": "binary_path: invalid application path"
+   },
+   "nul": {
+    "error": "binary_path: invalid application path"
+   }
+  },
+  "agent_refuses_nonclean_paths_no_side_effects": true,
+  "symlink_destination_refused_victim_unchanged": true,
+  "hub_rejects_illegal_transfer_destinations": true,
+  "transfer_rejection_messages": {
+   "dest_relative": {
+    "error": "destination path: absolute path required"
+   },
+   "dest_dotdot": {
+    "error": "destination path: path traversal is not allowed"
+   },
+   "dest_nul": {
+    "error": "destination path: absolute path required"
+   },
+   "dest_double_slash": {
+    "id": "9ac5218b-8a22-435b-85c1-3e41436de51b",
+    "source_node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+    "source_path": "/etc/hostname",
+    "size": 0,
+    "status": "UPLOADING",
+    "created_at": "2026-10-16T10:14:45.532287756Z",
+    "updated_at": "2026-10-16T10:14:45.537978991Z",
+    "targets": [
+     {
+      "transfer_id": "9ac5218b-8a22-435b-85c1-3e41436de51b",
+      "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+      "destination_path": "/opt/qa-cr1-a8392f15-app//xfer",
+      "status": "PENDING",
+      "updated_at": "2026-10-16T10:14:45.532287756Z"
+     }
+    ]
+   }
+  },
+  "allowlist_probe": {
+   "source": "/root/qa-cr1-a8392f15-probe-nonexistent.txt",
+   "http": 200,
+   "body": {
+    "id": "4ab0f3d8-6544-47f7-9eb0-865e6bf4a00e",
+    "source_node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+    "source_path": "/root/qa-cr1-a8392f15-probe-nonexistent.txt",
+    "size": 0,
+    "status": "UPLOADING",
+    "created_at": "2026-10-16T10:14:45.548421076Z",
+    "updated_at": "2026-10-16T10:14:45.552466864Z",
+    "targets": [
+     {
+      "transfer_id": "4ab0f3d8-6544-47f7-9eb0-865e6bf4a00e",
+      "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+      "destination_path": "/opt/qa-cr1-a8392f15-app/xfer-probe",
+      "status": "PENDING",
+      "updated_at": "2026-10-16T10:14:45.548421076Z"
+     }
+    ]
+   },
+   "target_created": "ABSENT",
+   "final": {
+    "status": "FAILED",
+    "error": "source upload failed: open /root/qa-cr1-a8392f15-probe-nonexistent.txt: no such file or directory",
+    "target_status": "FAILED",
+    "target_error": "source upload failed: open /root/qa-cr1-a8392f15-probe-nonexistent.txt: no such file or directory"
+   }
+  },
+  "ok": true,
+  "transfer_destination_agent_rejects_nonclean": {
+   "dest_double_slash": {
+    "http": 200,
+    "transfer_id": "9ac5218b-8a22-435b-85c1-3e41436de51b",
+    "status": "FAILED",
+    "target_status": "FAILED",
+    "target_error": "destination path: invalid absolute path: /opt/qa-cr1-a8392f15-app//xfer",
+    "destination_path": "/opt/qa-cr1-a8392f15-app//xfer"
+   },
+   "note": "Hub 仅拒绝相对/NUL/.. 目的地；非 clean 的 // 目的地由 Agent 侧拒绝（invalid absolute path），目标未创建"
+  },
+  "allowlist_conclusion": "repair 节点未配置 HostPathAllowlist：源路径 /root/... 未被 allowlist 拒绝，失败原因为源文件不存在（source upload failed: no such file or directory），目标文件未创建"
+ }
+}

@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "qa-resume-20261008-native4-current-owner-proof-7ea33c2646",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport hashlib,json,os,stat,urllib.parse\nfrom pathlib import Path\np=Path(\"/tmp/qa-resume-20261008-child-ciivjupc\"); mp=p/\"owner-manifest.json\"; raw=mp.read_bytes();m=json.loads(raw)\ndef sha(x):return hashlib.sha256(Path(x).read_bytes()).hexdigest()\ndef st(pid):\n x=Path(\"/proc\",str(pid),\"stat\").read_text();return int(x[x.rfind(\")\")+2:].split()[19])\ndef uid(pid):\n for r in Path(\"/proc\",str(pid),\"status\").read_text().splitlines():\n  if r.startswith(\"Uid:\"):return int(r.split()[1])\n raise RuntimeError(\"uid_missing\")\ndef argv(pid):return [x.decode(errors=\"replace\") for x in Path(\"/proc\",str(pid),\"cmdline\").read_bytes().split(bytes([0])) if x]\ndef check(row):\n pid=row[\"pid\"];return st(pid)==row[\"starttime\"] and uid(pid)==row[\"uid\"]==65534 and sha(\"/proc/\"+str(pid)+\"/exe\")==row[\"exe_sha256\"] and any(a==str(p) or a.startswith(str(p)+os.sep) for a in argv(pid))\nds=p.lstat();cfg=Path(m[\"config\"][\"path\"]);cfgst=cfg.lstat();controls=json.loads((p/\"controls.json\").read_text())\nvalues={}\nfor line in cfg.read_text().splitlines():\n k,sep,v=line.partition(\":\")\n if sep:\n  try:values[k.strip()]=json.loads(v.strip())\n  except Exception:values[k.strip()]=v.strip()\nprint(json.dumps({\"status\":\"PASS\" if (ds.st_dev,ds.st_ino,ds.st_uid)==(33,135,65534) and sha(mp)=='3400846d0f81f7934ffd69dc819b5ca21135e59b5e5a51489da4cbdcea482c17' and m[\"node_id\"]=='15961ef7-81b4-43f3-80c8-1b6977ca2aea' and m[\"agent_id\"]=='agent-ab15a133-73cd-4025-8c97-f2ff37e000f5' and (p/\"owner.marker\").read_text()==m[\"owner_marker\"] and check(m[\"child\"]) and check(m[\"supervisor\"]) and sha(p/\"nodesteer-agent\")=='d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add' and sha(p/\"ws_proxy.py\")=='7573c838dc562af47c5903c6f72c1c3ab4b8a4c7f3a0f8ee3042f753ad51103d' and cfgst.st_mode&0o777==0o600 and cfgst.st_uid==65534 and hashlib.sha256(values.get(\"registration_token\",\"\").encode()).hexdigest()[:16]==m[\"registration_token_fingerprint\"] and controls=={} else \"BLOCKED\",\"directory\":{\"dev\":ds.st_dev,\"ino\":ds.st_ino,\"uid\":ds.st_uid,\"mode\":oct(ds.st_mode&0o777)},\"manifest_sha256\":sha(mp),\"node_id\":m[\"node_id\"],\"agent_id\":m[\"agent_id\"],\"child\":m[\"child\"],\"supervisor\":m[\"supervisor\"],\"agent_binary_sha256\":sha(p/\"nodesteer-agent\"),\"proxy_source_sha256\":sha(p/\"ws_proxy.py\"),\"child_config\":{\"mode\":oct(cfgst.st_mode&0o777),\"uid\":cfgst.st_uid,\"grant_fingerprint_matches\":hashlib.sha256(values.get(\"registration_token\",\"\").encode()).hexdigest()[:16]==m[\"registration_token_fingerprint\"]},\"controls_empty\":controls=={},\"secret_values_emitted\":False},separators=(\",\",\":\")))\nPY",
+    "timeout": 30,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "0c8d0e212d4404e9c0d528e1f93f4ecdfa3a37c4f76a150bd467cbf016befbb8",
+  "source_contains_connection_token": false
+}

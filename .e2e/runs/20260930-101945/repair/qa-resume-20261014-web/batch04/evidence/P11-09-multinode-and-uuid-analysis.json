@@ -1,0 +1,54 @@
+{
+ "task_id": "33332cdc-0311-465d-8516-4ae7cc64456b",
+ "task_target_nodes": [
+  "91f44866-8a28-435e-bbda-2f2367126c00",
+  "37989297-3bc8-4c0c-b302-7c6efbdba630"
+ ],
+ "manual_run_1": {
+  "execution_ids": [
+   "92db8733-246f-4a6d-9927-2d3389e54877",
+   "ee33f0e0-1552-4fda-84e6-ceeb2ae89450"
+  ],
+  "count": 2,
+  "per_node": {
+   "qa-repair-20260930-101945-native-1": {
+    "execution_id": "92db8733-246f-4a6d-9927-2d3389e54877",
+    "status": "SUCCESS",
+    "stdout": "qa-w1410b04-89fe789d-p11-localhost.localdomain"
+   },
+   "qa-repair-20260930-101945-native-3": {
+    "execution_id": "ee33f0e0-1552-4fda-84e6-ceeb2ae89450",
+    "status": "SUCCESS",
+    "stdout": "qa-w1410b04-89fe789d-p11-localhost.localdomain"
+   }
+  }
+ },
+ "manual_run_2": {
+  "execution_ids": [
+   "efea53bf-09c0-4b22-b211-032e2e2afa24",
+   "f620ea0f-c7f4-4058-bb32-d8d1e8f684d8"
+  ],
+  "count": 2,
+  "per_node": {
+   "qa-repair-20260930-101945-native-3": {
+    "execution_id": "efea53bf-09c0-4b22-b211-032e2e2afa24",
+    "status": "SUCCESS",
+    "stdout": "qa-w1410b04-89fe789d-p11-localhost.localdomain"
+   },
+   "qa-repair-20260930-101945-native-1": {
+    "execution_id": "f620ea0f-c7f4-4058-bb32-d8d1e8f684d8",
+    "status": "SUCCESS",
+    "stdout": "qa-w1410b04-89fe789d-p11-localhost.localdomain"
+   }
+  }
+ },
+ "all_execution_ids_distinct": true,
+ "one_execution_per_target_node_per_run": true,
+ "run2_ids_disjoint_from_run1": true,
+ "identical_request_bodies": {
+  "manual_run_1": "POST /api/tasks/{id}/run {\"params\":{}}",
+  "manual_run_2": "POST /api/tasks/{id}/run {\"params\":{}}"
+ },
+ "interpretation": "identical manual-run requests are NOT deduplicated by design: every manual run is a new intent and receives fresh execution UUIDs; each targeted node gets exactly one Execution per run",
+ "duplicate_delivery_idempotency_runtime_evidence": "NOT_CAPTURED (no UI/HTTP path re-delivers one Execution ID; hub creates a fresh UUID per manual run, and no HTTP idempotency key exists) - see remaining_dimensions"
+}

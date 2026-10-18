@@ -1,0 +1,159 @@
+{
+  "captured_at_utc": "2026-10-10T01:36:49+00:00",
+  "canonical_id": "P05A-02",
+  "status": "PASS",
+  "ui_branches": [
+    {
+      "branch": "all_empty",
+      "pre_submit_form_valid": false,
+      "inputs": [
+        {
+          "length": 0,
+          "required": true,
+          "type": "text",
+          "valid": false
+        },
+        {
+          "length": 0,
+          "required": true,
+          "type": "text",
+          "valid": false
+        },
+        {
+          "length": 0,
+          "required": true,
+          "type": "url",
+          "valid": false
+        }
+      ],
+      "post_count": 0,
+      "post_statuses": [],
+      "required_empty_observed": true,
+      "blocked_no_post": true
+    },
+    {
+      "branch": "missing_name",
+      "pre_submit_form_valid": false,
+      "inputs": [
+        {
+          "length": 0,
+          "required": true,
+          "type": "text",
+          "valid": false
+        },
+        {
+          "length": 12,
+          "required": true,
+          "type": "text",
+          "valid": true
+        },
+        {
+          "length": 28,
+          "required": true,
+          "type": "url",
+          "valid": true
+        }
+      ],
+      "post_count": 0,
+      "post_statuses": [],
+      "required_empty_observed": true,
+      "blocked_no_post": true
+    },
+    {
+      "branch": "missing_address",
+      "pre_submit_form_valid": false,
+      "inputs": [
+        {
+          "length": 23,
+          "required": true,
+          "type": "text",
+          "valid": true
+        },
+        {
+          "length": 0,
+          "required": true,
+          "type": "text",
+          "valid": false
+        },
+        {
+          "length": 28,
+          "required": true,
+          "type": "url",
+          "valid": true
+        }
+      ],
+      "post_count": 0,
+      "post_statuses": [],
+      "required_empty_observed": true,
+      "blocked_no_post": true
+    },
+    {
+      "branch": "missing_hub",
+      "pre_submit_form_valid": false,
+      "inputs": [
+        {
+          "length": 23,
+          "required": true,
+          "type": "text",
+          "valid": true
+        },
+        {
+          "length": 12,
+          "required": true,
+          "type": "text",
+          "valid": true
+        },
+        {
+          "length": 0,
+          "required": true,
+          "type": "url",
+          "valid": false
+        }
+      ],
+      "post_count": 0,
+      "post_statuses": [],
+      "required_empty_observed": true,
+      "blocked_no_post": true
+    }
+  ],
+  "direct_api_negative_cases": [
+    {
+      "case": "all_empty",
+      "http_status": 400,
+      "omitted_fields": [
+        "node_name",
+        "node_ip",
+        "hub_address"
+      ],
+      "node_count_unchanged": true
+    },
+    {
+      "case": "missing_name",
+      "http_status": 400,
+      "omitted_fields": [
+        "node_name"
+      ],
+      "node_count_unchanged": true
+    },
+    {
+      "case": "missing_ip",
+      "http_status": 400,
+      "omitted_fields": [
+        "node_ip"
+      ],
+      "node_count_unchanged": true
+    }
+  ],
+  "node_count_before_api": 7,
+  "node_count_after_api": 7,
+  "fill_empty_method": "real keyboard Control+A then Backspace; DOM validity and lengths checked before submit",
+  "missing_hub_api_note": "hub_address is optional in handler; omitted Hub was tested only on UI required control; API fallback contract was not asserted as a negative.",
+  "private_values_saved": false,
+  "evidence": [
+    "p05a02-controlled-empty-rerun.py",
+    "unintended-fixture-cleanup.json",
+    "../../qa-resume-20261009-web/batch02/case-p05a-02-result.json",
+    "../../qa-resume-20261009-web/batch02/p05a-required-validation.png"
+  ],
+  "harness_incident_and_cleanup": "Initial agent-browser fill-empty did not update controlled React state and produced a valid POST. The exact qa-web-required-check Node was immediately deleted (HTTP 200; GET 404). The corrected rerun used real Control+A/Backspace, verified required inputs empty/invalid and 0 UI POSTs; API negative requests returned 400 and left node count unchanged."
+}

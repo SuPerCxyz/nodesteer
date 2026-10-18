@@ -1,0 +1,98 @@
+{
+ "at_utc": "2026-10-16T10:13:13Z",
+ "steps": {
+  "hub_path_rejections": {
+   "relative": {
+    "http": 400,
+    "body": {
+     "error": "binary_path: invalid application path"
+    }
+   },
+   "dotdot": {
+    "http": 400,
+    "body": {
+     "error": "binary_path: invalid application path"
+    }
+   },
+   "nul": {
+    "http": 400,
+    "body": {
+     "error": "binary_path: invalid application path"
+    }
+   }
+  },
+  "row_count_before_after": [
+   9,
+   9
+  ],
+  "agent_nonclean_paths": {
+   "double_slash": {
+    "def_put_http": 200,
+    "deploy_status": "SUCCESS",
+    "deploy_error": null,
+    "journal_phase": "DONE",
+    "journal_kind": "deployed",
+    "path_exists": "EXISTS"
+   },
+   "dot_slash": {
+    "def_put_http": 200,
+    "deploy_status": "SUCCESS",
+    "deploy_error": null,
+    "journal_phase": "DONE",
+    "journal_kind": "deployed",
+    "path_exists": "EXISTS"
+   },
+   "trailing_slash": {
+    "def_put_http": 200,
+    "deploy_status": "SUCCESS",
+    "deploy_error": null,
+    "journal_phase": "DONE",
+    "journal_kind": "deployed",
+    "path_exists": "EXISTS"
+   }
+  },
+  "symlink_target_untouched": "-rw-r--r-- 1 root root 16 Oct 16 18:06 /opt/qa-cr1-a8392f15-app/cfg-pfa/app.env\n-rw-r--r-- 1 root root 16 Oct 16 18:06 /opt/qa-cr1-a8392f15-app/cfg-rba/app.env",
+  "transfers": {
+   "source_probe": "/root/qa-cr1-a8392f15-probe-nonexistent.txt",
+   "outside_allowlist_probe": {
+    "http": 400,
+    "body": {
+     "error": "destination path: absolute path required"
+    },
+    "target_created": "ABSENT"
+   },
+   "dest_relative": {
+    "http": 400,
+    "body": {
+     "error": "destination path: absolute path required"
+    }
+   },
+   "dest_dotdot": {
+    "http": 400,
+    "body": {
+     "error": "destination path: absolute path required"
+    }
+   },
+   "dest_nul": {
+    "http": 400,
+    "body": {
+     "error": "destination path: absolute path required"
+    }
+   }
+  }
+ },
+ "oracles": {
+  "hub_rejects_nonclean_and_no_rows": true,
+  "agent_refuses_nonclean_no_side_effects": false,
+  "hub_rejects_transfer_destinations": true,
+  "allowlist_probe": {
+   "http": 400,
+   "body": {
+    "error": "destination path: absolute path required"
+   },
+   "target_created": "ABSENT"
+  },
+  "ok": false
+ },
+ "invalidated_reason": "首次尝试无效：① 传输目的地用了错误字段名 path（后端实际读取 destination_path），3 个 400 均由空路径触发；② Agent 侧非 clean 路径使用了 clean 变量而非原始路径，部署实际成功并留下文件。修正版见 sys56-paths.json。"
+}

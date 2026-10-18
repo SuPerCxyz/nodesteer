@@ -1,0 +1,39 @@
+Traceback (most recent call last):
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b01/run_sysb01.py", line 745, in main
+    mark('post_restart'); evidence['phases']['post_restart'] = run.phase6_post_restart()
+                                                               ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b01/run_sysb01.py", line 453, in phase6_post_restart
+    rec_res = self.poll_nodes(RETRY_WINDOW, 1.0, stop=lambda by: all(
+        (by.get(nid) or {}).get('status') == 'online'
+        and (by.get(nid) or {}).get('sync_status') == 'synced'
+        and (by.get(nid) or {}).get('global_revision', 0) >= target_rev
+        for nid in PROTECTED_NODES))
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b01/run_sysb01.py", line 162, in poll_nodes
+    by_id = self.nodes_by_id()
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b01/run_sysb01.py", line 92, in nodes_by_id
+    return {n['id']: n for n in self.hub.json('/api/nodes')}
+                                ~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b01/hubapi.py", line 83, in json
+    raise RuntimeError('get_%s_http_%s' % (path, code))
+RuntimeError: get_/api/nodes_http_401
+Traceback (most recent call last):
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b01/run_sysb01.py", line 782, in main
+    oracle = run.phase9_oracle(progress.get('final_cleanup', {}))
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b01/run_sysb01.py", line 661, in phase9_oracle
+    nodes = self.hub.json('/api/nodes')
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b01/hubapi.py", line 83, in json
+    raise RuntimeError('get_%s_http_%s' % (path, code))
+RuntimeError: get_/api/nodes_http_401
+{
+  "batch_id": "sys-b01",
+  "cases": {
+    "SYS-03": "PARTIAL",
+    "SYS-17": "PARTIAL",
+    "INV-01": "PARTIAL",
+    "AR-01": "PASS_WITH_NOTES"
+  },
+  "clean": null,
+  "deviations": [
+    "HARNESS_ERROR:get_/api/nodes_http_401"
+  ]
+}

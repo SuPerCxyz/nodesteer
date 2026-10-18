@@ -1,0 +1,170 @@
+{
+  "updated_at_utc": "2026-10-10T02:52:31Z",
+  "purpose": "Read-only mapping of newly executed P0/SHA fixture evidence to canonical expectations; no canonical ledger/status mutated.",
+  "canonical_sources": [
+    "docs/TEST_PLAN.md §9-12",
+    ".e2e/feature-inventory.json",
+    ".e2e/full-feature-prompts.md",
+    ".e2e/coverage.json",
+    ".e2e/runs/20260930-101945/repair/backend-case-crossmap-review.json"
+  ],
+  "cases": [
+    {
+      "case_id": "SYS-01",
+      "canonical_expected": "First Agent registration: Registration Token, Stable Agent ID, Credential, Node record.",
+      "new_fixture_coverage": "DIRECT_NATIVE_ENROLLMENT_DIMENSION",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/child-setup-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/child-setup-source.py",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/cleanup-api-preflight.json"
+      ],
+      "verified": [
+        "Enrollment response HTTP 200 on repair:18080 produced a new exact Node ID and Agent ID; persisted identity was later read back from owner/Agent process and Hub Node record.",
+        "Enrollment credential/registration token was passed as a secret Task parameter, stored only in 0600 private child config, never copied into evidence; Agent established authenticated HELLO and later online/synced."
+      ],
+      "missing_or_limits": [
+        "Does not independently test invalid/expired/revoked token or re-enrollment duplicate behavior.",
+        "Credential value is intentionally not exposed; evidence confirms secure storage flag and accepted connection, not raw value equality."
+      ],
+      "coverage_claim": "Strong evidence for the listed first-registration path on one isolated Native-1 Agent; keep other negative token cases outside this proof. Repair feature inventory currently says NOT_RUN; this mapping does not change that status.",
+      "current_repair_feature_inventory_status": "NOT_RUN",
+      "current_repair_remaining_dimensions": "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+    },
+    {
+      "case_id": "SYS-02",
+      "canonical_expected": "Registered Agent restart: HELLO, Heartbeat, online/synced, IDs unchanged.",
+      "new_fixture_coverage": "SAME_IDENTITY_RESTART_AND_SYNC_DIMENSION",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/recreate-owned-child-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/armed-child-restart-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/positive-prune-oracle-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/cleanup-api-preflight.json"
+      ],
+      "verified": [
+        "Same Node/Agent identity and private config/binary restarted under the exact owned Unit; proxy logged matching Agent HELLO.",
+        "After synchronization, Hub readback was online/synced and local revision advanced with exact Script rows."
+      ],
+      "missing_or_limits": [
+        "No explicit heartbeat packet/counter capture was recorded; online/synced is the actual Hub status oracle.",
+        "This one Native-1 restart does not cover Docker/native other-host variants."
+      ],
+      "coverage_claim": "Actual same-identity restart + HELLO + Hub online/synced covered; heartbeat-specific telemetry and other platforms remain separate dimensions. Repair feature inventory currently says NOT_RUN; this mapping does not change that status.",
+      "current_repair_feature_inventory_status": "NOT_RUN",
+      "current_repair_remaining_dimensions": "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+    },
+    {
+      "case_id": "AR-08",
+      "canonical_expected": "Agent Offline During Hub Script Update; on recovery state is idempotent, persisted and matches Hub Desired State; no loss, duplication, partial state or protected-resource damage.",
+      "new_fixture_coverage": "OFFLINE_SCRIPT_CHANGE_AND_RECONCILIATION_DIMENSION",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/v2-snapshot-prepare-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/armed-child-restart-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/negative-oracle-attempt02-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/release-good-snapshot-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/positive-prune-oracle-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/good-script-execution-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/good-v2-marker-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/good-script-execution-ui-evidence.json"
+      ],
+      "verified": [
+        "While the owned Agent Unit was offline, Hub Script definitions moved to Good rev3/Bad rev2 with retained target Tasks; on restart a real Snapshot carried both exact entries.",
+        "A corrupted bad-SHA frame was negatively acknowledged at applied_rev=0, local revision stayed1274 and v1 App DB/physical files/active Unit remained intact.",
+        "After the explicit release gate, the unmodified valid Snapshot was accepted; local revision reached1301, exact Hub Script SHA/revisions persisted, omitted managed App was pruned physically, and Good Script executed with verified marker and successful UI detail."
+      ],
+      "missing_or_limits": [
+        "No separately injected duplicate/lost/reordered notification or schedule idempotency dimension; repeated ACKs do not by themselves prove all notification-fault variants."
+      ],
+      "coverage_claim": "Adds strong real offline-change/reconciliation and safety evidence; do not treat it alone as complete AR-08 fault matrix. Repair feature inventory currently says NOT_RUN; this mapping does not change that status.",
+      "current_repair_feature_inventory_status": "NOT_RUN",
+      "current_repair_remaining_dimensions": "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+    },
+    {
+      "case_id": "SYS-09",
+      "canonical_expected": "Delete Script/Task/Schedule/Application; Agent consumes Tombstone, future scheduling stops, historical Execution is preserved.",
+      "new_fixture_coverage": "API_DEFINITION_DELETE_AND_EXECUTION_PRESERVATION_ONLY",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/hub-fixture-cleanup-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/final-cleanup-oracle-evidence.json"
+      ],
+      "verified": [
+        "New cleanup deleted only exact QA App, Scripts, Tasks and artifacts with GET404; SHA Good Execution still GETs SUCCESS after Node deletion.",
+        "Implementation comment at sqlite_users_nodes.go:208 says execution history is retained; final readback proves a concrete QA execution remains."
+      ],
+      "missing_or_limits": [
+        "This new cleanup stopped the QA Agent before Hub definition deletion; it does not demonstrate Tombstones consumed by a connected Agent.",
+        "No Schedule fixture/future-slot suppression was exercised in this cleanup; do not count offline API GET404 as Agent convergence."
+      ],
+      "coverage_claim": "Current repair feature inventory remains NOT_RUN. This new cleanup was after stopping the Agent, so it adds API GET404 and history-preservation observations only; it does not prove Tombstone consumption or future Schedule stop. Historical baseline evidence is background only.",
+      "current_repair_feature_inventory_status": "NOT_RUN",
+      "current_repair_remaining_dimensions": "修复版全部适用维度待执行；旧版证据不能计入新版通过。",
+      "historical_background_references_not_repair_PASS": [
+        ".e2e/runs/20260930-101945/backend/isolated/evidence/feature.sync.tombstone-145e4a4b.json",
+        ".e2e/runs/20260930-101945/backend/evidence/feature.application.lifecycle-e22782da.json",
+        ".e2e/runs/20260930-101945/backend/isolated/evidence/feature.schedule.disable-delete-a1da46c8.json"
+      ]
+    },
+    {
+      "case_id": "INV-05",
+      "canonical_expected": "Agent Revision advances only after successful durable local apply.",
+      "new_fixture_coverage": "BAD_SHA_ALL_OR_NOTHING_PLUS_VALID_APPLY_AND_REAL_APP_PRUNE",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/armed-child-restart-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/negative-oracle-attempt02-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/release-good-snapshot-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/positive-prune-oracle-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/good-script-execution-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/good-v2-marker-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/good-script-execution-ui-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/app-edit-unassigned-child-ui-evidence.json"
+      ],
+      "verified": [
+        "Actual bad-SHA Snapshot rejected with ok=false/applied_rev=0 and local SQLite revision unchanged at1274; old App row, three v1 SHA files and active Unit preserved.",
+        "Subsequent valid Snapshot received successful ACK; local revision advanced and DB stored exact Good3/Bad2 SHA rows; App row and Unit/files were physically removed.",
+        "Good Script SUCCESS, actual marker bytes and Execution UI shown; App edit UI shows child unassigned."
+      ],
+      "missing_or_limits": [
+        "No forced SQLite write/COMMIT failure, disk-full, or restart after successful Revision advancement; durable-commit failure rollback remains untested.",
+        "No statement that FullResync=true was exercised: actual SYNC_RESPONSE Snapshot=true, FullResync=false, which is valid full desired Snapshot semantics per approved plan."
+      ],
+      "coverage_claim": "Closes the real Script-SHA + managed-App prune physical path and strengthens INV-05; keeps commit-fault/restart dimension open. Repair feature inventory currently says PARTIAL; this mapping does not change that status.",
+      "current_repair_feature_inventory_status": "PARTIAL",
+      "current_repair_remaining_dimensions": [
+        "SQLite事务写入/Commit故障和进程重启后的Revision一致性仍未实测，坏SHA拒绝不泛化。"
+      ]
+    },
+    {
+      "case_id": "INV-02",
+      "canonical_expected": "Agent actively connects to Hub.",
+      "new_fixture_coverage": "CHILD_OUTBOUND_WEBSOCKET_SESSION_ONLY",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/armed-child-restart-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/child-proxy-connect-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/final-cleanup-oracle-evidence.json",
+        ".e2e/runs/20260930-101945/main/agent-outbound-sockets.json"
+      ],
+      "verified": [
+        "The real child Agent initiated WebSocket connection through the owned loopback proxy and sent matching HELLO; proxy upstream was fixed to repair:18080.",
+        "Prior canonical Native-1/2/3/4 process-fd evidence records outbound Hub connections."
+      ],
+      "missing_or_limits": [
+        "No child /proc socket or listener inventory was captured during this QA process lifetime; proxy HELLO alone does not prove absence of reverse listeners.",
+        "Canonical existing remaining gap covers Docker/Host topology process socket and reverse-listener checks."
+      ],
+      "coverage_claim": "Only real outbound connection dimension for this new child; INV-02 remains partial for all-topology listener assurance. Repair feature inventory currently says NOT_RUN; this mapping does not change that status.",
+      "current_repair_feature_inventory_status": "NOT_RUN",
+      "current_repair_remaining_dimensions": "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+    }
+  ],
+  "global_status_mutation": "NONE",
+  "completion_note": "Use this as evidence mapping only. Do not promote canonical statuses without Root merge/review.",
+  "canonical_status_source": ".e2e/runs/20260930-101945/repair/feature-inventory.json (sole repair-version status source)",
+  "status_rule": "New runtime observations are mapped as evidence dimensions only; do not upgrade a case from NOT_RUN unless Root accepts and updates the repair feature inventory. Historical baseline/backend status is not repair-version status.",
+  "repair_feature_inventory_statuses": {
+    "SYS-01": "NOT_RUN",
+    "SYS-02": "NOT_RUN",
+    "SYS-09": "NOT_RUN",
+    "AR-08": "NOT_RUN",
+    "INV-02": "NOT_RUN",
+    "INV-05": "PARTIAL"
+  }
+}

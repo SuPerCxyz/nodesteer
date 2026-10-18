@@ -1,0 +1,49 @@
+{
+  "at_utc": "2026-10-15T09:10:05Z",
+  "ui": "http://192.168.100.209:18080",
+  "hostname": "qa-psm-a8fd4885-child-u",
+  "steps": {
+    "pending": {
+      "enrolled_at": "2026-10-15T09:10:05Z",
+      "node_api_status": "pending",
+      "ui_row_text": "\" 等待中 qa-psm-a8fd4885-child-u - - qa-psm-a8fd4885-u.invalid - - \"",
+      "ui_pending_observed": true
+    },
+    "online": {
+      "node_api_status": "online",
+      "node_api_sync_status": "synced",
+      "hello_frames": 1,
+      "hello_ack_accepted": [
+        true
+      ],
+      "ui_row_text": "\" 在线 qa-psm-a8fd4885-child-u Rocky Linux 9.8 (Blue Onyx) - qa-psm-a8fd4885-u.invalid amd64 dddee4f0-e2e-repair-20261004 native 刚刚 \"",
+      "ui_online_observed": true
+    }
+  },
+  "assertions": {
+    "ui_shows_pending_before_hello": true,
+    "ui_shows_online_after_hello": true,
+    "api_online_synced": true
+  },
+  "assertions_pass": true,
+  "ui_screenshots": [
+    "evidence/ui-node-pending.png",
+    "evidence/ui-node-online.png"
+  ],
+  "cleanup": {
+    "child_remove": {
+      "signalled": [
+        23579
+      ],
+      "remaining_processes": [],
+      "root_removed": true,
+      "root_exists_after": false,
+      "data_still_mount": false
+    },
+    "node_delete": {
+      "id": "c73c4be7-eb2d-4d0b-8846-45594a58998a",
+      "delete_http": 200,
+      "get_http": 404
+    }
+  }
+}

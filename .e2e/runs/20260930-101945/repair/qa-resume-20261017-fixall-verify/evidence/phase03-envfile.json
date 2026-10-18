@@ -1,0 +1,63 @@
+{
+ "at_utc": "2026-10-17T14:01:55Z",
+ "case": [
+  "APPUI-20261016-ENVFILE-QUOTED-DASH"
+ ],
+ "config_v1": "APP_FIXALL_MARK=fixall-env-9c4f0710\nAPP_ENV_OUT=/var/lib/nodesteer-qa-fixall-9c4f0710-a/env-out.txt\nAPP_READY_FLAG=/var/lib/nodesteer-qa-fixall-9c4f0710-a/ready.flag\n",
+ "config_v1_sha256": "10542021d8bcd462398da24cc1eed702c7cade67f6e0e404c638b6662b7f6f07",
+ "app": {
+  "id": "2ffacbfb-eeb4-4d04-9b34-dbde0b7915b2",
+  "resumed": true
+ },
+ "assign": {
+  "http": 200,
+  "body": {
+   "ok": "true"
+  }
+ },
+ "assigned_after": [
+  "65b385be-0fcd-4a58-ba2c-296cd6cdfe71",
+  "fd2114a7-46a3-40bd-aedb-ac95bf7ffce9"
+ ],
+ "deploy_http": 200,
+ "deploy_execution": {
+  "id": "34b74fd9-067b-437a-b343-88aa0ccee3e9",
+  "task_id": "2ffacbfb-eeb4-4d04-9b34-dbde0b7915b2",
+  "task_revision": 1,
+  "node_id": "fd2114a7-46a3-40bd-aedb-ac95bf7ffce9",
+  "trigger_type": "manual",
+  "scheduled_time": "0001-01-01T00:00:00Z",
+  "start_time": "2026-10-17T14:01:55.310565675Z",
+  "end_time": "2026-10-17T22:01:56.69165036+08:00",
+  "status": "SUCCESS",
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": "",
+  "stdout_truncated": false,
+  "stderr_truncated": false,
+  "offline": false,
+  "synced": false
+ },
+ "runtime_probe": {
+  "unit_exists": true,
+  "unit_environmentfile_line": [
+   "EnvironmentFile=-/opt/qa-fixall-9c4f0710-envapp/config/app.env"
+  ],
+  "config_file_text": "APP_FIXALL_MARK=fixall-env-9c4f0710\nAPP_ENV_OUT=/var/lib/nodesteer-qa-fixall-9c4f0710-a/env-out.txt\nAPP_READY_FLAG=/var/lib/nodesteer-qa-fixall-9c4f0710-a/ready.flag\n",
+  "systemctl_environment": "",
+  "main_pid": "64940",
+  "process_app_env": {
+   "APP_ENV_OUT": "/var/lib/nodesteer-qa-fixall-9c4f0710-a/env-out.txt",
+   "APP_READY_FLAG": "/var/lib/nodesteer-qa-fixall-9c4f0710-a/ready.flag",
+   "APP_FIXALL_MARK": "fixall-env-9c4f0710"
+  },
+  "env_out_text": "mark=fixall-env-9c4f0710"
+ },
+ "systemd_semantics_note": "systemd 的 `systemctl show -p Environment` 只暴露 Environment= 指令（unit 属性），不含 EnvironmentFile 加载的键；EnvironmentFile 键只出现在服务进程环境。本机 systemd 实测复现（2026-10-17，user manager）：Environment= 键出现在 show 输出，EnvironmentFile 键只出现在 /proc/PID/environ。故运行期生效以 /proc/<pid>/environ + 进程实际行为（写出 env-out）为准。",
+ "verdict": {
+  "unit_line_unquoted": true,
+  "proc_environ_has_mark": true,
+  "env_out_written_by_process": true,
+  "config_file_matches": true
+ }
+}

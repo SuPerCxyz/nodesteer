@@ -1,0 +1,100 @@
+{
+  "status": "PASS_IMAGE_IMPORT_VERIFIED_AFTER_INSPECT_HARNESS_FAILURE",
+  "actual_at": "2026-10-10T02:40:26Z",
+  "source_task_id": "68d956ba-ee42-4859-a695-3613b86771fc",
+  "source_execution_id": "c3197281-7074-49e4-b9e9-b1a0ae049c66",
+  "source_task_status": "FAILED at post-import complex inspect; task DELETE/GET404",
+  "failure_classification": "Harness inspection command/template error after successful import. This is not an image compatibility failure. Original remote Docker stderr was not persisted by the helper (it returned only image_inspect_failed); exact argv retained below.",
+  "failed_inspect_argv": [
+    "/usr/bin/docker",
+    "image",
+    "inspect",
+    "--format",
+    "{{.Id}}|{{index .Config.Labels \"nodesteer.e2e.owner\"}}|{{json .Config.Entrypoint}}|{{json .Config.Cmd}}|{{.Size}}",
+    "nodesteer-qa/agent-host:f174890c3846"
+  ],
+  "failed_inspect_stderr": "Not persisted: remote helper discarded docker stderr then raised a generic image_inspect_failed. The same tag inspected read-only without a Go template succeeded with rc=0 and empty stderr; no compatibility conclusion is drawn.",
+  "recovery_probe": {
+    "task_id": "8389ab0c-9b49-4c71-bebc-50cd02faec75",
+    "execution_id": "6c612ce4-5bfc-4116-9132-385365e7f6cf",
+    "cleanup_http": 200,
+    "cleanup_get_after_delete_http": 404,
+    "inspect_argv": [
+      "docker",
+      "image",
+      "inspect",
+      "nodesteer-qa/agent-host:f174890c3846"
+    ],
+    "inspect_returncode": 0,
+    "inspect_stderr": "",
+    "image": {
+      "id": "sha256:ecd4dd9f8300067ba2cba22e8c5a701f1984f054fa4476354ed4d58af544cd44",
+      "tags": [
+        "nodesteer-qa/agent-host:f174890c3846"
+      ],
+      "size": 20158639,
+      "owner_label": "qa-resume-20261010-host-f174890c3846",
+      "entrypoint": [
+        "/opt/nodesteer/nodesteer-agent",
+        "--config",
+        "/run/nodesteer/agent.yaml"
+      ],
+      "cmd": null,
+      "layer_count": 1
+    },
+    "tag_rows": [
+      {
+        "id": "sha256:ecd4dd9f8300067ba2cba22e8c5a701f1984f054fa4476354ed4d58af544cd44",
+        "repository": "nodesteer-qa/agent-host",
+        "tag": "f174890c3846"
+      }
+    ]
+  },
+  "root": {
+    "path": "/opt/qa-resume-20261010-host-f174890c3846",
+    "device": 65025,
+    "inode": 70286,
+    "uid": 0,
+    "mode": "0o700",
+    "owner_marker": {
+      "run": "qa-resume-20261010-host-f174890c3846",
+      "nonce": "f174890c3846",
+      "root": "/opt/qa-resume-20261010-host-f174890c3846",
+      "root_devino": {
+        "dev": 65025,
+        "ino": 70286,
+        "uid": 0,
+        "mode": "0o700"
+      },
+      "authorized_image_tag": "nodesteer-qa/agent-host:f174890c3846",
+      "source_agent_pid": 452801,
+      "source_agent_starttime": 84208535,
+      "source_agent_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add"
+    },
+    "tar_sha256": "d012a9301f242511460aa212608f8965879866ae6d64d8e2b8c40b7c0a0da490",
+    "tar_size_bytes": 20183040,
+    "source_file_sha_and_size_verified": true,
+    "all_seven_source_files_match": true,
+    "extra_mount_target_dirs_only": true,
+    "zero_byte_files": [
+      "rootfs/host/etc/os-release",
+      "rootfs/run/nodesteer/agent.yaml"
+    ],
+    "systemd_tree_sha256_after_import": "3a52b197728cadec5e1409014a4edb8009f3831be1fafa2d931c68a6e70649d4",
+    "systemd_tree_matches_baseline": true
+  },
+  "created_resource_ids": {
+    "image_id": "sha256:ecd4dd9f8300067ba2cba22e8c5a701f1984f054fa4476354ed4d58af544cd44",
+    "container_ids": [],
+    "network_id": null,
+    "volume_names": [],
+    "Hub_node_ids": []
+  },
+  "evidence_files": [
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host-image-build-failed.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host-image-postfailure-readonly-probe.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/execution-68d956ba-ee42-4859-a695-3613b86771fc.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/task-cleanup-68d956ba-ee42-4859-a695-3613b86771fc.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/task-cleanup-8389ab0c-9b49-4c71-bebc-50cd02faec75.json"
+  ]
+}

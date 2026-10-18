@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "BE-REMOTE-TTL-observe-valid-response-clear-cfb841c485",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport hashlib,json,os,stat\nfrom pathlib import Path\np=Path(\"/tmp/qa-resume-20261008-child-ciivjupc\");mp=p/\"owner-manifest.json\";m=json.loads(mp.read_bytes());c=p/\"controls.json\"\ndef sha(x):return hashlib.sha256(Path(x).read_bytes()).hexdigest()\nif (p.stat().st_dev,p.stat().st_ino,p.stat().st_uid)!=(33,135,65534) or sha(mp)!='9d4a505cd99fc6acd9ea342e2bbbc22e156ff2e89da163cbea92a9ca1c9abfff' or m[\"node_id\"]!=\"15961ef7-81b4-43f3-80c8-1b6977ca2aea\" or m[\"agent_id\"]!=\"agent-ab15a133-73cd-4025-8c97-f2ff37e000f5\":raise RuntimeError(\"owned_manifest_guard_failed\")\ncurrent=json.loads(c.read_text())\nif current!={\"remote_override\":{'target_node_id': '15961ef7-81b4-43f3-80c8-1b6977ca2aea', 'property': 'last_execution', 'task_id': '0c1f41b8-5c7e-4db7-9aec-0df7d6c0c005', 'observe_only': True}}:raise RuntimeError(\"observe_only_rule_guard_failed\")\nt=c.with_suffix(\".json.tmp\");t.write_text(\"{}\");os.chmod(t,0o600);os.chown(t,65534,65534);t.replace(c)\nprint(json.dumps({\"status\":\"PASS\",\"controls_empty\":True,\"controls_sha256\":sha(c)},separators=(\",\",\":\")))\nPY",
+    "timeout": 20,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "b4405c003055cf69adcc2ea52f3ef18edf8e737cd1d6c2ac51705fd33de91af6",
+  "source_contains_connection_token": false
+}

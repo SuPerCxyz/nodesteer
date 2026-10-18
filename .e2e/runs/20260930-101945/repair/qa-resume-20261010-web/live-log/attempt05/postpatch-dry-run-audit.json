@@ -1,0 +1,54 @@
+{
+  "captured_at_utc": "2026-10-10T05:59:33+00:00",
+  "mode": "local-only string/AST check; no remote I/O",
+  "initial_postpatch_assertion_failure": "assert \"resource-intents.json\" in s and 'execution_id=execution' in s",
+  "failure_class": "overly literal source-text check; implementation stores ledger field as ri['execution_id']=execution, semantically equivalent but not matching assertion substring",
+  "whitelist_checks": {
+    "python_ast_parse": true,
+    "python_compile": true,
+    "single_selector_click_literal": true,
+    "resource_ledger_referenced": true,
+    "incorrect_textual_pattern_execution_id_equals_execution": false,
+    "actual_ledger_assignment_ri_execution_id_equals_execution": true,
+    "api_login_path": true,
+    "filtered_token_compare": true,
+    "one_alertdialog_exact_click_path": false,
+    "owned_task_get404_cleanup": true,
+    "pid_startticks_guard": true
+  },
+  "failed_security_gate": false,
+  "ssh_browser_or_network_started_by_this_check": false,
+  "private_values_saved": false,
+  "assertion_failure_detail": {
+    "expression": "assert \"resource-intents.json\" in s and 'execution_id=execution' in s",
+    "exception_type": "AssertionError",
+    "whitelisted_actual_values": {
+      "resource_intents_filename_in_source": true,
+      "literal_substring_execution_id_equals_execution_in_source": false,
+      "actual_source_assignment_ri_bracket_execution_id_bracket_equals_execution": true,
+      "ast_parse": true,
+      "python_compile": true
+    },
+    "interpretation": "Only the source-text formatting check failed: the runner assignment is ri['execution_id']=execution. No assertion or safety gate failed in the earlier complete local dry-run.",
+    "runtime_cross_check": {
+      "alertdialog_role": "alertdialog",
+      "run_button_label": "立即运行",
+      "confirm_enabled": true,
+      "confirm_button_index": 2,
+      "actual_run_post_count": 1,
+      "execution_id_recorded": true,
+      "evidence": [
+        "run-confirmation-oracle.json",
+        "execution-final-oracle.json",
+        "resource-intents.json"
+      ]
+    }
+  },
+  "additional_source_scan_false_check": {
+    "check": "one_alertdialog_exact_click_path",
+    "value": false,
+    "exact_failed_expression": "not captured by the local scanner; do not infer its predicate",
+    "runtime_evidence": "run-confirmation-oracle.json records visible alertdialog and enabled exact Run button; execution-final-oracle.json records run_post_count=1 and the retained execution.",
+    "follow_up": "No second runner/Run; Root review required if source-scan predicate is material."
+  }
+}

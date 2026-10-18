@@ -1,0 +1,152 @@
+{
+  "result": {
+    "id": "condition.dir_exists",
+    "name": "条件 dir_exists 的客户机实际效果与执行终态",
+    "started_at": "2026-09-30T02:31:30.123962+00:00",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-09-30T02:31:31.628411+00:00",
+    "evidence": "backend/evidence/condition.dir_exists.json"
+  },
+  "events": [
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-dir_exists-5684ec",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "56765828-4896-492b-b562-64afdc0fb8d6"
+          ]
+        },
+        "command": "mkdir -p /tmp/qa-20260930-101945-be; printf condition-ok > /tmp/qa-20260930-101945-be/condition-dir_exists",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "condition": {
+          "type": "local",
+          "local": {
+            "metric": "dir_exists",
+            "operator": "==",
+            "value": "true",
+            "path": "/tmp"
+          }
+        }
+      },
+      "response": {
+        "id": "16d66d92-0ca7-4146-a824-0a2e06e0b6aa",
+        "name": "qa-20260930-101945-be-dir_exists-5684ec",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "56765828-4896-492b-b562-64afdc0fb8d6"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /tmp/qa-20260930-101945-be; printf condition-ok > /tmp/qa-20260930-101945-be/condition-dir_exists",
+        "condition": {
+          "type": "local",
+          "local": {
+            "metric": "dir_exists",
+            "operator": "==",
+            "value": "true",
+            "path": "/tmp"
+          }
+        },
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:31:30 GMT",
+        "Content-Length": "619",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/16d66d92-0ca7-4146-a824-0a2e06e0b6aa/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "d7820f6b-4d97-436a-be34-0343d0ee9517",
+          "task_id": "16d66d92-0ca7-4146-a824-0a2e06e0b6aa",
+          "task_revision": 1,
+          "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:31:30 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/d7820f6b-4d97-436a-be34-0343d0ee9517",
+      "terminal": {
+        "id": "d7820f6b-4d97-436a-be34-0343d0ee9517",
+        "task_id": "16d66d92-0ca7-4146-a824-0a2e06e0b6aa",
+        "task_revision": 1,
+        "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T02:31:30.055084739Z",
+        "end_time": "2026-09-30T02:31:30.064607853Z",
+        "status": "SUCCESS",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "agent": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "read_command": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; r=c.execute('\"'\"'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?'\"'\"',(sys.argv[2],)).fetchone(); print(json.dumps(dict(r) if r else None))' /var/lib/nodesteer d7820f6b-4d97-436a-be34-0343d0ee9517\n",
+      "exit_code": 0,
+      "stdout": "{\"id\": \"d7820f6b-4d97-436a-be34-0343d0ee9517\", \"task_id\": \"16d66d92-0ca7-4146-a824-0a2e06e0b6aa\", \"node_id\": \"56765828-4896-492b-b562-64afdc0fb8d6\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}\n",
+      "stderr": ""
+    },
+    {
+      "agent": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "read_command": "cat -- /tmp/qa-20260930-101945-be/condition-dir_exists\n",
+      "exit_code": 0,
+      "stdout": "condition-ok",
+      "stderr": ""
+    }
+  ]
+}

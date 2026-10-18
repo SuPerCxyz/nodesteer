@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "qa-resume-20261008-native4-sha-fault-events-9cbf5645",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport json\nfrom pathlib import Path\nrows=[]\nfor line in Path(\"/tmp/qa-resume-20261008-child-ciivjupc/proxy-events.jsonl\").read_text().splitlines():\n try:\n  x=json.loads(line)\n  if x.get(\"type\")==\"SYNC_RESPONSE\" or x.get(\"event\") in {\"corrupt_script_sha\",\"sync_ack\"}:\n   keep={k:x.get(k) for k in [\"time\",\"event\",\"connection\",\"direction\",\"type\",\"id\",\"global_rev\",\"full_resync\",\"target_id\",\"declared_sha256\",\"received_content_sha256\",\"ok\",\"applied_rev\",\"error_sha256\",\"error_chars\",\"script_summary\"] if k in x};rows.append(keep)\n except Exception:pass\nprint(json.dumps(rows[-40:],separators=(\",\",\":\")))\nPY",
+    "timeout": 30,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "a01c6454726fd37b7281a3bcedf62cb4d88c3269ad1e03230054b5d9446a3fef",
+  "source_contains_connection_token": false
+}

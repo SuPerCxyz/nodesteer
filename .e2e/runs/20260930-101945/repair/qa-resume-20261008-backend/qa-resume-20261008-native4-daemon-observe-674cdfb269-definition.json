@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "qa-resume-20261008-native4-daemon-observe-674cdfb269",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport hashlib,json,os,stat,time\nfrom pathlib import Path\nD=Path(\"/tmp/qa-resume-20261008-child-n_9xjgq7\")\nEXPECTED_MANIFEST_SHA=\"6515ae9f62add7f2945deed2817f1f980f950a680cf69eac79c6301f6ce3be30\"\ndef emit(v): print(json.dumps(v,separators=(',',':')),flush=True)\ndef fail(code): emit({'status':'BLOCKED','code':code}); raise SystemExit(0)\ndef start(pid):\n raw=Path('/proc',str(pid),'stat').read_text(); tail=raw[raw.rfind(')')+2:].split(); return int(tail[19])\ndef uid(pid):\n for line in Path('/proc',str(pid),'status').read_text().splitlines():\n  if line.startswith('Uid:'): return tuple(map(int,line.split()[1:3]))\n raise ValueError('uid')\ndef sha(p):\n h=hashlib.sha256()\n with open(p,'rb') as f:\n  for b in iter(lambda:f.read(1048576),b''): h.update(b)\n return h.hexdigest()\nif not str(D).startswith('/tmp/qa-resume-20261008-child-') or D.is_symlink(): fail('owned_directory_gate')\ntry:\n st=D.lstat(); mpath=D/'owner-manifest.json'; raw=mpath.read_bytes()\n if hashlib.sha256(raw).hexdigest()!=EXPECTED_MANIFEST_SHA: fail('manifest_hash_mismatch')\n m=json.loads(raw); nonce=m['owner_nonce']; marker=(D/'owner.marker').read_text()\n if marker!=nonce or hashlib.sha256(marker.encode()).hexdigest()[:16]!=m.get('owner_marker_sha256_prefix'): fail('owner_marker_mismatch')\n if (st.st_dev,st.st_ino)!=(m['directory_dev'],m['directory_ino']) or stat.S_ISLNK(st.st_mode): fail('directory_identity_mismatch')\n pid=int(m['pid']); expected_start=int(m['starttime']); expected_uid=int(m['uid']); expected_exe=m['exe_sha256']\n if start(pid)!=expected_start: fail('daemon_starttime_mismatch')\n if uid(pid)!=(expected_uid,expected_uid): fail('daemon_uid_mismatch')\n exe=os.readlink('/proc/'+str(pid)+'/exe')\n if exe.endswith(' (deleted)') or sha(exe)!=expected_exe: fail('daemon_exe_hash_mismatch')\n argv=[x.decode(errors='replace') for x in Path('/proc',str(pid),'cmdline').read_bytes().split(b'\\0') if x]\n if not any(arg==str(D) or arg.startswith(str(D)+os.sep) for arg in argv): fail('daemon_argv_owner_path_mismatch')\n hb=D/'heartbeat'; first=hb.stat().st_mtime_ns; time.sleep(0.7); second=hb.stat().st_mtime_ns\n if second<=first: fail('daemon_heartbeat_not_advancing')\n emit({'status':'PASS','owned_directory_matches':True,'manifest_hash_matches':True,'owner_marker_matches':True,'pid_alive_after_initial_task_exit':True,'starttime_matches':True,'uid_matches':True,'exe_sha256_matches':True,'argv_contains_owned_directory':True,'heartbeat_advanced':True,'directory_mode':oct(stat.S_IMODE(st.st_mode))})\nexcept SystemExit: raise\nexcept BaseException: fail('observer_internal_failure')\nPY",
+    "timeout": 45,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "1b708f5a948f6d2aa296370582d92f3b5a8520dbdc0a47c8de0dcbffe68d7cba",
+  "source_contains_connection_token": false
+}

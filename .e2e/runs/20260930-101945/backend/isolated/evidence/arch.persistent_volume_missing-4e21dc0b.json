@@ -1,0 +1,591 @@
+{
+  "result": {
+    "id": "arch.persistent_volume_missing",
+    "name": "Persistent Volume Missing",
+    "started_at": "2026-09-30T06:28:37.005018+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-09-30T06:28:52.941658+00:00",
+    "evidence": "backend/isolated/evidence/arch.persistent_volume_missing-4e21dc0b.json"
+  },
+  "events": [
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-iso-missing-volume-fde4a4",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be; printf seed-real > /var/lib/nodesteer/qa-20260930-101945-be/missing-volume-e6254d",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "4b9ad4e7-4e9c-4406-878c-527310b2d50d",
+        "name": "qa-20260930-101945-be-iso-missing-volume-fde4a4",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be; printf seed-real > /var/lib/nodesteer/qa-20260930-101945-be/missing-volume-e6254d",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 06:28:37 GMT",
+        "Content-Length": "547",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/4b9ad4e7-4e9c-4406-878c-527310b2d50d/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "6848d69c-2ff4-46b2-8ee2-16ad1b0ca361",
+          "task_id": "4b9ad4e7-4e9c-4406-878c-527310b2d50d",
+          "task_revision": 1,
+          "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 06:28:37 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/6848d69c-2ff4-46b2-8ee2-16ad1b0ca361",
+      "terminal": {
+        "id": "6848d69c-2ff4-46b2-8ee2-16ad1b0ca361",
+        "task_id": "4b9ad4e7-4e9c-4406-878c-527310b2d50d",
+        "task_revision": 1,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T06:28:37.101413607Z",
+        "end_time": "2026-09-30T06:28:37.122157273Z",
+        "status": "SUCCESS",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"6848d69c-2ff4-46b2-8ee2-16ad1b0ca361\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"6848d69c-2ff4-46b2-8ee2-16ad1b0ca361\", \"task_id\": \"4b9ad4e7-4e9c-4406-878c-527310b2d50d\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys,hashlib; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); r=c.execute('\"'\"'select key,value from identity order by key'\"'\"').fetchall(); print(json.dumps({'\"'\"'keys'\"'\"':[v[0] for v in r],'\"'\"'fingerprint'\"'\"':hashlib.sha256(json.dumps(r).encode()).hexdigest(),'\"'\"'revision'\"'\"':c.execute('\"'\"'select global_revision from sync_state where id=1'\"'\"').fetchone()[0]}))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data",
+      "exit_code": 0,
+      "stdout": "{\"keys\": [\"agent_id\", \"credential\", \"node_id\"], \"fingerprint\": \"c98510c4f92ac400a00e05236191dafb056b9e73e1c4b7149b62533baf6ce14b\", \"revision\": 9}\n",
+      "stderr": ""
+    },
+    {
+      "api": "GET /api/nodes",
+      "status": 200,
+      "request": null,
+      "response": [
+        {
+          "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+          "hostname": "qa-20260930-101945-env-docker-agent",
+          "ip": "192.168.100.209",
+          "os": "Alpine Linux v3.20",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "docker",
+          "host_integration": false,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": false,
+            "application_deploy": false,
+            "host_filesystem": false,
+            "local_scheduler": true,
+            "managed_systemd": false,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 9,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T06:28:29.817256119Z",
+          "first_seen": "2026-09-30T02:36:32.656149623Z"
+        },
+        {
+          "id": "3f434b5b-832f-4bf4-8ec6-e96c568e07a6",
+          "agent_id": "agent-2a99889f-70d1-4463-bef7-9d84a679ac22",
+          "hostname": "qa-20260930-101945-env-enroll-compose",
+          "ip": "qa-20260930-101945-env-enroll-compose.example.test",
+          "os": "Alpine Linux v3.20",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "docker",
+          "host_integration": false,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": false,
+            "application_deploy": false,
+            "host_filesystem": false,
+            "local_scheduler": true,
+            "managed_systemd": false,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 9,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T06:28:23.119687397Z",
+          "first_seen": "2026-09-30T02:56:56.817897704Z"
+        },
+        {
+          "id": "560a9232-0b15-46c7-9783-4edba87dc401",
+          "agent_id": "agent-2dee25e8-c24f-4e01-8440-cb0523115c99",
+          "hostname": "qa-20260930-101945-env-enroll-docker",
+          "ip": "qa-20260930-101945-env-enroll-docker.example.test",
+          "os": "Alpine Linux v3.20",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "docker",
+          "host_integration": false,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": false,
+            "application_deploy": false,
+            "host_filesystem": false,
+            "local_scheduler": true,
+            "managed_systemd": false,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 9,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T06:28:39.192900035Z",
+          "first_seen": "2026-09-30T02:56:56.792289337Z"
+        },
+        {
+          "id": "544a2988-59fe-4efe-9bfd-538af11e632f",
+          "agent_id": "agent-ea19a9c1-5a2d-4142-b3d0-ae4dc75d5ac3",
+          "hostname": "qa-20260930-101945-env-hostint-agent",
+          "ip": "192.168.100.247",
+          "os": "openSUSE Leap 16.0",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "docker_host_integration",
+          "host_integration": true,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": false,
+            "application_deploy": true,
+            "host_filesystem": true,
+            "local_scheduler": true,
+            "managed_systemd": true,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 9,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T06:28:19.782671519Z",
+          "first_seen": "2026-09-30T02:52:37.201474481Z",
+          "inventory": {
+            "os": "openSUSE Leap 16.0",
+            "os_version": "16.0",
+            "kernel": "6.12.0-160000.35-default",
+            "arch": "amd64",
+            "cpu": [
+              {
+                "model": "Intel(R) Core(TM) i5-4670T CPU @ 2.30GHz",
+                "cores": 2,
+                "mhz": 2294
+              }
+            ],
+            "memory": {
+              "total_kb": 968180,
+              "available_kb": 590020
+            },
+            "filesystem": null,
+            "network": null
+          }
+        },
+        {
+          "id": "2c5f0157-4990-4c6a-833b-fca85c90a82d",
+          "agent_id": "agent-c17b1882-5d70-4c3b-902b-a711b30cff68",
+          "hostname": "qa-20260930-101945-env-tls-agent",
+          "ip": "qa-20260930-101945-env-tls-agent.example.test",
+          "os": "Alpine Linux v3.20",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "docker",
+          "host_integration": false,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": false,
+            "application_deploy": false,
+            "host_filesystem": false,
+            "local_scheduler": true,
+            "managed_systemd": false,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 9,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T06:28:23.646749913Z",
+          "first_seen": "2026-09-30T02:56:56.778033841Z"
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 06:28:39 GMT",
+        "Connection": "close",
+        "Transfer-Encoding": "chunked"
+      }
+    },
+    {
+      "control": "docker volume create qa-20260930-101945-be-missing-volume-574338",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-be-missing-volume-574338\n",
+      "stderr": ""
+    },
+    {
+      "control": "docker rm -f qa-20260930-101945-env-agent",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-env-agent\n",
+      "stderr": ""
+    },
+    {
+      "control": "docker run -d --name qa-20260930-101945-env-agent --network qa-20260930-101945-env-net --restart unless-stopped --hostname 6f6041279833 -v qa-20260930-101945-be-missing-volume-574338:/var/lib/nodesteer -e NODESTEER_HUB_URL=ws://192.168.100.209:18080 -e NODESTEER_REGISTRATION_TOKEN=[redacted] -e NODESTEER_AGENT_ID=agent-9b83b1d6-e376-4e76-a46f-f5c45e495329 -e NODESTEER_NODE_NAME=qa-20260930-101945-env-docker-agent -e NODESTEER_NODE_IP=192.168.100.209 -e NODESTEER_DEPLOYMENT_MODE=docker -e NODESTEER_DATA_DIR=/var/lib/nodesteer -e PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin qa-20260930-101945-env-agent:dddee4f0",
+      "exit_code": 0,
+      "stdout": "cb38d159ef476d779121bbce3440d57b5084ce28e28c2b826bf786b29c5eb944\n",
+      "stderr": ""
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "test ! -e /var/lib/nodesteer/qa-20260930-101945-be/missing-volume-e6254d\n",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "api": "GET /api/nodes",
+      "status": 200,
+      "request": null,
+      "response": [
+        {
+          "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+          "hostname": "qa-20260930-101945-env-docker-agent",
+          "ip": "192.168.100.209",
+          "os": "Alpine Linux v3.20",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "docker",
+          "host_integration": false,
+          "status": "offline",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": false,
+            "application_deploy": false,
+            "host_filesystem": false,
+            "local_scheduler": true,
+            "managed_systemd": false,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 9,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T06:28:29.817256119Z",
+          "first_seen": "2026-09-30T02:36:32.656149623Z"
+        },
+        {
+          "id": "9800f15c-caa3-456a-a81d-9a0d6771d241",
+          "agent_id": "agent-5e813abd-b4d4-4a14-afeb-aba483c34719",
+          "hostname": "qa-20260930-101945-env-docker-agent",
+          "ip": "192.168.100.209",
+          "os": "Alpine Linux v3.20",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "docker",
+          "host_integration": false,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": false,
+            "application_deploy": false,
+            "host_filesystem": false,
+            "local_scheduler": true,
+            "managed_systemd": false,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 9,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T06:28:41.688734486Z",
+          "first_seen": "2026-09-30T06:28:41.688734486Z"
+        },
+        {
+          "id": "3f434b5b-832f-4bf4-8ec6-e96c568e07a6",
+          "agent_id": "agent-2a99889f-70d1-4463-bef7-9d84a679ac22",
+          "hostname": "qa-20260930-101945-env-enroll-compose",
+          "ip": "qa-20260930-101945-env-enroll-compose.example.test",
+          "os": "Alpine Linux v3.20",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "docker",
+          "host_integration": false,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": false,
+            "application_deploy": false,
+            "host_filesystem": false,
+            "local_scheduler": true,
+            "managed_systemd": false,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 9,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T06:28:23.119687397Z",
+          "first_seen": "2026-09-30T02:56:56.817897704Z"
+        },
+        {
+          "id": "560a9232-0b15-46c7-9783-4edba87dc401",
+          "agent_id": "agent-2dee25e8-c24f-4e01-8440-cb0523115c99",
+          "hostname": "qa-20260930-101945-env-enroll-docker",
+          "ip": "qa-20260930-101945-env-enroll-docker.example.test",
+          "os": "Alpine Linux v3.20",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "docker",
+          "host_integration": false,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": false,
+            "application_deploy": false,
+            "host_filesystem": false,
+            "local_scheduler": true,
+            "managed_systemd": false,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 9,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T06:28:39.192900035Z",
+          "first_seen": "2026-09-30T02:56:56.792289337Z"
+        },
+        {
+          "id": "544a2988-59fe-4efe-9bfd-538af11e632f",
+          "agent_id": "agent-ea19a9c1-5a2d-4142-b3d0-ae4dc75d5ac3",
+          "hostname": "qa-20260930-101945-env-hostint-agent",
+          "ip": "192.168.100.247",
+          "os": "openSUSE Leap 16.0",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "docker_host_integration",
+          "host_integration": true,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": false,
+            "application_deploy": true,
+            "host_filesystem": true,
+            "local_scheduler": true,
+            "managed_systemd": true,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 9,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T06:28:19.782671519Z",
+          "first_seen": "2026-09-30T02:52:37.201474481Z",
+          "inventory": {
+            "os": "openSUSE Leap 16.0",
+            "os_version": "16.0",
+            "kernel": "6.12.0-160000.35-default",
+            "arch": "amd64",
+            "cpu": [
+              {
+                "model": "Intel(R) Core(TM) i5-4670T CPU @ 2.30GHz",
+                "cores": 2,
+                "mhz": 2294
+              }
+            ],
+            "memory": {
+              "total_kb": 968180,
+              "available_kb": 590020
+            },
+            "filesystem": null,
+            "network": null
+          }
+        },
+        {
+          "id": "2c5f0157-4990-4c6a-833b-fca85c90a82d",
+          "agent_id": "agent-c17b1882-5d70-4c3b-902b-a711b30cff68",
+          "hostname": "qa-20260930-101945-env-tls-agent",
+          "ip": "qa-20260930-101945-env-tls-agent.example.test",
+          "os": "Alpine Linux v3.20",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "docker",
+          "host_integration": false,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": false,
+            "application_deploy": false,
+            "host_filesystem": false,
+            "local_scheduler": true,
+            "managed_systemd": false,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 9,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T06:28:23.646749913Z",
+          "first_seen": "2026-09-30T02:56:56.778033841Z"
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 06:28:48 GMT",
+        "Connection": "close",
+        "Transfer-Encoding": "chunked"
+      }
+    },
+    {
+      "missing_volume_observation": {
+        "original_volume_preserved": "qa-20260930-101945-env-agentdata",
+        "replacement_volume": "qa-20260930-101945-be-missing-volume-574338",
+        "node_count_before": 5,
+        "node_count_after": 6,
+        "attributed_new_nodes": [],
+        "contract": "记录真实数据/身份变化，不预设拒绝重新注册"
+      }
+    },
+    {
+      "control": "docker rm -f qa-20260930-101945-env-agent",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-env-agent\n",
+      "stderr": ""
+    },
+    {
+      "control": "docker run -d --name qa-20260930-101945-env-agent --network qa-20260930-101945-env-net --restart unless-stopped --hostname 6f6041279833 -v qa-20260930-101945-env-agentdata:/var/lib/nodesteer -e NODESTEER_HUB_URL=ws://192.168.100.209:18080 -e NODESTEER_REGISTRATION_TOKEN=[redacted] -e NODESTEER_AGENT_ID=agent-9b83b1d6-e376-4e76-a46f-f5c45e495329 -e NODESTEER_NODE_NAME=qa-20260930-101945-env-docker-agent -e NODESTEER_NODE_IP=192.168.100.209 -e NODESTEER_DEPLOYMENT_MODE=docker -e NODESTEER_DATA_DIR=/var/lib/nodesteer -e PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin qa-20260930-101945-env-agent:dddee4f0",
+      "exit_code": 0,
+      "stdout": "23f54f64e4318e40315c63e315546caea3fb678601d614b23198681c0e1e608e\n",
+      "stderr": ""
+    },
+    {
+      "core_node": {
+        "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "hostname": "qa-20260930-101945-env-docker-agent",
+        "ip": "192.168.100.209",
+        "os": "Alpine Linux v3.20",
+        "arch": "amd64",
+        "agent_version": "dddee4f0",
+        "deployment_mode": "docker",
+        "host_integration": false,
+        "status": "online",
+        "labels": {},
+        "capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        },
+        "global_revision": 9,
+        "sync_status": "synced",
+        "last_seen": "2026-09-30T06:28:49.086236172Z",
+        "first_seen": "2026-09-30T02:36:32.656149623Z"
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys,hashlib; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); r=c.execute('\"'\"'select key,value from identity order by key'\"'\"').fetchall(); print(json.dumps({'\"'\"'keys'\"'\"':[v[0] for v in r],'\"'\"'fingerprint'\"'\"':hashlib.sha256(json.dumps(r).encode()).hexdigest(),'\"'\"'revision'\"'\"':c.execute('\"'\"'select global_revision from sync_state where id=1'\"'\"').fetchone()[0]}))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data",
+      "exit_code": 0,
+      "stdout": "{\"keys\": [\"agent_id\", \"credential\", \"node_id\"], \"fingerprint\": \"c98510c4f92ac400a00e05236191dafb056b9e73e1c4b7149b62533baf6ce14b\", \"revision\": 9}\n",
+      "stderr": ""
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "cat -- /var/lib/nodesteer/qa-20260930-101945-be/missing-volume-e6254d\n",
+      "exit_code": 0,
+      "stdout": "seed-real",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"6848d69c-2ff4-46b2-8ee2-16ad1b0ca361\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"6848d69c-2ff4-46b2-8ee2-16ad1b0ca361\", \"task_id\": \"4b9ad4e7-4e9c-4406-878c-527310b2d50d\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "docker volume rm qa-20260930-101945-be-missing-volume-574338",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-be-missing-volume-574338\n",
+      "stderr": ""
+    }
+  ]
+}

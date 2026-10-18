@@ -1,0 +1,48 @@
+{
+  "captured_at_utc": "2026-10-10T14:19:32.524883+00:00",
+  "canonical": "ROUTE-06",
+  "branch": "fresh missing Node detail ID -> UI error -> list recovery; no matching live Node detail href exists",
+  "missing_node_id": "cde82de2-7305-4b06-a23d-e8d67492ab94",
+  "actions": [
+    "authenticated GET /api/nodes/:fresh-missing first",
+    "direct-open /nodes/:fresh-missing",
+    "observe error and Retry",
+    "recover to actual /nodes list because it is the safe current list route"
+  ],
+  "observations": {
+    "preflight_get_status": 404,
+    "route_get_status": 404,
+    "error_route_status": 200,
+    "heading": "节点",
+    "role_alert_text": "节点不存在或已被删除。\n重试",
+    "retry_button_visible": true,
+    "recovery_path": "/nodes",
+    "recovery_list_get_status": 200,
+    "recovery_rows": 6,
+    "recovery_alert_count": 0,
+    "actual_nodes_detail_href_count": 0,
+    "actual_agents_detail_href_count": 6
+  },
+  "api_requests": [
+    {
+      "method": "GET",
+      "path": "/api/nodes/:fresh-missing",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/:fresh-missing",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes",
+      "status": 200,
+      "count": 6
+    }
+  ],
+  "write_request_count": 0,
+  "raw_response_saved": false,
+  "status": "PARTIAL",
+  "remaining": "Current live Nodes UI has no /nodes/:id detail href; only /agents/:id links. Did not guess or reuse Agent ID for Node route, so recovery to a valid same-pattern Node detail is unverified."
+}

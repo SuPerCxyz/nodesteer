@@ -1,0 +1,21 @@
+{
+  "at_utc": "2026-10-15T08:18:39Z",
+  "native2_docker_environment": {
+    "docker_binary": "/usr/bin/docker",
+    "docker_active": "active",
+    "docker_version": "Docker version 29.7.2, build a7dcaa6"
+  },
+  "source_findings": {
+    "deployment_modes": [
+      "native",
+      "docker",
+      "docker_host_integration"
+    ],
+    "task_runner": "internal/agent/execution/runner.go builds every command/script with SysProcAttr{Setpgid:true} and kills -pgid (SIGTERM, 2s, SIGKILL) regardless of deployment mode; there is no docker/compose-specific execution branch.",
+    "enrollment_snippet_only": "internal/hub/api/api.go returns docker_run/docker_compose snippets for enrolling the Agent itself (agent deployment), not for executing tasks.",
+    "app_deploy": "internal/agent/application.go deploys via systemd units through the host adapter, not docker compose."
+  },
+  "conclusion": "No docker/compose *execution* form exists in the product; the process-group cleanup code path is shared and was exercised on the native owned child (phase6). The Docker/Compose sub-dimension is therefore PARTIAL.",
+  "assertions_pass": false,
+  "dimension_status": "PARTIAL"
+}

@@ -1,0 +1,69 @@
+{
+  "at_utc": "2026-10-14T10:29:01Z",
+  "rejected_mutation_no_notification": {
+    "request": "POST /api/tasks with a non-existent script_id (83d2f6be-7be7-4b10-8e9d-ac26a2e14256), simulating an uncommitted/rejected desired-state mutation",
+    "http": 400,
+    "response": {
+      "error": "invalid task: referenced script not found"
+    },
+    "expected_client_feedback": "4xx with a referenced-script error",
+    "revision_before": 1996,
+    "revision_after": 1996,
+    "revision_unchanged": true,
+    "change_log_rows_added": 0,
+    "notifications_naming_rejected_object": 0,
+    "notifications_total_in_window": 0,
+    "notifications_total_note": "other concurrently running batches emit unrelated CHANGE_NOTIFICATION frames; only notifications naming the rejected object would indicate a pre-commit notification for this mutation",
+    "notification_details_for_rejected_object": [],
+    "bogus_task_absent": true,
+    "window_sec": 3.0694215297698975
+  },
+  "negative_control_detector": {
+    "at_utc": "2026-10-14T10:29:00Z",
+    "injected_frame": {
+      "object_type": "script",
+      "object_id": "a8fbe4cc-86d8-4285-898e-092f5595cf40",
+      "object_revision": 99,
+      "global_revision": 101996,
+      "role": "harness_control_injection_to_prove_detector_power"
+    },
+    "injection_delivered_to_agent": true,
+    "committed_revision_at_injection": 1996,
+    "committed_revision_after": 1996,
+    "fabricated_revision_present_in_change_log": false,
+    "detector_verdict": "VIOLATION",
+    "agent_reaction": {
+      "sync_requests_after_injection": 1,
+      "sync_responses_after_injection": 1,
+      "local_script_before": [
+        {
+          "id": "a8fbe4cc-86d8-4285-898e-092f5595cf40",
+          "revision": 3,
+          "sha256": "b4fd6c6faf8b0a894c3a6ed085e010ae5bd196d108fb39e6d79430b79b1f1b96"
+        }
+      ],
+      "local_script_after": [
+        {
+          "id": "a8fbe4cc-86d8-4285-898e-092f5595cf40",
+          "revision": 3,
+          "sha256": "b4fd6c6faf8b0a894c3a6ed085e010ae5bd196d108fb39e6d79430b79b1f1b96"
+        }
+      ],
+      "local_revision_before": [
+        {
+          "global_revision": 1996
+        }
+      ],
+      "local_revision_after": [
+        {
+          "global_revision": 1996
+        }
+      ]
+    },
+    "convergence_target": {
+      "hub_current_revision": 1996,
+      "note": "the Agent must converge to the Hub current desired revision, not to the fabricated revision carried by the notification"
+    }
+  },
+  "assertions_pass": true
+}

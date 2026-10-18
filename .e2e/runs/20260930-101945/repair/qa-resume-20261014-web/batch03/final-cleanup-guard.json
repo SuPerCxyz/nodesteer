@@ -1,0 +1,33 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch03",
+  "authority": "http://192.168.100.209:18080",
+  "authority_type": "repair",
+  "captured_at_utc": "2026-10-14T08:40:00Z",
+  "baseline_vs_final": {
+    "nodes": {"baseline": 6, "final": 6, "delta": 0},
+    "applications": {"baseline": 1, "final": 1, "delta": 0},
+    "tasks": {"baseline": 0, "final": 0, "delta": 0, "note": "concurrent sys-b05 batch may add tasks after this capture; not used as a batch03 acceptance signal"},
+    "schedules": {"baseline": 0, "final": 0, "delta": 0, "note": "same parallel-batch caveat"},
+    "artifacts": {"baseline": 1, "final": 1, "delta": 0},
+    "scripts": {"baseline": 2, "final": 2, "delta": 0},
+    "groups": {"baseline": 0, "final": 0, "delta": 0},
+    "users": {"baseline": 8, "final": 8, "delta": 0},
+    "transfers": {"baseline": 5, "final": 7, "delta": 2, "note": "the 2 owned transfers are non-deletable: no DELETE /api/transfers endpoint exists; 1 is SUCCESS and 1 CANCELED (terminal history, no pending work, hub staging dir empty)"}
+  },
+  "no_leftovers": true,
+  "leftover_exceptions": [
+    {"kind": "transfer", "id": "08dc8196-4f7e-4fc3-a6f2-6e678523da0f", "status": "CANCELED", "reason": "no delete API"},
+    {"kind": "transfer", "id": "08195116-ea50-42fa-b132-b39346bc812e", "status": "SUCCESS", "reason": "no delete API"}
+  ],
+  "owned_files_removed": {
+    "native-1": "/tmp/qa-w1410b03-69bdbd0f (source) removed; ls exit=2",
+    "native-3": "/tmp/qa-w1410b03-69bdbd0f (destination) removed; ls exit=2",
+    "hub_staging": "/var/lib/nodesteer-hub-repair-20260930-101945/file-transfers/ empty"
+  },
+  "artifacts_get404": {"total": 11, "all_404_verified": true, "evidence": "evidence/cleanup-artifacts-get404.json"},
+  "parallel_batch_interference": {
+    "detected": true,
+    "detail": "concurrent sys-b05 batch on the same hub; a transient node option 'qa-sysb05-b98b3ee95fba-probe' was observed in the transfer target selector",
+    "impact": "none on batch03 assertions; global counts not used"
+  }
+}

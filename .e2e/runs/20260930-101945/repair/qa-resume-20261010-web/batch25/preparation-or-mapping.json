@@ -1,0 +1,158 @@
+{
+  "created_at_utc": "2026-10-12T15:35:53.701Z",
+  "mode": "read-only evidence mapping; no browser/CDP/API mutations and no new resources",
+  "source_inventory": ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+  "cases": [
+    {
+      "case_id": "P06-01",
+      "title": "列表、搜索、分页、空态、Error/Retry。",
+      "inventory_status": "NOT_RUN",
+      "decision": "existing evidence covers all listed dimensions; can be proposed PASS for Root integration without recreating 11 Groups",
+      "dimension_map": {
+        "list_and_empty": [
+          "qa-resume-20261010-web/batch16/evidence/groups-empty-state.json — actual /api/groups GET 200 twice, zero visible rows, empty state, refresh restored, zero mutation"
+        ],
+        "search": [
+          "qa-resume-20261010-web/batch18/evidence/groups-search.json — 11 owned rows; positive hit, no-result, keyboard clear/reset; GET 200"
+        ],
+        "pagination": [
+          "qa-resume-20261010-web/batch18/evidence/groups-page1.json, groups-page2.json, groups-page-size.json and batch18/evidence/resume20261012/groups-page1-before-delete.json, groups-page2-before-delete.json — GET count 11, UI 10+1, first/last and size controls, IDs mapped; last-row removal returned to legal page"
+        ],
+        "error_retry_and_loading": [
+          "qa-resume-20261010-web/batch18/evidence/resume20261012/table-groups-loading-skeleton-confirmed.json — actual paused GET then GET 200, 5 skeletons observed; true empty after release",
+          "qa-resume-20261010-web/batch18/evidence/resume20261012/table-groups-error-final.json — exact GET /api/groups failed, real Error/Retry, click, subsequent GET 200, empty error cleared"
+        ],
+        "extra_ui_behavior": [
+          "qa-resume-20261010-web/batch18/evidence/groups-sort.json",
+          "qa-resume-20261010-web/batch18/evidence/groups-columns.json"
+        ]
+      },
+      "uncovered_dimensions": [],
+      "caveat": "The evidence spans a true empty baseline and a separate owned 11-row pagination fixture. No single-state inference is used."
+    },
+    {
+      "case_id": "P09P11-01",
+      "title": "列表、搜索、分页、View、空态、Error/Retry。",
+      "inventory_status": "NOT_RUN",
+      "decision": "most list dimensions are directly evidenced; do not recreate 11 Tasks. Root should keep PARTIAL unless it accepts ROUTE-15 happy detail as the canonical View action or a surviving trace proves a task-row anchor click.",
+      "dimension_map": {
+        "search": [
+          "qa-resume-20261010-web/batch18/evidence/tasks-search.json — 11 owned Tasks, hit/no-result/reset and GET 200"
+        ],
+        "pagination": [
+          "qa-resume-20261010-web/batch18/evidence/tasks-pagination.json",
+          "qa-resume-20261010-web/batch18/evidence/tasks-page-size.json",
+          "qa-resume-20261010-web/batch18/evidence/resume20261012/tasks-page1-before-delete.json",
+          "qa-resume-20261010-web/batch18/evidence/resume20261012/tasks-page2-before-delete.json",
+          "qa-resume-20261010-web/batch18/evidence/resume20261012/tasks-last-page-delete-fallback.json — 11-row 10+1 ID-to-API map, first/last/size, owned final-row deletion and legal page recovery"
+        ],
+        "true_empty": [
+          "qa-resume-20261010-web/batch15/evidence/table-tasks-empty-state.json — /api/tasks GET 200 and real empty state"
+        ],
+        "error_retry": [
+          "qa-resume-20261010-web/batch18/evidence/resume20261012/table-tasks-error-final.json — actual GET failures, Retry click, real GET 200 and cleared alert"
+        ],
+        "detail_view_candidate": [
+          "qa-resume-20261010-web/batch18/evidence/resume20261012/route-15-detail.json",
+          "qa-resume-20261010-web/batch18/evidence/resume20261012/route-15-history.json",
+          "qa-resume-20261010-web/batch18/evidence/resume20261012/route-15-missing-and-recovery.json — live owned task GET 200, refresh/history, missing UUID GET 404 and recovery to live task GET 200; run/save not clicked"
+        ],
+        "loading_note": [
+          "qa-resume-20261010-web/batch18/evidence/resume20261012/table-tasks-loading-observation.json — actual GET held; 0 skeleton/text, 1 placeholder row; source confirms Tasks renders DataTable while pending. This is a TABLE-TASKS-ERROR remaining dimension, not one of P09P11-01 title’s explicit items."
+        ]
+      },
+      "uncovered_dimensions": [
+        "The preserved evidence does not explicitly bind a click on a task-name link from a populated /tasks list row to that same Task ID; ROUTE-15 proves happy detail and detail→list/history, not the list-row→detail action."
+      ],
+      "minimal_supplement_if_view_requires_list_action": "One owned disabled Command Task, retry=0, timeout 15s, no Node IDs; click its actual list-row name anchor, assert pathname and GET /api/tasks/:id match the same API-listed ID, then return to /tasks. Exact delete + GET404 afterward. Existing 11-row page/search evidence remains reusable; do not recreate 11."
+    },
+    {
+      "case_id": "P12P13-01",
+      "title": "列表、搜索、分页、类型/表达式/时区/Owner/Offline/Misfire/Enabled。",
+      "inventory_status": "NOT_RUN",
+      "decision": "existing evidence closes true empty, search, pagination, sort/columns, error/retry and no-run safety. It does not preserve row-level UI↔GET value comparison for the requested seven schedule fields, so do not propose full PASS yet and do not recreate 11 schedules.",
+      "dimension_map": {
+        "list_and_empty": [
+          "qa-resume-20261010-web/batch16/evidence/schedules-empty-state.json — /api/schedules GET 200 twice, zero rows and true empty state"
+        ],
+        "search_pagination": [
+          "qa-resume-20261010-web/batch18/evidence/schedules-search.json",
+          "qa-resume-20261010-web/batch18/evidence/schedules-pagination.json",
+          "qa-resume-20261010-web/batch18/evidence/schedules-page-size.json",
+          "qa-resume-20261010-web/batch18/evidence/resume20261012/schedules-page1-before-delete.json",
+          "qa-resume-20261010-web/batch18/evidence/resume20261012/schedules-page2-before-delete.json",
+          "qa-resume-20261010-web/batch18/evidence/resume20261012/schedules-last-page-delete-fallback.json — 11 owned rows 10+1, search/reset, page controls and last-row recovery"
+        ],
+        "error_retry_and_loading": [
+          "qa-resume-20261010-web/batch18/evidence/resume20261012/table-schedules-loading-skeleton.json — 5 actual loading skeletons while GET paused, then actual GET 200 and empty state",
+          "qa-resume-20261010-web/batch18/evidence/resume20261012/table-schedules-error-final.json — actual GET failure, Retry click, subsequent GET 200 and alert cleared"
+        ],
+        "source_control_exists": [
+          "web/src/features/catalog/index.tsx:1021-1152 — schedule table GETs /schedules and defines visible type, expression, timezone, execution_owner, offline_policy, misfire_policy, enabled columns. Source proves the columns exist, not their rendered data correctness."
+        ],
+        "prior_safety": [
+          "qa-resume-20261010-web/batch18/evidence/schedules-no-run-oracle.json — 11 owned disabled on_start schedules; no Execution referencing owned Tasks and no Run action. This does not serialize per-row field values."
+        ],
+        "column_visibility": [
+          "qa-resume-20261010-web/batch18/evidence/schedules-columns.json — actual UI hide/restore timezone column and reload persistence; header list includes type/expression/execution owner/offline/misfire/status. No row value oracle."
+        ]
+      },
+      "uncovered_dimensions": [
+        "No saved per-row UI values matched to exact GET fields for type, expression, timezone, execution_owner, offline_policy, misfire_policy, enabled. Existing page count, column-presence, and disabled/no-run evidence cannot substitute for value comparison."
+      ],
+      "minimal_supplement": "One owned disabled Task + one owned disabled interval Schedule referencing only that Task; capture UI row rendered values as safe value/type/boolean comparisons to GET /api/schedules/:id for the seven fields. enabled=false, no Node target, no Run. Exact cleanup Schedule→Task with GET404. Existing 11-row pagination evidence is reusable; no 11-row recreation needed."
+    },
+    {
+      "case_id": "P06-08",
+      "title": "Group 变化后 Task Target 和 Node Detail 任务列表同步。",
+      "inventory_status": "NOT_RUN",
+      "decision": "NOT_RUN/PARTIAL until the same owned node is actually moved between owned Groups and both Task target/UI views change consistently.",
+      "why_existing_evidence_is_insufficient": "Group list and Task target/table tests use empty static Groups or disabled no-Node Tasks. They cannot prove group membership changes alter a matching Node Detail task list.",
+      "minimum_fixture_plan": {
+        "owned_node": 1,
+        "owned_static_groups": 2,
+        "owned_disabled_command_task": 1,
+        "runs": 0,
+        "protected_nodes_changed": 0,
+        "flows": [
+          "group the owned no-host Docker Node into Group A; disabled Task target Group A; verify Task target and Node Detail task list include the same Task",
+          "move that same owned Node to Group B; verify Group A Task no longer matches in Node Detail; use GETs/IDs to cross-check; do not HELLO/install/run"
+        ],
+        "cleanup_order": [
+          "Task",
+          "Groups",
+          "Node"
+        ],
+        "gating_note": "Use one uniquely named/IP no-host Docker Node only after a separate concrete grant; never modify protected Node membership. Task target switches between the two owned Group IDs; no Run."
+      }
+    },
+    {
+      "case_id": "P09P11-11",
+      "title": "Target label：key/value、匹配节点变化。",
+      "inventory_status": "NOT_RUN",
+      "decision": "NOT_RUN/PARTIAL; current zero-owned-Node fixture evidence cannot validate label matching or membership changes.",
+      "why_existing_evidence_is_insufficient": "The disabled Task target-label case needs a real Node with a known label and positive/negative matching result. Empty Groups and zero-Node Task pagination do not provide that oracle.",
+      "minimum_fixture_plan": {
+        "shared_fixture_with_P06_08": "one uniquely owned no-host Docker Node with a GET-verified safe label, two owned Groups, one owned disabled Command Task reused sequentially for group-target and label-target flows",
+        "label_flow": [
+          "GET exact Node label key/value; set Task target to that exact pair; verify matching Node through actual UI/API metadata; change only the owned Task target value to a fresh nonmatch and verify it disappears; do not mutate protected Node labels"
+        ],
+        "budget": {
+          "owned_nodes": 1,
+          "owned_groups": 2,
+          "owned_tasks": 1,
+          "runs": 0,
+          "protected_node_mutations": 0
+        },
+        "gating_note": "If the pending no-host Docker Node has no server-visible labels, do not infer a match and do not install/HELLO it. Keep P09P11-11 PARTIAL until an independently authorized label-bearing owned fixture is available."
+      }
+    }
+  ],
+  "summary": {
+    "fully_mappable_without_retest": "P06-01",
+    "partial_or_evidence-gap": "P09P11-01 (task list-row View linkage); P12P13-01 (row-level fields vs exact GET); P06-08 (needs 1 owned Node + 2 Groups + 1 disabled Task); P09P11-11 (needs known actual Node labels; can share same future fixture only if present)",
+    "objects_created": 0,
+    "api_mutations": 0,
+    "browser_actions": 0
+  }
+}

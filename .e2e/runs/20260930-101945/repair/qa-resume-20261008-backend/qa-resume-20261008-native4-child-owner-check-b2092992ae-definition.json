@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "qa-resume-20261008-native4-child-owner-check-b2092992ae",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport hashlib,json,os,pathlib,stat\nowned=pathlib.Path(\"/tmp/qa-resume-20261008-child-ciivjupc\")\nexpected={\"dev\":33,\"ino\":135,\"uid\":65534,\"manifest_sha\":\"475c97667c8475ddb6dc4cc8d24a1f225af47e8af949de17fa8354dafc76b940\",\"child\":(44027,121232566,65534,\"d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add\"),\"supervisor\":(44025,121232540,65534,\"078fc5e8711442c8051d8c515a3f57bc1d22dcdb90e9b384af0c50916125b531\")}\ndef proc(pid):\n p=pathlib.Path(\"/proc\",str(pid)); raw=(p/\"stat\").read_text(); start=int(raw[raw.rfind(\")\")+2:].split()[19]); uid=os.stat(p).st_uid; exe=os.readlink(p/\"exe\"); h=hashlib.sha256(pathlib.Path(exe).read_bytes()).hexdigest(); argv=[x.decode(errors=\"replace\") for x in (p/\"cmdline\").read_bytes().split(b\"\\0\") if x]; return {\"pid\":pid,\"starttime\":start,\"uid\":uid,\"exe_sha256\":h,\"owned_argv_path_match\":any(a==str(owned) or a.startswith(str(owned)+os.sep) for a in argv)}\ntry:\n ds=owned.lstat(); mp=owned/\"owner-manifest.json\"; marker=owned/\"owner.marker\"; raw=mp.read_bytes(); owner=json.loads(raw); result={\"directory\":{\"dev\":ds.st_dev,\"ino\":ds.st_ino,\"uid\":ds.st_uid,\"mode\":oct(stat.S_IMODE(ds.st_mode)),\"identity_matches\":(ds.st_dev,ds.st_ino,ds.st_uid)==(expected[\"dev\"],expected[\"ino\"],expected[\"uid\"])},\"manifest\":{\"sha256\":hashlib.sha256(raw).hexdigest(),\"matches_expected\":hashlib.sha256(raw).hexdigest()==expected[\"manifest_sha\"],\"node_id_matches\":owner.get(\"node_id\")==\"15961ef7-81b4-43f3-80c8-1b6977ca2aea\",\"agent_id_matches\":owner.get(\"agent_id\")==\"agent-ab15a133-73cd-4025-8c97-f2ff37e000f5\"},\"marker_matches\":marker.read_text()==owner.get(\"owner_marker\"),\"processes\":[]};\n for k in [\"child\",\"supervisor\"]:\n  e=expected[k]; actual=proc(e[0]); actual[\"matches_expected\"]=(actual[\"starttime\"],actual[\"uid\"],actual[\"exe_sha256\"],actual[\"owned_argv_path_match\"])==(e[1],e[2],e[3],True); result[\"processes\"].append(actual)\n result[\"status\"]=\"PASS\" if result[\"directory\"][\"identity_matches\"] and result[\"manifest\"][\"matches_expected\"] and result[\"marker_matches\"] and all(x[\"matches_expected\"] for x in result[\"processes\"]) else \"BLOCKED\"\nexcept Exception as e: result={\"status\":\"BLOCKED\",\"error_type\":type(e).__name__}\nprint(json.dumps(result,separators=(\",\",\":\")))\nPY",
+    "timeout": 45,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "3935c589e9ea0b07f4ec4edd2a6c669297020a1da1fb96cfb3caa8fc8125cb4a",
+  "source_contains_connection_token": false
+}

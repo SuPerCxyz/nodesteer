@@ -1,0 +1,27 @@
+{
+  "captured_at": "2026-10-09T16:52:00+08:00",
+  "executor": "gpt-6-luna",
+  "canonical_id": "G-01-06",
+  "status": "PASS",
+  "details": {
+    "me_before_http": 200,
+    "direct_logout_http": 200,
+    "old_token_after_direct_logout_http": 401,
+    "ui_logout_api_events": [
+      {
+        "path": "/api/oidc/state",
+        "method": "GET",
+        "status": 200
+      }
+    ],
+    "ui_after_logout": {
+      "path": "/sign-in",
+      "tokenPresent": false
+    },
+    "old_token_after_ui_logout_http": 200,
+    "interpretation": "API contract passes. UI logout clears local token and navigates to sign-in but does not send POST /api/logout; the isolated old token remains valid until the API logout call. Separate source-level observation for Root review; not counted as a second canonical."
+  },
+  "evidence": [
+    "g01-06-isolated-contract-results.json"
+  ]
+}

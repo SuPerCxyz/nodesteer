@@ -1,0 +1,80 @@
+--- attempt04/controller.py
++++ attempt05/controller.py
+@@ -317,8 +317,8 @@
+     args = parser.parse_args()
+     if not args.execute_reviewed_sequence:
+         raise SystemExit("refusing_without_explicit_execute_reviewed_sequence")
+-    if not re.fullmatch(r"[0-9a-f]{12}", args.hold_nonce) or args.marker != "QA_PENDING_UI_" + args.hold_nonce or not args.task_name.endswith(args.hold_nonce):
+-        raise SystemExit("task_marker_nonce_binding_failed")
++    if not re.fullmatch(r"[0-9a-f]{12}", args.hold_nonce) or not re.fullmatch(r"QA_PENDING_UI_[0-9a-f]{12}", args.marker) or not args.task_name.endswith(args.marker[-12:]):
++        raise SystemExit("task_marker_or_control_nonce_guard_failed")
+     if args.prepared_proof.resolve().parent != HERE or args.evidence.resolve().parent != HERE:
+         raise SystemExit("controller_evidence_outside_exclusive_directory")
+     reserved_paths = [args.evidence, HERE / ("hold-proof-" + args.hold_nonce + ".json"), HERE / ("ui-evidence-" + args.hold_nonce + ".json"), HERE / ("pending-execution-" + args.hold_nonce + ".png"), HERE / ("success-execution-" + args.hold_nonce + ".png")]
+--- attempt04/arm_control.py
++++ attempt05/arm_control.py
+@@ -160,6 +160,22 @@
+         os.fsync(dfd)
+     finally:
+         os.close(dfd)
++
++
++def ensure_watchdog_source(root: Path, source: bytes, source_sha256: str, uid: int, gid: int) -> tuple[Path, bool]:
++    path = root / "qa-pending-ui-watchdog.py"
++    if path.exists() or path.is_symlink():
++        st = path.lstat()
++        if stat.S_ISLNK(st.st_mode) or not stat.S_ISREG(st.st_mode) or (st.st_uid, st.st_gid, stat.S_IMODE(st.st_mode)) != (uid, gid, 0o700) or sha_file(path) != source_sha256:
++            raise RuntimeError("watchdog_destination_identity_or_sha_mismatch")
++        return path, True
++    with path.open("xb") as dst:
++        dst.write(source)
++        dst.flush()
++        os.fsync(dst.fileno())
++    os.chown(path, uid, gid)
++    os.chmod(path, 0o700)
++    return path, False
+ 
+ 
+ def main() -> int:
+@@ -195,8 +211,8 @@
+         raise SystemExit("refusing_to_arm_without_explicit_execute_reviewed_arm")
+     if not re.fullmatch(r"[0-9a-f]{12,32}", args.hold_nonce) or not re.fullmatch(r"[0-9a-f-]{36}", args.task_id):
+         raise SystemExit("arm_nonce_or_task_id_format_invalid")
+-    if not re.fullmatch(r"QA_PENDING_UI_[0-9a-f]{12}", args.marker) or args.marker != "QA_PENDING_UI_" + args.hold_nonce:
+-        raise SystemExit("arm_marker_must_match_hold_nonce")
++    if not re.fullmatch(r"QA_PENDING_UI_[0-9a-f]{12}", args.marker) or not args.task_name.endswith(args.marker[-12:]):
++        raise SystemExit("arm_task_marker_binding_failed")
+     root = Path(args.root)
+     evidence_path = Path(args.evidence)
+     if evidence_path.parent != root:
+@@ -262,15 +278,8 @@
+         watchdog_source = base64.b64decode(args.watchdog_source_b64, validate=True)
+         if sha_bytes(watchdog_source) != args.watchdog_source_sha256:
+             raise RuntimeError("watchdog_source_sha_mismatch")
+-        watchdog_dst = root / "qa-pending-ui-watchdog.py"
+-        if watchdog_dst.exists() or watchdog_dst.is_symlink():
+-            raise RuntimeError("watchdog_destination_already_exists")
+-        with watchdog_dst.open("xb") as dst:
+-            dst.write(watchdog_source)
+-            dst.flush()
+-            os.fsync(dst.fileno())
+-        os.chown(watchdog_dst, args.root_uid, args.root_gid)
+-        os.chmod(watchdog_dst, 0o700)
++        watchdog_dst, watchdog_source_reused = ensure_watchdog_source(root, watchdog_source, args.watchdog_source_sha256, args.root_uid, args.root_gid)
++        evidence["watchdog_source_reused"] = watchdog_source_reused
+ 
+         ready = root / ("watchdog-ready-" + args.hold_nonce + ".json")
+         lock_path = root / ("watchdog-lock-" + args.hold_nonce + ".lock")
+--- attempt04/ui_driver.py
++++ attempt05/ui_driver.py
+@@ -503,8 +503,8 @@
+         raise SystemExit("unique_marker_format_invalid")
+     if not args.task_name.endswith(args.marker[-12:]):
+         raise SystemExit("task_name_must_bind_to_unique_marker")
+-    if args.hold_nonce and args.marker != "QA_PENDING_UI_" + args.hold_nonce:
+-        raise SystemExit("marker_must_bind_to_hold_nonce")
++    if args.hold_nonce and not re.fullmatch(r"[0-9a-f]{12,32}", args.hold_nonce):
++        raise SystemExit("control_nonce_format_invalid")
+     if args.evidence.resolve().parent != HERE.resolve() or (args.prepared_proof and args.prepared_proof.resolve().parent != HERE.resolve()) or (args.hold_proof and args.hold_proof.resolve().parent != HERE.resolve()):
+         raise SystemExit("ui_evidence_must_stay_in_exclusive_pending_ui_directory")
+     reserved = [args.evidence]

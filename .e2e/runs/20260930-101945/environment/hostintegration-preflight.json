@@ -1,0 +1,47 @@
+{
+  "host": "192.168.100.247",
+  "container": "qa-20260930-101945-env-hostint-agent",
+  "pid": "host",
+  "network": "host",
+  "privileged": false,
+  "cap_drop": [
+    "ALL"
+  ],
+  "cap_add": [
+    "SYS_ADMIN",
+    "SYS_CHROOT",
+    "SYS_PTRACE",
+    "DAC_OVERRIDE"
+  ],
+  "readonly_mounts": [
+    "/proc:/host/proc",
+    "/sys:/host/sys",
+    "/etc/os-release:/host/etc/os-release"
+  ],
+  "readwrite_mounts": [
+    "/opt/qa-20260930-101945-env:/host/opt/qa-20260930-101945-env",
+    "/etc/systemd/system:/host/etc/systemd/system"
+  ],
+  "logical_allowlist": [
+    "/opt/qa-20260930-101945-env",
+    "/etc/systemd/system/qa-20260930-101945-env-hostint.service"
+  ],
+  "unit": "qa-20260930-101945-env-hostint.service",
+  "credential_and_state_volume": "qa-20260930-101945-env-hostintdata",
+  "runtime_checks": [
+    {
+      "command": "nsenter -t 1 -m -u -i -n -p -r /proc/1/root systemctl is-active nodesteer-agent.service",
+      "exit_code": 126,
+      "stderr": "nsenter: failed to execute /proc/1/root: Permission denied",
+      "status": "failed"
+    },
+    {
+      "command": "nsenter -t 1 -m -u -i -n -p --root=/proc/1/root systemctl is-active nodesteer-agent.service",
+      "exit_code": 0,
+      "stdout": "active",
+      "status": "passed"
+    }
+  ],
+  "source": "internal/agent/host/container.go:239",
+  "interpretation": "The separated optional -r argument becomes executable name. Existing caps/mounts permit corrected read-only command; no privileged workaround applied. Actual application deployment verification awaits core stable window."
+}

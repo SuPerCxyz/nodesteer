@@ -1,0 +1,19 @@
+--- reviewed-ui_driver.py
++++ attempt05/ui_driver.py
+@@ -453,8 +453,14 @@
+     result = browser(["eval", "--stdin"], js, timeout=2)
+     if result.returncode != 0:
+         raise RuntimeError("execution_link_lookup_failed")
+-    value = parse_browser_json(result.stdout)
+-    return value if isinstance(value, str) else ""
++    raw = result.stdout.strip()
++    if not raw:
++        return ""
++    try:
++        value = json.loads(raw)
++    except json.JSONDecodeError:
++        value = raw
++    return value if isinstance(value, str) and re.fullmatch(r"/executions/[0-9a-f-]{36}", value) else ""
+ 
+ 
+ def execution_ui_state() -> dict:

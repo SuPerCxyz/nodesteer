@@ -1,0 +1,78 @@
+{
+  "observed_at": "2026-10-15T08:55:19Z",
+  "hub": "http://127.0.0.1:38383",
+  "records": [
+    {
+      "method": "GET",
+      "path": "/healthz",
+      "status": 200,
+      "body_shape": "null-or-nonjson"
+    },
+    {
+      "method": "GET",
+      "path": "/readyz",
+      "status": 200,
+      "body_shape": "null-or-nonjson"
+    },
+    {
+      "method": "GET",
+      "path": "/api/oidc/state",
+      "status": 200,
+      "body_shape": "object",
+      "body_keys": [
+        "enabled",
+        "local_fallback"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/oidc/login",
+      "status": 404,
+      "body_shape": "object",
+      "body_keys": [
+        "error"
+      ],
+      "error": "oidc not enabled"
+    },
+    {
+      "method": "GET",
+      "path": "/api/oidc/callback",
+      "status": 404,
+      "body_shape": "object",
+      "body_keys": [
+        "error"
+      ],
+      "error": "oidc not enabled"
+    },
+    {
+      "method": "POST",
+      "path": "/api/login",
+      "status": 400,
+      "body_shape": "object",
+      "body_keys": [
+        "error"
+      ],
+      "error": "invalid request"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agent/binary?architecture=unknowarch",
+      "status": 400,
+      "body_shape": "object",
+      "body_keys": [
+        "error"
+      ],
+      "error": "architecture must be amd64 or arm64",
+      "content_length": 48,
+      "body_raw_head": "{\"error\":\"architecture must be amd64 or arm64\"}\n"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agent/binary?architecture=amd64 (Range 0-31)",
+      "status": 206,
+      "content_length": 32,
+      "x_agent_binary_sha256": null,
+      "content_range": "bytes 0-31/16805087"
+    }
+  ]
+}

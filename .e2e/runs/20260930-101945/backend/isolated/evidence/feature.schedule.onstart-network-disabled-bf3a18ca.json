@@ -1,0 +1,5892 @@
+{
+  "result": {
+    "id": "feature.schedule.onstart-network-disabled",
+    "name": "on_start网络重连不触发和disabled进程启动不触发",
+    "started_at": "2026-10-01T01:47:34.712387+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "failed",
+    "reason": "客户机文件内容错误: 'start'",
+    "traceback": "Traceback (most recent call last):\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/runner.py\", line 627, in execute\n    self.normal_case(case['id'])\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated_runner.py\", line 733, in normal_case\n    self.check_file(self.node(), marker, 'start\\n')\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/runner.py\", line 196, in check_file\n    assert output == expected, f'客户机文件内容错误: {output!r}'\n           ^^^^^^^^^^^^^^^^^^\nAssertionError: 客户机文件内容错误: 'start'\n",
+    "finished_at": "2026-10-01T01:47:49.606488+00:00",
+    "evidence": "backend/isolated/evidence/feature.schedule.onstart-network-disabled-bf3a18ca.json"
+  },
+  "events": [
+    {
+      "control": "python3 -c 'import pathlib,sys;pathlib.Path(sys.argv[1]).write_text(sys.argv[2])' /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.controls.json '{}'",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "control": "docker rm -f qa-20260930-101945-env-agent",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-env-agent\n",
+      "stderr": ""
+    },
+    {
+      "control": "docker run -d --name qa-20260930-101945-env-agent --network qa-20260930-101945-env-net --restart unless-stopped --hostname 6f6041279833 -v qa-20260930-101945-env-agentdata:/var/lib/nodesteer -e PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin -e NODESTEER_HUB_URL=ws://192.168.100.209:18084/ws -e NODESTEER_REGISTRATION_TOKEN=[redacted] -e NODESTEER_AGENT_ID=agent-9b83b1d6-e376-4e76-a46f-f5c45e495329 -e NODESTEER_NODE_NAME=qa-20260930-101945-env-docker-agent -e NODESTEER_NODE_IP=192.168.100.209 -e NODESTEER_DEPLOYMENT_MODE=docker -e NODESTEER_DATA_DIR=/var/lib/nodesteer qa-20260930-101945-env-agent:dddee4f0",
+      "exit_code": 0,
+      "stdout": "fee975d2618d069ea0fba221df6c4ec3427f0b81aee668abfa6b43f4eb4235d6\n",
+      "stderr": ""
+    },
+    {
+      "core_node": {
+        "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "hostname": "qa-20260930-101945-env-docker-agent",
+        "ip": "192.168.100.209",
+        "os": "Alpine Linux v3.20",
+        "arch": "amd64",
+        "agent_version": "dddee4f0",
+        "deployment_mode": "docker",
+        "host_integration": false,
+        "status": "online",
+        "labels": {},
+        "capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        },
+        "global_revision": 173,
+        "sync_status": "synced",
+        "last_seen": "2026-10-01T01:47:37.056171324Z",
+        "first_seen": "2026-09-30T02:36:32.656149623Z"
+      }
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-onstart-network-146aeb",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be; printf \"start\\n\" >> /var/lib/nodesteer/qa-20260930-101945-be/onstart-network-7833cb",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "92c0f3b2-ef05-488b-889a-82e9ba53ebe8",
+        "name": "qa-20260930-101945-be-onstart-network-146aeb",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be; printf \"start\\n\" >> /var/lib/nodesteer/qa-20260930-101945-be/onstart-network-7833cb",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:47:38 GMT",
+        "Content-Length": "554",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/schedules",
+      "status": 200,
+      "request": {
+        "task_id": "92c0f3b2-ef05-488b-889a-82e9ba53ebe8",
+        "type": "on_start",
+        "timezone": "UTC",
+        "execution_owner": "agent",
+        "offline_policy": "allow_offline",
+        "misfire_policy": "run_once",
+        "enabled": true
+      },
+      "response": {
+        "id": "da116bdf-2606-422c-8a70-33b4b312e13b",
+        "task_id": "92c0f3b2-ef05-488b-889a-82e9ba53ebe8",
+        "revision": 1,
+        "type": "on_start",
+        "expression": "",
+        "run_at": "0001-01-01T00:00:00Z",
+        "timezone": "UTC",
+        "execution_owner": "agent",
+        "offline_policy": "allow_offline",
+        "misfire_policy": "run_once",
+        "enabled": true,
+        "created_at": "2026-10-01T01:47:38.023252153Z",
+        "updated_at": "2026-10-01T01:47:38.023252267Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:47:38 GMT",
+        "Content-Length": "385",
+        "Connection": "close"
+      }
+    },
+    {
+      "control": "docker restart -t 2 qa-20260930-101945-env-agent",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-env-agent\n",
+      "stderr": ""
+    },
+    {
+      "core_node": {
+        "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "hostname": "qa-20260930-101945-env-docker-agent",
+        "ip": "192.168.100.209",
+        "os": "Alpine Linux v3.20",
+        "arch": "amd64",
+        "agent_version": "dddee4f0",
+        "deployment_mode": "docker",
+        "host_integration": false,
+        "status": "online",
+        "labels": {},
+        "capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        },
+        "global_revision": 175,
+        "sync_status": "synced",
+        "last_seen": "2026-10-01T01:47:40.004149532Z",
+        "first_seen": "2026-09-30T02:36:32.656149623Z"
+      }
+    },
+    {
+      "api": "GET /api/executions/9e3ebbd1-6d66-47b8-947a-132fcfa8f7cd",
+      "terminal": {
+        "id": "9e3ebbd1-6d66-47b8-947a-132fcfa8f7cd",
+        "task_id": "92c0f3b2-ef05-488b-889a-82e9ba53ebe8",
+        "task_revision": 1,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "schedule",
+        "scheduled_time": "2026-10-01T01:47:39Z",
+        "start_time": "2026-10-01T01:47:40.043580322Z",
+        "end_time": "2026-10-01T01:47:40.082735719Z",
+        "status": "SUCCESS",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"9e3ebbd1-6d66-47b8-947a-132fcfa8f7cd\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"9e3ebbd1-6d66-47b8-947a-132fcfa8f7cd\", \"task_id\": \"92c0f3b2-ef05-488b-889a-82e9ba53ebe8\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"2026-10-01T01:47:39Z\", \"synced\": 1, \"offline\": 0, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "docker inspect -f '{{.State.Pid}}' qa-20260930-101945-env-agent",
+      "exit_code": 0,
+      "stdout": "806797\n",
+      "stderr": ""
+    },
+    {
+      "proxy_events": [
+        {
+          "time": 1790750210.2633064,
+          "event": "proxy_started",
+          "port": 18084
+        },
+        {
+          "time": 1790750214.3525732,
+          "event": "connection_closed",
+          "connection": "1790750214351716292",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750217.6971858,
+          "event": "connection_closed",
+          "connection": "1790750217695769252",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750221.0171747,
+          "event": "connection_closed",
+          "connection": "1790750221016713647",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750224.6326535,
+          "event": "connection_closed",
+          "connection": "1790750224632260951",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750226.7277586,
+          "event": "connection_closed",
+          "connection": "1790750226727370946",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750228.9809368,
+          "event": "connection_closed",
+          "connection": "1790750228980555031",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750231.8155,
+          "event": "connection_closed",
+          "connection": "1790750231814055035",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750235.4171603,
+          "event": "connection_closed",
+          "connection": "1790750235416751236",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750238.0597515,
+          "event": "connection_closed",
+          "connection": "1790750238058639300",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750240.6673024,
+          "event": "connection_closed",
+          "connection": "1790750240666742057",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750243.532305,
+          "event": "connection_closed",
+          "connection": "1790750243531842591",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750246.0983293,
+          "event": "connection_closed",
+          "connection": "1790750246096718046",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750249.2153685,
+          "event": "connection_closed",
+          "connection": "1790750249214835505",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750252.9989126,
+          "event": "connection_closed",
+          "connection": "1790750252998456675",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750255.5099196,
+          "event": "connection_closed",
+          "connection": "1790750255509450102",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750259.2113945,
+          "event": "connection_closed",
+          "connection": "1790750259210893762",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750261.9362159,
+          "event": "connection_closed",
+          "connection": "1790750261931590203",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750264.5856876,
+          "event": "connection_closed",
+          "connection": "1790750264584788668",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750268.1279624,
+          "event": "connection_closed",
+          "connection": "1790750268127476724",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750271.3740292,
+          "event": "connection_closed",
+          "connection": "1790750271373372344",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750273.6564233,
+          "event": "connection_closed",
+          "connection": "1790750273655633359",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750276.9539044,
+          "event": "connection_closed",
+          "connection": "1790750276953451810",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750280.2393255,
+          "event": "connection_closed",
+          "connection": "1790750280236247674",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750282.5170288,
+          "event": "connection_closed",
+          "connection": "1790750282516565502",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750285.2528718,
+          "event": "connection_closed",
+          "connection": "1790750285252074097",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750287.7917678,
+          "event": "connection_closed",
+          "connection": "1790750287790485237",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750290.1598566,
+          "event": "connection_closed",
+          "connection": "1790750290159392976",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750292.3002534,
+          "event": "connection_closed",
+          "connection": "1790750292299466062",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750294.3459685,
+          "event": "connection_closed",
+          "connection": "1790750294345511277",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750297.1520963,
+          "event": "connection_closed",
+          "connection": "1790750297151632274",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750300.7249064,
+          "event": "connection_closed",
+          "connection": "1790750300724450645",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750303.3041625,
+          "event": "connection_closed",
+          "connection": "1790750303303683206",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750306.1499143,
+          "event": "connection_closed",
+          "connection": "1790750306149460153",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750309.361438,
+          "event": "connection_closed",
+          "connection": "1790750309359537818",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750312.7605357,
+          "event": "connection_closed",
+          "connection": "1790750312759037071",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750315.0430796,
+          "event": "connection_closed",
+          "connection": "1790750315042639097",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750318.7338018,
+          "event": "connection_closed",
+          "connection": "1790750318732942408",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750321.6569543,
+          "event": "connection_closed",
+          "connection": "1790750321656483805",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750324.2015452,
+          "event": "connection_closed",
+          "connection": "1790750324201051252",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750327.7393327,
+          "event": "connection_closed",
+          "connection": "1790750327738841953",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750330.821076,
+          "event": "connection_closed",
+          "connection": "1790750330820618172",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750332.985639,
+          "event": "connection_closed",
+          "connection": "1790750332985169739",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750336.508071,
+          "event": "connection_closed",
+          "connection": "1790750336507605625",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750340.4370334,
+          "event": "connection_closed",
+          "connection": "1790750340436524313",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750343.6711996,
+          "event": "connection_closed",
+          "connection": "1790750343670710440",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750346.667513,
+          "event": "connection_closed",
+          "connection": "1790750346666777951",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750349.922784,
+          "event": "connection_closed",
+          "connection": "1790750349922329210",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750353.7758923,
+          "event": "connection_closed",
+          "connection": "1790750353775441603",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750357.0593503,
+          "event": "connection_closed",
+          "connection": "1790750357058654686",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750360.2551906,
+          "event": "connection_closed",
+          "connection": "1790750360254384488",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750362.4508388,
+          "event": "connection_closed",
+          "connection": "1790750362450390538",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750365.3305483,
+          "event": "connection_closed",
+          "connection": "1790750365329824238",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750367.590805,
+          "event": "connection_closed",
+          "connection": "1790750367590344937",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750370.6559896,
+          "event": "connection_closed",
+          "connection": "1790750370655520649",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750373.6164644,
+          "event": "connection_closed",
+          "connection": "1790750373613962187",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750376.7227678,
+          "event": "connection_closed",
+          "connection": "1790750376722309429",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750378.9025266,
+          "event": "connection_closed",
+          "connection": "1790750378901027213",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750382.6060324,
+          "event": "connection_closed",
+          "connection": "1790750382605569125",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750384.7491367,
+          "event": "connection_closed",
+          "connection": "1790750384748640334",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750387.2468297,
+          "event": "connection_closed",
+          "connection": "1790750387246375212",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750389.4660163,
+          "event": "connection_closed",
+          "connection": "1790750389465565600",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750393.24001,
+          "event": "connection_closed",
+          "connection": "1790750393239272252",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750396.796515,
+          "event": "connection_closed",
+          "connection": "1790750396795971221",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750399.8786786,
+          "event": "connection_closed",
+          "connection": "1790750399877953781",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750402.6436818,
+          "event": "connection_closed",
+          "connection": "1790750402643157626",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750404.8703895,
+          "event": "connection_closed",
+          "connection": "1790750404869775911",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750407.647597,
+          "event": "connection_closed",
+          "connection": "1790750407647123972",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750410.3854382,
+          "event": "connection_closed",
+          "connection": "1790750410384942459",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750413.4584768,
+          "event": "connection_closed",
+          "connection": "1790750413457554256",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750416.8104846,
+          "event": "connection_closed",
+          "connection": "1790750416809620176",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750420.4902246,
+          "event": "connection_closed",
+          "connection": "1790750420489742444",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750424.4596329,
+          "event": "connection_closed",
+          "connection": "1790750424459170560",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750427.061558,
+          "event": "connection_closed",
+          "connection": "1790750427060648073",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750429.9523118,
+          "event": "connection_closed",
+          "connection": "1790750429951515471",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750432.9583876,
+          "event": "connection_closed",
+          "connection": "1790750432957481167",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750435.339044,
+          "event": "connection_closed",
+          "connection": "1790750435338600737",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750438.2948604,
+          "event": "connection_closed",
+          "connection": "1790750438294404088",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750440.896982,
+          "event": "connection_closed",
+          "connection": "1790750440896520595",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750444.2759073,
+          "event": "connection_closed",
+          "connection": "1790750444275454039",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750446.4839568,
+          "event": "connection_closed",
+          "connection": "1790750446483488912",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750450.46039,
+          "event": "connection_closed",
+          "connection": "1790750450459852412",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750452.3120823,
+          "event": "connection_closed",
+          "connection": "1790750452311578235",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750454.3790963,
+          "event": "connection_closed",
+          "connection": "1790750454378601039",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750456.9006896,
+          "event": "connection_closed",
+          "connection": "1790750456900213131",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750459.1329024,
+          "event": "connection_closed",
+          "connection": "1790750459132450986",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750461.6810124,
+          "event": "connection_closed",
+          "connection": "1790750461680486761",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750465.0303886,
+          "event": "connection_closed",
+          "connection": "1790750465029853898",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750467.7624087,
+          "event": "connection_closed",
+          "connection": "1790750467760978623",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750470.5259182,
+          "event": "connection_closed",
+          "connection": "1790750470525465892",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750473.3035274,
+          "event": "connection_closed",
+          "connection": "1790750473302977331",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750476.341905,
+          "event": "connection_closed",
+          "connection": "1790750476341452938",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750478.447342,
+          "event": "connection_closed",
+          "connection": "1790750478446834292",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750480.6879475,
+          "event": "connection_closed",
+          "connection": "1790750480687474381",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750484.594551,
+          "event": "connection_closed",
+          "connection": "1790750484594060323",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750487.5861857,
+          "event": "connection_closed",
+          "connection": "1790750487585389055",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750491.4391975,
+          "event": "connection_closed",
+          "connection": "1790750491438475422",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750493.4548395,
+          "event": "connection_closed",
+          "connection": "1790750493454340300",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750495.472682,
+          "event": "connection_closed",
+          "connection": "1790750495472200720",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750500.0663102,
+          "event": "connection_closed",
+          "connection": "1790750500065750207",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750502.888697,
+          "event": "connection_closed",
+          "connection": "1790750502888183375",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750506.5514143,
+          "event": "connection_closed",
+          "connection": "1790750506550171702",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750509.3358698,
+          "event": "connection_closed",
+          "connection": "1790750509335358112",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750512.6935833,
+          "event": "connection_closed",
+          "connection": "1790750512693073499",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750516.396398,
+          "event": "connection_closed",
+          "connection": "1790750516395596519",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750518.9122138,
+          "event": "connection_closed",
+          "connection": "1790750518911737232",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750522.7063906,
+          "event": "connection_closed",
+          "connection": "1790750522705475589",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750525.628342,
+          "event": "connection_closed",
+          "connection": "1790750525627522161",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750529.0691926,
+          "event": "connection_closed",
+          "connection": "1790750529068321141",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750532.7641335,
+          "event": "connection_closed",
+          "connection": "1790750532763325978",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750536.0658488,
+          "event": "connection_closed",
+          "connection": "1790750536065393120",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750538.5265472,
+          "event": "connection_closed",
+          "connection": "1790750538525679320",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750542.1528943,
+          "event": "connection_closed",
+          "connection": "1790750542152444203",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750544.7219515,
+          "event": "connection_closed",
+          "connection": "1790750544720997273",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750547.554297,
+          "event": "connection_closed",
+          "connection": "1790750547553657674",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750551.4028425,
+          "event": "connection_closed",
+          "connection": "1790750551402072606",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750554.0379467,
+          "event": "connection_closed",
+          "connection": "1790750554037493686",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750556.9039664,
+          "event": "connection_closed",
+          "connection": "1790750556903459737",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750560.4186127,
+          "event": "connection_closed",
+          "connection": "1790750560418134295",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750563.2435842,
+          "event": "connection_closed",
+          "connection": "1790750563242918817",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750565.9515164,
+          "event": "connection_closed",
+          "connection": "1790750565951004269",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750569.219269,
+          "event": "connection_closed",
+          "connection": "1790750569218767829",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750572.9417346,
+          "event": "connection_closed",
+          "connection": "1790750572941287609",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750575.3234968,
+          "event": "connection_closed",
+          "connection": "1790750575322918520",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750578.2230132,
+          "event": "connection_closed",
+          "connection": "1790750578222522843",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750581.2725906,
+          "event": "connection_closed",
+          "connection": "1790750581272045672",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750584.5299556,
+          "event": "connection_closed",
+          "connection": "1790750584529057747",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750586.7925427,
+          "event": "connection_closed",
+          "connection": "1790750586791794968",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750589.3941426,
+          "event": "connection_closed",
+          "connection": "1790750589393666489",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750591.9330294,
+          "event": "connection_closed",
+          "connection": "1790750591932309138",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750595.1247218,
+          "event": "connection_closed",
+          "connection": "1790750595120906625",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750597.699466,
+          "event": "connection_closed",
+          "connection": "1790750597698750458",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750600.9076543,
+          "event": "connection_closed",
+          "connection": "1790750600906833787",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750604.549329,
+          "event": "connection_closed",
+          "connection": "1790750604548811444",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750607.5731697,
+          "event": "connection_closed",
+          "connection": "1790750607572433841",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750610.617072,
+          "event": "connection_closed",
+          "connection": "1790750610616616783",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750612.864486,
+          "event": "connection_closed",
+          "connection": "1790750612863987031",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750616.732353,
+          "event": "connection_closed",
+          "connection": "1790750616731843929",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750620.1377437,
+          "event": "connection_closed",
+          "connection": "1790750620137283024",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750623.4480107,
+          "event": "connection_closed",
+          "connection": "1790750623447543223",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750626.4601567,
+          "event": "connection_closed",
+          "connection": "1790750626459430363",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750628.5239785,
+          "event": "connection_closed",
+          "connection": "1790750628523507952",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750632.1359675,
+          "event": "connection_closed",
+          "connection": "1790750632135469357",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750634.2828453,
+          "event": "connection_closed",
+          "connection": "1790750634282031095",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750637.85772,
+          "event": "connection_closed",
+          "connection": "1790750637857268165",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750641.0615287,
+          "event": "connection_closed",
+          "connection": "1790750641061009306",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750644.7793283,
+          "event": "connection_closed",
+          "connection": "1790750644777744534",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750646.8173969,
+          "event": "connection_closed",
+          "connection": "1790750646816578676",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750649.171998,
+          "event": "connection_closed",
+          "connection": "1790750649171535205",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750652.6649125,
+          "event": "connection_closed",
+          "connection": "1790750652664456231",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750656.4608915,
+          "event": "connection_closed",
+          "connection": "1790750656460446405",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750660.1179128,
+          "event": "connection_closed",
+          "connection": "1790750660117457228",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750662.455751,
+          "event": "connection_closed",
+          "connection": "1790750662455291782",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750664.880497,
+          "event": "connection_closed",
+          "connection": "1790750664879997236",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750666.999903,
+          "event": "connection_closed",
+          "connection": "1790750666999450270",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750670.8698516,
+          "event": "connection_closed",
+          "connection": "1790750670869393316",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750672.8877707,
+          "event": "connection_closed",
+          "connection": "1790750672886981002",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750676.668224,
+          "event": "connection_closed",
+          "connection": "1790750676667740011",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750680.162915,
+          "event": "connection_closed",
+          "connection": "1790750680162096758",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750683.0819106,
+          "event": "connection_closed",
+          "connection": "1790750683081129221",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750685.1726737,
+          "event": "connection_closed",
+          "connection": "1790750685171906119",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750687.7535837,
+          "event": "connection_closed",
+          "connection": "1790750687751647537",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750690.0843155,
+          "event": "connection_closed",
+          "connection": "1790750690083822075",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750693.3649397,
+          "event": "connection_closed",
+          "connection": "1790750693364484345",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750696.1597087,
+          "event": "connection_closed",
+          "connection": "1790750696159224973",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750699.0576243,
+          "event": "connection_closed",
+          "connection": "1790750699057144657",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750702.4971247,
+          "event": "connection_closed",
+          "connection": "1790750702496648623",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750705.6673899,
+          "event": "connection_closed",
+          "connection": "1790750705666614140",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750708.6352308,
+          "event": "connection_closed",
+          "connection": "1790750708634752208",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750711.1039834,
+          "event": "connection_closed",
+          "connection": "1790750711103282146",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750715.0235713,
+          "event": "connection_closed",
+          "connection": "1790750715023078790",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750718.0135703,
+          "event": "connection_closed",
+          "connection": "1790750718013019876",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750721.7904954,
+          "event": "connection_closed",
+          "connection": "1790750721789771210",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750724.5158825,
+          "event": "connection_closed",
+          "connection": "1790750724515144932",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750728.143667,
+          "event": "connection_closed",
+          "connection": "1790750728142898171",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750731.4499907,
+          "event": "connection_closed",
+          "connection": "1790750731449550461",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750734.7903366,
+          "event": "connection_closed",
+          "connection": "1790750734789847984",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790750737.3645983,
+          "event": "proxy_started",
+          "port": 18084
+        },
+        {
+          "time": 1790750740.5611649,
+          "event": "connection",
+          "connection": "1790750740551852680",
+          "websocket": true
+        },
+        {
+          "time": 1790750740.5796008,
+          "event": "forward_control",
+          "connection": "1790750740551852680",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 21,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750741.539282,
+          "event": "forward_control",
+          "connection": "1790750740551852680",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750741.5484102,
+          "event": "forward_control",
+          "connection": "1790750740551852680",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 22,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750741.5660713,
+          "event": "forward_control",
+          "connection": "1790750740551852680",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750741.5867083,
+          "event": "forward_control",
+          "connection": "1790750740551852680",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 23,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750745.597728,
+          "event": "connection",
+          "connection": "1790750745575286918",
+          "websocket": true
+        },
+        {
+          "time": 1790750745.6246672,
+          "event": "forward_control",
+          "connection": "1790750745575286918",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 23,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750746.6084845,
+          "event": "forward_control",
+          "connection": "1790750745575286918",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750746.6136444,
+          "event": "forward_control",
+          "connection": "1790750745575286918",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 24,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750746.6352267,
+          "event": "forward_control",
+          "connection": "1790750745575286918",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750746.6725774,
+          "event": "forward_control",
+          "connection": "1790750745575286918",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 25,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750750.5161433,
+          "event": "connection",
+          "connection": "1790750750502734022",
+          "websocket": true
+        },
+        {
+          "time": 1790750750.5443661,
+          "event": "forward_control",
+          "connection": "1790750750502734022",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 25,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750751.5089061,
+          "event": "forward_control",
+          "connection": "1790750750502734022",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750751.513345,
+          "event": "forward_control",
+          "connection": "1790750750502734022",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 26,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750751.5413058,
+          "event": "forward_control",
+          "connection": "1790750750502734022",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750751.5732594,
+          "event": "forward_control",
+          "connection": "1790750750502734022",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 27,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750755.3344314,
+          "event": "connection",
+          "connection": "1790750755325849596",
+          "websocket": true
+        },
+        {
+          "time": 1790750755.363811,
+          "event": "forward_control",
+          "connection": "1790750755325849596",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 27,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750756.3398912,
+          "event": "forward_control",
+          "connection": "1790750755325849596",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750756.3467557,
+          "event": "forward_control",
+          "connection": "1790750755325849596",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 28,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750756.3769934,
+          "event": "forward_control",
+          "connection": "1790750755325849596",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750756.3859038,
+          "event": "forward_control",
+          "connection": "1790750755325849596",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 29,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750759.6397374,
+          "event": "connection",
+          "connection": "1790750759638615643",
+          "websocket": true
+        },
+        {
+          "time": 1790750759.6685066,
+          "event": "forward_control",
+          "connection": "1790750759638615643",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 29,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750760.623052,
+          "event": "forward_control",
+          "connection": "1790750759638615643",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750760.6367037,
+          "event": "forward_control",
+          "connection": "1790750759638615643",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 30,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750760.6511872,
+          "event": "forward_control",
+          "connection": "1790750759638615643",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750760.656374,
+          "event": "forward_control",
+          "connection": "1790750759638615643",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 31,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750764.640565,
+          "event": "connection",
+          "connection": "1790750764632784010",
+          "websocket": true
+        },
+        {
+          "time": 1790750764.683213,
+          "event": "forward_control",
+          "connection": "1790750764632784010",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 31,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750765.6209095,
+          "event": "forward_control",
+          "connection": "1790750764632784010",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750765.6383247,
+          "event": "forward_control",
+          "connection": "1790750764632784010",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 32,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750765.6539872,
+          "event": "forward_control",
+          "connection": "1790750764632784010",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750765.6926186,
+          "event": "forward_control",
+          "connection": "1790750764632784010",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 33,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750769.2911413,
+          "event": "connection",
+          "connection": "1790750769281651220",
+          "websocket": true
+        },
+        {
+          "time": 1790750769.3322165,
+          "event": "forward_control",
+          "connection": "1790750769281651220",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 33,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750770.2683423,
+          "event": "forward_control",
+          "connection": "1790750769281651220",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750770.2798185,
+          "event": "forward_control",
+          "connection": "1790750769281651220",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 34,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750770.2988098,
+          "event": "forward_control",
+          "connection": "1790750769281651220",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750770.493648,
+          "event": "forward_control",
+          "connection": "1790750769281651220",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 35,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750773.6036541,
+          "event": "connection",
+          "connection": "1790750773601568108",
+          "websocket": true
+        },
+        {
+          "time": 1790750773.6337228,
+          "event": "forward_control",
+          "connection": "1790750773601568108",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 35,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750774.9238548,
+          "event": "forward_control",
+          "connection": "1790750773601568108",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750774.934967,
+          "event": "forward_control",
+          "connection": "1790750773601568108",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 36,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750778.240566,
+          "event": "connection",
+          "connection": "1790750778228652118",
+          "websocket": true
+        },
+        {
+          "time": 1790750778.2664332,
+          "event": "forward_control",
+          "connection": "1790750778228652118",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 36,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750779.5345278,
+          "event": "forward_control",
+          "connection": "1790750778228652118",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750779.556946,
+          "event": "forward_control",
+          "connection": "1790750778228652118",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 37,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750783.6940267,
+          "event": "connection",
+          "connection": "1790750783691857207",
+          "websocket": true
+        },
+        {
+          "time": 1790750783.722423,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 37,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750784.7013175,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750784.7102969,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 38,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750784.7957153,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750784.8017926,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 39,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750817.3823757,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750817.3951912,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 40,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750817.4089255,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750817.4313726,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 41,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750817.798506,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750817.8066037,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 42,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750993.2341495,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750993.2543962,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 43,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750993.2690442,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750993.2900603,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 44,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750993.3055246,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750993.3478389,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 45,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750993.4264102,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750993.4474642,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 46,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750993.455634,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750993.5021522,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 47,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750993.5458248,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750993.5618997,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750993.5785673,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750993.5978656,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750993.6275725,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750993.6713002,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750993.7420993,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750993.7548687,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 54,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750993.765319,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 54,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750993.765644,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 54,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750993.7660108,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 54,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750993.7664135,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 54,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750993.766716,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 54,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750993.7669938,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 54,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750993.8552976,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750993.8621988,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 55,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750993.8827064,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750993.899076,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750993.9877648,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 57,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750993.9887471,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 57,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750994.0209818,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750994.033861,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 58,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750994.0343645,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750994.0497217,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 59,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790750994.1153977,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790750994.1261542,
+          "event": "forward_control",
+          "connection": "1790750783691857207",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 60,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751085.766486,
+          "event": "connection",
+          "connection": "1790751085751291671",
+          "websocket": true
+        },
+        {
+          "time": 1790751085.7974393,
+          "event": "forward_control",
+          "connection": "1790751085751291671",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 60,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751086.768376,
+          "event": "forward_control",
+          "connection": "1790751085751291671",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751086.7758315,
+          "event": "forward_control",
+          "connection": "1790751085751291671",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751086.77978,
+          "event": "forward_control",
+          "connection": "1790751085751291671",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 61,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751086.7845273,
+          "event": "forward_control",
+          "connection": "1790751085751291671",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 62,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751086.8912077,
+          "event": "forward_control",
+          "connection": "1790751085751291671",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "46df1964-054d-4105-9ac0-f1fe5d906fee"
+        },
+        {
+          "time": 1790751089.243034,
+          "event": "drop",
+          "connection": "1790751085751291671",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751128.734974,
+          "event": "forward_control",
+          "connection": "1790751085751291671",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 63,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751459.3947525,
+          "event": "connection",
+          "connection": "1790751459393308519",
+          "websocket": true
+        },
+        {
+          "time": 1790751459.428273,
+          "event": "forward_control",
+          "connection": "1790751459393308519",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 63,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751460.428928,
+          "event": "forward_control",
+          "connection": "1790751459393308519",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751460.442913,
+          "event": "forward_control",
+          "connection": "1790751459393308519",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751460.4465966,
+          "event": "forward_control",
+          "connection": "1790751459393308519",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 64,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751460.4633317,
+          "event": "forward_control",
+          "connection": "1790751459393308519",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 65,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751460.505759,
+          "event": "forward_control",
+          "connection": "1790751459393308519",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "6236f133-fcfb-4048-bce2-9854d95ac88c"
+        },
+        {
+          "time": 1790751463.0434566,
+          "event": "drop",
+          "connection": "1790751459393308519",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751500.398206,
+          "event": "forward_control",
+          "connection": "1790751459393308519",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 66,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751501.240242,
+          "event": "forward_control",
+          "connection": "1790751459393308519",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "6dcd82ee-ca20-43d4-8ee8-d8037f01513a"
+        },
+        {
+          "time": 1790751505.486411,
+          "event": "connection",
+          "connection": "1790751505478959891",
+          "websocket": true
+        },
+        {
+          "time": 1790751505.5614636,
+          "event": "forward_control",
+          "connection": "1790751505478959891",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 66,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751506.443558,
+          "event": "forward_control",
+          "connection": "1790751505478959891",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751506.4609394,
+          "event": "forward_control",
+          "connection": "1790751505478959891",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 68,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751506.4695923,
+          "event": "forward_control",
+          "connection": "1790751505478959891",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751506.563998,
+          "event": "forward_control",
+          "connection": "1790751505478959891",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "4180f588-bd9e-4444-b048-bf376caf4249"
+        },
+        {
+          "time": 1790751508.1678839,
+          "event": "duplicate",
+          "connection": "1790751505478959891",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751508.1905534,
+          "event": "forward_control",
+          "connection": "1790751505478959891",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 69,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751508.1994522,
+          "event": "forward_control",
+          "connection": "1790751505478959891",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 69,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751508.8000376,
+          "event": "forward_control",
+          "connection": "1790751505478959891",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "9e15df55-dfa7-4072-8cf2-89d8d896d8ab"
+        },
+        {
+          "time": 1790751512.6357577,
+          "event": "connection",
+          "connection": "1790751512632068780",
+          "websocket": true
+        },
+        {
+          "time": 1790751512.6656866,
+          "event": "forward_control",
+          "connection": "1790751512632068780",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 69,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751513.627976,
+          "event": "forward_control",
+          "connection": "1790751512632068780",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751513.6360335,
+          "event": "forward_control",
+          "connection": "1790751512632068780",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 70,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751513.6501825,
+          "event": "forward_control",
+          "connection": "1790751512632068780",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751513.6710536,
+          "event": "forward_control",
+          "connection": "1790751512632068780",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 71,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751513.7629983,
+          "event": "forward_control",
+          "connection": "1790751512632068780",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "ca62506e-9f8d-48e1-8b22-d329cfdd7295"
+        },
+        {
+          "time": 1790751516.0990043,
+          "event": "reorder_hold",
+          "connection": "1790751512632068780",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751516.108477,
+          "event": "reorder_release",
+          "connection": "1790751512632068780",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751516.1243367,
+          "event": "forward_control",
+          "connection": "1790751512632068780",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 73,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751516.1401813,
+          "event": "forward_control",
+          "connection": "1790751512632068780",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 73,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751516.6859968,
+          "event": "forward_control",
+          "connection": "1790751512632068780",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "c797ceeb-fbe9-45d9-9193-b9ab16609e01"
+        },
+        {
+          "time": 1790751520.347528,
+          "event": "connection",
+          "connection": "1790751520331898021",
+          "websocket": true
+        },
+        {
+          "time": 1790751520.3809354,
+          "event": "forward_control",
+          "connection": "1790751520331898021",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 73,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751521.37309,
+          "event": "forward_control",
+          "connection": "1790751520331898021",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751521.3960404,
+          "event": "forward_control",
+          "connection": "1790751520331898021",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751521.3974762,
+          "event": "forward_control",
+          "connection": "1790751520331898021",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 74,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751521.4053416,
+          "event": "forward_control",
+          "connection": "1790751520331898021",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 75,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751521.4511762,
+          "event": "forward_control",
+          "connection": "1790751520331898021",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "49b0f94e-8972-4680-a430-daf9471875ff"
+        },
+        {
+          "time": 1790751524.6437335,
+          "event": "connection",
+          "connection": "1790751524642618616",
+          "websocket": true
+        },
+        {
+          "time": 1790751524.6612012,
+          "event": "forward_control",
+          "connection": "1790751524642618616",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 78,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751526.2083242,
+          "event": "forward_control",
+          "connection": "1790751524642618616",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "853f2167-ad58-4cf6-8343-09a84d2090b7"
+        },
+        {
+          "time": 1790751529.6065867,
+          "event": "connection",
+          "connection": "1790751529604304114",
+          "websocket": true
+        },
+        {
+          "time": 1790751529.6482592,
+          "event": "forward_control",
+          "connection": "1790751529604304114",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 78,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751529.6486595,
+          "event": "forward_control",
+          "connection": "1790751529604304114",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751529.6939883,
+          "event": "forward_control",
+          "connection": "1790751529604304114",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 79,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751529.7077844,
+          "event": "forward_control",
+          "connection": "1790751529604304114",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751529.723831,
+          "event": "forward_control",
+          "connection": "1790751529604304114",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 80,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751529.8064137,
+          "event": "forward_control",
+          "connection": "1790751529604304114",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "ebe05d69-d311-4b75-9558-e664bbe8b80c"
+        },
+        {
+          "time": 1790751533.4186845,
+          "event": "connection",
+          "connection": "1790751533414906710",
+          "websocket": true
+        },
+        {
+          "time": 1790751533.4450579,
+          "event": "forward_control",
+          "connection": "1790751533414906710",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 83,
+          "full_resync": true,
+          "snapshot": true
+        },
+        {
+          "time": 1790751535.0859644,
+          "event": "forward_control",
+          "connection": "1790751533414906710",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "53339381-5c17-43d5-b882-8fae9a9a41d2"
+        },
+        {
+          "time": 1790751538.2638676,
+          "event": "connection",
+          "connection": "1790751538262324733",
+          "websocket": true
+        },
+        {
+          "time": 1790751538.2814586,
+          "event": "forward_control",
+          "connection": "1790751538262324733",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 83,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751539.260207,
+          "event": "forward_control",
+          "connection": "1790751538262324733",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751539.2743142,
+          "event": "forward_control",
+          "connection": "1790751538262324733",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 84,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751539.2784529,
+          "event": "forward_control",
+          "connection": "1790751538262324733",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751539.2964935,
+          "event": "forward_control",
+          "connection": "1790751538262324733",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 85,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751539.3757417,
+          "event": "forward_control",
+          "connection": "1790751538262324733",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "5797adcb-e1bb-462a-b624-d3bbc62d0869"
+        },
+        {
+          "time": 1790751542.7640102,
+          "event": "connection",
+          "connection": "1790751542762958417",
+          "websocket": true
+        },
+        {
+          "time": 1790751542.7815888,
+          "event": "forward_control",
+          "connection": "1790751542762958417",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 88,
+          "full_resync": true,
+          "snapshot": true
+        },
+        {
+          "time": 1790751544.38183,
+          "event": "forward_control",
+          "connection": "1790751542762958417",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "3e13f2c1-b57a-4ba9-aabb-c3fc1563a4a1"
+        },
+        {
+          "time": 1790751547.9141552,
+          "event": "connection",
+          "connection": "1790751547904567541",
+          "websocket": true
+        },
+        {
+          "time": 1790751547.9336438,
+          "event": "forward_control",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 88,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751548.9169803,
+          "event": "forward_control",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751548.925838,
+          "event": "forward_control",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 89,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751548.9337938,
+          "event": "forward_control",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751549.0079837,
+          "event": "forward_control",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 90,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751549.0298681,
+          "event": "forward_control",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "192b2996-23ba-4fe5-9227-53a0916b2432"
+        },
+        {
+          "time": 1790751551.1554284,
+          "event": "forward_control",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751551.1705225,
+          "event": "forward_control",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 91,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751551.1769528,
+          "event": "forward_control",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751551.2205234,
+          "event": "forward_control",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 92,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751551.2903876,
+          "event": "forward_control",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "24b1091b-30e0-417b-8b58-3de3e53d70fc"
+        },
+        {
+          "time": 1790751554.3328032,
+          "event": "forward_control",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751554.3395536,
+          "event": "corrupt_script",
+          "target_id": "61dba53a-b7b3-45a7-8ab0-6218444cdc86",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 93,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751554.3415918,
+          "event": "forward_control",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 93,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751554.3474522,
+          "event": "forward_control",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751554.3629065,
+          "event": "corrupt_script",
+          "target_id": "61dba53a-b7b3-45a7-8ab0-6218444cdc86",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 94,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751554.364572,
+          "event": "forward_control",
+          "connection": "1790751547904567541",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 94,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751560.2062533,
+          "event": "connection",
+          "connection": "1790751560205028918",
+          "websocket": true
+        },
+        {
+          "time": 1790751560.224608,
+          "event": "forward_control",
+          "connection": "1790751560205028918",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 94,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751562.379154,
+          "event": "forward_control",
+          "connection": "1790751560205028918",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "8d7cb8d6-937c-4541-a012-c1712f8d17ad"
+        },
+        {
+          "time": 1790751565.7506301,
+          "event": "connection",
+          "connection": "1790751565746865599",
+          "websocket": true
+        },
+        {
+          "time": 1790751565.7763243,
+          "event": "forward_control",
+          "connection": "1790751565746865599",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 94,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751567.059086,
+          "event": "forward_control",
+          "connection": "1790751565746865599",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751567.0768156,
+          "event": "forward_control",
+          "connection": "1790751565746865599",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 95,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751567.128672,
+          "event": "drop",
+          "connection": "1790751565746865599",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "e5359ee1-a21f-4a86-bd7c-c75809ae16f0"
+        },
+        {
+          "time": 1790751570.3235312,
+          "event": "connection",
+          "connection": "1790751570322380237",
+          "websocket": true
+        },
+        {
+          "time": 1790751570.3433604,
+          "event": "forward_control",
+          "connection": "1790751570322380237",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 95,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751570.3437264,
+          "event": "forward_control",
+          "connection": "1790751570322380237",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "e5359ee1-a21f-4a86-bd7c-c75809ae16f0"
+        },
+        {
+          "time": 1790751573.258042,
+          "event": "connection",
+          "connection": "1790751573256570597",
+          "websocket": true
+        },
+        {
+          "time": 1790751573.2774138,
+          "event": "forward_control",
+          "connection": "1790751573256570597",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 95,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751574.5601478,
+          "event": "forward_control",
+          "connection": "1790751573256570597",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751574.5684364,
+          "event": "forward_control",
+          "connection": "1790751573256570597",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 96,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751574.6094294,
+          "event": "drop",
+          "connection": "1790751573256570597",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "199d4c41-cb97-4210-bca9-7982a1a03389"
+        },
+        {
+          "time": 1790751577.7473876,
+          "event": "connection",
+          "connection": "1790751577745701084",
+          "websocket": true
+        },
+        {
+          "time": 1790751577.7699409,
+          "event": "forward_control",
+          "connection": "1790751577745701084",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 96,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751577.7702017,
+          "event": "forward_control",
+          "connection": "1790751577745701084",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "199d4c41-cb97-4210-bca9-7982a1a03389"
+        },
+        {
+          "time": 1790751580.3239632,
+          "event": "connection",
+          "connection": "1790751580322575065",
+          "websocket": true
+        },
+        {
+          "time": 1790751580.3416388,
+          "event": "forward_control",
+          "connection": "1790751580322575065",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 96,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751582.6810744,
+          "event": "connection",
+          "connection": "1790751582678640537",
+          "websocket": true
+        },
+        {
+          "time": 1790751582.7014673,
+          "event": "forward_control",
+          "connection": "1790751582678640537",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 96,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751583.6835215,
+          "event": "forward_control",
+          "connection": "1790751582678640537",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751583.7108881,
+          "event": "forward_control",
+          "connection": "1790751582678640537",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 97,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751583.7413173,
+          "event": "forward_control",
+          "connection": "1790751582678640537",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751583.8484921,
+          "event": "forward_control",
+          "connection": "1790751582678640537",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 98,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751583.8681386,
+          "event": "forward_control",
+          "connection": "1790751582678640537",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "49314008-b3ff-4d08-b3bd-0f1662837618"
+        },
+        {
+          "time": 1790751586.6475966,
+          "event": "forward_control",
+          "connection": "1790751582678640537",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751586.654312,
+          "event": "corrupt_script_sha",
+          "target_id": "fd6fe274-9027-430a-8435-5c02705aab5e",
+          "connection": "1790751582678640537",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 99,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751586.6612816,
+          "event": "forward_control",
+          "connection": "1790751582678640537",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 99,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751592.1280751,
+          "event": "connection",
+          "connection": "1790751592127055800",
+          "websocket": true
+        },
+        {
+          "time": 1790751592.1467333,
+          "event": "forward_control",
+          "connection": "1790751592127055800",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 99,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751657.2040367,
+          "event": "forward_control",
+          "connection": "1790751592127055800",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751657.230665,
+          "event": "forward_control",
+          "connection": "1790751592127055800",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 100,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751657.2781563,
+          "event": "forward_control",
+          "connection": "1790751592127055800",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751657.3073142,
+          "event": "forward_control",
+          "connection": "1790751592127055800",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 101,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751672.0124173,
+          "event": "forward_control",
+          "connection": "1790751592127055800",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "8e196060-8b22-4788-aeeb-31457ba830f5"
+        },
+        {
+          "time": 1790751676.526602,
+          "event": "connection",
+          "connection": "1790751676522549904",
+          "websocket": true
+        },
+        {
+          "time": 1790751676.5448124,
+          "event": "forward_control",
+          "connection": "1790751676522549904",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 101,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751680.2976482,
+          "event": "forward_control",
+          "connection": "1790751676522549904",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751680.323717,
+          "event": "forward_control",
+          "connection": "1790751676522549904",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 102,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751680.34321,
+          "event": "forward_control",
+          "connection": "1790751676522549904",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751680.4586563,
+          "event": "forward_control",
+          "connection": "1790751676522549904",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 103,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751685.6202228,
+          "event": "connection_closed",
+          "connection": "1790751685617083125",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790751688.4624295,
+          "event": "connection_closed",
+          "connection": "1790751688461642308",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790751691.9470716,
+          "event": "connection",
+          "connection": "1790751691942814478",
+          "websocket": true
+        },
+        {
+          "time": 1790751691.9783092,
+          "event": "forward_control",
+          "connection": "1790751691942814478",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 103,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751691.9914696,
+          "event": "forward_control",
+          "connection": "1790751691942814478",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "0a9d8395-1289-4555-abf6-a47e1fffb9de"
+        },
+        {
+          "time": 1790751692.5854235,
+          "event": "forward_control",
+          "connection": "1790751691942814478",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751692.6019318,
+          "event": "forward_control",
+          "connection": "1790751691942814478",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 104,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751692.606861,
+          "event": "forward_control",
+          "connection": "1790751691942814478",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751692.6899946,
+          "event": "forward_control",
+          "connection": "1790751691942814478",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 105,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751701.1590607,
+          "event": "forward_control",
+          "connection": "1790751691942814478",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "60a91b60-fefe-4c4e-be0f-c03bc922f869"
+        },
+        {
+          "time": 1790751705.317982,
+          "event": "connection",
+          "connection": "1790751705313858552",
+          "websocket": true
+        },
+        {
+          "time": 1790751705.3469234,
+          "event": "forward_control",
+          "connection": "1790751705313858552",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 105,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751709.8795197,
+          "event": "forward_control",
+          "connection": "1790751705313858552",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751709.8988905,
+          "event": "forward_control",
+          "connection": "1790751705313858552",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 106,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751709.9077177,
+          "event": "forward_control",
+          "connection": "1790751705313858552",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751709.9709222,
+          "event": "forward_control",
+          "connection": "1790751705313858552",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751710.0226898,
+          "event": "forward_control",
+          "connection": "1790751705313858552",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 108,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751710.0234568,
+          "event": "forward_control",
+          "connection": "1790751705313858552",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 108,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751714.2296093,
+          "event": "connection_closed",
+          "connection": "1790751714227830105",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790751717.424768,
+          "event": "connection_closed",
+          "connection": "1790751717424359458",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790751720.6127043,
+          "event": "connection",
+          "connection": "1790751720610596164",
+          "websocket": true
+        },
+        {
+          "time": 1790751720.6565804,
+          "event": "forward_control",
+          "connection": "1790751720610596164",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 108,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751720.6628618,
+          "event": "forward_control",
+          "connection": "1790751720610596164",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "1d9cbdcb-b195-4743-b327-ff069788dbcc"
+        },
+        {
+          "time": 1790751722.9623735,
+          "event": "forward_control",
+          "connection": "1790751720610596164",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751722.9689794,
+          "event": "forward_control",
+          "connection": "1790751720610596164",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751722.9746377,
+          "event": "forward_control",
+          "connection": "1790751720610596164",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 109,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751722.9787529,
+          "event": "forward_control",
+          "connection": "1790751720610596164",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 110,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751723.044468,
+          "event": "forward_control",
+          "connection": "1790751720610596164",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751723.0784814,
+          "event": "forward_control",
+          "connection": "1790751720610596164",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 111,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751723.1083212,
+          "event": "forward_control",
+          "connection": "1790751720610596164",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751723.1150644,
+          "event": "forward_control",
+          "connection": "1790751720610596164",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751723.1345637,
+          "event": "forward_control",
+          "connection": "1790751720610596164",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 113,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751723.1358104,
+          "event": "forward_control",
+          "connection": "1790751720610596164",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 113,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751733.8939161,
+          "event": "connection",
+          "connection": "1790751733892446447",
+          "websocket": true
+        },
+        {
+          "time": 1790751733.9532545,
+          "event": "forward_control",
+          "connection": "1790751733892446447",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 113,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751733.9537034,
+          "event": "forward_control",
+          "connection": "1790751733892446447",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "fbf8eba4-12ca-455c-9f1f-c79f40b8d148"
+        },
+        {
+          "time": 1790751735.5777838,
+          "event": "forward_control",
+          "connection": "1790751733892446447",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751735.5857139,
+          "event": "forward_control",
+          "connection": "1790751733892446447",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 114,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751735.6106708,
+          "event": "forward_control",
+          "connection": "1790751733892446447",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751735.6643577,
+          "event": "forward_control",
+          "connection": "1790751733892446447",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 115,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751735.71381,
+          "event": "forward_control",
+          "connection": "1790751733892446447",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751735.7295334,
+          "event": "forward_control",
+          "connection": "1790751733892446447",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751735.7351606,
+          "event": "forward_control",
+          "connection": "1790751733892446447",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 116,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751735.7461596,
+          "event": "forward_control",
+          "connection": "1790751733892446447",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 117,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751735.7828233,
+          "event": "forward_control",
+          "connection": "1790751733892446447",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "fb44b4d8-adcc-4244-80a8-86c1892e5689"
+        },
+        {
+          "time": 1790751737.875804,
+          "event": "forward_control",
+          "connection": "1790751733892446447",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751737.8836544,
+          "event": "forward_control",
+          "connection": "1790751733892446447",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 118,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751740.6547961,
+          "event": "connection",
+          "connection": "1790751740650559493",
+          "websocket": true
+        },
+        {
+          "time": 1790751740.680778,
+          "event": "forward_control",
+          "connection": "1790751740650559493",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 121,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751942.4084659,
+          "event": "forward_control",
+          "connection": "1790751740650559493",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790751942.44182,
+          "event": "forward_control",
+          "connection": "1790751740650559493",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 122,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751947.6171336,
+          "event": "connection_closed",
+          "connection": "1790751947616158293",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790751950.7868824,
+          "event": "connection_closed",
+          "connection": "1790751950785830578",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790751953.330473,
+          "event": "connection_closed",
+          "connection": "1790751953329428896",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790751956.475316,
+          "event": "connection",
+          "connection": "1790751956470428820",
+          "websocket": true
+        },
+        {
+          "time": 1790751956.4961927,
+          "event": "forward_control",
+          "connection": "1790751956470428820",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 122,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790751956.5005982,
+          "event": "forward_control",
+          "connection": "1790751956470428820",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "d8051979-9339-463b-9a59-f2f97f7e91b6"
+        },
+        {
+          "time": 1790753464.793247,
+          "event": "forward_control",
+          "connection": "1790751956470428820",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790753464.833279,
+          "event": "forward_control",
+          "connection": "1790751956470428820",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 123,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790753465.9256716,
+          "event": "connection",
+          "connection": "1790753465918503418",
+          "websocket": true
+        },
+        {
+          "time": 1790753468.1513026,
+          "event": "connection",
+          "connection": "1790753468149354273",
+          "websocket": true
+        },
+        {
+          "time": 1790753468.1766205,
+          "event": "forward_control",
+          "connection": "1790753468149354273",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 123,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790753511.022267,
+          "event": "forward_control",
+          "connection": "1790753468149354273",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790753511.0381975,
+          "event": "forward_control",
+          "connection": "1790753468149354273",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 124,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790753511.0603564,
+          "event": "forward_control",
+          "connection": "1790753468149354273",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790753511.086199,
+          "event": "forward_control",
+          "connection": "1790753468149354273",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 125,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790753511.093057,
+          "event": "forward_control",
+          "connection": "1790753468149354273",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790816775.5841374,
+          "event": "forward_control",
+          "connection": "1790753468149354273",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790816775.5945413,
+          "event": "forward_control",
+          "connection": "1790753468149354273",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 126,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790816776.686532,
+          "event": "connection",
+          "connection": "1790816776681497754",
+          "websocket": true
+        },
+        {
+          "time": 1790816779.1634824,
+          "event": "connection",
+          "connection": "1790816779153043737",
+          "websocket": true
+        },
+        {
+          "time": 1790816779.2014513,
+          "event": "forward_control",
+          "connection": "1790816779153043737",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 126,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790816989.2207654,
+          "event": "forward_control",
+          "connection": "1790816779153043737",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790816989.2437716,
+          "event": "forward_control",
+          "connection": "1790816779153043737",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 127,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790816990.5118601,
+          "event": "connection",
+          "connection": "1790816990502970216",
+          "websocket": true
+        },
+        {
+          "time": 1790816994.041872,
+          "event": "connection",
+          "connection": "1790816994039240687",
+          "websocket": true
+        },
+        {
+          "time": 1790816994.0672388,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 127,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790816994.9856315,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "64dce0b4-6e31-461a-9afa-efff965dd750"
+        },
+        {
+          "time": 1790817333.732172,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817333.7498581,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 128,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817333.8178408,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "d91114db-5d41-418b-9598-384d16676bfe"
+        },
+        {
+          "time": 1790817335.3895302,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817335.4074047,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 129,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817335.452487,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "c67e8ea7-bc23-42c5-b19d-82a73977a365"
+        },
+        {
+          "time": 1790817337.014984,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817337.0298965,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 130,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817337.0597734,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "6b5354a6-08e4-40dd-b133-1333ea1a5bce"
+        },
+        {
+          "time": 1790817338.6165094,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817338.6278586,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 131,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817338.6709886,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "3535aca1-7ae7-420d-810f-c0312d2c4e44"
+        },
+        {
+          "time": 1790817340.206224,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817340.2190893,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 132,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817340.2694352,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "8dbdd864-680a-4d73-b3ca-6b69658ff108"
+        },
+        {
+          "time": 1790817341.8000736,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817341.831747,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 133,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817341.844462,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "13e715a4-3f2e-4eb6-b736-1a94c6e399a3"
+        },
+        {
+          "time": 1790817343.4098372,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817343.4273095,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 134,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817343.4684098,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "f6c4b844-c33d-43cb-aee0-0e6e7f1a7613"
+        },
+        {
+          "time": 1790817345.0458624,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817345.0774999,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 135,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817345.1282105,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817345.1405466,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 136,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817345.1909096,
+          "event": "forward_control",
+          "connection": "1790816994039240687",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "69105e01-88f2-410c-87a4-d4d443952d4a"
+        },
+        {
+          "time": 1790817348.0245802,
+          "event": "proxy_started",
+          "port": 18084
+        },
+        {
+          "time": 1790817351.5581563,
+          "event": "connection",
+          "connection": "1790817351550062507",
+          "websocket": true
+        },
+        {
+          "time": 1790817351.6392508,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 136,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817352.5820715,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817352.6068897,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 137,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817352.7162209,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "470f0164-80cd-4381-9c09-a80c2b2f6371"
+        },
+        {
+          "time": 1790817354.408884,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817354.4487946,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 138,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817354.7314856,
+          "event": "expire_remote",
+          "property": "last_execution",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "REMOTE_STATE",
+          "id": "a39ced6b-4237-439e-93b9-d25c43aa2573"
+        },
+        {
+          "time": 1790817354.7316234,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "REMOTE_STATE",
+          "id": "a39ced6b-4237-439e-93b9-d25c43aa2573"
+        },
+        {
+          "time": 1790817354.760249,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "dbe3b75a-defe-4b79-8b23-0bd5a8bececa"
+        },
+        {
+          "time": 1790817355.7363303,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817355.757407,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 139,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817358.7704601,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "2441ea76-288f-4dcc-a091-bb1148ba0317"
+        },
+        {
+          "time": 1790817701.8391232,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817701.8616073,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 140,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817701.9187157,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "dd19255c-0ef3-4cb4-a3f7-fe0e7ef9b84d"
+        },
+        {
+          "time": 1790817703.5354314,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817703.5523274,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 141,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817703.6013505,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "cea65f13-5176-4aea-88a0-740ec356b2a7"
+        },
+        {
+          "time": 1790817705.1854746,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817705.1982028,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 142,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817705.250303,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "7b42eee5-9eda-4b78-bae8-3dfc2036454d"
+        },
+        {
+          "time": 1790817706.796667,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817706.8086684,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 143,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817706.8523495,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "9efccc9e-f8a6-4556-b264-19c0e46a2cf2"
+        },
+        {
+          "time": 1790817708.4376705,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817708.4831386,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 144,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817708.5168023,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "37dd40de-0b40-4b2f-8fe6-345472b0e58c"
+        },
+        {
+          "time": 1790817710.0864582,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817710.0995824,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 145,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817710.17335,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "a644c03c-f640-4897-92ec-0ba1afe3d4d4"
+        },
+        {
+          "time": 1790817711.685183,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817711.714138,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 146,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817711.746888,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "85f9a07d-19c3-462f-aa78-921618980d9b"
+        },
+        {
+          "time": 1790817713.268577,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817713.2810798,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 147,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817713.2950857,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817713.3406186,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 148,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817713.3455188,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "REMOTE_STATE",
+          "id": "078dc897-ba30-4100-bea7-a0b857f957bd"
+        },
+        {
+          "time": 1790817713.3869596,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "b8115b09-fee6-4dc8-90d5-eb48b8707e97"
+        },
+        {
+          "time": 1790817715.2990506,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817715.331368,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 149,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817715.3591826,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "f13ca4d5-b3ef-4b41-bed9-579153fb0b85"
+        },
+        {
+          "time": 1790817717.2780275,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817717.2976627,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 150,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817717.3141267,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "REMOTE_STATE",
+          "id": "ac554c58-029f-488b-bbbb-3715915af316"
+        },
+        {
+          "time": 1790817717.3264873,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "9d193fac-0dae-492a-8e53-dcbd0f8c1966"
+        },
+        {
+          "time": 1790817719.2042866,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817719.2340124,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 151,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817719.2497437,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "REMOTE_STATE",
+          "id": "f54a6441-01a3-4201-8120-50b407e3fb1a"
+        },
+        {
+          "time": 1790817719.2688181,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "676e593b-b5c7-457a-ab16-a77451dc45ca"
+        },
+        {
+          "time": 1790817721.2445502,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817721.2604501,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 152,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817721.2860916,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "00f3541f-c69a-47e1-a732-640131553a86"
+        },
+        {
+          "time": 1790817723.2635467,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817723.2842147,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 153,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817723.3326662,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "REMOTE_STATE",
+          "id": "568ef70c-38ae-4a3f-a1f9-0aae54d104bc"
+        },
+        {
+          "time": 1790817723.3510313,
+          "event": "forward_control",
+          "connection": "1790817351550062507",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "75873e20-de92-4a41-8ee4-1cb84afd2fe3"
+        },
+        {
+          "time": 1790817726.1434696,
+          "event": "proxy_started",
+          "port": 18084
+        },
+        {
+          "time": 1790817729.3890593,
+          "event": "connection",
+          "connection": "1790817729378513239",
+          "websocket": true
+        },
+        {
+          "time": 1790817729.4365947,
+          "event": "forward_control",
+          "connection": "1790817729378513239",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 153,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817730.358975,
+          "event": "forward_control",
+          "connection": "1790817729378513239",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817730.3708787,
+          "event": "forward_control",
+          "connection": "1790817729378513239",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 154,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817730.4224236,
+          "event": "forward_control",
+          "connection": "1790817729378513239",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "c1da5cf2-818e-4401-b967-72793ede4eec"
+        },
+        {
+          "time": 1790817732.0363607,
+          "event": "forward_control",
+          "connection": "1790817729378513239",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817732.049436,
+          "event": "forward_control",
+          "connection": "1790817729378513239",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 155,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817732.3413506,
+          "event": "expire_remote",
+          "property": "last_execution",
+          "connection": "1790817729378513239",
+          "direction": "down",
+          "type": "REMOTE_STATE",
+          "id": "64c99ba7-d178-4070-aaf3-f0d12629ce17"
+        },
+        {
+          "time": 1790817732.3414855,
+          "event": "forward_control",
+          "connection": "1790817729378513239",
+          "direction": "down",
+          "type": "REMOTE_STATE",
+          "id": "64c99ba7-d178-4070-aaf3-f0d12629ce17"
+        },
+        {
+          "time": 1790817732.3751886,
+          "event": "forward_control",
+          "connection": "1790817729378513239",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "5eb6af74-8c3e-49c7-bf9f-c521886c83d9"
+        },
+        {
+          "time": 1790817733.8832514,
+          "event": "forward_control",
+          "connection": "1790817729378513239",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817733.9125497,
+          "event": "forward_control",
+          "connection": "1790817729378513239",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 156,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817736.9160874,
+          "event": "forward_control",
+          "connection": "1790817729378513239",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "df2285b0-281d-4e75-afe1-02a2c29b8264"
+        },
+        {
+          "time": 1790817739.5555854,
+          "event": "forward_control",
+          "connection": "1790817729378513239",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817739.5828047,
+          "event": "forward_control",
+          "connection": "1790817729378513239",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 157,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817744.603006,
+          "event": "forward_control",
+          "connection": "1790817729378513239",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "73d57341-c465-47b7-aac3-57038fb68166"
+        },
+        {
+          "time": 1790817749.256348,
+          "event": "connection",
+          "connection": "1790817749246261724",
+          "websocket": true
+        },
+        {
+          "time": 1790817749.3071425,
+          "event": "forward_control",
+          "connection": "1790817749246261724",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 157,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817750.260222,
+          "event": "forward_control",
+          "connection": "1790817749246261724",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817750.3081937,
+          "event": "forward_control",
+          "connection": "1790817749246261724",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 158,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817750.6541624,
+          "event": "forward_control",
+          "connection": "1790817749246261724",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817750.6756926,
+          "event": "redirect_app_artifact",
+          "target_id": "784f4688-77f6-4a77-a947-2411abbb1cb1",
+          "connection": "1790817749246261724",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 159,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817750.675918,
+          "event": "forward_control",
+          "connection": "1790817749246261724",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 159,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817750.7081704,
+          "event": "connection",
+          "connection": "1790817750701734648",
+          "websocket": false
+        },
+        {
+          "time": 1790817750.7085552,
+          "event": "http_fault",
+          "connection": "1790817750701734648",
+          "mode": "truncate",
+          "path": "/api/artifacts/5fe31d8d-d5cb-45c5-b505-fbac2bea26d4/download",
+          "declared_bytes": 163840,
+          "sent_bytes": 128
+        },
+        {
+          "time": 1790817754.8042276,
+          "event": "forward_control",
+          "connection": "1790817749246261724",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817754.8204975,
+          "event": "redirect_app_artifact",
+          "target_id": "784f4688-77f6-4a77-a947-2411abbb1cb1",
+          "connection": "1790817749246261724",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 160,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817754.82094,
+          "event": "forward_control",
+          "connection": "1790817749246261724",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 160,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817754.842579,
+          "event": "connection",
+          "connection": "1790817754840448990",
+          "websocket": false
+        },
+        {
+          "time": 1790817756.0565796,
+          "event": "forward_control",
+          "connection": "1790817749246261724",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817756.0760436,
+          "event": "forward_control",
+          "connection": "1790817749246261724",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 161,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817758.2671883,
+          "event": "connection",
+          "connection": "1790817758259395158",
+          "websocket": true
+        },
+        {
+          "time": 1790817758.302379,
+          "event": "forward_control",
+          "connection": "1790817758259395158",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 161,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817759.3025746,
+          "event": "forward_control",
+          "connection": "1790817758259395158",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817759.336605,
+          "event": "forward_control",
+          "connection": "1790817758259395158",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 162,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817759.6895874,
+          "event": "forward_control",
+          "connection": "1790817758259395158",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817759.7216578,
+          "event": "redirect_app_artifact",
+          "target_id": "90c5b3f0-5643-4971-ac83-07839b3a83a1",
+          "connection": "1790817758259395158",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 163,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817759.7245848,
+          "event": "forward_control",
+          "connection": "1790817758259395158",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 163,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817759.7527747,
+          "event": "connection",
+          "connection": "1790817759747745207",
+          "websocket": false
+        },
+        {
+          "time": 1790817759.7547026,
+          "event": "http_fault",
+          "connection": "1790817759747745207",
+          "mode": "corrupt",
+          "path": "/api/artifacts/2d095cf7-b36a-4786-8b01-bed92c284cb7/download",
+          "declared_bytes": 163840,
+          "sent_bytes": 163840
+        },
+        {
+          "time": 1790817763.858915,
+          "event": "forward_control",
+          "connection": "1790817758259395158",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817763.887984,
+          "event": "redirect_app_artifact",
+          "target_id": "90c5b3f0-5643-4971-ac83-07839b3a83a1",
+          "connection": "1790817758259395158",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 164,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817763.888771,
+          "event": "forward_control",
+          "connection": "1790817758259395158",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 164,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817763.913211,
+          "event": "connection",
+          "connection": "1790817763910690933",
+          "websocket": false
+        },
+        {
+          "time": 1790817765.0694137,
+          "event": "forward_control",
+          "connection": "1790817758259395158",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817765.0846632,
+          "event": "forward_control",
+          "connection": "1790817758259395158",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 165,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790818416.193687,
+          "event": "connection",
+          "connection": "1790818416186574765",
+          "websocket": true
+        },
+        {
+          "time": 1790818416.277311,
+          "event": "forward_control",
+          "connection": "1790818416186574765",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 165,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790818417.19154,
+          "event": "forward_control",
+          "connection": "1790818416186574765",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790818417.214296,
+          "event": "forward_control",
+          "connection": "1790818416186574765",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 166,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790818419.688216,
+          "event": "connection",
+          "connection": "1790818419677800703",
+          "websocket": true
+        },
+        {
+          "time": 1790818419.7225084,
+          "event": "hold",
+          "connection": "1790818419677800703",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 166,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790818420.248277,
+          "event": "forward_control",
+          "connection": "1790818419677800703",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "f762b76c-1721-4cbe-b059-abef97344e53"
+        },
+        {
+          "time": 1790818422.5405078,
+          "event": "release_held",
+          "connection": "1790818419677800703",
+          "type": "SYNC_RESPONSE"
+        },
+        {
+          "time": 1790818423.5609612,
+          "event": "forward_control",
+          "connection": "1790818419677800703",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "50b5dd15-5ae2-4781-b6c2-b65cdf8aa77c"
+        },
+        {
+          "time": 1790818425.5952842,
+          "event": "forward_control",
+          "connection": "1790818419677800703",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790818425.618762,
+          "event": "forward_control",
+          "connection": "1790818419677800703",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790818425.632648,
+          "event": "forward_control",
+          "connection": "1790818419677800703",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 167,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790818425.6427097,
+          "event": "forward_control",
+          "connection": "1790818419677800703",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 168,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790818425.7052321,
+          "event": "forward_control",
+          "connection": "1790818419677800703",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790818425.7206566,
+          "event": "forward_control",
+          "connection": "1790818419677800703",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 169,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790818425.72926,
+          "event": "forward_control",
+          "connection": "1790818419677800703",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790818425.7557483,
+          "event": "forward_control",
+          "connection": "1790818419677800703",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 170,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790818429.2225964,
+          "event": "connection_closed",
+          "connection": "1790818429222023784",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790818432.1549993,
+          "event": "connection_closed",
+          "connection": "1790818432154589928",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790818435.5155542,
+          "event": "connection_closed",
+          "connection": "1790818435515046082",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790818439.0001261,
+          "event": "connection_closed",
+          "connection": "1790818438998453869",
+          "error_type": "ConnectionRefusedError"
+        },
+        {
+          "time": 1790818441.2942991,
+          "event": "connection",
+          "connection": "1790818441291563801",
+          "websocket": true
+        },
+        {
+          "time": 1790818441.335216,
+          "event": "forward_control",
+          "connection": "1790818441291563801",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 170,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790818441.335626,
+          "event": "forward_control",
+          "connection": "1790818441291563801",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "8d19177b-9b3f-4b02-bca1-6debbcbb1a92"
+        },
+        {
+          "time": 1790818441.3457766,
+          "event": "forward_control",
+          "connection": "1790818441291563801",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "228de1ca-1bd8-42e0-ba45-53a694981eb1"
+        },
+        {
+          "time": 1790818441.355495,
+          "event": "forward_control",
+          "connection": "1790818441291563801",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "2d932b24-38ec-4782-9fa4-308084f44c05"
+        },
+        {
+          "time": 1790818442.2671487,
+          "event": "forward_control",
+          "connection": "1790818441291563801",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790818442.2822368,
+          "event": "forward_control",
+          "connection": "1790818441291563801",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790818442.3130598,
+          "event": "forward_control",
+          "connection": "1790818441291563801",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 171,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790818442.3145907,
+          "event": "forward_control",
+          "connection": "1790818441291563801",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 172,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790818450.9364214,
+          "event": "connection",
+          "connection": "1790818450927321719",
+          "websocket": true
+        },
+        {
+          "time": 1790818450.983548,
+          "event": "forward_control",
+          "connection": "1790818450927321719",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 172,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790819240.943789,
+          "event": "proxy_started",
+          "port": 18084
+        },
+        {
+          "time": 1790819243.9542212,
+          "event": "connection",
+          "connection": "1790819243940754271",
+          "websocket": true
+        },
+        {
+          "time": 1790819243.9913175,
+          "event": "forward_control",
+          "connection": "1790819243940754271",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 172,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790819244.9626138,
+          "event": "forward_control",
+          "connection": "1790819243940754271",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790819244.9697397,
+          "event": "forward_control",
+          "connection": "1790819243940754271",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 173,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790819245.5476148,
+          "event": "duplicate",
+          "connection": "1790819243940754271",
+          "direction": "down",
+          "type": "RUN_EXECUTION",
+          "id": "8d7e2f02-fb12-42f3-8d3d-23e7e38e259c"
+        },
+        {
+          "time": 1790819246.6111689,
+          "event": "forward_control",
+          "connection": "1790819243940754271",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "8d7e2f02-fb12-42f3-8d3d-23e7e38e259c"
+        },
+        {
+          "time": 1790819249.5984147,
+          "event": "replay_execution",
+          "connection": "1790819243940754271",
+          "direction": "down",
+          "type": "RUN_EXECUTION",
+          "id": "8d7e2f02-fb12-42f3-8d3d-23e7e38e259c"
+        },
+        {
+          "time": 1790819257.0415654,
+          "event": "connection",
+          "connection": "1790819257037541350",
+          "websocket": true
+        },
+        {
+          "time": 1790819257.091129,
+          "event": "forward_control",
+          "connection": "1790819257037541350",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 173,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790819258.016484,
+          "event": "forward_control",
+          "connection": "1790819257037541350",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790819258.034658,
+          "event": "forward_control",
+          "connection": "1790819257037541350",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790819258.0369236,
+          "event": "forward_control",
+          "connection": "1790819257037541350",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 174,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790819258.068248,
+          "event": "forward_control",
+          "connection": "1790819257037541350",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 175,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790819259.9982593,
+          "event": "connection",
+          "connection": "1790819259993748592",
+          "websocket": true
+        },
+        {
+          "time": 1790819260.0345123,
+          "event": "forward_control",
+          "connection": "1790819259993748592",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 175,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790819260.0977619,
+          "event": "forward_control",
+          "connection": "1790819259993748592",
+          "direction": "down",
+          "type": "EXECUTION_ACK",
+          "id": "9e3ebbd1-6d66-47b8-947a-132fcfa8f7cd"
+        }
+      ]
+    },
+    {
+      "control": "python3 -c 'import pathlib,sys;pathlib.Path(sys.argv[1]).write_text(sys.argv[2])' /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.controls.json '{\"disconnect_connection\": \"1790819259993748592\"}'",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "proxy_events": [
+        {
+          "time": 1790819262.5158055,
+          "event": "injected_disconnect",
+          "connection": "1790819259993748592"
+        }
+      ]
+    },
+    {
+      "proxy_events": [
+        {
+          "time": 1790819262.5158055,
+          "event": "injected_disconnect",
+          "connection": "1790819259993748592"
+        }
+      ]
+    },
+    {
+      "proxy_events": [
+        {
+          "time": 1790819262.5158055,
+          "event": "injected_disconnect",
+          "connection": "1790819259993748592"
+        }
+      ]
+    },
+    {
+      "proxy_events": [
+        {
+          "time": 1790819262.5158055,
+          "event": "injected_disconnect",
+          "connection": "1790819259993748592"
+        },
+        {
+          "time": 1790819266.3578072,
+          "event": "connection",
+          "connection": "1790819266355184060",
+          "websocket": true
+        },
+        {
+          "time": 1790819266.382185,
+          "event": "forward_control",
+          "connection": "1790819266355184060",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 175,
+          "full_resync": false,
+          "snapshot": true
+        }
+      ]
+    },
+    {
+      "control": "python3 -c 'import pathlib,sys;pathlib.Path(sys.argv[1]).write_text(sys.argv[2])' /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.controls.json '{}'",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "core_node": {
+        "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "hostname": "qa-20260930-101945-env-docker-agent",
+        "ip": "192.168.100.209",
+        "os": "Alpine Linux v3.20",
+        "arch": "amd64",
+        "agent_version": "dddee4f0",
+        "deployment_mode": "docker",
+        "host_integration": false,
+        "status": "online",
+        "labels": {},
+        "capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        },
+        "global_revision": 175,
+        "sync_status": "synced",
+        "last_seen": "2026-10-01T01:47:46.365592122Z",
+        "first_seen": "2026-09-30T02:36:32.656149623Z"
+      }
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-reconnect-proof-187d9b",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "printf reconnect-real",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "6f48cecf-a70c-4f36-9951-c159f20ed4d9",
+        "name": "qa-20260930-101945-be-reconnect-proof-187d9b",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "printf reconnect-real",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:47:46 GMT",
+        "Content-Length": "428",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/6f48cecf-a70c-4f36-9951-c159f20ed4d9/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "5f40c8df-934b-42f5-b6ce-568cc2cd71d7",
+          "task_id": "6f48cecf-a70c-4f36-9951-c159f20ed4d9",
+          "task_revision": 1,
+          "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:47:46 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/5f40c8df-934b-42f5-b6ce-568cc2cd71d7",
+      "terminal": {
+        "id": "5f40c8df-934b-42f5-b6ce-568cc2cd71d7",
+        "task_id": "6f48cecf-a70c-4f36-9951-c159f20ed4d9",
+        "task_revision": 1,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-10-01T01:47:46.744751205Z",
+        "end_time": "2026-10-01T01:47:46.761458912Z",
+        "status": "SUCCESS",
+        "stdout": "reconnect-real",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"5f40c8df-934b-42f5-b6ce-568cc2cd71d7\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"5f40c8df-934b-42f5-b6ce-568cc2cd71d7\", \"task_id\": \"6f48cecf-a70c-4f36-9951-c159f20ed4d9\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"offline\": 0, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "docker inspect -f '{{.State.Pid}}' qa-20260930-101945-env-agent",
+      "exit_code": 0,
+      "stdout": "806797\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id FROM executions WHERE task_id=?' '[\"92c0f3b2-ef05-488b-889a-82e9ba53ebe8\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"9e3ebbd1-6d66-47b8-947a-132fcfa8f7cd\"}]\n",
+      "stderr": ""
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "cat -- /var/lib/nodesteer/qa-20260930-101945-be/onstart-network-7833cb\n",
+      "exit_code": 0,
+      "stdout": "start\n",
+      "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+    }
+  ]
+}

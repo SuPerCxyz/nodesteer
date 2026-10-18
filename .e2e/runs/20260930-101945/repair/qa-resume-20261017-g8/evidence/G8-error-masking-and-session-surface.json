@@ -1,0 +1,89 @@
+{
+ "case_id": "X16",
+ "probe": "error-masking-and-session-surface",
+ "nonce": "g89202610178970c813",
+ "at_utc": "2026-10-17T04:28:03Z",
+ "authority": "http://192.168.100.209:18086",
+ "marker_label": "QAMARK-ERRPATH-*",
+ "error_paths": [
+  {
+   "tag": "run_with_supplied_secret_bogus_node",
+   "method": "POST",
+   "path": "/api/tasks/fc6247b4-7419-41a7-a879-9a85511bbde6/run",
+   "http": 500,
+   "error_head": "{\"error\":\"target node f7d6ce8c-9108-46c6-ac3e-d86ac78e74fa no longer exists; update the task targets\"}\n",
+   "echoes_marker": false
+  },
+  {
+   "tag": "run_missing_required_secret",
+   "method": "POST",
+   "path": "/api/tasks/e338ec9b-970f-4a3e-8361-d3169f4a375f/run",
+   "http": 500,
+   "error_head": "{\"error\":\"target node f7d6ce8c-9108-46c6-ac3e-d86ac78e74fa no longer exists; update the task targets\"}\n",
+   "echoes_marker": false
+  },
+  {
+   "tag": "transfer_bogus_source_with_marker_path",
+   "method": "POST",
+   "path": "/api/transfers",
+   "http": 400,
+   "error_head": "{\"error\":\"source node not found\"}\n",
+   "echoes_marker": false
+  },
+  {
+   "tag": "script_put_bad_type_with_marker_default",
+   "method": "PUT",
+   "path": "/api/scripts/87659f46-3dda-4540-ba35-38d74d67f43b",
+   "http": 200,
+   "error_head": "{\"id\":\"87659f46-3dda-4540-ba35-38d74d67f43b\",\"name\":\"qa-g89202610178970c813-script\",\"description\":\"\",\"interpreter\":\"bash\",\"content\":\"echo x\",\"parameters\":[{\"name\":\"marker_secret\",\"type\":\"not-a-type\",\"required\":false,\"def",
+   "echoes_marker": true
+  },
+  {
+   "tag": "schedule_create_marker_name_bad_type",
+   "method": "POST",
+   "path": "/api/schedules",
+   "http": 400,
+   "error_head": "{\"error\":\"schedule type must be cron, interval, one_time, or on_start\"}\n",
+   "echoes_marker": false
+  }
+ ],
+ "script_restore": 200,
+ "script_restore_marker_state": {
+  "script_default_present": true,
+  "error_marker_present": false
+ },
+ "error_verdict": {
+  "paths_probed": 5,
+  "paths_with_marker_echo": [
+   "script_put_bad_type_with_marker_default"
+  ],
+  "status_codes": {
+   "run_with_supplied_secret_bogus_node": 500,
+   "run_missing_required_secret": 500,
+   "transfer_bogus_source_with_marker_path": 400,
+   "script_put_bad_type_with_marker_default": 200,
+   "schedule_create_marker_name_bad_type": 400
+  }
+ },
+ "session_surface": {
+  "me_keys": [
+   "Expires",
+   "Role",
+   "Token",
+   "UserID",
+   "Username"
+  ],
+  "token_field_equals_caller_token": true,
+  "token_field_len": 36,
+  "note": "/api/me 返回调用者本人 token（会话信息接口，调用者已持有该值）；该 token 不出现在其它只读接口，且不进入证据。"
+ },
+ "token_in_other_endpoints": {
+  "/api/nodes": false,
+  "/api/users": false,
+  "/api/settings": false,
+  "/api/audit?limit=200": false,
+  "/api/scripts": false,
+  "/api/tasks": false,
+  "/api/executions?limit=20": false
+ }
+}

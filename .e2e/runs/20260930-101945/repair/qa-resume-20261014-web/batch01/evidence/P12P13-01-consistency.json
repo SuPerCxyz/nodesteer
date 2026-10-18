@@ -1,0 +1,39 @@
+{
+ "captured_at_utc": "2026-10-14T07:50:11.106591+00:00",
+ "case_id": "P12P13-01",
+ "route": "/schedules",
+ "baseline": {
+  "api_schedules_count": 0
+ },
+ "ui_observation": {
+  "heading": [
+   "调度"
+  ],
+  "empty_state_text": "暂无数据",
+  "search_inputs": 0,
+  "tables": 0,
+  "main_buttons": 0
+ },
+ "verified_dimensions": {
+  "list_page_renders": true,
+  "empty_state": "ListLayout renders '<EmptyState message=暂无数据>' when the API returns 0 rows; no search box, no table, no pagination controls are rendered in this state",
+  "error_retry": "network route aborted exact GET /api/schedules; page rendered 'Failed to fetch' + 重试; removed route and clicked 重试 -> exact GET /api/schedules 200 and 暂无数据 restored",
+  "failure_path_side_effects": "no server mutation; only GET /api/schedules"
+ },
+ "unverified_dimensions": [
+  "search positive hit / no-result on the schedules list (the schedules list UI is not rendered at all when empty)",
+  "pagination (requires >10 owned Schedules)",
+  "metadata columns 类型/表达式/时区/Owner/Offline/Misfire/Enabled values (requires >=1 owned Schedule); column definitions exist in web/src/features/catalog/index.tsx:1017-1200"
+ ],
+ "reason_for_partial": "Repair baseline has 0 Schedules; the confirmed scope for this batch forbids creating persistent resources.",
+ "source_mapping": "web/src/features/catalog/index.tsx:2341-2370 — DataTable (with search/pagination) is only rendered when (onFilterChange || data.length || pagination.total>0); otherwise a plain EmptyState card is shown.",
+ "evidence": [
+  "evidence/P12P13-01-01-schedules-empty.png",
+  "evidence/P12P13-01-02-schedules-error.png",
+  "evidence/P12P13-01-03-schedules-recovered.png",
+  "evidence/P12P13-01-empty-state-scan.json",
+  "evidence/P12P13-01-api-schedules.json",
+  "evidence/P12P13-01-api-audit.json"
+ ],
+ "server_writes": 0
+}

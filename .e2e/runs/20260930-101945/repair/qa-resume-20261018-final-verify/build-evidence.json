@@ -1,0 +1,87 @@
+{
+ "batch": "qa-resume-20261018-final-verify",
+ "build_label": "dddee4f0-e2e-repair-20261018-final",
+ "purpose": "X16 + T2 Go 修复 + Web3/T3/主 Agent Web 修复全部重建 → repair 环境部署（可回滚）",
+ "authority": "http://192.168.100.209:18080",
+ "git_head": "dddee4f",
+ "build_order_note": "T1 教训：先 cd web && npm run build，再 go build hub（go:embed all:dist），再 agent，再 bundle",
+ "artifacts_local": {
+  "hub_bundled": {
+   "path": "/tmp/opencode/nodesteer-build-20261018-final/nodesteer-hub-static-final",
+   "sha256": "00e1f375bf67a59ad04dfc6283741cb276ac6be70ce2f21e02d25094845e7a71",
+   "size": 55161802,
+   "previous_build_sha256": "1d8cc17e3aeeb5df59026bc3881a6ff8b5a3e308617c931ac1f13d70a9cc230b",
+   "previous_build_size": 55086747,
+   "changed_vs_previous_build": true
+  },
+  "agent_amd64": {
+   "path": "/tmp/opencode/nodesteer-build-20261018-final/nodesteer-agent-static",
+   "sha256": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01",
+   "size": 16886945,
+   "previous_build_sha256": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+   "previous_build_size": 16847621,
+   "changed_vs_previous_build": true
+  },
+  "agent_arm64": {
+   "path": "/tmp/opencode/nodesteer-build-20261018-final/nodesteer-agent-arm64",
+   "sha256": "7d987125d6df05282058b21d16cd89f0d4b8c61759f45db9a19e17c89e6c8e90",
+   "size": 16066534,
+   "previous_build_sha256": "297158e404ce4059319986c42021869153e9435d0b24c04242700dca4f8b7581",
+   "previous_build_size": 16052370,
+   "changed_vs_previous_build": true
+  },
+  "hub_unbundled": {
+   "path": "/tmp/opencode/nodesteer-build-20261018-final/nodesteer-hub.unbundled",
+   "sha256": "6b2daed23bba1ca629f94cf7a2e3d0c4598ccb5eb4914d0c0fde8bebdc3f3391",
+   "size": 22208266,
+   "previous_build_sha256": "a4437b7d1bdb3d5d5321428cd352717f6252fee534a9388e95d030d06fdd6b41",
+   "previous_build_size": 22186699,
+   "changed_vs_previous_build": true
+  }
+ },
+ "web_build": {
+  "command": "cd web && npm run build",
+  "dist_index_sha256": "1fdfc0b9cd9e01fccc2c22a59f9068790ae1ca752990c729ba9159f586231c01",
+  "dist_files": 74,
+  "previous_dist_index_sha256": "0053a663ce0eb16aebf0d54d8001deb747870dfef1871c26e1d8698df3cb8ae8",
+  "previous_dist_files": 70,
+  "manifest": "web-dist-manifest.txt（74 文件全量 sha256，构建目录内）",
+  "log": "web-build.log 尾行 WEB_BUILD_EXIT=0",
+  "new_strings_in_bundle": {
+   "加载中": [
+    "assets/button-hPis7tu8.js"
+   ],
+   "健康状态不可用": [
+    "assets/button-hPis7tu8.js"
+   ],
+   "条件摘要": [
+    "assets/button-hPis7tu8.js"
+   ],
+   "暂无数据": [
+    "assets/button-hPis7tu8.js"
+   ],
+   "任务不存在": [
+    "assets/button-hPis7tu8.js"
+   ],
+   "投递中": [
+    "assets/ui-B-xntZfs.js"
+   ]
+  },
+  "strings_in_hub_binary": {
+   "健康状态不可用": true,
+   "条件摘要": true,
+   "暂无数据": true
+  }
+ },
+ "build_commands": [
+  "cd web && npm run build   # tsc -b && vite build",
+  "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -o /tmp/opencode/nodesteer-build-20261018-final/nodesteer-hub.unbundled ./cmd/hub",
+  "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -ldflags '-X main.version=dddee4f0-e2e-repair-20261018-final' -o /tmp/opencode/nodesteer-build-20261018-final/nodesteer-agent-static ./cmd/agent",
+  "CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -buildvcs=false -ldflags '-X main.version=dddee4f0-e2e-repair-20261018-final' -o /tmp/opencode/nodesteer-build-20261018-final/nodesteer-agent-arm64 ./cmd/agent",
+  "sh packaging/bundle-agent.sh /tmp/opencode/nodesteer-build-20261018-final/nodesteer-hub-static-final /tmp/opencode/nodesteer-build-20261018-final/nodesteer-hub.unbundled amd64 /tmp/opencode/nodesteer-build-20261018-final/nodesteer-agent-static arm64 /tmp/opencode/nodesteer-build-20261018-final/nodesteer-agent-arm64"
+ ],
+ "agent_version_injection": {
+  "nodesteer-agent-static": true,
+  "nodesteer-agent-arm64": true
+ }
+}

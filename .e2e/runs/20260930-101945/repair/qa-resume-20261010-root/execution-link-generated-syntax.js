@@ -1,0 +1,1 @@
+(()=>{const name="qa-local-syntax-check";const rows=[...document.querySelectorAll('tr')];const row=rows.find(x=>x.innerText.includes(name));if(!row)return '';const link=[...row.querySelectorAll('a[href^="/executions/"]')].find(x=>/\/executions\/[0-9a-f-]{36}/i.test(x.getAttribute('href')||''));return link?link.getAttribute('href'):''})()

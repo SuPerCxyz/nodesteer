@@ -1,0 +1,26 @@
+{
+  "id": "3be6cae5-7e66-4102-8037-12e8d3316d38",
+  "name": "qa-resume-20261008-e2e03-85a4999d-script",
+  "description": "isolated E2E03 runtime field consumption probe",
+  "interpreter": "shell",
+  "content": "#!/bin/sh\nset -eu\nprintf \"shell_cwd=%s\\n\" \"$(pwd)\"\nprintf \"uid=%s\\n\" \"$(id -u)\"\nprintf \"username=%s\\n\" \"$(id -un)\"\nprintf \"parameter=%s\\n\" \"${NODESTEER_PARAM_qa_input-}\"\nprintf \"environment=%s\\n\" \"${QA_E2E_MARKER-}\"\npython3 -c 'import os,pwd; print(\"python_cwd=\"+os.getcwd()); print(\"python_uid=\"+str(os.getuid())); print(\"python_username=\"+pwd.getpwuid(os.getuid()).pw_name)'\n",
+  "parameters": [
+    {
+      "name": "qa_input",
+      "type": "string",
+      "required": true,
+      "default": "script-default"
+    }
+  ],
+  "environment": {
+    "QA_E2E_MARKER": "qa-resume-20261008-e2e03-85a4999d-environment-marker"
+  },
+  "working_dir": "/tmp",
+  "run_user": "nobody",
+  "timeout": 60,
+  "enabled": true,
+  "revision": 1,
+  "sha256": "c4411d44d420bc833b91ae18911a6df1a5f97868527895b42aaa7371687398fb",
+  "updated_at": "2026-10-08T07:56:06.238599247Z",
+  "created_at": "2026-10-08T07:56:06.238600717Z"
+}

@@ -1,0 +1,207 @@
+{
+  "case": "Theme light/dark/system, media changes, reload persistence and theme-color",
+  "tool": "agent-browser",
+  "base_url": "http://192.168.100.209:18080",
+  "initial_theme_cookie": "<absent>",
+  "steps": [
+    {
+      "step": "system-light-media",
+      "expected_theme": "system",
+      "expected_media": "light",
+      "after_reload": false,
+      "observed": {
+        "dark": false,
+        "light": true,
+        "mediaDark": false,
+        "meta": "#fff",
+        "cookie": "system"
+      },
+      "expected": {
+        "dark": false,
+        "light": true,
+        "mediaDark": false,
+        "meta": "#fff",
+        "cookie": "system"
+      },
+      "passed": true
+    },
+    {
+      "step": "system-dark-media-live-update",
+      "expected_theme": "system",
+      "expected_media": "dark",
+      "after_reload": false,
+      "observed": {
+        "dark": true,
+        "light": false,
+        "mediaDark": true,
+        "meta": "#020817",
+        "cookie": "system"
+      },
+      "expected": {
+        "dark": true,
+        "light": false,
+        "mediaDark": true,
+        "meta": "#020817",
+        "cookie": "system"
+      },
+      "passed": true
+    },
+    {
+      "step": "system-dark-persisted-reload",
+      "expected_theme": "system",
+      "expected_media": "dark",
+      "after_reload": true,
+      "observed": {
+        "dark": true,
+        "light": false,
+        "mediaDark": true,
+        "meta": "#020817",
+        "cookie": "system"
+      },
+      "expected": {
+        "dark": true,
+        "light": false,
+        "mediaDark": true,
+        "meta": "#020817",
+        "cookie": "system"
+      },
+      "passed": true
+    },
+    {
+      "step": "manual-dark",
+      "expected_theme": "dark",
+      "expected_media": "dark",
+      "after_reload": false,
+      "observed": {
+        "dark": true,
+        "light": false,
+        "mediaDark": true,
+        "meta": "#020817",
+        "cookie": "dark"
+      },
+      "expected": {
+        "dark": true,
+        "light": false,
+        "mediaDark": true,
+        "meta": "#020817",
+        "cookie": "dark"
+      },
+      "passed": true
+    },
+    {
+      "step": "manual-dark-ignores-light-media",
+      "expected_theme": "dark",
+      "expected_media": "light",
+      "after_reload": false,
+      "observed": {
+        "dark": true,
+        "light": false,
+        "mediaDark": false,
+        "meta": "#020817",
+        "cookie": "dark"
+      },
+      "expected": {
+        "dark": true,
+        "light": false,
+        "mediaDark": false,
+        "meta": "#020817",
+        "cookie": "dark"
+      },
+      "passed": true
+    },
+    {
+      "step": "manual-dark-persisted-reload",
+      "expected_theme": "dark",
+      "expected_media": "light",
+      "after_reload": true,
+      "observed": {
+        "dark": true,
+        "light": false,
+        "mediaDark": false,
+        "meta": "#020817",
+        "cookie": "dark"
+      },
+      "expected": {
+        "dark": true,
+        "light": false,
+        "mediaDark": false,
+        "meta": "#020817",
+        "cookie": "dark"
+      },
+      "passed": true
+    },
+    {
+      "step": "manual-light",
+      "expected_theme": "light",
+      "expected_media": "light",
+      "after_reload": false,
+      "observed": {
+        "dark": false,
+        "light": true,
+        "mediaDark": false,
+        "meta": "#fff",
+        "cookie": "light"
+      },
+      "expected": {
+        "dark": false,
+        "light": true,
+        "mediaDark": false,
+        "meta": "#fff",
+        "cookie": "light"
+      },
+      "passed": true
+    },
+    {
+      "step": "manual-light-ignores-dark-media",
+      "expected_theme": "light",
+      "expected_media": "dark",
+      "after_reload": false,
+      "observed": {
+        "dark": false,
+        "light": true,
+        "mediaDark": true,
+        "meta": "#fff",
+        "cookie": "light"
+      },
+      "expected": {
+        "dark": false,
+        "light": true,
+        "mediaDark": true,
+        "meta": "#fff",
+        "cookie": "light"
+      },
+      "passed": true
+    },
+    {
+      "step": "manual-light-persisted-reload",
+      "expected_theme": "light",
+      "expected_media": "dark",
+      "after_reload": true,
+      "observed": {
+        "dark": false,
+        "light": true,
+        "mediaDark": true,
+        "meta": "#fff",
+        "cookie": "light"
+      },
+      "expected": {
+        "dark": false,
+        "light": true,
+        "mediaDark": true,
+        "meta": "#fff",
+        "cookie": "light"
+      },
+      "passed": true
+    }
+  ],
+  "secrets_included": false,
+  "status": "passed",
+  "restore_verified": true,
+  "post_run_readonly_recheck": {
+    "theme_cookie": "",
+    "resolved_theme": "dark",
+    "media_prefers_dark": true,
+    "meta_theme_color": "#020817"
+  },
+  "restore_note": "The teardown equality check initially returned false. A subsequent browser read confirmed no theme cookie remains, so the app uses default system mode; dark class and #020817 match the active dark media preference."
+}

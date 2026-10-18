@@ -1,0 +1,359 @@
+package main
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"log"
+	"net"
+	"net/http"
+	"os"
+	"path/filepath"
+	"sync"
+	"time"
+
+	"github.com/coder/websocket"
+)
+
+const (
+	upstreamURL = "ws://192.168.100.209:18080/"
+	wantAgent   = "agent-426aa507-af4c-4005-858f-ce497d2fc67d"
+	maxMessage  = 8 << 20
+)
+
+type envelope struct {
+	Type    string          `json:"type"`
+	ID      string          `json:"id"`
+	Payload json.RawMessage `json:"payload"`
+}
+type syncPayload struct {
+	Snapshot   bool          `json:"snapshot"`
+	FullResync bool          `json:"full_resync"`
+	GlobalRev  int64         `json:"global_rev"`
+	Scripts    []objectEntry `json:"scripts"`
+	Apps       []objectEntry `json:"apps"`
+}
+type objectEntry struct {
+	ID       string          `json:"id"`
+	Revision int64           `json:"revision"`
+	Data     json.RawMessage `json:"data"`
+}
+type scriptData struct {
+	Content string `json:"content"`
+	SHA256  string `json:"sha256"`
+}
+type control struct {
+	AppID               string `json:"app_id"`
+	GoodScriptID        string `json:"good_script_id"`
+	GoodRevision        int64  `json:"good_revision"`
+	BadScriptID         string `json:"bad_script_id"`
+	BadRevision         int64  `json:"bad_revision"`
+	GoodSHA256          string `json:"good_sha256"`
+	BadSHA256           string `json:"bad_sha256"`
+	FaultArmed          bool   `json:"fault_armed"`
+	ReleaseGoodSnapshot bool   `json:"release_good_snapshot"`
+}
+type proxyState struct {
+	mu          sync.Mutex
+	badSent     bool
+	ackNegative bool
+	held        bool
+	released    bool
+}
+
+var root string
+var state proxyState
+var writeMu sync.Mutex
+
+func sha(s string) string { v := sha256.Sum256([]byte(s)); return hex.EncodeToString(v[:]) }
+func readControl() (control, error) {
+	var c control
+	b, err := os.ReadFile(filepath.Join(root, "controls.json"))
+	if err != nil {
+		return c, err
+	}
+	err = json.Unmarshal(b, &c)
+	return c, err
+}
+func event(name string, fields map[string]any) {
+	fields["event"] = name
+	fields["at_utc"] = time.Now().UTC().Format(time.RFC3339Nano)
+	b, _ := json.Marshal(fields)
+	writeMu.Lock()
+	defer writeMu.Unlock()
+	f, err := os.OpenFile(filepath.Join(root, "events.jsonl"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err == nil {
+		_, _ = f.Write(append(b, '\n'))
+		_ = f.Close()
+	}
+	log.Print(string(b))
+}
+func syncDetails(e envelope, p syncPayload, c control) map[string]any {
+	selected := make([]map[string]any, 0, 2)
+	for _, s := range p.Scripts {
+		if s.ID != c.GoodScriptID && s.ID != c.BadScriptID {
+			continue
+		}
+		d := scriptData{}
+		_ = json.Unmarshal(s.Data, &d)
+		selected = append(selected, map[string]any{"id": s.ID, "revision": s.Revision, "content_sha256": sha(d.Content), "declared_sha256": d.SHA256})
+	}
+	appPresent := false
+	for _, a := range p.Apps {
+		if a.ID == c.AppID {
+			appPresent = true
+		}
+	}
+	return map[string]any{"envelope_id": e.ID, "snapshot": p.Snapshot, "full_resync": p.FullResync, "global_rev": p.GlobalRev, "script_entry_count": len(p.Scripts), "target_scripts": selected, "target_app_present": appPresent}
+}
+func matching(p syncPayload, c control) bool {
+	if !p.Snapshot || c.AppID == "" || c.GoodScriptID == "" || c.BadScriptID == "" {
+		return false
+	}
+	for _, a := range p.Apps {
+		if a.ID == c.AppID {
+			return false
+		}
+	}
+	foundGood, foundBad := false, false
+	for _, s := range p.Scripts {
+		if s.ID == c.GoodScriptID && s.Revision == c.GoodRevision {
+			foundGood = true
+		}
+		if s.ID == c.BadScriptID && s.Revision == c.BadRevision {
+			foundBad = true
+		}
+	}
+	return foundGood && foundBad
+}
+func corruptBad(raw []byte, c control) ([]byte, bool, string, error) {
+	var e map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &e); err != nil {
+		return nil, false, "", err
+	}
+	var p map[string]json.RawMessage
+	if err := json.Unmarshal(e["payload"], &p); err != nil {
+		return nil, false, "", err
+	}
+	var scripts []json.RawMessage
+	if err := json.Unmarshal(p["scripts"], &scripts); err != nil {
+		return nil, false, "", err
+	}
+	changed := false
+	mutatedSHA := ""
+	for i, b := range scripts {
+		var s map[string]json.RawMessage
+		if json.Unmarshal(b, &s) != nil {
+			continue
+		}
+		var id string
+		var rev int64
+		_ = json.Unmarshal(s["id"], &id)
+		_ = json.Unmarshal(s["revision"], &rev)
+		if id != c.BadScriptID || rev != c.BadRevision {
+			continue
+		}
+		var data map[string]json.RawMessage
+		if json.Unmarshal(s["data"], &data) != nil {
+			return nil, false, "", errors.New("bad script data JSON")
+		}
+		var content string
+		if json.Unmarshal(data["content"], &content) != nil {
+			return nil, false, "", errors.New("bad script content JSON")
+		}
+		if sha(content) != c.BadSHA256 {
+			return nil, false, "", errors.New("bad Script content did not match expected original SHA")
+		}
+		content += "\n# qa-invalid-sha-870358cd92ee\n"
+		mutatedSHA = sha(content)
+		data["content"], _ = json.Marshal(content)
+		s["data"], _ = json.Marshal(data)
+		scripts[i], _ = json.Marshal(s)
+		changed = true
+		break
+	}
+	if !changed {
+		return nil, false, "", errors.New("exact bad Script entry not found")
+	}
+	p["scripts"], _ = json.Marshal(scripts)
+	e["payload"], _ = json.Marshal(p)
+	out, err := json.Marshal(e)
+	return out, true, mutatedSHA, err
+}
+func recordNegativeAck(b []byte) {
+	var e envelope
+	if json.Unmarshal(b, &e) != nil || e.Type != "SYNC_ACK" {
+		return
+	}
+	var p struct {
+		OK         bool   `json:"ok"`
+		AppliedRev int64  `json:"applied_rev"`
+		Error      string `json:"error"`
+	}
+	if json.Unmarshal(e.Payload, &p) != nil {
+		return
+	}
+	event("sync_ack", map[string]any{"envelope_id": e.ID, "ok": p.OK, "applied_rev": p.AppliedRev, "error_bytes": len(p.Error), "error_sha256": sha(p.Error)})
+	if !p.OK {
+		state.mu.Lock()
+		state.ackNegative = true
+		state.mu.Unlock()
+	}
+}
+func relayClient(ctx context.Context, client, hub *websocket.Conn) {
+	for {
+		typ, b, err := client.Read(ctx)
+		if err != nil {
+			return
+		}
+		recordNegativeAck(b)
+		if err = hub.Write(ctx, typ, b); err != nil {
+			return
+		}
+	}
+}
+func relayHub(ctx context.Context, hub, client *websocket.Conn) {
+	for {
+		typ, b, err := hub.Read(ctx)
+		if err != nil {
+			return
+		}
+		var e envelope
+		if json.Unmarshal(b, &e) == nil && e.Type == "SYNC_RESPONSE" {
+			var p syncPayload
+			if json.Unmarshal(e.Payload, &p) == nil {
+				c, ce := readControl()
+				if ce == nil && matching(p, c) {
+					details := syncDetails(e, p, c)
+					state.mu.Lock()
+					badSent, negative, held := state.badSent, state.ackNegative, state.held
+					state.mu.Unlock()
+					if c.FaultArmed && !badSent {
+						out, ok, mutated, er := corruptBad(b, c)
+						if er != nil {
+							event("fault_guard_rejected", map[string]any{"reason": er.Error(), "frame": details})
+							return
+						}
+						if !ok {
+							return
+						}
+						if err = client.Write(ctx, typ, out); err != nil {
+							return
+						}
+						state.mu.Lock()
+						state.badSent = true
+						state.mu.Unlock()
+						event("bad_sha_frame_forwarded", map[string]any{"frame": details, "bad_script_id": c.BadScriptID, "original_content_sha256": c.BadSHA256, "mutated_content_sha256": mutated, "only_content_field_changed": true})
+						continue
+					}
+					if badSent && !held {
+						state.mu.Lock()
+						state.held = true
+						state.mu.Unlock()
+						event("valid_snapshot_held_for_negative_oracle", map[string]any{"frame": details, "negative_ack_already_seen": negative})
+						for {
+							state.mu.Lock()
+							ack := state.ackNegative
+							state.mu.Unlock()
+							ctrl, err := readControl()
+							if err != nil {
+								event("control_read_error", map[string]any{"error": err.Error()})
+								time.Sleep(200 * time.Millisecond)
+								continue
+							}
+							if ack && ctrl.ReleaseGoodSnapshot {
+								break
+							}
+							select {
+							case <-ctx.Done():
+								return
+							case <-time.After(200 * time.Millisecond):
+							}
+						}
+						if err = client.Write(ctx, typ, b); err != nil {
+							return
+						}
+						state.mu.Lock()
+						state.released = true
+						state.mu.Unlock()
+						event("valid_snapshot_released_after_negative_oracle", map[string]any{"frame": details, "negative_ack_seen": true, "release_flag_seen": true})
+						continue
+					}
+				}
+			}
+		}
+		if err = client.Write(ctx, typ, b); err != nil {
+			return
+		}
+	}
+}
+func handle(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	client, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: []string{"*"}, Subprotocols: []string{"nodesteer"}})
+	if err != nil {
+		return
+	}
+	defer client.Close(websocket.StatusNormalClosure, "proxy done")
+	client.SetReadLimit(maxMessage)
+	typ, hello, err := client.Read(ctx)
+	if err != nil {
+		return
+	}
+	var he envelope
+	var hp struct {
+		AgentID string `json:"agent_id"`
+	}
+	if json.Unmarshal(hello, &he) != nil || he.Type != "HELLO" || json.Unmarshal(he.Payload, &hp) != nil || hp.AgentID != wantAgent {
+		event("hello_rejected", map[string]any{"type": he.Type, "agent_id_matches": hp.AgentID == wantAgent, "message_type": int(typ)})
+		client.Close(websocket.StatusPolicyViolation, "unexpected AgentID")
+		return
+	}
+	event("hello_verified", map[string]any{"agent_id": hp.AgentID, "message_type": int(typ)})
+	dialCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	hub, _, err := websocket.Dial(dialCtx, upstreamURL, &websocket.DialOptions{Subprotocols: []string{"nodesteer"}})
+	if err != nil {
+		event("upstream_dial_failed", map[string]any{"error": err.Error()})
+		return
+	}
+	defer hub.Close(websocket.StatusNormalClosure, "proxy done")
+	hub.SetReadLimit(maxMessage)
+	if err = hub.Write(ctx, typ, hello); err != nil {
+		return
+	}
+	go relayClient(ctx, client, hub)
+	relayHub(ctx, hub, client)
+}
+func main() {
+	if len(os.Args) != 2 {
+		log.Fatal("usage: ws-frame-proxy <owned-root>")
+	}
+	root = os.Args[1]
+	if fi, err := os.Stat(root); err != nil || !fi.IsDir() {
+		log.Fatal("proxy root unavailable")
+	}
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ln.Close()
+	addr := ln.Addr().(*net.TCPAddr)
+	meta := map[string]any{"listen": "127.0.0.1", "port": addr.Port, "upstream_host": "192.168.100.209", "upstream_port": 18080, "agent_id": wantAgent, "unit_pid": os.Getpid()}
+	b, _ := json.Marshal(meta)
+	tmp := filepath.Join(root, "ready.json.tmp")
+	if err = os.WriteFile(tmp, b, 0644); err != nil {
+		log.Fatal(err)
+	}
+	if err = os.Rename(tmp, filepath.Join(root, "ready.json")); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("READY %s\n", b)
+	server := &http.Server{Handler: http.HandlerFunc(handle), ReadHeaderTimeout: 5 * time.Second}
+	if err = server.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) && !errors.Is(err, io.EOF) {
+		log.Fatal(err)
+	}
+}

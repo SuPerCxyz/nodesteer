@@ -1,0 +1,475 @@
+{
+  "label": "app-host-recheck-20261005-01",
+  "authority": "http://192.168.100.209:18080",
+  "hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+  "agent_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+  "target_node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+  "target_node_name": "qa-repair-20260930-101945-native-2",
+  "app_id": "1c2b34cc-d6a1-43db-a005-70db09d863b3",
+  "app_name": "qa-resume-20261005-app-host-c8b417-managed",
+  "unit": "qa-resume-20261005-app-host-c8b417-managed.service",
+  "app_dir": "/tmp/qa-repair-20260930-101945-app-web/c8b417",
+  "v1_artifact_id": "7b8929ed-c880-46f1-90e6-a5e9c0dab096",
+  "v1_artifact_sha256": "9dbe15d4319d863093eade25419f25a68ca6d1f56aa805022b8f13dd3710e6ed",
+  "v2_artifact": {
+    "artifact_id": "50d610ab-f8c7-4648-93ff-1fd692702573",
+    "sha256": "9987115cb76d62078cda7dcdb96679b71bfc875d65e42500d0bab98aab9ce637",
+    "bytes": 1601717,
+    "setup": "API fixture seed; explicitly not counted as UI upload"
+  },
+  "app_create_ui_requests": [
+    "[633707.146] POST http://192.168.100.209:18080/api/applications (Fetch) 200",
+    "[633707.147] POST http://192.168.100.209:18080/api/applications/1c2b34cc-d6a1-43db-a005-70db09d863b3/assign (Fetch) 200"
+  ],
+  "host_task_create_ui_requests": [
+    "[633707.261] POST http://192.168.100.209:18080/api/tasks (Fetch) 200"
+  ],
+  "host_task_definition_path": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json",
+  "host_task_definition_persisted_before_first_run": true,
+  "host_task_definition": {
+    "task_id": "94e8f047-b9dc-4ab6-8d87-6c1653d4f473",
+    "name": "qa-resume-20261005-app-host-c8b417-host-inspector",
+    "type": "command",
+    "enabled": true,
+    "timeout": 30,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "target_node_ids": [
+      "611c02a5-1859-4465-878b-d543b7f6fdec"
+    ],
+    "target_exact_node_only": true,
+    "schedule_count": 0,
+    "schedule_list_http": 200,
+    "created_via": "agent-browser Task UI",
+    "definition_source_http": 200,
+    "api_fields_confirmed": [
+      "command",
+      "enabled",
+      "id",
+      "name",
+      "offline_policy",
+      "retry",
+      "target",
+      "timeout",
+      "type"
+    ],
+    "command": "set +e\nunit='qa-resume-20261005-app-host-c8b417-managed.service'\ndir='/tmp/qa-repair-20260930-101945-app-web/c8b417'\nbin=\"$dir/binary\"\nprintf 'hostname=%s\\n' \"$(hostname)\"\nprintf 'unit=%s\\n' \"$unit\"\nsystemctl show \"$unit\" --no-pager -p LoadState -p ActiveState -p SubState -p MainPID -p Result -p FragmentPath\npid=\"$(systemctl show \"$unit\" -p MainPID --value 2>/dev/null)\"\nprintf 'unit_main_pid=%s\\n' \"$pid\"\nif [ -n \"$pid\" ] && [ \"$pid\" != 0 ] && [ -e \"/proc/$pid/exe\" ]; then printf 'unit_main_exe=%s\\n' \"$(readlink \"/proc/$pid/exe\")\"; printf 'unit_main_sha256=%s\\n' \"$(sha256sum \"/proc/$pid/exe\" | cut -d' ' -f1)\"; else printf 'unit_main_exe=none\\nunit_main_sha256=none\\n'; fi\nif [ -e \"$bin\" ]; then printf 'binary_exists=yes\\n'; printf 'binary_sha256=%s\\n' \"$(sha256sum \"$bin\" | cut -d' ' -f1)\"; printf 'binary_size=%s\\n' \"$(stat -c %s \"$bin\")\"; else printf 'binary_exists=no\\n'; fi\nif [ -e \"$dir/config.ini\" ]; then printf 'config_exists=yes\\nconfig_content='; cat \"$dir/config.ini\"; printf '\\n'; else printf 'config_exists=no\\n'; fi\nunitfile=\"/etc/systemd/system/$unit\"\nif [ -e \"$unitfile\" ]; then printf 'unit_file_exists=yes\\n'; sed -n '1,40p' \"$unitfile\"; else printf 'unit_file_exists=no\\n'; fi\n",
+    "command_sha256": "db30ffc3147612abfa212c4cc5288483e12d00e1660e6436b427d55d4f1e1903",
+    "expected_harness_command_sha256": "db30ffc3147612abfa212c4cc5288483e12d00e1660e6436b427d55d4f1e1903",
+    "command_matches_harness": true,
+    "source_harness": "app-host-inspector-recheck-20261005-01.py",
+    "source_harness_file": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py",
+    "created_before_first_execution": true,
+    "secrets_included": false
+  },
+  "events": [
+    {
+      "type": "operation",
+      "ui": {
+        "operation": "deploy",
+        "execution_id": "c77cd0f9-cd78-4749-934d-5775509d8619",
+        "status": "SUCCESS",
+        "api_lifecycle": [
+          {
+            "status": "PENDING",
+            "elapsed_ms": 154
+          },
+          {
+            "status": "SUCCESS",
+            "elapsed_ms": 1376
+          }
+        ],
+        "state": {
+          "application_id": "1c2b34cc-d6a1-43db-a005-70db09d863b3",
+          "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+          "version": "v1",
+          "operation": "deploy",
+          "health": "healthy",
+          "updated_at": "2026-10-04T23:51:44.405553232Z"
+        },
+        "ui": {
+          "path": "/applications/1c2b34cc-d6a1-43db-a005-70db09d863b3",
+          "health": "健康检查\nqa-repair-20260930-101945-native-2\n健康\ndeploy",
+          "history": "执行历史\n执行\nSUCCESS\nqa-repair-20260930-101945-native-2 刚刚"
+        },
+        "deploy_request": [
+          "[633707.494] POST http://192.168.100.209:18080/api/applications/1c2b34cc-d6a1-43db-a005-70db09d863b3/deploy (Fetch) 200"
+        ],
+        "same_route_no_reload": true,
+        "ui_health_history_ok": true
+      },
+      "host": {
+        "execution_id": "29fe471b-948f-4772-9402-6422160306b4",
+        "execution_status": "SUCCESS",
+        "task_run_request": [
+          "[633707.554] POST http://192.168.100.209:18080/api/tasks/94e8f047-b9dc-4ab6-8d87-6c1653d4f473/run (Fetch) 200"
+        ],
+        "host_output_visible_in_execution_ui": true,
+        "host": {
+          "hostname": "debian",
+          "unit": "qa-resume-20261005-app-host-c8b417-managed.service",
+          "LoadState": "loaded",
+          "ActiveState": "active",
+          "SubState": "running",
+          "MainPID": "496349",
+          "FragmentPath": "/etc/systemd/system/qa-resume-20261005-app-host-c8b417-managed.service",
+          "unit_main_pid": "496349",
+          "unit_main_exe": "/tmp/qa-repair-20260930-101945-app-web/c8b417/binary",
+          "unit_main_sha256": "9dbe15d4319d863093eade25419f25a68ca6d1f56aa805022b8f13dd3710e6ed",
+          "binary_exists": "yes",
+          "binary_sha256": "9dbe15d4319d863093eade25419f25a68ca6d1f56aa805022b8f13dd3710e6ed",
+          "binary_size": "1601698",
+          "config_exists": "yes",
+          "config_content": "qa_version=v1",
+          "unit_file_exists": "yes"
+        },
+        "config_file_content": "qa_version=v1\n",
+        "expected_sha256": "9dbe15d4319d863093eade25419f25a68ca6d1f56aa805022b8f13dd3710e6ed",
+        "active_state_matches": true,
+        "running_exe_and_disk_hash_match": true,
+        "physical_vm_identity_independently_verified": false,
+        "os_hostname_observation": "Guest OS hostname is reported as observed; Hub Node hostname is Agent-configured node_name and may differ."
+      }
+    },
+    {
+      "type": "operation",
+      "ui": {
+        "operation": "stop",
+        "execution_id": "6bbfabec-0274-4835-86de-0b9737e55c8d",
+        "status": "SUCCESS",
+        "api_lifecycle": [
+          {
+            "status": "SUCCESS",
+            "elapsed_ms": 156
+          }
+        ],
+        "state": {
+          "application_id": "1c2b34cc-d6a1-43db-a005-70db09d863b3",
+          "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+          "version": "v1",
+          "operation": "stop",
+          "health": "stopped",
+          "updated_at": "2026-10-04T23:51:51.287870211Z"
+        },
+        "ui": {
+          "path": "/applications/1c2b34cc-d6a1-43db-a005-70db09d863b3",
+          "health": "健康检查\nqa-repair-20260930-101945-native-2\n已停止\nstop",
+          "history": "执行历史\n执行\nSUCCESS\nqa-repair-20260930-101945-native-2 刚刚\n执行\nSUCCESS\nqa-repair-20260930-101945-native-2 刚刚"
+        },
+        "deploy_request": [
+          "[633707.720] POST http://192.168.100.209:18080/api/applications/1c2b34cc-d6a1-43db-a005-70db09d863b3/deploy (Fetch) 200"
+        ],
+        "same_route_no_reload": true,
+        "ui_health_history_ok": true
+      },
+      "host": {
+        "execution_id": "fea3157c-1bfd-45d0-8d5b-acb1361571e1",
+        "execution_status": "SUCCESS",
+        "task_run_request": [
+          "[633707.778] POST http://192.168.100.209:18080/api/tasks/94e8f047-b9dc-4ab6-8d87-6c1653d4f473/run (Fetch) 200"
+        ],
+        "host_output_visible_in_execution_ui": true,
+        "host": {
+          "hostname": "debian",
+          "unit": "qa-resume-20261005-app-host-c8b417-managed.service",
+          "LoadState": "loaded",
+          "ActiveState": "inactive",
+          "SubState": "dead",
+          "MainPID": "0",
+          "FragmentPath": "/etc/systemd/system/qa-resume-20261005-app-host-c8b417-managed.service",
+          "unit_main_pid": "0",
+          "unit_main_exe": "none",
+          "unit_main_sha256": "none",
+          "binary_exists": "yes",
+          "binary_sha256": "9dbe15d4319d863093eade25419f25a68ca6d1f56aa805022b8f13dd3710e6ed",
+          "binary_size": "1601698",
+          "config_exists": "yes",
+          "config_content": "qa_version=v1",
+          "unit_file_exists": "yes"
+        },
+        "config_file_content": "qa_version=v1\n",
+        "expected_sha256": "9dbe15d4319d863093eade25419f25a68ca6d1f56aa805022b8f13dd3710e6ed",
+        "active_state_matches": true,
+        "running_exe_and_disk_hash_match": true,
+        "physical_vm_identity_independently_verified": false,
+        "os_hostname_observation": "Guest OS hostname is reported as observed; Hub Node hostname is Agent-configured node_name and may differ."
+      }
+    },
+    {
+      "type": "operation",
+      "ui": {
+        "operation": "start",
+        "execution_id": "af872bc0-3feb-4c80-9b21-16f7b58c280a",
+        "status": "SUCCESS",
+        "api_lifecycle": [
+          {
+            "status": "SUCCESS",
+            "elapsed_ms": 154
+          }
+        ],
+        "state": {
+          "application_id": "1c2b34cc-d6a1-43db-a005-70db09d863b3",
+          "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+          "version": "v1",
+          "operation": "start",
+          "health": "healthy",
+          "updated_at": "2026-10-04T23:51:58.028918204Z"
+        },
+        "ui": {
+          "path": "/applications/1c2b34cc-d6a1-43db-a005-70db09d863b3",
+          "health": "健康检查\nqa-repair-20260930-101945-native-2\n健康\nstart",
+          "history": "执行历史\n执行\nSUCCESS\nqa-repair-20260930-101945-native-2 刚刚\n执行\nSUCCESS\nqa-repair-20260930-101945-native-2 刚刚\n执行\nSUCCESS\nqa-repair-20260930-101945-native-2 刚刚"
+        },
+        "deploy_request": [
+          "[633707.942] POST http://192.168.100.209:18080/api/applications/1c2b34cc-d6a1-43db-a005-70db09d863b3/deploy (Fetch) 200"
+        ],
+        "same_route_no_reload": true,
+        "ui_health_history_ok": true
+      },
+      "host": {
+        "execution_id": "53951892-4165-42bb-b36c-00bd3ebec6ea",
+        "execution_status": "SUCCESS",
+        "task_run_request": [
+          "[633707.1002] POST http://192.168.100.209:18080/api/tasks/94e8f047-b9dc-4ab6-8d87-6c1653d4f473/run (Fetch) 200"
+        ],
+        "host_output_visible_in_execution_ui": true,
+        "host": {
+          "hostname": "debian",
+          "unit": "qa-resume-20261005-app-host-c8b417-managed.service",
+          "LoadState": "loaded",
+          "ActiveState": "active",
+          "SubState": "running",
+          "MainPID": "496436",
+          "FragmentPath": "/etc/systemd/system/qa-resume-20261005-app-host-c8b417-managed.service",
+          "unit_main_pid": "496436",
+          "unit_main_exe": "/tmp/qa-repair-20260930-101945-app-web/c8b417/binary",
+          "unit_main_sha256": "9dbe15d4319d863093eade25419f25a68ca6d1f56aa805022b8f13dd3710e6ed",
+          "binary_exists": "yes",
+          "binary_sha256": "9dbe15d4319d863093eade25419f25a68ca6d1f56aa805022b8f13dd3710e6ed",
+          "binary_size": "1601698",
+          "config_exists": "yes",
+          "config_content": "qa_version=v1",
+          "unit_file_exists": "yes"
+        },
+        "config_file_content": "qa_version=v1\n",
+        "expected_sha256": "9dbe15d4319d863093eade25419f25a68ca6d1f56aa805022b8f13dd3710e6ed",
+        "active_state_matches": true,
+        "running_exe_and_disk_hash_match": true,
+        "physical_vm_identity_independently_verified": false,
+        "os_hostname_observation": "Guest OS hostname is reported as observed; Hub Node hostname is Agent-configured node_name and may differ."
+      }
+    },
+    {
+      "type": "operation",
+      "ui": {
+        "operation": "restart",
+        "execution_id": "be6906f1-4324-4d79-bbb7-208477e58e92",
+        "status": "SUCCESS",
+        "api_lifecycle": [
+          {
+            "status": "PENDING",
+            "elapsed_ms": 104
+          },
+          {
+            "status": "SUCCESS",
+            "elapsed_ms": 155
+          }
+        ],
+        "state": {
+          "application_id": "1c2b34cc-d6a1-43db-a005-70db09d863b3",
+          "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+          "version": "v1",
+          "operation": "restart",
+          "health": "healthy",
+          "updated_at": "2026-10-04T23:52:04.765219678Z"
+        },
+        "ui": {
+          "path": "/applications/1c2b34cc-d6a1-43db-a005-70db09d863b3",
+          "health": "健康检查\nqa-repair-20260930-101945-native-2\n健康\nrestart",
+          "history": "执行历史\n执行\nSUCCESS\nqa-repair-20260930-101945-native-2 刚刚\n执行\nSUCCESS\nqa-repair-20260930-101945-native-2 刚刚\n执行\nSUCCESS\nqa-repair-20260930-101945-native-2 刚刚\n执行\nSUCCESS\nqa-repair-20260930-101945-native-2 刚刚"
+        },
+        "deploy_request": [
+          "[633707.1166] POST http://192.168.100.209:18080/api/applications/1c2b34cc-d6a1-43db-a005-70db09d863b3/deploy (Fetch) 200"
+        ],
+        "same_route_no_reload": true,
+        "ui_health_history_ok": true
+      },
+      "host": {
+        "execution_id": "f45d969a-1351-485b-81f0-e64bbbd9942f",
+        "execution_status": "SUCCESS",
+        "task_run_request": [
+          "[633707.1226] POST http://192.168.100.209:18080/api/tasks/94e8f047-b9dc-4ab6-8d87-6c1653d4f473/run (Fetch) 200"
+        ],
+        "host_output_visible_in_execution_ui": true,
+        "host": {
+          "hostname": "debian",
+          "unit": "qa-resume-20261005-app-host-c8b417-managed.service",
+          "LoadState": "loaded",
+          "ActiveState": "active",
+          "SubState": "running",
+          "MainPID": "496458",
+          "FragmentPath": "/etc/systemd/system/qa-resume-20261005-app-host-c8b417-managed.service",
+          "unit_main_pid": "496458",
+          "unit_main_exe": "/tmp/qa-repair-20260930-101945-app-web/c8b417/binary",
+          "unit_main_sha256": "9dbe15d4319d863093eade25419f25a68ca6d1f56aa805022b8f13dd3710e6ed",
+          "binary_exists": "yes",
+          "binary_sha256": "9dbe15d4319d863093eade25419f25a68ca6d1f56aa805022b8f13dd3710e6ed",
+          "binary_size": "1601698",
+          "config_exists": "yes",
+          "config_content": "qa_version=v1",
+          "unit_file_exists": "yes"
+        },
+        "config_file_content": "qa_version=v1\n",
+        "expected_sha256": "9dbe15d4319d863093eade25419f25a68ca6d1f56aa805022b8f13dd3710e6ed",
+        "active_state_matches": true,
+        "running_exe_and_disk_hash_match": true,
+        "physical_vm_identity_independently_verified": false,
+        "os_hostname_observation": "Guest OS hostname is reported as observed; Hub Node hostname is Agent-configured node_name and may differ."
+      }
+    },
+    {
+      "type": "operation",
+      "ui": {
+        "operation": "upgrade",
+        "execution_id": "06cbe82f-af2b-4efc-ba4a-cfc87f70f68a",
+        "status": "SUCCESS",
+        "api_lifecycle": [
+          {
+            "status": "PENDING",
+            "elapsed_ms": 164
+          },
+          {
+            "status": "SUCCESS",
+            "elapsed_ms": 1411
+          }
+        ],
+        "state": {
+          "application_id": "1c2b34cc-d6a1-43db-a005-70db09d863b3",
+          "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+          "version": "v2",
+          "operation": "upgrade",
+          "health": "healthy",
+          "updated_at": "2026-10-04T23:52:13.927435773Z"
+        },
+        "ui": {
+          "path": "/applications/1c2b34cc-d6a1-43db-a005-70db09d863b3",
+          "health": "健康检查\nqa-repair-20260930-101945-native-2\n健康\nupgrade",
+          "history": "执行历史\n执行\nSUCCESS\nqa-repair-20260930-101945-native-2 刚刚\n执行\nSUCCESS\nqa-repair-20260930-101945-native-2 刚刚\n执行\nSUCCESS\nqa-repair-20260930-101945-native-2 刚刚\n执行\nSUCCESS\nqa-repair-20260930-101945-native-2 刚刚\n执行\nSUCCESS\nqa-repair-20260930-101945-native-2 刚刚"
+        },
+        "deploy_request": [
+          "[633707.1451] POST http://192.168.100.209:18080/api/applications/1c2b34cc-d6a1-43db-a005-70db09d863b3/deploy (Fetch) 200"
+        ],
+        "same_route_no_reload": true,
+        "ui_health_history_ok": true
+      },
+      "host": {
+        "execution_id": "5dc438bd-a10e-4920-82af-1e98e4484cc9",
+        "execution_status": "SUCCESS",
+        "task_run_request": [
+          "[633707.1511] POST http://192.168.100.209:18080/api/tasks/94e8f047-b9dc-4ab6-8d87-6c1653d4f473/run (Fetch) 200"
+        ],
+        "host_output_visible_in_execution_ui": true,
+        "host": {
+          "hostname": "debian",
+          "unit": "qa-resume-20261005-app-host-c8b417-managed.service",
+          "LoadState": "loaded",
+          "ActiveState": "active",
+          "SubState": "running",
+          "MainPID": "496566",
+          "FragmentPath": "/etc/systemd/system/qa-resume-20261005-app-host-c8b417-managed.service",
+          "unit_main_pid": "496566",
+          "unit_main_exe": "/tmp/qa-repair-20260930-101945-app-web/c8b417/binary",
+          "unit_main_sha256": "9987115cb76d62078cda7dcdb96679b71bfc875d65e42500d0bab98aab9ce637",
+          "binary_exists": "yes",
+          "binary_sha256": "9987115cb76d62078cda7dcdb96679b71bfc875d65e42500d0bab98aab9ce637",
+          "binary_size": "1601717",
+          "config_exists": "yes",
+          "config_content": "qa_version=v2",
+          "unit_file_exists": "yes"
+        },
+        "config_file_content": "qa_version=v2\n",
+        "expected_sha256": "9987115cb76d62078cda7dcdb96679b71bfc875d65e42500d0bab98aab9ce637",
+        "active_state_matches": true,
+        "running_exe_and_disk_hash_match": true,
+        "physical_vm_identity_independently_verified": false,
+        "os_hostname_observation": "Guest OS hostname is reported as observed; Hub Node hostname is Agent-configured node_name and may differ."
+      }
+    }
+  ],
+  "cleanup": {
+    "source": "existing top-level execution fields in this same retained report",
+    "app_get_after_delete_http": 404,
+    "unit_unregistered": true,
+    "owned_files_removed": true,
+    "mainpid_zero": true,
+    "task_cleanup": {
+      "delete_http": 200,
+      "get_after_http": 404,
+      "execution_history_http": 200,
+      "execution_history_count": 7
+    },
+    "application_history_after_delete": {
+      "http": 200,
+      "count": 6
+    },
+    "artifact_cleanup": {
+      "v2_delete_http": 200,
+      "v2_get_after_http": 404,
+      "shared_v1_get_http": 200
+    }
+  },
+  "secrets_included": false,
+  "app_delete_ui_request": "DELETE /api/applications/1c2b34cc-d6a1-43db-a005-70db09d863b3 HTTP 200 (agent-browser network capture)",
+  "app_get_after_delete_http": 404,
+  "cleanup_host": {
+    "execution_id": "d2bf5999-f985-4348-aeff-a6e7a6b6f170",
+    "execution_status": "SUCCESS",
+    "task_run_request": [
+      "[633707.1948] POST http://192.168.100.209:18080/api/tasks/94e8f047-b9dc-4ab6-8d87-6c1653d4f473/run (Fetch) 200"
+    ],
+    "host_output_visible_in_execution_ui": true,
+    "host": {
+      "hostname": "debian",
+      "unit": "qa-resume-20261005-app-host-c8b417-managed.service",
+      "LoadState": "not-found",
+      "ActiveState": "inactive",
+      "SubState": "dead",
+      "MainPID": "0",
+      "FragmentPath": "",
+      "unit_main_pid": "0",
+      "unit_main_exe": "none",
+      "unit_main_sha256": "none",
+      "binary_exists": "no",
+      "binary_sha256": null,
+      "binary_size": null,
+      "config_exists": "no",
+      "config_content": null,
+      "unit_file_exists": "no"
+    },
+    "config_file_content": null,
+    "expected_sha256": "9987115cb76d62078cda7dcdb96679b71bfc875d65e42500d0bab98aab9ce637",
+    "active_state_matches": true,
+    "running_exe_and_disk_hash_match": true,
+    "physical_vm_identity_independently_verified": false,
+    "os_hostname_observation": "Guest OS hostname is reported as observed; Hub Node hostname is Agent-configured node_name and may differ."
+  },
+  "unit_unregistered": true,
+  "owned_files_removed": true,
+  "cleanup_unit_mainpid_zero": true,
+  "task_cleanup": {
+    "delete_http": 200,
+    "get_after_http": 404,
+    "execution_history_http": 200,
+    "execution_history_count": 7
+  },
+  "application_history_after_delete": {
+    "http": 200,
+    "count": 6
+  },
+  "artifact_cleanup": {
+    "v2_delete_http": 200,
+    "v2_get_after_http": 404,
+    "shared_v1_get_http": 200
+  },
+  "status": "passed"
+}

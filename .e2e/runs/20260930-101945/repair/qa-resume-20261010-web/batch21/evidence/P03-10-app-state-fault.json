@@ -1,0 +1,61 @@
+{
+  "case_id": "P03-10",
+  "captured_at_utc": "2026-10-12T13:57:58.211Z",
+  "status": "SUPPLEMENTAL_OBSERVATION_FOR_ROOT_REVIEW",
+  "source_refs": [
+    "web/src/features/overview/index.tsx:50-91",
+    "web/src/features/overview/index.tsx:98-140",
+    "web/src/features/overview/index.tsx:286-335"
+  ],
+  "target_guard": {
+    "session": "qawebsecure20261010-b18-clean38181",
+    "origin": "http://127.0.0.1:38181",
+    "route": "/",
+    "owned_pages": 1,
+    "external_pages": 0,
+    "cdp_port": 40949,
+    "existing_application_id_sha256": "bc4bdaea1b67d9aa39f4682af678298b0755280fcc7b83e77ed22921a52d62e4"
+  },
+  "fault": {
+    "method": "GET",
+    "path_class": "/api/applications/{id}/state",
+    "exactly_one_existing_baseline_application_targeted": true,
+    "failed_requests": 1,
+    "network_loading_failed": 1,
+    "error_class": "net::ERR_FAILED",
+    "at_utc": "2026-10-12T13:57:58.493Z"
+  },
+  "ui_during_fault": {
+    "route": "/",
+    "alerts": 0,
+    "retry_buttons": 0,
+    "metric_values": 4,
+    "application_status_label": "未知",
+    "healthy_count_summary": "0/2",
+    "dom_ready": "complete"
+  },
+  "restore": {
+    "action": "hard reload after Fetch interception disabled; no internal query mutation",
+    "fresh_actual_request_method": "GET",
+    "fresh_actual_request_path_class": "/api/applications/{id}/state",
+    "fresh_matching_response_status": 200,
+    "response_at_utc": "2026-10-12T13:59:23.069Z",
+    "dom": {
+      "route": "/",
+      "alerts": 0,
+      "retry_buttons": 0,
+      "metric_values": 4,
+      "healthy_count_summary": "1/2"
+    }
+  },
+  "interpretation": "The tested per-application state failure was caught by loadDashboard as an empty state list; the UI rendered the affected application as Unknown and did not show a global ErrorState or Retry. A later hard reload produced a directly observed 200 for the same exact application-state path class. The pre-existing P03-10 nodes failure chain independently did show global ErrorState/Retry and recovered. This supplement is a real behavior difference for Root to map against “any Dashboard API”; no new defect assertion is made here.",
+  "safety": {
+    "server_writes": 0,
+    "resources_created": 0,
+    "runs": 0,
+    "response_bodies_saved": false,
+    "application_id_saved": false,
+    "raw_names_or_state_records_saved": false,
+    "Fetch_disabled": true
+  }
+}

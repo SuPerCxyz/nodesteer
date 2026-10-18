@@ -1,0 +1,58 @@
+{
+  "captured_at_utc": "2026-10-10T11:31:24Z",
+  "scope": "read-only source/call/exit-boundary audit; harness fixes only; no remote operations",
+  "findings": [
+    {
+      "location": "arm_control.py:124,327",
+      "finding": "atomic_write positional signature/call mismatch made expected_before bind integer gid; deterministic false controls_changed_before_write.",
+      "fix": "signature reordered to path,expected_before,content,uid,gid.",
+      "validation": "local temp-file success and stale-before no-write tests pass."
+    },
+    {
+      "location": "controller.py:327-343 (pre-fix)",
+      "finding": "latest owner pointer and private connection/session loading were before the main try/finally; preflight failure leaked the prepared browser.",
+      "fix": "wrap startup preflight; on failure cleanup exact prepared browser, persist safe evidence, and logout only a controller-owned fresh API token. Shared valid token is not revoked."
+    },
+    {
+      "location": "controller.py:420+ (pre-fix)",
+      "finding": "finally deleted exact child Task whenever no active Execution, including when arm failed before any UI click; contradicted keep-idle-fixture diagnostic requirement.",
+      "fix": "preserve child Task unless UI evidence records run_clicked=true; when clicked, retain prior no-active-execution exact-ID cleanup."
+    },
+    {
+      "location": "watchdog.py:56,195",
+      "finding": "atomic_replace signature and call order already match; no fix."
+    },
+    {
+      "location": "ui_driver.py:409-435,523-555,558-610",
+      "finding": "output/prepared-proof paths are rooted in imported module HERE, and attempt04 paths are inside that directory; prepare-only supported and now records route/GET200/name/loading/error/Run button. Execute mode consumes exact same proof and nonce."
+    },
+    {
+      "location": "controller.py:315-326,358+",
+      "finding": "prepared proof/evidence parent guards match attempt04 layout; module import resolves attempt04 source; controller path correction to parents[6] makes test-data path repository-rooted."
+    }
+  ],
+  "attempt04_current_state": {
+    "task_id": "41935318-b19a-4a97-8076-c285901e3828",
+    "task_get404": true,
+    "arm_helper_execution_id": "aa2054ba-3150-4e30-a4a0-4f3ab4f15771",
+    "ui_run_clicked": false,
+    "actual_ui_run_count": 0,
+    "controls_current_state": "waiting independent inspector",
+    "watchdog_result": "waiting independent inspector"
+  },
+  "source_sha256": {
+    "arm_control.py": "bb54d35122068c8e5ae0c871cdf84cf1f4ca3287f9ceb08b8728b32a920c872d",
+    "watchdog.py": "cadfa357ce19783824825589755f398590399e99cc8667df2bff3a4793ef0480",
+    "controller.py": "ca6ff58356a6f6990b1a08ef64158412eb415e15e13a3f314d4646c16207875b",
+    "ui_driver.py": "5e3f408f9757629be2f9366bbb09b65d4635267b2cbdbc6589da4d49a8bf88c4",
+    "ui-network-observer.js": "db0d2d0bf557f13425424faade3e0a39ef20a8ab7e097748f26239ddf4483014",
+    "create_child_task.py": "cd79b99b7ffcaf69b7e712bbad16a87b0172318e11bbb1e9336df6bc47a38968"
+  },
+  "checks": {
+    "python_compile": "PASS",
+    "AST": "PASS",
+    "static_arm/watchdog_call_binding": "PASS",
+    "local_atomic_write_selftest": "PASS"
+  },
+  "remaining": "Independent inspector must confirm exact controls and watchdog sidecars. Root to approve any new Task/run after readback; no further fixture actions here."
+}

@@ -1,0 +1,32 @@
+{
+  "captured_at_utc": "2026-10-12T14:12:08.928963+00:00",
+  "session": "qawebsecure20261010-b18-clean38181",
+  "origin": "http://127.0.0.1:38181",
+  "route_class": "/agents/<id>",
+  "route_id_sha256": "a8fd2c68748a8bf2b136e2f2b4306a8134e21a679d3cadefbdd37cde986bd34f",
+  "observations": [
+    {
+      "request": "GET /api/me",
+      "status": 401
+    },
+    {
+      "request": "GET /api/nodes/{id} from in-page whitelist oracle",
+      "status": 401,
+      "node_response_matches_route_id": false
+    }
+  ],
+  "consequence": "Do not treat prior unauthenticated 401 as a product/session defect; corrected helper uses the existing owned browser token only in the Authorization header, with no token output.",
+  "writes": 0,
+  "credentials_or_tokens_saved": false,
+  "status": "CORRECTED_HARNESS_OBSERVATION",
+  "correction_at_utc": "2026-10-12T14:17:01.886106+00:00",
+  "correction": {
+    "cause": "The prior direct browser fetch omitted Authorization and therefore correctly returned 401. It did not test profile expiry.",
+    "same_profile_localstorage_token_present": true,
+    "token_length": 36,
+    "token_sha256": "1c97bc7a4746d0e11bbee2c2a8a7dd7806a9f9e89ca354f9ab4a753c3248da5f",
+    "explicit_bearer_get_me_status": 200,
+    "reauth_attempted": false,
+    "token_value_saved": false
+  }
+}

@@ -1,0 +1,376 @@
+--- main.go@a4fba037
++++ main.go@current
+@@ -94,41 +94,138 @@
+ }
+ func syncDetails(e envelope, p syncPayload, c control) map[string]any {
+ 	selected := make([]map[string]any, 0, 2)
+-	for _, s := range p.Scripts {
+-		if s.ID != c.GoodScriptID && s.ID != c.BadScriptID {
++	for _, entry := range p.Scripts {
++		if entry.ID != c.GoodScriptID && entry.ID != c.BadScriptID {
+ 			continue
+ 		}
+-		d := scriptData{}
+-		_ = json.Unmarshal(s.Data, &d)
+-		selected = append(selected, map[string]any{"id": s.ID, "revision": s.Revision, "content_sha256": sha(d.Content), "declared_sha256": d.SHA256})
++		var data scriptData
++		_ = json.Unmarshal(entry.Data, &data)
++		selected = append(selected, map[string]any{"id": entry.ID, "revision": entry.Revision, "content_sha256": sha(data.Content), "declared_sha256": data.SHA256})
+ 	}
+ 	appPresent := false
+-	for _, a := range p.Apps {
+-		if a.ID == c.AppID {
++	for _, app := range p.Apps {
++		if app.ID == c.AppID {
+ 			appPresent = true
+ 		}
+ 	}
+ 	return map[string]any{"envelope_id": e.ID, "snapshot": p.Snapshot, "full_resync": p.FullResync, "global_rev": p.GlobalRev, "script_entry_count": len(p.Scripts), "target_scripts": selected, "target_app_present": appPresent}
++}
++func shouldHoldForArm(c control, badSent, released bool) bool {
++	return !released && !c.FaultArmed && !badSent
++}
++func shouldHoldAfterFault(badSent, released bool) bool { return badSent && !released }
++
++func targetAppOmitted(p syncPayload, c control) bool {
++	if c.AppID == "" || (!p.Snapshot && !p.FullResync) {
++		return false
++	}
++	for _, app := range p.Apps {
++		if app.ID == c.AppID {
++			return false
++		}
++	}
++	return true
++}
++func shouldBlockAppPrune(p syncPayload, c control, released bool) bool {
++	return !released && targetAppOmitted(p, c) && !matching(p, c)
+ }
+ func matching(p syncPayload, c control) bool {
+ 	if !p.Snapshot || c.AppID == "" || c.GoodScriptID == "" || c.BadScriptID == "" {
+ 		return false
+ 	}
+-	for _, a := range p.Apps {
+-		if a.ID == c.AppID {
++	for _, app := range p.Apps {
++		if app.ID == c.AppID {
+ 			return false
+ 		}
+ 	}
+-	foundGood, foundBad := false, false
+-	for _, s := range p.Scripts {
+-		if s.ID == c.GoodScriptID && s.Revision == c.GoodRevision {
+-			foundGood = true
+-		}
+-		if s.ID == c.BadScriptID && s.Revision == c.BadRevision {
+-			foundBad = true
+-		}
+-	}
+-	return foundGood && foundBad
++	good, bad := false, false
++	for _, entry := range p.Scripts {
++		if entry.ID == c.GoodScriptID && entry.Revision == c.GoodRevision {
++			good = true
++		}
++		if entry.ID == c.BadScriptID && entry.Revision == c.BadRevision {
++			bad = true
++		}
++	}
++	return good && bad
++}
++func sameTargets(a, b control) bool {
++	return a.AppID == b.AppID && a.GoodScriptID == b.GoodScriptID && a.GoodRevision == b.GoodRevision && a.GoodSHA256 == b.GoodSHA256 && a.BadScriptID == b.BadScriptID && a.BadRevision == b.BadRevision && a.BadSHA256 == b.BadSHA256
++}
++func validTargetScripts(p syncPayload, c control) bool {
++	good, bad := false, false
++	for _, entry := range p.Scripts {
++		if entry.ID != c.GoodScriptID && entry.ID != c.BadScriptID {
++			continue
++		}
++		var data scriptData
++		if json.Unmarshal(entry.Data, &data) != nil {
++			return false
++		}
++		if entry.ID == c.GoodScriptID && entry.Revision == c.GoodRevision && data.SHA256 == c.GoodSHA256 && sha(data.Content) == c.GoodSHA256 {
++			good = true
++		}
++		if entry.ID == c.BadScriptID && entry.Revision == c.BadRevision && data.SHA256 == c.BadSHA256 && sha(data.Content) == c.BadSHA256 {
++			bad = true
++		}
++	}
++	return good && bad
++}
++func negativeAckMatches(e envelope, c control) bool {
++	if e.Type != "SYNC_ACK" {
++		return false
++	}
++	var p struct {
++		OK         bool   `json:"ok"`
++		AppliedRev int64  `json:"applied_rev"`
++		Error      string `json:"error"`
++	}
++	if json.Unmarshal(e.Payload, &p) != nil {
++		return false
++	}
++	return !p.OK && p.AppliedRev == 0 && p.Error == fmt.Sprintf("script %s sha256 mismatch", c.BadScriptID)
++}
++func waitForArmed(ctx context.Context, expected control) (control, bool) {
++	event("matching_snapshot_held_until_fault_armed", map[string]any{"app_id": expected.AppID, "good_script_id": expected.GoodScriptID, "bad_script_id": expected.BadScriptID})
++	for {
++		c, err := readControl()
++		if err == nil {
++			if !sameTargets(expected, c) {
++				event("control_target_changed_while_unarmed", map[string]any{"app_id": c.AppID, "good_script_id": c.GoodScriptID, "bad_script_id": c.BadScriptID})
++				return control{}, false
++			}
++			if c.FaultArmed {
++				return c, true
++			}
++		}
++		select {
++		case <-ctx.Done():
++			return control{}, false
++		case <-time.After(200 * time.Millisecond):
++		}
++	}
++}
++func waitForNegativeRelease(ctx context.Context, expected control) bool {
++	for {
++		c, err := readControl()
++		if err == nil {
++			if !sameTargets(expected, c) || !c.FaultArmed {
++				event("control_target_changed_while_held", map[string]any{"app_id": c.AppID, "good_script_id": c.GoodScriptID, "bad_script_id": c.BadScriptID})
++				return false
++			}
++			state.mu.Lock()
++			ack := state.ackNegative && state.badSent
++			state.mu.Unlock()
++			if ack && c.ReleaseGoodSnapshot {
++				return true
++			}
++		}
++		select {
++		case <-ctx.Done():
++			return false
++		case <-time.After(200 * time.Millisecond):
++		}
++	}
+ }
+ func corruptBad(raw []byte, c control) ([]byte, bool, string, error) {
+ 	var e map[string]json.RawMessage
+@@ -143,36 +240,35 @@
+ 	if err := json.Unmarshal(p["scripts"], &scripts); err != nil {
+ 		return nil, false, "", err
+ 	}
+-	changed := false
+-	mutatedSHA := ""
+-	for i, b := range scripts {
+-		var s map[string]json.RawMessage
+-		if json.Unmarshal(b, &s) != nil {
++	changed, mutatedSHA := false, ""
++	for i, rawEntry := range scripts {
++		var entry map[string]json.RawMessage
++		if json.Unmarshal(rawEntry, &entry) != nil {
+ 			continue
+ 		}
+ 		var id string
+-		var rev int64
+-		_ = json.Unmarshal(s["id"], &id)
+-		_ = json.Unmarshal(s["revision"], &rev)
+-		if id != c.BadScriptID || rev != c.BadRevision {
++		var revision int64
++		_ = json.Unmarshal(entry["id"], &id)
++		_ = json.Unmarshal(entry["revision"], &revision)
++		if id != c.BadScriptID || revision != c.BadRevision {
+ 			continue
+ 		}
+ 		var data map[string]json.RawMessage
+-		if json.Unmarshal(s["data"], &data) != nil {
+-			return nil, false, "", errors.New("bad script data JSON")
+-		}
+-		var content string
+-		if json.Unmarshal(data["content"], &content) != nil {
+-			return nil, false, "", errors.New("bad script content JSON")
+-		}
+-		if sha(content) != c.BadSHA256 {
+-			return nil, false, "", errors.New("bad Script content did not match expected original SHA")
++		if json.Unmarshal(entry["data"], &data) != nil {
++			return nil, false, "", errors.New("bad Script data JSON")
++		}
++		var content, declared string
++		if json.Unmarshal(data["content"], &content) != nil || json.Unmarshal(data["sha256"], &declared) != nil {
++			return nil, false, "", errors.New("bad Script content/SHA JSON")
++		}
++		if sha(content) != c.BadSHA256 || declared != c.BadSHA256 {
++			return nil, false, "", errors.New("bad Script original content/SHA did not match control")
+ 		}
+ 		content += "\n# qa-invalid-sha-870358cd92ee\n"
+ 		mutatedSHA = sha(content)
+ 		data["content"], _ = json.Marshal(content)
+-		s["data"], _ = json.Marshal(data)
+-		scripts[i], _ = json.Marshal(s)
++		entry["data"], _ = json.Marshal(data)
++		scripts[i], _ = json.Marshal(entry)
+ 		changed = true
+ 		break
+ 	}
+@@ -189,20 +285,25 @@
+ 	if json.Unmarshal(b, &e) != nil || e.Type != "SYNC_ACK" {
+ 		return
+ 	}
+-	var p struct {
++	c, err := readControl()
++	if err != nil {
++		return
++	}
++	var ack struct {
+ 		OK         bool   `json:"ok"`
+ 		AppliedRev int64  `json:"applied_rev"`
+ 		Error      string `json:"error"`
+ 	}
+-	if json.Unmarshal(e.Payload, &p) != nil {
+-		return
+-	}
+-	event("sync_ack", map[string]any{"envelope_id": e.ID, "ok": p.OK, "applied_rev": p.AppliedRev, "error_bytes": len(p.Error), "error_sha256": sha(p.Error)})
+-	if !p.OK {
+-		state.mu.Lock()
++	if json.Unmarshal(e.Payload, &ack) != nil {
++		return
++	}
++	state.mu.Lock()
++	accepted := state.badSent && c.FaultArmed && negativeAckMatches(e, c)
++	if accepted {
+ 		state.ackNegative = true
+-		state.mu.Unlock()
+-	}
++	}
++	state.mu.Unlock()
++	event("sync_ack", map[string]any{"envelope_id": e.ID, "ok": ack.OK, "applied_rev": ack.AppliedRev, "error_bytes": len(ack.Error), "error_sha256": sha(ack.Error), "accepted_as_bad_sha_rejection": accepted})
+ }
+ func relayClient(ctx context.Context, client, hub *websocket.Conn) {
+ 	for {
+@@ -222,57 +323,71 @@
+ 		if err != nil {
+ 			return
+ 		}
+-		var e envelope
+-		if json.Unmarshal(b, &e) == nil && e.Type == "SYNC_RESPONSE" {
++		var env envelope
++		if json.Unmarshal(b, &env) == nil && env.Type == "SYNC_RESPONSE" {
+ 			var p syncPayload
+-			if json.Unmarshal(e.Payload, &p) == nil {
+-				c, ce := readControl()
+-				if ce == nil && matching(p, c) {
+-					details := syncDetails(e, p, c)
++			if json.Unmarshal(env.Payload, &p) == nil {
++				c, controlErr := readControl()
++				if controlErr == nil {
+ 					state.mu.Lock()
+-					badSent, negative, held := state.badSent, state.ackNegative, state.held
++					released := state.released
+ 					state.mu.Unlock()
+-					if c.FaultArmed && !badSent {
+-						out, ok, mutated, er := corruptBad(b, c)
+-						if er != nil {
+-							event("fault_guard_rejected", map[string]any{"reason": er.Error(), "frame": details})
+-							return
+-						}
+-						if !ok {
+-							return
+-						}
+-						if err = client.Write(ctx, typ, out); err != nil {
+-							return
+-						}
+-						state.mu.Lock()
+-						state.badSent = true
+-						state.mu.Unlock()
+-						event("bad_sha_frame_forwarded", map[string]any{"frame": details, "bad_script_id": c.BadScriptID, "original_content_sha256": c.BadSHA256, "mutated_content_sha256": mutated, "only_content_field_changed": true})
++					if shouldBlockAppPrune(p, c, released) {
++						event("target_snapshot_input_mismatch_blocked", map[string]any{"frame": syncDetails(env, p, c), "reason": "target App omitted but exact Script IDs/revisions are incomplete"})
+ 						continue
+ 					}
+-					if badSent && !held {
++				}
++				if controlErr == nil && matching(p, c) {
++					state.mu.Lock()
++					badSent, ackSeen, released := state.badSent, state.ackNegative, state.released
++					state.mu.Unlock()
++					if shouldHoldForArm(c, badSent, released) {
++						var ready bool
++						c, ready = waitForArmed(ctx, c)
++						if !ready {
++							return
++						}
++					}
++					details := syncDetails(env, p, c)
++					state.mu.Lock()
++					badSent, ackSeen, released = state.badSent, state.ackNegative, state.released
++					state.mu.Unlock()
++					if c.FaultArmed && !badSent && !released {
++						out, ok, mutated, err := corruptBad(b, c)
++						if err != nil || !ok {
++							reason := "invalid target frame"
++							if err != nil {
++								reason = err.Error()
++							}
++							event("fault_guard_rejected", map[string]any{"reason": reason, "frame": details})
++							return
++						}
+ 						state.mu.Lock()
++						sendBad := !state.badSent
++						if sendBad {
++							state.badSent = true
++						}
++						state.mu.Unlock()
++						if sendBad {
++							if err = client.Write(ctx, typ, out); err != nil {
++								event("bad_sha_frame_write_failed", map[string]any{"frame": details})
++								return
++							}
++							event("bad_sha_frame_forwarded", map[string]any{"frame": details, "bad_script_id": c.BadScriptID, "original_content_sha256": c.BadSHA256, "mutated_content_sha256": mutated, "only_content_field_changed": true})
++							continue
++						}
++					}
++					state.mu.Lock()
++					badSent, ackSeen, released = state.badSent, state.ackNegative, state.released
++					if shouldHoldAfterFault(badSent, released) {
+ 						state.held = true
+-						state.mu.Unlock()
+-						event("valid_snapshot_held_for_negative_oracle", map[string]any{"frame": details, "negative_ack_already_seen": negative})
+-						for {
+-							state.mu.Lock()
+-							ack := state.ackNegative
+-							state.mu.Unlock()
+-							ctrl, err := readControl()
+-							if err != nil {
+-								event("control_read_error", map[string]any{"error": err.Error()})
+-								time.Sleep(200 * time.Millisecond)
+-								continue
+-							}
+-							if ack && ctrl.ReleaseGoodSnapshot {
+-								break
+-							}
+-							select {
+-							case <-ctx.Done():
+-								return
+-							case <-time.After(200 * time.Millisecond):
+-							}
++					}
++					state.mu.Unlock()
++					if shouldHoldAfterFault(badSent, released) {
++						valid := validTargetScripts(p, c)
++						event("valid_snapshot_held_for_negative_oracle", map[string]any{"frame": details, "negative_ack_seen": ackSeen, "valid_target_script_shas": valid})
++						if !valid || !waitForNegativeRelease(ctx, c) {
++							continue
+ 						}
+ 						if err = client.Write(ctx, typ, b); err != nil {
+ 							return
+@@ -280,7 +395,7 @@
+ 						state.mu.Lock()
+ 						state.released = true
+ 						state.mu.Unlock()
+-						event("valid_snapshot_released_after_negative_oracle", map[string]any{"frame": details, "negative_ack_seen": true, "release_flag_seen": true})
++						event("valid_snapshot_released_after_negative_oracle", map[string]any{"frame": details, "negative_ack_seen": true, "applied_rev_zero": true, "release_flag_seen": true})
+ 						continue
+ 					}
+ 				}

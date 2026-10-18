@@ -1,0 +1,32 @@
+{
+  "captured_at_utc": "2026-10-10T07:07:29.144+00:00",
+  "overall": "PARTIAL",
+  "cases": {
+    "G-01-04": "PASS",
+    "P02-01": "PARTIAL",
+    "P02-02": "PASS",
+    "P03-04": "PARTIAL",
+    "P03-06": "PARTIAL"
+  },
+  "evidence": {
+    "G-01-04": "case-g01-04-summary.json",
+    "P02-01": "case-p02-01.json",
+    "P02-02": "case-p02-02.json",
+    "P03-04": "case-p03-04.json",
+    "P03-06": "case-p03-06.json"
+  },
+  "harness_stop": {
+    "stage": "P03-06 post-case invariant",
+    "expression": "nodehash status!=200 OR node count differs OR SHA-256 differs",
+    "nodehash_fields": [
+      "id",
+      "labels",
+      "status",
+      "sync_status"
+    ],
+    "baseline_and_final_values_persisted": false,
+    "node_write_requests_sent_by_runner": false,
+    "interpretation": "Guard mismatch is inconclusive because dynamic status/sync are included and the two snapshots were not persisted. No Node mutation is asserted. Hold new external writes until Root decides the stable-field recheck scope."
+  },
+  "cleanup": "phase1-cleanup.json confirms dedicated logout 200, old /me 401, browser closed, owned SSH guard matched and listener absent."
+}

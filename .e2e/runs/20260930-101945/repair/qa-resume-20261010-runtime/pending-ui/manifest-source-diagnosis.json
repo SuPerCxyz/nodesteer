@@ -1,0 +1,42 @@
+{
+  "captured_at_utc": "2026-10-10T07:41:30Z",
+  "scope": "local read-only manifest-input source tracing; no API/Task/Run/remote write",
+  "attempt_helper_execution_id": "4e1333ff-b277-4278-840f-b6b11abe3097",
+  "attempt_passed_manifest_sha256": "fc7ad2e2dbba5c00c95ed08419cfc62b6601da1d13a0dc6ded9d8d5b4a7131f3",
+  "stale_input_source": {
+    "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/db-fault/attempt02/child-runtime-readonly-evidence.json",
+    "field_path": "stdout_json.owner_root.owner_manifest_sha256",
+    "line": 105,
+    "value_sha256": "fc7ad2e2dbba5c00c95ed08419cfc62b6601da1d13a0dc6ded9d8d5b4a7131f3",
+    "meaning": "pre-manual-restart owner manifest; stale after restart changed only child owner row"
+  },
+  "restart_evidence": {
+    "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/ui-native3/restart/manual-attempt01/restart-evidence.json",
+    "owner_manifest_sha256_before_line": 270,
+    "owner_manifest_sha256_after_line": 271,
+    "before_sha256": "fc7ad2e2dbba5c00c95ed08419cfc62b6601da1d13a0dc6ded9d8d5b4a7131f3",
+    "after_sha256": "c8142503fc467066265b67a1db641ec3274119961f65cdadcd92f2ba26a2e2ce",
+    "only_child_owner_row_updated": true
+  },
+  "latest_owner_pointer": {
+    "path": ".e2e/test-data.json",
+    "key": "repair_environment_state.backend_child_20261008.latest_owner_guard",
+    "owner_manifest_sha256_line": 7946,
+    "latest_owner_evidence_line": 7936,
+    "expected_sha256": "c8142503fc467066265b67a1db641ec3274119961f65cdadcd92f2ba26a2e2ce"
+  },
+  "pointer_update_source": {
+    "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/integrate-restart-clipboard-not-found.py",
+    "lines": "141-142",
+    "behavior": "updates latest_owner_guard owner_manifest_sha256 from restart evidence owner_manifest_sha256_after"
+  },
+  "local_caller": {
+    "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/controller.py",
+    "sha_forward_line": 132,
+    "cli_input_line": 240,
+    "behavior": "forwards explicit CLI manifest SHA without checking current latest-owner pointer"
+  },
+  "conclusion": "The attempted explicit manifest input was the stale fc7ad... pre-restart hash derived from db-fault/attempt02/child-runtime-readonly-evidence.json, while the current latest pointer is c814... from the successful owned-child restart. The helper failed closed correctly before watchdog/control writes. No evidence that the physical remote manifest changed again after the c814 readback; only an independent fresh owner readback could establish its present value.",
+  "controls_and_watchdog": "actual controls were not independently read; failure occurred before their write path; watchdog not started; logout evidence gap unchanged",
+  "next_local_fix": "make controller verify CLI SHA against .e2e/test-data.json latest_owner_guard and its referenced restart result before creating helper Task; refuse stale input; no remote retry authorized."
+}

@@ -1,0 +1,114 @@
+{
+ "case_id": "P19-03",
+ "at_utc": "2026-10-16T09:07:36Z",
+ "authority": "http://192.168.100.209:18085",
+ "actions": {
+  "1_execute": {
+   "http": 200,
+   "execution_ids": [
+    "c2df2f67-1ee7-41fe-a563-efb8946bd00f"
+   ],
+   "new_audit_rows": []
+  },
+  "2_cancel": {
+   "http": 200,
+   "execution_id": [
+    "4d10464b-1fe6-4d15-89d6-805089e53946"
+   ],
+   "status_before_cancel": "RUNNING",
+   "status_after_cancel": "RUNNING",
+   "new_audit_rows": [
+    {
+     "resource": "execution",
+     "resource_id": "4d10464b-1fe6-4d15-89d6-805089e53946",
+     "action": "cancel",
+     "username": "qa-g1202610163692428a-admin",
+     "detail": "qa-g1202610163692428a-task-slow",
+     "created_at": "2026-10-16T09:07:38.727558664Z"
+    },
+    {
+     "resource": "task",
+     "resource_id": "5e2eb32b-388b-44d4-be8e-f35e6d98bcb4",
+     "action": "execute",
+     "username": "qa-g1202610163692428a-admin",
+     "detail": null,
+     "created_at": "2026-10-16T09:07:37.717844289Z"
+    }
+   ]
+  },
+  "3_deploy": {
+   "http": 200,
+   "execution_ids": [
+    "64e00196-bc1f-401e-a6ff-e0526e09520b"
+   ],
+   "new_audit_rows": []
+  },
+  "4_upgrade": {
+   "http": 200,
+   "results": [
+    {
+     "node_id": "3f17e833-3a77-4490-86b3-114a7f83dbcd",
+     "execution_id": "801e951c-744a-4a19-8ba4-c00923e540ab",
+     "status": "PENDING",
+     "dispatched": true
+    }
+   ],
+   "new_audit_rows": [
+    {
+     "resource": "node",
+     "resource_id": "3f17e833-3a77-4490-86b3-114a7f83dbcd",
+     "action": "upgrade",
+     "username": "qa-g1202610163692428a-admin",
+     "detail": null,
+     "created_at": "2026-10-16T09:07:40.977652478Z"
+    }
+   ]
+  },
+  "5_node_status": {
+   "maintenance_http": 200,
+   "resume_http": 200,
+   "status_mid": "maintenance",
+   "status_end": "online",
+   "sync_end": "synced",
+   "new_audit_rows": []
+  },
+  "6_user_role_password": {
+   "role_http": 200,
+   "password_http": 200,
+   "relogin_after_password_change": 200,
+   "new_audit_rows": [
+    {
+     "resource": "user",
+     "resource_id": "0a176771-770e-4b99-b760-30ece01cc21a",
+     "action": "update",
+     "username": "qa-g1202610163692428a-admin",
+     "detail": null,
+     "created_at": "2026-10-16T09:07:48.835964893Z"
+    }
+   ]
+  }
+ },
+ "ui_audit_search": {
+  "search_input": {
+   "placeholder": "搜索用户、操作或资源"
+  },
+  "result": {
+   "body_has_exec": true,
+   "count": 1,
+   "rows": [
+    "刚刚\tqa-g1202610163692428a-admin\tcancel\texecution\t\n4d10464b-1fe6-4d15-89d6-805089e53946\n\t\nqa-g1202610163692428a-task-slow"
+   ]
+  },
+  "shot": "evidence/P1903-audit-search-cancel.png",
+  "login_token": true
+ },
+ "verdict": {
+  "execute_audited": false,
+  "cancel_audited": true,
+  "deploy_audited": false,
+  "upgrade_audited": true,
+  "node_status_audited": 0,
+  "user_role_password_audited": 1,
+  "ui_search_finds_cancel": true
+ }
+}

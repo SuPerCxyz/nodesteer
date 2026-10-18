@@ -1,0 +1,70 @@
+{
+ "captured_at_utc": "2026-10-14T07:50:11.106396+00:00",
+ "case_id": "P09P11-01",
+ "route": "/tasks",
+ "baseline": {
+  "api_tasks_count": 0
+ },
+ "ui_observation": {
+  "heading": [
+   "任务"
+  ],
+  "columns": [
+   "名称",
+   "类型",
+   "目标",
+   "超时",
+   "离线策略",
+   "修订号",
+   "状态"
+  ],
+  "row_count": 1,
+  "empty_row_text": "没有结果。",
+  "search_placeholder": "搜索任务名称、类型或 ID",
+  "pagination_buttons": [
+   {
+    "t": "跳转到第一页",
+    "disabled": true
+   },
+   {
+    "t": "上一页",
+    "disabled": true
+   },
+   {
+    "t": "下一页",
+    "disabled": true
+   },
+   {
+    "t": "跳转到最后一页",
+    "disabled": true
+   }
+  ],
+  "new_task_link": true
+ },
+ "verified_dimensions": {
+  "list_renders_with_real_get": true,
+  "empty_state": "table shows '没有结果。' row; page '第 1 页，共 0 页'; pagination controls all disabled (correct for a single empty page)",
+  "search_control": true,
+  "search_no_result": "typed 'no-such-task-zzz' -> search applied (重置 reset button appeared), table still no rows; GET /api/tasks not re-issued (client-side filter)",
+  "search_reset": "clicked 重置 -> filter cleared, table restored to baseline empty state",
+  "error_retry": "network route aborted exact GET /api/tasks; 5 failed attempts; page rendered 'Failed to fetch' + 重试; removed route and clicked 重试 -> exact GET /api/tasks 200 and empty table restored",
+  "failure_path_side_effects": "no server mutation; only GET /api/tasks"
+ },
+ "unverified_dimensions": [
+  "positive search hit (requires >=1 owned Task)",
+  "multi-page pagination traversal / page-size change (requires >10 owned Tasks)",
+  "View: click a populated Task row name link -> /tasks/{id} detail (requires >=1 owned Task)"
+ ],
+ "reason_for_partial": "Repair baseline has 0 Tasks; the confirmed scope for this batch forbids creating persistent resources. All row-dependent dimensions stop here for Root decision.",
+ "view_affordance_source": "web/src/features/tasks/index.tsx:161 renders the task name as an <a href=/tasks/{id}> in the list (link not observable because no rows).",
+ "evidence": [
+  "evidence/P09P11-01-01-tasks-empty.png",
+  "evidence/P09P11-01-02-tasks-search-none.png",
+  "evidence/P09P11-01-03-tasks-error.png",
+  "evidence/P09P11-01-04-tasks-retry-recovered.png",
+  "evidence/P09P11-01-list-controls-scan.json",
+  "evidence/P09P11-01-api-tasks.json",
+  "evidence/P09P11-01-api-requests.txt"
+ ],
+ "server_writes": 0
+}

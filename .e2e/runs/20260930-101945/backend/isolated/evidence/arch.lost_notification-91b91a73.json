@@ -1,0 +1,437 @@
+{
+  "result": {
+    "id": "arch.lost_notification",
+    "name": "Lost Notification",
+    "started_at": "2026-09-30T06:51:23.619689+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "failed",
+    "reason": "真实Agent脚本状态未按目标Revision收敛",
+    "traceback": "Traceback (most recent call last):\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/runner.py\", line 567, in execute\n    self.normal_case(case['id'])\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated_runner.py\", line 294, in normal_case\n    self.wait_script(script)\n    ~~~~~~~~~~~~~~~~^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated_runner.py\", line 188, in wait_script\n    raise AssertionError('真实Agent脚本状态未按目标Revision收敛')\nAssertionError: 真实Agent脚本状态未按目标Revision收敛\n",
+    "finished_at": "2026-09-30T06:52:09.602905+00:00",
+    "evidence": "backend/isolated/evidence/arch.lost_notification-91b91a73.json"
+  },
+  "events": [
+    {
+      "control": "python3 -c 'import pathlib,sys;pathlib.Path(sys.argv[1]).write_text(sys.argv[2])' /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.controls.json '{}'",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "control": "docker rm -f qa-20260930-101945-env-agent",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-env-agent\n",
+      "stderr": ""
+    },
+    {
+      "control": "docker run -d --name qa-20260930-101945-env-agent --network qa-20260930-101945-env-net --restart unless-stopped --hostname 6f6041279833 -v qa-20260930-101945-env-agentdata:/var/lib/nodesteer -e NODESTEER_NODE_NAME=qa-20260930-101945-env-docker-agent -e NODESTEER_NODE_IP=192.168.100.209 -e NODESTEER_DEPLOYMENT_MODE=docker -e NODESTEER_DATA_DIR=/var/lib/nodesteer -e PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin -e NODESTEER_HUB_URL=ws://192.168.100.209:18084/ws -e NODESTEER_REGISTRATION_TOKEN=[redacted] -e NODESTEER_AGENT_ID=agent-9b83b1d6-e376-4e76-a46f-f5c45e495329 qa-20260930-101945-env-agent:dddee4f0",
+      "exit_code": 0,
+      "stdout": "486880c0135d98f053c4a4c17cbbee10948288dedf8a17235e1b46061f74f616\n",
+      "stderr": ""
+    },
+    {
+      "core_node": {
+        "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "hostname": "qa-20260930-101945-env-docker-agent",
+        "ip": "192.168.100.209",
+        "os": "Alpine Linux v3.20",
+        "arch": "amd64",
+        "agent_version": "dddee4f0",
+        "deployment_mode": "docker",
+        "host_integration": false,
+        "status": "online",
+        "labels": {},
+        "capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        },
+        "global_revision": 60,
+        "sync_status": "synced",
+        "last_seen": "2026-09-30T06:51:25.782882949Z",
+        "first_seen": "2026-09-30T02:36:32.656149623Z"
+      }
+    },
+    {
+      "api": "POST /api/scripts",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-proxy-lost_notification-0030a1",
+        "interpreter": "shell",
+        "content": "printf proxy-one",
+        "enabled": true,
+        "timeout": 5
+      },
+      "response": {
+        "id": "b0883d14-e40f-423b-90f6-b9a0b909e7ff",
+        "name": "qa-20260930-101945-be-proxy-lost_notification-0030a1",
+        "description": "",
+        "interpreter": "shell",
+        "content": "printf proxy-two",
+        "parameters": null,
+        "environment": null,
+        "working_dir": "",
+        "timeout": 5,
+        "enabled": true,
+        "revision": 1,
+        "sha256": "5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3",
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 06:51:26 GMT",
+        "Content-Length": "418",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-proxy-lost_notification-624222",
+        "type": "script",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "script_id": "b0883d14-e40f-423b-90f6-b9a0b909e7ff"
+      },
+      "response": {
+        "id": "874b88c5-3342-4d9d-9ade-b3f084ed0ed5",
+        "name": "qa-20260930-101945-be-proxy-lost_notification-624222",
+        "type": "script",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "script_id": "b0883d14-e40f-423b-90f6-b9a0b909e7ff",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 06:51:26 GMT",
+        "Content-Length": "452",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/874b88c5-3342-4d9d-9ade-b3f084ed0ed5/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "46df1964-054d-4105-9ac0-f1fe5d906fee",
+          "task_id": "874b88c5-3342-4d9d-9ade-b3f084ed0ed5",
+          "task_revision": 1,
+          "script_id": "b0883d14-e40f-423b-90f6-b9a0b909e7ff",
+          "script_revision": 1,
+          "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 06:51:26 GMT",
+        "Content-Length": "493",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/46df1964-054d-4105-9ac0-f1fe5d906fee",
+      "terminal": {
+        "id": "46df1964-054d-4105-9ac0-f1fe5d906fee",
+        "task_id": "874b88c5-3342-4d9d-9ade-b3f084ed0ed5",
+        "task_revision": 1,
+        "script_id": "b0883d14-e40f-423b-90f6-b9a0b909e7ff",
+        "script_revision": 1,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T06:51:26.812127778Z",
+        "end_time": "2026-09-30T06:51:26.840145526Z",
+        "status": "SUCCESS",
+        "stdout": "proxy-one",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"46df1964-054d-4105-9ac0-f1fe5d906fee\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"46df1964-054d-4105-9ac0-f1fe5d906fee\", \"task_id\": \"874b88c5-3342-4d9d-9ade-b3f084ed0ed5\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 1}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import pathlib,sys;pathlib.Path(sys.argv[1]).write_text(sys.argv[2])' /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.controls.json '{\"drop_types\": [\"CHANGE_NOTIFICATION\"]}'",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "api": "PUT /api/scripts/b0883d14-e40f-423b-90f6-b9a0b909e7ff",
+      "status": 200,
+      "request": {
+        "id": "b0883d14-e40f-423b-90f6-b9a0b909e7ff",
+        "name": "qa-20260930-101945-be-proxy-lost_notification-0030a1",
+        "description": "",
+        "interpreter": "shell",
+        "content": "printf proxy-two",
+        "parameters": null,
+        "environment": null,
+        "working_dir": "",
+        "timeout": 5,
+        "enabled": true,
+        "revision": 1,
+        "sha256": "5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3",
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "response": {
+        "id": "b0883d14-e40f-423b-90f6-b9a0b909e7ff",
+        "name": "qa-20260930-101945-be-proxy-lost_notification-0030a1",
+        "description": "",
+        "interpreter": "shell",
+        "content": "printf proxy-two",
+        "parameters": null,
+        "environment": null,
+        "working_dir": "",
+        "timeout": 5,
+        "enabled": true,
+        "revision": 2,
+        "sha256": "7fc97f287102f19a1017e055a76ff0eff5a0fbfd8cf3be51e26a2c27be55200e",
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "2026-09-30T06:51:26.743960325Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 06:51:29 GMT",
+        "Content-Length": "428",
+        "Connection": "close"
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT content,revision,sha256 FROM scripts WHERE id=?' '[\"b0883d14-e40f-423b-90f6-b9a0b909e7ff\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"content\": \"printf proxy-one\", \"revision\": 1, \"sha256\": \"5af77a97ea0ef11dda661135f2f59c9734f1ecb81e4f03178e6287fbb01bc6b3\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import pathlib,sys;pathlib.Path(sys.argv[1]).write_text(sys.argv[2])' /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.controls.json '{}'",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

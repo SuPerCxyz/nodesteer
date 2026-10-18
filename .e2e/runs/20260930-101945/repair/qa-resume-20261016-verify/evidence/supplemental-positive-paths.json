@@ -1,0 +1,85 @@
+{
+ "at_utc": "2026-10-16T07:15:35Z",
+ "phase": "supplemental-positive-paths",
+ "P07_P08-04": {
+  "create_http": 400
+ },
+ "P09P11-10": {
+  "group_create_http": 200,
+  "task_create_http": 200,
+  "execution": {
+   "status": "SUCCESS",
+   "block_reason": null
+  },
+  "ok": true,
+  "group_put_http": 200,
+  "group_delete_http": 200,
+  "group_get_after": 404
+ },
+ "P12P13-02": {
+  "task_create_http": 200,
+  "create_http": 400
+ },
+ "corrected": {
+  "at_utc": "2026-10-16T07:16:04Z",
+  "phase": "supplemental-corrected",
+  "P07_P08-04": {
+   "create_http": 200,
+   "readback": {
+    "name": "qa-r1610-0348872d-script-rt-f",
+    "description": "rt desc",
+    "interpreter": "shell",
+    "content": "#!/bin/sh\necho roundtrip-final\n",
+    "working_dir": "/tmp",
+    "run_user": "root",
+    "timeout": 45,
+    "enabled": false
+   },
+   "edit_http": 200,
+   "edit_readback": {
+    "description": "rt desc v2",
+    "timeout": 60
+   },
+   "ok": true,
+   "delete_http": 200,
+   "get_after_delete": 404
+  },
+  "P12P13-02": {
+   "task_create_http": 200,
+   "create_http": 200,
+   "edit_http": 200,
+   "edit_readback": {
+    "name": null,
+    "enabled": false
+   },
+   "ok": false,
+   "delete_http": 200,
+   "get_after_delete": 404,
+   "task_get_after_delete": 404
+  }
+ },
+ "correction_note": "首轮 P07_P08-04 用了非法 parameters 形态、P12P13-02 用了 type=once（合法值为 cron/interval/one_time/on_start）；本轮已按正确 payload 重跑",
+ "P12P13-02_corrected2": {
+  "at_utc": "2026-10-16T07:16:27Z",
+  "correction": "schedule 无 name 字段（列表显示任务名）；改用 enabled/timezone 验证编辑",
+  "task_create_http": 200,
+  "create_http": 200,
+  "create_readback": {
+   "task_id": "f6c65f35-3e39-45d0-8d6b-1dfef8721f9e",
+   "type": "one_time",
+   "timezone": "UTC",
+   "enabled": true,
+   "execution_owner": "hub"
+  },
+  "edit_http": 200,
+  "edit_readback": {
+   "enabled": false,
+   "timezone": "Asia/Shanghai"
+  },
+  "ok": true,
+  "schedule_delete_http": 200,
+  "schedule_get_after": 404,
+  "task_delete_http": 200,
+  "task_get_after": 404
+ }
+}

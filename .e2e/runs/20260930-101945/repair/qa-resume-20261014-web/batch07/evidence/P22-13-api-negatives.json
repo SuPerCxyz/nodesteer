@@ -1,0 +1,146 @@
+{
+ "at": "2026-10-14T09:53:43Z",
+ "authority": "http://192.168.100.209:18080",
+ "cases": {
+  "agent_credential": {
+   "admin_user_token_on_agent_channel": {
+    "body": {
+     "error": "invalid agent credential"
+    },
+    "http": 401
+   },
+   "artifact_download_no_credential": {
+    "body": {
+     "error": "unauthorized"
+    },
+    "http": 401
+   },
+   "bogus_id_token_download": {
+    "body": {
+     "error": "invalid agent credential"
+    },
+    "http": 401
+   },
+   "no_headers_download": {
+    "body": {
+     "error": "agent authentication required"
+    },
+    "http": 401
+   },
+   "real_agent_id_wrong_token_download": {
+    "body": {
+     "error": "invalid agent credential"
+    },
+    "http": 401
+   },
+   "real_agent_id_wrong_token_upload": {
+    "body": {
+     "error": "invalid agent credential"
+    },
+    "http": 401
+   }
+  },
+  "duplicate_target": {
+   "response": [
+    400,
+    {
+     "error": "target node is empty or duplicated"
+    }
+   ]
+  },
+  "empty_source_path": {
+   "response": [
+    400,
+    {
+     "error": "source path: absolute path required"
+    }
+   ]
+  },
+  "no_target": {
+   "response": [
+    400,
+    {
+     "error": "at least one target is required"
+    }
+   ]
+  },
+  "rel_dest_path": {
+   "request": {
+    "destination_path": "qa/relative-dst.bin"
+   },
+   "response": [
+    400,
+    {
+     "error": "destination path: absolute path required"
+    }
+   ]
+  },
+  "rel_source_path": {
+   "request": {
+    "source_path": "qa/relative.bin"
+   },
+   "response": [
+    400,
+    {
+     "error": "source path: absolute path required"
+    }
+   ]
+  },
+  "traversal_dest": {
+   "request": {
+    "destination_path": "/tmp/qa-w1410b07-30fb54d4/../../etc/evil.bin"
+   },
+   "response": [
+    400,
+    {
+     "error": "destination path: path traversal is not allowed"
+    }
+   ]
+  },
+  "traversal_dest_nested": {
+   "request": {
+    "destination_path": "/tmp/./../tmp/evil2.bin"
+   },
+   "response": [
+    400,
+    {
+     "error": "destination path: path traversal is not allowed"
+    }
+   ]
+  },
+  "traversal_source": {
+   "request": {
+    "source_path": "/tmp/../etc/passwd"
+   },
+   "response": [
+    400,
+    {
+     "error": "source path: path traversal is not allowed"
+    }
+   ]
+  },
+  "unknown_source_node": {
+   "response": [
+    400,
+    {
+     "error": "source node not found"
+    }
+   ]
+  }
+ },
+ "negative_side_effects": {
+  "host001_cannot_be_inspected": "host integration container is used only to produce a fast allowlist failure",
+  "hub_staging": {
+   "rc": 0,
+   "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.",
+   "stdout": "total 8\ndrwx------ 2 nodesteer nodesteer 4096 Oct 14 17:13 .\ndrwxr-x--- 4 nodesteer nodesteer 4096 Oct  4 09:33 .."
+  },
+  "node_dir_listing": {
+   "rc": 0,
+   "stderr": "Warning: Permanently added '192.168.100.222' (ED25519) to the list of known hosts.",
+   "stdout": "total 11788\ndrwxr-xr-x  2 root root         220 Oct 14 17:52 .\ndrwxrwxrwt 16 root root         320 Oct 14 17:52 ..\n-rw-r--r--  1 root root          21 Oct 14 17:52 dst-interrupt.bin\n-rw-------  1 root root          28 Oct 14 17:52 dst-replace.bin\nlrwxrwxrwx  1 root root          48 Oct 14 17:52 dst-symlink.bin -> /tmp/qa-w1410b07-30fb54d4/dst-symlink-target.txt\n-rw-r--r--  1 root root          14 Oct 14 17:52 dst-symlink-target.txt\n-rw-r--r--  1 root root     1048576 Oct 14 17:52 src-1m.bin\n-rw-r--r--  1 root root     2097152 Oct 14 17:52 src-2m.bin\n-rw-r--r--  1 root root     8388608 Oct 14 17:52 src-8m.bin\n-rw-r--r--  1 root root 10737418241 Oct 14 17:52 src-overlimit.bin\n-rw-r--r--  1 root root      524288 Oct 14 17:52 src-small.bin"
+  },
+  "owned_prefix_in_list": [],
+  "transfers_total": 16
+ }
+}

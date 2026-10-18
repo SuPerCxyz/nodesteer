@@ -1,0 +1,72 @@
+{
+  "observation_id": "OBS-20261016-G23-RECONNECT-WINDOW",
+  "title": "agent IsConnected() 在 WS 握手完成、HELLO/HELLO_ACK 之前即置真，hub_online_required 门禁存在毫秒级放行窗口",
+  "severity_candidate": "INFO / 低危（不改判本批用例结论；仅记录）",
+  "discovered_at_utc": "2026-10-16T09:23:31Z",
+  "harness_context": "phase7 P12P13-07 象限 4（child 链路 cut 期间）。本次 cut 采用「accept 后立即 close(1013)」，该实现会让 agent 的 websocket.Dial 完成握手，从而短暂置 connected=true。",
+  "observed": {
+    "proxy_events_around": [
+      {
+        "event": "client_rejected_while_cut",
+        "at_utc": "2026-10-16T09:23:22Z",
+        "port": 42747
+      },
+      {
+        "event": "client_rejected_while_cut",
+        "at_utc": "2026-10-16T09:23:26Z",
+        "port": 42747
+      },
+      {
+        "event": "client_rejected_while_cut",
+        "at_utc": "2026-10-16T09:23:28Z",
+        "port": 42747
+      },
+      {
+        "event": "client_rejected_while_cut",
+        "at_utc": "2026-10-16T09:23:31Z",
+        "port": 42747
+      },
+      {
+        "event": "client_rejected_while_cut",
+        "at_utc": "2026-10-16T09:23:35Z",
+        "port": 42747
+      },
+      {
+        "event": "client_rejected_while_cut",
+        "at_utc": "2026-10-16T09:23:37Z",
+        "port": 42747
+      }
+    ],
+    "hub_online_required_execution_created_during_cut": [
+      {
+        "id": "ffe35473-f551-42a4-9573-ecf2fbd14c15",
+        "task_id": "7dcff604-02eb-4fa6-8cd9-21e4b14928fc",
+        "script_id": "7b0b4296-93dd-4555-91da-e3d6ceef4761",
+        "trigger_type": "schedule",
+        "scheduled_time": "2026-10-16T09:23:23Z",
+        "status": "SUCCESS",
+        "exit_code": 0,
+        "offline": 1,
+        "synced": 0,
+        "start_time": "2026-10-16T09:23:31.502610093Z",
+        "end_time": "2026-10-16T09:23:31.513651744Z"
+      }
+    ],
+    "child_allow_offline_rows_during_cut_offline_flag": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "note": "child 在该时刻的 dial 被 proxy 以 1013 拒绝，但同秒出现一条 hub_online_required 执行（start_time 09:23:31.502），说明该 tick 落在 connected=true 的窗口内。"
+  },
+  "product_code_refs": [
+    "internal/agent/connection/manager.go:249 m.connected = true（dial 成功后、HELLO 之前）",
+    "internal/agent/agent.go:148 a.sch.SetOnlineFunc(a.conn.IsConnected)",
+    "internal/agent/scheduler/scheduler.go:142 hub_online_required 门禁读 online()"
+  ],
+  "impact": "门禁判定依据是「WS 握手成功」而非「会话已建立（HELLO_ACK）」。真实网络分区（dial 失败/超时）不受影响；仅在「对端 accept 后立刻关闭」这类 LB/代理行为下存在毫秒级放行窗口。",
+  "mitigation_in_this_batch": "后续运行的 cut 改为止停监听端口（dial 直接 ECONNREFUSED），消除该窗口，象限 4 断言因此为干净复测。"
+}

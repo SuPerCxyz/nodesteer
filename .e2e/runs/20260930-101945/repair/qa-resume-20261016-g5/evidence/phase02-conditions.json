@@ -1,0 +1,1001 @@
+{
+ "at_utc": "2026-10-16T08:52:41Z",
+ "cases": [
+  "P09P11-15",
+  "P09P11-16",
+  "P09P11-17",
+  "X11"
+ ],
+ "local_metrics_accepted": {
+  "cpu_usage": {
+   "id": "8f6dc742-fdee-48e2-bfac-fa6d6099d3c6",
+   "http": 200,
+   "stored_local": {
+    "metric": "cpu_usage",
+    "operator": "==",
+    "value": "10"
+   },
+   "roundtrip_ok": true
+  },
+  "memory_usage": {
+   "id": "eb69a894-a884-42fa-bcb1-750aceacf6b2",
+   "http": 200,
+   "stored_local": {
+    "metric": "memory_usage",
+    "operator": "==",
+    "value": "20"
+   },
+   "roundtrip_ok": true
+  },
+  "disk_usage": {
+   "id": "f304dbbb-74b4-4c42-9bc7-27b93b2e1343",
+   "http": 200,
+   "stored_local": {
+    "metric": "disk_usage",
+    "operator": "==",
+    "value": "30",
+    "path": "/"
+   },
+   "roundtrip_ok": true
+  },
+  "file_exists": {
+   "id": "f923a8a7-a96d-4b50-98ac-f09904e5d03c",
+   "http": 200,
+   "stored_local": {
+    "metric": "file_exists",
+    "operator": "==",
+    "value": "true",
+    "path": "/etc/hostname"
+   },
+   "roundtrip_ok": true
+  },
+  "dir_exists": {
+   "id": "d149a8b0-bda6-47c6-a2d0-bb9b13afdbba",
+   "http": 200,
+   "stored_local": {
+    "metric": "dir_exists",
+    "operator": "==",
+    "value": "true",
+    "path": "/tmp"
+   },
+   "roundtrip_ok": true
+  },
+  "process_exists": {
+   "id": "01fcd5e3-5559-49f8-b27e-0b656d086858",
+   "http": 200,
+   "stored_local": {
+    "metric": "process_exists",
+    "operator": "==",
+    "value": "true",
+    "path": "systemd"
+   },
+   "roundtrip_ok": true
+  },
+  "port_listening": {
+   "id": "5f6f3222-1766-41f3-a657-665f2f71c182",
+   "http": 200,
+   "stored_local": {
+    "metric": "port_listening",
+    "operator": "==",
+    "value": "true",
+    "path": "22"
+   },
+   "roundtrip_ok": true
+  },
+  "command_result": {
+   "id": "0bc458a5-5a38-410e-89c2-a46743541760",
+   "http": 200,
+   "stored_local": {
+    "metric": "command_result",
+    "operator": "==",
+    "value": "0",
+    "command": "true"
+   },
+   "roundtrip_ok": true
+  }
+ },
+ "local_metrics_rejected": {},
+ "local_operators_accepted": {
+  "==": {
+   "id": "b4219b95-da0e-4494-a5a7-b7cf588e20f2",
+   "stored_operator": "=="
+  },
+  "!=": {
+   "id": "03ec7c8c-abca-484c-b27c-e8d977c9647c",
+   "stored_operator": "!="
+  },
+  ">": {
+   "id": "3ed522f0-7fa8-403f-a899-290297c70003",
+   "stored_operator": ">"
+  },
+  "<": {
+   "id": "b844c755-64a1-4a7b-ada8-a28d68cdf140",
+   "stored_operator": "<"
+  },
+  ">=": {
+   "id": "6e288777-b4ea-4144-ac51-5999ad158fa9",
+   "stored_operator": ">="
+  },
+  "<=": {
+   "id": "f76f555f-b2ae-409e-a270-27f010d528f5",
+   "stored_operator": "<="
+  }
+ },
+ "local_operators_rejected": {},
+ "local_negative_validation": {
+  "unknown_metric": {
+   "http": 400,
+   "body": {
+    "error": "invalid task: unknown local condition metric"
+   }
+  },
+  "invalid_operator": {
+   "http": 400,
+   "body": {
+    "error": "invalid task: invalid local condition operator"
+   }
+  },
+  "non_numeric_cpu": {
+   "http": 400,
+   "body": {
+    "error": "invalid task: numeric local condition requires numeric value"
+   }
+  },
+  "missing_path": {
+   "http": 400,
+   "body": {
+    "error": "invalid task: local condition requires path"
+   }
+  },
+  "bad_port": {
+   "http": 400,
+   "body": {
+    "error": "invalid task: port_listening path must be a valid port"
+   }
+  },
+  "missing_command": {
+   "http": 400,
+   "body": {
+    "error": "invalid task: command_result requires command"
+   }
+  },
+  "empty_type": {
+   "http": 400,
+   "body": {
+    "error": "invalid task: condition type must be local, remote, or and"
+   }
+  },
+  "and_empty": {
+   "http": 400,
+   "body": {
+    "error": "invalid task: and condition requires at least one child"
+   }
+  }
+ },
+ "remote_conditions": {
+  "online_eq": {
+   "http": 200,
+   "id": "0f755044-9c6a-4118-8402-7ef0d505f637"
+  },
+  "last_execution": {
+   "http": 200,
+   "id": "0ed4eeeb-4703-4ee6-ab70-a24c937d0d57"
+  },
+  "last_execution_missing_task_id": {
+   "http": 400,
+   "body": {
+    "error": "invalid task: last_execution condition requires task_id"
+   }
+  },
+  "last_execution_unknown_task": {
+   "http": 400,
+   "body": {
+    "error": "invalid task: remote condition task not found"
+   }
+  },
+  "unknown_node": {
+   "http": 400,
+   "body": {
+    "error": "invalid task: remote condition node not found"
+   }
+  },
+  "missing_node_id": {
+   "http": 400,
+   "body": {
+    "error": "invalid task: remote condition requires node_id"
+   }
+  },
+  "bad_operator": {
+   "http": 400,
+   "body": {
+    "error": "invalid task: remote condition operator must be == or !="
+   }
+  },
+  "bad_property": {
+   "http": 400,
+   "body": {
+    "error": "invalid task: unknown remote condition property"
+   }
+  },
+  "bad_online_value": {
+   "http": 400,
+   "body": {
+    "error": "invalid task: invalid online condition value"
+   }
+  }
+ },
+ "and": {
+  "create_http": 200,
+  "id": "223f2019-15c0-48f7-b8ba-b68a83ca6ef6",
+  "stored": {
+   "type": "and",
+   "and": [
+    {
+     "type": "local",
+     "local": {
+      "metric": "file_exists",
+      "operator": "==",
+      "value": "true",
+      "path": "/etc/hostname"
+     }
+    },
+    {
+     "type": "remote",
+     "remote": {
+      "node_id": "b0ec89f5-55c6-4b09-96b7-a58d8c344f65",
+      "property": "online",
+      "operator": "==",
+      "value": "online"
+     }
+    }
+   ]
+  },
+  "stored_child_count": 2,
+  "stored_types": [
+   "local",
+   "remote"
+  ],
+  "nested_create_http": 200,
+  "nested_id": "d4d45277-0ff8-4511-bc51-864ddccb1868",
+  "nested_stored": {
+   "type": "and",
+   "and": [
+    {
+     "type": "local",
+     "local": {
+      "metric": "cpu_usage",
+      "operator": "<",
+      "value": "100"
+     }
+    },
+    {
+     "type": "and",
+     "and": [
+      {
+       "type": "local",
+       "local": {
+        "metric": "dir_exists",
+        "operator": "==",
+        "value": "true",
+        "path": "/tmp"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "ui": {
+  "metric_select": {
+   "kind": "metric",
+   "current": "cpu_usage",
+   "options": [
+    "cpu_usage",
+    "memory_usage",
+    "disk_usage",
+    "file_exists",
+    "dir_exists",
+    "process_exists",
+    "port_listening",
+    "command_result"
+   ]
+  },
+  "local_operator_select": {
+   "kind": "operator",
+   "current": ">",
+   "options": [
+    "==",
+    "!=",
+    ">",
+    "<",
+    ">=",
+    "<="
+   ]
+  },
+  "remote_property_select": {
+   "kind": "property",
+   "current": "online",
+   "options": [
+    "online",
+    "上次执行"
+   ]
+  },
+  "remote_operator_select": {
+   "kind": "remote_operator",
+   "current": "==",
+   "options": [
+    "==",
+    "!="
+   ]
+  },
+  "and_checkbox_labels": [
+   "qa-g23-d08f3dbc-child-a\nonline",
+   "qa-g5-9505276f0c-child-a\nonline",
+   "qa-g5-9505276f0c-child-b\nonline",
+   "qa-repair-20260930-101945-native-1\nonline",
+   "qa-repair-20260930-101945-native-2\nonline",
+   "qa-repair-20260930-101945-native-3\nonline",
+   "qa-repair-20260930-101945-native-4\nonline",
+   "qa-resume-20261008-native4-child-c5d48ea9-da08-4123-94fb-69b11abd59a7\noffline",
+   "qa-resume-20261010-host-f174890c3846-host001\nonline",
+   "已启用",
+   "必填",
+   "所有条件都满足（AND）"
+  ],
+  "name_fill": "qa-g5-9505276f0c-ui-cond-task",
+  "node_a_check": "clicked",
+  "command_fill": "/bin/echo qa-g5-9505276f0c-ui-cond-task",
+  "checkbox_after": [
+   {
+    "checked": false,
+    "label": "qa-g23-d08f3dbc-child-a|online",
+    "state": "unchecked"
+   },
+   {
+    "checked": true,
+    "label": "qa-g5-9505276f0c-child-a|online",
+    "state": "checked"
+   },
+   {
+    "checked": false,
+    "label": "qa-g5-9505276f0c-child-b|online",
+    "state": "unchecked"
+   },
+   {
+    "checked": false,
+    "label": "qa-repair-20260930-101945-native-1|online",
+    "state": "unchecked"
+   },
+   {
+    "checked": false,
+    "label": "qa-repair-20260930-101945-native-2|online",
+    "state": "unchecked"
+   },
+   {
+    "checked": false,
+    "label": "qa-repair-20260930-101945-native-3|online",
+    "state": "unchecked"
+   },
+   {
+    "checked": false,
+    "label": "qa-repair-20260930-101945-native-4|online",
+    "state": "unchecked"
+   },
+   {
+    "checked": false,
+    "label": "qa-resume-20261008-native4-child-c5d48ea9-da08-4123-94fb-69b11abd59a7|offline",
+    "state": "unchecked"
+   },
+   {
+    "checked": false,
+    "label": "qa-resume-20261010-host-f174890c3846-host001|online",
+    "state": "unchecked"
+   },
+   {
+    "checked": true,
+    "label": "已启用",
+    "state": "checked"
+   },
+   {
+    "checked": false,
+    "label": "必填",
+    "state": "unchecked"
+   },
+   {
+    "checked": false,
+    "label": "所有条件都满足（AND）",
+    "state": "unchecked"
+   }
+  ],
+  "set_local_absent": {
+   "metric_pick": "file_exists",
+   "operator_pick": "==",
+   "path_fill": "/var/tmp/qa-g5-9505276f0c-absent",
+   "value_fill": "true",
+   "set_click": "clicked",
+   "summary": [
+    "file_exists == true"
+   ]
+  },
+  "summary_after_set": [
+   "file_exists == true"
+  ],
+  "save_1": {
+   "click": "clicked",
+   "url_before": "http://192.168.100.209:18080/tasks/new",
+   "url_after": "http://192.168.100.209:18080/tasks",
+   "saved": true,
+   "tail_text": [
+    "跳转到第 3 页",
+    "3",
+    "下一页",
+    "跳转到最后一页"
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "POST",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 400,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "POST",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 400,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "POST",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 200,
+     "resourceType": "Fetch"
+    }
+   ]
+  },
+  "created_task": {
+   "id": "b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+   "name": "qa-g5-9505276f0c-ui-cond-task",
+   "type": "command",
+   "target": {
+    "type": "node",
+    "node_ids": [
+     "b0ec89f5-55c6-4b09-96b7-a58d8c344f65"
+    ]
+   },
+   "parameters": [],
+   "param_values": {},
+   "command": "/bin/echo qa-g5-9505276f0c-ui-cond-task",
+   "condition": {
+    "type": "local",
+    "local": {
+     "metric": "file_exists",
+     "operator": "==",
+     "value": "true",
+     "path": "/var/tmp/qa-g5-9505276f0c-absent"
+    }
+   },
+   "timeout": 300,
+   "retry": 0,
+   "offline_policy": "hub_online_required",
+   "enabled": true,
+   "revision": 1,
+   "updated_at": "2026-10-16T08:52:50.893008759Z",
+   "created_at": "2026-10-16T08:52:50.893009541Z"
+  }
+ },
+ "exec_blocked": {
+  "id": "0221c94a-1f66-45da-965e-9c9de79c2908",
+  "task_id": "b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+  "node_id": "b0ec89f5-55c6-4b09-96b7-a58d8c344f65",
+  "status": "SKIPPED",
+  "exit_code": null,
+  "block_reason": "condition not satisfied",
+  "script_id": null,
+  "script_revision": null,
+  "offline": false,
+  "stdout": "",
+  "stderr": ""
+ },
+ "ui_echo_override": {
+  "edit_url": "http://192.168.100.209:18080/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4/edit",
+  "local_metric_shown": "file_exists",
+  "local_operator_shown": "==",
+  "path_shown": "/var/tmp/qa-g5-9505276f0c-absent",
+  "value_shown": "true",
+  "summary_shown": [
+   "file_exists == true"
+  ],
+  "and_checkbox_checked": "false",
+  "override_set": {
+   "metric_pick": "cpu_usage",
+   "operator_pick": ">",
+   "value_fill": "0",
+   "set_click": "clicked",
+   "summary": [
+    "cpu_usage > 0"
+   ]
+  },
+  "override_summary": [
+   "cpu_usage > 0"
+  ],
+  "override_save": {
+   "click": "clicked",
+   "url_before": "http://192.168.100.209:18080/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4/edit",
+   "url_after": "http://192.168.100.209:18080/tasks",
+   "saved": true,
+   "tail_text": [
+    "跳转到第 3 页",
+    "3",
+    "下一页",
+    "跳转到最后一页"
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 400,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "POST",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "PUT",
+     "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 200,
+     "resourceType": "Fetch"
+    }
+   ]
+  },
+  "stored_after_override": {
+   "type": "local",
+   "local": {
+    "metric": "cpu_usage",
+    "operator": ">",
+    "value": "0",
+    "path": "/var/tmp/qa-g5-9505276f0c-absent"
+   }
+  }
+ },
+ "clear_local_click": "clicked",
+ "summary_after_clear": [],
+ "clear_save": {
+  "click": "clicked",
+  "url_before": "http://192.168.100.209:18080/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4/edit",
+  "url_after": "http://192.168.100.209:18080/tasks",
+  "saved": true,
+  "tail_text": [
+   "跳转到第 3 页",
+   "3",
+   "下一页",
+   "跳转到最后一页"
+  ],
+  "requests": [
+   {
+    "method": "GET",
+    "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+    "status": 200,
+    "resourceType": "Fetch"
+   },
+   {
+    "method": "PUT",
+    "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+    "status": 200,
+    "resourceType": "Fetch"
+   },
+   {
+    "method": "GET",
+    "url": "http://192.168.100.209:18080/api/tasks",
+    "status": 200,
+    "resourceType": "Fetch"
+   },
+   {
+    "method": "GET",
+    "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+    "status": 200,
+    "resourceType": "Fetch"
+   },
+   {
+    "method": "PUT",
+    "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+    "status": 200,
+    "resourceType": "Fetch"
+   },
+   {
+    "method": "GET",
+    "url": "http://192.168.100.209:18080/api/tasks",
+    "status": 200,
+    "resourceType": "Fetch"
+   }
+  ]
+ },
+ "stored_after_clear": null,
+ "exec_after_clear": {
+  "id": "9c43a649-e3fc-4d59-8d24-65d798b92dd5",
+  "task_id": "b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+  "node_id": "b0ec89f5-55c6-4b09-96b7-a58d8c344f65",
+  "status": "SUCCESS",
+  "exit_code": null,
+  "block_reason": null,
+  "script_id": null,
+  "script_revision": null,
+  "offline": false,
+  "stdout": "qa-g5-9505276f0c-ui-cond-task\n",
+  "stderr": ""
+ },
+ "ui_and": {
+  "and_check": "clicked",
+  "set_local": {
+   "metric_pick": "file_exists",
+   "operator_pick": "==",
+   "path_fill": "/etc/hostname",
+   "value_fill": "true",
+   "set_click": "clicked",
+   "summary": []
+  },
+  "set_remote": {
+   "node_pick": "qa-g5-9505276f0c-child-a",
+   "property_pick": "online",
+   "operator_pick": "==",
+   "value_fill": "online",
+   "set_click": "clicked",
+   "summary": []
+  },
+  "summary": [],
+  "set_remote_no_node": {
+   "node_pick": "skipped(no node chosen)",
+   "property_pick": "online",
+   "operator_pick": "==",
+   "value_fill": "online",
+   "set_click": "clicked",
+   "summary": []
+  },
+  "summary_after_failed_remote": [],
+  "save": {
+   "click": "clicked",
+   "url_before": "http://192.168.100.209:18080/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4/edit",
+   "url_after": "http://192.168.100.209:18080/tasks",
+   "saved": true,
+   "tail_text": [
+    "跳转到第 3 页",
+    "3",
+    "下一页",
+    "跳转到最后一页"
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "PUT",
+     "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "PUT",
+     "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 200,
+     "resourceType": "Fetch"
+    }
+   ]
+  },
+  "stored": {
+   "type": "and",
+   "and": [
+    {
+     "type": "local",
+     "local": {
+      "metric": "file_exists",
+      "operator": "==",
+      "value": "true",
+      "path": "/etc/hostname"
+     }
+    },
+    {
+     "type": "remote",
+     "remote": {
+      "node_id": "b0ec89f5-55c6-4b09-96b7-a58d8c344f65",
+      "property": "online",
+      "operator": "==",
+      "value": "online"
+     }
+    }
+   ]
+  },
+  "exec_both_true": {
+   "id": "6044f27f-4e51-447c-9ea3-ed423ec9cbb4",
+   "task_id": "b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+   "node_id": "b0ec89f5-55c6-4b09-96b7-a58d8c344f65",
+   "status": "SUCCESS",
+   "exit_code": null,
+   "block_reason": null,
+   "script_id": null,
+   "script_revision": null,
+   "offline": false,
+   "stdout": "qa-g5-9505276f0c-ui-cond-task\n",
+   "stderr": ""
+  },
+  "downgrade_click": "missing:0",
+  "downgrade_save": {
+   "click": "clicked",
+   "url_before": "http://192.168.100.209:18080/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4/edit",
+   "url_after": "http://192.168.100.209:18080/tasks",
+   "saved": true,
+   "tail_text": [
+    "跳转到第 3 页",
+    "3",
+    "下一页",
+    "跳转到最后一页"
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "PUT",
+     "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "PUT",
+     "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 200,
+     "resourceType": "Fetch"
+    }
+   ]
+  },
+  "stored_after_downgrade": {
+   "type": "and",
+   "and": [
+    {
+     "type": "local",
+     "local": {
+      "metric": "file_exists",
+      "operator": "==",
+      "value": "true",
+      "path": "/etc/hostname"
+     }
+    },
+    {
+     "type": "remote",
+     "remote": {
+      "node_id": "b0ec89f5-55c6-4b09-96b7-a58d8c344f65",
+      "property": "online",
+      "operator": "==",
+      "value": "online"
+     }
+    }
+   ]
+  },
+  "clear_remote_click": "missing:0",
+  "clear_remote_save": {
+   "click": "clicked",
+   "url_before": "http://192.168.100.209:18080/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4/edit",
+   "url_after": "http://192.168.100.209:18080/tasks",
+   "saved": true,
+   "tail_text": [
+    "跳转到第 3 页",
+    "3",
+    "下一页",
+    "跳转到最后一页"
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "PUT",
+     "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "PUT",
+     "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 200,
+     "resourceType": "Fetch"
+    }
+   ]
+  },
+  "stored_after_clear_all": {
+   "type": "and",
+   "and": [
+    {
+     "type": "local",
+     "local": {
+      "metric": "file_exists",
+      "operator": "==",
+      "value": "true",
+      "path": "/etc/hostname"
+     }
+    },
+    {
+     "type": "remote",
+     "remote": {
+      "node_id": "b0ec89f5-55c6-4b09-96b7-a58d8c344f65",
+      "property": "online",
+      "operator": "==",
+      "value": "online"
+     }
+    }
+   ]
+  }
+ },
+ "ui_and_none": {
+  "name_fill": "qa-g5-9505276f0c-ui-and-none",
+  "node_check": "clicked",
+  "command_fill": "/bin/echo qa-g5-9505276f0c-ui-and-none",
+  "and_check": "clicked",
+  "summary": [],
+  "save": {
+   "click": "clicked",
+   "url_before": "http://192.168.100.209:18080/tasks/new",
+   "url_after": "http://192.168.100.209:18080/tasks",
+   "saved": true,
+   "tail_text": [
+    "跳转到第 3 页",
+    "3",
+    "下一页",
+    "跳转到最后一页"
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "PUT",
+     "url": "http://192.168.100.209:18080/api/tasks/b14b6dfd-23c6-4c26-a314-d5622098f3d4",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "POST",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 200,
+     "resourceType": "Fetch"
+    },
+    {
+     "method": "GET",
+     "url": "http://192.168.100.209:18080/api/tasks",
+     "status": 200,
+     "resourceType": "Fetch"
+    }
+   ]
+  },
+  "created": {
+   "id": "6740e40b-7b36-411f-a084-289c821022a4",
+   "name": "qa-g5-9505276f0c-ui-and-none",
+   "type": "command",
+   "target": {
+    "type": "node",
+    "node_ids": [
+     "b0ec89f5-55c6-4b09-96b7-a58d8c344f65"
+    ]
+   },
+   "parameters": [],
+   "param_values": {},
+   "command": "/bin/echo qa-g5-9505276f0c-ui-and-none",
+   "timeout": 300,
+   "retry": 0,
+   "offline_policy": "hub_online_required",
+   "enabled": true,
+   "revision": 1,
+   "updated_at": "2026-10-16T08:53:30.71871139Z",
+   "created_at": "2026-10-16T08:53:30.71871219Z"
+  },
+  "stored_condition": null
+ }
+}

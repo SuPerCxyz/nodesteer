@@ -1,0 +1,1631 @@
+{
+  "run_id": "20260930-101945",
+  "generated_at": "2026-10-01T09:51:58.322955+00:00",
+  "mode": "read-only takeover; only backend/ui-resume-inventory.json written; no browser/network/state/business writes",
+  "ownership": "Web恢复额度后继续独占web/**和web/e2e/**；本Agent未修改Web/环境/全局",
+  "snapshot_inventory_counts": {
+    "PASS": 151,
+    "FAIL": 11,
+    "NOT_RUN": 70,
+    "PARTIAL": 130
+  },
+  "snapshot_remaining_counts": {
+    "NOT_RUN": 71,
+    "PARTIAL": 130
+  },
+  "handoff_freshness": "handoff.md早于SAFE14-20结果，不将旧NextStep和旧SAFE12 harness当最新事实",
+  "namespace_warning": "旧Playwright Pxx测试号与504新库存case号/含义不一（例如旧P01-04中文EN vs库存P01-04pending）；必须按title+实际assertions映射，不机械同ID合并",
+  "existing_not_run_literal_tests": [
+    {
+      "title": "P21-02 [SHARED_SETTING] 保存设置",
+      "source": "web/e2e/tests/p19-misc.spec.ts:41",
+      "has_reported_run": false,
+      "grep": "P21-02",
+      "run_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-P21-02 --grep \"P21\\-02\"",
+      "ready": "GUARDED_OR_HARNESS_PREREQUISITE",
+      "reason": "默认ALLOW_SHARED_SETTINGS未开而skip；test只点Save/等待，缺持久化/运行效果断言。Root已有真实UI heartbeat运行证据，优先合并，非重复改共享Settings。"
+    },
+    {
+      "title": "E2E-11 [ROOT_RBAC] 用户生命周期",
+      "source": "web/e2e/tests/e2e-flows.spec.ts:50",
+      "has_reported_run": false,
+      "grep": "E2E-11",
+      "run_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-E2E-11 --grep \"E2E\\-11\"",
+      "ready": "GUARDED_OR_HARNESS_PREREQUISITE",
+      "reason": "默认ALLOW_USER_CREATE未开而skip；单test只创建不测login/role lifecycle，且无User DELETE。Root已有新专属User，不能重复创建，仅需按既有ID补UI或保留已测API部分。"
+    },
+    {
+      "title": "RBAC-07 未认证请求 401",
+      "source": "web/e2e/tests/rbac.spec.ts:9",
+      "has_reported_run": false,
+      "grep": "RBAC-07",
+      "run_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-RBAC-07 --grep \"RBAC\\-07\"",
+      "ready": "YES_READ_ONLY"
+    },
+    {
+      "title": "RBAC-06 Admin 全功能",
+      "source": "web/e2e/tests/rbac.spec.ts:14",
+      "has_reported_run": false,
+      "grep": "RBAC-06",
+      "run_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-RBAC-06 --grep \"RBAC\\-06\"",
+      "ready": "YES_READ_ONLY"
+    },
+    {
+      "title": "RBAC-02/03 Operator/Viewer 读取正常",
+      "source": "web/e2e/tests/rbac.spec.ts:28",
+      "has_reported_run": false,
+      "grep": "RBAC-02/03",
+      "run_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-RBAC-02-03 --grep \"RBAC\\-02/03\"",
+      "ready": "GUARDED_OR_HARNESS_PREREQUISITE",
+      "reason": "stock run-playwright.py没有注入Operator/Viewer用户名与RBAC_PASSWORD；rbac.spec用默认test-*和同一个密码。现有两个账号不同密码时，需测试helper分别取真实私密凭据；不能把login401当产品缺陷。Env44+26可覆盖已实际执行的角色UI/读取维度。"
+    },
+    {
+      "title": "RBAC-02 Viewer 写操作被拒",
+      "source": "web/e2e/tests/rbac.spec.ts:38",
+      "has_reported_run": false,
+      "grep": "RBAC-02",
+      "run_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-RBAC-02 --grep \"RBAC\\-02\"",
+      "ready": "GUARDED_OR_HARNESS_PREREQUISITE",
+      "reason": "stock run-playwright.py没有注入Operator/Viewer用户名与RBAC_PASSWORD；rbac.spec用默认test-*和同一个密码。现有两个账号不同密码时，需测试helper分别取真实私密凭据；不能把login401当产品缺陷。Env44+26可覆盖已实际执行的角色UI/读取维度。"
+    },
+    {
+      "title": "RBAC-03 Operator 写操作被拒",
+      "source": "web/e2e/tests/rbac.spec.ts:47",
+      "has_reported_run": false,
+      "grep": "RBAC-03",
+      "run_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-RBAC-03 --grep \"RBAC\\-03\"",
+      "ready": "GUARDED_OR_HARNESS_PREREQUISITE",
+      "reason": "stock run-playwright.py没有注入Operator/Viewer用户名与RBAC_PASSWORD；rbac.spec用默认test-*和同一个密码。现有两个账号不同密码时，需测试helper分别取真实私密凭据；不能把login401当产品缺陷。Env44+26可覆盖已实际执行的角色UI/读取维度。"
+    },
+    {
+      "title": "RBAC-04 Operator 本轮节点状态修改被拒",
+      "source": "web/e2e/tests/rbac.spec.ts:56",
+      "has_reported_run": false,
+      "grep": "RBAC-04",
+      "run_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-RBAC-04 --grep \"RBAC\\-04\"",
+      "ready": "GUARDED_OR_HARNESS_PREREQUISITE",
+      "reason": "stock run-playwright.py没有注入Operator/Viewer用户名与RBAC_PASSWORD；rbac.spec用默认test-*和同一个密码。现有两个账号不同密码时，需测试helper分别取真实私密凭据；不能把login401当产品缺陷。Env44+26可覆盖已实际执行的角色UI/读取维度。"
+    },
+    {
+      "title": "RBAC-05 [SHARED_SETTING] Operator 用户/设置被拒",
+      "source": "web/e2e/tests/rbac.spec.ts:73",
+      "has_reported_run": false,
+      "grep": "RBAC-05",
+      "run_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-RBAC-05 --grep \"RBAC\\-05\"",
+      "ready": "GUARDED_OR_HARNESS_PREREQUISITE",
+      "reason": "stock run-playwright.py没有注入Operator/Viewer用户名与RBAC_PASSWORD；rbac.spec用默认test-*和同一个密码。现有两个账号不同密码时，需测试helper分别取真实私密凭据；不能把login401当产品缺陷。Env44+26可覆盖已实际执行的角色UI/读取维度。"
+    },
+    {
+      "title": "RBAC-08 页面只展示角色允许的操作",
+      "source": "web/e2e/tests/rbac.spec.ts:88",
+      "has_reported_run": false,
+      "grep": "RBAC-08",
+      "run_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-RBAC-08 --grep \"RBAC\\-08\"",
+      "ready": "GUARDED_OR_HARNESS_PREREQUISITE",
+      "reason": "stock run-playwright.py没有注入Operator/Viewer用户名与RBAC_PASSWORD；rbac.spec用默认test-*和同一个密码。现有两个账号不同密码时，需测试helper分别取真实私密凭据；不能把login401当产品缺陷。Env44+26可覆盖已实际执行的角色UI/读取维度。"
+    }
+  ],
+  "priority_execution_list": [
+    {
+      "priority": 1,
+      "action": "MERGE_EVIDENCE_FIRST",
+      "grep": "SAFE-(14|15|16|17|20)",
+      "command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-pass-audit --grep \"SAFE-(14|15|16|17|20)\"",
+      "ready": "现成脚本可执行，但已有真实PASS，应先合并对应case；仅新改动或证据缺口需重跑",
+      "owner": "Web已恢复running并独占Web文件；Root调度避免与其同case/同fixture并发"
+    },
+    {
+      "priority": 2,
+      "action": "DIRECT_READ_ONLY_TESTS",
+      "grep": "RBAC-(06|07)",
+      "command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-rbac-read --grep \"RBAC-(06|07)\"",
+      "ready": "stock runner已注入Admin凭据，两条无业务写；此前无对应Playwright报告，但main99已满足API读取/401语义",
+      "expected_scope": "只API权限基础，不等同全角色页面权限"
+    },
+    {
+      "priority": 3,
+      "action": "MERGE_LATEST_PASS_NO_RERUN",
+      "grep": "FULL-09",
+      "command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-managed-task --grep \"FULL-09\"",
+      "ready": "Root已定点重测PASS/cleanup完成，Web合并新真实记录，无需重复创建资源",
+      "source": [
+        "web/e2e/tests/full-feature-ui.spec.ts:351",
+        "web/e2e/tests/full-feature-ui.spec.ts:475",
+        "web/e2e/tests/fixtures.ts:54"
+      ],
+      "remaining": "旧DirectApp停留页live health/history反例另列，不能由本Task路径PASS覆盖",
+      "current_result": "web/managed-app-task-traced-results.json"
+    },
+    {
+      "priority": 4,
+      "action": "OPTIONAL_VERIFY_GROUP_FACTS_AND_KNOWN_TASK_FAIL",
+      "grep": "SAFE-12",
+      "command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-group-task --grep \"SAFE-12\"",
+      "ready": "现成且known真实FAIL，Group/Task其他维度已有record可合并；无需循环重复验证未修产品",
+      "source": [
+        "web/e2e/tests/safe-ui.spec.ts:354"
+      ],
+      "product_failure": "WEB-TASK-DELETE-CANCEL"
+    },
+    {
+      "priority": 5,
+      "action": "OPTIONAL_VERIFY_FILTERS_AND_KNOWN_TRANSFER_FAIL",
+      "grep": "SAFE-18",
+      "command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-filter-transfer --grep \"SAFE-18\"",
+      "ready": "现成known真实FAIL；不会dispatch新的Relay；manual-only trigger缺schedule/system seed/特定验证",
+      "source": [
+        "web/e2e/tests/safe-ui.spec.ts:566"
+      ],
+      "product_failure": "WEB-TRANSFER-SOURCE-CHANGE"
+    },
+    {
+      "priority": 6,
+      "action": "ROLE_SUITE_HARNESS_GATED",
+      "grep": "RBAC-(02|03|04|05|08)",
+      "command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-role-controls --grep \"RBAC-(02|03|04|05|08)\"",
+      "ready": "stock runner目前不准备两个角色凭据；先Root/Web适配各角色私密password，避免默认空密码/test-*账号401。Env44+26读/控件/取消已有真实证据；Group/Schedule无既有row未覆盖。"
+    },
+    {
+      "priority": 7,
+      "action": "GUARDED_SETTINGS_AND_USERS",
+      "grep": "P21-02|E2E-11",
+      "command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-guarded --grep \"P21-02|E2E-11\"",
+      "ready": "两条默认skip且断言不足；不能直接启用重建新User/反复改shared Settings。Root已有专属新User+runtime证据，优先用既有ID定点补验证。"
+    }
+  ],
+  "latest_safe_results": [
+    {
+      "title": "SAFE-01 所有11表格搜索/无结果/Reset/排序/列持久化/分页",
+      "project": "chromium",
+      "started_at": "2026-10-01T01:18:44.369Z",
+      "actual_status": "passed",
+      "result_file": "web/tables-verified-results.json",
+      "errors": [],
+      "file": "safe-ui.spec.ts",
+      "line": 9,
+      "classification": "REAL_UI_PASS",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-01 --grep \"SAFE-01\""
+    },
+    {
+      "title": "SAFE-12 Group静态双成员/标签往返和Task启停/删除取消确认",
+      "project": "chromium",
+      "started_at": "2026-10-01T04:25:13.883Z",
+      "actual_status": "failed",
+      "result_file": "web/group-task-cancel-state-results.json",
+      "errors": [
+        "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 1\nReceived: 0\n\nCall Log:\n- Timeout 3000ms exceeded while waiting on the predicate\n\n  389 |       await page.getByRole('alertdialog').getByRole('button',{name:/^取消$/}).click();expect(deletes).toBe(before)\n  390 |       await page.keyboard.press('Escape')\n> 391 |       await expect.soft.poll(()=>row.getByRole('button',{name:/^操作$/}).count(),{timeout:3000}).toBe(1)\n      |                                                                                                ^\n  392 |       const accessible=await row.getByRole('button',{name:/^操作$/}).count()\n  393 |       await evidence('delete-cancel-'+kind,{url:page.url(),accessible_actions:accessible,dom:await page.evaluate(()=>({body_pointer_events:getComputedStyle(document.body).pointerEvents,hidden:[...document.querySelectorAll('[aria-hidden=\"true\"]')].map(e=>({tag:e.tagName,slot:e.getAttribute('data-slot')})),dialogs:[...document.querySelectorAll('[role=\"alertdialog\"],[role=\"menu\"]')].map(e=>({role:e.getAttribute('role'),state:e.getAttribute('data-state')}))})),rows:await page.locator('tbody').innerText(),resource:(await apiRequest(page,'/api/'+kind+'/'+objectId)).b"
+      ],
+      "file": "safe-ui.spec.ts",
+      "line": 354,
+      "classification": "CONFIRMED_PRODUCT_FAIL",
+      "product_failure_id": "WEB-TASK-DELETE-CANCEL",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-12 --grep \"SAFE-12\""
+    },
+    {
+      "title": "SAFE-14 Artifact必填/架构/Usage与Application参数环境健康字段",
+      "project": "chromium",
+      "started_at": "2026-10-01T04:27:13.418Z",
+      "actual_status": "passed",
+      "result_file": "web/artifact-app-form-verified-results.json",
+      "errors": [],
+      "file": "safe-ui.spec.ts",
+      "line": 403,
+      "classification": "REAL_UI_PASS",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-14 --grep \"SAFE-14\""
+    },
+    {
+      "title": "SAFE-15 真实执行日志流/搜索/换行跟随复制与停止取消审计",
+      "project": "chromium",
+      "started_at": "2026-10-01T04:33:23.189Z",
+      "actual_status": "passed",
+      "result_file": "web/execution-log-cancel-http-results.json",
+      "errors": [],
+      "file": "safe-ui.spec.ts",
+      "line": 442,
+      "classification": "REAL_UI_PASS",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-15 --grep \"SAFE-15\""
+    },
+    {
+      "title": "SAFE-06 登录必填/显示隐藏/真实回跳/退出取消确认/安全外站回跳",
+      "project": "chromium",
+      "started_at": "2026-10-01T01:13:17.557Z",
+      "actual_status": "passed",
+      "result_file": "web/auth-keyboard-results.json",
+      "errors": [],
+      "file": "safe-ui.spec.ts",
+      "line": 143,
+      "classification": "REAL_UI_PASS",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-06 --grep \"SAFE-06\""
+    },
+    {
+      "title": "SAFE-07 Browser历史、导航active、快捷键与退出Esc",
+      "project": "chromium",
+      "started_at": "2026-10-01T01:13:17.557Z",
+      "actual_status": "passed",
+      "result_file": "web/auth-keyboard-results.json",
+      "errors": [],
+      "file": "safe-ui.spec.ts",
+      "line": 173,
+      "classification": "REAL_UI_PASS",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-07 --grep \"SAFE-07\""
+    },
+    {
+      "title": "SAFE-09 Cron图形/所有预设/表达式/预览/IANA/Owner/Misfire",
+      "project": "chromium",
+      "started_at": "2026-10-01T01:44:56.757Z",
+      "actual_status": "passed",
+      "result_file": "web/cron-form-complete-results.json",
+      "errors": [],
+      "file": "safe-ui.spec.ts",
+      "line": 251,
+      "classification": "REAL_UI_PASS",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-09 --grep \"SAFE-09\""
+    },
+    {
+      "title": "SAFE-18 Execution状态触发筛选URL/清空与Transfer目标草稿反向操作",
+      "project": "chromium",
+      "started_at": "2026-10-01T04:55:50.124Z",
+      "actual_status": "failed",
+      "result_file": "web/transfer-source-change-ui-results.json",
+      "errors": [
+        "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: false\nReceived: true\n\n  592 |   await evidence('execution-filter-transfer-draft',{statuses:checks,triggers_available:available,filters_cleared:true,source_before:source.id,target_before:target.id,source_after:target.id,retained_target_node:target.id,retained_target_path:path,target_remains:retained,target_selector_source_option_count:selfOptionCount,source_excluded_initially:true,add_required:true,remove_zero_post:true,source_change_self_start_enabled:selfEnabled,posts_after_source_change:0,linked_actual_request:'evidence/transfer-source-change-self.json',api_self_transfer_contract:'allowed; UI constraint consistency only'})\n  593 |   if(process.env.NODESTEER_E2E_EVIDENCE_DIR)await page.screenshot({path:process.env.NODESTEER_E2E_EVIDENCE_DIR+'/transfer-source-change-ui.png'})\n> 594 |   expect(retained&&selfEnabled).toBe(false)\n      |                                 ^\n  595 | })\n  596 |\n  597 | test('SAFE-20 Node多选/工具栏键盘/升级维护取消零写请求',async({page})=>{\n    at /home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts:594:33"
+      ],
+      "file": "safe-ui.spec.ts",
+      "line": 566,
+      "classification": "CONFIRMED_PRODUCT_FAIL",
+      "product_failure_id": "WEB-TRANSFER-SOURCE-CHANGE",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-18 --grep \"SAFE-18\""
+    },
+    {
+      "title": "SAFE-17 详情深链刷新前后退/不存在资源ErrorRetry与Definition回链",
+      "project": "chromium",
+      "started_at": "2026-10-01T04:48:34.521Z",
+      "actual_status": "passed",
+      "result_file": "web/detail-deep-verified-results.json",
+      "errors": [],
+      "file": "safe-ui.spec.ts",
+      "line": 523,
+      "classification": "REAL_UI_PASS",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-17 --grep \"SAFE-17\""
+    },
+    {
+      "title": "SAFE-10 已登录访问登录入口应回到业务页",
+      "project": "chromium",
+      "started_at": "2026-10-01T04:19:34.022Z",
+      "actual_status": "failed",
+      "result_file": "web/root-gap-round2-results.json",
+      "errors": [
+        "Error: expect(page).not.toHaveURL(expected) failed\n\nExpected pattern: not /\\/sign-in/\nReceived string: \"http://192.168.100.209:8080/sign-in\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"not toHaveURL\" with timeout 5000ms\n    14 × locator resolved to <html dir=\"ltr\" lang=\"zh-CN\" class=\"font-maple light\">…</html>\n       - unexpected value \"http://192.168.100.209:8080/sign-in\"\n\n\n  292 |   await evidence('authenticated-sign-in',{me_http:me.status,url:page.url(),login_form_visible:await page.getByLabel(/^用户名$/).isVisible()})\n  293 |   if(process.env.NODESTEER_E2E_EVIDENCE_DIR)await page.screenshot({path:process.env.NODESTEER_E2E_EVIDENCE_DIR+'/authenticated-sign-in.png'})\n> 294 |   await expect(page).not.toHaveURL(/\\/sign-in/)\n      |                          ^\n  295 | })\n  296 |\n  297 | test('SAFE-13 Users取消必填角色/Settings双区与System主题',async({page})=>{\n    at /home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts:294:26"
+      ],
+      "file": "safe-ui.spec.ts",
+      "line": 288,
+      "classification": "CONFIRMED_PRODUCT_FAIL",
+      "product_failure_id": "WEB-AUTH-SIGN-IN",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-10 --grep \"SAFE-10\""
+    },
+    {
+      "title": "SAFE-02 Execution跨服务端页搜索已知ID",
+      "project": "chromium",
+      "started_at": "2026-10-01T01:02:16.542Z",
+      "actual_status": "failed",
+      "result_file": "web/safe-tables-results.json",
+      "errors": [
+        "Error: expect(locator).toBeVisible() failed\n\nLocator: locator('a[href=\"/executions/51635f63-8709-40d8-959d-3131ff1f9770\"]')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" with timeout 5000ms\n  - waiting for locator('a[href=\"/executions/51635f63-8709-40d8-959d-3131ff1f9770\"]')\n\n\n  78 |   const actual={id,rows:await page.locator('table tbody').innerText(),url:page.url()}\n  79 |   await evidence('execution-cross-page-search',actual)\n> 80 |   await expect(page.locator(`a[href=\"/executions/${id}\"]`)).toBeVisible()\n     |                                                             ^\n  81 | })\n  82 |\n  83 | test('SAFE-03 [UI_MOCK] Error/Retry与Loading',async({page})=>{\n    at /home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts:80:61"
+      ],
+      "file": "safe-ui.spec.ts",
+      "line": 71,
+      "classification": "CONFIRMED_PRODUCT_FAIL",
+      "product_failure_id": "WEB-EXEC-SEARCH-PAGE",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-02 --grep \"SAFE-02\""
+    },
+    {
+      "title": "SAFE-03 [UI_MOCK] Error/Retry与Loading",
+      "project": "chromium",
+      "started_at": "2026-10-01T01:02:16.542Z",
+      "actual_status": "passed",
+      "result_file": "web/safe-tables-results.json",
+      "errors": [],
+      "file": "safe-ui.spec.ts",
+      "line": 83,
+      "classification": "UI_MOCK_ONLY",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-03 --grep \"SAFE-03\""
+    },
+    {
+      "title": "SAFE-04 Script参数/环境增删覆盖空字段与取消",
+      "project": "chromium",
+      "started_at": "2026-10-01T01:02:16.542Z",
+      "actual_status": "passed",
+      "result_file": "web/safe-tables-results.json",
+      "errors": [],
+      "file": "safe-ui.spec.ts",
+      "line": 94,
+      "classification": "REAL_UI_PASS",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-04 --grep \"SAFE-04\""
+    },
+    {
+      "title": "SAFE-05 Schedule类型切换/必填/非法输入/Owner/Misfire",
+      "project": "chromium",
+      "started_at": "2026-10-01T01:02:16.542Z",
+      "actual_status": "passed",
+      "result_file": "web/safe-tables-results.json",
+      "errors": [],
+      "file": "safe-ui.spec.ts",
+      "line": 118,
+      "classification": "REAL_UI_PASS",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-05 --grep \"SAFE-05\""
+    },
+    {
+      "title": "SAFE-16 真实纳管必填/无效输入/IPv4IPv6DNS与三种命令/重开重置",
+      "project": "chromium",
+      "started_at": "2026-10-01T04:35:14.010Z",
+      "actual_status": "passed",
+      "result_file": "web/enrollment-validation-verified-results.json",
+      "errors": [],
+      "file": "safe-ui.spec.ts",
+      "line": 487,
+      "classification": "REAL_UI_PASS",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-16 --grep \"SAFE-16\""
+    },
+    {
+      "title": "SAFE-20 Node多选/工具栏键盘/升级维护取消零写请求",
+      "project": "chromium",
+      "started_at": "2026-10-01T04:56:44.184Z",
+      "actual_status": "passed",
+      "result_file": "web/bulk-selection-keyboard-verified-results.json",
+      "errors": [],
+      "file": "safe-ui.spec.ts",
+      "line": 597,
+      "classification": "REAL_UI_PASS",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-20 --grep \"SAFE-20\""
+    },
+    {
+      "title": "SAFE-11 Dashboard统计和全部ViewAll/Node-Task-Schedule回链与刷新",
+      "project": "chromium",
+      "started_at": "2026-10-01T04:17:56.157Z",
+      "actual_status": "passed",
+      "result_file": "web/root-gap-round1-results.json",
+      "errors": [],
+      "file": "safe-ui.spec.ts",
+      "line": 316,
+      "classification": "REAL_UI_PASS",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-11 --grep \"SAFE-11\""
+    },
+    {
+      "title": "SAFE-13 Users取消必填角色/Settings双区与System主题",
+      "project": "chromium",
+      "started_at": "2026-10-01T04:19:34.022Z",
+      "actual_status": "passed",
+      "result_file": "web/root-gap-round2-results.json",
+      "errors": [],
+      "file": "safe-ui.spec.ts",
+      "line": 297,
+      "classification": "REAL_UI_PASS",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-13 --grep \"SAFE-13\""
+    },
+    {
+      "title": "SAFE-08 Task四类型/目标切换、参数与Local/Remote/AND编辑清除",
+      "project": "chromium",
+      "started_at": "2026-10-01T01:33:08.795Z",
+      "actual_status": "passed",
+      "result_file": "web/task-form-verified-results.json",
+      "errors": [],
+      "file": "safe-ui.spec.ts",
+      "line": 189,
+      "classification": "REAL_UI_PASS",
+      "grep_command": "python3 .e2e/runs/20260930-101945/web/run-playwright.py resume-safe-08 --grep \"SAFE-08\""
+    }
+  ],
+  "existing_failure_or_harness_tests": [
+    {
+      "title": "FULL-03 Script Secret默认值应遮蔽（仅非敏感标记）",
+      "project": "chromium",
+      "started_at": "2026-09-30T06:27:36.795Z",
+      "actual_status": "failed",
+      "result_file": "web/final-results.json",
+      "errors": [
+        "Error: expect(locator).not.toContainText(expected) failed\n\nLocator: locator('main')\nExpected substring: not \"QA_NON_SENSITIVE_SECRET_MARKER\"\nReceived string: \"脚本名称描述解释器Shell超时内容#!/bin/sh\necho hello工作目录运行用户已启用参数string添加参数qa_secretsecretQA_NON_SENSITIVE_SECRET_MARKER环境变量添加保存取消\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"not toContainText\" with timeout 5000ms\n  - waiting for locator('main')\n    14 × locator resolved to <main data-layout=\"auto\" class=\"w-full px-4 pt-5 pb-6 mx-auto max-w-[2400px] flex flex-1 flex-col gap-6\">…</main>\n       - unexpected value \"脚本名称描述解释器Shell超时内容#!/bin/sh\necho hello工作目录运行用户已启用参数string添加参数qa_secretsecretQA_NON_SENSITIVE_SECRET_MARKER环境变量添加保存取消\"\n\n\n  142 |     await page.getByPlaceholder('默认值', { exact: true }).fill(marker)\n  143 |     await page.getByRole('button', { name: /^添加参数$/ }).click()\n> 144 |     await expect(page.locator('main')).not.toContainText(marker)\n      |                                            ^\n  145 |   })\n  146 |\n  147 |   test('FULL-04 实时日志在运行/终态显示全部stdout', async ({ page }) => {\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:144:44"
+      ],
+      "file": "full-feature-ui.spec.ts",
+      "line": 135
+    },
+    {
+      "title": "FULL-04 实时日志在运行/终态显示全部stdout",
+      "project": "chromium",
+      "started_at": "2026-09-30T06:27:36.795Z",
+      "actual_status": "failed",
+      "result_file": "web/final-results.json",
+      "errors": [
+        "Error: expect(locator).toContainText(expected) failed\n\nLocator: locator('pre')\nTimeout: 8000ms\n- Expected substring  - 1\n+ Received string     + 2\n\n- qa-20260930-101945-web-second-5b7f5908\n+ qa-20260930-101945-web-first-0027a182\n+\n\nCall log:\n  - Expect \"toContainText\" with timeout 8000ms\n  - waiting for locator('pre')\n    20 × locator resolved to <pre class=\"max-h-[560px] min-h-48 overflow-auto bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-200 whitespace-pre\">qa-20260930-101945-web-first-0027a182↵</pre>\n       - unexpected value \"qa-20260930-101945-web-first-0027a182\n\"\n\n\n  162 |       await expect(page.locator('pre')).toContainText(first)\n  163 |       await successExecution(page, task.id, second)\n> 164 |       await expect(page.locator('pre')).toContainText(second, { timeout: 8_000 })\n      |                                         ^\n  165 |     } finally { await cleanupByIds(page, [`/api/tasks/${task.id}`]) }\n  166 |   })\n  167 |\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:164:41"
+      ],
+      "file": "full-feature-ui.spec.ts",
+      "line": 147
+    },
+    {
+      "title": "FULL-08 真实应用UI Deploy/Stop/Start/Restart/Upgrade与Unit/config/SHA",
+      "project": "chromium",
+      "started_at": "2026-10-01T01:08:22.724Z",
+      "actual_status": "failed",
+      "result_file": "web/managed-app-complete-results.json",
+      "errors": [
+        "Error: deploy live health feedback\n\nexpect(received).toContain(expected) // indexOf\n\nExpected substring: \"deploy\"\nReceived string:    \"健康检查·\n暂无节点健康状态\"\n\n  416 |         observations.push({operation,execution_id:execution!.id,state,guest,live_feedback:liveFeedback,visible_execution:visibleExecution,badges})\n  417 |         if(process.env.NODESTEER_E2E_EVIDENCE_DIR)await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR+`/managed-app-${nonce}.json`,JSON.stringify({app_id:appId,unit,directory,observations},null,2))\n> 418 |         expect.soft(liveFeedback,operation+' live health feedback').toContain(operation)\n      |                                                                     ^\n  419 |         expect.soft(visibleExecution,operation+' live execution feedback').toBeGreaterThanOrEqual(completed)\n  420 |         if(operation!=='stop')expect.soft(badges,operation+' live health badge').toContain('健康')\n  421 |         await page.reload()\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:418:69",
+        "Error: deploy live execution feedback\n\nexpect(received).toBeGreaterThanOrEqual(expected)\n\nExpected: >= 1\nReceived:    0\n\n  417 |         if(process.env.NODESTEER_E2E_EVIDENCE_DIR)await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR+`/managed-app-${nonce}.json`,JSON.stringify({app_id:appId,unit,directory,observations},null,2))\n  418 |         expect.soft(liveFeedback,operation+' live health feedback').toContain(operation)\n> 419 |         expect.soft(visibleExecution,operation+' live execution feedback').toBeGreaterThanOrEqual(completed)\n      |                                                                            ^\n  420 |         if(operation!=='stop')expect.soft(badges,operation+' live health badge').toContain('健康')\n  421 |         await page.reload()\n  422 |         await expect(healthCard).toContainText(operation)\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:419:76",
+        "Error: deploy live health badge\n\nexpect(received).toContain(expected) // indexOf\n\nExpected value: \"健康\"\nReceived array: []\n\n  418 |         expect.soft(liveFeedback,operation+' live health feedback').toContain(operation)\n  419 |         expect.soft(visibleExecution,operation+' live execution feedback').toBeGreaterThanOrEqual(completed)\n> 420 |         if(operation!=='stop')expect.soft(badges,operation+' live health badge').toContain('健康')\n      |                                                                                  ^\n  421 |         await page.reload()\n  422 |         await expect(healthCard).toContainText(operation)\n  423 |         await expect.poll(()=>historyCard.getByText('SUCCESS',{exact:true}).count()).toBeGreaterThanOrEqual(completed)\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:420:82",
+        "Error: stop live health feedback\n\nexpect(received).toContain(expected) // indexOf\n\nExpected substring: \"stop\"\nReceived string:    \"健康检查\nagent-1-clean\n健康\ndeploy\"\n\n  416 |         observations.push({operation,execution_id:execution!.id,state,guest,live_feedback:liveFeedback,visible_execution:visibleExecution,badges})\n  417 |         if(process.env.NODESTEER_E2E_EVIDENCE_DIR)await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR+`/managed-app-${nonce}.json`,JSON.stringify({app_id:appId,unit,directory,observations},null,2))\n> 418 |         expect.soft(liveFeedback,operation+' live health feedback').toContain(operation)\n      |                                                                     ^\n  419 |         expect.soft(visibleExecution,operation+' live execution feedback').toBeGreaterThanOrEqual(completed)\n  420 |         if(operation!=='stop')expect.soft(badges,operation+' live health badge').toContain('健康')\n  421 |         await page.reload()\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:418:69",
+        "Error: stop live execution feedback\n\nexpect(received).toBeGreaterThanOrEqual(expected)\n\nExpected: >= 2\nReceived:    1\n\n  417 |         if(process.env.NODESTEER_E2E_EVIDENCE_DIR)await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR+`/managed-app-${nonce}.json`,JSON.stringify({app_id:appId,unit,directory,observations},null,2))\n  418 |         expect.soft(liveFeedback,operation+' live health feedback').toContain(operation)\n> 419 |         expect.soft(visibleExecution,operation+' live execution feedback').toBeGreaterThanOrEqual(completed)\n      |                                                                            ^\n  420 |         if(operation!=='stop')expect.soft(badges,operation+' live health badge').toContain('健康')\n  421 |         await page.reload()\n  422 |         await expect(healthCard).toContainText(operation)\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:419:76",
+        "Error: start live health feedback\n\nexpect(received).toContain(expected) // indexOf\n\nExpected substring: \"start\"\nReceived string:    \"健康检查\nagent-1-clean\n已停止\nstop\"\n\n  416 |         observations.push({operation,execution_id:execution!.id,state,guest,live_feedback:liveFeedback,visible_execution:visibleExecution,badges})\n  417 |         if(process.env.NODESTEER_E2E_EVIDENCE_DIR)await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR+`/managed-app-${nonce}.json`,JSON.stringify({app_id:appId,unit,directory,observations},null,2))\n> 418 |         expect.soft(liveFeedback,operation+' live health feedback').toContain(operation)\n      |                                                                     ^\n  419 |         expect.soft(visibleExecution,operation+' live execution feedback').toBeGreaterThanOrEqual(completed)\n  420 |         if(operation!=='stop')expect.soft(badges,operation+' live health badge').toContain('健康')\n  421 |         await page.reload()\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:418:69",
+        "Error: start live execution feedback\n\nexpect(received).toBeGreaterThanOrEqual(expected)\n\nExpected: >= 3\nReceived:    2\n\n  417 |         if(process.env.NODESTEER_E2E_EVIDENCE_DIR)await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR+`/managed-app-${nonce}.json`,JSON.stringify({app_id:appId,unit,directory,observations},null,2))\n  418 |         expect.soft(liveFeedback,operation+' live health feedback').toContain(operation)\n> 419 |         expect.soft(visibleExecution,operation+' live execution feedback').toBeGreaterThanOrEqual(completed)\n      |                                                                            ^\n  420 |         if(operation!=='stop')expect.soft(badges,operation+' live health badge').toContain('健康')\n  421 |         await page.reload()\n  422 |         await expect(healthCard).toContainText(operation)\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:419:76",
+        "Error: start live health badge\n\nexpect(received).toContain(expected) // indexOf\n\nExpected value: \"健康\"\nReceived array: [\"已停止\"]\n\n  418 |         expect.soft(liveFeedback,operation+' live health feedback').toContain(operation)\n  419 |         expect.soft(visibleExecution,operation+' live execution feedback').toBeGreaterThanOrEqual(completed)\n> 420 |         if(operation!=='stop')expect.soft(badges,operation+' live health badge').toContain('健康')\n      |                                                                                  ^\n  421 |         await page.reload()\n  422 |         await expect(healthCard).toContainText(operation)\n  423 |         await expect.poll(()=>historyCard.getByText('SUCCESS',{exact:true}).count()).toBeGreaterThanOrEqual(completed)\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:420:82",
+        "Error: restart live health feedback\n\nexpect(received).toContain(expected) // indexOf\n\nExpected substring: \"restart\"\nReceived string:    \"健康检查\nagent-1-clean\n健康\nstart\"\n\n  416 |         observations.push({operation,execution_id:execution!.id,state,guest,live_feedback:liveFeedback,visible_execution:visibleExecution,badges})\n  417 |         if(process.env.NODESTEER_E2E_EVIDENCE_DIR)await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR+`/managed-app-${nonce}.json`,JSON.stringify({app_id:appId,unit,directory,observations},null,2))\n> 418 |         expect.soft(liveFeedback,operation+' live health feedback').toContain(operation)\n      |                                                                     ^\n  419 |         expect.soft(visibleExecution,operation+' live execution feedback').toBeGreaterThanOrEqual(completed)\n  420 |         if(operation!=='stop')expect.soft(badges,operation+' live health badge').toContain('健康')\n  421 |         await page.reload()\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:418:69",
+        "Error: restart live execution feedback\n\nexpect(received).toBeGreaterThanOrEqual(expected)\n\nExpected: >= 4\nReceived:    3\n\n  417 |         if(process.env.NODESTEER_E2E_EVIDENCE_DIR)await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR+`/managed-app-${nonce}.json`,JSON.stringify({app_id:appId,unit,directory,observations},null,2))\n  418 |         expect.soft(liveFeedback,operation+' live health feedback').toContain(operation)\n> 419 |         expect.soft(visibleExecution,operation+' live execution feedback').toBeGreaterThanOrEqual(completed)\n      |                                                                            ^\n  420 |         if(operation!=='stop')expect.soft(badges,operation+' live health badge').toContain('健康')\n  421 |         await page.reload()\n  422 |         await expect(healthCard).toContainText(operation)\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:419:76",
+        "Error: upgrade live health feedback\n\nexpect(received).toContain(expected) // indexOf\n\nExpected substring: \"upgrade\"\nReceived string:    \"健康检查\nagent-1-clean\n健康\nrestart\"\n\n  416 |         observations.push({operation,execution_id:execution!.id,state,guest,live_feedback:liveFeedback,visible_execution:visibleExecution,badges})\n  417 |         if(process.env.NODESTEER_E2E_EVIDENCE_DIR)await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR+`/managed-app-${nonce}.json`,JSON.stringify({app_id:appId,unit,directory,observations},null,2))\n> 418 |         expect.soft(liveFeedback,operation+' live health feedback').toContain(operation)\n      |                                                                     ^\n  419 |         expect.soft(visibleExecution,operation+' live execution feedback').toBeGreaterThanOrEqual(completed)\n  420 |         if(operation!=='stop')expect.soft(badges,operation+' live health badge').toContain('健康')\n  421 |         await page.reload()\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:418:69",
+        "Error: upgrade live execution feedback\n\nexpect(received).toBeGreaterThanOrEqual(expected)\n\nExpected: >= 5\nReceived:    4\n\n  417 |         if(process.env.NODESTEER_E2E_EVIDENCE_DIR)await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR+`/managed-app-${nonce}.json`,JSON.stringify({app_id:appId,unit,directory,observations},null,2))\n  418 |         expect.soft(liveFeedback,operation+' live health feedback').toContain(operation)\n> 419 |         expect.soft(visibleExecution,operation+' live execution feedback').toBeGreaterThanOrEqual(completed)\n      |                                                                            ^\n  420 |         if(operation!=='stop')expect.soft(badges,operation+' live health badge').toContain('健康')\n  421 |         await page.reload()\n  422 |         await expect(healthCard).toContainText(operation)\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:419:76"
+      ],
+      "file": "full-feature-ui.spec.ts",
+      "line": 329
+    },
+    {
+      "title": "FULL-09 App Task UI创建/运行Deploy与四操作真实Unit/config/SHA/健康",
+      "project": "chromium",
+      "started_at": "2026-10-01T09:44:35.506Z",
+      "actual_status": "passed",
+      "result_file": "web/managed-app-task-traced-results.json",
+      "errors": [],
+      "file": "full-feature-ui.spec.ts",
+      "line": 351,
+      "classification": "REAL_UI_PASS",
+      "actual": "Root定点重测5Task/5操作，Task→AppUI删除→Artifact完整cleanup；不覆盖旧DirectApp停留页面LiveState缺陷"
+    }
+  ],
+  "legacy_full09_schema_correction": {
+    "first_record": "web/evidence/managed-app-792c2de9.json",
+    "independent_check": "main/full09-independent-check.json",
+    "actual": "首轮缺via_task标记是日志schema差异；五不同用户Task UUID、五manualSUCCESSNode1与五physical operation记录真实有效",
+    "latest_record": "web/evidence/managed-app-765608ef.json",
+    "latest_actual": "via_task=true 5Task/5操作完整新重测PASS，cleanup真实unit/directory removed；前a0f两步+409保留为已解决harness旧attempt",
+    "current_suite": "PASS",
+    "current_result": "web/managed-app-task-traced-results.json",
+    "old_direct_app_live_state": "WEB-APP-LIVE-STATE旧反例仍未覆盖/未修，不由Task路径PASS掩盖"
+  },
+  "merge_suggestions": [
+    {
+      "case_ids": [
+        "P04-07"
+      ],
+      "inventory_status_at_snapshot": {
+        "P04-07": "NOT_RUN"
+      },
+      "suggested_status": "PASS",
+      "actual_covered_dimensions": [
+        "operator/viewer Agents页Add/CUD控件隐藏，fresh me200；管理员已实际UI打开纳管与准备；两个role backend enrollment写403"
+      ],
+      "remaining_dimensions": [],
+      "evidence": [
+        "environment/role-ui-results.json",
+        "web/enrollment-validation-verified-results.json",
+        "main/api-results.json"
+      ],
+      "evidence_selectors": [
+        "roles.operator.pages.agents",
+        "roles.viewer.pages.agents",
+        "MAIN-WRITE-DENY-operator-08",
+        "MAIN-WRITE-DENY-viewer-08"
+      ],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P20-07"
+      ],
+      "inventory_status_at_snapshot": {
+        "P20-07": "NOT_RUN"
+      },
+      "suggested_status": "PASS",
+      "actual_covered_dimensions": [
+        "operator/viewer真实/users页面显示只有管理员限制、无创建/角色操作；各自GET/users403"
+      ],
+      "remaining_dimensions": [],
+      "evidence": [
+        "environment/role-ui-results.json"
+      ],
+      "evidence_selectors": [
+        "roles.operator.pages.users",
+        "roles.viewer.pages.users",
+        "roles.*.contracts path=/api/users expected403"
+      ],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P21-08"
+      ],
+      "inventory_status_at_snapshot": {
+        "P21-08": "NOT_RUN"
+      },
+      "suggested_status": "PASS",
+      "actual_covered_dimensions": [
+        "operator/viewer实际/settings读取200、runtime inputs全部disabled/Save隐藏；既有Main两个role PUT settings403"
+      ],
+      "remaining_dimensions": [],
+      "evidence": [
+        "environment/role-ui-results.json",
+        "main/api-results.json"
+      ],
+      "evidence_selectors": [
+        "roles.*.pages.settings",
+        "MAIN-SETTINGS-DENY-*"
+      ],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P04-06"
+      ],
+      "inventory_status_at_snapshot": {
+        "P04-06": "PARTIAL"
+      },
+      "suggested_status": "PARTIAL",
+      "actual_covered_dimensions": [
+        "operator upgrade可见，确认开/取消0写；viewer selection/upgrade隐藏；节点CUD被隐藏"
+      ],
+      "remaining_dimensions": [
+        "既有Node状态改变控件独立403/状态不变（若主控已有对应证据可合并，不能仅以enrollment403代替）"
+      ],
+      "evidence": [
+        "environment/role-ui-results.json",
+        "main/api-results.json"
+      ],
+      "evidence_selectors": [
+        "roles.operator.dialogs agent-upgrade-open-cancel",
+        "roles.viewer.agent_selection_hidden"
+      ],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P14P15-12"
+      ],
+      "inventory_status_at_snapshot": {
+        "P14P15-12": "NOT_RUN"
+      },
+      "suggested_status": "PARTIAL",
+      "actual_covered_dimensions": [
+        "operator/Viewers真实App详情定义与assignment控件禁用/Save隐藏；operator五Operation菜单实开实关，viewer无操作控件；Admin正常UIdeploy，Operator API首次deploy真实物理效果/Viewer403"
+      ],
+      "remaining_dimensions": [
+        "Operator实际UIdeploy到真实效果（Env零业务写明确没有dispatch）"
+      ],
+      "evidence": [
+        "environment/role-ui-results.json",
+        "backend/evidence/feature.application.operator-deploy-6d0afc51.json",
+        "web/managed-app-verified-results.json"
+      ],
+      "evidence_selectors": [
+        "roles.*.pages.application-detail",
+        "roles.*.application_operation_control"
+      ],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "G-01-06"
+      ],
+      "inventory_status_at_snapshot": {
+        "G-01-06": "NOT_RUN"
+      },
+      "suggested_status": "PARTIAL",
+      "actual_covered_dimensions": [
+        "main真实/me读session、logout后同token多个API401；webSAFE06真实退出取消/确认与登录页回跳"
+      ],
+      "remaining_dimensions": [
+        "若case要求同一Web UI session退出后服务器token不可重用，需绑定该UI token精确GET401；API旧独立session失效已实测"
+      ],
+      "evidence": [
+        "main/api-results.json",
+        "main/api-edge-results.json",
+        "web/auth-keyboard-results.json"
+      ],
+      "evidence_selectors": [],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P17P18-10"
+      ],
+      "inventory_status_at_snapshot": {
+        "P17P18-10": "PARTIAL"
+      },
+      "suggested_status": "PARTIAL",
+      "actual_covered_dimensions": [
+        "SAFE15真实Wrap开关、Follow开关、HTTP Copy手工fallback提示，actual logs stdout/stderr/all与搜索"
+      ],
+      "remaining_dimensions": [
+        "HTTPS真实clipboard成功路径；HTTP不能将manual fallback称clipboard success"
+      ],
+      "evidence": [
+        "web/execution-log-cancel-http-results.json",
+        "web/evidence/execution-log-cancel.json"
+      ],
+      "evidence_selectors": [],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P17P18-04"
+      ],
+      "inventory_status_at_snapshot": {
+        "P17P18-04": "PARTIAL"
+      },
+      "suggested_status": "PARTIAL",
+      "actual_covered_dimensions": [
+        "SAFE18已执行当时实际available trigger选项及URL清空"
+      ],
+      "remaining_dimensions": [
+        "当时triggers_available仅manual；schedule/system实际选择未测，不按动态循环PASS泛化三类型"
+      ],
+      "evidence": [
+        "web/evidence/execution-filters.json"
+      ],
+      "evidence_selectors": [],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P20-03"
+      ],
+      "inventory_status_at_snapshot": {
+        "P20-03": "PARTIAL"
+      },
+      "suggested_status": "FAIL",
+      "actual_covered_dimensions": [
+        "SAFE13 UI required及三个role选项实际验证；Root空password创建200/空password登录me200；PUT非法role200/GET持久"
+      ],
+      "remaining_dimensions": [
+        "两项服务端缺陷未修复，不能以HTML required或role dropdown通过覆盖"
+      ],
+      "evidence": [
+        "web/root-gap-round2-results.json",
+        "main/user-validation-results.json",
+        "main/user-validation-harness-note.json"
+      ],
+      "evidence_selectors": [
+        "MAIN-USER-EMPTY-PASSWORD-REJECT",
+        "MAIN-USER-EMPTY-PASSWORD-LOGIN",
+        "MAIN-USER-INVALID-ROLE-REJECT"
+      ],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P20-08"
+      ],
+      "inventory_status_at_snapshot": {
+        "P20-08": "NOT_RUN"
+      },
+      "suggested_status": "PASS",
+      "actual_covered_dimensions": [
+        "backend独占用户改随机新密码旧401新200；Root专属用户恢复新强密码/Viewer，空密码401、me200"
+      ],
+      "remaining_dimensions": [],
+      "evidence": [
+        "backend/evidence/feature.users.management-6a5f4d8e.json",
+        "main/user-validation-results.json"
+      ],
+      "evidence_selectors": [],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P09P11-07",
+        "P09P11-08"
+      ],
+      "inventory_status_at_snapshot": {
+        "P09P11-07": "PASS",
+        "P09P11-08": "PASS"
+      },
+      "suggested_status": "PASS",
+      "actual_covered_dimensions": [
+        "首轮792c五Task/五physical证据有效保留",
+        "新765608ef via_task=true五个Task实际manualSUCCESS，UI创建/运行Deploy/start/stop/restart/upgrade与真实Unit/config/SHA/health闭环",
+        "Task→App UI确认删除→Artifact及Unit/directory真实精确清理，33.7s suite exit0"
+      ],
+      "remaining_dimensions": [],
+      "evidence": [
+        "web/managed-app-task-traced-results.json",
+        "web/evidence/managed-app-765608ef.json",
+        "web/evidence/managed-app-765608ef-cleanup.json",
+        "main/full09-independent-check.json"
+      ],
+      "evidence_selectors": [],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P14P15-11",
+        "P14P15-13"
+      ],
+      "inventory_status_at_snapshot": {
+        "P14P15-11": "FAIL",
+        "P14P15-13": "PARTIAL"
+      },
+      "suggested_status": "FAIL",
+      "actual_covered_dimensions": [
+        "FULL08/09五种物理操作可成功，reload后状态显示更新；实时health/history保持旧状态反例"
+      ],
+      "remaining_dimensions": [
+        "WEB-APP-LIVE-STATE尚未修，suite保持FAIL"
+      ],
+      "evidence": [
+        "web/managed-app-complete-results.json",
+        "web/evidence/managed-app-792c2de9.json",
+        "main/full09-independent-check.json",
+        "web/failures.json"
+      ],
+      "evidence_selectors": [],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P16-03",
+        "P16-07",
+        "P14P15-03",
+        "P14P15-04",
+        "P14P15-05",
+        "P14P15-10"
+      ],
+      "inventory_status_at_snapshot": {
+        "P14P15-03": "PASS",
+        "P14P15-04": "PASS",
+        "P14P15-05": "PASS",
+        "P14P15-10": "PASS",
+        "P16-03": "PASS",
+        "P16-07": "PASS"
+      },
+      "suggested_status": "PASS",
+      "actual_covered_dimensions": [
+        "SAFE14已真实UI与保存API核实required、arm64上传、Usage、args增删/env覆盖删、四health表单字段、自动Unit与无node Deploy禁用"
+      ],
+      "remaining_dimensions": [],
+      "evidence": [
+        "web/artifact-app-form-verified-results.json",
+        "web/evidence/artifact-app-form.json"
+      ],
+      "evidence_selectors": [],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P17P18-09",
+        "P17P18-12"
+      ],
+      "inventory_status_at_snapshot": {
+        "P17P18-09": "PASS",
+        "P17P18-12": "PASS"
+      },
+      "suggested_status": "PASS",
+      "actual_covered_dimensions": [
+        "SAFE15真实stream/search、run取消0POST、stop取消0POST/确认1POST、CANCELED/停止按钮消失、对应Audit记录"
+      ],
+      "remaining_dimensions": [],
+      "evidence": [
+        "web/execution-log-cancel-http-results.json",
+        "web/evidence/execution-log-cancel.json"
+      ],
+      "evidence_selectors": [],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P05A-04",
+        "P05A-08",
+        "P05A-13"
+      ],
+      "inventory_status_at_snapshot": {
+        "P05A-04": "PASS",
+        "P05A-08": "PASS",
+        "P05A-13": "PASS"
+      },
+      "suggested_status": "PASS",
+      "actual_covered_dimensions": [
+        "SAFE16真实IPv4/IPv6/DNS+三种命令+重新打开重置"
+      ],
+      "remaining_dimensions": [],
+      "evidence": [
+        "web/enrollment-validation-verified-results.json"
+      ],
+      "evidence_selectors": [],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P09P11-18",
+        "P09P11-19",
+        "P09P11-20",
+        "P09P11-21",
+        "P05B-07",
+        "P05B-08",
+        "P05B-09",
+        "P05B-12"
+      ],
+      "inventory_status_at_snapshot": {
+        "P05B-07": "PASS",
+        "P05B-08": "PASS",
+        "P05B-09": "PASS",
+        "P05B-12": "PASS",
+        "P09P11-18": "PASS",
+        "P09P11-19": "PASS",
+        "P09P11-20": "PASS",
+        "P09P11-21": "PASS"
+      },
+      "suggested_status": "PASS",
+      "actual_covered_dimensions": [
+        "SAFE17真实深链/刷新/history/ErrorRetry与Task Script/Execution/Schedule回链；App Definition当前名称文本无href按实际设计"
+      ],
+      "remaining_dimensions": [],
+      "evidence": [
+        "web/detail-deep-verified-results.json",
+        "web/evidence/detail-deep-links.json"
+      ],
+      "evidence_selectors": [],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P09P11-03",
+        "P06-02",
+        "P06-04",
+        "P06-05",
+        "P06-06"
+      ],
+      "inventory_status_at_snapshot": {
+        "P06-02": "PASS",
+        "P06-04": "PASS",
+        "P06-05": "PASS",
+        "P06-06": "PASS",
+        "P09P11-03": "PASS"
+      },
+      "suggested_status": "PASS",
+      "actual_covered_dimensions": [
+        "SAFE12虽然整体TaskCancel软断言FAIL，仍实际完成Group static双成员→label→static单成员以及两类确认删除/GET404；Taskenable/disable API已核实"
+      ],
+      "remaining_dimensions": [],
+      "evidence": [
+        "web/group-task-cancel-state-results.json",
+        "web/evidence/group-task-roundtrip.json",
+        "web/evidence/delete-cancel-groups.json"
+      ],
+      "evidence_selectors": [],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P09P11-04"
+      ],
+      "inventory_status_at_snapshot": {
+        "P09P11-04": "FAIL"
+      },
+      "suggested_status": "FAIL",
+      "actual_covered_dimensions": [
+        "Taskcancel0DELETE但body pointer-events none/aria-hidden/menu open，refresh后恢复并确认删除"
+      ],
+      "remaining_dimensions": [
+        "WEB-TASK-DELETE-CANCEL未修；不是成员顺序/alertdialog旧harness问题"
+      ],
+      "evidence": [
+        "web/group-task-cancel-state-results.json",
+        "web/evidence/delete-cancel-tasks.json",
+        "web/failures.json"
+      ],
+      "evidence_selectors": [],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    },
+    {
+      "case_ids": [
+        "P22-03"
+      ],
+      "inventory_status_at_snapshot": {
+        "P22-03": "FAIL"
+      },
+      "suggested_status": "FAIL",
+      "actual_covered_dimensions": [
+        "初始Target selector排除Source；切换Source后旧Target保留且Start enabled，UI约束不一致"
+      ],
+      "remaining_dimensions": [
+        "WEB-TRANSFER-SOURCE-CHANGE未修；API本来允许self，不新增API禁止契约"
+      ],
+      "evidence": [
+        "web/transfer-source-change-ui-results.json",
+        "web/evidence/execution-filter-transfer-draft.json",
+        "web/failures.json"
+      ],
+      "evidence_selectors": [],
+      "rule": "状态建议基于真实记录；复合case任何已确认FAIL不得由其它正常输入PASS覆盖。"
+    }
+  ],
+  "env_role_ui_evidence": {
+    "file": "environment/role-ui-results.json",
+    "actual_summary": {
+      "page_route_observations": 44,
+      "actual_read_contracts": 26,
+      "actual_cancel_dialogs": 2,
+      "business_definition_configuration_writes": 0,
+      "product_failures": 0,
+      "blocked_mutation_attempts": 0,
+      "empty_existing_row_controls": "NOT_VERIFIED: Groups/Schedules have no existing rows; new routes actually observed"
+    },
+    "roles": [
+      {
+        "role": "operator",
+        "fresh_real_ui_login": {
+          "role": "operator",
+          "status": 200
+        },
+        "page_count": 22,
+        "contract_count": 13,
+        "pages": [
+          {
+            "case_id": "ENV-ROLE-OPERATOR-DASHBOARD",
+            "page": "dashboard",
+            "path": "/",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-dashboard.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-AGENTS",
+            "page": "agents",
+            "path": "/agents",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-agents.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-GROUPS",
+            "page": "groups",
+            "path": "/groups",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-groups.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-SCRIPTS",
+            "page": "scripts",
+            "path": "/scripts",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-scripts.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-TASKS",
+            "page": "tasks",
+            "path": "/tasks",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-tasks.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-SCHEDULES",
+            "page": "schedules",
+            "path": "/schedules",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-schedules.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-APPLICATIONS",
+            "page": "applications",
+            "path": "/applications",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-applications.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-ARTIFACTS",
+            "page": "artifacts",
+            "path": "/artifacts",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-artifacts.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-EXECUTIONS",
+            "page": "executions",
+            "path": "/executions",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-executions.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-TRANSFERS",
+            "page": "transfers",
+            "path": "/transfers",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-transfers.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-AUDIT",
+            "page": "audit",
+            "path": "/audit",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-audit.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-USERS",
+            "page": "users",
+            "path": "/users",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-users.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-SETTINGS",
+            "page": "settings",
+            "path": "/settings",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-settings.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-TASK-RUN",
+            "page": "task-run",
+            "path": "/tasks/917a3edc-6de0-4e6a-a988-c81e51ee9e55/run",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-task-run.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-AGENT-BULK",
+            "page": "agent-bulk",
+            "path": "/agents",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-agent-bulk.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-APPLICATION-DETAIL",
+            "page": "application-detail",
+            "path": "/applications/e35f4c8d-e88e-42b0-87c3-d395911222e6",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-application-detail.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-GROUP-CREATE",
+            "page": "group-create",
+            "path": "/groups/new",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-group-create.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-SCHEDULE-CREATE",
+            "page": "schedule-create",
+            "path": "/schedules/new",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-schedule-create.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-SCRIPT-CREATE",
+            "page": "script-create",
+            "path": "/scripts/new",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-script-create.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-TASK-CREATE",
+            "page": "task-create",
+            "path": "/tasks/new",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-task-create.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-APPLICATION-CREATE",
+            "page": "application-create",
+            "path": "/applications/new",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-application-create.png"
+          },
+          {
+            "case_id": "ENV-ROLE-OPERATOR-ARTIFACT-CREATE",
+            "page": "artifact-create",
+            "path": "/artifacts/new",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/operator-artifact-create.png"
+          }
+        ],
+        "contracts": [
+          {
+            "method": "GET",
+            "path": "/api/nodes",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/groups",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/scripts",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/tasks",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/schedules",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/applications",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/artifacts",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/executions?limit=1",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/transfers",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/audit?limit=1",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/settings",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/users",
+            "expected_http": 403,
+            "actual_http": 403,
+            "error": "permission denied",
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/users",
+            "authentication": "absent",
+            "expected_http": 401,
+            "actual_http": 401,
+            "status": "PASS"
+          }
+        ],
+        "dialogs": [
+          {
+            "id": "task-run-open-cancel",
+            "status": "PASS",
+            "opened": true,
+            "closed": true,
+            "business_requests": [],
+            "blocked_writes": [],
+            "evidence": "environment/role-ui-evidence/operator-task-run-dialog.png"
+          },
+          {
+            "id": "agent-upgrade-open-cancel",
+            "status": "PASS",
+            "opened": true,
+            "closed": true,
+            "business_requests": [],
+            "blocked_writes": [],
+            "evidence": "environment/role-ui-evidence/operator-upgrade-dialog.png"
+          }
+        ],
+        "application_operation_control": {
+          "status": "PASS",
+          "options": [
+            "deploy",
+            "start",
+            "stop",
+            "restart",
+            "upgrade"
+          ],
+          "menu_closed": true,
+          "actual_operation_dispatched": false,
+          "reason": "Deployment button posts immediately; only operation menu opened/closed under zero-write authorization.",
+          "business_requests": [],
+          "blocked_writes": [],
+          "evidence": "environment/role-ui-evidence/operator-app-operation-options.png"
+        }
+      },
+      {
+        "role": "viewer",
+        "fresh_real_ui_login": {
+          "role": "viewer",
+          "status": 200
+        },
+        "page_count": 22,
+        "contract_count": 13,
+        "pages": [
+          {
+            "case_id": "ENV-ROLE-VIEWER-DASHBOARD",
+            "page": "dashboard",
+            "path": "/",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-dashboard.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-AGENTS",
+            "page": "agents",
+            "path": "/agents",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-agents.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-GROUPS",
+            "page": "groups",
+            "path": "/groups",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-groups.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-SCRIPTS",
+            "page": "scripts",
+            "path": "/scripts",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-scripts.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-TASKS",
+            "page": "tasks",
+            "path": "/tasks",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-tasks.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-SCHEDULES",
+            "page": "schedules",
+            "path": "/schedules",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-schedules.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-APPLICATIONS",
+            "page": "applications",
+            "path": "/applications",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-applications.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-ARTIFACTS",
+            "page": "artifacts",
+            "path": "/artifacts",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-artifacts.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-EXECUTIONS",
+            "page": "executions",
+            "path": "/executions",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-executions.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-TRANSFERS",
+            "page": "transfers",
+            "path": "/transfers",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-transfers.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-AUDIT",
+            "page": "audit",
+            "path": "/audit",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-audit.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-USERS",
+            "page": "users",
+            "path": "/users",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-users.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-SETTINGS",
+            "page": "settings",
+            "path": "/settings",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-settings.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-TASK-RUN",
+            "page": "task-run",
+            "path": "/tasks/917a3edc-6de0-4e6a-a988-c81e51ee9e55/run",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-task-run.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-AGENT-BULK",
+            "page": "agent-bulk",
+            "path": "/agents",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-agent-bulk.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-APPLICATION-DETAIL",
+            "page": "application-detail",
+            "path": "/applications/e35f4c8d-e88e-42b0-87c3-d395911222e6",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-application-detail.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-GROUP-CREATE",
+            "page": "group-create",
+            "path": "/groups/new",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-group-create.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-SCHEDULE-CREATE",
+            "page": "schedule-create",
+            "path": "/schedules/new",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-schedule-create.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-SCRIPT-CREATE",
+            "page": "script-create",
+            "path": "/scripts/new",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-script-create.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-TASK-CREATE",
+            "page": "task-create",
+            "path": "/tasks/new",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-task-create.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-APPLICATION-CREATE",
+            "page": "application-create",
+            "path": "/applications/new",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-application-create.png"
+          },
+          {
+            "case_id": "ENV-ROLE-VIEWER-ARTIFACT-CREATE",
+            "page": "artifact-create",
+            "path": "/artifacts/new",
+            "status": "PASS",
+            "evidence": "environment/role-ui-evidence/viewer-artifact-create.png"
+          }
+        ],
+        "contracts": [
+          {
+            "method": "GET",
+            "path": "/api/nodes",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/groups",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/scripts",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/tasks",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/schedules",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/applications",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/artifacts",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/executions?limit=1",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/transfers",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/audit?limit=1",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/settings",
+            "expected_http": 200,
+            "actual_http": 200,
+            "error": null,
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/users",
+            "expected_http": 403,
+            "actual_http": 403,
+            "error": "permission denied",
+            "status": "PASS"
+          },
+          {
+            "method": "GET",
+            "path": "/api/users",
+            "authentication": "absent",
+            "expected_http": 401,
+            "actual_http": 401,
+            "status": "PASS"
+          }
+        ],
+        "dialogs": [],
+        "application_operation_control": {
+          "status": "PASS",
+          "operation_controls_visible": false
+        }
+      }
+    ],
+    "remaining": [
+      "Groups and Schedules existing-row CUD menus: no current records; actual new/editor routes and hidden submit checked. No existing-row mutation executed."
+    ],
+    "harness_observations": [
+      {
+        "classification": "TEST_HARNESS",
+        "issue": "Radix checkbox capture now records role=checkbox before HTML element type; original disabled properties were captured correctly.",
+        "initial_false_failures_invalidated": true
+      },
+      {
+        "classification": "TEST_HARNESS",
+        "issue": "Cancel result must wait for closing animation then check open dialog state.",
+        "initial_false_failures_invalidated": true
+      }
+    ],
+    "scope_limit": "44页面与26读取全部实际PASS，零business/definition/config写；Operator App操作只开菜单未部署，不能把可见控件算真实操作effect。"
+  },
+  "root_new_user_findings": {
+    "evidence": "main/user-validation-results.json",
+    "cases": [
+      {
+        "case_id": "MAIN-USER-EMPTY-PASSWORD-REJECT",
+        "classification": "REAL_API",
+        "status": "FAIL",
+        "detail": {
+          "http": 200,
+          "username": "qa-20260930-101945-main-contract-3352fd0f"
+        }
+      },
+      {
+        "case_id": "MAIN-USER-EMPTY-PASSWORD-LOGIN",
+        "classification": "REAL_API",
+        "status": "FAIL",
+        "detail": {
+          "http": 200,
+          "authenticated_me_http": 200
+        }
+      },
+      {
+        "case_id": "MAIN-USER-INVALID-ROLE-REJECT",
+        "classification": "REAL_API",
+        "status": "FAIL",
+        "detail": {
+          "http": 200,
+          "stored_role": "qa_invalid_role",
+          "expected_roles": [
+            "administrator",
+            "operator",
+            "viewer"
+          ]
+        }
+      },
+      {
+        "case_id": "MAIN-USER-VALIDATION-RESTORE",
+        "classification": "REAL_API",
+        "status": "PASS",
+        "detail": {
+          "empty_password_http": 401,
+          "valid_me_http": 200,
+          "final_role": "viewer",
+          "retained_user_id": "1ab58538-576d-4c75-8a1c-fac0eccb969c"
+        }
+      }
+    ],
+    "restoration": "唯一本轮新QA user随机强密码/Viewer，空密码401、me200；没有动既有账户/真实Admin",
+    "api_matrix_updated": "backend/api-contract-matrix.json"
+  },
+  "not_present_as_executable_case": {
+    "SAFE-19": "当前safe-ui.spec没有此title，不虚构grep",
+    "unimplemented_inventory_dimensions": "大量NOT_RUN/PARTIAL库存维度没有对应现成测试；用source不算PASS。loading/pending阻止重复、长字符串、现存row权限、HTTPSclipboard、全部分页/两会话缓存等需Web/Root新增定点用例后实际验证。"
+  },
+  "verification": {
+    "missing_merge_evidence_paths": [],
+    "actual_execution_in_this_turn": false,
+    "inventory_or_global_files_modified": false,
+    "real_secret_values_checked": 20,
+    "real_secret_hits": 0,
+    "live_environment_operations": false
+  },
+  "superseded_full09_attempts": [
+    {
+      "title": "FULL-09 App Task UI创建/运行Deploy与四操作真实Unit/config/SHA/健康",
+      "project": "chromium",
+      "started_at": "2026-10-01T09:44:35.506Z",
+      "actual_status": "passed",
+      "result_file": "web/managed-app-task-traced-results.json",
+      "errors": [],
+      "file": "full-feature-ui.spec.ts",
+      "line": 351
+    }
+  ]
+}

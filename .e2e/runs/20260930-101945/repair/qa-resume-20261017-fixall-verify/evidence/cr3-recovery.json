@@ -1,0 +1,128 @@
+{
+ "at_utc": "2026-10-17T14:18:17Z",
+ "case": [
+  "CR-3"
+ ],
+ "child": {
+  "node_id": "fd2114a7-46a3-40bd-aedb-ac95bf7ffce9",
+  "root": "/var/lib/nodesteer-qa-fixall-9c4f0710-a"
+ },
+ "stop1": {
+  "signalled": [
+   64404
+  ],
+  "remaining": []
+ },
+ "inject": {
+  "injected": 5,
+  "active_rows": 4
+ },
+ "start1": {
+  "launcher_pid": 65828,
+  "owned_processes": [
+   "65829 /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent --config /var/lib/nodesteer-qa-fixall-9c4f0710-a/child.yaml"
+  ]
+ },
+ "restart1": {
+  "closed_lines": 4,
+  "kinds": [
+   "time=2026-10-17T22:18:21.953+08:00 level=ERROR msg=\"unreplayable deployment journal closed\" id=cr3-sup-row1 app=fixall-cr3-superseded kind=superseded detail=\"superseded by a later successful deployment; stale backup not replayed\"",
+   "time=2026-10-17T22:18:21.956+08:00 level=ERROR msg=\"unreplayable deployment journal closed\" id=cr3-stale-row1 app=fixall-cr3-stale kind=stale_binding detail=\"journal binding does not match the current application definition; backup not replayed\"",
+   "time=2026-10-17T22:18:21.960+08:00 level=ERROR msg=\"unreplayable deployment journal closed\" id=cr3-legacy-row1 app=fixall-cr3-legacy kind=legacy_unbound detail=\"legacy journal lacks deployment binding; backup ownership unknown, not replayed\"",
+   "time=2026-10-17T22:18:21.963+08:00 level=ERROR msg=\"unreplayable deployment journal closed\" id=cr3-prep-row1 app=fixall-cr3-preparing kind=prepare_interrupted detail=\"preparing phase interrupted; files preserved, no replay\""
+  ],
+  "summary_lines": [
+   "time=2026-10-17T22:18:21.963+08:00 level=WARN msg=\"unreplayable deployment journals closed by recovery\" closed=\"superseded=1,stale_binding=1,legacy_unbound=1,prepare_interrupted=1\""
+  ],
+  "still_active_lines": [],
+  "lacks_definition_lines": []
+ },
+ "db_after1": {
+  "rows": [
+   {
+    "id": "cr3-legacy-row1",
+    "phase": "DONE",
+    "completed_kind": "legacy_unbound"
+   },
+   {
+    "id": "cr3-prep-row1",
+    "phase": "DONE",
+    "completed_kind": "prepare_interrupted"
+   },
+   {
+    "id": "cr3-stale-row1",
+    "phase": "DONE",
+    "completed_kind": "stale_binding"
+   },
+   {
+    "id": "cr3-sup-row1",
+    "phase": "DONE",
+    "completed_kind": "superseded"
+   },
+   {
+    "id": "cr3-sup-row2",
+    "phase": "DONE",
+    "completed_kind": "deployed"
+   }
+  ],
+  "active_rows": []
+ },
+ "stop2": {
+  "signalled": [
+   65829
+  ],
+  "remaining": []
+ },
+ "start2": {
+  "launcher_pid": 66025,
+  "owned_processes": [
+   "66026 /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent --config /var/lib/nodesteer-qa-fixall-9c4f0710-a/child.yaml"
+  ]
+ },
+ "restart2": {
+  "closed_lines": 0,
+  "summary_lines": 0,
+  "still_active_lines": 0,
+  "tail": "time=2026-10-17T22:18:34.900+08:00 level=INFO msg=\"nodesteer agent starting\" version=dddee4f0-e2e-repair-20261017-fixall hub=ws://192.168.100.209:18080 mode=native data_dir=/var/lib/nodesteer-qa-fixall-9c4f0710-a/data\ntime=2026-10-17T22:18:34.914+08:00 level=INFO msg=\"agent connected\" recovered=false fail_duration=0s failures=0\n"
+ },
+ "db_after2": {
+  "rows": [
+   {
+    "id": "cr3-legacy-row1",
+    "phase": "DONE",
+    "completed_kind": "legacy_unbound"
+   },
+   {
+    "id": "cr3-prep-row1",
+    "phase": "DONE",
+    "completed_kind": "prepare_interrupted"
+   },
+   {
+    "id": "cr3-stale-row1",
+    "phase": "DONE",
+    "completed_kind": "stale_binding"
+   },
+   {
+    "id": "cr3-sup-row1",
+    "phase": "DONE",
+    "completed_kind": "superseded"
+   },
+   {
+    "id": "cr3-sup-row2",
+    "phase": "DONE",
+    "completed_kind": "deployed"
+   }
+  ],
+  "active_rows": []
+ },
+ "verdict": {
+  "injected_four_active_rows": true,
+  "restart1_closed_four": true,
+  "restart1_summary_present": true,
+  "restart1_no_still_active": true,
+  "terminal_kinds_correct": true,
+  "active_rows_empty_after1": true,
+  "restart2_no_new_alerts": true,
+  "restart2_no_new_still_active": true
+ }
+}

@@ -1,0 +1,32 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch06",
+  "at_utc": "2026-10-14T10:20:00Z",
+  "note": "Both corrections were derived from artifacts captured during the run; no operation was re-executed and no environment state was changed by this re-derivation.",
+  "P11-04": {
+    "variant_A_request_http_400": true,
+    "variant_A_execution_failed_with_block_reason_agent_offline": true,
+    "variant_A_ui_toast_shows_agent_offline_visually": true,
+    "variant_B_node_status_offline": true,
+    "variant_B_request_http_400": true,
+    "variant_B_no_new_execution_row": true,
+    "variant_B_ui_toast_shows_not_online_visually": true,
+    "recovery_online_synced": true
+  },
+  "P06-08": {
+    "task_list_before_excludes_group_task": true,
+    "task_list_after_add_includes_group_task": true,
+    "task_list_after_remove_excludes_group_task": true,
+    "groups_list_member_count_0_1_0": true,
+    "group_edit_put_200_both_times": true,
+    "real_dispatch_through_group_target_succeeded": true,
+    "group_task_run_after_remove_fails_no_target_nodes": true,
+    "task_target_config_unchanged": true,
+    "overview_group_field_after_add_screenshot": true,
+    "overview_group_field_after_remove_screenshot": true,
+    "ui_toast_no_target_nodes_screenshot": true
+  },
+  "rationale": {
+    "P11-04": "harness measurement defect: the toast text was read from the wrong DOM container (querySelector(\"[role=region]\") returned an empty innerText), so the two toast-text conditions could not be evaluated by DOM; the toasts are visible in the screenshots taken right after each failed run",
+    "P06-08": "harness measurement defect: one condition used a whole-page text proxy (\"group_task_present_in_main\") for the Node Detail task list. After the node was removed from the group the group task name legitimately still appears in the page because the 执行 SectionCard lists the execution row of that task (ExecutionRows renders task.name per web/src/features/tasks/index.tsx). The section-scoped DOM read (SectionCard 任务 links) is the correct measurement and shows the expected list in all three states; the 分组 field in the overview screenshots independently confirms the same membership sync. The residual page-text occurrence was not re-observed after the fixtures were deleted, so it is explained from source code, not re-measured."
+  }
+}

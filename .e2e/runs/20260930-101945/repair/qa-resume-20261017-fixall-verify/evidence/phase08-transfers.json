@@ -1,0 +1,98 @@
+{
+ "at_utc": "2026-10-17T14:07:30Z",
+ "run": 1,
+ "case": [
+  "E2E-20261017-XFER-REMOTE-TARGET-STUCK-DELIVERING",
+  "DESTRUCTIVE-CANCEL-TRANSFER"
+ ],
+ "create_happy_http": 200,
+ "happy_final": {
+  "id": "6a07ebd1-09f0-4d37-9078-7d2938c2e007",
+  "status": "SUCCESS",
+  "error": null,
+  "sha256": "3dff893bf6bf587151392f7b6e86711fdab7e7c3f55155b295799277d3474a45",
+  "size": 25
+ },
+ "happy_targets": [
+  {
+   "transfer_id": "6a07ebd1-09f0-4d37-9078-7d2938c2e007",
+   "node_id": "0ff794ae-9a0d-421e-812d-ae04acf29bdc",
+   "destination_path": "/var/lib/nodesteer-qa-fixall-9c4f0710-c/incoming/transfer-dst.txt",
+   "status": "SUCCESS",
+   "updated_at": "2026-10-17T14:07:30.774181358Z"
+  }
+ ],
+ "dest_file": {
+  "exists": true,
+  "text": "fixall-transfer-9c4f0710\n"
+ },
+ "kill_c": {
+  "killed": [
+   190963
+  ],
+  "remaining": []
+ },
+ "c_status_after_kill": "offline",
+ "create_fail_http": 200,
+ "fail_state": {
+  "status": "DELIVERING",
+  "target": {
+   "node_id": "0ff794ae-9a0d-421e-812d-ae04acf29bdc",
+   "status": "PENDING",
+   "error": null
+  },
+  "sha256_present": true
+ },
+ "delete_c_while_active": {
+  "http": 409,
+  "body": "{\"error\":\"node 0ff794ae-9a0d-421e-812d-ae04acf29bdc has active file transfer 2779b045-cefa-40fb-b4b1-d9524f8c798f\"}\n"
+ },
+ "create_cancel_http": 200,
+ "cancel_http": 200,
+ "cancel_body": {
+  "id": "ee69eb19-336d-4f83-9f45-3e8dcb06ebba",
+  "status": "CANCELED",
+  "error": null
+ },
+ "cancel_targets": [
+  {
+   "transfer_id": "ee69eb19-336d-4f83-9f45-3e8dcb06ebba",
+   "node_id": "0ff794ae-9a0d-421e-812d-ae04acf29bdc",
+   "destination_path": "/var/lib/nodesteer-qa-fixall-9c4f0710-c/incoming/fail-dst.txt.2",
+   "status": "CANCELED",
+   "updated_at": "2026-10-17T14:07:36.531929487Z"
+  }
+ ],
+ "restart_c": {
+  "launcher_pid": 191119,
+  "owned_processes": [
+   "191120 /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent --config /var/lib/nodesteer-qa-fixall-9c4f0710-c/child.yaml"
+  ]
+ },
+ "c_status_after_restart": "online",
+ "fail_final": {
+  "id": "2779b045-cefa-40fb-b4b1-d9524f8c798f",
+  "status": "SUCCESS",
+  "error": null
+ },
+ "fail_targets_final": [
+  {
+   "transfer_id": "2779b045-cefa-40fb-b4b1-d9524f8c798f",
+   "node_id": "0ff794ae-9a0d-421e-812d-ae04acf29bdc",
+   "destination_path": "/var/lib/nodesteer-qa-fixall-9c4f0710-c/incoming/fail-dst.txt",
+   "status": "SUCCESS",
+   "updated_at": "2026-10-17T14:07:36.80057892Z"
+  }
+ ],
+ "dest2_file": {
+  "exists": true,
+  "text": "fail-path-9c4f0710\n"
+ },
+ "verdict": {
+  "happy_path": true,
+  "channel_down_target_not_silently_delivering": true,
+  "non_terminal_blocks_delete_409": true,
+  "reconnect_resume_completes": true,
+  "cancel_terminal": true
+ }
+}

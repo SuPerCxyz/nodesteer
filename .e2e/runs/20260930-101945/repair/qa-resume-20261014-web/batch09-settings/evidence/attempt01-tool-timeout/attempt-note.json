@@ -1,0 +1,21 @@
+{
+  "attempt": "attempt01",
+  "outcome": "aborted by harness tool-call timeout (not a product failure)",
+  "at_utc_range": ["2026-10-15T12:21:00Z", "2026-10-15T12:24:04Z"],
+  "nonce": "f7549c600f26",
+  "last_progress_phase": "apply_and_broadcast",
+  "detail": "The first invocation was started as a foreground shell command; the harness terminated the tool call while the script was inside the 32 s frame-observation window of phase4. The script never reached its `finally` restore/cleanup block, so the global settings were left at the modified values (heartbeat_interval_sec=3, revision_check_interval_sec=5, max_log_bytes=2048).",
+  "immediate_remediation": {
+    "settings_put_back": {"heartbeat_interval_sec": "30", "revision_check_interval_sec": "45", "max_log_bytes": "1048576", "http": 200},
+    "api_settings_after": {"changelog_window": "5000", "heartbeat_interval_sec": "30", "max_log_bytes": "1048576", "revision_check_interval_sec": "45"},
+    "owned_child_removed": {"signalled": [170490], "remaining_processes": [], "root_removed": true, "root_exists_after": false},
+    "abandoned_child_node_id": "f2663634-f202-4482-8bf8-3e152930ce20",
+    "abandoned_child_node_delete_http": 200,
+    "abandoned_child_node_get_http_after": 404,
+    "no_scripts_or_tasks_had_been_created": true,
+    "protected_units_touched": 0,
+    "vms_restarted": 0
+  },
+  "harness_fix": "attempt02 runs the same script under `nohup` with the stdout/stderr captured to run-stdout.log/run-stderr.log and is polled from the harness, so a harness-side tool timeout can no longer kill the run in the middle of the settings-modification window.",
+  "conclusion": "harness defect, not a product defect; no product behaviour conclusion is drawn from attempt01"
+}

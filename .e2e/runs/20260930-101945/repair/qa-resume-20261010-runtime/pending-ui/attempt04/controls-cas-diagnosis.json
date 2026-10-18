@@ -1,0 +1,47 @@
+{
+  "captured_at_utc": "2026-10-10T11:29:34Z",
+  "scope": "read-only source/control-flow diagnosis; no remote file/control/process/API mutation",
+  "runtime_evidence": {
+    "helper_execution_id": "aa2054ba-3150-4e30-a4a0-4f3ab4f15771",
+    "status": "FAILED",
+    "exit_code": 2,
+    "stdout_sha256": "4f1c52b904172b0a5ff5dab1447eacae00943d8970ecf57ff50f81d4466acc22",
+    "safe_helper_status": "ARM_GUARD_FAILED",
+    "safe_error": "controls_changed_before_write",
+    "watchdog_pid": 50414,
+    "child_db_quick_check": "ok",
+    "child_db_open_mode": "read-only",
+    "child_pending_or_running_count": 0,
+    "child_task_get404": true,
+    "child_exact_execution_count": 0,
+    "safe_error_interpretation": "does not establish remote bytes changed; argument-order bug makes comparison fail deterministically"
+  },
+  "source_flow": {
+    "initial_controls_expectation": "attempt04/arm_control.py:259-260 parses initial controls and requires {}",
+    "watchdog_lock": "attempt04/arm_control.py:275-305 creates O_EXCL lock, holds flock, spawns watchdog, waits and validates exact WATCHDOG_READY before control write",
+    "last_pre_write_compare": "attempt04/arm_control.py:322 compares current bytes with captured initial bytes; mismatch here would report controls_changed_before_arm, which was not returned",
+    "CAS_error": "attempt04/arm_control.py:124-126 atomic_write rereads controls and raises controls_changed_before_write on byte mismatch",
+    "write_order": "attempt04/arm_control.py:127-138 creates/writes temp and os.replace only after the failing check",
+    "unlock": "attempt04/arm_control.py:350-358 releases flock in finally; exception path does not create arm_state at 331-332",
+    "atomic_write_signature": "arm_control.py:124 parameters are path, content, uid, gid, expected_before; this disagreed with the call",
+    "atomic_write_call": "arm_control.py:327 passes path, expected_before bytes, desired content bytes, uid, gid positionally",
+    "actual_binding": "expected_before received cst.st_gid (integer); controls.read_bytes() returns bytes, so comparison at line 125 is always unequal and raises controls_changed_before_write",
+    "watchdog_atomic_replace": "watchdog.py:56 signature is controls,before,value,uid,gid; watchdog.py:195 call uses that order correctly"
+  },
+  "conclusion": {
+    "root_cause": "deterministic local helper argument-order mismatch, not observed remote controls mutation",
+    "own_hold_write": "not performed: atomic_write precheck failed before temp creation/content write/os.replace",
+    "watchdog": "spawned and readiness was validated before reaching line 327; exact watchdog final status/result file remains for independent inspector",
+    "controls_current_state": "not read by this agent; independent inspector still required",
+    "product_failure": "none inferred"
+  },
+  "not_inferred": [
+    "remote controls bytes/hash after helper",
+    "watchdog final status/result and exact sidecar presence",
+    "any actions by separate actors"
+  ],
+  "source_sha256": {
+    "arm_control.py": "bb54d35122068c8e5ae0c871cdf84cf1f4ca3287f9ceb08b8728b32a920c872d",
+    "watchdog.py": "cadfa357ce19783824825589755f398590399e99cc8667df2bff3a4793ef0480"
+  }
+}

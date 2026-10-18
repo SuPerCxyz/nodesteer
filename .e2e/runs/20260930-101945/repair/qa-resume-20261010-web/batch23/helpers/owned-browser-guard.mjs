@@ -1,0 +1,6 @@
+import {execFileSync} from 'node:child_process';import {createHash} from 'node:crypto';
+const S='qawebsecure20261010-b18-clean38181',O='http://127.0.0.1:38181';
+const cdp=execFileSync('agent-browser',['--session',S,'get','cdp-url'],{encoding:'utf8'}).trim(),ep=new URL(cdp);if(!['127.0.0.1','localhost'].includes(ep.hostname))throw Error('cdp_not_loopback');
+const t=await(await fetch(`http://${ep.host}/json/list`)).json(),pages=t.filter(x=>x.type==='page'),owned=pages.filter(x=>x.url.startsWith(O+'/')),blank=pages.filter(x=>['about:blank','data:,','chrome://newtab/','chrome://newtab'].includes(x.url)),external=pages.filter(x=>!owned.includes(x)&&!blank.includes(x)),contexts=[...new Set(owned.map(x=>x.browserContextId||'default'))];
+const sha=x=>createHash('sha256').update(x).digest('hex');
+console.log(JSON.stringify({session:S,cdpPort:ep.port,ownedRepairPages:owned.length,blankPages:blank.length,externalPages:external.length,ownedPageRouteClasses:owned.map(x=>{let p=new URL(x.url).pathname;return p==='/'?'/':p.startsWith('/nodes/')?'/nodes/<id>':p.startsWith('/agents/')?'/agents/<id>':p.startsWith('/applications/')?'/applications/<id>':p}),ownedContextCount:contexts.length,ownedContextHashes:contexts.map(sha),origin:owned.every(x=>new URL(x.url).origin===O),guard:owned.length===1&&external.length===0&&contexts.length<=1}));

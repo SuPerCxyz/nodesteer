@@ -1,0 +1,117 @@
+{
+  "at_utc": "2026-10-15T11:13:24Z",
+  "fixtures": {
+    "script": {
+      "id": "bfd2e2ee-a52e-45b7-b77c-dadbed5da3e2",
+      "sha256": "fe91247686efa27069b93e15a50d0fc8fe2171b95ef228227e43b294d4703a5b",
+      "expected_sha256": "fe91247686efa27069b93e15a50d0fc8fe2171b95ef228227e43b294d4703a5b",
+      "content_sha256_matches": true
+    },
+    "qa-sysb08-fc0350484850-task-allow": {
+      "id": "a04ffa6d-04e4-443b-982b-71234f1adfd4",
+      "offline_policy": "allow_offline",
+      "param_values": {
+        "tag": "allow"
+      }
+    },
+    "qa-sysb08-fc0350484850-task-required": {
+      "id": "0363aa2d-29a5-4a83-bb7f-3c73287334c2",
+      "offline_policy": "hub_online_required",
+      "param_values": {
+        "tag": "required"
+      }
+    },
+    "qa-sysb08-fc0350484850-sched-allow": {
+      "id": "3f66165e-e9b0-4d8d-9ed2-ba6b14f06068",
+      "task_id": "a04ffa6d-04e4-443b-982b-71234f1adfd4",
+      "type": "interval",
+      "interval_sec": 5,
+      "execution_owner": "agent",
+      "offline_policy": "allow_offline",
+      "misfire_policy": "skip",
+      "enabled": true
+    },
+    "qa-sysb08-fc0350484850-sched-required": {
+      "id": "cc4a87e6-c9c2-4555-906a-1195cb66369d",
+      "task_id": "0363aa2d-29a5-4a83-bb7f-3c73287334c2",
+      "type": "interval",
+      "interval_sec": 5,
+      "execution_owner": "agent",
+      "offline_policy": "hub_online_required",
+      "misfire_policy": "skip",
+      "enabled": true
+    }
+  },
+  "child_schedules": [
+    {
+      "id": "3f66165e-e9b0-4d8d-9ed2-ba6b14f06068",
+      "revision": 1,
+      "enabled": true,
+      "task_id": "a04ffa6d-04e4-443b-982b-71234f1adfd4",
+      "type": "interval",
+      "interval_sec": 5,
+      "execution_owner": "agent",
+      "offline_policy": "allow_offline",
+      "misfire_policy": "skip"
+    },
+    {
+      "id": "cc4a87e6-c9c2-4555-906a-1195cb66369d",
+      "revision": 1,
+      "enabled": true,
+      "task_id": "0363aa2d-29a5-4a83-bb7f-3c73287334c2",
+      "type": "interval",
+      "interval_sec": 5,
+      "execution_owner": "agent",
+      "offline_policy": "hub_online_required",
+      "misfire_policy": "skip"
+    }
+  ],
+  "child_tasks": [
+    {
+      "id": "a04ffa6d-04e4-443b-982b-71234f1adfd4",
+      "revision": 1,
+      "enabled": true,
+      "offline_policy": "allow_offline",
+      "script_id": "bfd2e2ee-a52e-45b7-b77c-dadbed5da3e2",
+      "param_values": {
+        "tag": "allow"
+      }
+    },
+    {
+      "id": "0363aa2d-29a5-4a83-bb7f-3c73287334c2",
+      "revision": 1,
+      "enabled": true,
+      "offline_policy": "hub_online_required",
+      "script_id": "bfd2e2ee-a52e-45b7-b77c-dadbed5da3e2",
+      "param_values": {
+        "tag": "required"
+      }
+    }
+  ],
+  "online_positive_control": {
+    "allow_executions": 1,
+    "required_executions": 1,
+    "both_fired_while_online": true,
+    "note": "both agent-owned interval schedules fire while the Hub link is up; this is the control that isolates the offline gate as the differentiator in SYS-14"
+  },
+  "effect_counts_after_online": {
+    "allow": {
+      "path": "/var/lib/nodesteer-qa-sysb08-fc0350484850/effects/allow.txt",
+      "exists": true,
+      "lines": 1,
+      "content_tail": [
+        "1792062803.559518062|allow|2026-10-15T11:13:23Z"
+      ],
+      "sha256": "f4dfe000bd0669b89f81fd77690837621f87e6793b6e54b179c5c0ae2e2b6e86"
+    },
+    "required": {
+      "path": "/var/lib/nodesteer-qa-sysb08-fc0350484850/effects/required.txt",
+      "exists": true,
+      "lines": 1,
+      "content_tail": [
+        "1792062803.560267752|required|2026-10-15T11:13:23Z"
+      ],
+      "sha256": "ca4fc671cd4cb1dbbc79c2c4f1f29fb164d767528dfda02f391b5cbfc61ec147"
+    }
+  }
+}

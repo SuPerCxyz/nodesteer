@@ -1,0 +1,487 @@
+{
+  "at_utc": "2026-10-15T09:21:47Z",
+  "known_defect_id": "E2E-20261014-ROLLBACK-FAILED-STALE-BACKUP-RESTORE",
+  "poison_rows_before_restart": [
+    {
+      "id": "b3e3ed3b-0dcb-4d16-86b3-d540bdd4394d",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "2.7",
+      "to_version": "2.7",
+      "phase": "ROLLING_BACK",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-f4c21280-1b68-48a6-87f5-40c5716e4d0e.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-f4c21280-1b68-48a6-87f5-40c5716e4d0e.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-f4c21280-1b68-48a6-87f5-40c5716e4d0e.unit",
+      "started_at": "2026-10-15T09:21:32.517963781Z",
+      "updated_at": "2026-10-15T09:21:35.45378302Z"
+    },
+    {
+      "id": "3548a0d3-bb4c-4395-bbc8-d92174b3e517",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "2.5",
+      "to_version": "2.5",
+      "phase": "ROLLING_BACK",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-0292c574-502b-4a61-b713-aa70408c5802.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-0292c574-502b-4a61-b713-aa70408c5802.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-0292c574-502b-4a61-b713-aa70408c5802.unit",
+      "started_at": "2026-10-15T09:21:15.357931044Z",
+      "updated_at": "2026-10-15T09:21:18.25616449Z"
+    },
+    {
+      "id": "e1548f4a-c905-4068-b4e4-b1a1978fb3d4",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "2.3",
+      "to_version": "2.3",
+      "phase": "ROLLING_BACK",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-7c178cbb-d936-45c9-938b-c6c30e60a32b.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-7c178cbb-d936-45c9-938b-c6c30e60a32b.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-7c178cbb-d936-45c9-938b-c6c30e60a32b.unit",
+      "started_at": "2026-10-15T09:20:58.829824272Z",
+      "updated_at": "2026-10-15T09:21:01.746010059Z"
+    }
+  ],
+  "binary_sha_before_restart": "ce835a17a36f9278473860966263eecbcb72838b36f50611a62eab4abfb500aa",
+  "unit_active_before_restart": "active",
+  "desired_version": "2.8",
+  "desired_artifact_sha256": "402ff7d53836cf52782f22ffea94e9ff9ccc2963bac9e9b731693e84a471c735",
+  "poison_row_backup_shas": {
+    "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-f4c21280-1b68-48a6-87f5-40c5716e4d0e.binary": {
+      "exists": true,
+      "sha256": "ce835a17a36f9278473860966263eecbcb72838b36f50611a62eab4abfb500aa",
+      "size": 4194911
+    },
+    "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-0292c574-502b-4a61-b713-aa70408c5802.binary": {
+      "exists": true,
+      "sha256": "bde00aa2d166763fad79763dc11be3d18cb433ef8f24f0a4966c12f0ca635c55",
+      "size": 4194911
+    },
+    "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-7c178cbb-d936-45c9-938b-c6c30e60a32b.binary": {
+      "exists": true,
+      "sha256": "ce835a17a36f9278473860966263eecbcb72838b36f50611a62eab4abfb500aa",
+      "size": 4194911
+    }
+  },
+  "hypothesis": "GetActiveDeployments() selects phase NOT IN (DONE); on startup RecoverDeployments re-runs rollback for every poison row using that row stale backup, overwriting the currently installed version",
+  "restart": {
+    "stop": {
+      "signalled": [
+        160772
+      ],
+      "remaining": []
+    },
+    "start": {
+      "launcher_pid": 164293,
+      "owned_processes": [
+        "164294 /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent --config /var/lib/nodesteer-qa-papp-f7821a1dbfb5/child.yaml"
+      ]
+    }
+  },
+  "node_after_restart": {
+    "status": "online",
+    "sync_status": "synced"
+  },
+  "recovery_phase_sequence": [
+    "DONE"
+  ],
+  "recovery_rows": [
+    {
+      "event": "tracking_row",
+      "row": "4e90eeeb-9677-4fb2-b451-6b49dd808d71",
+      "t": 0.001
+    },
+    {
+      "t": 0.005,
+      "at_utc": "2026-10-15T09:21:48Z",
+      "phase": "DONE",
+      "row": "4e90eeeb-9677-4fb2-b451-6b49dd808d71",
+      "binary_sha256": "ce835a17a36f9278473860966263eecbcb72838b36f50611a62eab4abfb500aa",
+      "unit_active": "active",
+      "tmp_entries": []
+    },
+    {
+      "event": "reached_done",
+      "row": "4e90eeeb-9677-4fb2-b451-6b49dd808d71"
+    },
+    {
+      "event": "watcher_exit",
+      "last_phase": "DONE",
+      "row": "4e90eeeb-9677-4fb2-b451-6b49dd808d71"
+    }
+  ],
+  "binary_sha_after_restart": "ce835a17a36f9278473860966263eecbcb72838b36f50611a62eab4abfb500aa",
+  "unit_active_after_restart": "active",
+  "deployments_after_restart": [
+    {
+      "id": "4e90eeeb-9677-4fb2-b451-6b49dd808d71",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "2.8",
+      "to_version": "2.8",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-91983880-4cf1-4504-9c43-0c10653780d5.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-91983880-4cf1-4504-9c43-0c10653780d5.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-91983880-4cf1-4504-9c43-0c10653780d5.unit",
+      "started_at": "2026-10-15T09:21:40.837567697Z",
+      "updated_at": "2026-10-15T09:21:44.842410786Z"
+    },
+    {
+      "id": "b3e3ed3b-0dcb-4d16-86b3-d540bdd4394d",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "2.7",
+      "to_version": "2.7",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-f4c21280-1b68-48a6-87f5-40c5716e4d0e.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-f4c21280-1b68-48a6-87f5-40c5716e4d0e.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-f4c21280-1b68-48a6-87f5-40c5716e4d0e.unit",
+      "started_at": "2026-10-15T09:21:32.517963781Z",
+      "updated_at": "2026-10-15T09:21:55.028464525Z"
+    },
+    {
+      "id": "0cc1087d-5741-439e-b210-d718e5fde70c",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "2.6",
+      "to_version": "2.6",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-a8422518-006d-43ee-8380-e34757f02a2c.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-a8422518-006d-43ee-8380-e34757f02a2c.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-a8422518-006d-43ee-8380-e34757f02a2c.unit",
+      "started_at": "2026-10-15T09:21:25.189517332Z",
+      "updated_at": "2026-10-15T09:21:28.116363249Z"
+    },
+    {
+      "id": "3548a0d3-bb4c-4395-bbc8-d92174b3e517",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "2.5",
+      "to_version": "2.5",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-0292c574-502b-4a61-b713-aa70408c5802.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-0292c574-502b-4a61-b713-aa70408c5802.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-0292c574-502b-4a61-b713-aa70408c5802.unit",
+      "started_at": "2026-10-15T09:21:15.357931044Z",
+      "updated_at": "2026-10-15T09:21:54.207755715Z"
+    },
+    {
+      "id": "c8860e67-a695-4762-96b9-462c0922040e",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "2.4",
+      "to_version": "2.4",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-9a89ecbe-43a1-4f09-bdeb-3f77cae80cf5.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-9a89ecbe-43a1-4f09-bdeb-3f77cae80cf5.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-9a89ecbe-43a1-4f09-bdeb-3f77cae80cf5.unit",
+      "started_at": "2026-10-15T09:21:08.488366172Z",
+      "updated_at": "2026-10-15T09:21:11.485831528Z"
+    },
+    {
+      "id": "e1548f4a-c905-4068-b4e4-b1a1978fb3d4",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "2.3",
+      "to_version": "2.3",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-7c178cbb-d936-45c9-938b-c6c30e60a32b.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-7c178cbb-d936-45c9-938b-c6c30e60a32b.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-7c178cbb-d936-45c9-938b-c6c30e60a32b.unit",
+      "started_at": "2026-10-15T09:20:58.829824272Z",
+      "updated_at": "2026-10-15T09:21:53.358984989Z"
+    },
+    {
+      "id": "645c4a0c-fff2-4382-b6d2-6cef788fe3e6",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "2.2",
+      "to_version": "2.2",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-99828211-2721-4cdf-9f35-8614a0638f26.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-99828211-2721-4cdf-9f35-8614a0638f26.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-99828211-2721-4cdf-9f35-8614a0638f26.unit",
+      "started_at": "2026-10-15T09:20:51.858433815Z",
+      "updated_at": "2026-10-15T09:20:54.780608991Z"
+    },
+    {
+      "id": "fc83b14b-250b-4bd1-9c40-6ebb035b89c3",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "2.1",
+      "to_version": "2.1",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-371e7d1a-0aab-4690-8c43-559f78a4c0a0.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-371e7d1a-0aab-4690-8c43-559f78a4c0a0.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-371e7d1a-0aab-4690-8c43-559f78a4c0a0.unit",
+      "started_at": "2026-10-15T09:20:47.912571248Z",
+      "updated_at": "2026-10-15T09:20:49.087983713Z"
+    },
+    {
+      "id": "c5343f07-d190-4be8-8acd-9d697127b0f3",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "1.0",
+      "to_version": "1.0",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-233c2cfd-7922-42ef-8247-ebc5e20ab6c7.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-233c2cfd-7922-42ef-8247-ebc5e20ab6c7.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-233c2cfd-7922-42ef-8247-ebc5e20ab6c7.unit",
+      "started_at": "2026-10-15T09:20:42.085364259Z",
+      "updated_at": "2026-10-15T09:20:43.207384774Z"
+    },
+    {
+      "id": "67c78f76-ef6f-4a4c-943f-083749f99f13",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "6.0",
+      "to_version": "6.0",
+      "phase": "DONE",
+      "backup_path": "",
+      "backup_config_path": "",
+      "backup_unit_path": "",
+      "started_at": "2026-10-15T09:20:39.114374822Z",
+      "updated_at": "2026-10-15T09:20:39.138405558Z"
+    },
+    {
+      "id": "0bb51b60-282d-4746-9e4f-a49bdd55ed0e",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "5.0",
+      "to_version": "5.0",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-28ccebec-0e50-476e-ac03-9dbe7eecc972.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-28ccebec-0e50-476e-ac03-9dbe7eecc972.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-28ccebec-0e50-476e-ac03-9dbe7eecc972.unit",
+      "started_at": "2026-10-15T09:20:34.606506035Z",
+      "updated_at": "2026-10-15T09:20:35.80199206Z"
+    },
+    {
+      "id": "d24ba1e8-0172-401e-8344-47026726c9e8",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "5.0",
+      "to_version": "5.0",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-357f8a59-9720-4a47-a92c-d74ffb501e9f.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-357f8a59-9720-4a47-a92c-d74ffb501e9f.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-357f8a59-9720-4a47-a92c-d74ffb501e9f.unit",
+      "started_at": "2026-10-15T09:20:20.757842487Z",
+      "updated_at": "2026-10-15T09:20:21.896746233Z"
+    },
+    {
+      "id": "284de871-a895-4211-987c-8d5f3fb9f38f",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "5.0",
+      "to_version": "5.0",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-1ec45446-1714-4dfd-9a9e-e17c362eb53d.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-1ec45446-1714-4dfd-9a9e-e17c362eb53d.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-1ec45446-1714-4dfd-9a9e-e17c362eb53d.unit",
+      "started_at": "2026-10-15T09:20:17.467643088Z",
+      "updated_at": "2026-10-15T09:20:28.699391187Z"
+    },
+    {
+      "id": "ff9e6da7-b9d0-4f59-9608-4f4c10ccb5c6",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "2.0",
+      "to_version": "2.0",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-eb135410-7ee6-414b-ab54-5e53e5fbd952.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-eb135410-7ee6-414b-ab54-5e53e5fbd952.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-eb135410-7ee6-414b-ab54-5e53e5fbd952.unit",
+      "started_at": "2026-10-15T09:20:13.267593878Z",
+      "updated_at": "2026-10-15T09:20:14.432334723Z"
+    },
+    {
+      "id": "b220d06a-77d0-4996-bb79-e5c24d845f4d",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "4.4",
+      "to_version": "4.4",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-5c7fcc16-1177-4867-9d37-661d9b51bb67.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-5c7fcc16-1177-4867-9d37-661d9b51bb67.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-5c7fcc16-1177-4867-9d37-661d9b51bb67.unit",
+      "started_at": "2026-10-15T09:20:02.57002385Z",
+      "updated_at": "2026-10-15T09:20:07.167537095Z"
+    },
+    {
+      "id": "3c201b10-5196-499e-8721-4ca806d19979",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "2.0",
+      "to_version": "2.0",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-da8ce3bd-df7e-4e6e-bca8-0289c6108d90.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-da8ce3bd-df7e-4e6e-bca8-0289c6108d90.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-da8ce3bd-df7e-4e6e-bca8-0289c6108d90.unit",
+      "started_at": "2026-10-15T09:19:58.15183258Z",
+      "updated_at": "2026-10-15T09:19:59.307259059Z"
+    },
+    {
+      "id": "315a43c0-b583-412d-87e2-f9a98764d479",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "4.3",
+      "to_version": "4.3",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-8a212d42-999b-4e65-9185-40319411ccd2.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-8a212d42-999b-4e65-9185-40319411ccd2.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-8a212d42-999b-4e65-9185-40319411ccd2.unit",
+      "started_at": "2026-10-15T09:19:47.550798292Z",
+      "updated_at": "2026-10-15T09:19:52.121597043Z"
+    },
+    {
+      "id": "063194b0-f46f-4516-a8aa-13fae4361879",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "2.0",
+      "to_version": "2.0",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-3ec32541-2825-473f-a3a8-50b2bcc8b191.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-3ec32541-2825-473f-a3a8-50b2bcc8b191.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-3ec32541-2825-473f-a3a8-50b2bcc8b191.unit",
+      "started_at": "2026-10-15T09:19:43.239821045Z",
+      "updated_at": "2026-10-15T09:19:44.441859778Z"
+    },
+    {
+      "id": "a2d8b08e-d97a-41a5-b439-4a0e90805b9a",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "4.2",
+      "to_version": "4.2",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-21948418-6f99-40aa-8d09-dda991d62ee0.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-21948418-6f99-40aa-8d09-dda991d62ee0.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-21948418-6f99-40aa-8d09-dda991d62ee0.unit",
+      "started_at": "2026-10-15T09:19:33.01697989Z",
+      "updated_at": "2026-10-15T09:19:37.264825796Z"
+    },
+    {
+      "id": "321bc5e0-8a4a-4563-a264-8fb52e389b97",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "2.0",
+      "to_version": "2.0",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-37203df0-0e4d-48a1-be81-901dae58dc1d.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-37203df0-0e4d-48a1-be81-901dae58dc1d.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-37203df0-0e4d-48a1-be81-901dae58dc1d.unit",
+      "started_at": "2026-10-15T09:19:28.761699259Z",
+      "updated_at": "2026-10-15T09:19:29.964659288Z"
+    },
+    {
+      "id": "6d6fd958-dfe6-4aee-8790-de0ae6cf1775",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "4.1",
+      "to_version": "4.1",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-102e4f1d-0396-48ea-a7ee-acd8b2731c9d.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-102e4f1d-0396-48ea-a7ee-acd8b2731c9d.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-102e4f1d-0396-48ea-a7ee-acd8b2731c9d.unit",
+      "started_at": "2026-10-15T09:19:18.813582214Z",
+      "updated_at": "2026-10-15T09:19:22.89523423Z"
+    },
+    {
+      "id": "48a77189-bea4-44bc-8c60-0dfabcd18f97",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "3.0",
+      "to_version": "3.0",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-ceca25df-52eb-4478-b71f-d1b0f65daefb.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-ceca25df-52eb-4478-b71f-d1b0f65daefb.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-ceca25df-52eb-4478-b71f-d1b0f65daefb.unit",
+      "started_at": "2026-10-15T09:19:10.371598095Z",
+      "updated_at": "2026-10-15T09:19:14.770376259Z"
+    },
+    {
+      "id": "0bc2d7dd-02f3-4de2-961f-8712a86f774c",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "2.0",
+      "to_version": "2.0",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-0edb3423-a205-48de-ae01-a0d51b11bec9.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-0edb3423-a205-48de-ae01-a0d51b11bec9.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-0edb3423-a205-48de-ae01-a0d51b11bec9.unit",
+      "started_at": "2026-10-15T09:19:04.960294436Z",
+      "updated_at": "2026-10-15T09:19:06.332854156Z"
+    },
+    {
+      "id": "323303a2-ea15-42f3-af43-a5621fd02dd4",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "1.0",
+      "to_version": "1.0",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-8bf4cd0b-654d-4a53-a146-6063f547735b.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-8bf4cd0b-654d-4a53-a146-6063f547735b.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-8bf4cd0b-654d-4a53-a146-6063f547735b.unit",
+      "started_at": "2026-10-15T09:18:48.554943799Z",
+      "updated_at": "2026-10-15T09:18:49.923902412Z"
+    },
+    {
+      "id": "a9948107-f792-47d7-acf9-8940584e89e6",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "1.5",
+      "to_version": "1.5",
+      "phase": "DONE",
+      "backup_path": "",
+      "backup_config_path": "",
+      "backup_unit_path": "",
+      "started_at": "2026-10-15T09:18:46.119387993Z",
+      "updated_at": "2026-10-15T09:18:46.12771382Z"
+    },
+    {
+      "id": "6f3b8f69-5cf8-4663-8114-2112b6553387",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "1.0",
+      "to_version": "1.0",
+      "phase": "DONE",
+      "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-6613a0cb-5741-4b67-a68f-1a14963627be.binary",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-6613a0cb-5741-4b67-a68f-1a14963627be.conf",
+      "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-6613a0cb-5741-4b67-a68f-1a14963627be.unit",
+      "started_at": "2026-10-15T09:18:28.084537227Z",
+      "updated_at": "2026-10-15T09:18:29.534398838Z"
+    },
+    {
+      "id": "1e5d2613-3a7c-4794-bbd9-a0a7e258979e",
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "from_version": "1.0",
+      "to_version": "1.0",
+      "phase": "DONE",
+      "backup_path": "absent:",
+      "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-5dafa865-ea4d-4ec1-b671-e2238dfd3460.conf",
+      "backup_unit_path": "absent:",
+      "started_at": "2026-10-15T09:18:21.042522096Z",
+      "updated_at": "2026-10-15T09:18:22.442700378Z"
+    }
+  ],
+  "node_state_hub": [
+    {
+      "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+      "version": "2.8",
+      "operation": "upgrade",
+      "health": "unhealthy",
+      "error": "health check failed",
+      "updated_at": "2026-10-15T09:21:45.000137848Z"
+    }
+  ],
+  "agent_log_recovery_lines": [
+    "time=2026-10-15T17:19:51.312+08:00 level=INFO msg=\"recovering incomplete deployment\" id=315a43c0-b583-412d-87e2-f9a98764d479 app=ce2b6e1b-3a14-4d71-af80-a62445b011d7 phase=VERIFYING",
+    "time=2026-10-15T17:19:52.136+08:00 level=INFO msg=\"agent connected\" recovered=false fail_duration=0s failures=0",
+    "time=2026-10-15T17:20:06.347+08:00 level=INFO msg=\"recovering incomplete deployment\" id=b220d06a-77d0-4996-bb79-e5c24d845f4d app=ce2b6e1b-3a14-4d71-af80-a62445b011d7 phase=VERIFYING",
+    "time=2026-10-15T17:20:07.184+08:00 level=INFO msg=\"agent connected\" recovered=false fail_duration=0s failures=0",
+    "time=2026-10-15T17:20:27.872+08:00 level=INFO msg=\"recovering incomplete deployment\" id=284de871-a895-4211-987c-8d5f3fb9f38f app=ce2b6e1b-3a14-4d71-af80-a62445b011d7 phase=ROLLING_BACK",
+    "time=2026-10-15T17:20:28.716+08:00 level=INFO msg=\"agent connected\" recovered=false fail_duration=0s failures=0",
+    "time=2026-10-15T17:21:52.561+08:00 level=INFO msg=\"recovering incomplete deployment\" id=e1548f4a-c905-4068-b4e4-b1a1978fb3d4 app=ce2b6e1b-3a14-4d71-af80-a62445b011d7 phase=ROLLING_BACK",
+    "time=2026-10-15T17:21:53.363+08:00 level=INFO msg=\"recovering incomplete deployment\" id=3548a0d3-bb4c-4395-bbc8-d92174b3e517 app=ce2b6e1b-3a14-4d71-af80-a62445b011d7 phase=ROLLING_BACK",
+    "time=2026-10-15T17:21:54.213+08:00 level=INFO msg=\"recovering incomplete deployment\" id=b3e3ed3b-0dcb-4d16-86b3-d540bdd4394d app=ce2b6e1b-3a14-4d71-af80-a62445b011d7 phase=ROLLING_BACK",
+    "time=2026-10-15T17:21:55.050+08:00 level=INFO msg=\"agent connected\" recovered=false fail_duration=0s failures=0"
+  ],
+  "poison_rows_after_restart": [],
+  "binary_mtime_before_restart": 1792056103.996014,
+  "binary_mtime_after_restart": 1792056114.236053,
+  "binary_rewritten_by_recovery": true,
+  "binary_changed_by_recovery": false,
+  "after_sha_matches_a_poison_backup": true,
+  "stale_backup_overwrote_current_binary": false,
+  "desired_vs_actual_consistent_after_restart": false,
+  "desired_vs_actual_note": "before the restart the desired definition already pointed at the failed version while the installed binary was the previous version (a second consequence of the failed rollback)",
+  "defect_reproduced": false,
+  "consistency_restore": {
+    "execution": {
+      "id": "ecd7a4cb-b7b9-453f-82e4-938aad1441c8",
+      "task_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+      "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+      "status": "SUCCESS",
+      "trigger_type": "manual",
+      "start_time": "2026-10-15T09:22:01.891404746Z",
+      "end_time": "2026-10-15T17:22:03.23648211+08:00",
+      "block_reason": null,
+      "exit_code": null
+    },
+    "binary_sha256": "ce835a17a36f9278473860966263eecbcb72838b36f50611a62eab4abfb500aa",
+    "unit_active": "active",
+    "consistent": true
+  }
+}

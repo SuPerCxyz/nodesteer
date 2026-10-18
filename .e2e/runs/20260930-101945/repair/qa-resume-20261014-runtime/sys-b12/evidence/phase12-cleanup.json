@@ -1,0 +1,287 @@
+{
+  "at_utc": "2026-10-14T10:07:25Z",
+  "steps": {
+    "release_owned_seams": {
+      "chattr_minus_bin": {
+        "action": "chattr_minus",
+        "path": "/opt/qa-sysb12-530b8e2c5b77/app/bin",
+        "extra": {},
+        "at_utc": "2026-10-14T10:07:25Z",
+        "result": {
+          "rc": 0,
+          "out": "",
+          "err": ""
+        },
+        "after": {
+          "lexists": true,
+          "is_dir": true,
+          "is_symlink": false,
+          "target": null
+        }
+      },
+      "chattr_minus_opt": {
+        "action": "chattr_minus",
+        "path": "/opt/qa-sysb12-530b8e2c5b77",
+        "extra": {},
+        "at_utc": "2026-10-14T10:07:25Z",
+        "result": {
+          "rc": 0,
+          "out": "",
+          "err": ""
+        },
+        "after": {
+          "lexists": true,
+          "is_dir": true,
+          "is_symlink": false,
+          "target": null
+        }
+      },
+      "umount_xfs": {
+        "action": "umount",
+        "path": "/opt/qa-sysb12-530b8e2c5b77/xfs",
+        "extra": {},
+        "at_utc": "2026-10-14T10:07:25Z",
+        "result": {
+          "rc": 0,
+          "out": "",
+          "err": ""
+        },
+        "after": {
+          "lexists": true,
+          "is_dir": true,
+          "is_symlink": false,
+          "target": null
+        }
+      },
+      "lsattr_bin": {
+        "action": "lsattr",
+        "path": "/opt/qa-sysb12-530b8e2c5b77/app/bin",
+        "extra": {},
+        "at_utc": "2026-10-14T10:07:26Z",
+        "result": {
+          "rc": 0,
+          "out": "---------------------- /opt/qa-sysb12-530b8e2c5b77/app/bin",
+          "err": ""
+        },
+        "after": {
+          "lexists": true,
+          "is_dir": true,
+          "is_symlink": false,
+          "target": null
+        }
+      },
+      "mounts": [],
+      "mounts_b": []
+    },
+    "product_uninstall": {
+      "owned_apps": [
+        {
+          "id": "a8879252-75b0-49e3-8daa-46989da18491",
+          "name": "qa-sysb12-530b8e2c5b77-app"
+        },
+        {
+          "id": "501db824-4cb7-4699-ae8f-149c07560771",
+          "name": "qa-sysb12-530b8e2c5b77-xapp"
+        }
+      ],
+      "delete_qa-sysb12-530b8e2c5b77-app": {
+        "id": "a8879252-75b0-49e3-8daa-46989da18491",
+        "delete_http": 200,
+        "delete_body": {
+          "ok": "true"
+        }
+      },
+      "delete_qa-sysb12-530b8e2c5b77-xapp": {
+        "id": "501db824-4cb7-4699-ae8f-149c07560771",
+        "delete_http": 200,
+        "delete_body": {
+          "ok": "true"
+        }
+      },
+      "host_after_product_cleanup": {
+        "unit_file_lexists": false,
+        "binary_lexists": false,
+        "config_lexists": false,
+        "enable_symlink_lexists": false,
+        "unit_registry": [],
+        "unit_state": {
+          "MainPID": "0",
+          "Id": "qa-sysb12-530b8e2c5b77-app.service",
+          "LoadState": "not-found",
+          "ActiveState": "inactive",
+          "SubState": "dead",
+          "FragmentPath": "",
+          "UnitFileState": ""
+        },
+        "local_apps": []
+      },
+      "product_cleanup_complete": true,
+      "get_after_delete_http": 404
+    },
+    "host_unit_residue_sweep": {
+      "action": "cmd",
+      "path": "/opt/qa-sysb12-530b8e2c5b77",
+      "extra": {
+        "argv": [
+          "bash",
+          "-lc",
+          "for u in qa-sysb12-530b8e2c5b77-app.service qa-sysb12-530b8e2c5b77-xapp.service; do systemctl stop $u 2>/dev/null; systemctl disable $u 2>/dev/null; systemctl reset-failed $u 2>/dev/null; rm -f /etc/systemd/system/$u; rm -f /etc/systemd/system/multi-user.target.wants/$u; done; systemctl daemon-reload"
+        ]
+      },
+      "at_utc": "2026-10-14T10:07:28Z",
+      "result": {
+        "rc": 0,
+        "out": "",
+        "err": ""
+      },
+      "after": {
+        "lexists": true,
+        "is_dir": true,
+        "is_symlink": false,
+        "target": null
+      }
+    },
+    "host_dirs_removal": {
+      "rm_/opt/qa-sysb12-530b8e2c5b77/xfs": {
+        "action": "rm_rf",
+        "path": "/opt/qa-sysb12-530b8e2c5b77/xfs",
+        "extra": {},
+        "at_utc": "2026-10-14T10:07:29Z",
+        "result": {
+          "ok": true
+        },
+        "after": {
+          "lexists": false,
+          "is_dir": false,
+          "is_symlink": false,
+          "target": null
+        }
+      },
+      "rm_/tmp/qa-sysb12-530b8e2c5b77-escape": {
+        "action": "rm_rf",
+        "path": "/tmp/qa-sysb12-530b8e2c5b77-escape",
+        "extra": {},
+        "at_utc": "2026-10-14T10:07:29Z",
+        "result": {
+          "ok": true
+        },
+        "after": {
+          "lexists": false,
+          "is_dir": false,
+          "is_symlink": false,
+          "target": null
+        }
+      },
+      "rm_etc_owned": {
+        "action": "rm_rf",
+        "path": "/etc/qa-sysb12-530b8e2c5b77",
+        "extra": {},
+        "at_utc": "2026-10-14T10:07:29Z",
+        "result": {
+          "ok": true
+        },
+        "after": {
+          "lexists": false,
+          "is_dir": false,
+          "is_symlink": false,
+          "target": null
+        }
+      },
+      "rm_sampler_files": {
+        "action": "rm_rf",
+        "path": "/opt/qa-sysb12-530b8e2c5b77/xfs/dst.samples",
+        "extra": {},
+        "at_utc": "2026-10-14T10:07:29Z",
+        "result": {
+          "ok": true
+        },
+        "after": {
+          "lexists": false,
+          "is_dir": false,
+          "is_symlink": false,
+          "target": null
+        }
+      }
+    },
+    "owned_child_removal": {
+      "child_b": {
+        "mount_before": [],
+        "agent_signalled": [
+          26696
+        ],
+        "agent_remaining": [],
+        "root_removed": true,
+        "opt_removed": true,
+        "mounts_after": [],
+        "units_after": []
+      },
+      "child_a": {
+        "mount_before": [],
+        "agent_signalled": [
+          25625
+        ],
+        "agent_remaining": [],
+        "root_removed": true,
+        "opt_removed": true,
+        "mounts_after": [],
+        "units_after": []
+      }
+    },
+    "artifact_deletes": [
+      {
+        "label": "A1",
+        "id": "9e7e15ec-be3b-4d52-86a3-21fa157e9a70",
+        "delete_http": 200,
+        "get_http": 404
+      }
+    ],
+    "node_deletes": {
+      "a": {
+        "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+        "delete_http": 200,
+        "delete_body": {
+          "ok": "true"
+        },
+        "get_http": 404
+      },
+      "b": {
+        "node_id": "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889",
+        "delete_http": 200,
+        "delete_body": {
+          "ok": "true"
+        },
+        "get_http": 404
+      }
+    },
+    "frame_proxy_stop": {
+      "stopped": true
+    }
+  },
+  "errors": [],
+  "get_http_by_id": {
+    "a8879252-75b0-49e3-8daa-46989da18491": null,
+    "501db824-4cb7-4699-ae8f-149c07560771": null,
+    "9e7e15ec-be3b-4d52-86a3-21fa157e9a70": 404,
+    "a70e9042-a4a8-47b0-a228-c8ad4127fcc7": 404,
+    "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889": 404
+  },
+  "budget": {
+    "api_mutations": 59,
+    "artifact_uploads": 1,
+    "artifact_deletes": 1,
+    "app_creates": 2,
+    "app_updates": 11,
+    "app_deletes": 2,
+    "app_assigns": 2,
+    "deploys": 13,
+    "transfers": 12,
+    "transfer_retries": 1,
+    "node_enroll_posts": 2,
+    "node_deletes": 2,
+    "node_upgrades": 1,
+    "child_process_starts": 5,
+    "child_process_stops": 3,
+    "host_seam_actions": 31,
+    "mounts": 5
+  }
+}

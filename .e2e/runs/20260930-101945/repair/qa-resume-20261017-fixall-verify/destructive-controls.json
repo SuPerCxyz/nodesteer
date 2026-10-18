@@ -1,0 +1,248 @@
+{
+ "batch": "qa-resume-20261017-fixall-verify",
+ "authority": "http://192.168.100.209:18080",
+ "build_label": "dddee4f0-e2e-repair-20261017-fixall",
+ "at_utc": "2026-10-17T14:22:34Z",
+ "scope": "仅对自建 owned fixture 执行破坏性操作；4 个 protected repair 节点与 :8080 主 Hub 未触碰",
+ "items": {
+  "1_delete_node": {
+   "targets": [
+    "qa-fixall-9c4f0710-a",
+    "qa-fixall-9c4f0710-b",
+    "qa-fixall-9c4f0710-c",
+    "qa-fixall-9c4f0710-d"
+   ],
+   "via": "UI 节点列表行菜单 → 删除 → 确认（a 作为选择漂移场景的前置删除，b/c/d 依次删除）",
+   "before": {
+    "rows_initial": [
+     {
+      "checked": false,
+      "idx": 0,
+      "name": "qa-fixall-9c4f0710-a"
+     },
+     {
+      "checked": false,
+      "idx": 1,
+      "name": "qa-fixall-9c4f0710-b"
+     },
+     {
+      "checked": false,
+      "idx": 2,
+      "name": "qa-fixall-9c4f0710-c"
+     },
+     {
+      "checked": false,
+      "idx": 3,
+      "name": "qa-fixall-9c4f0710-d"
+     },
+     {
+      "checked": false,
+      "idx": 4,
+      "name": null
+     },
+     {
+      "checked": false,
+      "idx": 5,
+      "name": null
+     },
+     {
+      "checked": false,
+      "idx": 6,
+      "name": null
+     },
+     {
+      "checked": false,
+      "idx": 7,
+      "name": null
+     },
+     {
+      "checked": false,
+      "idx": 8,
+      "name": null
+     },
+     {
+      "checked": false,
+      "idx": 9,
+      "name": null
+     }
+    ]
+   },
+   "after": {
+    "deleted_nodes_get404": {
+     "qa-fixall-9c4f0710-b": true,
+     "qa-fixall-9c4f0710-c": true,
+     "qa-fixall-9c4f0710-d": true
+    },
+    "a_get404": true
+   },
+   "result": "PASS",
+   "note": "删除后仍在运行的 owned child Agent 会按产品既有重新纳管能力生成新 node 记录；清理阶段先停止子进程再删除全部 qa-fixall-* 节点（4/4 DELETE 200，GET 404）",
+   "evidence": [
+    "evidence/web-drift.json",
+    "evidence/final-cleanup-raw.json"
+   ]
+  },
+  "2_delete_script": {
+   "targets": [
+    "qa-fixall-9c4f0710-script"
+   ],
+   "via": "UI 脚本列表行菜单 → 删除 → 确认",
+   "before": {
+    "id": "7ce42dc5-4878-4275-b434-a8305a713134",
+    "get_http": 200
+   },
+   "after": {
+    "get_http": 404
+   },
+   "result": "PASS",
+   "evidence": [
+    "evidence/web-destructive.json"
+   ]
+  },
+  "3_delete_application": {
+   "targets": [
+    "qa-fixall-9c4f0710-envapp"
+   ],
+   "via": "UI 应用列表行菜单 → 删除 → 确认",
+   "before": {
+    "id": "2ffacbfb-eeb4-4d04-9b34-dbde0b7915b2",
+    "get_http": 200,
+    "assigned": [
+     "fd2114a7-46a3-40bd-aedb-ac95bf7ffce9"
+    ]
+   },
+   "after": {
+    "get_http": 404,
+    "agent_cleanup": {
+     "unit_lexists": false,
+     "binary_lexists": false,
+     "config_lexists": false,
+     "opt_exists": true,
+     "unit_load_state": "not-found"
+    }
+   },
+   "result": "PASS",
+   "evidence": [
+    "evidence/web-destructive.json"
+   ]
+  },
+  "4_delete_artifact": {
+   "targets": [
+    "qa-fixall-9c4f0710-payload-a2（UI）",
+    "qa-fixall-9c4f0710-payload-a1（API）"
+   ],
+   "via": "UI 发布包列表行菜单 → 删除 → 确认；A1 走同一 DELETE 端点",
+   "before": {
+    "a2": 200,
+    "a1": 200
+   },
+   "after": {
+    "a2": 404,
+    "a1": 200
+   },
+   "result": "PASS",
+   "evidence": [
+    "evidence/web-destructive.json",
+    "evidence/final-cleanup-raw.json"
+   ]
+  },
+  "5_revoke_credential": {
+   "targets": [
+    "qa-fixall-9c4f0710-d（owned child）"
+   ],
+   "via": "POST /api/nodes/{id}/revoke-credential（UI 行菜单同一端点，前置 window.confirm）",
+   "before": {
+    "status": "online"
+   },
+   "after": {
+    "revoke_http": 200,
+    "status_after": "disabled",
+    "verdict": {
+     "http_200": true,
+     "status_disabled": true
+    }
+   },
+   "result": "PASS",
+   "evidence": [
+    "evidence/web-drift.json"
+   ]
+  },
+  "6_cancel_transfer": {
+   "targets": [
+    "owned Transfer b→c（目标节点离线时创建）"
+   ],
+   "via": "POST /api/transfers/{id}/cancel",
+   "before": {
+    "transfer_id": "ee69eb19-336d-4f83-9f45-3e8dcb06ebba",
+    "status": "DELIVERING/PENDING"
+   },
+   "after": {
+    "http": 200,
+    "status": "CANCELED",
+    "targets": [
+     {
+      "transfer_id": "ee69eb19-336d-4f83-9f45-3e8dcb06ebba",
+      "node_id": "0ff794ae-9a0d-421e-812d-ae04acf29bdc",
+      "destination_path": "/var/lib/nodesteer-qa-fixall-9c4f0710-c/incoming/fail-dst.txt.2",
+      "status": "CANCELED",
+      "updated_at": "2026-10-17T14:07:36.531929487Z"
+     }
+    ]
+   },
+   "result": "PASS",
+   "evidence": [
+    "evidence/phase08-transfers.json"
+   ]
+  },
+  "7_remove_assignment": {
+   "targets": [
+    "应用 qa-fixall-9c4f0710-envapp 的节点 b 分配"
+   ],
+   "via": "POST /api/applications/{id}/assign {node_ids, remove:true}（UI 编辑保存同一端点）",
+   "before": {
+    "assigned": [
+     "65b385be-0fcd-4a58-ba2c-296cd6cdfe71",
+     "fd2114a7-46a3-40bd-aedb-ac95bf7ffce9"
+    ]
+   },
+   "after": {
+    "assigned": [
+     "fd2114a7-46a3-40bd-aedb-ac95bf7ffce9"
+    ],
+    "http": 200
+   },
+   "result": "PASS",
+   "evidence": [
+    "evidence/phase04-remove-assign.json"
+   ]
+  }
+ },
+ "not_deletable_history": {
+  "transfers": [
+   {
+    "id": "6a07ebd1-09f0-4d37-9078-7d2938c2e007",
+    "note": "SUCCESS 终态，产品无删除接口"
+   },
+   {
+    "id": "2779b045-cefa-40fb-b4b1-d9524f8c798f",
+    "note": "SUCCESS 终态，产品无删除接口"
+   },
+   {
+    "id": "ee69eb19-336d-4f83-9f45-3e8dcb06ebba",
+    "note": "CANCELED 终态，产品无删除接口"
+   }
+  ],
+  "note": "传输记录无删除接口，保留为终态历史；不阻塞任何节点删除"
+ },
+ "final_oracle": {
+  "no_owned_nodes_left": true,
+  "no_owned_list_fixtures_left": true,
+  "transfers_are_terminal_history_only": true,
+  "no_owned_host_units_or_dirs_or_procs": true,
+  "repair_nodes_untouched_online": true,
+  "primary_hub_pid_unchanged": true,
+  "primary_agent_units_unchanged": true,
+  "repair_hub_on_fixall_build": true,
+  "repair_agents_on_fixall_build": true
+ }
+}

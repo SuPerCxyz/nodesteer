@@ -1,0 +1,340 @@
+{
+ "nonce": "a8392f15",
+ "fixtures": [
+  [
+   "artifact",
+   "6e53ca84-d7fc-43ae-bd4e-366dfbe64bae",
+   "qa-cr1-a8392f15-artifact-v1"
+  ],
+  [
+   "artifact",
+   "f25871e1-c3f7-4c3c-83dd-a3253039e234",
+   "qa-cr1-a8392f15-artifact-v2"
+  ],
+  [
+   "application",
+   "3c66b54c-8888-4d2a-a362-036234b0d49f",
+   "qa-cr1-a8392f15-app-adv"
+  ],
+  [
+   "application",
+   "430cc09f-b744-4267-84e5-abe6de2dbf9c",
+   "qa-cr1-a8392f15-app-adv2"
+  ],
+  [
+   "application",
+   "3a3b6d86-2565-4dc9-aee5-19342ac18c25",
+   "qa-cr1-a8392f15-app-pfa"
+  ],
+  [
+   "application",
+   "eac58123-4f52-4cfb-8ef0-d0b2c6db01a7",
+   "qa-cr1-a8392f15-app-rba"
+  ],
+  [
+   "application",
+   "c09b5e80-5bbd-4a12-8605-70c33bcae120",
+   "qa-cr1-a8392f15-app-unk"
+  ],
+  [
+   "application",
+   "e973b9fc-66de-4629-ad4c-a74e38756c9e",
+   "qa-cr1-a8392f15-app-bm"
+  ],
+  [
+   "application",
+   "7833475b-7c2b-4246-a747-acc62156e5ba",
+   "qa-cr1-a8392f15-app-hc"
+  ],
+  [
+   "application",
+   "ce880861-dc1f-4845-a8ec-abf3c28eee12",
+   "qa-cr1-a8392f15-app-crash"
+  ],
+  [
+   "artifact",
+   "2e3c7ac2-b2af-4634-9ed7-46c567dc0d4f",
+   "qa-cr1-a8392f15-artifact-v3"
+  ],
+  [
+   "application",
+   "3a06545b-7f08-470d-ba92-72a351277c10",
+   "qa-cr1-a8392f15-app-nc"
+  ]
+ ],
+ "cases": [
+  {
+   "case_id": "SYS-48/E2E-12",
+   "at_utc": "2026-10-16T10:13:07Z",
+   "new_status": "PASS",
+   "new_conclusion": "COMMAND 健康检查：target=true 部署 SUCCESS 且与 systemd 实际状态一致（active/PID）；stop 后 API=stopped 且 PID=0；start 恢复 active；target=false 时部署 FAILED、回滚成功、旧版本 SHA 还原且服务重新 active",
+   "evidence": [
+    "evidence/app-hc.json"
+   ],
+   "extra": {
+    "positive_deploy_success": true,
+    "healthy_state_active": true,
+    "stop_leaves_pid0": true,
+    "stop_reports_stopped": true,
+    "start_restores_active": true,
+    "negative_deploy_failed": true,
+    "negative_rollback_kind": [
+     "deployed",
+     "deployed",
+     ""
+    ],
+    "old_version_restored": true,
+    "negative_service_back_active": true,
+    "ok": true
+   }
+  },
+  {
+   "case_id": "E2E-13/SYS-51/AR-30/INV-11",
+   "at_utc": "2026-10-16T10:19:54Z",
+   "new_status": "PASS",
+   "new_conclusion": "真实 deploy 进行中（Journal=VERIFYING，二进制已替换为新版本）对 native-2 Agent 执行 SIGKILL：systemd 自动拉起后 RecoverDeployments 重放该行，回滚到崩溃前版本、Journal 收敛 DONE(rolled_back)，unit active，Desired==Actual，无伪成功",
+   "evidence": [
+    "evidence/app-crash.json"
+   ],
+   "extra": {
+    "crash_phase_was_intermediate": true,
+    "binary_was_replaced_before_crash": true,
+    "rolled_back_to_previous_version": true,
+    "crash_row_is_terminal_done": true,
+    "leftover_rows_untouched": [
+     "ROLLBACK_FAILED"
+    ],
+    "crash_row_converged_rolled_back": true,
+    "no_pseudo_success": true,
+    "unit_active_and_consistent": true,
+    "ok": true
+   }
+  },
+  {
+   "case_id": "AR-32",
+   "at_utc": "2026-10-16T10:22:22Z",
+   "new_status": "PARTIAL -> PASS",
+   "new_conclusion": "原状态（20261014/20261016 PAPP）PARTIAL：EPERM 被拒后 journal 停在 ROLLING_BACK，子重启后 RecoverDeployments 用陈旧 backup 覆盖已成功部署版本（SYSB12-DEFECT-01）。本次 CR-1 构建下：EPERM 部署 → 失败并落 ROLLBACK_FAILED（不再遗留 ROLLING_BACK）；重启恢复按「更晚成功部署取代」保留现状（adv/adv2，日志 superseded）；binding 漂移仍拒绝重放（bm）；陈旧行不再被误判取代而能收敛到终态（pfa/rba/unk → DONE(rolled_back)）。Desired==Actual 保持（宿主二进制 SHA 与最新成功制品一致）。",
+   "evidence": [
+    "evidence/app-scenarios.json",
+    "evidence/app-crash-recovery-logs.txt",
+    "evidence/app-adv-upgrade.json"
+   ],
+   "build_label": "dddee4f0-e2e-repair-20261016-cr1",
+   "hub_sha256": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+   "agent_sha256": "b15f6df540a63a8eb530ec837c57d4628ff7925822153a02d624f021a525ac4f"
+  },
+  {
+   "case_id": "SYS-51",
+   "at_utc": "2026-10-16T10:22:22Z",
+   "new_status": "PASS -> PASS",
+   "new_conclusion": "原状态 PASS（PREPARING 保守分支：文件保留、日志如实、无伪 DONE）。本次新增更深的崩溃点：真实 deploy 处于 VERIFYING（二进制已替换）时 SIGKILL，systemd 自动拉起后 RecoverDeployments 重放该行 → 回滚到崩溃前版本、journal 收敛 DONE(rolled_back)、unit active、无伪 healthy。",
+   "evidence": [
+    "evidence/app-crash.json",
+    "evidence/app-crash-recovery-logs.txt"
+   ],
+   "build_label": "dddee4f0-e2e-repair-20261016-cr1",
+   "hub_sha256": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+   "agent_sha256": "b15f6df540a63a8eb530ec837c57d4628ff7925822153a02d624f021a525ac4f"
+  },
+  {
+   "case_id": "SYS-48",
+   "at_utc": "2026-10-16T10:22:22Z",
+   "new_status": "PASS -> PASS",
+   "new_conclusion": "原状态 PASS（healthy/stopped 反馈与真实服务状态一致）。本次以 COMMAND 健康检查复跑：target=true 部署 SUCCESS 且 API 与 systemd active/PID 一致；stop 后 API=stopped、PID=0；start 恢复 active；target=false 时部署 FAILED、回滚还原旧版本二进制且服务重新 active（journal 记 ROLLBACK_FAILED 属回滚后健康校验的保守语义，见未完成项/备注）。",
+   "evidence": [
+    "evidence/app-hc.json"
+   ],
+   "build_label": "dddee4f0-e2e-repair-20261016-cr1",
+   "hub_sha256": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+   "agent_sha256": "b15f6df540a63a8eb530ec837c57d4628ff7925822153a02d624f021a525ac4f"
+  },
+  {
+   "case_id": "INV-11",
+   "at_utc": "2026-10-16T10:22:22Z",
+   "new_status": "PASS(受 P0-2 影响) -> PASS",
+   "new_conclusion": "原状态：恢复路径存在但会被陈旧 backup 覆盖（PASS_FOR_PREPARING_CONSERVATIVE_BRANCH/PARTIAL）。本次验证恢复路径在 CR-1 语义下完整可达：被取代→保留现状；非成功成因→重放收敛；绑定漂移→保留待人工检查；崩溃→回滚到已知状态。三类分支均有独立真实执行与日志。",
+   "evidence": [
+    "evidence/app-scenarios.json",
+    "evidence/app-crash.json",
+    "evidence/app-crash-recovery-logs.txt"
+   ],
+   "build_label": "dddee4f0-e2e-repair-20261016-cr1",
+   "hub_sha256": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+   "agent_sha256": "b15f6df540a63a8eb530ec837c57d4628ff7925822153a02d624f021a525ac4f"
+  },
+  {
+   "case_id": "E2E-13",
+   "at_utc": "2026-10-16T10:22:22Z",
+   "new_status": "PASS(保守分支) -> PASS(含终态收敛分支)",
+   "new_conclusion": "原状态 PASS_FOR_PREPARING_CONSERVATIVE_BRANCH（PREPARING 崩溃只保留文件、要求人工检查）。本次补齐「已替换后崩溃」分支：VERIFYING 期间崩溃 → 重启自动恢复为明确终态 DONE(rolled_back)，文件与 Desired State 一致，无伪 DONE/healthy。",
+   "evidence": [
+    "evidence/app-crash.json"
+   ],
+   "build_label": "dddee4f0-e2e-repair-20261016-cr1",
+   "hub_sha256": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+   "agent_sha256": "b15f6df540a63a8eb530ec837c57d4628ff7925822153a02d624f021a525ac4f"
+  },
+  {
+   "case_id": "AR-30",
+   "at_utc": "2026-10-16T10:22:22Z",
+   "new_status": "PASS -> PASS",
+   "new_conclusion": "原状态 PASS（崩溃后幂等、持久化、Desired State 与实际一致）。本次在 CR-1 构建下复跑：崩溃恢复后 journal 终态明确、宿主二进制等于崩溃前版本、unit active 且再次重启不再产生新动作（重放幂等）。",
+   "evidence": [
+    "evidence/app-crash.json",
+    "evidence/app-crash-recovery-logs.txt"
+   ],
+   "build_label": "dddee4f0-e2e-repair-20261016-cr1",
+   "hub_sha256": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+   "agent_sha256": "b15f6df540a63a8eb530ec837c57d4628ff7925822153a02d624f021a525ac4f"
+  },
+  {
+   "case_id": "E2E-12",
+   "at_utc": "2026-10-16T10:22:22Z",
+   "new_status": "PASS -> PASS",
+   "new_conclusion": "原状态 PASS（v1→v2 升级成功；失败恢复旧版本）。本次 CR-1 构建下：真实 v1→v2→v3 逐级升级成功且宿主二进制 SHA 与制品逐一对应；失败尝试（健康检查失败 / 安装 EPERM）均回滚还原旧版本；同定义重复部署幂等（adv2 pfa 等场景二次部署）。",
+   "evidence": [
+    "evidence/app-adv-upgrade.json",
+    "evidence/app-hc.json",
+    "evidence/app-scenarios.json"
+   ],
+   "build_label": "dddee4f0-e2e-repair-20261016-cr1",
+   "hub_sha256": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+   "agent_sha256": "b15f6df540a63a8eb530ec837c57d4628ff7925822153a02d624f021a525ac4f"
+  },
+  {
+   "case_id": "SYS-56",
+   "at_utc": "2026-10-16T10:22:22Z",
+   "new_status": "PASS -> PASS",
+   "new_conclusion": "原状态 PASS（路径逃逸防护）。本次复跑：Hub 拒绝相对/含 ../NUL 的 app 定义（400，行数不变）与非法传输目的地（400，含 traversal 文案）；Agent 对 //、/./、尾随 / 三类非 clean 绝对路径返回 FAILED invalid deployment path 且无文件副作用；symlink 目的地被拒且 victim 文件 SHA 不变；非 clean 传输目的地由 Agent 侧拒绝（invalid absolute path）。allowlist 段不可复现（repair 节点未配置 HostPathAllowlist，见备注）。",
+   "evidence": [
+    "evidence/sys56-paths.json",
+    "evidence/sys56-paths-attempt1.json"
+   ],
+   "build_label": "dddee4f0-e2e-repair-20261016-cr1",
+   "hub_sha256": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+   "agent_sha256": "b15f6df540a63a8eb530ec837c57d4628ff7925822153a02d624f021a525ac4f"
+  }
+ ],
+ "steps": {},
+ "host_paths": [
+  {
+   "host": "192.168.100.206",
+   "path": "/opt/qa-cr1-a8392f15-app",
+   "role": "qa-cr1 app fixtures"
+  }
+ ],
+ "node_ids": {
+  "qa-repair-20260930-101945-native-1": "91f44866-8a28-435e-bbda-2f2367126c00",
+  "qa-repair-20260930-101945-native-2": "611c02a5-1859-4465-878b-d543b7f6fdec",
+  "qa-repair-20260930-101945-native-3": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+  "qa-repair-20260930-101945-native-4": "03cb50cc-eab6-4afd-bbe0-f73c4e326773",
+  "native-2": "611c02a5-1859-4465-878b-d543b7f6fdec"
+ },
+ "agent_db_native_2": "/var/lib/nodesteer-repair-20260930-101945/native-2/state.db",
+ "setup": {
+  "at_utc": "2026-10-16T10:02:50Z",
+  "root": "/opt/qa-cr1-a8392f15-app",
+  "agent_db": "/var/lib/nodesteer-repair-20260930-101945/native-2/state.db",
+  "apps": {
+   "adv": {
+    "app_id": "3c66b54c-8888-4d2a-a362-036234b0d49f",
+    "name": "qa-cr1-a8392f15-app-adv",
+    "bin": "/opt/qa-cr1-a8392f15-app/bin-adv/app",
+    "cfg": "/opt/qa-cr1-a8392f15-app/cfg-adv/app.env",
+    "unit": "qa-cr1-a8392f15-app-adv.service",
+    "assign_http": 200
+   },
+   "adv2": {
+    "app_id": "430cc09f-b744-4267-84e5-abe6de2dbf9c",
+    "name": "qa-cr1-a8392f15-app-adv2",
+    "bin": "/opt/qa-cr1-a8392f15-app/bin-adv2/app",
+    "cfg": "/opt/qa-cr1-a8392f15-app/cfg-adv2/app.env",
+    "unit": "qa-cr1-a8392f15-app-adv2.service",
+    "assign_http": 200
+   },
+   "pfa": {
+    "app_id": "3a3b6d86-2565-4dc9-aee5-19342ac18c25",
+    "name": "qa-cr1-a8392f15-app-pfa",
+    "bin": "/opt/qa-cr1-a8392f15-app/bin-pfa/app",
+    "cfg": "/opt/qa-cr1-a8392f15-app/cfg-pfa/app.env",
+    "unit": "qa-cr1-a8392f15-app-pfa.service",
+    "assign_http": 200
+   },
+   "rba": {
+    "app_id": "eac58123-4f52-4cfb-8ef0-d0b2c6db01a7",
+    "name": "qa-cr1-a8392f15-app-rba",
+    "bin": "/opt/qa-cr1-a8392f15-app/bin-rba/app",
+    "cfg": "/opt/qa-cr1-a8392f15-app/cfg-rba/app.env",
+    "unit": "qa-cr1-a8392f15-app-rba.service",
+    "assign_http": 200
+   },
+   "unk": {
+    "app_id": "c09b5e80-5bbd-4a12-8605-70c33bcae120",
+    "name": "qa-cr1-a8392f15-app-unk",
+    "bin": "/opt/qa-cr1-a8392f15-app/bin-unk/app",
+    "cfg": "/opt/qa-cr1-a8392f15-app/cfg-unk/app.env",
+    "unit": "qa-cr1-a8392f15-app-unk.service",
+    "assign_http": 200
+   },
+   "bm": {
+    "app_id": "e973b9fc-66de-4629-ad4c-a74e38756c9e",
+    "name": "qa-cr1-a8392f15-app-bm",
+    "bin": "/opt/qa-cr1-a8392f15-app/bin-bm/app",
+    "cfg": "/opt/qa-cr1-a8392f15-app/cfg-bm/app.env",
+    "unit": "qa-cr1-a8392f15-app-bm.service",
+    "assign_http": 200
+   },
+   "hc": {
+    "app_id": "7833475b-7c2b-4246-a747-acc62156e5ba",
+    "name": "qa-cr1-a8392f15-app-hc",
+    "bin": "/opt/qa-cr1-a8392f15-app/bin-hc/app",
+    "cfg": "/opt/qa-cr1-a8392f15-app/cfg-hc/app.env",
+    "unit": "qa-cr1-a8392f15-app-hc.service",
+    "assign_http": 200
+   },
+   "crash": {
+    "app_id": "ce880861-dc1f-4845-a8ec-abf3c28eee12",
+    "name": "qa-cr1-a8392f15-app-crash",
+    "bin": "/opt/qa-cr1-a8392f15-app/bin-crash/app",
+    "cfg": "/opt/qa-cr1-a8392f15-app/cfg-crash/app.env",
+    "unit": "qa-cr1-a8392f15-app-crash.service",
+    "assign_http": 200
+   },
+   "nc": {
+    "app_id": "3a06545b-7f08-470d-ba92-72a351277c10",
+    "name": "qa-cr1-a8392f15-app-nc",
+    "bin": "/opt/qa-cr1-a8392f15-app/bin-nc-app/app",
+    "cfg": "/opt/qa-cr1-a8392f15-app/cfg-nc/app.env",
+    "unit": "qa-cr1-a8392f15-app-nc.service"
+   }
+  },
+  "artifacts": {
+   "v1": {
+    "id": "6e53ca84-d7fc-43ae-bd4e-366dfbe64bae",
+    "sha256": "325e652b26b28475291d2bc8c48f5d8af4a53d0c57117a19306024f53a744941",
+    "name": "qa-cr1-a8392f15-artifact-v1",
+    "size": 4129
+   },
+   "v2": {
+    "id": "f25871e1-c3f7-4c3c-83dd-a3253039e234",
+    "sha256": "a2a9bd217dc53c33b07052375d18d91b782d5b7bc432ecfda31b1a016bcb71a1",
+    "name": "qa-cr1-a8392f15-artifact-v2",
+    "size": 4129
+   },
+   "v3": {
+    "id": "2e3c7ac2-b2af-4634-9ed7-46c567dc0d4f",
+    "sha256": "356fd7aa817e6e10d30f82abed8b51cf1405ab3a029f198bf5428e4935d9a6a2",
+    "name": "qa-cr1-a8392f15-artifact-v3",
+    "size": 4129
+   }
+  },
+  "root_mkdir": {
+   "rc": 0
+  }
+ },
+ "transfers": [
+  "4ab0f3d8-6544-47f7-9eb0-865e6bf4a00e",
+  "9ac5218b-8a22-435b-85c1-3e41436de51b"
+ ]
+}

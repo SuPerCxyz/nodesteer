@@ -1,0 +1,26 @@
+{
+  "attempt": "attempt02",
+  "outcome": "aborted by a harness bug (frame-proxy mutex deadlock), not a product failure",
+  "at_utc_range": ["2026-10-15T12:48:10Z", "2026-10-15T12:54:30Z"],
+  "nonce": "f7549c600f26",
+  "last_progress_phase": "apply_and_broadcast",
+  "root_cause": "harness/runners/frame_proxy.py used a non-reentrant threading.Lock and FrameProxy._record() (which holds the lock) called FrameProxy._event() (which acquires the same lock) when the first hub->agent SETTINGS frame arrived. The proxy's relay coroutine blocked forever holding the mutex, so the child Agent stopped receiving frames and went offline, and the batch's main thread blocked in proxy.state().",
+  "diagnosis_evidence": {
+    "child_process_alive": "pgrep on 192.168.100.247 showed the owned agent still running",
+    "child_node_status": "offline",
+    "settings_at_hang": {"heartbeat_interval_sec": "3", "revision_check_interval_sec": "5", "max_log_bytes": "2048"},
+    "stuck_phase_since_utc": "2026-10-15T12:50:10Z"
+  },
+  "fix": "FrameProxy now uses threading.RLock and _record() dispatches _event() outside the locked region.",
+  "immediate_remediation": {
+    "tool": "runners/abort_cleanup.py f7549c600f26 503b1ea4-9503-4230-b458-0ce1d96dde71",
+    "settings_restored": true,
+    "child_removed": {"signalled": [170749], "remaining_processes": [], "root_removed": true},
+    "child_node_delete_http": 200,
+    "child_node_get_http_after": 404,
+    "no_scripts_or_tasks_had_been_created": true,
+    "protected_units_touched": 0,
+    "vms_restarted": 0
+  },
+  "conclusion": "harness defect, not a product defect; no product behaviour conclusion is drawn from attempt02"
+}

@@ -1,0 +1,102 @@
+{
+  "run_id": "20260930-101945",
+  "audit_scope": "existing evidence only; no SSH, no new E2E, no product or global-record changes",
+  "global_snapshot": {
+    "coverage_updated_at": "2026-10-03T15:49:53.210092+00:00",
+    "total_cases": 504,
+    "statuses": {"PASS": 315, "FAIL": 42, "PARTIAL": 146, "BLOCKED": 1},
+    "confirmed_product_failures": 22,
+    "status": "running"
+  },
+  "cases": [
+    {
+      "case_id": "P03-09",
+      "status": "PASS",
+      "status_scope": "environment/empty-ttl isolated real Hub UI run",
+      "global_status": "PARTIAL",
+      "covered": [
+        "Fresh isolated administrator login and /api/me HTTP 200.",
+        "Real empty API arrays for nodes, executions, applications, schedules, and tasks.",
+        "Dashboard showed zero running/failure counts and applicable no-running/no-app/no-schedule and empty recent-execution states.",
+        "No Agent registration or business-resource creation."
+      ],
+      "remaining": [],
+      "evidence": [
+        {"path": ".e2e/runs/20260930-101945/environment/empty-ttl/empty-ttl-summary.json", "exists": true},
+        {"path": ".e2e/runs/20260930-101945/environment/empty-ttl/dashboard-empty-isolated.png", "exists": true}
+      ],
+      "status_note": "Global P03-09 remains PARTIAL because the separate primary-Hub scenario retains failed executions; this isolated empty-Hub result does not establish the primary-Hub empty-failure state."
+    },
+    {
+      "case_id": "FL-14",
+      "status": "FAIL",
+      "status_scope": "environment/empty-ttl real TTL=3s session expiry run",
+      "global_status": "NOT_RUN",
+      "covered": [
+        "Fresh login and /api/me HTTP 200; expiry was allowed to elapse for 5.512 seconds without changing clocks.",
+        "Dashboard made real API requests and received HTTP 401 after expiry.",
+        "Post-401 URL, login form, and localStorage token state were captured.",
+        "Protected same-origin /executions return target was retained through fresh UI login."
+      ],
+      "remaining": ["Automatic redirect from expired Dashboard to /sign-in was not observed."],
+      "evidence": [
+        {"path": ".e2e/runs/20260930-101945/environment/empty-ttl/empty-ttl-summary.json", "exists": true},
+        {"path": ".e2e/runs/20260930-101945/environment/empty-ttl/dashboard-ttl-expired.png", "exists": true}
+      ],
+      "status_note": "The saved run result is FAIL while global coverage/case inventory has not yet incorporated it and still says NOT_RUN."
+    },
+    {
+      "case_id": "P14P15-12",
+      "title": "Admin/operator/viewer application deploy and definition permissions",
+      "status": "PARTIAL",
+      "status_sources": {
+        "global_coverage": "PARTIAL",
+        "global_feature_inventory": "PARTIAL",
+        "web_case_inventory": "NOT_RUN"
+      },
+      "covered": [
+        "Operator UI hid create/actions/save controls and disabled assigned-node selection; direct create/PUT/DELETE returned 403; definition remained unchanged.",
+        "Operator deploy API returned HTTP 200. The associated execution reached SUCCESS; application state reported operation=deploy and health=healthy.",
+        "Guest evidence showed the managed unit active, binary installed, and operator config present.",
+        "Viewer UI hid create/actions/deploy/save controls; direct create/PUT/DELETE/deploy returned 403 and no execution was created.",
+        "The follow-up audit fields and resource evidence were saved."
+      ],
+      "remaining": [
+        "Admin-specific deploy/definition-permission path is not established by this evidence set.",
+        "The Operator UI feedback portion did not pass: health card still showed '暂无节点健康状态' and execution-history SUCCESS row count was 0 despite successful API execution and healthy Guest state.",
+        "Do not promote the overall P14P15-12 case to PASS based only on the successful Operator deployment."
+      ],
+      "fixture_failure_vs_product_issue": {
+        "initial_attempt": "luna-role-app-permissions-results.json timed out waiting for execution.status=SUCCESS and observed undefined. The initial omission of application arguments is classified as a fixture/harness failure; the independently saved API/Guest record proves the deployment itself succeeded, so this attempt is not a new product defect.",
+        "corrected_attempt": "luna-role-app-permissions-fixed-results.json failed the UI health-card assertion: expected deploy, received '健康检查·暂无节点健康状态'. The saved API and Guest evidence still reports successful/healthy deployment.",
+        "product_issue_mapping": "The corrected UI symptom matches the existing WEB-APP-LIVE-STATE finding (stale/empty Health and Execution History feedback after a successful operation); retain that existing failure and do not count a duplicate defect."
+      },
+      "cleanup": {
+        "unit_and_directory": "Removed; cleanup evidence says unit_removed=true and directory_removed=true. Final-state evidence confirms both owned units inactive, unit files absent, no owned files remaining, cleanup_confirmed=true.",
+        "application_and_artifact": "The run resource log records DELETE cleanup for the exact application and artifact IDs.",
+        "qa_account": "test-data retains the QA account as role=viewer. Test finally block closes role sessions and restores Viewer; per-session logout HTTP results for this application suite are not separately persisted in its evidence JSON.",
+        "evidence": [
+          {"path": ".e2e/runs/20260930-101945/web/evidence/role-application-unit-cleanup.json", "exists": true},
+          {"path": ".e2e/runs/20260930-101945/web/evidence/role-application-units-final-state.json", "exists": true},
+          {"path": ".e2e/runs/20260930-101945/web/playwright-resources.jsonl", "exists": true},
+          {"path": ".e2e/runs/20260930-101945/web/test-data.json", "exists": true}
+        ]
+      },
+      "evidence": [
+        {"path": ".e2e/coverage.json", "exists": true},
+        {"path": ".e2e/feature-inventory.json", "exists": true},
+        {"path": ".e2e/runs/20260930-101945/web/case-inventory.json", "exists": true},
+        {"path": ".e2e/runs/20260930-101945/web/luna-role-app-permissions-results.json", "exists": true},
+        {"path": ".e2e/runs/20260930-101945/web/luna-role-app-permissions-fixed-results.json", "exists": true},
+        {"path": ".e2e/runs/20260930-101945/web/luna-role-app-permissions-fixed-run.json", "exists": true},
+        {"path": ".e2e/runs/20260930-101945/web/evidence/role-application-permissions.json", "exists": true},
+        {"path": ".e2e/runs/20260930-101945/web/failures.json", "exists": true},
+        {"path": ".e2e/failures.json", "exists": true}
+      ],
+      "evidence_limitations": [
+        "Both Playwright JSON results reference a private error-context.md attachment that is no longer present. The result JSON itself retains the assertion message and stack; this missing attachment is not used as the sole basis for the conclusion."
+      ]
+    }
+  ],
+  "secret_handling": "No passwords, tokens, cookies, authorization headers, or private logs copied into this report."
+}

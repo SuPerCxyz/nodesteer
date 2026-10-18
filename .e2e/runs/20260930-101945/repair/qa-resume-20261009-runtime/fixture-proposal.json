@@ -1,0 +1,100 @@
+{
+  "run_id": "20260930-101945",
+  "case_id": "E2E-20260930-101945-P0-002",
+  "proposal_status": "PARENT_APPROVED_CHILD_SETUP_ONLY",
+  "fault_injection_status": "WAITING_PARENT_REVIEW_AFTER_CHILD_PREFLIGHT",
+  "authorization": "Parent approved an isolated child Agent on Native-1 using the repair binary, then preflight only. Parent approval for PREPARING fault injection is still required after reviewing the child ledger and source definitions.",
+  "observed_parent_agent": {
+    "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+    "node_name": "qa-repair-20260930-101945-native-1",
+    "agent_version": "dddee4f0-e2e-repair-20261004",
+    "service_unit": "nodesteer-agent-repair-20260930-101945-native-1.service",
+    "pid_at_discovery": 33342,
+    "starttime_ticks_at_discovery": 84203924,
+    "uid": 0,
+    "executable": "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent",
+    "executable_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "config_path_only": "/etc/nodesteer/repair-20260930-101945/native-1.yaml",
+    "cgroup": "/system.slice/nodesteer-agent-repair-20260930-101945-native-1.service",
+    "evidence": "native1-ancestor-probe-evidence.json"
+  },
+  "owner_nonce": "870358cd92ee",
+  "target_host_node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+  "new_identity": {
+    "node_name": "qa-resume-20261009-native1-p0-002-child-870358cd92ee",
+    "node_ip": "qa-resume-20261009-native1-p0-002-870358cd92ee.example.test",
+    "agent_id": "generated_by_repair_enrollment_in_memory",
+    "node_id": "generated_by_repair_enrollment_in_memory",
+    "must_be_unique_against": "all 5 current nodes by exact node_name and node_ip before enrollment"
+  },
+  "endpoint_policy": {
+    "all_management_api_calls": "http://192.168.100.209:18080 only",
+    "hub_address_sent_to_enrollment": "http://192.168.100.209:18080",
+    "child_agent_gateway": "use gateway_url returned by this exact repair enrollment response; never substitute primary:8080 or guess another URL",
+    "guest_ssh": "not used"
+  },
+  "owned_host_paths": {
+    "root": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee",
+    "root_owner": "uid 0 / gid 0",
+    "root_mode": "0700",
+    "config": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/agent.yaml (0600; contains new Agent registration credential; never copy into evidence)",
+    "state_and_database": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/state/",
+    "logs": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/log/agent.log",
+    "application_root_reserved_for_later_approval": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/app/",
+    "deployment_backups": "child data directory applications/ only"
+  },
+  "child_agent_unit": {
+    "name": "nodesteer-qa-e2e-20261009-p0-002-native1-870358cd92ee.service",
+    "kind": "systemd-run transient service; do not install a unit file",
+    "executable": "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent",
+    "executable_sha256_required": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "argv": ["/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent", "--config", "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/agent.yaml"],
+    "properties": {"User": "root", "Restart": "no", "KillMode": "control-group", "RuntimeMaxSec": "1800s", "TimeoutStopSec": "3s", "StandardOutput": "append:<owned-root>/log/agent.log", "StandardError": "append:<owned-root>/log/agent.log"},
+    "parent_agent_and_baseline_unit": "preserve; no operation"
+  },
+  "later_application_unit_reserved_for_parent_approval": {
+    "name": "nodesteer-qa-e2e-20261009-p0-002-app-870358cd92ee.service",
+    "binary_path": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/app/bin/qa-app",
+    "config_path": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/app/config/qa-app.env",
+    "unit_path": "/etc/systemd/system/nodesteer-qa-e2e-20261009-p0-002-app-870358cd92ee.service",
+    "creation_gate": "do not create Application, Artifact, Task, or application unit until parent reviews child preflight ledger and explicitly approves PREPARING case setup"
+  },
+  "credential_handling": {
+    "enrollment_response": "keep registration_token in local process memory only",
+    "transport_to_owned_setup_task": "one-time required secret parameter; task command contains no token; Agent SecretValues redaction enabled",
+    "remote_setup": "write token only into owned agent.yaml with 0600, strip parameter env before systemd-run, never emit config or token",
+    "evidence": "store only IDs, paths, hashes, status; no token/credential value or config content"
+  },
+  "preflight_steps": [
+    "recheck all current nodes for exact node_name/node_ip collision before enrollment",
+    "on Native-1, atomically mkdir the exact absent QA root with 0700; abort if it exists or is not root-owned",
+    "verify repair executable SHA equals manifest d55dc5cd... before use",
+    "check unique transient unit is not loaded; verify original Native-1 repair and baseline units are active and fingerprints unchanged",
+    "write private config atomically mode 0600 and state/log directories mode 0700 beneath owned root",
+    "systemd-run only the new unique child unit with Restart=no/KillMode=control-group and owned log paths",
+    "verify child process PID/startticks/UID/argv/config path/exe SHA/cgroup and node online/synced via repair API",
+    "verify original service fingerprints remain unchanged; do not perform PREPARING injection in this stage"
+  ],
+  "fault_signal_guard_for_later_parent_approval": {
+    "source": "separate NodeSteer Command Task on Native-1, not a command running under the child being killed",
+    "database": "open only child state DB using SQLite mode=ro; never update Journal directly",
+    "trigger": "exact owned application deployment row for PREPARING with all three backup path fields empty and old binary/config/unit hashes still matching captured v1",
+    "recheck_before_SIGSTOP_and_before_SIGKILL": ["unit MainPID", "PID starttime ticks", "UID 0", "full argv matches exact owned config path", "exe SHA is manifest d55dc5cd...", "PID's cgroup equals exact unique child Unit ControlGroup", "unique owner nonce/root still match"],
+    "abort_on_mismatch": true,
+    "after_fault": "SIGKILL only this verified child Agent PID; never systemctl stop/kill parent services; later restart only the exact child unit after reset-failed"
+  },
+  "cleanup_plan": [
+    "keep child running until owned Application tombstone is synced; let CleanupApplication remove only registered unique app Unit and its unique binary/config paths",
+    "verify app Unit inactive and absent, app binary/config absent; delete only QA Tasks, Application and Artifacts by captured IDs and verify each GET 404",
+    "verify child process identity and exact unique ControlGroup before systemctl stop of child unit; reset-failed this exact transient unit and verify LoadState=not-found",
+    "delete the unique QA Node only after child has stopped; verify GET 404",
+    "remove exact QA root only after verifying uid/gid/mode and owner nonce; record remaining files before deletion",
+    "verify Native-1 baseline PID 24684/startticks 59589521 and repair PID captured in current preflight remain unchanged/active; verify other 3 Agents, Hub and pre-existing backups unchanged"
+  ],
+  "scope_limits": [
+    "This proposal authorizes child creation and preflight only; PREPARING fault injection awaits another parent review.",
+    "No HostIntegration container or added capability/mount; historical runner on another VM is read-only reference only.",
+    "No TLS endpoint or private-CA mutation; TLS-001 remains unrun unless a separately approved isolated runner is proven.",
+    "No primary:8080 writes, no original Agent stop/signal, no QGA bypass, no AGENTS/source edits, no Git/OpenSpec archive."
+  ]
+}

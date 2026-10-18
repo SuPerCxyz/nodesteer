@@ -1,0 +1,9 @@
+{
+  "post_run_additions": [
+    "evidence/phase0-untouched-units-after.json - identical read-only unit probe repeated AFTER the batch; compared with evidence/phase0-untouched-units.json it shows every protected Agent and the primary Hub kept the same MainPID, while only the repair Hub MainPID changed (authorised restart).",
+    "evidence/attempt01-harness-bug/ - artifacts of the first attempt, kept unmodified. It failed on a harness bug (the repair-Hub restart invalidated the management API session, so the client did not re-authenticate; plus a %-formatting bug in the child remove helper). Both were fixed and the batch was re-run completely (EXIT=0); the report above is the second, complete run.",
+    "Repair-Hub restart count for the whole sys-b01 batch: 2 (one per attempt). Attempt 1 restarted the unit once (MainPID 5952 -> 97295) and then aborted on the harness bug; attempt 2 restarted it again (MainPID 97295 -> 97389) and completed. The unit is active at the end of the batch and /healthz, /readyz both answer 200; no protected Agent unit and no primary-Hub unit was ever restarted.",
+    "Product observation (not a failure): the repair Hub keeps management sessions in memory, so the first API call after the restart returned 401 \"invalid or expired session\" and the client re-authenticated once. Recorded in evidence/phase6-post-restart.json -> management_session_after_restart."
+  ],
+  "claims_changed": false
+}

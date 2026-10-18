@@ -1,0 +1,107 @@
+{
+  "result": {
+    "id": "feature.docker.cache-preservation",
+    "name": "Docker保卷重建真实缓存SHA与identity保持",
+    "started_at": "2026-10-01T01:34:07.028763+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-10-01T01:34:14.077082+00:00",
+    "evidence": "backend/isolated/evidence/feature.docker.cache-preservation-3bc4fc69.json"
+  },
+  "events": [
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT sha256,path FROM artifacts' '[]'",
+      "exit_code": 0,
+      "stdout": "[{\"sha256\": \"98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5\", \"path\": \"/var/lib/nodesteer/artifacts/98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5\"}, {\"sha256\": \"ae66ddef6fb319b9c8a291f104bbea673009cce5b4ab925f7d7f8eee37888e22\", \"path\": \"/var/lib/nodesteer/artifacts/ae66ddef6fb319b9c8a291f104bbea673009cce5b4ab925f7d7f8eee37888e22\"}]\n",
+      "stderr": ""
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "sha256sum /var/lib/nodesteer/artifacts/98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5\n",
+      "exit_code": 0,
+      "stdout": "98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5  /var/lib/nodesteer/artifacts/98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5\n",
+      "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "sha256sum /var/lib/nodesteer/artifacts/ae66ddef6fb319b9c8a291f104bbea673009cce5b4ab925f7d7f8eee37888e22\n",
+      "exit_code": 0,
+      "stdout": "ae66ddef6fb319b9c8a291f104bbea673009cce5b4ab925f7d7f8eee37888e22  /var/lib/nodesteer/artifacts/ae66ddef6fb319b9c8a291f104bbea673009cce5b4ab925f7d7f8eee37888e22\n",
+      "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys,hashlib; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); r=c.execute('\"'\"'select key,value from identity order by key'\"'\"').fetchall(); print(json.dumps({'\"'\"'keys'\"'\"':[v[0] for v in r],'\"'\"'fingerprint'\"'\"':hashlib.sha256(json.dumps(r).encode()).hexdigest(),'\"'\"'revision'\"'\"':c.execute('\"'\"'select global_revision from sync_state where id=1'\"'\"').fetchone()[0]}))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data",
+      "exit_code": 0,
+      "stdout": "{\"keys\": [\"agent_id\", \"credential\", \"node_id\"], \"fingerprint\": \"a79bc63b1a70e6fa38102c1437bbd9bc40278837c629ea47e4bd291da35a83a4\", \"revision\": 172}\n",
+      "stderr": ""
+    },
+    {
+      "control": "docker rm -f qa-20260930-101945-env-agent",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-env-agent\n",
+      "stderr": ""
+    },
+    {
+      "control": "docker run -d --name qa-20260930-101945-env-agent --network qa-20260930-101945-env-net --restart unless-stopped --hostname 6f6041279833 -v qa-20260930-101945-env-agentdata:/var/lib/nodesteer -e NODESTEER_DEPLOYMENT_MODE=docker -e NODESTEER_DATA_DIR=/var/lib/nodesteer -e PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin -e NODESTEER_HUB_URL=ws://192.168.100.209:18084/ws -e NODESTEER_REGISTRATION_TOKEN=[redacted] -e NODESTEER_AGENT_ID=agent-9b83b1d6-e376-4e76-a46f-f5c45e495329 -e NODESTEER_NODE_NAME=qa-20260930-101945-env-docker-agent -e NODESTEER_NODE_IP=192.168.100.209 qa-20260930-101945-env-agent:dddee4f0",
+      "exit_code": 0,
+      "stdout": "50db17778d32a1ae2b457037c94e07121fd31f22589efab5392692ba27148911\n",
+      "stderr": ""
+    },
+    {
+      "core_node": {
+        "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "hostname": "qa-20260930-101945-env-docker-agent",
+        "ip": "192.168.100.209",
+        "os": "Alpine Linux v3.20",
+        "arch": "amd64",
+        "agent_version": "dddee4f0",
+        "deployment_mode": "docker",
+        "host_integration": false,
+        "status": "online",
+        "labels": {},
+        "capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        },
+        "global_revision": 172,
+        "sync_status": "synced",
+        "last_seen": "2026-10-01T01:34:10.954610569Z",
+        "first_seen": "2026-09-30T02:36:32.656149623Z"
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT sha256,path FROM artifacts' '[]'",
+      "exit_code": 0,
+      "stdout": "[{\"sha256\": \"98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5\", \"path\": \"/var/lib/nodesteer/artifacts/98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5\"}, {\"sha256\": \"ae66ddef6fb319b9c8a291f104bbea673009cce5b4ab925f7d7f8eee37888e22\", \"path\": \"/var/lib/nodesteer/artifacts/ae66ddef6fb319b9c8a291f104bbea673009cce5b4ab925f7d7f8eee37888e22\"}]\n",
+      "stderr": ""
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "sha256sum /var/lib/nodesteer/artifacts/98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5\n",
+      "exit_code": 0,
+      "stdout": "98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5  /var/lib/nodesteer/artifacts/98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5\n",
+      "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "sha256sum /var/lib/nodesteer/artifacts/ae66ddef6fb319b9c8a291f104bbea673009cce5b4ab925f7d7f8eee37888e22\n",
+      "exit_code": 0,
+      "stdout": "ae66ddef6fb319b9c8a291f104bbea673009cce5b4ab925f7d7f8eee37888e22  /var/lib/nodesteer/artifacts/ae66ddef6fb319b9c8a291f104bbea673009cce5b4ab925f7d7f8eee37888e22\n",
+      "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys,hashlib; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); r=c.execute('\"'\"'select key,value from identity order by key'\"'\"').fetchall(); print(json.dumps({'\"'\"'keys'\"'\"':[v[0] for v in r],'\"'\"'fingerprint'\"'\"':hashlib.sha256(json.dumps(r).encode()).hexdigest(),'\"'\"'revision'\"'\"':c.execute('\"'\"'select global_revision from sync_state where id=1'\"'\"').fetchone()[0]}))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data",
+      "exit_code": 0,
+      "stdout": "{\"keys\": [\"agent_id\", \"credential\", \"node_id\"], \"fingerprint\": \"a79bc63b1a70e6fa38102c1437bbd9bc40278837c629ea47e4bd291da35a83a4\", \"revision\": 172}\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,235 @@
+{
+  "run_id": "20260930-101945",
+  "owner": "web",
+  "failures": [
+    {
+      "id": "WEB-SECRET-DEFAULT",
+      "severity": "high",
+      "status": "OPEN",
+      "title": "Script/Task Editor secret参数默认值摘要明文展示",
+      "steps": [
+        "打开/scripts/new",
+        "添加type=secret且非敏感默认值QA_NON_SENSITIVE_SECRET_MARKER",
+        "观察参数摘要列表"
+      ],
+      "expected": "secret值在页面摘要遮蔽",
+      "actual": "main可见完整标记",
+      "evidence": [
+        "evidence/secret-default-repro.json",
+        "evidence/secret-default-repro.png",
+        "final-results.json",
+        "evidence/task-pending-secret.json",
+        "gap-core-results.json"
+      ],
+      "source": "web/src/features/editors/index.tsx:632",
+      "related_root_evidence": "../main/secret-log-independent-check.json",
+      "relation": "同类保密风险、不同位置；backend跨块日志泄露另由root维护",
+      "task_extension": "Task独立摘要直接渲染item.default；同类保密问题扩展影响，不重复计bug"
+    },
+    {
+      "id": "WEB-LIVE-LOG",
+      "severity": "medium",
+      "status": "OPEN",
+      "title": "Execution详情已有chunks后新日志及终态stdout不更新",
+      "steps": [
+        "运行echo first;sleep 6;echo second",
+        "Hub收到first日志后打开执行详情",
+        "等API SUCCESS且stdout含second"
+      ],
+      "expected": "页面日志显示first和second",
+      "actual": "8秒后pre仅first；刷新才取得全部chunks",
+      "evidence": [
+        "final-results.json"
+      ],
+      "source": "web/src/features/executions/index.tsx:369"
+    },
+    {
+      "id": "WEB-APP-LIVE-STATE",
+      "severity": "medium",
+      "status": "OPEN",
+      "title": "Managed Application操作成功后Health/Execution History仍旧状态",
+      "steps": [
+        "创建本轮ELF应用并分配Agent1",
+        "通过UI逐项deploy/stop/start/restart/upgrade",
+        "等待API SUCCESS并检查guest Unit/config/SHA",
+        "读取当前Health/History，再刷新"
+      ],
+      "expected": "当前详情反馈最新健康与执行终态",
+      "actual": "当前卡片仍空/旧operation/旧SUCCESS数量；刷新后正确；五种操作真实客户机效果正确",
+      "evidence": [
+        "managed-app-complete-results.json",
+        "evidence/managed-app-cb765bf3-cleanup.json",
+        "evidence/managed-app-5994994a-cleanup.json",
+        "evidence/managed-app-f504bb57-cleanup.json",
+        "evidence/managed-app-4ee17830-cleanup.json"
+      ],
+      "source": "web/src/features/editors/index.tsx:942"
+    },
+    {
+      "id": "ROOT-SESSION-401",
+      "severity": "medium",
+      "status": "LINKED",
+      "title": "停留页真实会话失效后401不自动回登录",
+      "evidence": [
+        "../main/failures.json",
+        "../main/session-expiry-network.json"
+      ],
+      "root_id": "E2E-20260930-101945-P1-001",
+      "relation": "引用主控独立复现，不重复登记为新增缺陷"
+    },
+    {
+      "id": "WEB-EXEC-SEARCH-PAGE",
+      "severity": "medium",
+      "status": "OPEN",
+      "title": "Execution/Audit搜索仅过滤当前服务端页",
+      "steps": [
+        "保证21条以上真实记录",
+        "取第21条ID",
+        "第一页输入该ID搜索"
+      ],
+      "actual": "没有结果，对象仍存在",
+      "evidence": [
+        "safe-tables-results.json",
+        "evidence/execution-cross-page-search.json",
+        "evidence/audit-cross-page-search.json",
+        "gap-audit-tables-verified-results.json"
+      ],
+      "source": "web/src/features/executions/index.tsx:108",
+      "audit_extension": "同DataTable本地搜索根因；Audit已用实际offset0/10独立验证"
+    },
+    {
+      "id": "WEB-AUTH-SIGN-IN",
+      "severity": "medium",
+      "status": "OPEN",
+      "title": "已认证访问/sign-in仍显示登录表单",
+      "steps": [
+        "真实登录并/api/me200",
+        "直接访问/sign-in",
+        "等待5秒"
+      ],
+      "expected": "回到业务页",
+      "actual": "仍/sign-in并显示用户名/密码表单",
+      "evidence": [
+        "root-gap-round2-results.json",
+        "evidence/authenticated-sign-in.json",
+        "evidence/authenticated-sign-in.png"
+      ],
+      "source": "web/src/features/auth/sign-in/index.tsx"
+    },
+    {
+      "id": "WEB-TASK-DELETE-CANCEL",
+      "severity": "medium",
+      "status": "OPEN",
+      "title": "Task删除取消后菜单残留并锁住页面",
+      "steps": [
+        "本轮Task列表操作→删除",
+        "确认框取消",
+        "Escape并等待3秒",
+        "再操作搜索/菜单"
+      ],
+      "expected": "取消0 DELETE并恢复页面交互",
+      "actual": "0 DELETE但body pointer-events:none，sidebar aria-hidden，open menu，AX操作0；刷新后恢复",
+      "evidence": [
+        "group-task-cancel-state-results.json",
+        "evidence/delete-cancel-tasks.json",
+        "evidence/delete-cancel-tasks.png",
+        "evidence/delete-cancel-groups.json",
+        "evidence/group-task-roundtrip.json"
+      ],
+      "source": "web/src/features/tasks/index.tsx:1535",
+      "cleanup": "刷新后确认删除/404，Group同流程正常"
+    },
+    {
+      "id": "WEB-TRANSFER-SOURCE-CHANGE",
+      "severity": "medium",
+      "status": "OPEN",
+      "title": "Transfer切换Source后已选目标成为自身且仍可开始",
+      "steps": [
+        "选择Source Node1/Target Agent4并添加目标",
+        "切Source为Agent4",
+        "观察目标草稿、目标下拉和Start"
+      ],
+      "expected": "维持Target不能选Source的当前UI约束，移除该草稿或禁用Start并提示",
+      "actual": "target selector已排除新Source，但旧target保留且Start enabled；API允许self不是API缺陷",
+      "evidence": [
+        "transfer-source-change-ui-results.json",
+        "evidence/execution-filter-transfer-draft.json",
+        "evidence/transfer-source-change-ui.png",
+        "evidence/transfer-source-change-self.json"
+      ],
+      "source": "web/src/features/transfers/index.tsx:263",
+      "resource_effect": "仅此前缺失QA源的self请求产生FAILED历史，无客户机写文件"
+    },
+    {
+      "id": "WEB-ROLE-LIVE-STATE",
+      "severity": "low",
+      "priority": "P2",
+      "status": "OPEN",
+      "title": "自身降权后当前页面仍显示并允许打开Admin创建表单",
+      "steps": [
+        "仅qa-web-user自有账户升Admin并UI登录",
+        "在/users将本人Role改Viewer",
+        "/me200 Roleviewer，users和write403",
+        "等5秒NewUser按钮仍1",
+        "实际点击填写并提交403；reload按钮0"
+      ],
+      "expected": "权限改变后当前页面控件反映Viewer权限",
+      "actual": "后端即刻403正确，当前UI仍保留Admin按钮5秒后可点击，提交403；刷新恢复",
+      "evidence": [
+        "self-role-feedback-results.json",
+        "evidence/self-role-downgrade.json",
+        "evidence/self-role-downgrade.png"
+      ],
+      "source": "web/src/features/catalog/index.tsx:1943",
+      "scope": "only own QA account; original Admin untouched; final Viewer and all own tokens logout",
+      "severity_priority_explanation": "severity=P3描述短暂UI状态滞后（服务端即时403保护有效）；priority=P2反映容易误导有权限变化的用户，应优先修复。"
+    },
+    {
+      "id": "WEB-TASK-PENDING-SAVE",
+      "severity": "P2",
+      "priority": "P2",
+      "status": "OPEN",
+      "title": "Task保存pending期间按钮未禁用，重复点击发重复PUT",
+      "steps": [
+        "编辑本轮独占Task",
+        "延迟真实PUT发送但不修改请求/响应",
+        "Save点击一次仍enabled，再点一次",
+        "释放后核对Hub实际定义"
+      ],
+      "expected": "pending保存禁用，重复点击不生成第二请求",
+      "actual": "Save enabled，2次点击产生2个PUT；最终Revision2，只证明重复请求，不能证明两次服务端mutation",
+      "source": "web/src/features/tasks/index.tsx:631",
+      "case_ids": [
+        "G04-01",
+        "X08"
+      ],
+      "evidence": [
+        "evidence/task-pending-secret.json",
+        "gap-core-results.json"
+      ]
+    },
+    {
+      "id": "WEB-BLOCK-REASON",
+      "severity": "P2",
+      "priority": "P2",
+      "status": "OPEN",
+      "title": "真实BLOCKED执行详情未显示Hub保存的block_reason",
+      "steps": [
+        "新建Node1 neverRun Task使last_execution无历史",
+        "另一个本轮Task引用该真实remote condition",
+        "真实Run等待Agent返回BLOCKED",
+        "打开Execution详情并刷新"
+      ],
+      "expected": "BLOCKED详情显示实际block_reason，用户可理解为何没有执行",
+      "actual": "Hub记录statusBLOCKED/block_reason=condition unknown: <nil>；UI仅已阻断、stdout/stderr空，没有原因",
+      "source": "web/src/features/executions/index.tsx:511",
+      "case_ids": [
+        "P17P18-13"
+      ],
+      "evidence": [
+        "evidence/offline-node-condition-blocked.json",
+        "gap-block-reason-real-results.json"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,165 @@
+{
+  "captured_at_utc": "2026-10-10T07:40:27.158794+00:00",
+  "case_id": "AUTH-RELAY",
+  "gateway_authority_source": {
+    "method": "GET",
+    "path": "/api/nodes/enrollment?node_name=qa-auth-relay-probe&node_ip=192.0.2.123",
+    "http_status": 200,
+    "gateway_base_url": "http://192.168.100.209:18080",
+    "gateway_url": "ws://192.168.100.209:18080",
+    "credentials_or_full_body_persisted": false
+  },
+  "relay_endpoint": "http://192.168.100.209:18080/agent/transfers/{transfer_id}/{upload|download}",
+  "authority_verified_by_anonymous_relay_401": true,
+  "selected_transfer_id": "256de7fe-c8df-4825-a7cb-651568b4ff34",
+  "selected_transfer_before": {
+    "id": "256de7fe-c8df-4825-a7cb-651568b4ff34",
+    "source_node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+    "status": "SUCCESS",
+    "size": 16,
+    "sha256": "0c3f718f4453e07689077bbc3c212eb7948ca1f70115169decafa6b61d58b6f6",
+    "updated_at": "2026-10-04T05:35:33.346240486Z",
+    "targets": [
+      {
+        "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+        "status": "SUCCESS"
+      },
+      {
+        "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+        "status": "SUCCESS"
+      }
+    ]
+  },
+  "selected_transfer_after": {
+    "id": "256de7fe-c8df-4825-a7cb-651568b4ff34",
+    "source_node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+    "status": "SUCCESS",
+    "size": 16,
+    "sha256": "0c3f718f4453e07689077bbc3c212eb7948ca1f70115169decafa6b61d58b6f6",
+    "updated_at": "2026-10-04T05:35:33.346240486Z",
+    "targets": [
+      {
+        "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+        "status": "SUCCESS"
+      },
+      {
+        "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+        "status": "SUCCESS"
+      }
+    ]
+  },
+  "transfer_collection_before": {
+    "count": 5,
+    "safe_metadata_sha256": "c9d6b3c552e5bd59a556dcfa421d1de91813496458cb3d01e4dd96a215189a61"
+  },
+  "transfer_collection_after": {
+    "count": 5,
+    "safe_metadata_sha256": "c9d6b3c552e5bd59a556dcfa421d1de91813496458cb3d01e4dd96a215189a61"
+  },
+  "transfer_state_unchanged": true,
+  "audit_before": {
+    "status": 200,
+    "matching_total": 2,
+    "rows": [
+      {
+        "id": "440b2fe7-5105-4049-89d4-2dab93159d74",
+        "action": "retry",
+        "resource": "file_transfer",
+        "resource_id": "256de7fe-c8df-4825-a7cb-651568b4ff34",
+        "created_at": "2026-10-04T05:35:33.338614634Z"
+      },
+      {
+        "id": "9087f074-ea0f-4c70-9c9a-53aa20362805",
+        "action": "create",
+        "resource": "file_transfer",
+        "resource_id": "256de7fe-c8df-4825-a7cb-651568b4ff34",
+        "created_at": "2026-10-04T05:35:30.676078617Z"
+      }
+    ],
+    "digest": "bf4dbabfb936da1976873365abb1e3fc251e282932862ec43a04fa97f7d12083"
+  },
+  "audit_after": {
+    "status": 200,
+    "matching_total": 2,
+    "rows": [
+      {
+        "id": "440b2fe7-5105-4049-89d4-2dab93159d74",
+        "action": "retry",
+        "resource": "file_transfer",
+        "resource_id": "256de7fe-c8df-4825-a7cb-651568b4ff34",
+        "created_at": "2026-10-04T05:35:33.338614634Z"
+      },
+      {
+        "id": "9087f074-ea0f-4c70-9c9a-53aa20362805",
+        "action": "create",
+        "resource": "file_transfer",
+        "resource_id": "256de7fe-c8df-4825-a7cb-651568b4ff34",
+        "created_at": "2026-10-04T05:35:30.676078617Z"
+      }
+    ],
+    "digest": "bf4dbabfb936da1976873365abb1e3fc251e282932862ec43a04fa97f7d12083"
+  },
+  "audit_unchanged": true,
+  "cases": [
+    {
+      "case": "anonymous",
+      "method": "GET",
+      "path": "/agent/transfers/{transfer_id}/download",
+      "status": 401,
+      "json_object": true,
+      "body_keys": [
+        "error"
+      ],
+      "error": "agent authentication required",
+      "response_bytes": 42,
+      "expected_status": 401,
+      "pass": true
+    },
+    {
+      "case": "invalid_bearer",
+      "method": "GET",
+      "path": "/agent/transfers/{transfer_id}/download",
+      "status": 401,
+      "json_object": true,
+      "body_keys": [
+        "error"
+      ],
+      "error": "agent authentication required",
+      "response_bytes": 42,
+      "expected_status": 401,
+      "pass": true
+    },
+    {
+      "case": "valid_user_session",
+      "method": "GET",
+      "path": "/agent/transfers/{transfer_id}/download",
+      "status": 401,
+      "json_object": true,
+      "body_keys": [
+        "error"
+      ],
+      "error": "agent authentication required",
+      "response_bytes": 42,
+      "expected_status": 401,
+      "pass": true
+    },
+    {
+      "case": "owned_agent_id_invalid_agent_token",
+      "method": "GET",
+      "path": "/agent/transfers/{transfer_id}/download",
+      "status": 401,
+      "json_object": true,
+      "body_keys": [
+        "error"
+      ],
+      "error": "invalid agent credential",
+      "response_bytes": 37,
+      "expected_status": 401,
+      "pass": true
+    }
+  ],
+  "all_four_negative_gets_pass": true,
+  "query_token_used": false,
+  "credential_or_full_response_body_persisted": false,
+  "status": "PASS_NEGATIVE_GET_MATRIX"
+}

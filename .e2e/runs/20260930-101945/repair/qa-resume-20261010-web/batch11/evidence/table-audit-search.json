@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "steps": [
+    "Opened actual sidebar Audit route; initial list showed 10 rows, GET /api/audit 200.",
+    "Entered a bounded common term; GET /api/audit?q=… returned 200 and UI remained populated (10 rows in the current page).",
+    "Entered a fresh unlikely term; API returned 200, table rendered the localized “没有结果。” state.",
+    "Clicked actual “重置” control; input cleared, GET q empty returned 200 and the 10-row baseline returned."
+  ],
+  "oracle": {
+    "api_method": "GET",
+    "api_path": "/api/audit",
+    "statuses": [
+      200,
+      200,
+      200,
+      200
+    ],
+    "q_parameter_present": true,
+    "query_lengths_only": [
+      0,
+      6,
+      29,
+      0
+    ],
+    "row_counts": [
+      10,
+      10,
+      1,
+      10
+    ],
+    "empty_message_observed": true,
+    "reset_button_observed_and_clicked": true
+  },
+  "source": "web/src/features/catalog/index.tsx:1858-1938",
+  "case_id": "TABLE-AUDIT-SEARCH",
+  "captured_at_utc": "2026-10-10T14:51:49.017368+00:00",
+  "route": "/audit",
+  "mutations": 0,
+  "raw_row_text_or_usernames_saved": false,
+  "api_response_bodies_saved": false,
+  "search_literals_saved": false
+}

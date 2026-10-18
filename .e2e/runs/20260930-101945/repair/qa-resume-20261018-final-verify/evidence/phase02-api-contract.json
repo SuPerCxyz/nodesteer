@@ -1,0 +1,133 @@
+{
+ "at_utc": "2026-10-18T04:55:40Z",
+ "cases": {
+  "ME_KEYS": {
+   "http": 200,
+   "keys": [
+    "expires",
+    "role",
+    "token",
+    "user_id",
+    "username"
+   ],
+   "pascal_keys": [],
+   "user_id": "cd5945f0-56b4-4cf7-8b71-c4d4751ebb09",
+   "role": "administrator"
+  },
+  "TRANSFERS_405": {
+   "put": {
+    "http": 405,
+    "allow": "GET, POST",
+    "body": "{\"error\":\"method not allowed\"}\n"
+   },
+   "delete": {
+    "http": 405,
+    "allow": "GET, POST",
+    "body": "{\"error\":\"method not allowed\"}\n"
+   },
+   "get_action": {
+    "http": 405,
+    "allow": "POST",
+    "body": "{\"error\":\"method not allowed\"}\n"
+   },
+   "put_missing_id": {
+    "http": 405,
+    "allow": "GET, POST",
+    "body": "{\"error\":\"method not allowed\"}\n"
+   }
+  },
+  "DELETE_MISSING_404": {
+   "scripts": {
+    "http": 404,
+    "body": "{\"error\":\"script not found\"}\n",
+    "sql_leak": false
+   },
+   "tasks": {
+    "http": 404,
+    "body": "{\"error\":\"task not found\"}\n",
+    "sql_leak": false
+   },
+   "schedules": {
+    "http": 404,
+    "body": "{\"error\":\"schedule not found\"}\n",
+    "sql_leak": false
+   },
+   "groups": {
+    "http": 404,
+    "body": "{\"error\":\"group not found\"}\n",
+    "sql_leak": false
+   },
+   "artifacts": {
+    "http": 404,
+    "body": "{\"error\":\"artifact not found\"}\n",
+    "sql_leak": false
+   },
+   "applications": {
+    "http": 404,
+    "body": "{\"error\":\"application not found\"}\n",
+    "sql_leak": false
+   }
+  },
+  "NODE_ORACLE": {
+   "users": {
+    "operator": {
+     "user_id": "16df6c40-c27a-4b29-8a8b-cff414df1a16",
+     "login_http": 200,
+     "token_ok": true,
+     "delete_existing": 403,
+     "delete_missing": 403,
+     "list_users": 403,
+     "body_missing": "{\"error\":\"permission denied\"}\n",
+     "sql_leak": false
+    },
+    "viewer": {
+     "user_id": "86f987d9-69b2-4578-a979-b41900f5bef4",
+     "login_http": 200,
+     "token_ok": true,
+     "delete_existing": 403,
+     "delete_missing": 403,
+     "list_users": 403,
+     "body_missing": "{\"error\":\"permission denied\"}\n",
+     "sql_leak": false
+    }
+   },
+   "admin_put_missing": {
+    "http": 404,
+    "body": "{\"error\":\"node not found\"}\n",
+    "sql_leak": false
+   }
+  },
+  "DUP_USER": {
+   "first_http": 200,
+   "second_http": 400,
+   "second_body": "{\"error\":\"username already exists\"}\n",
+   "sql_leak": false
+  },
+  "ENROLL_CONC": {
+   "elapsed_s": 0.13,
+   "codes": [
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200
+   ],
+   "leaks": [],
+   "sequential": {
+    "http": 200,
+    "node_id": "79abb56a-b255-4b76-a625-844f2347cf91"
+   },
+   "bad_request": {
+    "http": 400,
+    "body": "{\"error\":\"node_name is required and must be at most 128 characters\"}\n"
+   }
+  }
+ }
+}

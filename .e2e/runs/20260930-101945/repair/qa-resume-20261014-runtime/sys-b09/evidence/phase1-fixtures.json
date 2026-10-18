@@ -1,0 +1,380 @@
+{
+  "tasks": {
+    "main": {
+      "id": "c1190fc3-0827-4bb5-b521-795dffbfa2cf",
+      "revision": 1,
+      "type": "script",
+      "name": "qa-sysb09-7f31ac2e-main",
+      "condition_type": null,
+      "condition": null
+    },
+    "skip": {
+      "id": "1cba1614-ee7d-41a1-b1b8-e1c55ad63932",
+      "revision": 1,
+      "type": "script",
+      "name": "qa-sysb09-7f31ac2e-skip",
+      "condition_type": null,
+      "condition": null
+    },
+    "runonce": {
+      "id": "2d26fe53-47cf-4f2e-b7e6-deb5324ff5c3",
+      "revision": 1,
+      "type": "script",
+      "name": "qa-sysb09-7f31ac2e-runonce",
+      "condition_type": null,
+      "condition": null
+    },
+    "dup-agent": {
+      "id": "4205d429-65f2-405c-a51b-a5a8175a02ff",
+      "revision": 1,
+      "type": "script",
+      "name": "qa-sysb09-7f31ac2e-dup-agent",
+      "condition_type": null,
+      "condition": null
+    },
+    "dup-hub": {
+      "id": "00bb5c33-98b6-4c55-a2be-15437a6182b6",
+      "revision": 1,
+      "type": "script",
+      "name": "qa-sysb09-7f31ac2e-dup-hub",
+      "condition_type": null,
+      "condition": null
+    },
+    "and-true": {
+      "id": "fc267caa-6413-4822-9a81-bda1b8b66986",
+      "revision": 1,
+      "type": "command",
+      "name": "qa-sysb09-7f31ac2e-and-true",
+      "condition_type": "and",
+      "condition": {
+        "type": "and",
+        "and": [
+          {
+            "type": "local",
+            "local": {
+              "metric": "file_exists",
+              "operator": "==",
+              "value": "true",
+              "path": "/etc/hostname"
+            }
+          },
+          {
+            "type": "local",
+            "local": {
+              "metric": "dir_exists",
+              "operator": "==",
+              "value": "true",
+              "path": "/tmp"
+            }
+          }
+        ]
+      }
+    },
+    "and-false": {
+      "id": "43f4499c-8bf4-41aa-afea-61f9d175ff3d",
+      "revision": 1,
+      "type": "command",
+      "name": "qa-sysb09-7f31ac2e-and-false",
+      "condition_type": "and",
+      "condition": {
+        "type": "and",
+        "and": [
+          {
+            "type": "local",
+            "local": {
+              "metric": "file_exists",
+              "operator": "==",
+              "value": "true",
+              "path": "/etc/hostname"
+            }
+          },
+          {
+            "type": "local",
+            "local": {
+              "metric": "file_exists",
+              "operator": "==",
+              "value": "true",
+              "path": "/tmp/qa-sysb09-7f31ac2e-absent"
+            }
+          }
+        ]
+      }
+    },
+    "and-nested-true": {
+      "id": "4a947c62-d934-458d-988e-80e65e207928",
+      "revision": 1,
+      "type": "command",
+      "name": "qa-sysb09-7f31ac2e-and-nested-true",
+      "condition_type": "and",
+      "condition": {
+        "type": "and",
+        "and": [
+          {
+            "type": "and",
+            "and": [
+              {
+                "type": "local",
+                "local": {
+                  "metric": "file_exists",
+                  "operator": "==",
+                  "value": "true",
+                  "path": "/etc/hostname"
+                }
+              },
+              {
+                "type": "local",
+                "local": {
+                  "metric": "command_result",
+                  "operator": "==",
+                  "value": "ok",
+                  "command": "printf ok"
+                }
+              }
+            ]
+          },
+          {
+            "type": "local",
+            "local": {
+              "metric": "dir_exists",
+              "operator": "==",
+              "value": "true",
+              "path": "/tmp"
+            }
+          }
+        ]
+      }
+    },
+    "and-nested-false": {
+      "id": "59627338-f5e3-46ad-8654-943ab72280b2",
+      "revision": 1,
+      "type": "command",
+      "name": "qa-sysb09-7f31ac2e-and-nested-false",
+      "condition_type": "and",
+      "condition": {
+        "type": "and",
+        "and": [
+          {
+            "type": "and",
+            "and": [
+              {
+                "type": "local",
+                "local": {
+                  "metric": "file_exists",
+                  "operator": "==",
+                  "value": "true",
+                  "path": "/etc/hostname"
+                }
+              },
+              {
+                "type": "local",
+                "local": {
+                  "metric": "file_exists",
+                  "operator": "==",
+                  "value": "true",
+                  "path": "/tmp/qa-sysb09-7f31ac2e-nested-absent"
+                }
+              }
+            ]
+          },
+          {
+            "type": "local",
+            "local": {
+              "metric": "file_exists",
+              "operator": "==",
+              "value": "true",
+              "path": "/etc/hostname"
+            }
+          }
+        ]
+      }
+    },
+    "and-unknown": {
+      "id": "661a4193-7adc-47de-a05a-8d81e01892d4",
+      "revision": 1,
+      "type": "command",
+      "name": "qa-sysb09-7f31ac2e-and-unknown",
+      "condition_type": "and",
+      "condition": {
+        "type": "and",
+        "and": [
+          {
+            "type": "local",
+            "local": {
+              "metric": "file_exists",
+              "operator": "==",
+              "value": "true",
+              "path": "/etc/hostname"
+            }
+          },
+          {
+            "type": "local",
+            "local": {
+              "metric": "disk_usage",
+              "operator": "<",
+              "value": "50",
+              "path": "/qa-sysb09-7f31ac2e-no-such-mount"
+            }
+          }
+        ]
+      }
+    },
+    "remote-online-sat": {
+      "id": "9035b88b-0246-4ab8-b4a1-3807c29471da",
+      "revision": 1,
+      "type": "command",
+      "name": "qa-sysb09-7f31ac2e-remote-online-sat",
+      "condition_type": "remote",
+      "condition": {
+        "type": "remote",
+        "remote": {
+          "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+          "property": "online",
+          "operator": "==",
+          "value": "online"
+        }
+      }
+    },
+    "remote-online-unsat": {
+      "id": "d49a62ae-786b-4662-97c9-8f7f5096cef1",
+      "revision": 1,
+      "type": "command",
+      "name": "qa-sysb09-7f31ac2e-remote-online-unsat",
+      "condition_type": "remote",
+      "condition": {
+        "type": "remote",
+        "remote": {
+          "node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+          "property": "online",
+          "operator": "==",
+          "value": "online"
+        }
+      }
+    },
+    "remote-offline-sat": {
+      "id": "43cedac9-c321-4c7d-82bd-97a3ac3a9448",
+      "revision": 1,
+      "type": "command",
+      "name": "qa-sysb09-7f31ac2e-remote-offline-sat",
+      "condition_type": "remote",
+      "condition": {
+        "type": "remote",
+        "remote": {
+          "node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+          "property": "online",
+          "operator": "==",
+          "value": "offline"
+        }
+      }
+    },
+    "and-remote-local": {
+      "id": "19ff1020-34ee-4149-b72d-a746bd4de2b2",
+      "revision": 1,
+      "type": "command",
+      "name": "qa-sysb09-7f31ac2e-and-remote-local",
+      "condition_type": "and",
+      "condition": {
+        "type": "and",
+        "and": [
+          {
+            "type": "remote",
+            "remote": {
+              "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+              "property": "online",
+              "operator": "==",
+              "value": "online"
+            }
+          },
+          {
+            "type": "local",
+            "local": {
+              "metric": "file_exists",
+              "operator": "==",
+              "value": "true",
+              "path": "/etc/hostname"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "schedules": {
+    "skip": {
+      "id": "1e22cdb7-3219-4d6f-aa8e-c28ba446b5ae",
+      "task_id": "1cba1614-ee7d-41a1-b1b8-e1c55ad63932",
+      "type": "interval",
+      "interval_sec": 10,
+      "run_at": "0001-01-01T00:00:00Z",
+      "execution_owner": "agent",
+      "misfire_policy": "skip",
+      "enabled": false,
+      "revision": 1,
+      "created_at": "2026-10-14T08:33:34.121670132Z"
+    },
+    "runonce": {
+      "id": "8ad373c0-ed10-4dc2-a0b8-2281373b48ff",
+      "task_id": "2d26fe53-47cf-4f2e-b7e6-deb5324ff5c3",
+      "type": "interval",
+      "interval_sec": 10,
+      "run_at": "0001-01-01T00:00:00Z",
+      "execution_owner": "agent",
+      "misfire_policy": "run_once",
+      "enabled": false,
+      "revision": 1,
+      "created_at": "2026-10-14T08:33:34.130355665Z"
+    },
+    "dup_hub_1": {
+      "id": "1ce599f4-2edb-4e0e-b092-6b22dd28da82",
+      "task_id": "00bb5c33-98b6-4c55-a2be-15437a6182b6",
+      "type": "one_time",
+      "interval_sec": null,
+      "run_at": "2026-10-14T08:33:24Z",
+      "execution_owner": "hub",
+      "misfire_policy": "run_once",
+      "enabled": true,
+      "revision": 1,
+      "created_at": "2026-10-14T08:33:34.139431606Z"
+    },
+    "dup_hub_2": {
+      "id": "3bec00f9-80f4-43d4-bdbd-e3ffeac295ce",
+      "task_id": "00bb5c33-98b6-4c55-a2be-15437a6182b6",
+      "type": "one_time",
+      "interval_sec": null,
+      "run_at": "2026-10-14T08:33:24Z",
+      "execution_owner": "hub",
+      "misfire_policy": "run_once",
+      "enabled": true,
+      "revision": 1,
+      "created_at": "2026-10-14T08:33:34.162284626Z"
+    },
+    "dup_agent_1": {
+      "id": "8cae44e9-242b-4d6e-908b-5f953791d3d1",
+      "task_id": "4205d429-65f2-405c-a51b-a5a8175a02ff",
+      "type": "one_time",
+      "interval_sec": null,
+      "run_at": "2026-10-14T08:34:14Z",
+      "execution_owner": "agent",
+      "misfire_policy": "run_once",
+      "enabled": true,
+      "revision": 1,
+      "created_at": "2026-10-14T08:33:34.281568893Z"
+    },
+    "dup_agent_2": {
+      "id": "9a4fb634-2aee-4077-87a0-e72ec3c39300",
+      "task_id": "4205d429-65f2-405c-a51b-a5a8175a02ff",
+      "type": "one_time",
+      "interval_sec": null,
+      "run_at": "2026-10-14T08:34:14Z",
+      "execution_owner": "agent",
+      "misfire_policy": "run_once",
+      "enabled": true,
+      "revision": 1,
+      "created_at": "2026-10-14T08:33:34.303971627Z"
+    }
+  },
+  "hub_run_at_utc": "2026-10-14T08:33:24Z",
+  "agent_run_at_utc": "2026-10-14T08:34:14Z",
+  "script": {
+    "id": "761c5050-05f6-4049-a193-19a7e36734c6",
+    "sha256": "fe357eab818abe8853d2dc5d2202d50e3d587dca247a59f5f7753b8584497b9f"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "incident_id": "ENV-20261014-PARALLEL-LOAD-NODE-OFFLINE",
+  "at": "2026-10-14T10:24:39.935273+00:00",
+  "detected_by": "web batch06 报告 + Root 实时核验",
+  "symptom": "native-1 与 native-3 两个 protected repair 节点一度 offline；native-3 宿主 VM(.222) 一度 SSH banner 超时、QGA 无响应、load 13–21、kswapd 活跃",
+  "root_cause_assessment": "5 路并行批次共同作用于 2GB 内存的测试 VM，native-3 出现资源竞争/内存压力（VM 内存 1044M/2G、kswapd0 活跃、块读累计 848GB）；native-1 的 repair 单元以 inactive(dead) 停在无 journal 状态",
+  "not_caused_by": "sys-b02 自身的 oracle 记录 protected_node_not_healthy:native-1 并主动中止（clean=False），其自有 fixture 已清空（hub_leftover_clear=true）",
+  "root_action": "已 systemctl start nodesteer-agent-repair-20260930-101945-native-1.service（MainPID 1494）",
+  "post_state": "native-1..4 全部 online/synced（含 batch07 自行恢复 native-3、Root 恢复 native-1）",
+  "impact": "sys-b02 批次因此中止未产生用例结果（其 6 个用例维持 NOT_RUN，需重排）；batch06 的取证已完成且在窗口内",
+  "mitigation": "后续批次降低并发（建议 ≤3）并在每批前置做 protected 节点健康门禁；避免同一 VM 上并行多批",
+  "root_cause_corrected": {
+    "native-3_offline": "web batch07 为制造确定性 ENOSPC 在 native-3 的 /tmp(tmpfs) 放置 483MiB 文件，而该 VM 气球内存仅 1GiB → 客人内存压力导致 sshd 无响应、repair Agent 18:09:47Z offline；批内 setmem 2097152 --live + 删填充文件后 18:24:25Z 回 online（未重启服务、uptime 连续）。",
+    "native-1_offline": "web batch07 恢复时误用 virsh reboot nodesteer-agent-3，而该 libvirt 域实为 .204 = repair native-1（native-3 对应域为 nodesteer-agent-2）；native-1 因此被重启一次，其 repair 单元 enabled=disabled 不会自动拉起 → Root 手工 systemctl start 恢复（MainPID 1494）。",
+    "earlier_assessment": "此前归因为「并行负载资源竞争」；实际为 web batch07 的两项 harness/操作失误，已由该批主动披露。",
+    "lessons": [
+      "libvirt 域名 nodesteer-agent-N 与 repair native-N 并非同一映射（VM agent-3=.204=native-1）；后续批次须按 MAC/实际 IP 核实目标域。",
+      "repair 单元均 enabled=disabled：任何 VM 重启都会使节点掉线并需手工拉起——重启类批次前后必须显式复核并恢复 4 节点。",
+      "在 1GiB 气球内存的 VM 上做 tmpfs 填充类 ENOSPC 需先升气球或降低填充量。"
+    ]
+  }
+}

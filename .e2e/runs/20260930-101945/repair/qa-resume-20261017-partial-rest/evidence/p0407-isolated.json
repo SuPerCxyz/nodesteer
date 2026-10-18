@@ -1,0 +1,213 @@
+{
+ "case_id": "P04-07",
+ "at_utc": "2026-10-17T14:39:01Z",
+ "isolated_instance": {
+  "host": "192.168.100.209",
+  "port": 18087,
+  "binary": "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard",
+  "data_dir": "/tmp/nodesteer-iso-prst-621bfad5/data",
+  "config": "/tmp/nodesteer-iso-prst-621bfad5/hub.yaml",
+  "purpose": "owned+disposable authority for non-admin role 403 assertion",
+  "secrets_policy": "admin/user passwords + registration token generated in-memory, passed via stdin, never persisted"
+ },
+ "authority_18080_untouched_check": {
+  "before": {
+   "http": 200,
+   "body": "ok"
+  },
+  "after": {
+   "http": 200,
+   "body": "ok"
+  }
+ },
+ "steps": {
+  "port_18087_free_preflight": {
+   "ok": true,
+   "detail": {
+    "ss_grep_count": "0",
+    "binary": "-rwxr-xr-x 1 root root 55086747 Oct 17 21:52 /opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard"
+   }
+  },
+  "config_written_0600": {
+   "ok": true,
+   "detail": {
+    "stdout_tail": "-rw------- 1 root root 355 Oct 17 22:39 /tmp/nodesteer-iso-prst-621bfad5/hub.yaml"
+   }
+  },
+  "instance_launched": {
+   "ok": true,
+   "detail": {
+    "pidfile_pid": 243380
+   }
+  },
+  "instance_healthz": {
+   "ok": true,
+   "detail": {
+    "http": 200,
+    "body": "ok"
+   }
+  },
+  "instance_pid_resolved": {
+   "ok": true,
+   "detail": {
+    "pid": 243380,
+    "pidfile_pid": 243380,
+    "cmdline_has_binary": true,
+    "listening": true
+   }
+  },
+  "admin_login": {
+   "ok": true,
+   "detail": {
+    "http": 200,
+    "token_present": true
+   }
+  },
+  "create_operator_user": {
+   "ok": true,
+   "detail": {
+    "http": 200,
+    "role": "operator",
+    "username": "iso-prst-621bfad5-operator",
+    "response_username": "iso-prst-621bfad5-operator"
+   }
+  },
+  "create_viewer_user": {
+   "ok": true,
+   "detail": {
+    "http": 200,
+    "role": "viewer",
+    "username": "iso-prst-621bfad5-viewer",
+    "response_username": "iso-prst-621bfad5-viewer"
+   }
+  },
+  "operator_session_valid": {
+   "ok": true,
+   "detail": {
+    "login_http": 200,
+    "me_http": 200,
+    "me_role": "operator",
+    "me_keys": [
+     "Expires",
+     "Role",
+     "Token",
+     "UserID",
+     "Username"
+    ]
+   }
+  },
+  "operator_read_allowed": {
+   "ok": true,
+   "detail": {
+    "get_nodes_http": 200,
+    "nodes_count": 0
+   }
+  },
+  "operator_enrollment_POST_403": {
+   "ok": true,
+   "detail": {
+    "http": 403,
+    "body": {
+     "error": "permission denied"
+    },
+    "endpoint": "POST /api/nodes/enrollment"
+   }
+  },
+  "operator_enrollment_GET_403": {
+   "ok": true,
+   "detail": {
+    "http": 403,
+    "body": {
+     "error": "permission denied"
+    },
+    "endpoint": "GET /api/nodes/enrollment"
+   }
+  },
+  "viewer_session_valid": {
+   "ok": true,
+   "detail": {
+    "login_http": 200,
+    "me_http": 200,
+    "me_role": "viewer",
+    "me_keys": [
+     "Expires",
+     "Role",
+     "Token",
+     "UserID",
+     "Username"
+    ]
+   }
+  },
+  "viewer_read_allowed": {
+   "ok": true,
+   "detail": {
+    "get_nodes_http": 200,
+    "nodes_count": 0
+   }
+  },
+  "viewer_enrollment_POST_403": {
+   "ok": true,
+   "detail": {
+    "http": 403,
+    "body": {
+     "error": "permission denied"
+    },
+    "endpoint": "POST /api/nodes/enrollment"
+   }
+  },
+  "viewer_enrollment_GET_403": {
+   "ok": true,
+   "detail": {
+    "http": 403,
+    "body": {
+     "error": "permission denied"
+    },
+    "endpoint": "GET /api/nodes/enrollment"
+   }
+  },
+  "admin_enrollment_200_positive_control": {
+   "ok": true,
+   "detail": {
+    "http": 200,
+    "response_keys": [
+     "agent_id",
+     "agent_image",
+     "docker_compose",
+     "docker_run",
+     "gateway_base_url",
+     "gateway_url",
+     "native",
+     "node_id"
+    ],
+    "native_command_present": true,
+    "registration_token_embedded": true,
+    "command_sha256_prefix": "320baf745068b623",
+    "command_persisted": false,
+    "redaction": "command text contains the registration token and was NOT persisted"
+   }
+  },
+  "admin_enrollment_node_cleanup": {
+   "ok": true,
+   "detail": {
+    "delete_http": 200,
+    "get_after_http": 404
+   }
+  }
+ },
+ "verdict": "PASS",
+ "teardown": {
+  "at_utc": "2026-10-17T14:39:05Z",
+  "kill_result": "GONE",
+  "process_gone": true,
+  "pgrep_leftover": "",
+  "no_leftover_process": true,
+  "port_grep_after": "0",
+  "port_closed": true,
+  "dir_removed": true,
+  "repair_18080_health_after": {
+   "http": 200,
+   "body": "ok"
+  }
+ },
+ "teardown_ok": true
+}

@@ -1,0 +1,3975 @@
+{
+  "run_id": "20260930-101945",
+  "case_count": 134,
+  "counts": {
+    "PASS": 102,
+    "PARTIAL": 16,
+    "FAIL": 15,
+    "BLOCKED": 1
+  },
+  "cases": [
+    {
+      "case_id": "E2E-04",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.schedule.interval-offline-57313037.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Interval离线多slot/ACK无重复与HubRequired不运行",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.schedule.interval-offline-57313037.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.schedule.interval-offline",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "E2E-05",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/schedule.cron.agent.json",
+        "backend/isolated/evidence/arch.duplicate_schedule_trigger-81f46f1a.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "cron / agent owner真实触发/Journal/引用保护/删除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/schedule.cron.agent.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: schedule.cron.agent",
+          "remaining": ""
+        },
+        {
+          "dimension": "Duplicate Schedule Trigger",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.duplicate_schedule_trigger-81f46f1a.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.duplicate_schedule_trigger",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "E2E-06",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/schedule.one_time.agent.json",
+        "backend/evidence/schedule.one_time.hub.json",
+        "backend/isolated/evidence/feature.schedule.misfire-2f592753.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "one_time / agent owner真实触发/Journal/引用保护/删除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/schedule.one_time.agent.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: schedule.one_time.agent",
+          "remaining": ""
+        },
+        {
+          "dimension": "one_time / hub owner真实触发/Journal/引用保护/删除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/schedule.one_time.hub.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: schedule.one_time.hub",
+          "remaining": ""
+        },
+        {
+          "dimension": "Agent停机错过One-Time的SKIP/RUN_ONCE",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.schedule.misfire-2f592753.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.schedule.misfire",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "E2E-07",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.schedule.disable-delete-a1da46c8.json",
+        "backend/isolated/evidence/feature.schedule.onstart-network-disabled-d11333cf.json",
+        "backend/isolated/evidence/feature.schedule.on_start-5038bb04.json"
+      ],
+      "actual": "Agent/Hub两个owner的Interval/Cron/OneTime disabled跨70秒/分钟边界/45秒Hub tick无Execution或marker；Interval重启用真实恢复，DELETE后跨两个未来Slot无新增。；仅新进程启动产生Slot；只断开WS后PID不变、新WS/任务成功且无新Slot；disabled保存后重启没有新Slot。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "三类Schedule双owner禁用和未来slot停止",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.schedule.disable-delete-a1da46c8.json"
+          ],
+          "actual": "Agent/Hub两个owner的Interval/Cron/OneTime disabled跨70秒/分钟边界/45秒Hub tick无Execution或marker；Interval重启用真实恢复，DELETE后跨两个未来Slot无新增。",
+          "remaining": ""
+        },
+        {
+          "dimension": "on_start进程启动、网络重连、禁用",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.schedule.onstart-network-disabled-d11333cf.json",
+            "backend/isolated/evidence/feature.schedule.on_start-5038bb04.json"
+          ],
+          "actual": "仅新进程启动产生Slot；只断开WS后PID不变、新WS/任务成功且无新Slot；disabled保存后重启没有新Slot。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "E2E-08",
+      "status": "PARTIAL",
+      "evidence": [
+        "backend/evidence/task.retry.json",
+        "backend/evidence/task.timeout.json",
+        "backend/evidence/task.cancel.json",
+        "backend/evidence/feature.process.native-bab6a27a.json",
+        "backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+      ],
+      "actual": "retry2真实三次、单Execution，timeout/cancel终态及客户机效果核实。；两种路径的父/孙PID在host init收割后/proc完全不存在。；两种路径没有活进程；每种路径2个Z态由容器PID1未收割，原始stat保留。",
+      "remaining": "Docker Z态观察不代表活进程泄漏，但复合无残留尚未全通过。",
+      "dimensions": [
+        {
+          "dimension": "retry次数与终态",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/task.retry.json",
+            "backend/evidence/task.timeout.json",
+            "backend/evidence/task.cancel.json"
+          ],
+          "actual": "retry2真实三次、单Execution，timeout/cancel终态及客户机效果核实。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native忽略TERM后代cancel与timeout",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.process.native-bab6a27a.json"
+          ],
+          "actual": "两种路径的父/孙PID在host init收割后/proc完全不存在。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Docker忽略TERM后代",
+          "status": "PARTIAL",
+          "evidence": [
+            "backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+          ],
+          "actual": "两种路径没有活进程；每种路径2个Z态由容器PID1未收割，原始stat保留。",
+          "remaining": "Z态不等同运行泄漏；“无任何子孙残留”复合要求未全满足。"
+        }
+      ]
+    },
+    {
+      "case_id": "E2E-09",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/condition.false.json",
+        "backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json"
+      ],
+      "actual": "真实命令条件成功执行/False SKIPPED；命令exit3为BLOCKED且无marker。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "本地满足/False/UNKNOWN",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/condition.false.json",
+            "backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json"
+          ],
+          "actual": "真实命令条件成功执行/False SKIPPED；命令exit3为BLOCKED且无marker。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "E2E-10",
+      "status": "FAIL",
+      "evidence": [
+        "backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json",
+        "backend/evidence/condition.remote-unknown.json",
+        "backend/isolated/evidence/feature.condition.remote-ttl-bf27e07e.json"
+      ],
+      "actual": "无历史、Hub断线Agent-owned触发均BLOCKED/no effect；恢复后上传ACK。；ObservedAt2000/TTL1仍被Agent接受并SUCCESS，客户机marker真实出现；BE-REMOTE-TTL-004。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "无历史/离线FailClosed",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json",
+            "backend/evidence/condition.remote-unknown.json"
+          ],
+          "actual": "无历史、Hub断线Agent-owned触发均BLOCKED/no effect；恢复后上传ACK。",
+          "remaining": ""
+        },
+        {
+          "dimension": "过期RemoteState",
+          "status": "FAIL",
+          "evidence": [
+            "backend/isolated/evidence/feature.condition.remote-ttl-bf27e07e.json"
+          ],
+          "actual": "ObservedAt2000/TTL1仍被Agent接受并SUCCESS，客户机marker真实出现；BE-REMOTE-TTL-004。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "E2E-12",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/feature.application.lifecycle-e22782da.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "真实托管应用部署/四健康检查/start/stop/restart/版本/分配解除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.application.lifecycle-e22782da.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.application.lifecycle",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "E2E-13",
+      "status": "FAIL",
+      "evidence": [
+        "main/native-results.json"
+      ],
+      "actual": "REPLACED真实定点kill，原v1 binary/config/unit恢复并active。；STARTED真实定点kill，原v1 binary/config/unit恢复并active。；VERIFYING真实定点kill，原v1 binary/config/unit恢复并active。；ROLLING_BACK真实定点kill，原v1 binary/config/unit恢复并active。；实际Journal三个BackupPath为空，kill后DONE但原binary/config/unit全部不存在，ExecutionFAILED agent_restarted；P0恢复路径删除旧文件。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Native升级REPLACED崩溃恢复",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "REPLACED真实定点kill，原v1 binary/config/unit恢复并active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native升级STARTED崩溃恢复",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "STARTED真实定点kill，原v1 binary/config/unit恢复并active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native升级VERIFYING崩溃恢复",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "VERIFYING真实定点kill，原v1 binary/config/unit恢复并active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native升级ROLLING_BACK崩溃恢复",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "ROLLING_BACK真实定点kill，原v1 binary/config/unit恢复并active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native升级PREPARING崩溃",
+          "status": "FAIL",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "实际Journal三个BackupPath为空，kill后DONE但原binary/config/unit全部不存在，ExecutionFAILED agent_restarted；P0恢复路径删除旧文件。",
+          "remaining": ""
+        },
+        {
+          "dimension": "STOPPED阶段",
+          "status": "BLOCKED",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "",
+          "remaining": "当前实现从未写STOPPED，不能伪造阶段；其他实际阶段已执行。"
+        }
+      ]
+    },
+    {
+      "case_id": "E2E-16",
+      "status": "PASS",
+      "evidence": [
+        "environment/agent-install-results.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "主控/环境运行证据: environment/agent-install-results.json",
+          "status": "PASS",
+          "evidence": [
+            "environment/agent-install-results.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "E2E-17",
+      "status": "PASS",
+      "evidence": [
+        "environment/extra-agent-results.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "主控/环境运行证据: environment/extra-agent-results.json",
+          "status": "PASS",
+          "evidence": [
+            "environment/extra-agent-results.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "E2E-18",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.docker_agent_recreate-c1bb87d7.json",
+        "backend/isolated/evidence/feature.docker.cache-preservation-3bc4fc69.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Docker Agent Recreate",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.docker_agent_recreate-c1bb87d7.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.docker_agent_recreate",
+          "remaining": ""
+        },
+        {
+          "dimension": "Docker保卷重建真实缓存SHA与identity保持",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.docker.cache-preservation-3bc4fc69.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.docker.cache-preservation",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-01",
+      "status": "PASS",
+      "evidence": [
+        "environment/agent-install-results.json",
+        "environment/extra-agent-results.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "主控/环境运行证据: environment/agent-install-results.json",
+          "status": "PASS",
+          "evidence": [
+            "environment/agent-install-results.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        },
+        {
+          "dimension": "主控/环境运行证据: environment/extra-agent-results.json",
+          "status": "PASS",
+          "evidence": [
+            "environment/extra-agent-results.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-02",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.docker_agent_restart-660b369c.json",
+        "main/native-results.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Docker Agent Restart",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.docker_agent_restart-660b369c.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.docker_agent_restart",
+          "remaining": ""
+        },
+        {
+          "dimension": "主控/环境运行证据: main/native-results.json",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-03",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.hub_restart-56006af8.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Hub Restart",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.hub_restart-56006af8.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.hub_restart",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-04",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.lost_notification-ef6007fd.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Lost Notification",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.lost_notification-ef6007fd.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.lost_notification",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-05",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.duplicate_notification-b2025121.json",
+        "backend/isolated/evidence/arch.out_of_order_notification-431f5614.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Duplicate Notification",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.duplicate_notification-b2025121.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.duplicate_notification",
+          "remaining": ""
+        },
+        {
+          "dimension": "Out-of-order Notification",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.out_of_order_notification-431f5614.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.out_of_order_notification",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-06",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.revision_lag-642bc11d.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Revision Lag",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.revision_lag-642bc11d.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.revision_lag",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-07",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.change_log_window_expiry-1142f7ff.json",
+        "backend/isolated/evidence/arch.full_resync-cac170fa.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Change Log Window Expiry",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.change_log_window_expiry-1142f7ff.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.change_log_window_expiry",
+          "remaining": ""
+        },
+        {
+          "dimension": "Full Resync",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.full_resync-cac170fa.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.full_resync",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-08",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.sync_dependency_failure-24a4e9ce.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Sync Dependency Failure",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.sync_dependency_failure-24a4e9ce.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.sync_dependency_failure",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-09",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.sync.tombstone-145e4a4b.json",
+        "backend/evidence/feature.application.lifecycle-e22782da.json",
+        "backend/isolated/evidence/feature.schedule.disable-delete-a1da46c8.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "离线删除script/task/schedule后本地清除",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.sync.tombstone-145e4a4b.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.sync.tombstone",
+          "remaining": ""
+        },
+        {
+          "dimension": "真实托管应用部署/四健康检查/start/stop/restart/版本/分配解除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.application.lifecycle-e22782da.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.application.lifecycle",
+          "remaining": ""
+        },
+        {
+          "dimension": "三种Schedule双owner禁用跨未来slot与Interval恢复/删除停止",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.schedule.disable-delete-a1da46c8.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.schedule.disable-delete",
+          "remaining": ""
+        },
+        {
+          "dimension": "三类Schedule双owner禁用和未来slot停止",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.schedule.disable-delete-a1da46c8.json"
+          ],
+          "actual": "Agent/Hub两个owner的Interval/Cron/OneTime disabled跨70秒/分钟边界/45秒Hub tick无Execution或marker；Interval重启用真实恢复，DELETE后跨两个未来Slot无新增。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-10",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.sync.commit-failure-notify-1922bee5.json"
+      ],
+      "actual": "真实15秒BEGIN IMMEDIATE纯锁、busy_timeout后写失败；无schema/data写入，finally ROLLBACK；释放后同对象完成。失败API明确SQLiteBusy、GlobalRevision/脚本不变且无Notify；释放后同脚本成功收敛/运行。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "feature.sync.commit-failure-notify",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.sync.commit-failure-notify-1922bee5.json"
+          ],
+          "actual": "真实15秒BEGIN IMMEDIATE纯锁、busy_timeout后写失败；无schema/data写入，finally ROLLBACK；释放后同对象完成。失败API明确SQLiteBusy、GlobalRevision/脚本不变且无Notify；释放后同脚本成功收敛/运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-11",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/task.success-18b6cf3d.json",
+        "main/native-results.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "命令真实文件效果/stdout/stderr/Journal/ACK",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/task.success-18b6cf3d.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: task.success",
+          "remaining": ""
+        },
+        {
+          "dimension": "主控/环境运行证据: main/native-results.json",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-12",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.docker_agent_restart-660b369c.json",
+        "backend/isolated/evidence/arch.docker_agent_recreate-c1bb87d7.json",
+        "backend/isolated/evidence/feature.docker.cache-preservation-3bc4fc69.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Docker Agent Restart",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.docker_agent_restart-660b369c.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.docker_agent_restart",
+          "remaining": ""
+        },
+        {
+          "dimension": "Docker Agent Recreate",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.docker_agent_recreate-c1bb87d7.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.docker_agent_recreate",
+          "remaining": ""
+        },
+        {
+          "dimension": "Docker保卷重建真实缓存SHA与identity保持",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.docker.cache-preservation-3bc4fc69.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.docker.cache-preservation",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-13",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.schedule.interval-offline-57313037.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Interval离线多slot/ACK无重复与HubRequired不运行",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.schedule.interval-offline-57313037.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.schedule.interval-offline",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-14",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.schedule.interval-offline-57313037.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Interval离线多slot/ACK无重复与HubRequired不运行",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.schedule.interval-offline-57313037.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.schedule.interval-offline",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-15",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.execution_re_upload-7e09dabb.json",
+        "backend/isolated/evidence/arch.duplicate_execution_upload-75196223.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Execution Re-upload",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.execution_re_upload-7e09dabb.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.execution_re_upload",
+          "remaining": ""
+        },
+        {
+          "dimension": "Duplicate Execution Upload",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.duplicate_execution_upload-75196223.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.duplicate_execution_upload",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-16",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.docker_agent_restart-660b369c.json",
+        "main/native-results.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Docker Agent Restart",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.docker_agent_restart-660b369c.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.docker_agent_restart",
+          "remaining": ""
+        },
+        {
+          "dimension": "主控/环境运行证据: main/native-results.json",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-17",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.sync.ready-7a648878.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "重连未完成SYNC前BLOCKED且无效果，释放后成功",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.sync.ready-7a648878.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.sync.ready",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-18",
+      "status": "PARTIAL",
+      "evidence": [
+        "main/settings-runtime-evidence.json",
+        "backend/isolated/evidence/arch.lost_notification-ef6007fd.json"
+      ],
+      "actual": "真实UI heartbeat30→3→30；4Agent实测3～4秒、共享设置恢复。；通知真实丢弃后45秒Revision定时检查收敛。",
+      "remaining": "重连backoff/jitter完整统计未测。",
+      "dimensions": [
+        {
+          "dimension": "Heartbeat运行时配置和周期",
+          "status": "PASS",
+          "evidence": [
+            "main/settings-runtime-evidence.json"
+          ],
+          "actual": "真实UI heartbeat30→3→30；4Agent实测3～4秒、共享设置恢复。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Revision定时自愈",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.lost_notification-ef6007fd.json"
+          ],
+          "actual": "通知真实丢弃后45秒Revision定时检查收敛。",
+          "remaining": ""
+        },
+        {
+          "dimension": "重连backoff/jitter分布",
+          "status": "NOT_RUN",
+          "evidence": [],
+          "actual": "",
+          "remaining": "尚未连续采样多次网络失败的退避和抖动分布。"
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-19",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/schedule.cron.agent.json",
+        "backend/evidence/schedule.cron.hub.json",
+        "backend/evidence/schedule.interval.agent.json",
+        "backend/evidence/schedule.interval.hub.json",
+        "backend/evidence/schedule.one_time.agent.json",
+        "backend/evidence/schedule.one_time.hub.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "cron / agent owner真实触发/Journal/引用保护/删除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/schedule.cron.agent.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: schedule.cron.agent",
+          "remaining": ""
+        },
+        {
+          "dimension": "cron / hub owner真实触发/Journal/引用保护/删除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/schedule.cron.hub.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: schedule.cron.hub",
+          "remaining": ""
+        },
+        {
+          "dimension": "interval / agent owner真实触发/Journal/引用保护/删除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/schedule.interval.agent.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: schedule.interval.agent",
+          "remaining": ""
+        },
+        {
+          "dimension": "interval / hub owner真实触发/Journal/引用保护/删除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/schedule.interval.hub.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: schedule.interval.hub",
+          "remaining": ""
+        },
+        {
+          "dimension": "one_time / agent owner真实触发/Journal/引用保护/删除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/schedule.one_time.agent.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: schedule.one_time.agent",
+          "remaining": ""
+        },
+        {
+          "dimension": "one_time / hub owner真实触发/Journal/引用保护/删除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/schedule.one_time.hub.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: schedule.one_time.hub",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-20",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/schedule.cron.agent.json",
+        "backend/isolated/evidence/arch.duplicate_schedule_trigger-81f46f1a.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "cron / agent owner真实触发/Journal/引用保护/删除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/schedule.cron.agent.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: schedule.cron.agent",
+          "remaining": ""
+        },
+        {
+          "dimension": "Duplicate Schedule Trigger",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.duplicate_schedule_trigger-81f46f1a.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.duplicate_schedule_trigger",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-21",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/schedule.cron.hub.json",
+        "backend/isolated/evidence/arch.hub_restart-56006af8.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "cron / hub owner真实触发/Journal/引用保护/删除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/schedule.cron.hub.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: schedule.cron.hub",
+          "remaining": ""
+        },
+        {
+          "dimension": "Hub Restart",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.hub_restart-56006af8.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.hub_restart",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-22",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.duplicate_schedule_trigger-81f46f1a.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Duplicate Schedule Trigger",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.duplicate_schedule_trigger-81f46f1a.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.duplicate_schedule_trigger",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-23",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.schedule.misfire-2f592753.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Agent停机错过One-Time的SKIP/RUN_ONCE",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.schedule.misfire-2f592753.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.schedule.misfire",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-24",
+      "status": "BLOCKED",
+      "evidence": [],
+      "actual": "尚未有完整复合用例运行证据。",
+      "remaining": "真实DST边界需独立可调时钟环境；不能修改承载primary的HubVM时间或用unit/mock代替。",
+      "dimensions": [
+        {
+          "dimension": "尚缺维度",
+          "status": "BLOCKED",
+          "evidence": [],
+          "actual": "",
+          "remaining": "真实DST边界需独立可调时钟环境；不能修改承载primary的HubVM时间或用unit/mock代替。"
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-25",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/condition.cpu_usage.json",
+        "backend/evidence/condition.memory_usage.json",
+        "backend/evidence/condition.disk_usage.json",
+        "backend/evidence/condition.file_exists.json",
+        "backend/evidence/condition.dir_exists.json",
+        "backend/evidence/condition.process_exists-ba257714.json",
+        "backend/evidence/condition.port_listening-02422254.json",
+        "backend/evidence/condition.command_result.json",
+        "backend/isolated/evidence/feature.condition.operators-and-remote-29abbb7c.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "条件 cpu_usage 的客户机实际效果与执行终态",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/condition.cpu_usage.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: condition.cpu_usage",
+          "remaining": ""
+        },
+        {
+          "dimension": "条件 memory_usage 的客户机实际效果与执行终态",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/condition.memory_usage.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: condition.memory_usage",
+          "remaining": ""
+        },
+        {
+          "dimension": "条件 disk_usage 的客户机实际效果与执行终态",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/condition.disk_usage.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: condition.disk_usage",
+          "remaining": ""
+        },
+        {
+          "dimension": "条件 file_exists 的客户机实际效果与执行终态",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/condition.file_exists.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: condition.file_exists",
+          "remaining": ""
+        },
+        {
+          "dimension": "条件 dir_exists 的客户机实际效果与执行终态",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/condition.dir_exists.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: condition.dir_exists",
+          "remaining": ""
+        },
+        {
+          "dimension": "条件 process_exists 的客户机实际效果与执行终态",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/condition.process_exists-ba257714.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: condition.process_exists",
+          "remaining": ""
+        },
+        {
+          "dimension": "条件 port_listening 的客户机实际效果与执行终态",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/condition.port_listening-02422254.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: condition.port_listening",
+          "remaining": ""
+        },
+        {
+          "dimension": "条件 command_result 的客户机实际效果与执行终态",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/condition.command_result.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: condition.command_result",
+          "remaining": ""
+        },
+        {
+          "dimension": "6合法比较符/AND真假未知/remote online与last_execution",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.condition.operators-and-remote-29abbb7c.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.condition.operators-and-remote",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-26",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.condition.operators-and-remote-29abbb7c.json",
+        "backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json"
+      ],
+      "actual": "真/假/未知组合、3层AND真实状态与效果一致；空AND/非法子类型API400。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "AND合法组合及多层递归",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.condition.operators-and-remote-29abbb7c.json",
+            "backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json"
+          ],
+          "actual": "真/假/未知组合、3层AND真实状态与效果一致；空AND/非法子类型API400。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-27",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.condition.operators-and-remote-29abbb7c.json",
+        "main/remote-peer-offline-result.json",
+        "backend/continuation/SYS-27-physical-peer.json",
+        "backend/continuation/sys27-cleanup.json"
+      ],
+      "actual": "Root Node2真实stop且guestPID0/APIoffline→仅Node3Task新Execution SKIPPED，marker不产生，Agent Journal/ACK一致；finally恢复Node2online/synced，再sameTask独立新UUID SUCCESS且实际marker，Task/own目录精确清理。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "6合法比较符/AND真假未知/remote online与last_execution",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.condition.operators-and-remote-29abbb7c.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.condition.operators-and-remote",
+          "remaining": ""
+        },
+        {
+          "dimension": "独立真实Native peer离线/恢复条件",
+          "status": "PASS",
+          "evidence": [
+            "main/remote-peer-offline-result.json",
+            "backend/continuation/SYS-27-physical-peer.json",
+            "backend/continuation/sys27-cleanup.json"
+          ],
+          "actual": "Root Node2真实stop且guestPID0/APIoffline→仅Node3Task新Execution SKIPPED，marker不产生，Agent Journal/ACK一致；finally恢复Node2online/synced，再sameTask独立新UUID SUCCESS且实际marker，Task/own目录精确清理。",
+          "remaining": ""
+        }
+      ],
+      "prior_scope_verdicts": [
+        {
+          "status": "PARTIAL",
+          "remaining": "第二真实Agent online满足已测；offline不满足未单独测。",
+          "dimensions": [
+            {
+              "dimension": "6合法比较符/AND真假未知/remote online与last_execution",
+              "status": "PASS",
+              "evidence": [
+                "backend/isolated/evidence/feature.condition.operators-and-remote-29abbb7c.json"
+              ],
+              "actual": "真实API、Agent状态与客户机断言通过: feature.condition.operators-and-remote",
+              "remaining": ""
+            },
+            {
+              "dimension": "尚缺维度",
+              "status": "NOT_RUN",
+              "evidence": [],
+              "actual": "",
+              "remaining": "第二真实Agent online满足已测；offline不满足未单独测。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-28",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.condition.operators-and-remote-29abbb7c.json",
+        "backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json",
+        "backend/evidence/condition.remote-unknown.json"
+      ],
+      "actual": "SUCCESS与FAILED条件都真实成功；FAILED不相等SKIPPED，无历史BLOCKED且无效果。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "last_execution SUCCESS/FAILED/无历史",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.condition.operators-and-remote-29abbb7c.json",
+            "backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json",
+            "backend/evidence/condition.remote-unknown.json"
+          ],
+          "actual": "SUCCESS与FAILED条件都真实成功；FAILED不相等SKIPPED，无历史BLOCKED且无效果。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-29",
+      "status": "FAIL",
+      "evidence": [
+        "backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json",
+        "backend/evidence/condition.remote-unknown.json",
+        "backend/isolated/evidence/feature.condition.remote-ttl-bf27e07e.json"
+      ],
+      "actual": "无历史、Hub断线Agent-owned触发均BLOCKED/no effect；恢复后上传ACK。；ObservedAt2000/TTL1仍被Agent接受并SUCCESS，客户机marker真实出现；BE-REMOTE-TTL-004。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "无历史/离线FailClosed",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json",
+            "backend/evidence/condition.remote-unknown.json"
+          ],
+          "actual": "无历史、Hub断线Agent-owned触发均BLOCKED/no effect；恢复后上传ACK。",
+          "remaining": ""
+        },
+        {
+          "dimension": "过期RemoteState",
+          "status": "FAIL",
+          "evidence": [
+            "backend/isolated/evidence/feature.condition.remote-ttl-bf27e07e.json"
+          ],
+          "actual": "ObservedAt2000/TTL1仍被Agent接受并SUCCESS，客户机marker真实出现；BE-REMOTE-TTL-004。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-30",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/condition.false.json",
+        "backend/isolated/evidence/feature.condition.operators-and-remote-29abbb7c.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "条件 false 的客户机实际效果与执行终态",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/condition.false.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: condition.false",
+          "remaining": ""
+        },
+        {
+          "dimension": "6合法比较符/AND真假未知/remote online与last_execution",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.condition.operators-and-remote-29abbb7c.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.condition.operators-and-remote",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-31",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.execution.duplicate-id-9a0d863d.json",
+        "backend/isolated/evidence/arch.duplicate_execution_upload-75196223.json"
+      ],
+      "actual": "透明代理即时重复原RUN_EXECUTION、4秒后原样重放同ID；客户机一行，Hub/Journal各一条记录。；终态重新上传后无重复Execution/效果。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "相同ExecutionID运行中/终态重复下发",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.execution.duplicate-id-9a0d863d.json"
+          ],
+          "actual": "透明代理即时重复原RUN_EXECUTION、4秒后原样重放同ID；客户机一行，Hub/Journal各一条记录。",
+          "remaining": ""
+        },
+        {
+          "dimension": "结果重传与ACK幂等",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.duplicate_execution_upload-75196223.json"
+          ],
+          "actual": "终态重新上传后无重复Execution/效果。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-32",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.duplicate_schedule_trigger-81f46f1a.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Duplicate Schedule Trigger",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.duplicate_schedule_trigger-81f46f1a.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.duplicate_schedule_trigger",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-33",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.execution.journal-write-failure-642b0999.json"
+      ],
+      "actual": "真实15秒BEGIN IMMEDIATE纯锁、busy_timeout后写失败；无schema/data写入，finally ROLLBACK；释放后同对象完成。同ID锁内无Journal/marker、明确sqlite busy日志，释放后受控同ID重放单记录/效果/ACK。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "feature.execution.journal-write-failure",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.execution.journal-write-failure-642b0999.json"
+          ],
+          "actual": "真实15秒BEGIN IMMEDIATE纯锁、busy_timeout后写失败；无schema/data写入，finally ROLLBACK；释放后同对象完成。同ID锁内无Journal/marker、明确sqlite busy日志，释放后受控同ID重放单记录/效果/ACK。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-34",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/task.success-18b6cf3d.json",
+        "backend/evidence/task.parameters-secrets.json",
+        "backend/continuation/SYS-34-9a46b8.json",
+        "backend/continuation/cleanup.json"
+      ],
+      "actual": "新Native3串行stdout/stderr六交错事件逐chunk核对seq0..N-1/ExecutionID/stream/实际事件顺序；并发两stream各30行核对每chunk归属、全局seq连续与同stream顺序/无漏重复；terminal对照与客户机marker/Journal ACK真实一致。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "命令真实文件效果/stdout/stderr/Journal/ACK",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/task.success-18b6cf3d.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: task.success",
+          "remaining": ""
+        },
+        {
+          "dimension": "必填/覆盖/secret参数与实时/终态脱敏",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/task.parameters-secrets.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: task.parameters-secrets",
+          "remaining": ""
+        },
+        {
+          "dimension": "2026-10-03 Native3当前适用路径真实补测",
+          "status": "PASS",
+          "evidence": [
+            "backend/continuation/SYS-34-9a46b8.json",
+            "backend/continuation/cleanup.json"
+          ],
+          "actual": "新Native3串行stdout/stderr六交错事件逐chunk核对seq0..N-1/ExecutionID/stream/实际事件顺序；并发两stream各30行核对每chunk归属、全局seq连续与同stream顺序/无漏重复；terminal对照与客户机marker/Journal ACK真实一致。",
+          "remaining": ""
+        }
+      ],
+      "prior_scope_verdicts": [
+        {
+          "status": "PARTIAL",
+          "remaining": "stdout/stderr与分块已测；两stream完整seq并发顺序边界未单测。",
+          "dimensions": [
+            {
+              "dimension": "命令真实文件效果/stdout/stderr/Journal/ACK",
+              "status": "PASS",
+              "evidence": [
+                "backend/evidence/task.success-18b6cf3d.json"
+              ],
+              "actual": "真实API、Agent状态与客户机断言通过: task.success",
+              "remaining": ""
+            },
+            {
+              "dimension": "必填/覆盖/secret参数与实时/终态脱敏",
+              "status": "PASS",
+              "evidence": [
+                "backend/evidence/task.parameters-secrets.json"
+              ],
+              "actual": "真实API、Agent状态与客户机断言通过: task.parameters-secrets",
+              "remaining": ""
+            },
+            {
+              "dimension": "尚缺维度",
+              "status": "NOT_RUN",
+              "evidence": [],
+              "actual": "",
+              "remaining": "stdout/stderr与分块已测；两stream完整seq并发顺序边界未单测。"
+            }
+          ],
+          "recorded_before": "2026-10-01T04:50:00.734015+00:00"
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-35",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.hub_disconnect_during_execution-79e660b7.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Hub Disconnect During Execution",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.hub_disconnect_during_execution-79e660b7.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.hub_disconnect_during_execution",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-36",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.hub_disconnect_during_execution-79e660b7.json",
+        "backend/isolated/evidence/arch.execution_re_upload-7e09dabb.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Hub Disconnect During Execution",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.hub_disconnect_during_execution-79e660b7.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.hub_disconnect_during_execution",
+          "remaining": ""
+        },
+        {
+          "dimension": "Execution Re-upload",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.execution_re_upload-7e09dabb.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.execution_re_upload",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-37",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/task.log-truncation-5a9c1399.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "原日志上限下超长stdout/stderr截断",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/task.log-truncation-5a9c1399.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: task.log-truncation",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-38",
+      "status": "PARTIAL",
+      "evidence": [
+        "backend/evidence/feature.process.native-bab6a27a.json",
+        "backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+      ],
+      "actual": "两种路径的父/孙PID在host init收割后/proc完全不存在。；两种路径没有活进程；每种路径2个Z态由容器PID1未收割，原始stat保留。",
+      "remaining": "Docker两条路径仍观察到Z态；Native全部PID收割已通过。",
+      "dimensions": [
+        {
+          "dimension": "Native忽略TERM后代cancel与timeout",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.process.native-bab6a27a.json"
+          ],
+          "actual": "两种路径的父/孙PID在host init收割后/proc完全不存在。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Docker忽略TERM后代",
+          "status": "PARTIAL",
+          "evidence": [
+            "backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+          ],
+          "actual": "两种路径没有活进程；每种路径2个Z态由容器PID1未收割，原始stat保留。",
+          "remaining": "Z态不等同运行泄漏；“无任何子孙残留”复合要求未全满足。"
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-39",
+      "status": "PARTIAL",
+      "evidence": [
+        "backend/evidence/feature.process.native-bab6a27a.json",
+        "backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+      ],
+      "actual": "两种路径的父/孙PID在host init收割后/proc完全不存在。；两种路径没有活进程；每种路径2个Z态由容器PID1未收割，原始stat保留。",
+      "remaining": "Docker两条路径仍观察到Z态；Native全部PID收割已通过。",
+      "dimensions": [
+        {
+          "dimension": "Native忽略TERM后代cancel与timeout",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.process.native-bab6a27a.json"
+          ],
+          "actual": "两种路径的父/孙PID在host init收割后/proc完全不存在。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Docker忽略TERM后代",
+          "status": "PARTIAL",
+          "evidence": [
+            "backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+          ],
+          "actual": "两种路径没有活进程；每种路径2个Z态由容器PID1未收割，原始stat保留。",
+          "remaining": "Z态不等同运行泄漏；“无任何子孙残留”复合要求未全满足。"
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-40",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/task.retry.json",
+        "backend/evidence/audit.execution-actions.json",
+        "backend/continuation/SYS-40-e6a892.json",
+        "backend/continuation/cleanup.json"
+      ],
+      "actual": "Retry2实测3次独占marker与每次start/end时间，/logs含三次stdout/stderr、seq连续；同一Execution，终态仅last attempt；Agent journal两次retry记录、Hub execute audit恰一次。间隔实测进程自然间隙，当前产品无配置retry interval/独立retry audit承诺。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Retry真实尝试次数与单Execution",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/task.retry.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: task.retry",
+          "remaining": ""
+        },
+        {
+          "dimension": "本轮资源运行/取消审计与分页",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/audit.execution-actions.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: audit.execution-actions",
+          "remaining": ""
+        },
+        {
+          "dimension": "2026-10-03 Native3当前适用路径真实补测",
+          "status": "PASS",
+          "evidence": [
+            "backend/continuation/SYS-40-e6a892.json",
+            "backend/continuation/cleanup.json"
+          ],
+          "actual": "Retry2实测3次独占marker与每次start/end时间，/logs含三次stdout/stderr、seq连续；同一Execution，终态仅last attempt；Agent journal两次retry记录、Hub execute audit恰一次。间隔实测进程自然间隙，当前产品无配置retry interval/独立retry audit承诺。",
+          "remaining": ""
+        }
+      ],
+      "prior_scope_verdicts": [
+        {
+          "status": "PARTIAL",
+          "remaining": "Retry2真实三次/单Execution已测；每次日志与间隔/专门重试审计契约未闭环。",
+          "dimensions": [
+            {
+              "dimension": "Retry真实尝试次数与单Execution",
+              "status": "PASS",
+              "evidence": [
+                "backend/evidence/task.retry.json"
+              ],
+              "actual": "真实API、Agent状态与客户机断言通过: task.retry",
+              "remaining": ""
+            },
+            {
+              "dimension": "本轮资源运行/取消审计与分页",
+              "status": "PASS",
+              "evidence": [
+                "backend/evidence/audit.execution-actions.json"
+              ],
+              "actual": "真实API、Agent状态与客户机断言通过: audit.execution-actions",
+              "remaining": ""
+            },
+            {
+              "dimension": "尚缺维度",
+              "status": "NOT_RUN",
+              "evidence": [],
+              "actual": "",
+              "remaining": "Retry2真实三次/单Execution已测；每次日志与间隔/专门重试审计契约未闭环。"
+            }
+          ],
+          "recorded_before": "2026-10-01T04:50:00.734015+00:00"
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-41",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+        "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json",
+        "main/cache-recovery-result.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Artifact Download Interruption",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.artifact_download_interruption",
+          "remaining": ""
+        },
+        {
+          "dimension": "Artifact SHA Failure",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.artifact_sha_failure",
+          "remaining": ""
+        },
+        {
+          "dimension": "主控/环境运行证据: main/cache-recovery-result.json",
+          "status": "PASS",
+          "evidence": [
+            "main/cache-recovery-result.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-42",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Artifact SHA Failure",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.artifact_sha_failure",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-43",
+      "status": "PARTIAL",
+      "evidence": [
+        "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "真实HTTP截断与sha坏已清可信缓存；timeout/HTTP非200与tmp全部清理未全组合。",
+      "dimensions": [
+        {
+          "dimension": "Artifact Download Interruption",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.artifact_download_interruption",
+          "remaining": ""
+        },
+        {
+          "dimension": "尚缺维度",
+          "status": "NOT_RUN",
+          "evidence": [],
+          "actual": "",
+          "remaining": "真实HTTP截断与sha坏已清可信缓存；timeout/HTTP非200与tmp全部清理未全组合。"
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-44",
+      "status": "FAIL",
+      "evidence": [
+        "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+        "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json",
+        "environment/tls-full-results.json"
+      ],
+      "actual": "HTTP Prefetch成功/截断/SHA失败恢复已测；环境TLSCA配置下Prefetch真实unknown authority失败。",
+      "remaining": "TLS业务下载路径缺陷不能由HTTP路径PASS覆盖。",
+      "dimensions": [
+        {
+          "dimension": "Artifact Download Interruption",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.artifact_download_interruption",
+          "remaining": ""
+        },
+        {
+          "dimension": "Artifact SHA Failure",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.artifact_sha_failure",
+          "remaining": ""
+        },
+        {
+          "dimension": "主控/环境运行证据: environment/tls-full-results.json",
+          "status": "PARTIAL",
+          "evidence": [
+            "environment/tls-full-results.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        },
+        {
+          "dimension": "尚缺维度",
+          "status": "NOT_RUN",
+          "evidence": [],
+          "actual": "",
+          "remaining": "TLS业务下载路径缺陷不能由HTTP路径PASS覆盖。"
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-45",
+      "status": "FAIL",
+      "evidence": [
+        "backend/evidence/feature.application.lifecycle-e22782da.json",
+        "backend/evidence/feature.application.operator-deploy-6d0afc51.json",
+        "environment/hostintegration-preflight.json",
+        "environment/hostintegration-application.json"
+      ],
+      "actual": "首次Operator部署、4种health、升级失败回滚、task/计划操作均验证真实Unit/bin/config与API/Journal；精确删除。；实际install unit exit126；nsenter -r分离参数被作为可执行路径，FAIL-ENV-HOST-001。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Native应用正常闭环和Operator效果",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.application.lifecycle-e22782da.json",
+            "backend/evidence/feature.application.operator-deploy-6d0afc51.json"
+          ],
+          "actual": "首次Operator部署、4种health、升级失败回滚、task/计划操作均验证真实Unit/bin/config与API/Journal；精确删除。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Host Integration应用部署",
+          "status": "FAIL",
+          "evidence": [
+            "environment/hostintegration-preflight.json",
+            "environment/hostintegration-application.json"
+          ],
+          "actual": "实际install unit exit126；nsenter -r分离参数被作为可执行路径，FAIL-ENV-HOST-001。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-46",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/feature.application.lifecycle-e22782da.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "真实托管应用部署/四健康检查/start/stop/restart/版本/分配解除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.application.lifecycle-e22782da.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.application.lifecycle",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-47",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/feature.application.lifecycle-e22782da.json",
+        "main/nonmanaged-unit-result.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "真实托管应用部署/四健康检查/start/stop/restart/版本/分配解除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.application.lifecycle-e22782da.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.application.lifecycle",
+          "remaining": ""
+        },
+        {
+          "dimension": "主控/环境运行证据: main/nonmanaged-unit-result.json",
+          "status": "PASS",
+          "evidence": [
+            "main/nonmanaged-unit-result.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-48",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/feature.application.lifecycle-e22782da.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "真实托管应用部署/四健康检查/start/stop/restart/版本/分配解除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.application.lifecycle-e22782da.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.application.lifecycle",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-49",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/feature.application.lifecycle-e22782da.json",
+        "main/cross-fs-result.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "真实托管应用部署/四健康检查/start/stop/restart/版本/分配解除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.application.lifecycle-e22782da.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.application.lifecycle",
+          "remaining": ""
+        },
+        {
+          "dimension": "主控/环境运行证据: main/cross-fs-result.json",
+          "status": "PASS",
+          "evidence": [
+            "main/cross-fs-result.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-50",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/feature.application.lifecycle-e22782da.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "真实托管应用部署/四健康检查/start/stop/restart/版本/分配解除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.application.lifecycle-e22782da.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.application.lifecycle",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-51",
+      "status": "FAIL",
+      "evidence": [
+        "main/native-results.json"
+      ],
+      "actual": "REPLACED真实定点kill，原v1 binary/config/unit恢复并active。；STARTED真实定点kill，原v1 binary/config/unit恢复并active。；VERIFYING真实定点kill，原v1 binary/config/unit恢复并active。；ROLLING_BACK真实定点kill，原v1 binary/config/unit恢复并active。；实际Journal三个BackupPath为空，kill后DONE但原binary/config/unit全部不存在，ExecutionFAILED agent_restarted；P0恢复路径删除旧文件。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Native升级REPLACED崩溃恢复",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "REPLACED真实定点kill，原v1 binary/config/unit恢复并active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native升级STARTED崩溃恢复",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "STARTED真实定点kill，原v1 binary/config/unit恢复并active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native升级VERIFYING崩溃恢复",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "VERIFYING真实定点kill，原v1 binary/config/unit恢复并active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native升级ROLLING_BACK崩溃恢复",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "ROLLING_BACK真实定点kill，原v1 binary/config/unit恢复并active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native升级PREPARING崩溃",
+          "status": "FAIL",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "实际Journal三个BackupPath为空，kill后DONE但原binary/config/unit全部不存在，ExecutionFAILED agent_restarted；P0恢复路径删除旧文件。",
+          "remaining": ""
+        },
+        {
+          "dimension": "STOPPED阶段",
+          "status": "BLOCKED",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "",
+          "remaining": "当前实现从未写STOPPED，不能伪造阶段；其他实际阶段已执行。"
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-52",
+      "status": "PASS",
+      "evidence": [
+        "main/native-storage-edge-results.json",
+        "main/backup-missing-result.json"
+      ],
+      "actual": "真实ENOSPC/EROFS/Permission denied明确FAILED、无文件/Unit/tmp残留、Agent active。；VERIFYING删除唯一该App的binary backup，健康失败后Execution FAILED/unhealthy/rollback health failed；未误SUCCESS、Unit不active。旧binary物理不可恢复事实保留。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "磁盘不足/只读/权限失败",
+          "status": "PASS",
+          "evidence": [
+            "main/native-storage-edge-results.json"
+          ],
+          "actual": "真实ENOSPC/EROFS/Permission denied明确FAILED、无文件/Unit/tmp残留、Agent active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "应用Backup缺失明确失败",
+          "status": "PASS",
+          "evidence": [
+            "main/backup-missing-result.json"
+          ],
+          "actual": "VERIFYING删除唯一该App的binary backup，健康失败后Execution FAILED/unhealthy/rollback health failed；未误SUCCESS、Unit不active。旧binary物理不可恢复事实保留。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-53",
+      "status": "PASS",
+      "evidence": [
+        "main/native-storage-edge-results.json",
+        "backend/continuation/SYS-53-1ab76c.json",
+        "backend/continuation/cleanup.json"
+      ],
+      "actual": "当前适用路径真实验证：Native3 Task run_user=nobody实际uid/gid和文件owner/group0640、0400写拒绝；仅Node3 self Relay mode0640→NativeHostAdapter.AtomicReplaceReader，真实size/SHA/owner与无.tmp。HostAdapter.Chown无生产调用为NOT_APPLICABLE，fixture os.chown不冒称调用adapter。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Native路径/User/权限故障",
+          "status": "PASS",
+          "evidence": [
+            "main/native-storage-edge-results.json"
+          ],
+          "actual": "nobody写0700拒绝、不存在user明确FAILED；../binary_path Hub400且无definition/客户机效果。",
+          "remaining": ""
+        },
+        {
+          "dimension": "2026-10-03 Native3当前适用路径真实补测",
+          "status": "PASS",
+          "evidence": [
+            "backend/continuation/SYS-53-1ab76c.json",
+            "backend/continuation/cleanup.json"
+          ],
+          "actual": "当前适用路径真实验证：Native3 Task run_user=nobody实际uid/gid和文件owner/group0640、0400写拒绝；仅Node3 self Relay mode0640→NativeHostAdapter.AtomicReplaceReader，真实size/SHA/owner与无.tmp。HostAdapter.Chown无生产调用为NOT_APPLICABLE，fixture os.chown不冒称调用adapter。",
+          "remaining": ""
+        },
+        {
+          "dimension": "HostAdapter.Chown直接方法",
+          "status": "NOT_APPLICABLE",
+          "evidence": [],
+          "source": [
+            "internal/agent/host/native.go:79",
+            "internal/agent/application.go:450",
+            "internal/agent/agent.go:1311"
+          ],
+          "actual": "当前生产代码无Chown调用/API文件owner/group字段，不能通过shell chown构造不存在的对外契约；已用真实run_user与Relay覆盖适用路径。",
+          "remaining": ""
+        }
+      ],
+      "prior_scope_verdicts": [
+        {
+          "status": "PARTIAL",
+          "remaining": "mode/group/chown完整组合未覆盖。",
+          "dimensions": [
+            {
+              "dimension": "Native路径/User/权限故障",
+              "status": "PASS",
+              "evidence": [
+                "main/native-storage-edge-results.json"
+              ],
+              "actual": "nobody写0700拒绝、不存在user明确FAILED；../binary_path Hub400且无definition/客户机效果。",
+              "remaining": ""
+            },
+            {
+              "dimension": "Native文件模式/chown/group全部组合",
+              "status": "NOT_RUN",
+              "evidence": [],
+              "actual": "",
+              "remaining": "完整文件mode、group/chown负向与回滚组合仍未实测。"
+            }
+          ],
+          "recorded_before": "2026-10-01T04:50:00.734015+00:00"
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-54",
+      "status": "PARTIAL",
+      "evidence": [
+        "environment/hostintegration-preflight.json",
+        "environment/hostintegration-application.json"
+      ],
+      "actual": "host PID/network、最小caps与只读proc/sys/os-release及精确可写allowlist真实配置；正确nsenter命令只读探针exit0。",
+      "remaining": "完整HostOS/capability字段比对证据待主控整合；HostDeploy失败另列。",
+      "dimensions": [
+        {
+          "dimension": "真实Host Integration inventory与挂载映射",
+          "status": "PASS",
+          "evidence": [
+            "environment/hostintegration-preflight.json",
+            "environment/hostintegration-application.json"
+          ],
+          "actual": "host PID/network、最小caps与只读proc/sys/os-release及精确可写allowlist真实配置；正确nsenter命令只读探针exit0。",
+          "remaining": ""
+        },
+        {
+          "dimension": "HostOS/能力所有字段独立断言",
+          "status": "NOT_RUN",
+          "evidence": [],
+          "actual": "",
+          "remaining": "摘要不等于逐字段Node inventory和host本体OS/capability比对；待Root/Env实际证据合入。"
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-55",
+      "status": "FAIL",
+      "evidence": [
+        "environment/host-negative-results.json"
+      ],
+      "actual": "ENV-HOSTNEG-MISSING/WRONG两条真实反例：缺失或错误宿主映射仍报告传输SUCCESS并写容器路径，宿主目标未更新；FAIL-ENV-HOST-002。；只读挂载真实拒绝，宿主旧文件保留。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Host缺失/错误映射",
+          "status": "FAIL",
+          "evidence": [
+            "environment/host-negative-results.json"
+          ],
+          "actual": "ENV-HOSTNEG-MISSING/WRONG两条真实反例：缺失或错误宿主映射仍报告传输SUCCESS并写容器路径，宿主目标未更新；FAIL-ENV-HOST-002。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Host只读映射",
+          "status": "PASS",
+          "evidence": [
+            "environment/host-negative-results.json"
+          ],
+          "actual": "只读挂载真实拒绝，宿主旧文件保留。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-56",
+      "status": "PASS",
+      "evidence": [
+        "environment/host-negative-results.json",
+        "main/native-storage-edge-results.json"
+      ],
+      "actual": "真实Host ../、allowlist外路径和symlink拒绝，宿主旧sentinel不变；精准本轮fixture清理。；../binary_path POST400，无definition/客户机效果。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "HostTraversal/Allowlist/Symlink拒绝",
+          "status": "PASS",
+          "evidence": [
+            "environment/host-negative-results.json"
+          ],
+          "actual": "真实Host ../、allowlist外路径和symlink拒绝，宿主旧sentinel不变；精准本轮fixture清理。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native traversal提前API拒绝",
+          "status": "PASS",
+          "evidence": [
+            "main/native-storage-edge-results.json"
+          ],
+          "actual": "../binary_path POST400，无definition/客户机效果。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-57",
+      "status": "PASS",
+      "evidence": [
+        "main/cross-fs-result.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "主控/环境运行证据: main/cross-fs-result.json",
+          "status": "PASS",
+          "evidence": [
+            "main/cross-fs-result.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-58",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.capability.host-operation-eb048d21.json",
+        "backend/isolated/evidence/feature.node.docker-upgrade-78e2a7d2.json"
+      ],
+      "actual": "真实Docker deploy/upgrade/start/stop/restart及app_deploy/app_operation API缺cap400；没有RUN_EXECUTION/本地Journal、binary/unit；Agent升级SKIPPED、原二进制SHA不变。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "BasicDocker应用HostOperation及Task缺cap过滤",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.capability.host-operation-eb048d21.json",
+            "backend/isolated/evidence/feature.node.docker-upgrade-78e2a7d2.json"
+          ],
+          "actual": "真实Docker deploy/upgrade/start/stop/restart及app_deploy/app_operation API缺cap400；没有RUN_EXECUTION/本地Journal、binary/unit；Agent升级SKIPPED、原二进制SHA不变。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-59",
+      "status": "PASS",
+      "evidence": [
+        "main/relay-edge-results.json",
+        "environment/tls-full-results.json"
+      ],
+      "actual": "wrong-source403；真实Source身份上传，通过HTTPS证书校验并实际SHA一致。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Source身份精确授权",
+          "status": "PASS",
+          "evidence": [
+            "main/relay-edge-results.json",
+            "environment/tls-full-results.json"
+          ],
+          "actual": "wrong-source403；真实Source身份上传，通过HTTPS证书校验并实际SHA一致。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-60",
+      "status": "PASS",
+      "evidence": [
+        "main/relay-edge-results.json",
+        "environment/tls-full-results.json"
+      ],
+      "actual": "stage前所有Agent下载404；stage后Source/Other403、Target200 bytes一致。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Target身份及Stage门禁",
+          "status": "PASS",
+          "evidence": [
+            "main/relay-edge-results.json",
+            "environment/tls-full-results.json"
+          ],
+          "actual": "stage前所有Agent下载404；stage后Source/Other403、Target200 bytes一致。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-61",
+      "status": "PARTIAL",
+      "evidence": [
+        "main/relay-edge-results.json"
+      ],
+      "actual": "非法size/range/contentlength拒绝；chunked part13/blob不存在/SHA空，正确offset续传真SHA；重复上传保原SHA。",
+      "remaining": "Hub Stage原子提升精确故障窗口尚缺。",
+      "dimensions": [
+        {
+          "dimension": "Stage元数据/Range/部分上传与续传",
+          "status": "PASS",
+          "evidence": [
+            "main/relay-edge-results.json"
+          ],
+          "actual": "非法size/range/contentlength拒绝；chunked part13/blob不存在/SHA空，正确offset续传真SHA；重复上传保原SHA。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Hub重启时Stage原子提升",
+          "status": "NOT_RUN",
+          "evidence": [],
+          "actual": "",
+          "remaining": "未在Stage原子提升边界重启Hub。"
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-62",
+      "status": "PARTIAL",
+      "evidence": [
+        "main/relay-edge-results.json",
+        "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json"
+      ],
+      "actual": "部分目标失败不影响其他成功；Native目标symlink拒绝、old sentinel未变、tmp无残留。",
+      "remaining": "目标中途故障与原子替换窗口尚未精确注入。",
+      "dimensions": [
+        {
+          "dimension": "真实多目标与Native symlink旧文件保护",
+          "status": "PASS",
+          "evidence": [
+            "main/relay-edge-results.json",
+            "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json"
+          ],
+          "actual": "部分目标失败不影响其他成功；Native目标symlink拒绝、old sentinel未变、tmp无残留。",
+          "remaining": ""
+        },
+        {
+          "dimension": "目标接收中断/替换边界故障",
+          "status": "NOT_RUN",
+          "evidence": [],
+          "actual": "",
+          "remaining": "未在目标下载/AtomicRename窗口终止Agent。"
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-63",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+        "web/relay-verified-results.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "多目标故障隔离/失败目标重试/权限/原子替换",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.transfer.multitarget-retry",
+          "remaining": ""
+        },
+        {
+          "dimension": "主控/环境运行证据: web/relay-verified-results.json",
+          "status": "PASS",
+          "evidence": [
+            "web/relay-verified-results.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-64",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "多目标故障隔离/失败目标重试/权限/原子替换",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.transfer.multitarget-retry",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-65",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+        "backend/evidence/transfer.success-source-failure.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "多目标故障隔离/失败目标重试/权限/原子替换",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.transfer.multitarget-retry",
+          "remaining": ""
+        },
+        {
+          "dimension": "真实文件中继/SHA效果/源失败目标终结/取消",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/transfer.success-source-failure.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: transfer.success-source-failure",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "SYS-66",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json"
+      ],
+      "actual": "授权generatedDocker目标停机：源实际512KiB+标记上传/Hub Stage SHA与size一致、目标旧文件保留；coreHub真实stop/start后Stage持久；原目标原卷启动收到完整SHA且无.tmp，identity不变online/synced；精确取消传输与fixture清理。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "离线精确Target旧文件和Hub重启Stage恢复",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json"
+          ],
+          "actual": "授权generatedDocker目标停机：源实际512KiB+标记上传/Hub Stage SHA与size一致、目标旧文件保留；coreHub真实stop/start后Stage持久；原目标原卷启动收到完整SHA且无.tmp，identity不变online/synced；精确取消传输与fixture清理。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "X01",
+      "status": "PARTIAL",
+      "evidence": [
+        "backend/isolated/evidence/feature.node.docker-upgrade-78e2a7d2.json",
+        "main/upgrade-ui-result.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "真实Native单点UI成功/Docker过滤已测；混合批部分失败/暂停离线/重复在途完整组合缺。",
+      "dimensions": [
+        {
+          "dimension": "Docker Agent自升级拒绝/批内去重/无实际替换",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.node.docker-upgrade-78e2a7d2.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.node.docker-upgrade",
+          "remaining": ""
+        },
+        {
+          "dimension": "主控/环境运行证据: main/upgrade-ui-result.json",
+          "status": "PARTIAL",
+          "evidence": [
+            "main/upgrade-ui-result.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        },
+        {
+          "dimension": "尚缺维度",
+          "status": "NOT_RUN",
+          "evidence": [],
+          "actual": "",
+          "remaining": "真实Native单点UI成功/Docker过滤已测；混合批部分失败/暂停离线/重复在途完整组合缺。"
+        }
+      ]
+    },
+    {
+      "case_id": "X02",
+      "status": "FAIL",
+      "evidence": [
+        "backend/isolated/evidence/feature.node.revoke-3dfd204f.json"
+      ],
+      "actual": "旧cred401/新credaccepted，但管理员重新纳管仍disabled，显式Enable恢复QA。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "凭证吊销/重纳管/旧凭证拒绝",
+          "status": "FAIL",
+          "evidence": [
+            "backend/isolated/evidence/feature.node.revoke-3dfd204f.json"
+          ],
+          "actual": "新凭证认证/同步成功，但重新纳管后仍disabled；已显式Enable恢复QA环境",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "X03",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.schedule.onstart-network-disabled-d11333cf.json",
+        "backend/isolated/evidence/feature.schedule.on_start-5038bb04.json"
+      ],
+      "actual": "仅新进程启动产生Slot；只断开WS后PID不变、新WS/任务成功且无新Slot；disabled保存后重启没有新Slot。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "on_start进程启动、网络重连、禁用",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.schedule.onstart-network-disabled-d11333cf.json",
+            "backend/isolated/evidence/feature.schedule.on_start-5038bb04.json"
+          ],
+          "actual": "仅新进程启动产生Slot；只断开WS后PID不变、新WS/任务成功且无新Slot；disabled保存后重启没有新Slot。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-01",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.hub_restart-56006af8.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Hub Restart",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.hub_restart-56006af8.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.hub_restart",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-02",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.docker_agent_restart-660b369c.json",
+        "main/native-results.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Docker Agent Restart",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.docker_agent_restart-660b369c.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.docker_agent_restart",
+          "remaining": ""
+        },
+        {
+          "dimension": "主控/环境运行证据: main/native-results.json",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-03",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.docker_agent_restart-660b369c.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Docker Agent Restart",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.docker_agent_restart-660b369c.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.docker_agent_restart",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-04",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.docker_agent_recreate-c1bb87d7.json",
+        "backend/isolated/evidence/feature.docker.cache-preservation-3bc4fc69.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Docker Agent Recreate",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.docker_agent_recreate-c1bb87d7.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.docker_agent_recreate",
+          "remaining": ""
+        },
+        {
+          "dimension": "Docker保卷重建真实缓存SHA与identity保持",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.docker.cache-preservation-3bc4fc69.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.docker.cache-preservation",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-05",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.persistent_volume_missing-4e21dc0b.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Persistent Volume Missing",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.persistent_volume_missing-4e21dc0b.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.persistent_volume_missing",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-06",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.agent_offline_during_task_update-bf905097.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Agent Offline During Task Update",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.agent_offline_during_task_update-bf905097.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.agent_offline_during_task_update",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-07",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.hub_disconnect_during_execution-79e660b7.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Hub Disconnect During Execution",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.hub_disconnect_during_execution-79e660b7.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.hub_disconnect_during_execution",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-08",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.agent_offline_during_hub_script_update-4c6237be.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Agent Offline During Hub Script Update",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.agent_offline_during_hub_script_update-4c6237be.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.agent_offline_during_hub_script_update",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-09",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.agent_offline_during_task_update-bf905097.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Agent Offline During Task Update",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.agent_offline_during_task_update-bf905097.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.agent_offline_during_task_update",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-10",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.lost_notification-ef6007fd.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Lost Notification",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.lost_notification-ef6007fd.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.lost_notification",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-11",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.duplicate_notification-b2025121.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Duplicate Notification",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.duplicate_notification-b2025121.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.duplicate_notification",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-12",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.out_of_order_notification-431f5614.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Out-of-order Notification",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.out_of_order_notification-431f5614.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.out_of_order_notification",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-13",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.revision_lag-642bc11d.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Revision Lag",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.revision_lag-642bc11d.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.revision_lag",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-14",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.change_log_window_expiry-1142f7ff.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Change Log Window Expiry",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.change_log_window_expiry-1142f7ff.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.change_log_window_expiry",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-15",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.full_resync-cac170fa.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Full Resync",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.full_resync-cac170fa.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.full_resync",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-16",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.sync_dependency_failure-24a4e9ce.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Sync Dependency Failure",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.sync_dependency_failure-24a4e9ce.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.sync_dependency_failure",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-17",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.duplicate_schedule_trigger-81f46f1a.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Duplicate Schedule Trigger",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.duplicate_schedule_trigger-81f46f1a.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.duplicate_schedule_trigger",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-18",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+        "backend/isolated/evidence/feature.schedule.interval-offline-57313037.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Offline Scheduled Execution",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.offline_scheduled_execution",
+          "remaining": ""
+        },
+        {
+          "dimension": "Interval离线多slot/ACK无重复与HubRequired不运行",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.schedule.interval-offline-57313037.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.schedule.interval-offline",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-19",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.execution_re_upload-7e09dabb.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Execution Re-upload",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.execution_re_upload-7e09dabb.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.execution_re_upload",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-20",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.duplicate_execution_upload-75196223.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Duplicate Execution Upload",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.duplicate_execution_upload-75196223.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.duplicate_execution_upload",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-21",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/task.timeout.json",
+        "backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Timeout真实终态",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/task.timeout.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: task.timeout",
+          "remaining": ""
+        },
+        {
+          "dimension": "Process Group Cleanup",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.process_group_cleanup",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-22",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/task.cancel.json",
+        "backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Cancel真实终态且不Retry",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/task.cancel.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: task.cancel",
+          "remaining": ""
+        },
+        {
+          "dimension": "Process Group Cleanup",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.process_group_cleanup",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-23",
+      "status": "PARTIAL",
+      "evidence": [
+        "backend/evidence/feature.process.native-bab6a27a.json",
+        "backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+      ],
+      "actual": "两种路径的父/孙PID在host init收割后/proc完全不存在。；两种路径没有活进程；每种路径2个Z态由容器PID1未收割，原始stat保留。",
+      "remaining": "Docker两条路径仍观察到Z态；Native全部PID收割已通过。",
+      "dimensions": [
+        {
+          "dimension": "Native忽略TERM后代cancel与timeout",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.process.native-bab6a27a.json"
+          ],
+          "actual": "两种路径的父/孙PID在host init收割后/proc完全不存在。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Docker忽略TERM后代",
+          "status": "PARTIAL",
+          "evidence": [
+            "backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+          ],
+          "actual": "两种路径没有活进程；每种路径2个Z态由容器PID1未收割，原始stat保留。",
+          "remaining": "Z态不等同运行泄漏；“无任何子孙残留”复合要求未全满足。"
+        }
+      ]
+    },
+    {
+      "case_id": "AR-24",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Artifact Download Interruption",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.artifact_download_interruption",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-25",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Artifact SHA Failure",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.artifact_sha_failure",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-26",
+      "status": "FAIL",
+      "evidence": [
+        "backend/evidence/feature.application.lifecycle-e22782da.json",
+        "backend/evidence/feature.application.operator-deploy-6d0afc51.json",
+        "environment/hostintegration-preflight.json",
+        "environment/hostintegration-application.json"
+      ],
+      "actual": "首次Operator部署、4种health、升级失败回滚、task/计划操作均验证真实Unit/bin/config与API/Journal；精确删除。；实际install unit exit126；nsenter -r分离参数被作为可执行路径，FAIL-ENV-HOST-001。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Native应用正常闭环和Operator效果",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.application.lifecycle-e22782da.json",
+            "backend/evidence/feature.application.operator-deploy-6d0afc51.json"
+          ],
+          "actual": "首次Operator部署、4种health、升级失败回滚、task/计划操作均验证真实Unit/bin/config与API/Journal；精确删除。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Host Integration应用部署",
+          "status": "FAIL",
+          "evidence": [
+            "environment/hostintegration-preflight.json",
+            "environment/hostintegration-application.json"
+          ],
+          "actual": "实际install unit exit126；nsenter -r分离参数被作为可执行路径，FAIL-ENV-HOST-001。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-27",
+      "status": "PARTIAL",
+      "evidence": [
+        "backend/evidence/feature.application.lifecycle-e22782da.json",
+        "environment/summary.json"
+      ],
+      "actual": "Native部署/升级/回滚已实测，Host升级被安装126前置阻断。",
+      "remaining": "Host实际升级无法到达。",
+      "dimensions": [
+        {
+          "dimension": "真实托管应用部署/四健康检查/start/stop/restart/版本/分配解除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.application.lifecycle-e22782da.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.application.lifecycle",
+          "remaining": ""
+        },
+        {
+          "dimension": "主控/环境运行证据: environment/summary.json",
+          "status": "PARTIAL",
+          "evidence": [
+            "environment/summary.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        },
+        {
+          "dimension": "尚缺维度",
+          "status": "NOT_RUN",
+          "evidence": [],
+          "actual": "",
+          "remaining": "Host实际升级无法到达。"
+        }
+      ]
+    },
+    {
+      "case_id": "AR-28",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/feature.application.lifecycle-e22782da.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "真实托管应用部署/四健康检查/start/stop/restart/版本/分配解除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.application.lifecycle-e22782da.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.application.lifecycle",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-29",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/feature.application.lifecycle-e22782da.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "真实托管应用部署/四健康检查/start/stop/restart/版本/分配解除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.application.lifecycle-e22782da.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.application.lifecycle",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-30",
+      "status": "FAIL",
+      "evidence": [
+        "main/native-results.json"
+      ],
+      "actual": "REPLACED真实定点kill，原v1 binary/config/unit恢复并active。；STARTED真实定点kill，原v1 binary/config/unit恢复并active。；VERIFYING真实定点kill，原v1 binary/config/unit恢复并active。；ROLLING_BACK真实定点kill，原v1 binary/config/unit恢复并active。；实际Journal三个BackupPath为空，kill后DONE但原binary/config/unit全部不存在，ExecutionFAILED agent_restarted；P0恢复路径删除旧文件。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Native升级REPLACED崩溃恢复",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "REPLACED真实定点kill，原v1 binary/config/unit恢复并active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native升级STARTED崩溃恢复",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "STARTED真实定点kill，原v1 binary/config/unit恢复并active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native升级VERIFYING崩溃恢复",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "VERIFYING真实定点kill，原v1 binary/config/unit恢复并active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native升级ROLLING_BACK崩溃恢复",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "ROLLING_BACK真实定点kill，原v1 binary/config/unit恢复并active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native升级PREPARING崩溃",
+          "status": "FAIL",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "实际Journal三个BackupPath为空，kill后DONE但原binary/config/unit全部不存在，ExecutionFAILED agent_restarted；P0恢复路径删除旧文件。",
+          "remaining": ""
+        },
+        {
+          "dimension": "STOPPED阶段",
+          "status": "BLOCKED",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "",
+          "remaining": "当前实现从未写STOPPED，不能伪造阶段；其他实际阶段已执行。"
+        }
+      ]
+    },
+    {
+      "case_id": "AR-31",
+      "status": "FAIL",
+      "evidence": [
+        "environment/host-negative-results.json"
+      ],
+      "actual": "ENV-HOSTNEG-MISSING/WRONG两条真实反例：缺失或错误宿主映射仍报告传输SUCCESS并写容器路径，宿主目标未更新；FAIL-ENV-HOST-002。；只读挂载真实拒绝，宿主旧文件保留。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Host缺失/错误映射",
+          "status": "FAIL",
+          "evidence": [
+            "environment/host-negative-results.json"
+          ],
+          "actual": "ENV-HOSTNEG-MISSING/WRONG两条真实反例：缺失或错误宿主映射仍报告传输SUCCESS并写容器路径，宿主目标未更新；FAIL-ENV-HOST-002。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Host只读映射",
+          "status": "PASS",
+          "evidence": [
+            "environment/host-negative-results.json"
+          ],
+          "actual": "只读挂载真实拒绝，宿主旧文件保留。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-32",
+      "status": "PARTIAL",
+      "evidence": [
+        "environment/host-negative-results.json"
+      ],
+      "actual": "真实缺cap/只读拒绝，无HostOperation效果。",
+      "remaining": "独立宿主owner/group权限组合未完整实测。",
+      "dimensions": [
+        {
+          "dimension": "Host缺cap与只读拒绝",
+          "status": "PASS",
+          "evidence": [
+            "environment/host-negative-results.json"
+          ],
+          "actual": "真实缺cap/只读拒绝，无HostOperation效果。",
+          "remaining": ""
+        },
+        {
+          "dimension": "HostAdapter全部permission组合",
+          "status": "NOT_RUN",
+          "evidence": [],
+          "actual": "",
+          "remaining": "独立宿主文件owner/group拒绝组合未全部验证；nsenter126问题另列。"
+        }
+      ]
+    },
+    {
+      "case_id": "AR-33",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.capability.host-operation-eb048d21.json",
+        "backend/isolated/evidence/feature.node.docker-upgrade-78e2a7d2.json"
+      ],
+      "actual": "真实Docker deploy/upgrade/start/stop/restart及app_deploy/app_operation API缺cap400；没有RUN_EXECUTION/本地Journal、binary/unit；Agent升级SKIPPED、原二进制SHA不变。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "BasicDocker应用HostOperation及Task缺cap过滤",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.capability.host-operation-eb048d21.json",
+            "backend/isolated/evidence/feature.node.docker-upgrade-78e2a7d2.json"
+          ],
+          "actual": "真实Docker deploy/upgrade/start/stop/restart及app_deploy/app_operation API缺cap400；没有RUN_EXECUTION/本地Journal、binary/unit；Agent升级SKIPPED、原二进制SHA不变。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-34",
+      "status": "PASS",
+      "evidence": [
+        "environment/host-negative-results.json"
+      ],
+      "actual": "真实Host ../、allowlist外路径和symlink拒绝，宿主旧sentinel不变；精准本轮fixture清理。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "HostTraversal/Allowlist/Symlink拒绝",
+          "status": "PASS",
+          "evidence": [
+            "environment/host-negative-results.json"
+          ],
+          "actual": "真实Host ../、allowlist外路径和symlink拒绝，宿主旧sentinel不变；精准本轮fixture清理。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "AR-35",
+      "status": "PASS",
+      "evidence": [
+        "main/cross-fs-result.json"
+      ],
+      "actual": "真实cache ext4→目标/run tmpfs部署升级与SHA/Config/Unit一致。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "主控/环境运行证据: main/cross-fs-result.json",
+          "status": "PASS",
+          "evidence": [
+            "main/cross-fs-result.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "INV-01",
+      "status": "PARTIAL",
+      "evidence": [
+        "backend/isolated/evidence/arch.agent_offline_during_hub_script_update-4c6237be.json",
+        "backend/isolated/evidence/arch.agent_offline_during_task_update-bf905097.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "Hub修改与重连收敛已测；Agent本地永久篡改对账维度未注入。",
+      "dimensions": [
+        {
+          "dimension": "Agent Offline During Hub Script Update",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.agent_offline_during_hub_script_update-4c6237be.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.agent_offline_during_hub_script_update",
+          "remaining": ""
+        },
+        {
+          "dimension": "Agent Offline During Task Update",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.agent_offline_during_task_update-bf905097.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.agent_offline_during_task_update",
+          "remaining": ""
+        },
+        {
+          "dimension": "尚缺维度",
+          "status": "NOT_RUN",
+          "evidence": [],
+          "actual": "",
+          "remaining": "Hub修改与重连收敛已测；Agent本地永久篡改对账维度未注入。"
+        }
+      ]
+    },
+    {
+      "case_id": "INV-02",
+      "status": "PARTIAL",
+      "evidence": [
+        "backend/isolated/evidence/arch.hub_restart-56006af8.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "正常主动连接已实测；未全拓扑反向监听验证。",
+      "dimensions": [
+        {
+          "dimension": "Hub Restart",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.hub_restart-56006af8.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.hub_restart",
+          "remaining": ""
+        },
+        {
+          "dimension": "尚缺维度",
+          "status": "NOT_RUN",
+          "evidence": [],
+          "actual": "",
+          "remaining": "正常主动连接已实测；未全拓扑反向监听验证。"
+        }
+      ]
+    },
+    {
+      "case_id": "INV-03",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.lost_notification-ef6007fd.json",
+        "backend/isolated/evidence/arch.duplicate_notification-b2025121.json",
+        "backend/isolated/evidence/arch.agent_offline_during_task_update-bf905097.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Lost Notification",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.lost_notification-ef6007fd.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.lost_notification",
+          "remaining": ""
+        },
+        {
+          "dimension": "Duplicate Notification",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.duplicate_notification-b2025121.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.duplicate_notification",
+          "remaining": ""
+        },
+        {
+          "dimension": "Agent Offline During Task Update",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.agent_offline_during_task_update-bf905097.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.agent_offline_during_task_update",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "INV-04",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.lost_notification-ef6007fd.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Lost Notification",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.lost_notification-ef6007fd.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.lost_notification",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "INV-05",
+      "status": "FAIL",
+      "evidence": [
+        "backend/isolated/evidence/feature.sync.script-sha-a7d33af9.json",
+        "backend/isolated/evidence/arch.sync_dependency_failure-24a4e9ce.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "真实同步帧Script SHA不符拒应用/Revision不前进",
+          "status": "FAIL",
+          "evidence": [
+            "backend/isolated/evidence/feature.sync.script-sha-a7d33af9.json"
+          ],
+          "actual": "Agent接受SHA256不一致脚本并推进Revision",
+          "remaining": ""
+        },
+        {
+          "dimension": "Sync Dependency Failure",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.sync_dependency_failure-24a4e9ce.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.sync_dependency_failure",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "INV-06",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/schedule.cron.agent.json",
+        "backend/isolated/evidence/arch.duplicate_schedule_trigger-81f46f1a.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "cron / agent owner真实触发/Journal/引用保护/删除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/schedule.cron.agent.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: schedule.cron.agent",
+          "remaining": ""
+        },
+        {
+          "dimension": "Duplicate Schedule Trigger",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.duplicate_schedule_trigger-81f46f1a.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.duplicate_schedule_trigger",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "INV-07",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.execution.duplicate-id-9a0d863d.json",
+        "backend/isolated/evidence/arch.duplicate_schedule_trigger-81f46f1a.json",
+        "backend/isolated/evidence/arch.duplicate_execution_upload-75196223.json"
+      ],
+      "actual": "透明代理即时重复原RUN_EXECUTION、4秒后原样重放同ID；客户机一行，Hub/Journal各一条记录。；保卷重建重复Slot不重复实际执行。；恢复重传只有一条结果。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "相同ExecutionID运行中/终态重复下发",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.execution.duplicate-id-9a0d863d.json"
+          ],
+          "actual": "透明代理即时重复原RUN_EXECUTION、4秒后原样重放同ID；客户机一行，Hub/Journal各一条记录。",
+          "remaining": ""
+        },
+        {
+          "dimension": "相同Schedule Slot Key",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.duplicate_schedule_trigger-81f46f1a.json"
+          ],
+          "actual": "保卷重建重复Slot不重复实际执行。",
+          "remaining": ""
+        },
+        {
+          "dimension": "结果上传",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.duplicate_execution_upload-75196223.json"
+          ],
+          "actual": "恢复重传只有一条结果。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "INV-08",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.execution.journal-write-failure-642b0999.json"
+      ],
+      "actual": "真实15秒BEGIN IMMEDIATE纯锁、busy_timeout后写失败；无schema/data写入，finally ROLLBACK；释放后同对象完成。同ID锁内无Journal/marker、明确sqlite busy日志，释放后受控同ID重放单记录/效果/ACK。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "feature.execution.journal-write-failure",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.execution.journal-write-failure-642b0999.json"
+          ],
+          "actual": "真实15秒BEGIN IMMEDIATE纯锁、busy_timeout后写失败；无schema/data写入，finally ROLLBACK；释放后同对象完成。同ID锁内无Journal/marker、明确sqlite busy日志，释放后受控同ID重放单记录/效果/ACK。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "INV-09",
+      "status": "FAIL",
+      "evidence": [
+        "backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json",
+        "backend/evidence/condition.remote-unknown.json",
+        "backend/isolated/evidence/feature.condition.remote-ttl-bf27e07e.json"
+      ],
+      "actual": "无历史、Hub断线Agent-owned触发均BLOCKED/no effect；恢复后上传ACK。；ObservedAt2000/TTL1仍被Agent接受并SUCCESS，客户机marker真实出现；BE-REMOTE-TTL-004。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "无历史/离线FailClosed",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json",
+            "backend/evidence/condition.remote-unknown.json"
+          ],
+          "actual": "无历史、Hub断线Agent-owned触发均BLOCKED/no effect；恢复后上传ACK。",
+          "remaining": ""
+        },
+        {
+          "dimension": "过期RemoteState",
+          "status": "FAIL",
+          "evidence": [
+            "backend/isolated/evidence/feature.condition.remote-ttl-bf27e07e.json"
+          ],
+          "actual": "ObservedAt2000/TTL1仍被Agent接受并SUCCESS，客户机marker真实出现；BE-REMOTE-TTL-004。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "INV-10",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Artifact SHA Failure",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.artifact_sha_failure",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "INV-11",
+      "status": "FAIL",
+      "evidence": [
+        "main/native-results.json"
+      ],
+      "actual": "REPLACED真实定点kill，原v1 binary/config/unit恢复并active。；STARTED真实定点kill，原v1 binary/config/unit恢复并active。；VERIFYING真实定点kill，原v1 binary/config/unit恢复并active。；ROLLING_BACK真实定点kill，原v1 binary/config/unit恢复并active。；实际Journal三个BackupPath为空，kill后DONE但原binary/config/unit全部不存在，ExecutionFAILED agent_restarted；P0恢复路径删除旧文件。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Native升级REPLACED崩溃恢复",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "REPLACED真实定点kill，原v1 binary/config/unit恢复并active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native升级STARTED崩溃恢复",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "STARTED真实定点kill，原v1 binary/config/unit恢复并active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native升级VERIFYING崩溃恢复",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "VERIFYING真实定点kill，原v1 binary/config/unit恢复并active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native升级ROLLING_BACK崩溃恢复",
+          "status": "PASS",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "ROLLING_BACK真实定点kill，原v1 binary/config/unit恢复并active。",
+          "remaining": ""
+        },
+        {
+          "dimension": "Native升级PREPARING崩溃",
+          "status": "FAIL",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "实际Journal三个BackupPath为空，kill后DONE但原binary/config/unit全部不存在，ExecutionFAILED agent_restarted；P0恢复路径删除旧文件。",
+          "remaining": ""
+        },
+        {
+          "dimension": "STOPPED阶段",
+          "status": "BLOCKED",
+          "evidence": [
+            "main/native-results.json"
+          ],
+          "actual": "",
+          "remaining": "当前实现从未写STOPPED，不能伪造阶段；其他实际阶段已执行。"
+        }
+      ]
+    },
+    {
+      "case_id": "INV-12",
+      "status": "PASS",
+      "evidence": [
+        "backend/evidence/feature.application.lifecycle-e22782da.json",
+        "main/nonmanaged-unit-result.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "真实托管应用部署/四健康检查/start/stop/restart/版本/分配解除",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.application.lifecycle-e22782da.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.application.lifecycle",
+          "remaining": ""
+        },
+        {
+          "dimension": "主控/环境运行证据: main/nonmanaged-unit-result.json",
+          "status": "PASS",
+          "evidence": [
+            "main/nonmanaged-unit-result.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "INV-13",
+      "status": "PARTIAL",
+      "evidence": [
+        "backend/isolated/evidence/arch.docker_agent_restart-660b369c.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "Native/Docker重启/命令链均实测；完整Host Integration反例与差异另列。",
+      "dimensions": [
+        {
+          "dimension": "Docker Agent Restart",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.docker_agent_restart-660b369c.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.docker_agent_restart",
+          "remaining": ""
+        },
+        {
+          "dimension": "尚缺维度",
+          "status": "NOT_RUN",
+          "evidence": [],
+          "actual": "",
+          "remaining": "Native/Docker重启/命令链均实测；完整Host Integration反例与差异另列。"
+        }
+      ]
+    },
+    {
+      "case_id": "INV-14",
+      "status": "FAIL",
+      "evidence": [
+        "environment/summary.json"
+      ],
+      "actual": "HostAdapter真实systemd桥接参数失败126，不能用Native结果代替。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "主控/环境运行证据: environment/summary.json",
+          "status": "PARTIAL",
+          "evidence": [
+            "environment/summary.json"
+          ],
+          "actual": "参照该运行证据中的逐项断言；复合结果另列，不以摘要代替运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "INV-15",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/arch.docker_agent_recreate-c1bb87d7.json",
+        "backend/isolated/evidence/feature.docker.cache-preservation-3bc4fc69.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "Docker Agent Recreate",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.docker_agent_recreate-c1bb87d7.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.docker_agent_recreate",
+          "remaining": ""
+        },
+        {
+          "dimension": "Docker保卷重建真实缓存SHA与identity保持",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.docker.cache-preservation-3bc4fc69.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.docker.cache-preservation",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "INV-16",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.capability.host-operation-eb048d21.json",
+        "backend/isolated/evidence/feature.node.docker-upgrade-78e2a7d2.json"
+      ],
+      "actual": "真实Docker deploy/upgrade/start/stop/restart及app_deploy/app_operation API缺cap400；没有RUN_EXECUTION/本地Journal、binary/unit；Agent升级SKIPPED、原二进制SHA不变。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "BasicDocker应用HostOperation及Task缺cap过滤",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.capability.host-operation-eb048d21.json",
+            "backend/isolated/evidence/feature.node.docker-upgrade-78e2a7d2.json"
+          ],
+          "actual": "真实Docker deploy/upgrade/start/stop/restart及app_deploy/app_operation API缺cap400；没有RUN_EXECUTION/本地Journal、binary/unit；Agent升级SKIPPED、原二进制SHA不变。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "INV-17",
+      "status": "PASS",
+      "evidence": [
+        "backend/isolated/evidence/feature.sync.commit-failure-notify-1922bee5.json"
+      ],
+      "actual": "真实15秒BEGIN IMMEDIATE纯锁、busy_timeout后写失败；无schema/data写入，finally ROLLBACK；释放后同对象完成。失败API明确SQLiteBusy、GlobalRevision/脚本不变且无Notify；释放后同脚本成功收敛/运行。",
+      "remaining": "",
+      "dimensions": [
+        {
+          "dimension": "feature.sync.commit-failure-notify",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/feature.sync.commit-failure-notify-1922bee5.json"
+          ],
+          "actual": "真实15秒BEGIN IMMEDIATE纯锁、busy_timeout后写失败；无schema/data写入，finally ROLLBACK；释放后同对象完成。失败API明确SQLiteBusy、GlobalRevision/脚本不变且无Notify；释放后同脚本成功收敛/运行。",
+          "remaining": ""
+        }
+      ]
+    },
+    {
+      "case_id": "INV-18",
+      "status": "PARTIAL",
+      "evidence": [
+        "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+        "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json"
+      ],
+      "actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "remaining": "已观察HTTP Artifact与Relay真实bytes/控制metadata；完整TLS路径Prefetch失败另列，所有payload类型抓包未全做。",
+      "dimensions": [
+        {
+          "dimension": "Artifact Download Interruption",
+          "status": "PASS",
+          "evidence": [
+            "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: arch.artifact_download_interruption",
+          "remaining": ""
+        },
+        {
+          "dimension": "多目标故障隔离/失败目标重试/权限/原子替换",
+          "status": "PASS",
+          "evidence": [
+            "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json"
+          ],
+          "actual": "真实API、Agent状态与客户机断言通过: feature.transfer.multitarget-retry",
+          "remaining": ""
+        },
+        {
+          "dimension": "尚缺维度",
+          "status": "NOT_RUN",
+          "evidence": [],
+          "actual": "",
+          "remaining": "已观察HTTP Artifact与Relay真实bytes/控制metadata；完整TLS路径Prefetch失败另列，所有payload类型抓包未全做。"
+        }
+      ]
+    }
+  ],
+  "updated_at": "2026-10-03T01:01:08.086023+00:00",
+  "incremental_audits": [
+    {
+      "at": "2026-10-03T00:57:17.192663+00:00",
+      "owner": "backend Native3 continuation",
+      "cases_promoted": [
+        "SYS-34",
+        "SYS-40",
+        "SYS-53"
+      ],
+      "counts_before": {
+        "PASS": 98,
+        "PARTIAL": 20,
+        "FAIL": 15,
+        "BLOCKED": 1
+      },
+      "counts_after": {
+        "PASS": 101,
+        "PARTIAL": 17,
+        "FAIL": 15,
+        "BLOCKED": 1
+      },
+      "evidence": "backend/continuation/summary.json",
+      "failed_cases_unchanged": true
+    }
+  ]
+}

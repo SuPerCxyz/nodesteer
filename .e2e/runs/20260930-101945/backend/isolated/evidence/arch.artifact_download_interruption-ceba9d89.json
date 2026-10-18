@@ -1,0 +1,380 @@
+{
+  "result": {
+    "id": "arch.artifact_download_interruption",
+    "name": "Artifact Download Interruption",
+    "started_at": "2026-10-01T01:22:27.246264+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-10-01T01:22:36.072741+00:00",
+    "evidence": "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json"
+  },
+  "events": [
+    {
+      "control": "python3 -c 'import pathlib,sys;pathlib.Path(sys.argv[1]).write_text(sys.argv[2])' /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.controls.json '{}'",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "control": "docker rm -f qa-20260930-101945-env-agent",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-env-agent\n",
+      "stderr": ""
+    },
+    {
+      "control": "docker run -d --name qa-20260930-101945-env-agent --network qa-20260930-101945-env-net --restart unless-stopped --hostname 6f6041279833 -v qa-20260930-101945-env-agentdata:/var/lib/nodesteer -e NODESTEER_NODE_NAME=qa-20260930-101945-env-docker-agent -e NODESTEER_NODE_IP=192.168.100.209 -e NODESTEER_DEPLOYMENT_MODE=docker -e NODESTEER_DATA_DIR=/var/lib/nodesteer -e PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin -e NODESTEER_HUB_URL=ws://192.168.100.209:18084/ws -e NODESTEER_REGISTRATION_TOKEN=[redacted] -e NODESTEER_AGENT_ID=agent-9b83b1d6-e376-4e76-a46f-f5c45e495329 qa-20260930-101945-env-agent:dddee4f0",
+      "exit_code": 0,
+      "stdout": "6446cf6fc62d9d003cddf407715108ca3bccfe079e6b443ea720126c47a65d3e\n",
+      "stderr": ""
+    },
+    {
+      "core_node": {
+        "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "hostname": "qa-20260930-101945-env-docker-agent",
+        "ip": "192.168.100.209",
+        "os": "Alpine Linux v3.20",
+        "arch": "amd64",
+        "agent_version": "dddee4f0",
+        "deployment_mode": "docker",
+        "host_integration": false,
+        "status": "online",
+        "labels": {},
+        "capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        },
+        "global_revision": 157,
+        "sync_status": "synced",
+        "last_seen": "2026-10-01T01:22:29.272174961Z",
+        "first_seen": "2026-09-30T02:36:32.656149623Z"
+      }
+    },
+    {
+      "api": "POST /api/artifacts",
+      "status": 200,
+      "request": null,
+      "response": {
+        "id": "5fe31d8d-d5cb-45c5-b505-fbac2bea26d4",
+        "name": "qa-20260930-101945-be-artifact-de25f4",
+        "version": "qa-v1",
+        "architecture": "amd64",
+        "filename": "qa-payload.bin",
+        "size": 163840,
+        "sha256": "98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5",
+        "uploaded_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:22:30 GMT",
+        "Content-Length": "289",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/applications",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-prefetch-13ad2c09",
+        "version": "qa-prefetch",
+        "artifact_id": "5fe31d8d-d5cb-45c5-b505-fbac2bea26d4",
+        "binary_path": "/var/lib/nodesteer/qa-20260930-101945-be/prefetch-13ad2c09/unused-bin",
+        "config_path": "/var/lib/nodesteer/qa-20260930-101945-be/prefetch-13ad2c09/unused.conf",
+        "config": "prefetch-only",
+        "unit_name": "qa-20260930-101945-be-prefetch-13ad2c09.service",
+        "health_check": {
+          "type": "systemd"
+        }
+      },
+      "response": {
+        "id": "784f4688-77f6-4a77-a947-2411abbb1cb1",
+        "name": "qa-20260930-101945-be-prefetch-13ad2c09",
+        "description": "retry after actual HTTP fault",
+        "artifact_id": "5fe31d8d-d5cb-45c5-b505-fbac2bea26d4",
+        "version": "qa-prefetch",
+        "binary_path": "/var/lib/nodesteer/qa-20260930-101945-be/prefetch-13ad2c09/unused-bin",
+        "arguments": null,
+        "environment": null,
+        "config": "prefetch-only",
+        "config_path": "/var/lib/nodesteer/qa-20260930-101945-be/prefetch-13ad2c09/unused.conf",
+        "unit_name": "qa-20260930-101945-be-prefetch-13ad2c09.service",
+        "health_check": {
+          "type": "systemd",
+          "target": "",
+          "timeout": 0,
+          "attempts": 0,
+          "interval": 0
+        },
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:22:30 GMT",
+        "Content-Length": "654",
+        "Connection": "close"
+      }
+    },
+    {
+      "control": "python3 -c 'import pathlib,sys;pathlib.Path(sys.argv[1]).write_text(sys.argv[2])' /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.controls.json '{\"redirect_app_id\": \"784f4688-77f6-4a77-a947-2411abbb1cb1\", \"artifact_proxy_url\": \"http://192.168.100.209:18084/api/artifacts/5fe31d8d-d5cb-45c5-b505-fbac2bea26d4/download\", \"http_fault\": {\"path\": \"/api/artifacts/5fe31d8d-d5cb-45c5-b505-fbac2bea26d4/download\", \"mode\": \"truncate\"}}'",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "api": "POST /api/applications/784f4688-77f6-4a77-a947-2411abbb1cb1/assign",
+      "status": 200,
+      "request": {
+        "node_ids": [
+          "d940ab68-9f29-434b-bfe8-5d075a519edc"
+        ]
+      },
+      "response": {
+        "ok": "true"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:22:30 GMT",
+        "Content-Length": "14",
+        "Connection": "close"
+      }
+    },
+    {
+      "proxy_events": [
+        {
+          "time": 1790817750.260222,
+          "event": "forward_control",
+          "connection": "1790817749246261724",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817750.3081937,
+          "event": "forward_control",
+          "connection": "1790817749246261724",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 158,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817750.6541624,
+          "event": "forward_control",
+          "connection": "1790817749246261724",
+          "direction": "down",
+          "type": "CHANGE_NOTIFICATION",
+          "id": ""
+        },
+        {
+          "time": 1790817750.6756926,
+          "event": "redirect_app_artifact",
+          "target_id": "784f4688-77f6-4a77-a947-2411abbb1cb1",
+          "connection": "1790817749246261724",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 159,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817750.675918,
+          "event": "forward_control",
+          "connection": "1790817749246261724",
+          "direction": "down",
+          "type": "SYNC_RESPONSE",
+          "id": "",
+          "global_rev": 159,
+          "full_resync": false,
+          "snapshot": true
+        },
+        {
+          "time": 1790817750.7081704,
+          "event": "connection",
+          "connection": "1790817750701734648",
+          "websocket": false
+        },
+        {
+          "time": 1790817750.7085552,
+          "event": "http_fault",
+          "connection": "1790817750701734648",
+          "mode": "truncate",
+          "path": "/api/artifacts/5fe31d8d-d5cb-45c5-b505-fbac2bea26d4/download",
+          "declared_bytes": 163840,
+          "sent_bytes": 128
+        }
+      ]
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT sha256 FROM artifacts WHERE sha256=?' '[\"98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5\"]'",
+      "exit_code": 0,
+      "stdout": "[]\n",
+      "stderr": ""
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "test ! -e /var/lib/nodesteer/artifacts/98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5\n",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "test ! -e /var/lib/nodesteer/qa-20260930-101945-be/prefetch-13ad2c09/unused-bin\n",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "test ! -e /etc/systemd/system/qa-20260930-101945-be-prefetch-13ad2c09.service\n",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "control": "python3 -c 'import pathlib,sys;pathlib.Path(sys.argv[1]).write_text(sys.argv[2])' /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.controls.json '{\"redirect_app_id\": \"784f4688-77f6-4a77-a947-2411abbb1cb1\", \"artifact_proxy_url\": \"http://192.168.100.209:18084/api/artifacts/5fe31d8d-d5cb-45c5-b505-fbac2bea26d4/download\"}'",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "api": "PUT /api/applications/784f4688-77f6-4a77-a947-2411abbb1cb1",
+      "status": 200,
+      "request": {
+        "id": "784f4688-77f6-4a77-a947-2411abbb1cb1",
+        "name": "qa-20260930-101945-be-prefetch-13ad2c09",
+        "description": "retry after actual HTTP fault",
+        "artifact_id": "5fe31d8d-d5cb-45c5-b505-fbac2bea26d4",
+        "version": "qa-prefetch",
+        "binary_path": "/var/lib/nodesteer/qa-20260930-101945-be/prefetch-13ad2c09/unused-bin",
+        "arguments": null,
+        "environment": null,
+        "config": "prefetch-only",
+        "config_path": "/var/lib/nodesteer/qa-20260930-101945-be/prefetch-13ad2c09/unused.conf",
+        "unit_name": "qa-20260930-101945-be-prefetch-13ad2c09.service",
+        "health_check": {
+          "type": "systemd",
+          "target": "",
+          "timeout": 0,
+          "attempts": 0,
+          "interval": 0
+        },
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "response": {
+        "id": "784f4688-77f6-4a77-a947-2411abbb1cb1",
+        "name": "qa-20260930-101945-be-prefetch-13ad2c09",
+        "description": "retry after actual HTTP fault",
+        "artifact_id": "5fe31d8d-d5cb-45c5-b505-fbac2bea26d4",
+        "version": "qa-prefetch",
+        "binary_path": "/var/lib/nodesteer/qa-20260930-101945-be/prefetch-13ad2c09/unused-bin",
+        "arguments": null,
+        "environment": null,
+        "config": "prefetch-only",
+        "config_path": "/var/lib/nodesteer/qa-20260930-101945-be/prefetch-13ad2c09/unused.conf",
+        "unit_name": "qa-20260930-101945-be-prefetch-13ad2c09.service",
+        "health_check": {
+          "type": "systemd",
+          "target": "",
+          "timeout": 0,
+          "attempts": 0,
+          "interval": 0
+        },
+        "revision": 2,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "2026-10-01T01:22:30.251696902Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:22:34 GMT",
+        "Content-Length": "693",
+        "Connection": "close"
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT sha256,path FROM artifacts WHERE sha256=?' '[\"98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"sha256\": \"98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5\", \"path\": \"/var/lib/nodesteer/artifacts/98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5\"}]\n",
+      "stderr": ""
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "sha256sum /var/lib/nodesteer/artifacts/98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5\n",
+      "exit_code": 0,
+      "stdout": "98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5  /var/lib/nodesteer/artifacts/98eb6c28b4d155633e5f769b3ea9e2ece68bd90a1bcf323d378805c4e43903d5\n",
+      "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "control": "python3 -c 'import pathlib,sys;pathlib.Path(sys.argv[1]).write_text(sys.argv[2])' /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.controls.json '{}'",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "api": "DELETE /api/applications/784f4688-77f6-4a77-a947-2411abbb1cb1",
+      "status": 200,
+      "request": null,
+      "response": {
+        "ok": "true"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:22:36 GMT",
+        "Content-Length": "14",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "DELETE /api/artifacts/5fe31d8d-d5cb-45c5-b505-fbac2bea26d4",
+      "status": 200,
+      "request": null,
+      "response": {
+        "ok": "true"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:22:36 GMT",
+        "Content-Length": "14",
+        "Connection": "close"
+      }
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "batch_id": "qa-resume-20261014-web-p-web",
+  "authority": "http://192.168.100.209:18080 (repair)",
+  "primary_8080_touched": false,
+  "nonce": "d6dbf7af",
+  "prefix": "qa-pweb-d6dbf7af",
+  "captured_at_utc": "2026-10-15T08:10:00Z",
+  "counts_baseline": {
+    "nodes": 6,
+    "applications": 1,
+    "tasks": 0,
+    "schedules": 0,
+    "scripts": 2,
+    "artifacts": 1,
+    "transfers": 38,
+    "users": 8
+  },
+  "counts_after": {
+    "nodes": 6,
+    "applications": 1,
+    "tasks": 0,
+    "schedules": 0,
+    "scripts": 2,
+    "artifacts": 1,
+    "transfers": 38,
+    "users": 8
+  },
+  "deltas": {
+    "nodes": 0,
+    "applications": 0,
+    "tasks": 0,
+    "schedules": 0,
+    "scripts": 0,
+    "artifacts": 0,
+    "transfers": 0,
+    "users": 0
+  },
+  "delta_attribution": {
+    "all_zero": "the batch created 2 child nodes, 4 scripts, 2 tasks and 1 schedule, and deleted every one of them; the baseline and final counts are identical. Other parallel batches (qa-psched-*, qa-papp-*, qa-sysb*) created and removed their own objects in the same window, which is why per-object name lists (not the global counts) are used for the owned-leftover check."
+  },
+  "owned_leftovers": {
+    "nodes": [],
+    "scripts": [],
+    "tasks": [],
+    "schedules": [],
+    "applications": [],
+    "artifacts": [],
+    "transfers": []
+  },
+  "owned_get404": {
+    "child1_node": 404,
+    "child2_node": 404,
+    "script": 404,
+    "script_huge": 404,
+    "script_timeout0": 404,
+    "script_negtimeout": 404,
+    "task_multinode": 404,
+    "task_slow": 404,
+    "schedule": 404
+  },
+  "node_side_native3": {
+    "owned_roots_existing": 0,
+    "owned_agent_processes_matching_owned_config": 0,
+    "owned_markers_existing": 0,
+    "remaining_nodesteer_agent_processes": [
+      "16918 /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent --config /etc/nodesteer/repair-20260930-101945/native-3.yaml (protected, untouched)",
+      "16919 /usr/local/bin/nodesteer-agent --config /etc/nodesteer/agent.yaml (nodesteer-agent.service, untouched)"
+    ],
+    "protected_native3_unit": {"Id": "nodesteer-agent-repair-20260930-101945-native-3.service", "ActiveState": "active", "MainPID": "16918"},
+    "primary_agent_unit": {"Id": "nodesteer-agent.service", "ActiveState": "active", "MainPID": "16919"},
+    "agent_binary_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "agent_binary_sha_matches_baseline": true,
+    "vm_rebooted": false
+  },
+  "protected_resources": {
+    "hub_restarted": false,
+    "protected_agents_stopped": false,
+    "protected_node_status_changed_by_this_batch": false,
+    "protected_node_status_now": {
+      "native-1": "online",
+      "native-2": "online",
+      "native-3": "online",
+      "native-4": "online"
+    },
+    "other_actors_nodes_now": {
+      "qa-resume-20261008-native4-child-c5d48ea9-da08-4123-94fb-69b11abd59a7": "offline (untouched)",
+      "qa-resume-20261010-host-f174890c3846-host001": "online (untouched)"
+    },
+    "users_created_or_deleted": 0,
+    "groups_created_or_deleted": 0,
+    "product_source_changes": "none",
+    "git_operations": "none"
+  },
+  "non_deletable_history": {
+    "owned_execution_ids": [
+      "5b3c2bbc-2bb5-444c-887d-4088bbd87f4d",
+      "3ad9883a-2d51-4b50-864a-3e51202ee29c",
+      "4077021d-2d52-459b-bd3c-3aebf4f3505a"
+    ],
+    "count": 3,
+    "note": "1 run of the slow task + 1 two-node run. No execution-delete API exists; history is retained by design and now shows 未知任务 (deleted task definitions)."
+  },
+  "no_leftovers": true,
+  "background_processes_prepared_by_batch": {
+    "containers": 0,
+    "proxies": 0,
+    "temp_ports_bound": 0,
+    "agent_browser_sessions_closed_with_session_flag_only": ["qapweb-d6dbf7af"],
+    "agent_browser_closed_with_all_flag": false
+  },
+  "server_writes_issued_by_this_batch": [
+    "POST /api/nodes/enrollment (5 attempts total; 3 fully cleaned early attempts + 2 final children)",
+    "DELETE /api/nodes/{child1} (1)",
+    "DELETE /api/nodes/{child2} (1)",
+    "POST /api/scripts (1 via real UI) + POST /api/scripts (1 duplicate-name probe → 400, no object) + POST /api/scripts (1 oversize via UI) + POST /api/scripts (1 timeout0 via UI) + POST /api/scripts (1 negative timeout via API)",
+    "PUT /api/scripts/{id} (1 via real UI, revision 1→2)",
+    "DELETE /api/scripts/{id} (4 via real UI confirm dialogs)",
+    "POST /api/tasks (1 via real UI multinode) + POST /api/tasks (2 rejected-by-validation probes → 400) + POST /api/tasks (1 slow fixture) + POST /api/tasks (1 invalid target node id → 400)",
+    "POST /api/tasks/{id}/run (1 via real UI multinode + 1 via real UI slow; the confirmed-cancel path issued 0 run requests)",
+    "DELETE /api/tasks/{id} (2)",
+    "POST /api/schedules (1 fixture) + DELETE /api/schedules/{id} (1 via real UI)",
+    "POST /api/login (many; local auth)"
+  ],
+  "harness_notes": [
+    "All deletes were driven through the real row-action menu + confirm alertdialog where the case required UI evidence (scripts ×4, schedule ×1), and via the API for the two task definitions after the UI delete-confirm behaviour had already been proven twice.",
+    "node-side cleanup verified: roots=0, owned agent processes=0, markers=0, exactly the 2 protected nodesteer-agent processes remain.",
+    "agent-browser session closed with `close --session qapweb-d6dbf7af` (no --all).",
+    "no /tmp fixture files, no background servers, no bound temporary ports left by this batch."
+  ],
+  "harness_errors": [
+    {
+      "id": "PWEB-HARNESS-01",
+      "severity": "low",
+      "what": "Enrolment de-duplicates by hostname OR node_ip, so a second `POST /api/nodes/enrollment` that reused node_ip 192.168.100.222 returned the first child's node_id.",
+      "impact": "two early attempts collapsed into the existing child record; nothing was left behind, and both children were finally created with distinct node_ip labels (…221 / …222).",
+      "product_note": "this matches internal/hub/node.go findEnrollableNode (hostname match first, then IP match) — correct re-enrolment semantics, not a defect."
+    },
+    {
+      "id": "PWEB-HARNESS-02",
+      "severity": "medium",
+      "what": "Sub-agent delegation is unavailable in this session (`Subagent depth limit reached (1)`), so all reconnaissance and execution was performed by the single agent instead of the intended 5-way parallel split.",
+      "impact": "fewer cases were closed than the batch scope listed; see results.json for the honest per-case status. No evidence quality impact."
+    },
+    {
+      "id": "PWEB-HARNESS-03",
+      "severity": "low",
+      "what": "The shared authority is being written by other parallel batches (qa-psched-*, qa-papp-*, qa-sysb*); /api/tasks and /api/schedules were empty at one moment and non-empty minutes later.",
+      "impact": "no conclusion in this batch depends on global counts or on other actors' objects; every behavioural claim uses only qa-pweb-d6dbf7af-* fixtures."
+    }
+  ]
+}

@@ -1,0 +1,1012 @@
+{
+  "created_at_utc": "2026-10-12T14:00:14.162084+00:00",
+  "inventory_source": ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+  "inventory_snapshot_phase": "repair-live-regression",
+  "inventory_snapshot_statuses": {
+    "NOT_RUN": 145
+  },
+  "reconciliation_note": "The inventory is a snapshot and remains globally Root-owned. Do not overwrite it here. P01-04/P03-10 were executed in batch20 after this NOT_RUN snapshot; P03-10 now needs Root mapping because its application-state subrequest behaved differently from a primary dashboard query.",
+  "phase1_scope_basis": [
+    "docs/PRODUCT.md §17 describes the Admin Node enrollment wizard and its Native/Docker/Compose command output.",
+    "docs/PRODUCT.md §43 requires the Web UI core sections; use actual live navigation/behavior, not feature names alone.",
+    "For system/runtime and transfer fault cases, use confirmed product sections/OpenSpec and an isolated disposable fixture; do not infer runtime acceptance from UI/API presence."
+  ],
+  "categories": [
+    {
+      "category": "inventory_status_superseded_by_batch20_actual_results",
+      "case_ids": [
+        "P01-04",
+        "P03-10"
+      ],
+      "basis": "Inventory snapshot still says NOT_RUN, but batch20 now has real evidence for P01-04 and P03-10. P03-10 is PARTIAL after the exact Application state failure supplement; merge after Root review.",
+      "cases": [
+        {
+          "case_id": "P01-04",
+          "priority": "P1",
+          "title": "登录按钮 loading 禁用，重复点击只产生一次请求。"
+        },
+        {
+          "case_id": "P03-10",
+          "priority": "P1",
+          "title": "Dashboard API 任一请求失败时 Error/Retry，不显示假数据。"
+        }
+      ]
+    },
+    {
+      "category": "direct_readonly_existing_session_candidates",
+      "case_ids": [
+        "P04-09",
+        "P05B-03",
+        "P05B-04",
+        "P05B-09",
+        "P05B-10",
+        "P05B-11",
+        "P21-01",
+        "P21-02"
+      ],
+      "basis": "No new resource or server mutation is needed for the first probe. Reuse exact owned Node/Task/Application/Execution links and current settings page; stop with dimension-specific PARTIAL if required live relationship/data is absent. P04-09 uses only owned-browser GET failure and Retry.",
+      "cases": [
+        {
+          "case_id": "P04-09",
+          "priority": "P1",
+          "title": "节点 API 失败 Retry。"
+        },
+        {
+          "case_id": "P05B-03",
+          "priority": "P1",
+          "title": "Inventory：OS、Kernel、CPU、Memory、Filesystem、Network。"
+        },
+        {
+          "case_id": "P05B-04",
+          "priority": "P1",
+          "title": "Capability enabled/disabled 展示。"
+        },
+        {
+          "case_id": "P05B-09",
+          "priority": "P1",
+          "title": "Managed Applications → Application Detail。"
+        },
+        {
+          "case_id": "P05B-10",
+          "priority": "P1",
+          "title": "Execution 表中的 Task 链接，ID 是否可点击按当前设计验证。"
+        },
+        {
+          "case_id": "P05B-11",
+          "priority": "P1",
+          "title": "返回按钮回 `/agents`。"
+        },
+        {
+          "case_id": "P21-01",
+          "priority": "P1",
+          "title": "Runtime/Appearance 两个切换按钮。"
+        },
+        {
+          "case_id": "P21-02",
+          "priority": "P1",
+          "title": "Runtime显示当前API提供的4个原settings（heartbeat/revision check/changelog/max log），gateway absent不虚构控件"
+        }
+      ]
+    },
+    {
+      "category": "identity_role_or_external_oidc_configuration_dependent",
+      "case_ids": [
+        "P01-08",
+        "P01-09",
+        "P01-10",
+        "P19-05",
+        "P20-07"
+      ],
+      "basis": "P01-08/09/10 require actual OIDC-enabled config and an available nonproduction IdP; do not toggle shared OIDC config. P20-07 requires an existing QA Operator/Viewer identity; User creation is out of scope. P19-05 requires a least-privileged account to prove ordinary-user audit restrictions.",
+      "cases": [
+        {
+          "case_id": "P01-08",
+          "priority": "P1",
+          "title": "OIDC enabled 时 SSO 按钮跳转 IdP，state/PKCE 正常。"
+        },
+        {
+          "case_id": "P01-09",
+          "priority": "P1",
+          "title": "OIDC enabled且local_fallback=false拒绝本地登录；本地fallback按实际配置验证"
+        },
+        {
+          "case_id": "P01-10",
+          "priority": "P1",
+          "title": "OIDC callback 缺少 state/code、错误 state、重复 state、错误 code。"
+        },
+        {
+          "case_id": "P19-05",
+          "priority": "P1",
+          "title": "审计记录不可被普通用户修改或删除。"
+        },
+        {
+          "case_id": "P20-07",
+          "priority": "P1",
+          "title": "Operator/Viewer 无用户管理控件，访问页面显示管理员限制。"
+        }
+      ]
+    },
+    {
+      "category": "requires_owned_fixture_for_full_dimensions",
+      "case_ids": [
+        "G03-10",
+        "P05A-10",
+        "P06-01",
+        "P06-08",
+        "P09P11-01",
+        "P12P13-01",
+        "P14P15-01",
+        "P16-01",
+        "TABLE-APPLICATIONS-PAGE",
+        "TABLE-APPLICATIONS-SORT",
+        "TABLE-ARTIFACTS-PAGE",
+        "TABLE-ARTIFACTS-SORT",
+        "TABLE-USERS-PAGE"
+      ],
+      "basis": "Full canonical dimensions require safe disposable data: 11 Groups/Tasks/Schedules/Applications/Transfers as applicable, or list population for TABLE pages. Existing application/script/node data can support initial UI probes, but do not claim full pagination/true-empty without adequate live rows. P05A-10 needs a real command preview; current UI produces it only after POST /api/nodes/enrollment, which this task forbids.",
+      "cases": [
+        {
+          "case_id": "G03-10",
+          "priority": "P1",
+          "title": "Loading、Empty、No Results 三种空数据语义不混淆。"
+        },
+        {
+          "case_id": "P05A-10",
+          "priority": "P1",
+          "title": "Copy 成功显示 Copied；剪贴板失败显示 copy failed。"
+        },
+        {
+          "case_id": "P06-01",
+          "priority": "P1",
+          "title": "列表、搜索、分页、空态、Error/Retry。"
+        },
+        {
+          "case_id": "P06-08",
+          "priority": "P1",
+          "title": "Group 变化后 Task Target 和 Node Detail 任务列表同步。"
+        },
+        {
+          "case_id": "P09P11-01",
+          "priority": "P1",
+          "title": "列表、搜索、分页、View、空态、Error/Retry。"
+        },
+        {
+          "case_id": "P12P13-01",
+          "priority": "P0",
+          "title": "列表、搜索、分页、类型/表达式/时区/Owner/Offline/Misfire/Enabled。"
+        },
+        {
+          "case_id": "P14P15-01",
+          "priority": "P0",
+          "title": "应用列表实际只有详情/编辑、删除、新建入口；不把列表不存在的部署按钮列入测试。"
+        },
+        {
+          "case_id": "P16-01",
+          "priority": "P1",
+          "title": "列表、搜索、分页、View、空态、Error/Retry。"
+        },
+        {
+          "case_id": "TABLE-APPLICATIONS-PAGE",
+          "priority": "P1",
+          "title": "applications 首末/前后页/pageSize持久化/末页数据变化"
+        },
+        {
+          "case_id": "TABLE-APPLICATIONS-SORT",
+          "priority": "P1",
+          "title": "applications 允许列升序/降序/清排序"
+        },
+        {
+          "case_id": "TABLE-ARTIFACTS-PAGE",
+          "priority": "P1",
+          "title": "artifacts 首末/前后页/pageSize持久化/末页数据变化"
+        },
+        {
+          "case_id": "TABLE-ARTIFACTS-SORT",
+          "priority": "P1",
+          "title": "artifacts 允许列升序/降序/清排序"
+        },
+        {
+          "case_id": "TABLE-USERS-PAGE",
+          "priority": "P1",
+          "title": "users 首末/前后页/pageSize持久化/末页数据变化"
+        }
+      ]
+    },
+    {
+      "category": "writes_protected_or_node_agent_runtime_scope",
+      "case_ids": [
+        "P04-04",
+        "P04-05",
+        "P07_P08-10",
+        "P19-02",
+        "P21-03",
+        "P21-04",
+        "P21-05",
+        "P21-06"
+      ],
+      "basis": "These cases change original Node status, delete Agent/Node history, perform multi-resource CRUD, save shared server settings, or broadcast config. They need a separately scoped owned fixture/runtime window; no such mutations are authorized here.",
+      "cases": [
+        {
+          "case_id": "P04-04",
+          "priority": "P1",
+          "title": "操作菜单：online → maintenance；maintenance → online；set online。"
+        },
+        {
+          "case_id": "P04-05",
+          "priority": "P1",
+          "title": "offline 节点 set online。"
+        },
+        {
+          "case_id": "P07_P08-10",
+          "priority": "P0",
+          "title": "删除确认框取消/确认、Tombstone、Agent 本地删除但历史 Execution 保留。"
+        },
+        {
+          "case_id": "P19-02",
+          "priority": "P1",
+          "title": "登录、创建/修改/删除 Script、Task、Schedule、Artifact、Application。"
+        },
+        {
+          "case_id": "P21-03",
+          "priority": "P1",
+          "title": "修改、保存、成功提示、失败提示、重复保存。"
+        },
+        {
+          "case_id": "P21-04",
+          "priority": "P1",
+          "title": "非法数字、0、负数、超大值、非法 Gateway URL。"
+        },
+        {
+          "case_id": "P21-05",
+          "priority": "P1",
+          "title": "保存后刷新持久化。"
+        },
+        {
+          "case_id": "P21-06",
+          "priority": "P1",
+          "title": "设置变更是否广播到在线 Agent。"
+        }
+      ]
+    },
+    {
+      "category": "integration_or_controlled_runtime_environment_required",
+      "case_ids": [
+        "AR-01",
+        "AR-02",
+        "AR-03",
+        "AR-04",
+        "AR-05",
+        "AR-06",
+        "AR-07",
+        "AR-09",
+        "AR-10",
+        "AR-11",
+        "AR-12",
+        "AR-13",
+        "AR-14",
+        "AR-15",
+        "AR-16",
+        "AR-17",
+        "AR-18",
+        "AR-19",
+        "AR-20",
+        "AR-24",
+        "AR-25",
+        "AR-26",
+        "AR-27",
+        "AR-28",
+        "AR-29",
+        "AR-31",
+        "AR-32",
+        "AR-33",
+        "AR-34",
+        "AR-35",
+        "E2E-04",
+        "E2E-14",
+        "E2E-16",
+        "E2E-17",
+        "E2E-18",
+        "FL-01",
+        "FL-05",
+        "FL-09",
+        "FL-13",
+        "FL-16",
+        "IDEMPOTENT-MANUAL",
+        "INV-01",
+        "INV-03",
+        "INV-04",
+        "INV-07",
+        "INV-08",
+        "INV-10",
+        "INV-13",
+        "INV-14",
+        "INV-15",
+        "INV-16",
+        "INV-17",
+        "P09P11-11",
+        "P11-04",
+        "P11-07",
+        "P11-08",
+        "P14P15-17",
+        "P16-09",
+        "P16-10",
+        "P17P18-14",
+        "P21-07",
+        "P22-08",
+        "P22-09",
+        "P22-10",
+        "P22-11",
+        "P22-12",
+        "P22-13",
+        "P22-14",
+        "P22-15",
+        "SYS-03",
+        "SYS-04",
+        "SYS-05",
+        "SYS-06",
+        "SYS-07",
+        "SYS-08",
+        "SYS-10",
+        "SYS-13",
+        "SYS-14",
+        "SYS-15",
+        "SYS-16",
+        "SYS-17",
+        "SYS-18",
+        "SYS-22",
+        "SYS-23",
+        "SYS-24",
+        "SYS-26",
+        "SYS-27",
+        "SYS-31",
+        "SYS-32",
+        "SYS-33",
+        "SYS-35",
+        "SYS-36",
+        "SYS-41",
+        "SYS-42",
+        "SYS-43",
+        "SYS-50",
+        "SYS-52",
+        "SYS-54",
+        "SYS-55",
+        "SYS-56",
+        "SYS-57",
+        "SYS-58",
+        "SYS-59",
+        "SYS-60",
+        "SYS-61",
+        "SYS-66",
+        "X01",
+        "X03",
+        "X17"
+      ],
+      "basis": "Remaining cases require Hub/Agent restart/offline/reconnect, execution/run, scheduler timing, file relay/install/upgrade/cache, or other backend/runtime fault control. Execute only in the confirmed isolated QA environment with explicit resource/Run and cleanup budget; static UI inspection cannot pass them.",
+      "cases": [
+        {
+          "case_id": "AR-01",
+          "priority": "P0",
+          "title": "Hub Restart；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-02",
+          "priority": "P0",
+          "title": "Agent Restart；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-03",
+          "priority": "P0",
+          "title": "Docker Agent Restart；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-04",
+          "priority": "P0",
+          "title": "Docker Agent Recreate；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-05",
+          "priority": "P0",
+          "title": "Persistent Volume Missing；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-06",
+          "priority": "P0",
+          "title": "Agent Disconnect；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-07",
+          "priority": "P0",
+          "title": "Hub Disconnect During Execution；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-09",
+          "priority": "P0",
+          "title": "Agent Offline During Task Update；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-10",
+          "priority": "P0",
+          "title": "Lost Notification；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-11",
+          "priority": "P0",
+          "title": "Duplicate Notification；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-12",
+          "priority": "P0",
+          "title": "Out-of-order Notification；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-13",
+          "priority": "P0",
+          "title": "Revision Lag；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-14",
+          "priority": "P0",
+          "title": "Change Log Window Expiry；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-15",
+          "priority": "P0",
+          "title": "Full Resync；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-16",
+          "priority": "P0",
+          "title": "Sync Dependency Failure；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-17",
+          "priority": "P0",
+          "title": "Duplicate Schedule Trigger；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-18",
+          "priority": "P0",
+          "title": "Offline Scheduled Execution；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-19",
+          "priority": "P0",
+          "title": "Execution Re-upload；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-20",
+          "priority": "P0",
+          "title": "Duplicate Execution Upload；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-24",
+          "priority": "P0",
+          "title": "Artifact Download Interruption；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-25",
+          "priority": "P0",
+          "title": "Artifact SHA Failure；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-26",
+          "priority": "P0",
+          "title": "Application Install；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-27",
+          "priority": "P0",
+          "title": "Upgrade；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-28",
+          "priority": "P0",
+          "title": "Health Failure；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-29",
+          "priority": "P0",
+          "title": "Rollback；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-31",
+          "priority": "P0",
+          "title": "Docker Host Mount Missing；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-32",
+          "priority": "P0",
+          "title": "Host Adapter Permission Denied；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-33",
+          "priority": "P0",
+          "title": "Capability Mismatch；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-34",
+          "priority": "P0",
+          "title": "Path Escape；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "AR-35",
+          "priority": "P0",
+          "title": "Cross-filesystem Rename；恢复后幂等、持久化、Desired State与实际状态一致"
+        },
+        {
+          "case_id": "E2E-04",
+          "priority": "P0",
+          "title": "Agent-owned Interval Offline → Agent 离线继续执行，恢复后无重复"
+        },
+        {
+          "case_id": "E2E-14",
+          "priority": "P0",
+          "title": "File Relay 多目标 → 成功、失败、重试、取消、Hub 重启均正确"
+        },
+        {
+          "case_id": "E2E-16",
+          "priority": "P0",
+          "title": "Native Enrollment → pending → HELLO → online/synced"
+        },
+        {
+          "case_id": "E2E-17",
+          "priority": "P0",
+          "title": "Docker Enrollment → docker run/Compose Agent 真实接入并持久化"
+        },
+        {
+          "case_id": "E2E-18",
+          "priority": "P0",
+          "title": "Docker Recreate → 容器重建后 Identity/Revision/Journal/Cache 不丢"
+        },
+        {
+          "case_id": "FL-01",
+          "priority": "P0",
+          "title": "Login → Dashboard → Agents → 登录、统计、节点 View All、节点状态一致"
+        },
+        {
+          "case_id": "FL-05",
+          "priority": "P0",
+          "title": "Task → Run Now → Execution → Logs → 参数、环境、stdout/stderr、状态和回链"
+        },
+        {
+          "case_id": "FL-09",
+          "priority": "P0",
+          "title": "Application Assign → Agent Detail → Node Detail 托管应用与 Application 节点列表一致"
+        },
+        {
+          "case_id": "FL-13",
+          "priority": "P0",
+          "title": "File Transfer Create → Target File → Hub staging、目标文件、状态和 SHA 一致"
+        },
+        {
+          "case_id": "FL-16",
+          "priority": "P0",
+          "title": "Settings Save → Agent Runtime → Agent 心跳/Revision/日志设置实际消费或明确不消费"
+        },
+        {
+          "case_id": "IDEMPOTENT-MANUAL",
+          "priority": "P0",
+          "title": "每次Manual Run新UUID为新意图；相同Execution ID/Key重复投递/上传保持幂等"
+        },
+        {
+          "case_id": "INV-01",
+          "priority": "P0",
+          "title": "Hub 是 Desired State 唯一权威源。"
+        },
+        {
+          "case_id": "INV-03",
+          "priority": "P0",
+          "title": "同步必须是 Notify + Revision Check + Reconciliation。"
+        },
+        {
+          "case_id": "INV-04",
+          "priority": "P0",
+          "title": "Notification 不承担最终一致性。"
+        },
+        {
+          "case_id": "INV-07",
+          "priority": "P0",
+          "title": "Execution ID / Key 必须幂等。"
+        },
+        {
+          "case_id": "INV-08",
+          "priority": "P0",
+          "title": "Execution Start 前必须先写 Journal。"
+        },
+        {
+          "case_id": "INV-10",
+          "priority": "P0",
+          "title": "Artifact 校验失败禁止安装。"
+        },
+        {
+          "case_id": "INV-13",
+          "priority": "P0",
+          "title": "Native 与 Docker 共享 Agent Core。"
+        },
+        {
+          "case_id": "INV-14",
+          "priority": "P0",
+          "title": "Native/Docker 差异必须进入 Host Adapter。"
+        },
+        {
+          "case_id": "INV-15",
+          "priority": "P0",
+          "title": "Docker Agent state 必须 Persistent。"
+        },
+        {
+          "case_id": "INV-16",
+          "priority": "P0",
+          "title": "Capability 不匹配不得下发 Host Operation。"
+        },
+        {
+          "case_id": "INV-17",
+          "priority": "P0",
+          "title": "Commit 前不得发送 Desired State Notification。"
+        },
+        {
+          "case_id": "P09P11-11",
+          "priority": "P1",
+          "title": "Target label：key/value、匹配节点变化。"
+        },
+        {
+          "case_id": "P11-04",
+          "priority": "P1",
+          "title": "offline 节点不进入无限等待，返回明确 BLOCKED/错误。"
+        },
+        {
+          "case_id": "P11-07",
+          "priority": "P1",
+          "title": "多节点执行每个 Node 一条 Execution。"
+        },
+        {
+          "case_id": "P11-08",
+          "priority": "P1",
+          "title": "每次Manual Run生成新UUID代表新意图；同Execution ID/Key重复投递/上传按幂等验证"
+        },
+        {
+          "case_id": "P14P15-17",
+          "priority": "P1",
+          "title": "Artifact 不存在、节点离线、Capability 缺失、Agent 不可达。"
+        },
+        {
+          "case_id": "P16-09",
+          "priority": "P1",
+          "title": "Agent Cache 下载 `.tmp`、校验失败不安装、不污染正式缓存。"
+        },
+        {
+          "case_id": "P16-10",
+          "priority": "P1",
+          "title": "下载中断后临时文件清理和重试。"
+        },
+        {
+          "case_id": "P17P18-14",
+          "priority": "P0",
+          "title": "Agent Offline 执行 synced=false，恢复后幂等上传为 synced=true。"
+        },
+        {
+          "case_id": "P21-07",
+          "priority": "P1",
+          "title": "Appearance 的 light/dark/system 和刷新持久化。"
+        },
+        {
+          "case_id": "P22-08",
+          "priority": "P1",
+          "title": "成功后源路径、目标列表、输入状态重置。"
+        },
+        {
+          "case_id": "P22-09",
+          "priority": "P1",
+          "title": "每目标独立状态，整体状态正确聚合。"
+        },
+        {
+          "case_id": "P22-10",
+          "priority": "P1",
+          "title": "目标失败隔离，其他目标仍成功。"
+        },
+        {
+          "case_id": "P22-11",
+          "priority": "P1",
+          "title": "FAILED → retry，验证整体重试和 `target_id` 单目标重试。"
+        },
+        {
+          "case_id": "P22-12",
+          "priority": "P0",
+          "title": "PENDING/UPLOADING/DELIVERING → cancel，取消确认按当前产品设计验证。"
+        },
+        {
+          "case_id": "P22-13",
+          "priority": "P1",
+          "title": "源/目标相对路径、路径逃逸、错误 Agent Credential、文件超限。"
+        },
+        {
+          "case_id": "P22-14",
+          "priority": "P1",
+          "title": "目标文件内容、Mode、SHA256、原子替换和半文件清理。"
+        },
+        {
+          "case_id": "P22-15",
+          "priority": "P1",
+          "title": "Hub 重启、Agent 重连、目标离线后的传输恢复。"
+        },
+        {
+          "case_id": "SYS-03",
+          "priority": "P0",
+          "title": "SYS-03 Hub 重启：Agent 自动重连、Session 重建、Desired State 不丢。"
+        },
+        {
+          "case_id": "SYS-04",
+          "priority": "P0",
+          "title": "SYS-04 实时通知丢失：Revision Check 最终收敛。"
+        },
+        {
+          "case_id": "SYS-05",
+          "priority": "P0",
+          "title": "SYS-05 通知重复/乱序：最终以 Hub Current Desired State 为准。"
+        },
+        {
+          "case_id": "SYS-06",
+          "priority": "P0",
+          "title": "SYS-06 Agent Revision 落后：增量 Sync 正确。"
+        },
+        {
+          "case_id": "SYS-07",
+          "priority": "P0",
+          "title": "SYS-07 Change Log 窗口过期：触发 Full Resync。"
+        },
+        {
+          "case_id": "SYS-08",
+          "priority": "P0",
+          "title": "SYS-08 Script/Task 依赖同步失败：事务回滚，Revision 不前进，无半同步。"
+        },
+        {
+          "case_id": "SYS-10",
+          "priority": "P0",
+          "title": "SYS-10 Commit 前不发送通知，Commit 后通知一次或可安全重复。"
+        },
+        {
+          "case_id": "SYS-13",
+          "priority": "P0",
+          "title": "SYS-13 Agent 断网时 Allow Offline 调度继续执行。"
+        },
+        {
+          "case_id": "SYS-14",
+          "priority": "P0",
+          "title": "SYS-14 Hub Online Required 在 Hub 不可用时不执行。"
+        },
+        {
+          "case_id": "SYS-15",
+          "priority": "P0",
+          "title": "SYS-15 离线 Execution 上传和 ACK 幂等，无重复。"
+        },
+        {
+          "case_id": "SYS-16",
+          "priority": "P0",
+          "title": "SYS-16 Agent 发现旧 RUNNING 但进程不存在，按 `agent_restarted` 正确收尾。"
+        },
+        {
+          "case_id": "SYS-17",
+          "priority": "P0",
+          "title": "SYS-17 Agent 重连前不宣告 READY，完成 Reconciliation 后再 READY。"
+        },
+        {
+          "case_id": "SYS-18",
+          "priority": "P0",
+          "title": "SYS-18 心跳、Revision Check、重连退避包含配置和 Jitter 行为。"
+        },
+        {
+          "case_id": "SYS-22",
+          "priority": "P0",
+          "title": "SYS-22 同一 Task+Node+Scheduled Time 重复触发只产生一条 Execution。"
+        },
+        {
+          "case_id": "SYS-23",
+          "priority": "P0",
+          "title": "SYS-23 Misfire `skip` 不补跑，`run_once` 只补跑一次。"
+        },
+        {
+          "case_id": "SYS-24",
+          "priority": "P0",
+          "title": "SYS-24 Timezone/DST 边界。"
+        },
+        {
+          "case_id": "SYS-26",
+          "priority": "P0",
+          "title": "SYS-26 Condition AND、多层结构和错误结构。"
+        },
+        {
+          "case_id": "SYS-27",
+          "priority": "P0",
+          "title": "SYS-27 Remote online 满足/不满足。"
+        },
+        {
+          "case_id": "SYS-31",
+          "priority": "P0",
+          "title": "SYS-31 Manual Execution UUID 幂等。"
+        },
+        {
+          "case_id": "SYS-32",
+          "priority": "P0",
+          "title": "SYS-32 Scheduled Execution Key 幂等。"
+        },
+        {
+          "case_id": "SYS-33",
+          "priority": "P0",
+          "title": "SYS-33 Execution 开始前先写 Journal。"
+        },
+        {
+          "case_id": "SYS-35",
+          "priority": "P0",
+          "title": "SYS-35 Hub 断开时本地日志仍完整。"
+        },
+        {
+          "case_id": "SYS-36",
+          "priority": "P0",
+          "title": "SYS-36 Hub 恢复后日志和 Execution 幂等上传。"
+        },
+        {
+          "case_id": "SYS-41",
+          "priority": "P0",
+          "title": "SYS-41 Artifact 下载成功后 SHA256 校验和原子落盘。"
+        },
+        {
+          "case_id": "SYS-42",
+          "priority": "P0",
+          "title": "SYS-42 SHA256 错误禁止安装，正式缓存和目标文件不被污染。"
+        },
+        {
+          "case_id": "SYS-43",
+          "priority": "P0",
+          "title": "SYS-43 Artifact 下载中断、超时、HTTP 错误后 `.tmp` 清理。"
+        },
+        {
+          "case_id": "SYS-50",
+          "priority": "P0",
+          "title": "SYS-50 Health 失败：停止新版本、恢复 Binary/Config/Unit、Health 后记录 ROLLBACK_SUCCESS。"
+        },
+        {
+          "case_id": "SYS-52",
+          "priority": "P0",
+          "title": "SYS-52 Backup 缺失、权限不足、磁盘不足的明确失败。"
+        },
+        {
+          "case_id": "SYS-54",
+          "priority": "P0",
+          "title": "SYS-54 ContainerHostAdapter `/host` 映射和 Host Inventory。"
+        },
+        {
+          "case_id": "SYS-55",
+          "priority": "P0",
+          "title": "SYS-55 Docker Host Mount 缺失/只读/错误路径。"
+        },
+        {
+          "case_id": "SYS-56",
+          "priority": "P0",
+          "title": "SYS-56 `../`、绝对路径、Symlink Escape、Allowlist。"
+        },
+        {
+          "case_id": "SYS-57",
+          "priority": "P0",
+          "title": "SYS-57 跨文件系统临时文件和 Atomic Replace。"
+        },
+        {
+          "case_id": "SYS-58",
+          "priority": "P0",
+          "title": "SYS-58 Capability 缺失时在下发前 BLOCKED，不到客户机执行。"
+        },
+        {
+          "case_id": "SYS-59",
+          "priority": "P0",
+          "title": "SYS-59 源 Agent 身份认证、源节点只能上传。"
+        },
+        {
+          "case_id": "SYS-60",
+          "priority": "P0",
+          "title": "SYS-60 目标 Agent 身份认证、目标只能下载自己的目标。"
+        },
+        {
+          "case_id": "SYS-61",
+          "priority": "P0",
+          "title": "SYS-61 大小校验、SHA256 校验、Hub staged blob 原子提升。"
+        },
+        {
+          "case_id": "SYS-66",
+          "priority": "P0",
+          "title": "SYS-66 Hub 重启、Agent 重连、目标离线后状态和文件不产生半成品。"
+        },
+        {
+          "case_id": "X01",
+          "priority": "P0",
+          "title": "节点批量 Native Agent 自升级：混选 Docker、暂停/离线、重复在途升级、部分失败、取消确认、版本更新和重连。"
+        },
+        {
+          "case_id": "X03",
+          "priority": "P0",
+          "title": "on_start 每次Agent进程启动触发一次；网络重连不再次触发；禁用/删除停止触发。"
+        },
+        {
+          "case_id": "X17",
+          "priority": "P0",
+          "title": "真实 OIDC enabled/local_fallback/缺字段/慢响应/失败、SSO成功/拒绝/取消；外站/协议相对/sign-in/query/hash 回跳；停留页轮询/写请求401退登。"
+        }
+      ]
+    }
+  ],
+  "next_batch_candidate_limit": 12,
+  "next_batch_candidates": [
+    {
+      "case_id": "P04-09",
+      "title": "节点 API 失败 Retry。",
+      "priority": "P1",
+      "actions": "Use the current owned authenticated profile and the existing live object; verify actual route/GET/DOM feedback without mutating server data.",
+      "fixture_budget": 0,
+      "stop_condition": "If current relationship/data no longer exists, record the unavailable dimension and stop that case rather than substituting another owner’s object."
+    },
+    {
+      "case_id": "P05B-03",
+      "title": "Inventory：OS、Kernel、CPU、Memory、Filesystem、Network。",
+      "priority": "P1",
+      "actions": "Use the current owned authenticated profile and the existing live object; verify actual route/GET/DOM feedback without mutating server data.",
+      "fixture_budget": 0,
+      "stop_condition": "If current relationship/data no longer exists, record the unavailable dimension and stop that case rather than substituting another owner’s object."
+    },
+    {
+      "case_id": "P05B-04",
+      "title": "Capability enabled/disabled 展示。",
+      "priority": "P1",
+      "actions": "Use the current owned authenticated profile and the existing live object; verify actual route/GET/DOM feedback without mutating server data.",
+      "fixture_budget": 0,
+      "stop_condition": "If current relationship/data no longer exists, record the unavailable dimension and stop that case rather than substituting another owner’s object."
+    },
+    {
+      "case_id": "P05B-09",
+      "title": "Managed Applications → Application Detail。",
+      "priority": "P1",
+      "actions": "Use the current owned authenticated profile and the existing live object; verify actual route/GET/DOM feedback without mutating server data.",
+      "fixture_budget": 0,
+      "stop_condition": "If current relationship/data no longer exists, record the unavailable dimension and stop that case rather than substituting another owner’s object."
+    },
+    {
+      "case_id": "P05B-10",
+      "title": "Execution 表中的 Task 链接，ID 是否可点击按当前设计验证。",
+      "priority": "P1",
+      "actions": "Use the current owned authenticated profile and the existing live object; verify actual route/GET/DOM feedback without mutating server data.",
+      "fixture_budget": 0,
+      "stop_condition": "If current relationship/data no longer exists, record the unavailable dimension and stop that case rather than substituting another owner’s object."
+    },
+    {
+      "case_id": "P05B-11",
+      "title": "返回按钮回 `/agents`。",
+      "priority": "P1",
+      "actions": "Use the current owned authenticated profile and the existing live object; verify actual route/GET/DOM feedback without mutating server data.",
+      "fixture_budget": 0,
+      "stop_condition": "If current relationship/data no longer exists, record the unavailable dimension and stop that case rather than substituting another owner’s object."
+    },
+    {
+      "case_id": "P21-01",
+      "title": "Runtime/Appearance 两个切换按钮。",
+      "priority": "P1",
+      "actions": "Use the current owned authenticated profile and the existing live object; verify actual route/GET/DOM feedback without mutating server data.",
+      "fixture_budget": 0,
+      "stop_condition": "If current relationship/data no longer exists, record the unavailable dimension and stop that case rather than substituting another owner’s object."
+    },
+    {
+      "case_id": "P21-02",
+      "title": "Runtime显示当前API提供的4个原settings（heartbeat/revision check/changelog/max log），gateway absent不虚构控件",
+      "priority": "P1",
+      "actions": "Use the current owned authenticated profile and the existing live object; verify actual route/GET/DOM feedback without mutating server data.",
+      "fixture_budget": 0,
+      "stop_condition": "If current relationship/data no longer exists, record the unavailable dimension and stop that case rather than substituting another owner’s object."
+    }
+  ],
+  "minimal_next_batch": "One readonly pass over P05B-03/04/09/10/11 plus P04-09; then P21-01/02 read-only Settings tabs. Reuse current profile/tunnel, 0 objects/Run. P05A-10 must wait for an explicitly authorized disposable enrollment preview source or a specifically approved one-shot enrollment POST with exact pending Node cleanup.",
+  "evidence_limits": {
+    "not_run_count": 145,
+    "classification_method": "canonical id/title and current inventory status; no cases executed during triage",
+    "untrusted_inferences_avoided": [
+      "Do not treat PARTIAL as NOT_RUN; this list only uses snapshot status NOT_RUN.",
+      "Do not mark OIDC cases applicable until current OIDC configuration is read.",
+      "Do not create Users or alter shared OIDC settings to make tests runnable.",
+      "Do not create records merely to emulate true empty states."
+    ]
+  }
+}

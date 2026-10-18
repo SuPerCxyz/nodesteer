@@ -1,0 +1,320 @@
+{
+  "result": {
+    "id": "transfer.success-source-failure",
+    "name": "真实文件中继/SHA效果/源失败目标终结/取消",
+    "started_at": "2026-09-30T02:31:12.217434+00:00",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-09-30T02:31:15.839964+00:00",
+    "evidence": "backend/evidence/transfer.success-source-failure.json"
+  },
+  "events": [
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-file-source-4c3846",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "56765828-4896-492b-b562-64afdc0fb8d6"
+          ]
+        },
+        "command": "mkdir -p /tmp/qa-20260930-101945-be; printf transfer-real > /tmp/qa-20260930-101945-be/transfer-source",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "66bd8ec1-0545-476c-bb81-4928d50d624d",
+        "name": "qa-20260930-101945-be-file-source-4c3846",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "56765828-4896-492b-b562-64afdc0fb8d6"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /tmp/qa-20260930-101945-be; printf transfer-real > /tmp/qa-20260930-101945-be/transfer-source",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:31:12 GMT",
+        "Content-Length": "510",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/66bd8ec1-0545-476c-bb81-4928d50d624d/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "15cd3496-0b06-45df-a209-c5128c40a66a",
+          "task_id": "66bd8ec1-0545-476c-bb81-4928d50d624d",
+          "task_revision": 1,
+          "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:31:12 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/15cd3496-0b06-45df-a209-c5128c40a66a",
+      "terminal": {
+        "id": "15cd3496-0b06-45df-a209-c5128c40a66a",
+        "task_id": "66bd8ec1-0545-476c-bb81-4928d50d624d",
+        "task_revision": 1,
+        "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T02:31:12.150351613Z",
+        "end_time": "2026-09-30T02:31:12.161824655Z",
+        "status": "SUCCESS",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "agent": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "read_command": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; r=c.execute('\"'\"'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?'\"'\"',(sys.argv[2],)).fetchone(); print(json.dumps(dict(r) if r else None))' /var/lib/nodesteer 15cd3496-0b06-45df-a209-c5128c40a66a\n",
+      "exit_code": 0,
+      "stdout": "{\"id\": \"15cd3496-0b06-45df-a209-c5128c40a66a\", \"task_id\": \"66bd8ec1-0545-476c-bb81-4928d50d624d\", \"node_id\": \"56765828-4896-492b-b562-64afdc0fb8d6\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}\n",
+      "stderr": ""
+    },
+    {
+      "api": "POST /api/transfers",
+      "status": 200,
+      "request": {
+        "source_node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "source_path": "/tmp/qa-20260930-101945-be/never-created-f90b155c1ece4fc0841a5e65a6ce6ff9",
+        "targets": [
+          {
+            "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+            "destination_path": "/tmp/qa-20260930-101945-be/transfer-target"
+          }
+        ]
+      },
+      "response": {
+        "id": "5560a2a0-6ea6-4e0c-b725-198573d90162",
+        "source_node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "source_path": "/tmp/qa-20260930-101945-be/transfer-source",
+        "size": 0,
+        "status": "UPLOADING",
+        "created_at": "2026-09-30T02:31:13.513988735Z",
+        "updated_at": "2026-09-30T02:31:13.521697405Z",
+        "targets": [
+          {
+            "transfer_id": "5560a2a0-6ea6-4e0c-b725-198573d90162",
+            "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+            "destination_path": "/tmp/qa-20260930-101945-be/transfer-target",
+            "status": "PENDING",
+            "updated_at": "2026-09-30T02:31:13.513988735Z"
+          }
+        ]
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:31:13 GMT",
+        "Content-Length": "528",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/transfers/5560a2a0-6ea6-4e0c-b725-198573d90162",
+      "terminal": {
+        "id": "5560a2a0-6ea6-4e0c-b725-198573d90162",
+        "source_node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "source_path": "/tmp/qa-20260930-101945-be/transfer-source",
+        "source_mode": 420,
+        "size": 13,
+        "sha256": "8a9087745db96bfbe3c56de2088c1cdea6427d3af8047641618605be55f6678a",
+        "status": "SUCCESS",
+        "created_at": "2026-09-30T02:31:13.513988735Z",
+        "updated_at": "2026-09-30T02:31:13.556883964Z",
+        "targets": [
+          {
+            "transfer_id": "5560a2a0-6ea6-4e0c-b725-198573d90162",
+            "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+            "destination_path": "/tmp/qa-20260930-101945-be/transfer-target",
+            "status": "SUCCESS",
+            "updated_at": "2026-09-30T02:31:13.551787947Z"
+          }
+        ]
+      }
+    },
+    {
+      "agent": "d77e2440-919f-4431-a488-733817dcd809",
+      "read_command": "cat -- /tmp/qa-20260930-101945-be/transfer-target\n",
+      "exit_code": 0,
+      "stdout": "transfer-real",
+      "stderr": ""
+    },
+    {
+      "api": "POST /api/transfers",
+      "status": 200,
+      "request": {
+        "source_node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "source_path": "/tmp/qa-20260930-101945-be/never-created-f90b155c1ece4fc0841a5e65a6ce6ff9",
+        "targets": [
+          {
+            "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+            "destination_path": "/tmp/qa-20260930-101945-be/transfer-target"
+          }
+        ]
+      },
+      "response": {
+        "id": "e5a1ebdf-64d9-4160-aa45-c9c640ebbaf8",
+        "source_node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "source_path": "/tmp/qa-20260930-101945-be/never-created-f90b155c1ece4fc0841a5e65a6ce6ff9",
+        "size": 0,
+        "status": "UPLOADING",
+        "created_at": "2026-09-30T02:31:14.794594799Z",
+        "updated_at": "2026-09-30T02:31:14.804366064Z",
+        "targets": [
+          {
+            "transfer_id": "e5a1ebdf-64d9-4160-aa45-c9c640ebbaf8",
+            "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+            "destination_path": "/tmp/qa-20260930-101945-be/transfer-target",
+            "status": "PENDING",
+            "updated_at": "2026-09-30T02:31:14.794594799Z"
+          }
+        ]
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:31:14 GMT",
+        "Content-Length": "559",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/transfers/e5a1ebdf-64d9-4160-aa45-c9c640ebbaf8",
+      "terminal": {
+        "id": "e5a1ebdf-64d9-4160-aa45-c9c640ebbaf8",
+        "source_node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "source_path": "/tmp/qa-20260930-101945-be/never-created-f90b155c1ece4fc0841a5e65a6ce6ff9",
+        "size": 0,
+        "status": "FAILED",
+        "error": "source upload failed: open /tmp/qa-20260930-101945-be/never-created-f90b155c1ece4fc0841a5e65a6ce6ff9: no such file or directory",
+        "created_at": "2026-09-30T02:31:14.794594799Z",
+        "updated_at": "2026-09-30T02:31:14.809963037Z",
+        "targets": [
+          {
+            "transfer_id": "e5a1ebdf-64d9-4160-aa45-c9c640ebbaf8",
+            "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+            "destination_path": "/tmp/qa-20260930-101945-be/transfer-target",
+            "status": "FAILED",
+            "error": "source upload failed: open /tmp/qa-20260930-101945-be/never-created-f90b155c1ece4fc0841a5e65a6ce6ff9: no such file or directory",
+            "updated_at": "2026-09-30T02:31:14.822924428Z"
+          }
+        ]
+      }
+    },
+    {
+      "api": "POST /api/transfers/e5a1ebdf-64d9-4160-aa45-c9c640ebbaf8/cancel",
+      "status": 200,
+      "request": {},
+      "response": {
+        "id": "e5a1ebdf-64d9-4160-aa45-c9c640ebbaf8",
+        "source_node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "source_path": "/tmp/qa-20260930-101945-be/never-created-f90b155c1ece4fc0841a5e65a6ce6ff9",
+        "size": 0,
+        "status": "CANCELED",
+        "created_at": "2026-09-30T02:31:14.794594799Z",
+        "updated_at": "2026-09-30T02:31:15.81933612Z",
+        "targets": [
+          {
+            "transfer_id": "e5a1ebdf-64d9-4160-aa45-c9c640ebbaf8",
+            "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+            "destination_path": "/tmp/qa-20260930-101945-be/transfer-target",
+            "status": "CANCELED",
+            "error": "source upload failed: open /tmp/qa-20260930-101945-be/never-created-f90b155c1ece4fc0841a5e65a6ce6ff9: no such file or directory",
+            "updated_at": "2026-09-30T02:31:15.823911999Z"
+          }
+        ]
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:31:15 GMT",
+        "Content-Length": "696",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/transfers/e5a1ebdf-64d9-4160-aa45-c9c640ebbaf8",
+      "terminal": {
+        "id": "e5a1ebdf-64d9-4160-aa45-c9c640ebbaf8",
+        "source_node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "source_path": "/tmp/qa-20260930-101945-be/never-created-f90b155c1ece4fc0841a5e65a6ce6ff9",
+        "size": 0,
+        "status": "CANCELED",
+        "created_at": "2026-09-30T02:31:14.794594799Z",
+        "updated_at": "2026-09-30T02:31:15.81933612Z",
+        "targets": [
+          {
+            "transfer_id": "e5a1ebdf-64d9-4160-aa45-c9c640ebbaf8",
+            "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+            "destination_path": "/tmp/qa-20260930-101945-be/transfer-target",
+            "status": "CANCELED",
+            "error": "source upload failed: open /tmp/qa-20260930-101945-be/never-created-f90b155c1ece4fc0841a5e65a6ce6ff9: no such file or directory",
+            "updated_at": "2026-09-30T02:31:15.823911999Z"
+          }
+        ]
+      }
+    }
+  ]
+}

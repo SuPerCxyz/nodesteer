@@ -1,0 +1,85 @@
+{
+  "run_id": "20260930-101945",
+  "latest_final_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+  "main_repair_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+  "main_repair_configuration": {
+    "private_path": "/tmp/nodesteer-e2e-20260930-101945-repair/repair-hub.yaml",
+    "backup_path": "/tmp/nodesteer-e2e-20260930-101945-repair/repair-hub-before-ttl.yaml",
+    "private_mode": "0o600",
+    "private_dir_mode": "0o700",
+    "remote_evidence": [
+      "e594591f164b67d4974352c3b29eaa86eb8b67498c4f1af127d6c0c8131f6ade  /etc/nodesteer/hub-repair-20260930-101945.yaml",
+      "nodesteer:nodesteer:600"
+    ],
+    "session_ttl_restored_24h": true
+  },
+  "ttl_ui_authority": {
+    "url": "http://127.0.0.1:18995",
+    "session_ttl": "3s",
+    "remote_unit": "nodesteer-hub-repair-20260930-101945-ttl-ui.service",
+    "remote_state": [
+      "ActiveState=active",
+      "SubState=running",
+      "nodesteer:nodesteer:600",
+      "nodesteer:nodesteer:700",
+      "root:root:644"
+    ],
+    "private_credentials_path": "/tmp/nodesteer-e2e-20260930-101945-repair/ttl-ui-connection.json",
+    "private_credentials_mode": "0o600",
+    "tunnel_pid": 654012,
+    "tunnel_process_alive": true,
+    "local_health_http": 200,
+    "operator_test_user_credentials_path": "/tmp/nodesteer-e2e-20260930-101945-repair/ttl-ui-operator-credentials.json"
+  },
+  "latest_ui_observations_not_yet_merged": {
+    "expired_loaded_page_redirected_to_signin": true,
+    "localStorage_keys_after_401": [],
+    "internal_redirect_after_fresh_login": "/users?search=ttl#auth-expiry",
+    "external_redirect_after_login": "http://127.0.0.1:18995/",
+    "browser_sessions": [
+      "node-repair-ttl-ui",
+      "node-repair-ttl-ext"
+    ],
+    "screenshots": [
+      "ttl-ui-expired-signin.png",
+      "ttl-ui-internal-return.png",
+      "ttl-ui-external-return.png"
+    ],
+    "verified_additional": [
+      "after natural expiry the next protected /api/me request redirected sign-in and cleared nodesteer_token",
+      "fresh login returned to /users?search=ttl#auth-expiry",
+      "external URL redirect rejected to local root",
+      "logout confirmation cleared token and returned sign-in",
+      "Operator direct /api/users=403 and same token /api/me=200; frontend Users role guard did not issue request"
+    ],
+    "background_poll_401": {
+      "status": "passed",
+      "result_file": "ttl-background-expiry.json",
+      "no_manual_action_after_login": true,
+      "wait_seconds": 16,
+      "401_paths": [
+        "/api/applications",
+        "/api/executions",
+        "/api/nodes",
+        "/api/schedules",
+        "/api/tasks"
+      ],
+      "final_url": "http://127.0.0.1:18995/sign-in?redirect=%2F",
+      "nodesteer_token_present": false
+    }
+  },
+  "resources_not_yet_cleaned": [
+    "isolated ttl-ui Hub/service/config/data and SSH tunnel are intentionally running for follow-up 403/browser tests",
+    "QA Viewer and Operator users from final Hub validation are retained because User DELETE endpoint is unavailable; statuses valid"
+  ],
+  "other_resource_cleanup": {
+    "backend QA tasks": "deleted; execution history retained",
+    "secret-default test script": "deleted and GET verified 404",
+    "live-log task": "deleted; execution history retained"
+  },
+  "secrets_included": false,
+  "remaining_ttl_auth_dimensions": [
+    "live backend-generated 500 response",
+    "browser-visible 403 request is gated by frontend role guard; server API 403 + me 200 is verified"
+  ]
+}

@@ -1,0 +1,104 @@
+{
+ "captured_at_utc": "2026-10-14T09:17:29.665921+00:00",
+ "authority": "http://192.168.100.209:18080 (repair)",
+ "nonce": "89fe789d",
+ "counts_baseline": {
+  "nodes": 7,
+  "applications": 1,
+  "tasks": 0,
+  "schedules": 0,
+  "artifacts": 4,
+  "scripts": 2,
+  "groups": 0,
+  "users": 8,
+  "transfers": 7,
+  "executions_head": 1
+ },
+ "counts_after": {
+  "nodes": 6,
+  "applications": 1,
+  "tasks": 0,
+  "schedules": 0,
+  "artifacts": 1,
+  "scripts": 2,
+  "groups": 0,
+  "users": 8,
+  "transfers": 11,
+  "executions_head": 1
+ },
+ "deltas": {
+  "nodes": -1,
+  "applications": 0,
+  "tasks": 0,
+  "schedules": 0,
+  "artifacts": -3,
+  "scripts": 0,
+  "groups": 0,
+  "users": 0,
+  "transfers": 4,
+  "executions_head": 0
+ },
+ "delta_attribution": {
+  "transfers +4": "all 4 are batch04 owned transfers (no DELETE endpoint; terminal history, listed in fixture-ledger.json)",
+  "nodes -1": "NOT batch04: the parallel sys-b10 child node (baseline id f8df4168-713c-4884-8d18-df2dba5125e7) was removed/recreated by the parallel batch; batch04 created no node",
+  "artifacts -3": "NOT batch04: parallel batches removed their artifacts; batch04 created 0 artifacts",
+  "applications 0 change": "batch04 created 1 owned application and deleted it (GET404 in evidence/final-cleanup-get404.json)",
+  "tasks 0 change": "batch04 created 1 owned task and deleted it (GET404; 4 execution records remain as history)",
+  "scripts/users/groups/schedules": "unchanged; batch04 created no script/user/group/schedule"
+ },
+ "owned_leftovers": {
+  "artifacts": [],
+  "applications": [],
+  "tasks": [],
+  "scripts": [],
+  "transfers": [
+   {
+    "id": "f62913ec-dc41-47e4-bb93-62596f418c41",
+    "label": "/tmp/qa-w1410b04-89fe789d/src-2mb.bin"
+   },
+   {
+    "id": "ec3772f9-606d-493f-bdef-762861b6e93e",
+    "label": "/tmp/qa-w1410b04-89fe789d/src-small.bin"
+   },
+   {
+    "id": "6bb56f76-f725-4158-9609-f2589fb8045d",
+    "label": "/tmp/qa-w1410b04-89fe789d/src-big.bin"
+   },
+   {
+    "id": "b5ecb82a-7603-43a6-b243-a7af8a80ad3b",
+    "label": "/tmp/qa-w1410b04-89fe789d/pending-src.bin"
+   }
+  ]
+ },
+ "owned_leftovers_expectation": {
+  "artifacts": 0,
+  "applications": 0,
+  "tasks": 0,
+  "scripts": 0,
+  "transfers": 4
+ },
+ "node_side_files": {
+  "native-1 /tmp/qa-w1410b04-89fe789d": "ls: cannot access '/tmp/qa-w1410b04-89fe789d': No such file or directory\n0\nWarning: Permanently added '192.168.100.204' (ED25519) to the list of known hosts.",
+  "native-3 /tmp/qa-w1410b04-89fe789d": "ls: cannot access '/tmp/qa-w1410b04-89fe789d': No such file or directory\n0\nWarning: Permanently added '192.168.100.222' (ED25519) to the list of known hosts."
+ },
+ "hub_staging": {
+  "path": "/var/lib/nodesteer-hub-repair-20260930-101945/file-transfers/",
+  "file_count": "0",
+  "detail": "0\nls: cannot access '/var/lib/nodesteer-hub-repair-20260930-101945/file-transfers/*': No such file or directory\nWarning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts."
+ },
+ "non_owned_application_untouched": {
+  "checked_via": "runners/fl09_api.py non_owned_apps_untouched at three points (after create+assign, after unassign, baseline)",
+  "result": "804e6b14-eb84-4dda-90de-8bcab9586c4c stayed assigned to native-1 only; no non-owned application or node was modified by batch04"
+ },
+ "parallel_interference": [
+  "sys-b09 (schedule/heartbeat/condition) creates BLOCKED executions for task 6e6d673c-64a4-4c74-aa42-8a339c335c35; not batch04",
+  "sys-b10 (artifact cache) created/removed node qa-sysb10-b36cbf4e3d15-child and 2 applications during the batch; not batch04",
+  "a 3rd parallel actor removed the pre-existing artifacts during the batch window"
+ ],
+ "no_leftovers": true,
+ "notes": [
+  "batch04 is forbidden from creating/deleting User/Node/Group and from changing node state; none were touched",
+  "no real deploy was triggered; no hub/agent process was stopped",
+  "only POST /api/transfers (4), POST /api/transfers/{id}/cancel (3), POST /api/applications (1), POST /api/applications/{id}/assign (2), DELETE /api/applications/{id} (1), POST+DELETE /api/tasks (1+1), POST /api/tasks/{id}/run (2) were written to the repair authority"
+ ]
+}

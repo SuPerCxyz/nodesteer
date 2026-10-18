@@ -1,0 +1,108 @@
+{
+  "at_utc": "2026-10-14T10:06:20Z",
+  "application_definition_guard": [
+    {
+      "label": "relative_binary_path",
+      "patched": {
+        "binary_path": "opt/rel/bin/app"
+      },
+      "http": 400,
+      "error": "binary_path: invalid application path",
+      "created_row_ids": [],
+      "created": false
+    },
+    {
+      "label": "dotdot_binary_path",
+      "patched": {
+        "binary_path": "/opt/qa-sysb12-530b8e2c5b77/a/../bin/app"
+      },
+      "http": 400,
+      "error": "binary_path: invalid application path",
+      "created_row_ids": [],
+      "created": false
+    },
+    {
+      "label": "non_ascii_nul_binary_path",
+      "patched": {
+        "binary_path": "/opt/qa-sysb12-530b8e2c5b77/a\u0000b"
+      },
+      "http": 400,
+      "error": "binary_path: invalid application path",
+      "created_row_ids": [],
+      "created": false
+    },
+    {
+      "label": "relative_config_path",
+      "patched": {
+        "config_path": "etc/rel.conf"
+      },
+      "http": 400,
+      "error": "config_path: invalid application path",
+      "created_row_ids": [],
+      "created": false
+    },
+    {
+      "label": "dotdot_config_path",
+      "patched": {
+        "config_path": "/opt/qa-sysb12-530b8e2c5b77/x/../../etc/passwd"
+      },
+      "http": 400,
+      "error": "config_path: invalid application path",
+      "created_row_ids": [],
+      "created": false
+    },
+    {
+      "label": "PUT_relative_binary_path",
+      "patched": {
+        "binary_path": "opt/rel/bin/app"
+      },
+      "http": 400,
+      "error": "binary_path: invalid application path"
+    },
+    {
+      "label": "PUT_dotdot_binary_path",
+      "patched": {
+        "binary_path": "/opt/qa-sysb12-530b8e2c5b77/a/../bin/app"
+      },
+      "http": 400,
+      "error": "binary_path: invalid application path"
+    }
+  ],
+  "transfer_guard": [
+    {
+      "label": "relative_destination",
+      "destination_path": "opt/rel/out.bin",
+      "http": 400,
+      "error": "destination path: absolute path required"
+    },
+    {
+      "label": "relative_with_dotdot",
+      "destination_path": "../out.bin",
+      "http": 400,
+      "error": "destination path: absolute path required"
+    },
+    {
+      "label": "dotdot_traversal",
+      "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/../../etc/out.bin",
+      "http": 400,
+      "error": "destination path: path traversal is not allowed"
+    },
+    {
+      "label": "empty_destination",
+      "destination_path": "",
+      "http": 400,
+      "error": "destination path: absolute path required"
+    }
+  ],
+  "app_revision_unchanged": {
+    "before": 1,
+    "after": 1,
+    "equal": true
+  },
+  "app_paths_unchanged": {
+    "binary_path": "/opt/qa-sysb12-530b8e2c5b77/app/bin/app",
+    "config_path": "/opt/qa-sysb12-530b8e2c5b77/app/config/app.env"
+  },
+  "transfer_rows_created_by_rejected_requests": 0,
+  "all_hub_level_rejections_ok": true
+}

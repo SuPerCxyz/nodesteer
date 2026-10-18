@@ -1,0 +1,47 @@
+{
+  "result": {
+    "id": "arch.lost_notification",
+    "name": "Lost Notification",
+    "started_at": "2026-09-30T06:36:48.035390+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "failed",
+    "reason": "core原Node未恢复online/synced",
+    "traceback": "Traceback (most recent call last):\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/runner.py\", line 567, in execute\n    self.normal_case(case['id'])\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated_runner.py\", line 270, in normal_case\n    self.start_proxy()\n    ~~~~~~~~~~~~~~~~^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated_runner.py\", line 162, in start_proxy\n    self.wait_online()\n    ~~~~~~~~~~~~~~~~^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated_runner.py\", line 96, in wait_online\n    raise AssertionError('core原Node未恢复online/synced')\nAssertionError: core原Node未恢复online/synced\n",
+    "finished_at": "2026-09-30T06:37:39.439735+00:00",
+    "evidence": "backend/isolated/evidence/arch.lost_notification-cf57c430.json"
+  },
+  "events": [
+    {
+      "control": "python3 -c 'import pathlib,sys;pathlib.Path(sys.argv[1]).write_text(sys.argv[2])' /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.controls.json '{}'",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "control": "nohup python3 /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.py --listen 18084 --upstream-port 18080 --controls /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.controls.json --events /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.events.jsonl > /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.stdout 2>&1 & proxy_pid=$!; printf %s \"$proxy_pid\" > /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.pid; cat /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.pid",
+      "exit_code": 0,
+      "stdout": "720046",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import pathlib,sys;pathlib.Path(sys.argv[1]).write_text(sys.argv[2])' /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.controls.json '{}'",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "control": "docker rm -f qa-20260930-101945-env-agent",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-env-agent\n",
+      "stderr": ""
+    },
+    {
+      "control": "docker run -d --name qa-20260930-101945-env-agent --network qa-20260930-101945-env-net --restart unless-stopped --hostname 6f6041279833 -v qa-20260930-101945-env-agentdata:/var/lib/nodesteer -e NODESTEER_NODE_IP=192.168.100.209 -e NODESTEER_DEPLOYMENT_MODE=docker -e NODESTEER_DATA_DIR=/var/lib/nodesteer -e PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin -e NODESTEER_HUB_URL=ws://192.168.100.209:18084/ws -e NODESTEER_REGISTRATION_TOKEN=[redacted] -e NODESTEER_AGENT_ID=agent-9b83b1d6-e376-4e76-a46f-f5c45e495329 -e NODESTEER_NODE_NAME=qa-20260930-101945-env-docker-agent qa-20260930-101945-env-agent:dddee4f0",
+      "exit_code": 0,
+      "stdout": "3a308ec6d7bb0b27201cc7d277a3ef29b055b7e2fc2adbd9926f735dcf1293a1\n",
+      "stderr": ""
+    }
+  ]
+}

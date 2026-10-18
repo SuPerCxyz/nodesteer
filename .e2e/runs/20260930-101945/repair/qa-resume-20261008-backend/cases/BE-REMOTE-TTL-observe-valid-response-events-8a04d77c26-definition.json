@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "BE-REMOTE-TTL-observe-valid-response-events-8a04d77c26",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport json\nfrom pathlib import Path\nrows=[]\nfor l in Path(\"/tmp/qa-resume-20261008-child-ciivjupc/proxy-events.jsonl\").read_text().splitlines()[-500:]:\n try:\n  x=json.loads(l)\n  if x.get(\"event\") in {\"remote_request\",\"remote_override\"}:rows.append(x)\n  elif x.get(\"event\")==\"forward_control\" and x.get(\"type\")==\"REMOTE_STATE\":rows.append({k:x.get(k) for k in [\"time\",\"event\",\"connection\",\"direction\",\"type\",\"id\"] if k in x})\n except Exception:pass\nprint(json.dumps(rows[-25:],separators=(\",\",\":\")))\nPY",
+    "timeout": 25,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "79d9034f02a8908440322a8d95074b737a2ed677764d3ee79deb6b0c95646146",
+  "source_contains_connection_token": false
+}

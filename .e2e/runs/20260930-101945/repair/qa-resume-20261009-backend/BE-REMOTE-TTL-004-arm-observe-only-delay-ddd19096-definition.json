@@ -1,0 +1,22 @@
+{
+  "method": "POST",
+  "path": "/api/tasks",
+  "payload": {
+    "name": "BE-REMOTE-TTL-004-arm-observe-only-delay-ddd19096",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport hashlib,json,os,stat\nfrom pathlib import Path\np=Path(\"/tmp/qa-resume-20261008-child-ciivjupc\");mp=p/\"owner-manifest.json\";m=json.loads(mp.read_bytes());c=p/\"controls.json\"\ndef sha(x):return hashlib.sha256(Path(x).read_bytes()).hexdigest()\nif (p.stat().st_dev,p.stat().st_ino,p.stat().st_uid)!=(33,135,65534) or sha(mp)!='7a5bf21f70ec2610527f054809f40fbc17bb5dcbfd24f8af804237bc811f7cfc' or m[\"node_id\"]!=\"15961ef7-81b4-43f3-80c8-1b6977ca2aea\" or m[\"agent_id\"]!=\"agent-ab15a133-73cd-4025-8c97-f2ff37e000f5\":raise RuntimeError(\"owner_guard_failed\")\nif json.loads(c.read_text())!={}:raise RuntimeError(\"controls_not_empty\")\nvalue={\"remote_override\":{'target_node_id': '15961ef7-81b4-43f3-80c8-1b6977ca2aea', 'property': 'last_execution', 'task_id': 'd9669588-e633-473e-8843-706dc0eabe07', 'observe_only': True, 'delay_ms': 500}}\nt=c.with_suffix(\".json.tmp\");t.write_text(json.dumps(value,separators=(\",\",\":\")));os.chmod(t,0o600);os.chown(t,65534,65534);t.replace(c)\nprint(json.dumps({\"status\":\"PASS\",\"controls_sha256\":sha(c),\"controls_mode\":\"0o600\",\"controls_uid\":c.stat().st_uid,\"matching_request_id_only\":True,\"delivery_delay_ms\":500},separators=(\",\",\":\")))\nPY",
+    "timeout": 20,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "source_sha256": "709d30b3ceaf9e46e219c49a03417fa4f2635f22407830975387cc77f77d2be6"
+}

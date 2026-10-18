@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "qa-resume-20261008-native4-daemon-cleanup-674cdfb269",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport hashlib,json,os,shutil,signal,stat,time\nfrom pathlib import Path\nD=Path(\"/tmp/qa-resume-20261008-child-n_9xjgq7\")\nEXPECTED_MANIFEST_SHA=\"6515ae9f62add7f2945deed2817f1f980f950a680cf69eac79c6301f6ce3be30\"\ndef emit(v): print(json.dumps(v,separators=(',',':')),flush=True)\ndef start(pid):\n raw=Path('/proc',str(pid),'stat').read_text(); tail=raw[raw.rfind(')')+2:].split(); return int(tail[19])\ndef uid(pid):\n for line in Path('/proc',str(pid),'status').read_text().splitlines():\n  if line.startswith('Uid:'): return tuple(map(int,line.split()[1:3]))\n raise ValueError('uid')\ndef sha(p):\n h=hashlib.sha256()\n with open(p,'rb') as f:\n  for b in iter(lambda:f.read(1048576),b''): h.update(b)\n return h.hexdigest()\ndef same(pid,since,want_uid,want_exe,directory):\n try:\n  if start(pid)!=since or uid(pid)!=(want_uid,want_uid): return False\n  exe=os.readlink('/proc/'+str(pid)+'/exe')\n  if exe.endswith(' (deleted)') or sha(exe)!=want_exe: return False\n  argv=[x.decode(errors='replace') for x in Path('/proc',str(pid),'cmdline').read_bytes().split(b'\\0') if x]\n  return any(arg==str(directory) or arg.startswith(str(directory)+os.sep) for arg in argv)\n except BaseException: return False\nif not str(D).startswith('/tmp/qa-resume-20261008-child-') or D.is_symlink(): emit({'status':'BLOCKED','code':'owned_directory_gate'}); raise SystemExit(0)\ntry:\n st=D.lstat(); raw=(D/'owner-manifest.json').read_bytes()\n if hashlib.sha256(raw).hexdigest()!=EXPECTED_MANIFEST_SHA: emit({'status':'BLOCKED','code':'manifest_hash_mismatch'}); raise SystemExit(0)\n m=json.loads(raw); pid=int(m['pid']); since=int(m['starttime']); expected_uid=int(m['uid']); expected_exe=m['exe_sha256']; nonce=m['owner_nonce']\n if (st.st_dev,st.st_ino)!=(m['directory_dev'],m['directory_ino']) or stat.S_ISLNK(st.st_mode): emit({'status':'BLOCKED','code':'directory_identity_mismatch'}); raise SystemExit(0)\n if (D/'owner.marker').read_text()!=nonce: emit({'status':'BLOCKED','code':'owner_marker_mismatch'}); raise SystemExit(0)\n matched=same(pid,since,expected_uid,expected_exe,D)\n if matched:\n  os.kill(pid,signal.SIGTERM)\n  deadline=time.monotonic()+5\n  while time.monotonic()<deadline and same(pid,since,expected_uid,expected_exe,D): time.sleep(0.1)\n  if same(pid,since,expected_uid,expected_exe,D):\n   os.kill(pid,signal.SIGKILL)\n   deadline=time.monotonic()+2\n   while time.monotonic()<deadline and same(pid,since,expected_uid,expected_exe,D): time.sleep(0.1)\n  if same(pid,since,expected_uid,expected_exe,D): emit({'status':'BLOCKED','code':'owned_pid_did_not_exit'}); raise SystemExit(0)\n elif Path('/proc',str(pid)).exists():\n  try:\n   if start(pid)==since: emit({'status':'BLOCKED','code':'pid_exists_identity_mismatch'}); raise SystemExit(0)\n  except FileNotFoundError: pass\n if D.exists():\n  now=D.lstat()\n  if stat.S_ISLNK(now.st_mode) or (now.st_dev,now.st_ino)!=(m['directory_dev'],m['directory_ino']) or (D/'owner.marker').read_text()!=nonce:\n   emit({'status':'BLOCKED','code':'cleanup_directory_owner_guard_failed'}); raise SystemExit(0)\n  shutil.rmtree(D)\n emit({'status':'PASS','owned_pid_stopped_or_gone':True,'process_identity_verified_before_signal':matched,'owned_directory_removed':not D.exists(),'directory_dev_inode_verified':True,'owner_marker_verified':True})\nexcept SystemExit: raise\nexcept BaseException: emit({'status':'BLOCKED','code':'cleanup_internal_failure'})\nPY",
+    "timeout": 45,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "7194a55a3615448667eceb53cf39006ad5e7cb8a13239b5e64ed2a3f711e15b9",
+  "source_contains_connection_token": false
+}

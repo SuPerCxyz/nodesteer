@@ -1,0 +1,417 @@
+{
+  "at_utc": "2026-10-16T09:30:41Z",
+  "scenario": "hub-side Script definition changes while the owned child channel is fault-injected: a real CHANGE_NOTIFICATION is lost, then a real one is duplicated, then a captured stale one is replayed (reordered) after the newer revision was already applied",
+  "script_id": "cb3cdea9-691f-45ac-9318-67b16d5713f3",
+  "hub_revision_before": 3472,
+  "child_before": {
+    "script_rows": [
+      {
+        "id": "cb3cdea9-691f-45ac-9318-67b16d5713f3",
+        "revision": 1,
+        "sha256": "5cb6f61c2aa1d4217c7d187434076e7eefd621ffeef99bf5bbc27941a12eff85"
+      }
+    ],
+    "sync_state": [
+      {
+        "global_revision": 3472,
+        "last_sync": "2026-10-16T09:29:56.771833699Z"
+      }
+    ]
+  },
+  "lost_notification": {
+    "put_http": 200,
+    "new_revision": 2,
+    "new_sha256": "49e1a002673214639f575da93283c49c8c990076e37b7aa8ec7a2e4735349c47",
+    "frames_dropped": [
+      {
+        "ftype": "CHANGE_NOTIFICATION",
+        "direction": "hub_to_agent",
+        "seq": 131,
+        "task_id": null,
+        "object_id": "cb3cdea9-691f-45ac-9318-67b16d5713f3",
+        "global_revision": 3473,
+        "label": "ar08-lost-notification",
+        "at_utc": "2026-10-16T09:29:57Z"
+      }
+    ],
+    "child_converged": {
+      "complete": true,
+      "seconds": 19.184
+    },
+    "convergence_samples_tail": [
+      {
+        "at_utc": "2026-10-16T09:30:15Z",
+        "value": {
+          "revision": 1,
+          "sha256": "5cb6f61c2aa1d4217c7d187434076e7eefd621ffeef99bf5bbc27941a12eff85",
+          "sync_rev": 3472
+        },
+        "ok": false
+      },
+      {
+        "at_utc": "2026-10-16T09:30:17Z",
+        "value": {
+          "revision": 1,
+          "sha256": "5cb6f61c2aa1d4217c7d187434076e7eefd621ffeef99bf5bbc27941a12eff85",
+          "sync_rev": 3472
+        },
+        "ok": false
+      },
+      {
+        "at_utc": "2026-10-16T09:30:18Z",
+        "value": {
+          "revision": 2,
+          "sha256": "49e1a002673214639f575da93283c49c8c990076e37b7aa8ec7a2e4735349c47",
+          "sync_rev": 3473
+        },
+        "ok": true
+      }
+    ]
+  },
+  "duplicate_notification": {
+    "put_http": 200,
+    "new_revision": 3,
+    "new_sha256": "519edaea4c38f484bb45eac4d3e88cb2dca915870288eaa84905c2fff7a6d642",
+    "frames_duplicated": [
+      {
+        "ftype": "CHANGE_NOTIFICATION",
+        "direction": "hub_to_agent",
+        "seq": 142,
+        "task_id": null,
+        "execution_id": null,
+        "object_id": "cb3cdea9-691f-45ac-9318-67b16d5713f3",
+        "global_revision": 3474,
+        "label": "ar08-duplicate-notification",
+        "at_utc": "2026-10-16T09:30:18Z"
+      }
+    ],
+    "child_converged": {
+      "complete": true,
+      "seconds": 0.351
+    },
+    "convergence_samples_tail": [
+      {
+        "at_utc": "2026-10-16T09:30:21Z",
+        "value": {
+          "revision": 3,
+          "sha256": "519edaea4c38f484bb45eac4d3e88cb2dca915870288eaa84905c2fff7a6d642",
+          "sync_rev": 3474
+        },
+        "ok": true
+      }
+    ]
+  },
+  "reordered_stale_notification": {
+    "source_frame": {
+      "seq": 131,
+      "global_revision": 3473
+    },
+    "injected_frame": {
+      "seq": 149,
+      "global_revision": 3473,
+      "injected": true,
+      "replayed_seq": 131
+    },
+    "sync_requests_before": 30,
+    "sync_requests_after": 30,
+    "sync_request_observation_note": "SYNC_REQUESTs are frequent on this shared authority (heartbeat revision checks every 5s plus other batches' object changes); the count delta inside the window is therefore not a clean discriminator and is reported as informational only. The applied-state checks below are the authoritative signal.",
+    "local_global_revision_before": 3474,
+    "local_global_revision_after": 3474,
+    "child_script_before": [
+      {
+        "revision": 3,
+        "sha256": "519edaea4c38f484bb45eac4d3e88cb2dca915870288eaa84905c2fff7a6d642"
+      }
+    ],
+    "child_script_after": [
+      {
+        "revision": 3,
+        "sha256": "519edaea4c38f484bb45eac4d3e88cb2dca915870288eaa84905c2fff7a6d642"
+      }
+    ],
+    "hub_script_final": {
+      "revision": 3,
+      "sha256": "519edaea4c38f484bb45eac4d3e88cb2dca915870288eaa84905c2fff7a6d642"
+    },
+    "stale_revision_older_than_local_at_injection": true,
+    "no_state_regression": true
+  },
+  "desired_state_vs_actual": {
+    "comparison": {
+      "scripts": [
+        {
+          "id": "1c937e38-ef44-4f1d-a4d7-d8f55d3f1dee",
+          "hub_revision": 1,
+          "child_revision": 1,
+          "hub_sha256": "982a9c0622cb7d36b173f038f8d29406ea49f4da0c40f1aec1398f42963dcd46",
+          "child_sha256": "982a9c0622cb7d36b173f038f8d29406ea49f4da0c40f1aec1398f42963dcd46"
+        },
+        {
+          "id": "3e4d505c-cbc6-48a1-b402-81fb51512e40",
+          "hub_revision": 1,
+          "child_revision": 1,
+          "hub_sha256": "22f6c3c2dd9f66b2caa2787a84ee7f2d7f974a13f47eec507fb10440e0dac92a",
+          "child_sha256": "22f6c3c2dd9f66b2caa2787a84ee7f2d7f974a13f47eec507fb10440e0dac92a"
+        },
+        {
+          "id": "5dbbd008-7737-4582-99c8-aad667a0e50a",
+          "hub_revision": 1,
+          "child_revision": 1,
+          "hub_sha256": "fee06c4cbf61c166667dd088f7299f93660a7e0811b21e9d76c38560d6158eeb",
+          "child_sha256": "fee06c4cbf61c166667dd088f7299f93660a7e0811b21e9d76c38560d6158eeb"
+        },
+        {
+          "id": "78b86dc5-047c-41ac-a74d-d3693f29c8cd",
+          "hub_revision": 1,
+          "child_revision": 1,
+          "hub_sha256": "b3d910b4e08afd6e0e5b31507c927a6e6f6215b0085edd26587ac6638ae987bd",
+          "child_sha256": "b3d910b4e08afd6e0e5b31507c927a6e6f6215b0085edd26587ac6638ae987bd"
+        },
+        {
+          "id": "91d67129-810a-4723-b317-1e90a259e5c4",
+          "hub_revision": 1,
+          "child_revision": 1,
+          "hub_sha256": "f7122fffcc12e07b215f8c572cce228057541b4b26e04abdbf98f2f5490c2cb2",
+          "child_sha256": "f7122fffcc12e07b215f8c572cce228057541b4b26e04abdbf98f2f5490c2cb2"
+        },
+        {
+          "id": "ba29f2b7-d56b-45cc-8aef-b646de1d8eb1",
+          "hub_revision": 1,
+          "child_revision": 1,
+          "hub_sha256": "033bd184d9e948e376714bb2766061cb19ae4473d6296b3dcf0290470e838c94",
+          "child_sha256": "033bd184d9e948e376714bb2766061cb19ae4473d6296b3dcf0290470e838c94"
+        },
+        {
+          "id": "bd17264d-ae83-4a2c-bafc-e9d8f8f86b2e",
+          "hub_revision": 1,
+          "child_revision": 1,
+          "hub_sha256": "de6a4ca11e39451feb0a943341e8895659799a272656fd1e75d05f2e0578d181",
+          "child_sha256": "de6a4ca11e39451feb0a943341e8895659799a272656fd1e75d05f2e0578d181"
+        },
+        {
+          "id": "cb3cdea9-691f-45ac-9318-67b16d5713f3",
+          "hub_revision": 3,
+          "child_revision": 3,
+          "hub_sha256": "519edaea4c38f484bb45eac4d3e88cb2dca915870288eaa84905c2fff7a6d642",
+          "child_sha256": "519edaea4c38f484bb45eac4d3e88cb2dca915870288eaa84905c2fff7a6d642"
+        },
+        {
+          "id": "e1ab3423-ea4f-419b-9eb3-45d7a5a9d810",
+          "hub_revision": 1,
+          "child_revision": 1,
+          "hub_sha256": "21b64de96594335907d76e11b400135e896b7b88b433d83616b3f198e98075a2",
+          "child_sha256": "21b64de96594335907d76e11b400135e896b7b88b433d83616b3f198e98075a2"
+        }
+      ],
+      "tasks": [
+        {
+          "id": "3e19bf4c-64df-4e07-bd44-e146c5e0c447",
+          "hub_revision": 1,
+          "child_revision": 1
+        },
+        {
+          "id": "4377e54f-7d00-4ed0-87f5-7b849bcca8a8",
+          "hub_revision": 1,
+          "child_revision": 1
+        },
+        {
+          "id": "77f8b412-69b1-4fef-9299-07ef3e2c099b",
+          "hub_revision": 1,
+          "child_revision": 1
+        },
+        {
+          "id": "7d1c10ed-7201-4cd2-b5c2-ee381d0f50d2",
+          "hub_revision": 1,
+          "child_revision": 1
+        },
+        {
+          "id": "c98acb89-4343-43c9-bc39-0df222931a1d",
+          "hub_revision": 1,
+          "child_revision": 1
+        },
+        {
+          "id": "d4391c60-5501-458c-93d4-9baad74dc9b0",
+          "hub_revision": 1,
+          "child_revision": 1
+        },
+        {
+          "id": "e902e00d-0875-4000-89ff-c83250b92387",
+          "hub_revision": 1,
+          "child_revision": 1
+        },
+        {
+          "id": "e9774cbc-0146-4049-8089-f3072eb74ec7",
+          "hub_revision": 1,
+          "child_revision": 1
+        },
+        {
+          "id": "ed6a8705-1f71-45eb-9096-33e8c4804588",
+          "hub_revision": 1,
+          "child_revision": 1
+        }
+      ],
+      "schedules": [
+        {
+          "id": "4b716798-d097-4d9b-97a2-fac76f1b548e",
+          "hub_revision": 1,
+          "child_revision": 1,
+          "hub_enabled": false,
+          "child_enabled": false
+        },
+        {
+          "id": "4e3eb585-3556-4ae7-a282-c3c9457514c0",
+          "hub_revision": 1,
+          "child_revision": 1,
+          "hub_enabled": false,
+          "child_enabled": false
+        },
+        {
+          "id": "6318f463-fddb-4891-b3f9-c8a003ccf583",
+          "hub_revision": 2,
+          "child_revision": 2,
+          "hub_enabled": true,
+          "child_enabled": true
+        },
+        {
+          "id": "92d3da9b-4090-44d0-b45b-ec47db95c772",
+          "hub_revision": 1,
+          "child_revision": 1,
+          "hub_enabled": false,
+          "child_enabled": false
+        },
+        {
+          "id": "c1fec52a-38df-4bb1-9963-23d1818a2f65",
+          "hub_revision": 1,
+          "child_revision": 1,
+          "hub_enabled": false,
+          "child_enabled": false
+        },
+        {
+          "id": "d5f9859e-75a7-4f17-b23d-a980ee3fdda6",
+          "hub_revision": 1,
+          "child_revision": 1,
+          "hub_enabled": false,
+          "child_enabled": false
+        },
+        {
+          "id": "e7a7bdd7-5091-461d-9f7f-f39155f8a90a",
+          "hub_revision": 1,
+          "child_revision": 1,
+          "hub_enabled": false,
+          "child_enabled": false
+        }
+      ]
+    },
+    "consistent": true,
+    "child_sync_state": [
+      {
+        "global_revision": 3474,
+        "last_sync": "2026-10-16T09:30:34.03972136Z"
+      }
+    ],
+    "hub_revision_sequence": 3474,
+    "hub_agent_sync_state_rows": []
+  },
+  "schedule_idempotency_across_fault_window": {
+    "schedule_id": "6318f463-fddb-4891-b3f9-c8a003ccf583",
+    "hub_rows": 2,
+    "child_rows": 2,
+    "hub_slot_uniqueness": {
+      "slots": {
+        "2026-10-16T09:29:59Z": 1,
+        "2026-10-16T09:30:29Z": 1
+      },
+      "duplicate_slots": [],
+      "unique": true
+    },
+    "child_slot_uniqueness": {
+      "slots": {
+        "2026-10-16T09:29:59Z": 1,
+        "2026-10-16T09:30:29Z": 1
+      },
+      "duplicate_slots": [],
+      "unique": true
+    },
+    "sample_hub_rows": [
+      {
+        "id": "2797fdc8-d3f1-4c67-8b2f-5af5769528ad",
+        "status": "SUCCESS",
+        "scheduled_time": "2026-10-16T09:29:59Z",
+        "offline": false
+      },
+      {
+        "id": "429017c2-7ce3-4958-ae17-b61b25e3b949",
+        "status": "SUCCESS",
+        "scheduled_time": "2026-10-16T09:30:29Z",
+        "offline": false
+      }
+    ]
+  },
+  "restart_persistence": {
+    "stop": {
+      "signalled": [
+        130255
+      ],
+      "remaining": [],
+      "stopped_at_utc": "2026-10-16T09:30:30Z"
+    },
+    "start": {
+      "launcher_pid": 130814,
+      "owned_processes": [
+        "130815 /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent --config /var/lib/nodesteer-qa-g23-d08f3dbc-a/child.yaml"
+      ]
+    },
+    "node_after_restart": {
+      "status": "online",
+      "sync_status": "synced",
+      "global_revision": 3474
+    },
+    "restart_wait_seconds": 0.002,
+    "sync_before_restart": [
+      {
+        "global_revision": 3474,
+        "last_sync": "2026-10-16T09:30:18.598596211Z"
+      }
+    ],
+    "sync_after_restart": [
+      {
+        "global_revision": 3474,
+        "last_sync": "2026-10-16T09:30:34.03972136Z"
+      }
+    ],
+    "script_row_after_restart": [
+      {
+        "revision": 3,
+        "sha256": "519edaea4c38f484bb45eac4d3e88cb2dca915870288eaa84905c2fff7a6d642"
+      }
+    ],
+    "execution_ids_before_restart": [
+      "2797fdc8-d3f1-4c67-8b2f-5af5769528ad",
+      "429017c2-7ce3-4958-ae17-b61b25e3b949"
+    ],
+    "execution_ids_after_restart": [
+      "2797fdc8-d3f1-4c67-8b2f-5af5769528ad",
+      "429017c2-7ce3-4958-ae17-b61b25e3b949"
+    ],
+    "new_execution_ids_after_restart": [],
+    "new_rows_after_restart": [],
+    "new_rows_slots_were_not_previously_executed": true,
+    "note": "a restart may legitimately add executions for slots that were missed while the Agent was down (run_once misfire); what must NOT happen is re-uploading or duplicating an already synced execution"
+  },
+  "assertions": {
+    "lost_notification_really_dropped": true,
+    "lost_notification_recovered_by_revision_check": true,
+    "duplicate_notification_really_duplicated": true,
+    "duplicate_notification_idempotent_convergence": true,
+    "stale_notification_replay_ignored": true,
+    "desired_state_equals_actual_after_faults": true,
+    "schedule_slots_unique_under_faults": true,
+    "schedule_still_produced_real_executions": true,
+    "child_restart_resynced": true,
+    "restart_preserved_definition": true,
+    "restart_preserved_all_pre_restart_executions": true,
+    "restart_no_duplicate_execution_ids": true,
+    "restart_new_rows_are_new_slots_only": true
+  },
+  "assertions_pass": true
+}

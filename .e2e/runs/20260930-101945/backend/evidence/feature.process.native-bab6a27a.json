@@ -1,0 +1,319 @@
+{
+  "result": {
+    "id": "feature.process.native",
+    "name": "Native忽略TERM后代cancel/timeout与PID收割",
+    "started_at": "2026-10-01T01:38:18.245725+00:00",
+    "hub_url": "http://192.168.100.209:8080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-10-01T01:38:31.591048+00:00",
+    "evidence": "backend/evidence/feature.process.native-bab6a27a.json"
+  },
+  "events": [
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-native-pg-cancel-48dce7",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "56765828-4896-492b-b562-64afdc0fb8d6"
+          ]
+        },
+        "command": "mkdir -p /tmp/qa-20260930-101945-be/native-pg-cancel-bb80ac; sh -c 'trap \"\" TERM; sleep 120 & printf %s \"$!\" > /tmp/qa-20260930-101945-be/native-pg-cancel-bb80ac/child; wait' & child=$!; printf %s \"$child\" > /tmp/qa-20260930-101945-be/native-pg-cancel-bb80ac/parent; wait \"$child\"",
+        "timeout": 130,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "0a5804d2-9d95-4d96-8160-b9fdec83212a",
+        "name": "qa-20260930-101945-be-native-pg-cancel-48dce7",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "56765828-4896-492b-b562-64afdc0fb8d6"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /tmp/qa-20260930-101945-be/native-pg-cancel-bb80ac; sh -c 'trap \"\" TERM; sleep 120 & printf %s \"$!\" > /tmp/qa-20260930-101945-be/native-pg-cancel-bb80ac/child; wait' & child=$!; printf %s \"$child\" > /tmp/qa-20260930-101945-be/native-pg-cancel-bb80ac/parent; wait \"$child\"",
+        "timeout": 130,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:38:18 GMT",
+        "Content-Length": "717",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/0a5804d2-9d95-4d96-8160-b9fdec83212a/run",
+      "status": 200,
+      "request": {},
+      "response": [
+        {
+          "id": "ebd49f73-5055-489b-8880-537f86d39005",
+          "task_id": "0a5804d2-9d95-4d96-8160-b9fdec83212a",
+          "task_revision": 1,
+          "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:38:18 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/executions/ebd49f73-5055-489b-8880-537f86d39005/cancel",
+      "status": 200,
+      "request": {},
+      "response": {
+        "ok": "true"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:38:19 GMT",
+        "Content-Length": "14",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/ebd49f73-5055-489b-8880-537f86d39005",
+      "terminal": {
+        "id": "ebd49f73-5055-489b-8880-537f86d39005",
+        "task_id": "0a5804d2-9d95-4d96-8160-b9fdec83212a",
+        "task_revision": 1,
+        "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-10-01T01:38:18.179291543Z",
+        "end_time": "2026-10-01T01:38:21.198646755Z",
+        "status": "CANCELED",
+        "exit_code": -1,
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "agent": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "read_command": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; r=c.execute('\"'\"'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?'\"'\"',(sys.argv[2],)).fetchone(); print(json.dumps(dict(r) if r else None))' /var/lib/nodesteer ebd49f73-5055-489b-8880-537f86d39005\n",
+      "exit_code": 0,
+      "stdout": "{\"id\": \"ebd49f73-5055-489b-8880-537f86d39005\", \"task_id\": \"0a5804d2-9d95-4d96-8160-b9fdec83212a\", \"node_id\": \"56765828-4896-492b-b562-64afdc0fb8d6\", \"status\": \"CANCELED\", \"exit_code\": -1, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}\n",
+      "stderr": "Warning: Permanently added 'kvm2.soocoo.xyz' (ED25519) to the list of known hosts.\nWarning: Permanently added '192.168.100.207' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "agent": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "read_command": "cat /tmp/qa-20260930-101945-be/native-pg-cancel-bb80ac/parent\n",
+      "exit_code": 0,
+      "stdout": "314754",
+      "stderr": "Warning: Permanently added 'kvm2.soocoo.xyz' (ED25519) to the list of known hosts.\nWarning: Permanently added '192.168.100.207' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "agent": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "read_command": "cat /tmp/qa-20260930-101945-be/native-pg-cancel-bb80ac/child\n",
+      "exit_code": 0,
+      "stdout": "314755",
+      "stderr": "Warning: Permanently added 'kvm2.soocoo.xyz' (ED25519) to the list of known hosts.\nWarning: Permanently added '192.168.100.207' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "agent": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "read_command": "if test -r /proc/314754/stat; then cat /proc/314754/stat; fi; if test -r /proc/314755/stat; then cat /proc/314755/stat; fi\n",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "Warning: Permanently added 'kvm2.soocoo.xyz' (ED25519) to the list of known hosts.\nWarning: Permanently added '192.168.100.207' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "native_process_group_effect": {
+        "action": "cancel",
+        "pids": [
+          314754,
+          314755
+        ],
+        "remaining_proc_stat": ""
+      }
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-native-pg-timeout-95e694",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "56765828-4896-492b-b562-64afdc0fb8d6"
+          ]
+        },
+        "command": "mkdir -p /tmp/qa-20260930-101945-be/native-pg-timeout-5829aa; sh -c 'trap \"\" TERM; sleep 120 & printf %s \"$!\" > /tmp/qa-20260930-101945-be/native-pg-timeout-5829aa/child; wait' & child=$!; printf %s \"$child\" > /tmp/qa-20260930-101945-be/native-pg-timeout-5829aa/parent; wait \"$child\"",
+        "timeout": 4,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "150c8212-b2af-444e-b7a9-f97360c3e437",
+        "name": "qa-20260930-101945-be-native-pg-timeout-95e694",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "56765828-4896-492b-b562-64afdc0fb8d6"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /tmp/qa-20260930-101945-be/native-pg-timeout-5829aa; sh -c 'trap \"\" TERM; sleep 120 & printf %s \"$!\" > /tmp/qa-20260930-101945-be/native-pg-timeout-5829aa/child; wait' & child=$!; printf %s \"$child\" > /tmp/qa-20260930-101945-be/native-pg-timeout-5829aa/parent; wait \"$child\"",
+        "timeout": 4,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:38:23 GMT",
+        "Content-Length": "719",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/150c8212-b2af-444e-b7a9-f97360c3e437/run",
+      "status": 200,
+      "request": {},
+      "response": [
+        {
+          "id": "9c37263a-0264-47a9-9862-47489a32528d",
+          "task_id": "150c8212-b2af-444e-b7a9-f97360c3e437",
+          "task_revision": 1,
+          "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:38:23 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/9c37263a-0264-47a9-9862-47489a32528d",
+      "terminal": {
+        "id": "9c37263a-0264-47a9-9862-47489a32528d",
+        "task_id": "150c8212-b2af-444e-b7a9-f97360c3e437",
+        "task_revision": 1,
+        "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-10-01T01:38:23.211340914Z",
+        "end_time": "2026-10-01T01:38:29.220633926Z",
+        "status": "TIMED_OUT",
+        "exit_code": -1,
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "agent": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "read_command": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; r=c.execute('\"'\"'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?'\"'\"',(sys.argv[2],)).fetchone(); print(json.dumps(dict(r) if r else None))' /var/lib/nodesteer 9c37263a-0264-47a9-9862-47489a32528d\n",
+      "exit_code": 0,
+      "stdout": "{\"id\": \"9c37263a-0264-47a9-9862-47489a32528d\", \"task_id\": \"150c8212-b2af-444e-b7a9-f97360c3e437\", \"node_id\": \"56765828-4896-492b-b562-64afdc0fb8d6\", \"status\": \"TIMED_OUT\", \"exit_code\": -1, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}\n",
+      "stderr": "Warning: Permanently added 'kvm2.soocoo.xyz' (ED25519) to the list of known hosts.\nWarning: Permanently added '192.168.100.207' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "agent": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "read_command": "cat /tmp/qa-20260930-101945-be/native-pg-timeout-5829aa/parent\n",
+      "exit_code": 0,
+      "stdout": "314818",
+      "stderr": "Warning: Permanently added 'kvm2.soocoo.xyz' (ED25519) to the list of known hosts.\nWarning: Permanently added '192.168.100.207' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "agent": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "read_command": "cat /tmp/qa-20260930-101945-be/native-pg-timeout-5829aa/child\n",
+      "exit_code": 0,
+      "stdout": "314819",
+      "stderr": "Warning: Permanently added 'kvm2.soocoo.xyz' (ED25519) to the list of known hosts.\nWarning: Permanently added '192.168.100.207' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "agent": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "read_command": "if test -r /proc/314818/stat; then cat /proc/314818/stat; fi; if test -r /proc/314819/stat; then cat /proc/314819/stat; fi\n",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "Warning: Permanently added 'kvm2.soocoo.xyz' (ED25519) to the list of known hosts.\nWarning: Permanently added '192.168.100.207' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "native_process_group_effect": {
+        "action": "timeout",
+        "pids": [
+          314818,
+          314819
+        ],
+        "remaining_proc_stat": ""
+      }
+    }
+  ]
+}

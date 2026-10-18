@@ -1,0 +1,47 @@
+{
+  "attempt": "attempt03",
+  "outcome": "run completed end-to-end, but three harness defects degraded the produced verdicts; the run was therefore not reported as the batch result",
+  "at_utc_range": ["2026-10-15T12:55:50Z", "2026-10-15T12:59:52Z"],
+  "nonce": "f7549c600f26",
+  "business_result_of_this_attempt": {
+    "P21-03": "all 4 dimensions PASS",
+    "P21-04": "all 7 dimensions PASS",
+    "P21-05": "all 3 dimensions PASS",
+    "P21-06": "all 3 dimensions PASS",
+    "FL-16": "6 of 7 dimensions PASS; heartbeat_cadence_follows_saved_3s failed on a measurement-window artefact",
+    "IDEMPOTENT-MANUAL": "all 8 dimensions PASS"
+  },
+  "harness_defects": [
+    {
+      "id": "A",
+      "where": "phase4 heartbeat cadence assertion",
+      "symptom": "assertion `heartbeat_cadence_became_~3s` = false because the required minimum of 6 heartbeat frames was not reached (frames_seen=5)",
+      "why_not_a_product_defect": "the observation window started immediately after the settings PUT, while the Agent's already-armed pre-change timer kept a 30 s schedule (24-36 s with jitter). The first heartbeat therefore landed 14.05 s after the PUT and only 5 frames fitted in the 32 s window. The measured gaps were [4.001, 2.999, 4.0, 4.0] s, i.e. the cadence had already dropped from ~30 s to 3-4 s - exactly the behaviour under test.",
+      "fix": "phase4 now drains the pending pre-change tick (58 s settle) before measuring a 34 s steady-state window, and asserts on the steady-state gap band (heartbeat 3-4 s, revision 4-6 s, both widened for the Agent's 1 s ticker granularity) instead of a raw frame count."
+    },
+    {
+      "id": "B",
+      "where": "settings restore verdict / final cleanup oracle",
+      "symptom": "`settings_restored` = false and `oracle_clean` = false although the API settings and the managed Hub DB settings were byte-identical to the pre-run snapshot",
+      "why_not_a_product_defect": "the comparison required the whole `settings` key/value table to have the same key set so the raw table compare also included the per-node `cred:<node_id>` rows of the Hub's generic settings table. The owned child's credential row existed when the phase12 snapshot was taken (the node is deleted afterwards), so the key sets differed. The managed settings keys themselves were identical before/after.",
+      "fix": "the restore verdict is now scoped to the non-credential settings keys, credential-row drift is reported separately, and the oracle re-reads the Hub DB after cleanup and asserts the full key set equals the pre-run key set."
+    },
+    {
+      "id": "C",
+      "where": "api deliverable path",
+      "symptom": "the IDEMPOTENT-MANUAL artifacts were written to `qa-resume-20261014-web/qa-resume-20261014-api/idempotent-manual` (one directory level too shallow)",
+      "fix": "API_DIR corrected to `repair/qa-resume-20261014-api/idempotent-manual`; the stray directory was removed"
+    }
+  ],
+  "cleanup_state_of_this_attempt": {
+    "settings_restored_by_the_run_itself": true,
+    "api_and_db_settings_identical_to_before": true,
+    "fixtures_deleted_get404": true,
+    "child_process_and_root_removed": true,
+    "protected_nodes_online_synced": true,
+    "protected_units_pid_unchanged": true,
+    "vms_restarted": 0,
+    "hub_restarts": 0
+  },
+  "conclusion": "harness defects A/B/C, not product defects. No product behaviour conclusion is drawn from attempt03; the reported run is attempt04 with the corrected harness. Attempt03 phase1/phase3/phase6/phase7/phase8/phase9/phase10 evidence was produced by code paths that attempt04 did not change and is retained for cross-checking."
+}

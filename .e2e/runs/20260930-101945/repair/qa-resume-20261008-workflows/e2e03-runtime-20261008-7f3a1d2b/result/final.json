@@ -1,0 +1,58 @@
+{
+  "case": "E2E-03 runtime residual dimensions",
+  "status": "PASS",
+  "authority": "http://192.168.100.209:18080",
+  "target": {"node_id":"37989297-3bc8-4c0c-b302-7c6efbdba630","hostname":"qa-repair-20260930-101945-native-3","target_type":"node","node_ids":["37989297-3bc8-4c0c-b302-7c6efbdba630"],"group_ids":[]},
+  "preflight": {
+    "default_agent_identity": {"uid":0,"username":"root"},
+    "selected_run_user": {"uid":65534,"username":"nobody"},
+    "python3_path": "/usr/bin/python3",
+    "tmp_exists_and_writable_as_nobody": true,
+    "run_user_probe_status": "SUCCESS",
+    "probe_tasks_get404": true,
+    "evidence": "preflight.json"
+  },
+  "pre_run_artifacts": {
+    "script_id": "3be6cae5-7e66-4102-8037-12e8d3316d38",
+    "task_id": "6d56546a-463d-4832-8e2d-c7ac5c3f50d8",
+    "source_file": "source/script.sh",
+    "source_sha256": "c4411d44d420bc833b91ae18911a6df1a5f97868527895b42aaa7371687398fb",
+    "api_sha256_matched_before_run": true,
+    "script_working_dir": "/tmp",
+    "script_run_user": "nobody",
+    "task_run_user_override": "",
+    "task_retry": 0,
+    "task_schedule": null,
+    "definition_readback_saved_before_run": true,
+    "expected_oracle_saved_before_run": true,
+    "evidence": ["source/metadata.json","definition/pre-run-state.json","definition/script-api-readback.json","definition/task-api-readback.json","definition/task-request.json","definition/expected-oracle.json"]
+  },
+  "runtime": {
+    "ui_run_request": {"method":"POST","path":"/api/tasks/6d56546a-463d-4832-8e2d-c7ac5c3f50d8/run","status":200},
+    "execution_id": "337898e9-4037-48d7-bc48-d3015d6db180",
+    "execution_status": "SUCCESS",
+    "execution_node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+    "actual": {
+      "shell_cwd":"/tmp",
+      "python_cwd":"/tmp",
+      "uid":"65534",
+      "python_uid":"65534",
+      "username":"nobody",
+      "python_username":"nobody",
+      "parameter":"qa-resume-20261008-e2e03-85a4999d-parameter-marker",
+      "environment":"qa-resume-20261008-e2e03-85a4999d-environment-marker"
+    },
+    "logs_ui_verified": true,
+    "audit_ui_verified_same_task_id": true,
+    "audit_ui_actions_visible": ["execute","create"],
+    "exit_code_observation": "API execution GET omitted exit_code and Execution UI displayed '-'; status and actual output were SUCCESS. Preserve this as a separate product observation; it did not block the requested cwd/run_user/parameter/environment verification.",
+    "evidence": ["result/api-execution-oracle.json","result/ui-logs-check.json","result/ui-run-logs-audit.json","result/execution-logs-ui.png","result/audit-ui.png"]
+  },
+  "cleanup": {
+    "task": {"id":"6d56546a-463d-4832-8e2d-c7ac5c3f50d8","delete_http":200,"verify_get_http":404},
+    "script": {"id":"3be6cae5-7e66-4102-8037-12e8d3316d38","delete_http":200,"verify_get_http":404},
+    "all_probe_and_runtime_resources_clean": true,
+    "evidence": ["preflight.json","result/cleanup.json"]
+  },
+  "safety": {"credentials_or_tokens_written":false,"browser_storage_read":false,"shared_node_state_changed":false,"new_user_or_package_created":false,"only_repair_hub_used":true}
+}

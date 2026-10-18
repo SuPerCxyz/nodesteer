@@ -1,0 +1,133 @@
+{
+  "captured_at_utc": "2026-10-10T11:47:51.338523+00:00",
+  "status": "READONLY_AUTHORIZATION_AND_FIXTURE_AUDIT_COMPLETE",
+  "api_authority": "GET /api/users via repair:18080 only; HTTP 200; response processed in memory; raw user list not persisted",
+  "live_user_inventory": {
+    "count": 8,
+    "role_counts": {
+      "administrator": 1,
+      "operator": 1,
+      "viewer": 6
+    },
+    "qa_like_accounts": [
+      {
+        "username": "qa-repair-20260930-101945-admin",
+        "role": "administrator",
+        "id": "cd5945f0-56b4-4cf7-8b71-c4d4751ebb09"
+      },
+      {
+        "username": "qa-repair-20260930-101945-validation-edaebfe8",
+        "role": "viewer",
+        "id": "cc37bde0-1020-403b-b5e3-abac6c2ec4d0"
+      },
+      {
+        "username": "qa-repair-20260930-101945-operator-e66527ad",
+        "role": "operator",
+        "id": "9e43385c-4466-41f5-94e4-15fe2bdc3839"
+      },
+      {
+        "username": "qa-20260930-101945-be-viewer-ffa13a",
+        "role": "viewer",
+        "id": "f776bbd2-ed65-4d9b-b7a4-1b9e5dfc7f72"
+      },
+      {
+        "username": "qa-resume-20261004-safe_more-user-d826ae37",
+        "role": "viewer",
+        "id": "ca6a3e1e-af5d-43bc-9963-13e5cf841c7f"
+      },
+      {
+        "username": "qa-resume-20261004-safe01_21-user-210f47eb",
+        "role": "viewer",
+        "id": "1a933718-9bd9-46dd-b259-4594395df976"
+      },
+      {
+        "username": "qa-resume-20261005-c-operator-98def5",
+        "role": "viewer",
+        "id": "04039ff5-e34b-44b5-a5b1-8ee6ebb1dfc4"
+      },
+      {
+        "username": "qa-resume-20261005-c-viewer-98def5",
+        "role": "viewer",
+        "id": "b75b9a15-2fa0-41da-b4c2-f5656e37b9e9"
+      }
+    ],
+    "prior_live_evidence": "auth-users-negative-matrix.json recorded count 8 and identity/role digest unchanged; no user writes this batch."
+  },
+  "ownership_and_credentials": {
+    "repair_admin_test_accounts": "user-validation-live-final.json records owned QA operator/viewer IDs and says accounts were retained because User DELETE is unavailable; these are fully QA-named but their operator/viewer credentials are not in the currently available private directory.",
+    "existing_lifecycle_fixture": {
+      "username": "qa-resume-20261004-safe01_21-user-210f47eb",
+      "id": "1a933718-9bd9-46dd-b259-4594395df976",
+      "roles_exercised": [
+        "operator",
+        "administrator",
+        "viewer"
+      ],
+      "current_role": "viewer",
+      "credential_path_field": "[REDACTED] in evidence; actual file not resolved"
+    },
+    "available_private_directory": {
+      "path": "/tmp/nodesteer-e2e-resume-20261009-Qv9AYO",
+      "mode": "0700",
+      "files": [
+        {
+          "path": "repair-connection.json",
+          "mode": "0600",
+          "keys": [
+            "hub_url",
+            "token"
+          ]
+        },
+        {
+          "path": "repair-credentials.json",
+          "mode": "0600",
+          "keys": [
+            "admin_password",
+            "admin_username",
+            "registration_token"
+          ]
+        },
+        {
+          "path": "repair-hub.yaml",
+          "mode": "0600",
+          "credential_values_read_or_recorded": false
+        }
+      ]
+    },
+    "operator_or_viewer_private_credentials_available": false,
+    "passwords_or_tokens_read_or_recorded": false
+  },
+  "authorization_review": {
+    "full_repair_scope_review_refs": [
+      "openspec/changes/repair-e2e-confirmed-defects/proposal.md:8,12,27",
+      "openspec/changes/repair-e2e-confirmed-defects/specs/hub/access-control/spec.md:4-8",
+      "openspec/changes/repair-e2e-confirmed-defects/tasks.md:3"
+    ],
+    "finding": "The confirmed proposal authorizes fixing user input validation and testing the confirmed defects; it requires cleanup of exclusive resources and preserves non-deletable history. It does not explicitly authorize retaining an additional non-deletable test User. Current change scope and prior Root instructions therefore do not authorize creating another User without a separate review/confirmation.",
+    "implementation_contract": "Current user item routes support PUT only; item GET/DELETE return 405, and no User delete handler/store method exists. A successful create creates a durable row."
+  },
+  "minimum_review_draft_if_new_user_is_required": {
+    "purpose": "Exercise real Operator and Viewer denial on Users endpoints, plus an Admin-valid role update with actual role/session effect.",
+    "exact_username": "qa-auth-role-cycle-20261010-01 (preflight collision check required before any future create)",
+    "initial_role": "viewer",
+    "role_sequence": [
+      "viewer",
+      "operator",
+      "administrator",
+      "viewer"
+    ],
+    "final_role": "viewer",
+    "private_credential_path_proposed": "/tmp/nodesteer-e2e-auth-user-20261010-01/credentials.json (directory 0700; file 0600; create only after explicit review/authorization)",
+    "credential_file_keys": [
+      "username",
+      "password",
+      "user_id"
+    ],
+    "retained_effect": "One permanent QA User row remains on the repair Hub as Viewer; no supported API cleanup exists. Record exact UserID and final role. Never touch/reset existing accounts or passwords.",
+    "scope": "One Admin POST creates exactly this user; Admin PUT changes only this new ID through the listed roles; log in/logout only as this new user; Operator/Viewer GET/POST/PUT Users probes target only this new ID or fail-before-write sentinel bodies; Admin restores final Viewer. No other User, no original Node, no primary:8080.",
+    "decision_needed": "Root decides whether this review requires user confirmation; no User was created and no confirmation was requested in this batch."
+  },
+  "write_boundary": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/user-fixture-investigation.json",
+  "api_or_user_writes_this_investigation": 0,
+  "raw_user_list_persisted": false
+}

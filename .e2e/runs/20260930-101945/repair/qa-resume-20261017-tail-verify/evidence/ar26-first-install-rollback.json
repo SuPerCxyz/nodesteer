@@ -1,0 +1,171 @@
+{
+ "nonce": "c2b7238a",
+ "at_utc": "2026-10-17T15:42:37Z",
+ "unit": "qa-tail-c2b7238a-firstinstall.service",
+ "binary": "/opt/qa-tail-c2b7238a-bin/qa-tail-c2b7238a-app",
+ "config": "/etc/qa-tail-c2b7238a-firstinstall.conf",
+ "steps": [
+  {
+   "step": "enroll owned node",
+   "http": 200,
+   "node_id": "da267119-c5b4-482b-985d-bf354fc0aaec"
+  },
+  {
+   "step": "read agent_id",
+   "agent_id": "agent-9b04b6c0-d72e-4590-96e7-d4062423ff23",
+   "status": "pending"
+  },
+  {
+   "step": "child paths",
+   "root": "/var/lib/nodesteer-qa-fixall-c2b7238ai3",
+   "config": "/var/lib/nodesteer-qa-fixall-c2b7238ai3/child.yaml"
+  },
+  {
+   "step": "start owned child agent",
+   "info": {
+    "launcher_pid": 67018,
+    "owned_processes": [
+     "67019 /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent --config /var/lib/nodesteer-qa-fixall-c2b7238ai3/child.yaml"
+    ]
+   }
+  },
+  {
+   "step": "wait node online",
+   "status": "online",
+   "agent_version": "dddee4f0-e2e-repair-20261017-fixall",
+   "capabilities": {
+    "agent_upgrade": true,
+    "application_deploy": true,
+    "host_filesystem": true,
+    "local_scheduler": true,
+    "managed_systemd": true,
+    "offline_execution": true,
+    "script": true
+   }
+  },
+  {
+   "step": "upload artifact",
+   "http": 200,
+   "id": "1c67af60-f118-4a95-9fe5-e9b32d9bc78e"
+  },
+  {
+   "step": "create application (no prior install on host)",
+   "http": 200,
+   "app_id": "1f7a79f5-7b51-480e-93c7-295868779dba",
+   "version": "1.0"
+  },
+  {
+   "step": "assign to owned child",
+   "http": 200
+  },
+  {
+   "step": "deploy (first install)",
+   "http": 200
+  },
+  {
+   "step": "wait execution",
+   "elapsed_s": 4.1,
+   "execution": {
+    "id": "c4b9f46a-6a2a-4ec4-9792-c432e1de06cd",
+    "status": "FAILED",
+    "block_reason": "health check failed",
+    "error": null,
+    "offline": false
+   }
+  },
+  {
+   "step": "cleanup application",
+   "http": 200
+  },
+  {
+   "step": "verify app 404",
+   "http": 404
+  },
+  {
+   "step": "cleanup node",
+   "delete": 200,
+   "after_get": 404
+  },
+  {
+   "step": "cleanup artifact",
+   "delete": 200,
+   "after_get": 404
+  }
+ ],
+ "closed_port": 54263,
+ "host_before_install": {
+  "unit": false,
+  "binary": false,
+  "config": false
+ },
+ "failure_text": "health check failed",
+ "host_after_failure": {
+  "at_utc": "2026-10-17T15:42:50Z",
+  "unit_file_exists": false,
+  "unit_enable_symlink": false,
+  "binary_exists": false,
+  "binary_dir_exists": true,
+  "config_exists": false,
+  "unit_state": {
+   "Id": "qa-tail-c2b7238a-firstinstall.service",
+   "LoadState": "not-found",
+   "ActiveState": "inactive",
+   "SubState": "dead",
+   "UnitFileState": ""
+  },
+  "deployments": [
+   {
+    "id": "521698f1-63cd-4b1c-a104-62d580e4a900",
+    "to_version": "1.0",
+    "phase": "DONE",
+    "completed_kind": "rolled_back",
+    "updated_at": "2026-10-17T15:42:45.638465312Z"
+   }
+  ],
+  "deployments_columns": [
+   "id",
+   "application_id",
+   "from_version",
+   "to_version",
+   "phase",
+   "completed_kind",
+   "backup_path",
+   "backup_config_path",
+   "backup_unit_path",
+   "app_revision",
+   "binary_path",
+   "config_path",
+   "unit_name",
+   "started_at",
+   "updated_at"
+  ]
+ },
+ "verdict": {
+  "journal_closed": true,
+  "phases": [
+   "DONE"
+  ],
+  "completed_kinds": [
+   "rolled_back"
+  ],
+  "failure_text_no_rollback_failed": true,
+  "no_half_install": true,
+  "first_install_was_real": true
+ },
+ "host_cleanup": {
+  "unit": false,
+  "binary": false,
+  "config": false,
+  "binary_dir": false
+ },
+ "child_stop": {
+  "signalled": [
+   67019
+  ],
+  "remaining": []
+ },
+ "child_root_removed": {
+  "rc": 0
+ },
+ "child_root_left": "0"
+}

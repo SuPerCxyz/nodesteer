@@ -1,0 +1,153 @@
+[
+  {
+    "id": "E2E-20260930-101945-P1-001",
+    "severity": "P1",
+    "status": "OPEN",
+    "title": "停留页面的会话失效后，401清空Token但不自动跳转登录",
+    "case_ids": [
+      "X17",
+      "G-01-05"
+    ],
+    "environment": "primary Hub dddee4f0，专用Viewer，agent-browser",
+    "precondition": "真实Viewer登录，/api/me=200，停留Dashboard；不刷新或切换路由",
+    "steps": [
+      "使该专用会话在服务端失效：POST /api/logout=200，保持当前页面",
+      "等待Dashboard周期请求/api/nodes、applications、tasks、schedules、executions均401",
+      "检查localStorage nodesteer_token清空，但URL仍/且Dashboard/角色布局仍存在"
+    ],
+    "expected": "401后清除认证状态并跳转/sign-in，保留合法回跳路径",
+    "actual": "Token已清空、请求被后端正确拒绝；当前URL仍/，保留Dashboard及侧栏，显示Invalid or expired session和重试，但不自动跳转登录。",
+    "reproduced": 2,
+    "evidence": [
+      "main/session-expiry-before-3.png",
+      "main/session-expiry-after-3.png",
+      "main/session-expiry-repro-3.webm",
+      "main/session-expiry-network.json"
+    ],
+    "source_refs": [
+      "web/src/lib/api.ts:51",
+      "web/src/main.tsx:66"
+    ],
+    "impact": "用户停留在会话错误页面，需要刷新或切换路径才能触发/me检查回到登录页；本例未发现后端越权。",
+    "harness_notes": "录像工具启动会重建上下文；前两段录像起始未认证，不计复现。第三段录像启动后重新建立专用会话且已核验/me=200，无凭据进入证据。"
+  },
+  {
+    "id": "E2E-20260930-101945-P0-002",
+    "severity": "P0",
+    "status": "OPEN",
+    "title": "升级PREPARING阶段崩溃后恢复删除旧Binary/Config/Unit，旧服务未恢复",
+    "case_ids": [
+      "MAIN-PHASE-PREPARING",
+      "AR-30",
+      "INV-11"
+    ],
+    "environment": "本轮新安装Rocky Agent3，唯一main测试应用/目录/Unit",
+    "application_id": "d1e8e28c-6dfe-4b48-a4e8-c61aa9298850",
+    "execution_id": "02048baa-871e-488a-84de-1c8a456b3693",
+    "steps": [
+      "真实部署v1并验证Binary SHA/Config v1/Unit active",
+      "更新定义v2并开始upgrade",
+      "在SQLite Journal PREPARING、三个backup路径尚空时SIGSTOP核实阶段，再SIGKILL本轮Agent3进程",
+      "恢复Agent3，等待其online/synced和Journal DONE，检查先前已存在的v1文件及服务"
+    ],
+    "expected": "崩溃后恢复旧版本或保留可恢复的旧文件，托管服务存在明确恢复路径",
+    "actual": {
+      "journal": [
+        [
+          "f151768f-fea2-41d3-8771-f55b3625e19e",
+          "DONE",
+          "",
+          "",
+          ""
+        ],
+        [
+          "42a94772-aeb8-4e4e-b9f5-8e13703af4a6",
+          "DONE",
+          "",
+          "",
+          ""
+        ]
+      ],
+      "binary_exists": false,
+      "config_exists": false,
+      "unit_exists": false,
+      "unit_state": "failed"
+    },
+    "execution_terminal": {
+      "id": "02048baa-871e-488a-84de-1c8a456b3693",
+      "status": "FAILED",
+      "block_reason": "agent_restarted"
+    },
+    "injection": {
+      "observed": true,
+      "target": "PREPARING",
+      "stopped_phase": "PREPARING",
+      "backup_present": [
+        false,
+        false,
+        false
+      ],
+      "deployment_id": "f151768f-fea2-41d3-8771-f55b3625e19e",
+      "agent_pid": 18988
+    },
+    "evidence": [
+      "main/native-results.json",
+      "main/native-second-attempt.json"
+    ],
+    "source_refs": [
+      "internal/agent/application.go:425",
+      "internal/agent/application.go:717"
+    ],
+    "impact": "真实升级若在持久化backup路径之前崩溃，启动回滚把已有部署当首次安装清理；本轮仅影响专属测试应用，随后已精确清理并恢复Agent3",
+    "reproduced": 1
+  },
+  {
+    "id": "MAIN-USER-EMPTY-PASSWORD",
+    "severity": "P1",
+    "status": "OPEN",
+    "title": "创建用户服务端接受空密码，空密码可真实登录",
+    "case_ids": [
+      "API-CONTRACT"
+    ],
+    "user_id": "1ab58538-576d-4c75-8a1c-fac0eccb969c",
+    "expected": "密码必填；role仅administrator/operator/viewer；非法值原子拒绝",
+    "actual": {
+      "create_http": 200,
+      "blank_password_login_http": 200,
+      "authenticated_me_http": 200
+    },
+    "evidence": [
+      "main/user-validation-results.json",
+      "main/user-validation-harness-note.json"
+    ],
+    "source_refs": [
+      "internal/hub/api/api.go:2018",
+      "internal/hub/auth/auth.go:89"
+    ],
+    "cleanup": "仅本轮新QA账号已恢复随机非空密码/Viewer，空密码登录401；无删除User API，账号和审计保留。"
+  },
+  {
+    "id": "MAIN-USER-INVALID-ROLE",
+    "severity": "P2",
+    "status": "OPEN",
+    "title": "用户Role更新接受三种有效角色之外的字符串并持久化",
+    "case_ids": [
+      "API-CONTRACT"
+    ],
+    "user_id": "1ab58538-576d-4c75-8a1c-fac0eccb969c",
+    "expected": "密码必填；role仅administrator/operator/viewer；非法值原子拒绝",
+    "actual": {
+      "update_http": 200,
+      "persisted_role": "qa_invalid_role"
+    },
+    "evidence": [
+      "main/user-validation-results.json",
+      "main/user-validation-harness-note.json"
+    ],
+    "source_refs": [
+      "internal/hub/api/api.go:2066",
+      "docs/PRODUCT.md:1281"
+    ],
+    "cleanup": "仅本轮新QA账号已恢复随机非空密码/Viewer，空密码登录401；无删除User API，账号和审计保留。"
+  }
+]

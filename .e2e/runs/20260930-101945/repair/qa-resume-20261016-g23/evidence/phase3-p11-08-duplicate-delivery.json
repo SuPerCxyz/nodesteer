@@ -1,0 +1,145 @@
+{
+  "at_utc": "2026-10-16T09:29:38Z",
+  "scenario": "one Manual Run whose hub->agent RUN_EXECUTION frame and agent->hub EXECUTION_FINISHED frame are each duplicated on the owned child channel (same Execution ID delivered twice / same result uploaded twice), then a second untouched Manual Run",
+  "injection": {
+    "run_frames_received": [
+      {
+        "seq": 106,
+        "execution_id": "90ddc8d8-1616-4198-94ea-883fb699d67e",
+        "task_id": "ed6a8705-1f71-45eb-9096-33e8c4804588",
+        "trigger_type": "manual"
+      }
+    ],
+    "finished_frames_received": [
+      {
+        "seq": 114,
+        "execution_id": "90ddc8d8-1616-4198-94ea-883fb699d67e",
+        "task_id": "ed6a8705-1f71-45eb-9096-33e8c4804588",
+        "status": "SUCCESS"
+      }
+    ],
+    "duplicate_injected_run_execution": [
+      {
+        "ftype": "RUN_EXECUTION",
+        "direction": "hub_to_agent",
+        "seq": 106,
+        "task_id": "ed6a8705-1f71-45eb-9096-33e8c4804588",
+        "execution_id": "90ddc8d8-1616-4198-94ea-883fb699d67e",
+        "object_id": null,
+        "global_revision": null,
+        "label": "p11-08-dup-run-delivery",
+        "at_utc": "2026-10-16T09:29:29Z"
+      }
+    ],
+    "duplicate_injected_execution_finished": [
+      {
+        "ftype": "EXECUTION_FINISHED",
+        "direction": "agent_to_hub",
+        "seq": 114,
+        "task_id": "ed6a8705-1f71-45eb-9096-33e8c4804588",
+        "execution_id": "90ddc8d8-1616-4198-94ea-883fb699d67e",
+        "object_id": null,
+        "global_revision": null,
+        "label": "p11-08-dup-result-upload",
+        "at_utc": "2026-10-16T09:29:29Z"
+      }
+    ],
+    "execution_ack_frames_for_this_execution": [
+      {
+        "seq": 115,
+        "execution_id": "90ddc8d8-1616-4198-94ea-883fb699d67e",
+        "ok": true,
+        "error": null
+      },
+      {
+        "seq": 116,
+        "execution_id": "90ddc8d8-1616-4198-94ea-883fb699d67e",
+        "ok": true,
+        "error": null
+      }
+    ],
+    "note": "the proxy ledger records frames it receives; a duplicate injection is recorded as an injection event and proven downstream (the duplicated RUN_EXECUTION did not create a second local execution; the duplicated EXECUTION_FINISHED made the Hub ack the same execution twice)"
+  },
+  "run1": {
+    "execution_id": "90ddc8d8-1616-4198-94ea-883fb699d67e",
+    "terminal_wait": {
+      "complete": true,
+      "seconds": 0.704
+    },
+    "hub_row": {
+      "id": "90ddc8d8-1616-4198-94ea-883fb699d67e",
+      "task_id": "ed6a8705-1f71-45eb-9096-33e8c4804588",
+      "task_revision": 1,
+      "script_id": "5dbbd008-7737-4582-99c8-aad667a0e50a",
+      "script_revision": 1,
+      "node_id": "a029df98-9097-4ef0-948b-4913387a3916",
+      "trigger_type": "manual",
+      "scheduled_time": "0001-01-01T00:00:00Z",
+      "start_time": "2026-10-16T09:29:29.84977979Z",
+      "end_time": "2026-10-16T09:29:29.865006344Z",
+      "status": "SUCCESS",
+      "stdout": "marker 2026-10-16T09:29:29.864109652Z\n",
+      "stderr": "",
+      "stdout_truncated": false,
+      "stderr_truncated": false,
+      "offline": false,
+      "synced": true
+    },
+    "hub_rows_for_task": 1,
+    "local_rows_for_task": 1,
+    "local_row": {
+      "id": "90ddc8d8-1616-4198-94ea-883fb699d67e",
+      "task_id": "ed6a8705-1f71-45eb-9096-33e8c4804588",
+      "script_id": "5dbbd008-7737-4582-99c8-aad667a0e50a",
+      "trigger_type": "manual",
+      "scheduled_time": "",
+      "status": "SUCCESS",
+      "exit_code": 0,
+      "offline": 0,
+      "synced": 1,
+      "start_time": "2026-10-16T09:29:29.84977979Z",
+      "end_time": "2026-10-16T09:29:29.865006344Z"
+    },
+    "run_frames_same_exec_id": [
+      "90ddc8d8-1616-4198-94ea-883fb699d67e"
+    ],
+    "finished_frames_same_exec_id": [
+      "90ddc8d8-1616-4198-94ea-883fb699d67e"
+    ],
+    "ack_count_for_execution": 2,
+    "child_agent_log_tail": {
+      "exists": true,
+      "line_count": 2,
+      "lines": [
+        "time=2026-10-16T17:29:23.462+08:00 level=INFO msg=\"nodesteer agent starting\" version=dddee4f0-e2e-repair-20261016 hub=ws://192.168.100.170:32979 mode=native data_dir=/var/lib/nodesteer-qa-g23-d08f3dbc-a/data",
+        "time=2026-10-16T17:29:23.483+08:00 level=INFO msg=\"agent connected\" recovered=false fail_duration=0s failures=0"
+      ]
+    },
+    "marker_lines": 1
+  },
+  "run2": {
+    "execution_id": "2339039f-3d20-4a11-9702-2737be20c4af",
+    "terminal_wait": {
+      "complete": true,
+      "seconds": 0.704
+    },
+    "hub_rows_for_task": 2,
+    "local_rows_for_task": 2,
+    "marker_lines": 2
+  },
+  "assertions": {
+    "run_execution_duplicate_really_injected": true,
+    "execution_finished_duplicate_really_injected": true,
+    "hub_acked_duplicated_upload_twice": true,
+    "hub_received_one_run_execution_frame": true,
+    "single_hub_execution_row_after_duplicates": true,
+    "hub_row_terminal_success": true,
+    "single_child_local_execution_row_after_duplicates": true,
+    "child_row_synced_once": true,
+    "single_business_invocation_for_run1": true,
+    "second_run_new_uuid_new_intent": true,
+    "second_run_second_business_invocation": true,
+    "no_duplicate_local_rows_after_second_run": true
+  },
+  "assertions_pass": true
+}

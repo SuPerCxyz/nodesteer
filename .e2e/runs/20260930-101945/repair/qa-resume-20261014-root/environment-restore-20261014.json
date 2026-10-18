@@ -1,0 +1,84 @@
+{
+  "restore_id": "ROOT-ENV-RESTORE-20261014",
+  "at": "2026-10-14T07:37:54.750978+00:00",
+  "authorization": "用户 2026-10-14 明确授权：启动 kvm2 上 5 个 nodesteer VM 以恢复 repair 环境并继续测试",
+  "authority": "http://192.168.100.209:18080",
+  "pre_state": {
+    "nodesteer_vms": "nodesteer-hub, nodesteer-agent-1..4 all shut off (autostart disable)",
+    "repair_18080": "unreachable",
+    "primary_8080": "unreachable",
+    "host_kvm2_nodesteer_units_or_containers": "none"
+  },
+  "actions": [
+    "virsh start nodesteer-hub nodesteer-agent-1..4 (未启用 autostart)",
+    "systemctl start nodesteer-hub-repair-20260930-101945.service (hub VM 192.168.100.209)",
+    "systemctl start nodesteer-agent-repair-20260930-101945-native-1.service (192.168.100.204)",
+    "...native-2 (192.168.100.206), ...native-3 (192.168.100.222), ...native-4 (192.168.100.247)"
+  ],
+  "not_touched": [
+    "nodesteer-hub.service (:8080 原 Hub) 保持 running/enabled",
+    "nodesteer-agent.service (4 个 VM 上的原 Agent) 保持 running",
+    "未启用任何 autostart；未改动原部署、备份、数据目录"
+  ],
+  "verification": {
+    "healthz": 200,
+    "readyz": 200,
+    "login": "ok (qa-repair-20260930-101945-admin, role=administrator)",
+    "web_root": 200,
+    "sign_in_route": 200,
+    "primary_8080_healthz": 200,
+    "hub_running_process_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+    "hub_binary_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+    "agent_binary_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "agent_running_process_sha256_all_four": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "sha_matches_baseline_build_manifest": true
+  },
+  "nodes_after_restore": [
+    {
+      "name": "qa-repair-20260930-101945-native-1",
+      "id": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "status": "online",
+      "sync_status": "synced"
+    },
+    {
+      "name": "qa-repair-20260930-101945-native-2",
+      "id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+      "status": "online",
+      "sync_status": "synced"
+    },
+    {
+      "name": "qa-repair-20260930-101945-native-3",
+      "id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+      "status": "online",
+      "sync_status": "synced"
+    },
+    {
+      "name": "qa-repair-20260930-101945-native-4",
+      "id": "03cb50cc-eab6-4afd-bbe0-f73c4e326773",
+      "status": "online",
+      "sync_status": "synced"
+    },
+    {
+      "name": "qa-resume-20261008-native4-child-c5d48ea9-...",
+      "id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+      "status": "offline",
+      "sync_status": "synced"
+    },
+    {
+      "name": "qa-resume-20261010-host-f174890c3846-host001",
+      "id": "f6a79d23-2410-450c-ac39-64dd70c9daa1",
+      "status": "online",
+      "sync_status": "synced"
+    }
+  ],
+  "node_mapping": {
+    "192.168.100.204": "native-1",
+    "192.168.100.206": "native-2",
+    "192.168.100.222": "native-3",
+    "192.168.100.247": "native-4"
+  },
+  "agent3_qga_note": "nodesteer-agent-3(192.168.100.204) 的 qemu-ga 禁用了 guest-exec 与 guest-file-*，本次未绕过：改用其既有 root authorized_key（与本机 ~/.ssh/id_ed25519 匹配）经 SSH 管理；未新增任何授权键。",
+  "limitations": [
+    "pre_state 结论来自 2026-10-14 只读探测；恢复后未重跑用例，功能结论仍以台账为准"
+  ]
+}

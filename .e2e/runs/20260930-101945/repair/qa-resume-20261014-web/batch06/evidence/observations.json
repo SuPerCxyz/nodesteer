@@ -1,0 +1,81 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch06",
+  "at_utc": "2026-10-14T10:26:00Z",
+  "observations": [
+    {
+      "id": "OBS-B06-01",
+      "severity": "low",
+      "title": "maintenance/disabled 状态徽标无中文文案",
+      "detail": "StatusBadge 的标签表中没有 maintenance/disabled 的 zh 文案，节点列表在中文界面下直接显示原始英文状态串 \"maintenance\"（本批 UI 回读与截图可见）。",
+      "evidence": [
+        "evidence/P0404-02-node-maintenance-row.png",
+        "evidence/phase3-p04-04-operation-menu.json"
+      ],
+      "source": "web/src/features/shared/ui.tsx StatusBadge labels"
+    },
+    {
+      "id": "OBS-B06-02",
+      "severity": "medium",
+      "title": "offline 节点手工设为在线后无会话仍显示在线",
+      "detail": "节点已 offline（无 Agent 会话）时手工「设为在线」会持久化为 online；该记录不会自动回落到 offline（无断开/心跳事件），直到 Hub 重启复位孤儿 online 或 Agent 重新 HELLO。此时对该节点手动执行会失败并留 FAILED 记录（block_reason=agent offline）。是否符合预期需产品确认，本批仅记录现象。",
+      "evidence": [
+        "evidence/phase4-p04-05-offline-set-online.json",
+        "evidence/phase5-p11-04-offline-node-dispatch.json"
+      ],
+      "source": "hub/node.go MarkOffline 仅由 gateway 断开回调触发；无周期清扫"
+    },
+    {
+      "id": "OBS-B06-03",
+      "severity": "low",
+      "title": "Node Detail 任务列表用整页文本测量会被 执行 区污染",
+      "detail": "Node Detail 的 执行 区按 execution 行渲染 task.name（features/tasks/index.tsx ExecutionRows），因此整页文本里会残留与节点无目标关系的任务名；按 SectionCard 的 任务 区做作用域读取才准确。本批已按作用域读取并说明。",
+      "evidence": [
+        "evidence/phase6-p06-08-group-change-sync.json",
+        "evidence/assertion-reevaluation.json"
+      ]
+    },
+    {
+      "id": "OBS-B06-04",
+      "severity": "low",
+      "title": "菜单点击后立即读取行状态徽标可能读到旧值",
+      "detail": "点击菜单项后 mutation 成功 → invalidate [\"nodes\"] → 重新拉取存在短暂延迟；本次在 agent-pause 步骤未加 settle 延迟即读取，得到旧徽标 在线（Hub 已是 maintenance）；同一状态在 P04-04 步骤 2（延迟 1.5s）读取正确。属 Harness 时序问题，非产品缺陷。",
+      "evidence": [
+        "evidence/phase3-p04-04-operation-menu.json"
+      ]
+    },
+    {
+      "id": "OBS-B06-05",
+      "severity": "info",
+      "title": "并行批次干扰：native-3 与 native-1 在本批结束之后转为 offline",
+      "detail": "本批 final guard（2026-10-14T10:06Z）时 native-1..4 全部 online/synced；随后 native-3 于 10:09:47Z（last_seen）转为 offline，独立复验（10:18Z）时 native-1 亦为 offline，仅 native-2/4 为 online。192.168.100.222:22 端口可连但 SSH banner 握手超时。本批全程未对 native-1/native-3 做任何操作（未改状态、未停/起 Agent、未 SSH 执行业务命令），判定为其他并行批次的环境活动。",
+      "evidence": [
+        "final-cleanup-guard.json",
+        "evidence/final-independent-reverification.json"
+      ],
+      "native3_now": [
+        {
+          "hostname": "qa-repair-20260930-101945-native-3",
+          "status": "offline",
+          "sync_status": "synced",
+          "last_seen": "2026-10-14T18:09:47.476968779+08:00"
+        }
+      ],
+      "native_now": {
+        "native-1": "offline",
+        "native-2": "online",
+        "native-3": "offline",
+        "native-4": "online"
+      },
+      "caveat": "native-2 上的 “procs” 命中是本批复验脚本自身命令行包含 nodesteer-qa- 造成的自匹配，并非残留进程；qa_roots 为空、root 不存在可交叉确认。"
+    },
+    {
+      "id": "OBS-B06-06",
+      "severity": "info",
+      "title": "Harness 修复记录（3 处）",
+      "detail": "(1) runners/child_agent.py inventory() 的格式化参数不足导致 2 次启动前置失败，修复后重跑；(2) CLI 的 wait --text 未文档化 --timeout，改为 eval 轮询实现；(3) 登录表单需在 hydration 完成后再填充，改为先轮询输入框存在再填充并校验长度。",
+      "evidence": [
+        "run-stdout.log"
+      ]
+    }
+  ]
+}

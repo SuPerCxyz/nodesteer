@@ -1,0 +1,102 @@
+==== batch07 terminal transcript (redacted) ====
+# Condensed, human-readable transcript of the real operations behind
+# .e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch07/evidence/.
+# Credentials never appear here: sign-in was piped into `agent-browser eval --stdin`,
+# and the Authorization header is never written to evidence.
+
+== 0. environment ==
+$ authority: http://192.168.100.209:18080 (repair, single port web+gateway)   primary :8080 NOT touched
+$ nonce -> 30fb54d4      prefix -> qa-w1410b07-30fb54d4
+$ node scope: native-3 37989297-3bc8-4c0c-b302-7c6efbdba630 (192.168.100.222, KVM domain nodesteer-agent-2)
+  failure target only: host001 f6a79d23-2410-450c-ac39-64dd70c9daa1 (docker host integration, no write test)
+$ owned dir on native-3: /tmp/qa-w1410b07-30fb54d4   agent data dir: /var/lib/nodesteer-repair-20260930-101945/native-3
+
+== 1. baseline (read-only) ==
+$ python3 runners/run_b07.py setup ; python3 -c ... snapshot -> evidence/baseline.json
+  nodes 9 (native-1..4 online, host001 online, 3 child/offline), transfers 16 (shared with parallel batches),
+  artifacts 1, applications 1, tasks 3, scripts 5, users 8
+  native-3 agent cache: one entry 37a674d6...(56 B, 2026-10-12T21:48) + SQLite row, no .tmp
+
+== 2. P22-13 API negatives (no fixture created) ==
+$ POST /api/transfers with relative / traversal / empty / duplicate / unknown-node inputs
+  400 source path: absolute path required | 400 destination path: absolute path required
+  400 path traversal is not allowed (source /tmp/../etc/passwd; dest <dir>/../../etc/evil.bin; /tmp/./../tmp/evil2.bin)
+  400 at least one target is required | 400 target node is empty or duplicated | 400 source node not found
+$ GET/POST /agent/transfers/<bogus>/{upload,download} without / with bogus / with real-agent-id+wrong-token headers
+  401 agent authentication required | 401 invalid agent credential (x3, incl. real native-3 agent id) | 401 on artifact download
+  side effects: no transfer, no Hub staging file, no node file        -> evidence/P22-13-api-negatives.json
+
+== 3. P22-10 target isolation (2 attempts, 2 transfers) ==
+$ POST /api/transfers source native-3 src-2m.bin -> targets native-3 /tmp/.../iso-native3.bin (mode 640)
+  + host001 /tmp/.../iso-host001.bin (attempt1) and host001 /var/tmp/.../x-host001.bin (attempt2)
+  attempt1/2: native-3 target SUCCESS with src sha 14d4c495... size 2097152 mode 640
+              host001 target stayed DELIVERING with no agent result (12+ min / 90 s, no timeout in the Hub)
+  harness injection: truncating the Hub staged blob to 4096 B produced no agent-side outcome either
+$ POST /api/transfers/<id>/cancel -> 200 -> CANCELED (native-3 kept SUCCESS)
+$ UI /transfers + nonce filter: row shows '已取消' with 'native-3 成功' + 'host001 已取消'
+  -> evidence/P22-10-isolation.json, P22-10-isolation-attempt1.json, UI-01b-transfers-filtered.json
+
+== 4. P22-11 retry semantics ==
+$ transfer c8f2cb42: FAILED 'source upload failed: open .../src-late.bin: no such file or directory' (sha256="")
+  -> create the source -> POST /api/transfers/<id>/retry (whole) -> SUCCESS, dst sha bf5c6bb8... == src
+$ transfer f926be58: target FAILED 'write .../.nodesteer-transfer-237579231: no space left on device'
+  -> POST /api/transfers/<id>/retry?target_id=37989297-... -> 200 -> SUCCESS, dst sha 5adc86e1... size 268435456
+$ transfer 4aff7bd2 (SUCCESS): retry with no FAILED target -> no re-dispatch, state kept, dst untouched
+$ transfer f926be58 (over limit): FAILED 'source upload failed: invalid file size', retry stays FAILED
+  -> evidence/P22-11-retry.json, P22-14-half-file.json, snapshot-after-transfers.json
+
+== 5. P22-13 file over limit ==
+$ truncate -s 10737418241 /tmp/qa-w1410b07-<nonce>/src-overlimit.bin   (sparse, hub default max = 10 GiB)
+$ POST /api/transfers -> FAILED after 1.0 s: source upload failed: invalid file size; target FAILED
+  Hub staging: <id>.part == MISSING, <id>.blob == MISSING; node destination: does not exist
+  -> evidence/P22-13-size-limit.json
+
+== 6. P22-14 content / mode / sha256 / atomic replace ==
+$ transfer 0892e422: src 167772160 B (random) -> dst kept from 201326592 B sparse (mode 644) -> SUCCESS
+  dst: size 167772160 exactly, mode 640 as requested, sha256 == src 29526af9...
+$ failed delivery (ENOSPC): dst stayed byte-identical 201326592 B sha 46b23b74... mode 644
+  no .nodesteer-transfer-* left; agent error names the removed temp file
+$ POST /api/transfers/f926be58/retry?target_id=... -> SUCCESS, dst 268435456 B sha == src
+  -> evidence/P22-14-interrupt.json (success/atomic), P22-14-half-file.json (half-file cleanup + retry)
+
+== 7. P16-09 / P16-10 Agent artifact cache (.tmp) ==
+$ POST /api/artifacts -> owned artifact 51735863... sha 952ecc97... size 268435456 (blob <artifact_dir>/<sha>)
+$ POST /api/applications -> owned app 82e8ee0a...
+$ in-guest watcher (2 ms) + POST /api/applications/82e8ee0a.../assign   (the endpoint the UI editor calls)
+  happy: tmp_created(size=0) -> tmp_gone(renamed) +2125 ms tmp_max 268435456 -> final_appeared 268435456
+         cache sha == artifact sha, mode 644, SQLite row, agent log 'artifact cached'; no .tmp left
+  sha mismatch (blob appended): tmp_created -> tmp_gone final_exists=false (+2252 ms, 268435470 B)
+         log WARN 'artifact prefetch failed ... error="sha256 mismatch: expected 952ecc... got a975afe0..."'
+         nothing installed, no .tmp, baseline cache untouched; blob restored (sha verified)
+  404 (blob moved aside): tmp_created -> tmp_gone +30.7 ms final_exists=false, log 'error="download status 404"'
+  interruption (blob truncated to 4096 B at .tmp 72317984 B): half file 143075656 B -> tmp_gone +828.9 ms
+         final_exists=false, log 'error="unexpected EOF"'; blob restored -> retry -> cache sha == artifact sha
+  -> evidence/P16-setup.json, P16-09-happy-install.json, P16-09-sha-mismatch.json,
+     P16-10-notfound-cleanup-retry.json, P16-10-interrupt-retry.json, P16-10-interrupt-retry2.json
+
+== 8. UI actions (agent-browser session qaweb1410b07) ==
+$ /sign-in -> local-setter fill + 登录 (no credentials in argv/stdout)
+$ /transfers -> table scan, search '30fb54d4' -> 6 owned rows with per-target statuses, screenshots
+$ /transfers form -> source native-3 + relative source path + host001 target -> toast
+  'source path: absolute path required'; then traversal destination -> toast
+  'destination path: path traversal is not allowed'; transfers count unchanged (38) both times
+$ /applications, /nodes/<id>, /agents/<id>, /artifacts -> owned app/artifact readback + screenshots
+$ /applications row 操作 -> 删除 -> alertdialog '删除: qa-w1410b07-30fb54d4-app-A' -> 删除
+  -> GET /api/applications/82e8ee0a... 404 application not found
+  observed: the app editor 保存 button emitted no request for this API-created app (3 attempts)
+  -> evidence/UI-01..UI-10*.json + .png
+
+== 9. incident (disclosed) ==
+$ a ~483 MiB harness file in native-3 /tmp (tmpfs 979 MiB) while the VM balloon was 1 GiB caused guest memory
+  pressure: sshd unresponsive, repair Agent offline 2026-10-14T18:09:47Z
+$ recovery: virsh setmem nodesteer-agent-2 2097152 --live (kvm2) + rm the filler -> agent back online 18:24:25Z
+$ mistake: `virsh reboot nodesteer-agent-3 --mode agent` targeted .204 (repair native-1), not .222;
+  native-1 rebooted and recovered automatically (services active, node online)
+$ balloon restored to 1 GiB at 18:50Z; /tmp fixtures removed (tmpfs 0%); cache back to the baseline entry only
+  -> evidence/incident-report.json, final-cleanup-node-and-fixtures.json
+
+== 10. cleanup verification ==
+$ DELETE /api/artifacts/51735863... 200 -> GET 404; Hub artifact dir has no owned sha and no b07 leftovers
+$ UI DELETE /api/applications/82e8ee0a... -> GET 404; the non-owned app 804e6b14 is untouched
+$ /tmp/qa-w1410b07-* absent; no watch_tmp.py process; agent cache = baseline entry only (sha unchanged)
+$ 6 owned transfers remain as terminal history (no DELETE endpoint for transfers)

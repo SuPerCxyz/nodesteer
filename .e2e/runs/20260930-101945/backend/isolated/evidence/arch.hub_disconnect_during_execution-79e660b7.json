@@ -1,0 +1,284 @@
+{
+  "result": {
+    "id": "arch.hub_disconnect_during_execution",
+    "name": "Hub Disconnect During Execution",
+    "started_at": "2026-09-30T07:05:42.389089+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-09-30T07:05:57.354129+00:00",
+    "evidence": "backend/isolated/evidence/arch.hub_disconnect_during_execution-79e660b7.json"
+  },
+  "events": [
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-hub-down-4c1bfa",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be; printf running > /var/lib/nodesteer/qa-20260930-101945-be/hub-down-95f63a; sleep 10; printf hub-down-completed > /var/lib/nodesteer/qa-20260930-101945-be/hub-down-95f63a; printf hub-down-log",
+        "timeout": 25,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "13a35c29-87ca-4868-89fb-e19c2ee38cb4",
+        "name": "qa-20260930-101945-be-hub-down-4c1bfa",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be; printf running > /var/lib/nodesteer/qa-20260930-101945-be/hub-down-95f63a; sleep 10; printf hub-down-completed > /var/lib/nodesteer/qa-20260930-101945-be/hub-down-95f63a; printf hub-down-log",
+        "timeout": 25,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 07:05:42 GMT",
+        "Content-Length": "651",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/13a35c29-87ca-4868-89fb-e19c2ee38cb4/run",
+      "status": 200,
+      "request": {},
+      "response": [
+        {
+          "id": "d8051979-9339-463b-9a59-f2f97f7e91b6",
+          "task_id": "13a35c29-87ca-4868-89fb-e19c2ee38cb4",
+          "task_revision": 1,
+          "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 07:05:42 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"d8051979-9339-463b-9a59-f2f97f7e91b6\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"d8051979-9339-463b-9a59-f2f97f7e91b6\", \"task_id\": \"13a35c29-87ca-4868-89fb-e19c2ee38cb4\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"RUNNING\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 0, \"offline\": 0, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "cat -- /var/lib/nodesteer/qa-20260930-101945-be/hub-down-95f63a\n",
+      "exit_code": 0,
+      "stdout": "running",
+      "stderr": ""
+    },
+    {
+      "control": "docker stop -t 2 qa-20260930-101945-env-hub",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-env-hub\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"d8051979-9339-463b-9a59-f2f97f7e91b6\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"d8051979-9339-463b-9a59-f2f97f7e91b6\", \"task_id\": \"13a35c29-87ca-4868-89fb-e19c2ee38cb4\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"RUNNING\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 0, \"offline\": 0, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"d8051979-9339-463b-9a59-f2f97f7e91b6\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"d8051979-9339-463b-9a59-f2f97f7e91b6\", \"task_id\": \"13a35c29-87ca-4868-89fb-e19c2ee38cb4\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"RUNNING\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 0, \"offline\": 0, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"d8051979-9339-463b-9a59-f2f97f7e91b6\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"d8051979-9339-463b-9a59-f2f97f7e91b6\", \"task_id\": \"13a35c29-87ca-4868-89fb-e19c2ee38cb4\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"RUNNING\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 0, \"offline\": 0, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"d8051979-9339-463b-9a59-f2f97f7e91b6\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"d8051979-9339-463b-9a59-f2f97f7e91b6\", \"task_id\": \"13a35c29-87ca-4868-89fb-e19c2ee38cb4\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"RUNNING\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 0, \"offline\": 0, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"d8051979-9339-463b-9a59-f2f97f7e91b6\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"d8051979-9339-463b-9a59-f2f97f7e91b6\", \"task_id\": \"13a35c29-87ca-4868-89fb-e19c2ee38cb4\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 0, \"offline\": 0, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "offline_semantics": "该Manual Execution在线启动，offline初始false保持；断线期间结果以synced=false持久，字段不擅自改为全程断线语义",
+      "journal": {
+        "id": "d8051979-9339-463b-9a59-f2f97f7e91b6",
+        "task_id": "13a35c29-87ca-4868-89fb-e19c2ee38cb4",
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "status": "SUCCESS",
+        "exit_code": 0,
+        "scheduled_time": "",
+        "synced": 0,
+        "offline": 0,
+        "block_reason": "",
+        "task_revision": 1,
+        "script_revision": 0
+      }
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "cat -- /var/lib/nodesteer/qa-20260930-101945-be/hub-down-95f63a\n",
+      "exit_code": 0,
+      "stdout": "hub-down-completed",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT stdout,stderr FROM executions WHERE id=?' '[\"d8051979-9339-463b-9a59-f2f97f7e91b6\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"stdout\": \"hub-down-log\", \"stderr\": \"\"}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "docker start qa-20260930-101945-env-hub",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-env-hub\n",
+      "stderr": ""
+    },
+    {
+      "api": "GET /readyz",
+      "status": 200,
+      "request": null,
+      "response": {
+        "bytes": 5,
+        "sha256": "b24d6d33736ecd5604a4b17bc9c6481039fac362bb7df044ef1c10a2bfd21db6"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Date": "Wed, 30 Sep 2026 07:05:55 GMT",
+        "Content-Length": "5",
+        "Content-Type": "text/plain; charset=utf-8",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/login",
+      "status": 200,
+      "request": {
+        "username": "qa-20260930-101945-env-admin",
+        "password": "[redacted]"
+      },
+      "response": {
+        "token": "[redacted]",
+        "user": {
+          "Token": "[redacted]",
+          "UserID": "3ba8a380-5470-4ef1-90d7-2e8445fde48b",
+          "Username": "qa-20260930-101945-env-admin",
+          "Role": "administrator",
+          "Expires": "2026-10-01T07:05:55.719061801Z"
+        }
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 07:05:55 GMT",
+        "Content-Length": "261",
+        "Connection": "close"
+      }
+    },
+    {
+      "core_node": {
+        "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "hostname": "qa-20260930-101945-env-docker-agent",
+        "ip": "192.168.100.209",
+        "os": "Alpine Linux v3.20",
+        "arch": "amd64",
+        "agent_version": "dddee4f0",
+        "deployment_mode": "docker",
+        "host_integration": false,
+        "status": "online",
+        "labels": {},
+        "capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        },
+        "global_revision": 122,
+        "sync_status": "synced",
+        "last_seen": "2026-09-30T07:05:56.483277263Z",
+        "first_seen": "2026-09-30T02:36:32.656149623Z"
+      }
+    },
+    {
+      "api": "GET /api/executions/d8051979-9339-463b-9a59-f2f97f7e91b6",
+      "terminal": {
+        "id": "d8051979-9339-463b-9a59-f2f97f7e91b6",
+        "task_id": "13a35c29-87ca-4868-89fb-e19c2ee38cb4",
+        "task_revision": 1,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T07:05:42.439961995Z",
+        "end_time": "2026-09-30T07:05:52.479769345Z",
+        "status": "SUCCESS",
+        "stdout": "hub-down-log",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"d8051979-9339-463b-9a59-f2f97f7e91b6\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"d8051979-9339-463b-9a59-f2f97f7e91b6\", \"task_id\": \"13a35c29-87ca-4868-89fb-e19c2ee38cb4\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"offline\": 0, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    }
+  ]
+}

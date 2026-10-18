@@ -1,0 +1,95 @@
+{
+  "at_utc": "2026-10-14T09:38:37Z",
+  "scenario": "two Desired State changes with both CHANGE_NOTIFICATION frames dropped -> Agent revision lag recovered by Revision Check, then a real child restart",
+  "pre_local_revision": 1875,
+  "dropped_notifications": [
+    {
+      "type": "CHANGE_NOTIFICATION",
+      "global_revision": 1876,
+      "object_type": "script",
+      "object_id": "cff2bf5b-59c7-481f-8635-a3170594e199",
+      "object_revision": 6,
+      "direction": "hub_to_agent",
+      "at_utc": "2026-10-14T09:37:50Z",
+      "action": "dropped"
+    },
+    {
+      "type": "CHANGE_NOTIFICATION",
+      "global_revision": 1877,
+      "object_type": "task",
+      "object_id": "fef664ce-39da-4727-ab8f-0c37c43e302d",
+      "object_revision": 4,
+      "direction": "hub_to_agent",
+      "at_utc": "2026-10-14T09:37:50Z",
+      "action": "dropped"
+    }
+  ],
+  "target_global_revision": 1877,
+  "lag": {
+    "local_revision_3s_after_changes": 1875,
+    "lagged_behind": true
+  },
+  "recovery_by_revision_check": {
+    "converged": true,
+    "child_local_revision_after": 1877,
+    "convergence_seconds": 46.8,
+    "sync_request_count": 1,
+    "sync_request_since": 1875,
+    "sync_response_full_resync": false,
+    "desired_equals_actual": true
+  },
+  "recovery_by_restart": {
+    "restart": {
+      "stop": {
+        "signalled": [
+          13361
+        ],
+        "remaining": []
+      },
+      "start": {
+        "launcher_pid": 14044,
+        "owned_processes": [
+          "14045 /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent --config /var/lib/nodesteer-qa-sysb03-ab0d99a2f96f/child.yaml"
+        ]
+      }
+    },
+    "node_after": {
+      "status": "online",
+      "sync_status": "synced",
+      "global_revision": 1877
+    },
+    "child_local_revision_after": 1877,
+    "owned_script": {
+      "id": "cff2bf5b-59c7-481f-8635-a3170594e199",
+      "name": "qa-sysb03-ab0d99a2f96f-script",
+      "revision": 6,
+      "sha256": "f49214eef31474cab6f49622a08bf2bf680c62da351b63524ad83f6b6b8172d4",
+      "content_len": 94,
+      "enabled": true
+    },
+    "owned_tasks": [
+      {
+        "id": "fef664ce-39da-4727-ab8f-0c37c43e302d",
+        "revision": 4,
+        "enabled": true,
+        "definition_len": 452
+      },
+      {
+        "id": "4f65501b-2c69-48d2-9027-6d15e20220c3",
+        "revision": 1,
+        "enabled": true,
+        "definition_len": 454
+      }
+    ],
+    "persisted_after_restart": true,
+    "desired_equals_actual_after_restart": true,
+    "task_execution_count": 1,
+    "hub_execution_count": 1
+  },
+  "node_final": {
+    "status": "online",
+    "sync_status": "synced",
+    "global_revision": 1877
+  },
+  "assertions_pass": true
+}

@@ -1,0 +1,46 @@
+{
+ "case_id": "G04-03",
+ "phase": "source-scan",
+ "at_utc": "2026-10-17T14:36:40Z",
+ "repo": "/home/superc/code/nodesteer",
+ "generic_hardcoded_error_strings": {
+  "Something went wrong": 4,
+  "Request failed": 2
+ },
+ "generic_hardcoded_error_samples": {
+  "Something went wrong": [
+   "/home/superc/code/nodesteer/web/src/lib/handle-server-error.ts:11:  let errMsg = 'Something went wrong!'",
+   "/home/superc/code/nodesteer/web/src/lib/handle-server-error.test.ts:22:    expect(toastError).toHaveBeenCalledWith('Something went wrong!')",
+   "/home/superc/code/nodesteer/web/src/lib/handle-server-error.test.ts:58:    expect(toastError).toHaveBeenCalledWith('Something went wrong!')",
+   "/home/superc/code/nodesteer/web/src/lib/handle-server-error.test.ts:70:    expect(toastError).toHaveBeenCalledWith('Something went wrong!')"
+  ],
+  "Request failed": [
+   "/home/superc/code/nodesteer/web/src/lib/handle-server-error.test.ts:50:    const error = new AxiosError('Request failed')",
+   "/home/superc/code/nodesteer/web/src/features/shared/ui.tsx:552:  return formatApiError(error) || 'Request failed'"
+  ]
+ },
+ "error_surface_line_count": 90,
+ "error_surface_with_caught_message": 45,
+ "error_surface_suspected_constant": [
+  "/home/superc/code/nodesteer/web/src/features/editors/index.tsx:114:    setError('')",
+  "/home/superc/code/nodesteer/web/src/features/editors/index.tsx:445:    setError('')",
+  "/home/superc/code/nodesteer/web/src/features/editors/index.tsx:814:    setError('')",
+  "/home/superc/code/nodesteer/web/src/features/editors/index.tsx:1112:    setError('')",
+  "/home/superc/code/nodesteer/web/src/features/editors/index.tsx:1156:    setError('')",
+  "/home/superc/code/nodesteer/web/src/features/editors/index.tsx:1870:    setError('')",
+  "/home/superc/code/nodesteer/web/src/features/auth/sign-in/index.tsx:79:    setError('')"
+ ],
+ "formatApiError": {
+  "duplicate_name_pattern_present": true,
+  "unique_constraint_pattern_present": true,
+  "sqlite_leak_translation": true
+ },
+ "method": "read-only grep scan of web/src for hardcoded generic error strings, error-surface call sites, and api-errors.ts mapping; no writes, no runtime calls",
+ "note": "full cross-page runtime enumeration is out of scope for this batch; the scan is the read-only counterpart agreed in partial-closeout-plan B1 (\"跨页错误文案只读扫描\")",
+ "classification": {
+  "Something went wrong": "web/src/lib/handle-server-error.ts:11 fallback; module is only referenced by its own unit test (dead code, no user-facing call site found by grep)",
+  "Request failed": "web/src/features/shared/ui.tsx:552 apiMessage() last-resort fallback when formatApiError returns empty; call sites use it for error text where no server message is extractable",
+  "setError('') samples": "error-state clears at the start of save handlers, not error surfaces (heuristic false positives)",
+  "verdict": "no page-level generic duplicate-error text found for the duplicate-name family; duplicate-name surfaces are specific and localized"
+ }
+}

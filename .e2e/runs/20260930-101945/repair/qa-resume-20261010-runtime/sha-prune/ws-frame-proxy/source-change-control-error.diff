@@ -1,0 +1,16 @@
+--- relayHub SYNC_RESPONSE branch (previous source a19f5cf6)
++++ relayHub SYNC_RESPONSE branch (current source)
+@@
+ 		if json.Unmarshal(b, &env) == nil && env.Type == "SYNC_RESPONSE" {
+-			var p syncPayload
+-			if json.Unmarshal(env.Payload, &p) == nil {
+-				c, controlErr := readControl()
+-				if controlErr == nil {
++			c, controlErr := readControl()
++			if controlErr != nil {
++				event("sync_response_dropped_control_error", map[string]any{"error_bytes": len(controlErr.Error()), "error_sha256": sha(controlErr.Error())})
++				continue
++			}
++			var p syncPayload
++			if json.Unmarshal(env.Payload, &p) == nil {
++				if controlErr == nil {

@@ -1,0 +1,49 @@
+{
+  "case_id": "FL-14",
+  "failure_id": "E2E-20260930-101945-P1-001",
+  "status": "partial",
+  "layer": "live-isolated-static-hub",
+  "build_label": "dddee4f0-e2e-repair-20261004",
+  "hub_sha256": "e0b120e6e63fa5781cd4c5aef4a39f8094e799a4f5824bb969a816737d37c472",
+  "tested_ttl": "3s",
+  "checks": {
+    "hub_health_with_ttl_config": [
+      200,
+      200
+    ],
+    "config_owner_mode": "nodesteer:nodesteer:0600",
+    "login_http": 200,
+    "immediate_me_http": 200,
+    "elapsed_monotonic_seconds": 3.501,
+    "expired_me_http": 401,
+    "expired_nodes_http": 401,
+    "restored_health_ready_http": [
+      200,
+      200
+    ],
+    "original_config_sha256_restored": "e594591f164b67d4974352c3b29eaa86eb8b67498c4f1af127d6c0c8131f6ade",
+    "restored_login_http": 200,
+    "restored_me_http": 200
+  },
+  "remote_config_backup": "/etc/nodesteer/hub-repair-20260930-101945.yaml.pre-ttl-test",
+  "private_config_backup": "/tmp/nodesteer-e2e-20260930-101945-repair/repair-hub-before-ttl.yaml",
+  "configuration_owner_preserved": true,
+  "primary_touched": false,
+  "secrets_included": false,
+  "verified_subcase": {
+    "id": "AUTH_TTL_API",
+    "status": "passed",
+    "checks": [
+      "TTL=3s fresh admin login and immediate /api/me 200",
+      "monotonic wait 3.501s",
+      "expired /api/me and /api/nodes 401",
+      "owned config exact restore + Hub health/login/me recovered"
+    ]
+  },
+  "remaining": [
+    "passive timeout without request",
+    "live backend 500 response",
+    "overall FL-14 includes additional UI/query behavior beyond auth expiry"
+  ],
+  "browser_followup": "ttl-ui-browser-results.json"
+}

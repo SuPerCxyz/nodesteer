@@ -1,0 +1,19 @@
+{
+  "recorded_at_utc": "2026-10-10T15:30:26+00:00",
+  "type": "dedicated_test_login_token_unrevoked_after_local_storage_injection_error",
+  "evidence": "A private-credential API login returned HTTP 200, then the agent-browser eval failed because its current document was about:blank and localStorage access raised SecurityError before storing the token. The token was held only in a terminated Python→stdin pipe and was not written to disk or output; it cannot now be recovered from this client.",
+  "issued_at_utc_window": {
+    "not_before": "2026-10-10T15:21:07+00:00",
+    "not_after": "2026-10-10T15:28:24+00:00"
+  },
+  "token_or_credentials_saved": false,
+  "revoked": false,
+  "scope": "Only the repair Hub API; no business operation was issued with this token.",
+  "default_session_ttl_source": {
+    "file": "cmd/hub/main.go",
+    "line": 59,
+    "value": "24 * time.Hour",
+    "caveat": "The running repair Hub may override its config; runtime session_ttl was not read."
+  },
+  "action": "Do not attempt global session revocation or credential rotation. Preserve as one temporary unrevoked-session cleanup limitation; later expiry is bounded only by the configured session TTL."
+}

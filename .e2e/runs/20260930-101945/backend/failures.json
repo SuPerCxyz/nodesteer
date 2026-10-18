@@ -1,0 +1,113 @@
+{
+  "run_id": "20260930-101945",
+  "failures": [
+    {
+      "id": "BE-SECRET-STREAM-001",
+      "severity": "high",
+      "status": "confirmed",
+      "title": "secret参数跨实时日志分块后可重组为明文",
+      "case_id": "task.secret-split-stream",
+      "execution_id": "be19e5a3-7ef5-4d47-be97-08dc12f45553",
+      "task_id": "6dfd85ee-8003-43e9-9000-403fc5310aa0",
+      "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "expected": "实时日志与终态日志均不得暴露完整secret参数值",
+      "actual": "终态stdout已脱敏；两次分别输出secret前/后半段并flush且相隔1秒，GET /api/executions/{id}/logs的stdout两块拼接包含原始完整secret",
+      "reproduction": [
+        "创建含required secret参数password的本轮命令任务",
+        "Python将NODESTEER_PARAM_password前半段写stdout并flush，sleep 1，再写后半段并flush",
+        "运行该任务并等待SUCCESS",
+        "按seq拼接logs API stdout chunks，与输入的dummy secret比较"
+      ],
+      "source": [
+        "internal/agent/agent.go:1086",
+        "internal/agent/agent.go:1625"
+      ],
+      "evidence": [
+        "backend/evidence/task.secret-split-stream-e0308807.json"
+      ],
+      "note": "仅使用本轮随机dummy secret，未使用真实凭据；未修改产品代码"
+    },
+    {
+      "id": "BE-SCRIPT-SHA-002",
+      "severity": "high",
+      "status": "confirmed",
+      "case_id": "feature.sync.script-sha",
+      "title": "Agent接受控制同步中SHA256不匹配的脚本内容并前进Revision",
+      "expected": "校验失败拒绝应用，保持旧脚本与旧GlobalRevision",
+      "actual": "真实Hub脚本更新响应在透明WS代理中只替换content并保留SHA/Revision；Agent SQLite保存篡改content且GlobalRevision前进，声明SHA与实算SHA不同",
+      "observation": {
+        "content_sha256": "4ef60917e0bed00e07654d45f6b90a5ca061e5f50f6b18fda597ab979ff35b4c",
+        "declared_sha256": "9e6a139feb5b794bb999ea572a38a419d1c1acb218df2110e3e202790e99a8fc",
+        "revision": 2,
+        "agent_revision": 99,
+        "before_revision": 98
+      },
+      "evidence": [
+        "backend/isolated/evidence/feature.sync.script-sha-a7d33af9.json"
+      ],
+      "sources": [
+        "docs/PRODUCT.md:599",
+        "internal/agent/agent.go:783",
+        "internal/agent/store.go:317"
+      ],
+      "recovery": "已关闭扰动并重建仅core Agent，真实重连快照恢复canonical内容/SHA/Revision；原卷保留",
+      "note": "控制内容仅printf无敏感数据；未修改产品代码"
+    },
+    {
+      "id": "BE-REENROLL-STATUS-003",
+      "severity": "medium",
+      "status": "confirmed",
+      "title": "撤销后重新纳管换新凭证成功但节点仍disabled",
+      "case_id": "feature.node.revoke",
+      "actual": "旧凭证401；同Node/AgentID与原卷重新纳管，Agent新凭证accepted且synced，但Node仍disabled、任务不可执行；显式Enable后新凭证下载与任务实效成功",
+      "expected": "PrepareEnrollment进入pending并在接受HELLO后online（源码注释与纳管闭环），或界面明确额外Enable步骤",
+      "observation": {
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "status_after_new_credential_accepted": "disabled",
+        "sync_status": "synced",
+        "same_volume": "qa-20260930-101945-env-agentdata"
+      },
+      "evidence": [
+        "backend/isolated/evidence/feature.node.revoke-3dfd204f.json"
+      ],
+      "recovery": "已通过节点状态API显式Enable恢复原core online/synced，未改产品/数据库",
+      "sources": [
+        "internal/hub/node.go:47",
+        "internal/store/sqlite_users_nodes.go:86",
+        "internal/store/sqlite_users_nodes.go:104"
+      ],
+      "note": "保持完整运行证据，根代理判定产品契约；不是Credential缺失或连接失败",
+      "priority": "P1",
+      "root_review": "Root已确认管理员纳管应pending，Upsert ON CONFLICT未写status/sync_status使重新授权状态转换未持久化"
+    },
+    {
+      "id": "BE-REMOTE-TTL-004",
+      "severity": "high",
+      "priority": "P1",
+      "status": "confirmed",
+      "title": "Agent忽略Remote State ObservedAt/TTL并执行过期条件任务",
+      "case_id": "feature.condition.remote-ttl",
+      "expected": "Expired Remote State→UNKNOWN→BLOCKED且无业务效果",
+      "actual": "真实Hub last_execution成功响应经授权代理仅改observed_at=2000/ttl_sec=1，Agent仍SUCCESS并在原core卷写expired-state-executed",
+      "observation": {
+        "execution_id": "5eb6af74-8c3e-49c7-bf9f-c521886c83d9",
+        "status": "SUCCESS",
+        "marker": "expired-state-executed",
+        "property": "last_execution",
+        "observed_at": "2000-01-01T00:00:00Z",
+        "ttl_sec": 1
+      },
+      "evidence": [
+        "backend/isolated/evidence/feature.condition.remote-ttl-bf27e07e.json"
+      ],
+      "sources": [
+        "docs/PRODUCT.md:788",
+        "docs/ARCHITECTURE.md:1703",
+        "internal/agent/agent.go:1674"
+      ],
+      "recovery": "代理expire_remote控制已清空，原core身份/卷未更改",
+      "note": "真实协议故障注入与真实客户机效果，不是Mock或静态结论"
+    }
+  ]
+}

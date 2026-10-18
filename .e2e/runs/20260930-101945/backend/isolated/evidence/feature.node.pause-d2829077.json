@@ -1,0 +1,451 @@
+{
+  "result": {
+    "id": "feature.node.pause",
+    "name": "维护/禁用/恢复全执行面阻断与状态收敛",
+    "started_at": "2026-10-01T04:29:25.304953+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "failed",
+    "reason": "",
+    "traceback": "Traceback (most recent call last):\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/runner.py\", line 627, in execute\n    self.normal_case(case['id'])\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated_runner.py\", line 846, in normal_case\n    assert len(executions) == 1 and executions[0]['status'] == 'SKIPPED' and executions[0].get('block_reason')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n",
+    "finished_at": "2026-10-01T04:29:39.703775+00:00",
+    "evidence": "backend/isolated/evidence/feature.node.pause-d2829077.json"
+  },
+  "events": [
+    {
+      "api": "GET /api/nodes/d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "status": 200,
+      "request": null,
+      "response": {
+        "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "hostname": "qa-20260930-101945-env-docker-agent",
+        "ip": "192.168.100.209",
+        "os": "Alpine Linux v3.20",
+        "arch": "amd64",
+        "agent_version": "dddee4f0",
+        "deployment_mode": "docker",
+        "host_integration": false,
+        "status": "online",
+        "labels": {},
+        "capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        },
+        "global_revision": 206,
+        "sync_status": "synced",
+        "last_seen": "2026-10-01T04:29:17.450259311Z",
+        "first_seen": "2026-09-30T02:36:32.656149623Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:25 GMT",
+        "Content-Length": "636",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-pause-interval-8d3270",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be; printf \"slot\\n\" >> /var/lib/nodesteer/qa-20260930-101945-be/pause-66daf5",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "5de7b729-898b-44a3-9b20-bb1b33e84d33",
+        "name": "qa-20260930-101945-be-pause-interval-8d3270",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be; printf \"slot\\n\" >> /var/lib/nodesteer/qa-20260930-101945-be/pause-66daf5",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:25 GMT",
+        "Content-Length": "542",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/schedules",
+      "status": 200,
+      "request": {
+        "task_id": "5de7b729-898b-44a3-9b20-bb1b33e84d33",
+        "type": "interval",
+        "interval_sec": 3,
+        "timezone": "UTC",
+        "execution_owner": "agent",
+        "offline_policy": "allow_offline",
+        "misfire_policy": "skip",
+        "enabled": true
+      },
+      "response": {
+        "id": "e7247c8b-8e16-4def-8efc-962f55450184",
+        "task_id": "5de7b729-898b-44a3-9b20-bb1b33e84d33",
+        "revision": 1,
+        "type": "interval",
+        "expression": "",
+        "interval_sec": 3,
+        "run_at": "0001-01-01T00:00:00Z",
+        "timezone": "UTC",
+        "execution_owner": "agent",
+        "offline_policy": "allow_offline",
+        "misfire_policy": "skip",
+        "enabled": true,
+        "created_at": "2026-10-01T04:29:25.335258377Z",
+        "updated_at": "2026-10-01T04:29:25.335258506Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:25 GMT",
+        "Content-Length": "398",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/83033e2c-071f-463e-b57c-23325fdc5f00",
+      "terminal": {
+        "id": "83033e2c-071f-463e-b57c-23325fdc5f00",
+        "task_id": "5de7b729-898b-44a3-9b20-bb1b33e84d33",
+        "task_revision": 1,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "schedule",
+        "scheduled_time": "2026-10-01T04:29:28Z",
+        "start_time": "2026-10-01T04:29:28.449958093Z",
+        "end_time": "2026-10-01T04:29:28.468052458Z",
+        "status": "SUCCESS",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"83033e2c-071f-463e-b57c-23325fdc5f00\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"83033e2c-071f-463e-b57c-23325fdc5f00\", \"task_id\": \"5de7b729-898b-44a3-9b20-bb1b33e84d33\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"2026-10-01T04:29:28Z\", \"synced\": 1, \"offline\": 0, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "api": "POST /api/nodes/d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "status": 200,
+      "request": {
+        "status": "maintenance"
+      },
+      "response": {
+        "ok": "true"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:30 GMT",
+        "Content-Length": "14",
+        "Connection": "close"
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id FROM executions WHERE task_id=?' '[\"5de7b729-898b-44a3-9b20-bb1b33e84d33\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"83033e2c-071f-463e-b57c-23325fdc5f00\"}]\n",
+      "stderr": ""
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "cat /var/lib/nodesteer/qa-20260930-101945-be/pause-66daf5\n",
+      "exit_code": 0,
+      "stdout": "slot\n",
+      "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "api": "POST /api/tasks/5de7b729-898b-44a3-9b20-bb1b33e84d33/run",
+      "status": 400,
+      "request": {},
+      "response": {
+        "error": "node d940ab68-9f29-434b-bfe8-5d075a519edc is not online (status=maintenance)"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:33 GMT",
+        "Content-Length": "89",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-paused-hub-maintenance-246714",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "printf forbidden > /var/lib/nodesteer/qa-20260930-101945-be/paused-hub-maintenance",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "10ea9b3a-ab74-41f2-b4b6-6a2bc1709430",
+        "name": "qa-20260930-101945-be-paused-hub-maintenance-246714",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "printf forbidden > /var/lib/nodesteer/qa-20260930-101945-be/paused-hub-maintenance",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:33 GMT",
+        "Content-Length": "501",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/schedules",
+      "status": 200,
+      "request": {
+        "task_id": "10ea9b3a-ab74-41f2-b4b6-6a2bc1709430",
+        "type": "one_time",
+        "run_at": "2026-10-01T04:29:36.604175+00:00",
+        "timezone": "UTC",
+        "execution_owner": "hub",
+        "offline_policy": "hub_online_required",
+        "misfire_policy": "skip",
+        "enabled": true
+      },
+      "response": {
+        "id": "d3555170-1722-42cb-a126-614d3258db3f",
+        "task_id": "10ea9b3a-ab74-41f2-b4b6-6a2bc1709430",
+        "revision": 1,
+        "type": "one_time",
+        "expression": "",
+        "run_at": "2026-10-01T04:29:36.604175Z",
+        "timezone": "UTC",
+        "execution_owner": "hub",
+        "offline_policy": "hub_online_required",
+        "misfire_policy": "skip",
+        "enabled": true,
+        "created_at": "2026-10-01T04:29:33.607570622Z",
+        "updated_at": "2026-10-01T04:29:33.607570755Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:33 GMT",
+        "Content-Length": "392",
+        "Connection": "close"
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id FROM executions WHERE task_id=?' '[\"5de7b729-898b-44a3-9b20-bb1b33e84d33\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"83033e2c-071f-463e-b57c-23325fdc5f00\"}]\n",
+      "stderr": ""
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "cat -- /var/lib/nodesteer/qa-20260930-101945-be/pause-66daf5\n",
+      "exit_code": 0,
+      "stdout": "slot\n",
+      "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+    },
+    {
+      "api": "GET /api/nodes/d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "status": 200,
+      "request": null,
+      "response": {
+        "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "hostname": "qa-20260930-101945-env-docker-agent",
+        "ip": "192.168.100.209",
+        "os": "Alpine Linux v3.20",
+        "arch": "amd64",
+        "agent_version": "dddee4f0",
+        "deployment_mode": "docker",
+        "host_integration": false,
+        "status": "maintenance",
+        "labels": {},
+        "capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        },
+        "global_revision": 210,
+        "sync_status": "synced",
+        "last_seen": "2026-10-01T04:29:17.450259311Z",
+        "first_seen": "2026-09-30T02:36:32.656149623Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:39 GMT",
+        "Content-Length": "641",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions?task_id=10ea9b3a-ab74-41f2-b4b6-6a2bc1709430",
+      "status": 200,
+      "request": null,
+      "response": [],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "X-Total-Count": "0",
+        "Date": "Thu, 01 Oct 2026 04:29:39 GMT",
+        "Content-Length": "3",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/nodes/d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "status": 200,
+      "request": {
+        "status": "online"
+      },
+      "response": {
+        "ok": "true"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:39 GMT",
+        "Content-Length": "14",
+        "Connection": "close"
+      }
+    },
+    {
+      "core_node": {
+        "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "hostname": "qa-20260930-101945-env-docker-agent",
+        "ip": "192.168.100.209",
+        "os": "Alpine Linux v3.20",
+        "arch": "amd64",
+        "agent_version": "dddee4f0",
+        "deployment_mode": "docker",
+        "host_integration": false,
+        "status": "online",
+        "labels": {},
+        "capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        },
+        "global_revision": 210,
+        "sync_status": "synced",
+        "last_seen": "2026-10-01T04:29:17.450259311Z",
+        "first_seen": "2026-09-30T02:36:32.656149623Z"
+      }
+    },
+    {
+      "api": "DELETE /api/schedules/e7247c8b-8e16-4def-8efc-962f55450184",
+      "status": 200,
+      "request": null,
+      "response": {
+        "ok": "true"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:39 GMT",
+        "Content-Length": "14",
+        "Connection": "close"
+      }
+    }
+  ]
+}

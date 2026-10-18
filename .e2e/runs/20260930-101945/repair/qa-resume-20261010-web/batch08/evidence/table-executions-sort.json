@@ -1,0 +1,88 @@
+{
+  "captured_at_utc": "2026-10-10T14:16:09.501158+00:00",
+  "canonical": "TABLE-EXECUTIONS-SORT",
+  "sort_key": "status",
+  "source_refs": [
+    "web/src/features/executions/index.tsx:137-145",
+    "web/src/components/data-table/column-header.tsx:27-33"
+  ],
+  "source_semantics": {
+    "accessor": "accessorKey=status",
+    "raw_status_order_ascending": [
+      "FAILED",
+      "SUCCESS"
+    ],
+    "header_label": "aria-label/title describes the next action, as computed from current sorted state"
+  },
+  "actions": "Three actual clicks on Status header using fresh refs; only status enums were read from visible first cells, no task or execution row data.",
+  "dataset": {
+    "api_count": 565,
+    "visible_page_rows": 10
+  },
+  "observed_cycle": [
+    {
+      "click": 1,
+      "header_next_action": "descending",
+      "actual_state": "ascending",
+      "visible_status_order": [
+        "FAILED",
+        "FAILED",
+        "FAILED",
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS"
+      ],
+      "matches_raw_enum_ascending": true
+    },
+    {
+      "click": 2,
+      "header_next_action": "clear sorting",
+      "actual_state": "descending",
+      "visible_status_order": [
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS",
+        "FAILED",
+        "FAILED",
+        "FAILED"
+      ],
+      "matches_reverse_raw_enum_order": true
+    },
+    {
+      "click": 3,
+      "header_next_action": "ascending",
+      "actual_state": "cleared",
+      "visible_status_order": [
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS",
+        "SUCCESS",
+        "FAILED",
+        "SUCCESS",
+        "FAILED",
+        "SUCCESS",
+        "FAILED"
+      ],
+      "matches_unsorted_page_order": true
+    }
+  ],
+  "api_requests": [
+    {
+      "method": "GET",
+      "path": "/api/executions",
+      "status": 200,
+      "count": 565
+    }
+  ],
+  "write_request_count": 0,
+  "raw_rows_or_bodies_saved": false
+}

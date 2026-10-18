@@ -1,0 +1,34 @@
+{
+  "at_utc": "2026-10-15T13:54:51Z",
+  "before": {
+    "upgrade_executions_total": 14
+  },
+  "after": {
+    "upgrade_executions_total": 14
+  },
+  "control_post": {
+    "http": 200,
+    "response": [
+      {
+        "node_id": "801aefe2-8bb8-4250-b9cf-6f4c3072df96",
+        "execution_id": "cfd9e8a5-d369-4c41-a8ff-503e83c3dab9",
+        "status": "SKIPPED",
+        "block_reason": "self-upgrade unsupported for deployment mode docker"
+      }
+    ],
+    "total_before_control": 14,
+    "total_after_control": 15
+  },
+  "frontend_gate_reference": {
+    "file": "web/src/features/catalog/node-bulk-actions.tsx",
+    "lines": "141-172",
+    "fact": "ConfirmDialog only calls handleConfirm (which POSTs /api/nodes/upgrade) on confirm; cancelBtnText is wired to dialog close, so cancelling performs no API call"
+  },
+  "checks": {
+    "no_request_no_new_row": true,
+    "control_request_creates_row": true,
+    "ui_cancel_is_client_side_no_request": true
+  },
+  "cancel_ok": true,
+  "limitation": "UI click-through of the ConfirmDialog cancel path was intentionally NOT executed: the same bulk-upgrade dialog confirms real protected nodes, and a mis-click would replace Agent binaries on protected nodes. Verified at API level + frontend source contract instead."
+}

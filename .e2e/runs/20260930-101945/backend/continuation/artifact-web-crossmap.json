@@ -1,0 +1,230 @@
+{
+  "run_id": "20260930-101945",
+  "generated_at": "2026-10-03T01:14:27.898181+00:00",
+  "classification": "REAL_API_AGENT_EVIDENCE_CROSSMAP_NO_GUI",
+  "mode": "只读已有JSON事件；无新remote状态写/无隔离重建/不修改Web或global库存",
+  "cases": [
+    {
+      "case_id": "P16-09",
+      "status": "PARTIAL",
+      "classification": "REAL_API_AGENT",
+      "covered": [
+        {
+          "dimension": "完整HTTP错误body的校验保护/可信缓存不提升",
+          "status": "PASS_OBSERVED",
+          "evidence": [
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json",
+              "json_pointer": "/events/8/proxy_events/6",
+              "actual": "真实proxy http_fault mode=corrupt，完整declared/sent163840 bytes；控制只改payload首字节，Artifact声明SHA保持ae66ddef..."
+            },
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json",
+              "json_pointer": "/events/9",
+              "actual": "Agent本地artifacts表按声明SHA查询=[]"
+            },
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json",
+              "json_pointer": "/events/10",
+              "actual": "声明SHA正式cache文件test ! -e exit0"
+            }
+          ],
+          "limit": "这是实际corrupt body，未篡改HTTP X-Artifact-SHA256 header；原record未保存Agent端错误日志/收到body计算SHA，不称“错误SHA header”。"
+        },
+        {
+          "dimension": "故障时观察未出现bin/unit",
+          "status": "PASS_OBSERVED_WITH_CAPABILITY_LIMIT",
+          "evidence": [
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json",
+              "json_pointer": "/events/11",
+              "actual": "本轮unused-bin不存在"
+            },
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json",
+              "json_pointer": "/events/12",
+              "actual": "本轮unit不存在"
+            }
+          ],
+          "limit": "此Agent为Basic Docker(application_deploy=false)，只做Prefetch，不以“不存在Unit”单独推断有能力Native部署路径的拒绝安装。"
+        },
+        {
+          "dimension": "Native损坏既有缓存被拒绝使用并恢复正确下载后安装",
+          "status": "PASS_OBSERVED",
+          "evidence": [
+            {
+              "evidence": "main/cache-recovery-result.json",
+              "json_pointer": "/corrupted_sha",
+              "actual": "损坏缓存b4b0b7db...与声明ec6d007d...不等"
+            },
+            {
+              "evidence": "main/cache-recovery-result.json",
+              "json_pointer": "/cache_after_sha",
+              "actual": "重新下载后的正式缓存SHA准确=declared"
+            },
+            {
+              "evidence": "main/cache-recovery-result.json",
+              "json_pointer": "/actual/binary_sha256",
+              "actual": "实际Native安装binary SHA=declared而非corrupted"
+            },
+            {
+              "evidence": "main/cache-recovery-result.json",
+              "json_pointer": "/actual/unit_state",
+              "actual": "升级Execution SUCCESS、Journal DONE、Unit active、config cache-v2"
+            }
+          ],
+          "limit": "这是损坏既有cache→重新验证下载→正常安装，不能替代下载SHA错误持续时的Native安装失败专门用例。"
+        },
+        {
+          "dimension": "HTTP故障解除后的正确缓存恢复",
+          "status": "PASS_OBSERVED",
+          "evidence": [
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json",
+              "json_pointer": "/events/13",
+              "actual": "移除http_fault保留Artifact HTTP透传"
+            },
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json",
+              "json_pointer": "/events/14",
+              "actual": "真实PUT App描述/Revision触发重新prefetch"
+            },
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json",
+              "json_pointer": "/events/15",
+              "actual": "可信artifacts表出现声明SHA/正式路径"
+            },
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json",
+              "json_pointer": "/events/16",
+              "actual": "客户机sha256sum准确=ae66ddef..."
+            }
+          ],
+          "limit": "明确由Desired State更新触发重取，不称已经单独验证自动定时重试。"
+        }
+      ],
+      "remaining": [
+        {
+          "dimension": "SHA错误/截断后的Cache下载.tmp真实清理",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "两个20-event record仅检查正式cache、artifacts表、unused-bin/unit；没有对Artifact下载临时路径test ! -e/list/stat，不能从正式cache缺失或后来恢复推断错误时tmp不存在。",
+          "needed": "在准确下载临时路径上故障返回后/恢复重取前保留客户端stat/list证据；旧隔离已撤除，本任务不重建、不再写远程。"
+        },
+        {
+          "dimension": "有capability的Native在持续错误下载SHA下拒绝安装（如果标题采用完整安装链解释）",
+          "status": "PARTIAL",
+          "actual_missing": "Docker SHA case只Prefetch无deploy；Native cache-recovery最终获取正确bytes后升级成功。可合并安全性维度，但不是故障保持期间Native安装拒绝的同一路径用例。"
+        }
+      ],
+      "evidence": [
+        "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json",
+        "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+        "main/cache-recovery-result.json"
+      ],
+      "gui_required": false
+    },
+    {
+      "case_id": "P16-10",
+      "status": "PARTIAL",
+      "classification": "REAL_API_AGENT",
+      "covered": [
+        {
+          "dimension": "真实下载截断",
+          "status": "PASS_OBSERVED",
+          "evidence": [
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+              "json_pointer": "/events/8/proxy_events/6",
+              "actual": "实际HTTP声明163840 byte、只发送128 byte，随后连接关闭"
+            }
+          ]
+        },
+        {
+          "dimension": "截断后不污染可信正式缓存/业务文件",
+          "status": "PASS_OBSERVED",
+          "evidence": [
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+              "json_pointer": "/events/9",
+              "actual": "可信artifacts表查询=[]"
+            },
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+              "json_pointer": "/events/10",
+              "actual": "正式SHA cache文件不存在"
+            },
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+              "json_pointer": "/events/11",
+              "actual": "unused-bin不存在"
+            },
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+              "json_pointer": "/events/12",
+              "actual": "unit不存在"
+            }
+          ],
+          "limit": "Basic Docker Prefetch拓扑；cache protection有效，未试Native host install action。"
+        },
+        {
+          "dimension": "解除截断后的实际恢复重取",
+          "status": "PASS_OBSERVED",
+          "evidence": [
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+              "json_pointer": "/events/13",
+              "actual": "移除truncate注入、继续真实HTTP透传"
+            },
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+              "json_pointer": "/events/14",
+              "actual": "App PUT描述更新触发再次prefetch"
+            },
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+              "json_pointer": "/events/15",
+              "actual": "Agent可信cache行出现"
+            },
+            {
+              "evidence": "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+              "json_pointer": "/events/16",
+              "actual": "正式cache客户机SHA=98eb6c28...，匹配声明"
+            }
+          ],
+          "limit": "用户Desired State更新触发的恢复重取已实测；没有证明无操作自动重试。"
+        }
+      ],
+      "remaining": [
+        {
+          "dimension": "截断返回后、恢复触发前.tmp清理",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "interruption /events/10只检查正式cache SHA文件，而非.tmp。后来sha正确/metadata成功不证明失败时临时文件已清理。"
+        },
+        {
+          "dimension": "无新Desired State操作的自动重试（仅若产品契约要求）",
+          "status": "NOT_VERIFIED_OR_NOT_REQUIRED",
+          "actual_missing": "当前证据恢复流程使用真实PUT App来触发再次prefetch；不要把它叫自动重试，也不凭旧prompt新增自动定时重试契约。"
+        }
+      ],
+      "evidence": [
+        "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+        "backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json"
+      ],
+      "gui_required": false
+    }
+  ],
+  "non_substituting_evidence": [
+    {
+      "evidence": "environment/tls-full-results.json",
+      "json_pointer": "/checks/agent_prefetch",
+      "actual": "另一个TLS unknown-authority故障明确记录cache_file_exists=false/temporary_file_exists=false。",
+      "applicability": "TLS握手失败发生在body下载前，不能代替corrupt body/128-byte截断之后.tmp清理。有效tls_ca_file未被Prefetch采用的已确认FAIL仍归原FAIL-ENV-TLS-001，不被本crossmap近似PASS覆盖。"
+    }
+  ],
+  "conclusion": "两Web owner条目不应继续笼统NOT_RUN：真实HTTP故障/可信cache保护/恢复重取已覆盖，应按维度合并PARTIAL；但两者.tmp失败清理缺直接事件，不能整条PASS。",
+  "validation": {
+    "all_paths_exist": true,
+    "actual_new_runtime_test": false,
+    "original_confirmed_failures_changed": false
+  }
+}

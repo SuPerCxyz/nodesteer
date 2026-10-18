@@ -1,0 +1,115 @@
+{
+  "at_utc": "2026-10-15T11:47:16Z",
+  "scenario": "size validation on the real upload endpoint: source Agent is offline so the transfer stays unstaged; the harness speaks the exact Agent HTTP protocol with the source child's own credential.",
+  "transfer_id": "3d1f2b1b-f5a5-4aef-b027-574ef7adfead",
+  "source_file": {
+    "path": "/var/lib/nodesteer-qa-sysb14-cda9ddb845cb/xfer/src-size.bin",
+    "size": 1048576,
+    "sha256": "8c51549dd17edfdf2a31bcea79e255d6f1bc6999c73da16c4f52ab7fa4b6355b"
+  },
+  "source_offline_observed": false,
+  "pre_upload_state": {
+    "id": "3d1f2b1b-f5a5-4aef-b027-574ef7adfead",
+    "source_node_id": "58d085fa-b8cb-4508-ae48-8519f13bcc09",
+    "source_path": "/var/lib/nodesteer-qa-sysb14-cda9ddb845cb/xfer/src-size.bin",
+    "size": 0,
+    "sha256": null,
+    "source_mode": null,
+    "status": "UPLOADING",
+    "error": null,
+    "targets": [
+      {
+        "node_id": "9a165ff3-dd02-46d8-9223-b0159b291ca7",
+        "destination_path": "/var/lib/nodesteer-qa-sysb14-cda9ddb845cb/xfer/dst-size.bin",
+        "mode": null,
+        "status": "PENDING",
+        "error": null
+      }
+    ]
+  },
+  "cases": {
+    "size_header_not_a_number": {
+      "http": 400,
+      "body": {
+        "error": "invalid file size"
+      }
+    },
+    "size_negative": {
+      "http": 400,
+      "body": {
+        "error": "invalid file size"
+      }
+    },
+    "size_over_declared_content_length_mismatch": {
+      "http": 400,
+      "body": {
+        "error": "content length mismatch"
+      }
+    },
+    "valid_upload_correct": {
+      "http": 200,
+      "body": {
+        "sha256": "4a7fd67eb680afee896516739d88afc3652b99a8b62009de27b482a47cd009cf",
+        "size": 64,
+        "status": "DELIVERING"
+      }
+    }
+  },
+  "after_valid_upload_state": {
+    "id": "3d1f2b1b-f5a5-4aef-b027-574ef7adfead",
+    "source_node_id": "58d085fa-b8cb-4508-ae48-8519f13bcc09",
+    "source_path": "/var/lib/nodesteer-qa-sysb14-cda9ddb845cb/xfer/src-size.bin",
+    "size": 64,
+    "sha256": "4a7fd67eb680afee896516739d88afc3652b99a8b62009de27b482a47cd009cf",
+    "source_mode": 420,
+    "status": "DELIVERING",
+    "error": null,
+    "targets": [
+      {
+        "node_id": "9a165ff3-dd02-46d8-9223-b0159b291ca7",
+        "destination_path": "/var/lib/nodesteer-qa-sysb14-cda9ddb845cb/xfer/dst-size.bin",
+        "mode": null,
+        "status": "DELIVERING",
+        "error": null
+      }
+    ]
+  },
+  "final": {
+    "id": "3d1f2b1b-f5a5-4aef-b027-574ef7adfead",
+    "source_node_id": "58d085fa-b8cb-4508-ae48-8519f13bcc09",
+    "source_path": "/var/lib/nodesteer-qa-sysb14-cda9ddb845cb/xfer/src-size.bin",
+    "size": 64,
+    "sha256": "4a7fd67eb680afee896516739d88afc3652b99a8b62009de27b482a47cd009cf",
+    "source_mode": 420,
+    "status": "SUCCESS",
+    "error": null,
+    "targets": [
+      {
+        "node_id": "9a165ff3-dd02-46d8-9223-b0159b291ca7",
+        "destination_path": "/var/lib/nodesteer-qa-sysb14-cda9ddb845cb/xfer/dst-size.bin",
+        "mode": null,
+        "status": "SUCCESS",
+        "error": null
+      }
+    ]
+  },
+  "destination_after": {
+    "path": "/var/lib/nodesteer-qa-sysb14-cda9ddb845cb/xfer/dst-size.bin",
+    "exists": true,
+    "size": 64,
+    "mode": "644",
+    "is_symlink": false,
+    "is_dir": false,
+    "sha256": "4a7fd67eb680afee896516739d88afc3652b99a8b62009de27b482a47cd009cf"
+  },
+  "assertions": {
+    "size_header_not_a_number_400": true,
+    "size_negative_400": true,
+    "content_length_mismatch_400": true,
+    "valid_upload_200": true,
+    "hub_sha_matches_payload": true,
+    "final_success": true,
+    "dest_sha_matches": true
+  },
+  "assertions_pass": true
+}

@@ -1,0 +1,268 @@
+{
+  "run_id": "20260930-101945",
+  "time": "2026-10-03T06:36:49.023315+00:00",
+  "scope": "系统当前PARTIAL现证核验与下一次真实运行计划，不是新实时测试",
+  "counts": {
+    "PARTIAL": 16
+  },
+  "status_changes": 0,
+  "missing_evidence": [],
+  "cases": [
+    {
+      "case_id": "E2E-08",
+      "title": "Retry/Timeout/Cancel → 次数、最终状态、进程组清理正确",
+      "status": "PARTIAL",
+      "classification": "EXISTING_REAL_EVIDENCE_AUDIT",
+      "prior_actual": "retry2真实三次、单Execution，timeout/cancel终态及客户机效果核实。；两种路径的父/孙PID在host init收割后/proc完全不存在。；两种路径没有活进程；每种路径2个Z态由容器PID1未收割，原始stat保留。",
+      "additional_covered": "",
+      "remaining_dimensions": "Docker Z态观察不代表活进程泄漏，但复合无残留尚未全通过。",
+      "evidence": [
+        "backend/evidence/task.retry.json",
+        "backend/evidence/task.timeout.json",
+        "backend/evidence/task.cancel.json",
+        "backend/evidence/feature.process.native-bab6a27a.json",
+        "backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+      ],
+      "next_live_test": "恢复授权隔离Docker测试环境，分别检查timeout/cancel实际PID与Z态、SIGTERM/SIGKILL和日志；不能把Z态说成活进程泄漏。",
+      "execution_blocker": "当前沙箱连接拒绝Errno1且私密连接资料已消失；未执行上述下一步。"
+    },
+    {
+      "case_id": "SYS-18",
+      "title": "SYS-18 心跳、Revision Check、重连退避包含配置和 Jitter 行为。",
+      "status": "PARTIAL",
+      "classification": "EXISTING_REAL_EVIDENCE_AUDIT",
+      "prior_actual": "真实UI heartbeat30→3→30；4Agent实测3～4秒、共享设置恢复。；通知真实丢弃后45秒Revision定时检查收敛。",
+      "additional_covered": "独占dummy Agent真实57 SYN/56间隔覆盖2.085～3.992秒重连抖动，Root独立重算；原进程/数据/身份保持，自己的进程/目录已清理。",
+      "remaining_dimensions": "Revision周期jitter及改值周期消费的独立采样；本dummy采样不证明成功HELLO，既有Hub重连证据需另关联。",
+      "evidence": [
+        "main/settings-runtime-evidence.json",
+        "backend/isolated/evidence/arch.lost_notification-ef6007fd.json",
+        "environment/jitter/sys18-jitter.json",
+        "environment/jitter/reconnect-syn.txt",
+        "main/jitter-independent-check.json"
+      ],
+      "next_live_test": "重连delay/jitter已完成，不重复。后续需独立测试authority采样Revision周期jitter/改值，不改变原Hub/Agent配置或共用设置。",
+      "execution_blocker": "当前沙箱连接拒绝Errno1且私密连接资料已消失；未执行上述下一步。"
+    },
+    {
+      "case_id": "SYS-38",
+      "title": "SYS-38 Timeout 发送 SIGTERM，再按 Grace Period SIGKILL。",
+      "status": "PARTIAL",
+      "classification": "EXISTING_REAL_EVIDENCE_AUDIT",
+      "prior_actual": "两种路径的父/孙PID在host init收割后/proc完全不存在。；两种路径没有活进程；每种路径2个Z态由容器PID1未收割，原始stat保留。",
+      "additional_covered": "",
+      "remaining_dimensions": "Docker两条路径仍观察到Z态；Native全部PID收割已通过。",
+      "evidence": [
+        "backend/evidence/feature.process.native-bab6a27a.json",
+        "backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+      ],
+      "next_live_test": "同E2E-08，补Docker PID1收割语义和SIGTERM到SIGKILL时间证据。",
+      "execution_blocker": "当前沙箱连接拒绝Errno1且私密连接资料已消失；未执行上述下一步。"
+    },
+    {
+      "case_id": "SYS-39",
+      "title": "SYS-39 Cancel 清理整个进程组，不残留子进程。",
+      "status": "PARTIAL",
+      "classification": "EXISTING_REAL_EVIDENCE_AUDIT",
+      "prior_actual": "两种路径的父/孙PID在host init收割后/proc完全不存在。；两种路径没有活进程；每种路径2个Z态由容器PID1未收割，原始stat保留。",
+      "additional_covered": "",
+      "remaining_dimensions": "Docker两条路径仍观察到Z态；Native全部PID收割已通过。",
+      "evidence": [
+        "backend/evidence/feature.process.native-bab6a27a.json",
+        "backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+      ],
+      "next_live_test": "同E2E-08，补Docker cancel后父/孙进程、Z态和重复cancel最终状态。",
+      "execution_blocker": "当前沙箱连接拒绝Errno1且私密连接资料已消失；未执行上述下一步。"
+    },
+    {
+      "case_id": "SYS-43",
+      "title": "SYS-43 Artifact 下载中断、超时、HTTP 错误后 `.tmp` 清理。",
+      "status": "PARTIAL",
+      "classification": "EXISTING_REAL_EVIDENCE_AUDIT",
+      "prior_actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "additional_covered": "原生缓存SHA损坏后真实重下并部署正确SHA；TLS私有CA失败时cache/tmp均不存在。",
+      "remaining_dimensions": "明确下载timeout与HTTP非200的完整tmp清理组合；不能用TLS错误替代HTTP错误。",
+      "evidence": [
+        "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+        "main/cache-recovery-result.json",
+        "environment/tls-full-results.json"
+      ],
+      "next_live_test": "专属下载代理分别超时和非200，核对cache与所有tmp及重新尝试，精确清理。",
+      "execution_blocker": "当前沙箱连接拒绝Errno1且私密连接资料已消失；未执行上述下一步。"
+    },
+    {
+      "case_id": "SYS-54",
+      "title": "SYS-54 ContainerHostAdapter `/host` 映射和 Host Inventory。",
+      "status": "PARTIAL",
+      "classification": "EXISTING_REAL_EVIDENCE_AUDIT",
+      "prior_actual": "host PID/network、最小caps与只读proc/sys/os-release及精确可写allowlist真实配置；正确nsenter命令只读探针exit0。",
+      "additional_covered": "真实Host Node声明的七项capability已保存；正确bind写到真实宿主SHA，缺失/错误bind假成功，RO映射拒绝且sentinel不变。",
+      "remaining_dimensions": "宿主OS、CPU、内存、磁盘等完整Inventory与宿主实值逐字段比对。",
+      "evidence": [
+        "environment/hostintegration-preflight.json",
+        "environment/hostintegration-application.json",
+        "environment/host-negative-results.json"
+      ],
+      "next_live_test": "专属HostIntegration容器只读Inventory与宿主字段对照，不改变宿主设置。",
+      "execution_blocker": "当前沙箱连接拒绝Errno1且私密连接资料已消失；未执行上述下一步。"
+    },
+    {
+      "case_id": "SYS-61",
+      "title": "SYS-61 大小校验、SHA256 校验、Hub staged blob 原子提升。",
+      "status": "PARTIAL",
+      "classification": "EXISTING_REAL_EVIDENCE_AUDIT",
+      "prior_actual": "非法size/range/contentlength拒绝；chunked part13/blob不存在/SHA空，正确offset续传真SHA；重复上传保原SHA。",
+      "additional_covered": "13字节part未提升、blob不存在、所有角色下载404；续传真SHA；重复上传保持原SHA。",
+      "remaining_dimensions": "Hub staged原子提升前后精确故障窗口、持久化与重启恢复。",
+      "evidence": [
+        "main/relay-edge-results.json"
+      ],
+      "next_live_test": "专属隔离Hub staged写入/rename窗口注入，保留part/blob/metadata与重启后对照；禁止故障原Hub。",
+      "execution_blocker": "当前沙箱连接拒绝Errno1且私密连接资料已消失；未执行上述下一步。"
+    },
+    {
+      "case_id": "SYS-62",
+      "title": "SYS-62 目标文件 `.tmp` 下载、校验、原子替换。",
+      "status": "PARTIAL",
+      "classification": "EXISTING_REAL_EVIDENCE_AUDIT",
+      "prior_actual": "部分目标失败不影响其他成功；Native目标symlink拒绝、old sentinel未变、tmp无残留。",
+      "additional_covered": "Native symlink拒绝保old sentinel且tmp空；Host RO拒绝保原SHA，正确bind物理SHA与源一致。",
+      "remaining_dimensions": "目标下载中途断连以及SHA校验至rename原子替换窗口的精确故障注入。",
+      "evidence": [
+        "main/relay-edge-results.json",
+        "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+        "environment/host-negative-results.json"
+      ],
+      "next_live_test": "专属目标路径/文件传输，精确控制断连与rename窗口，断言old/new SHA和tmp残留。",
+      "execution_blocker": "当前沙箱连接拒绝Errno1且私密连接资料已消失；未执行上述下一步。"
+    },
+    {
+      "case_id": "X01",
+      "title": "节点批量 Native Agent 自升级：混选 Docker、暂停/离线、重复在途升级、部分失败、取消确认、版本更新和重连。",
+      "status": "PARTIAL",
+      "classification": "EXISTING_REAL_EVIDENCE_AUDIT",
+      "prior_actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "additional_covered": "8条真实API组合覆盖维护/禁用/混合Docker过滤、重复在途同UUID、离线部分失败、ID/版本/sync与精确清理；单点真实UI确认和取消已测。",
+      "remaining_dimensions": "批量UI完整确认到结果反馈闭环；API结果不替代该UI维度。",
+      "evidence": [
+        "backend/isolated/evidence/feature.node.docker-upgrade-78e2a7d2.json",
+        "main/upgrade-ui-result.json",
+        "main/bulk-upgrade-results.json"
+      ],
+      "next_live_test": "协同Web执行批量真实确认、terminal反馈与版本重连，禁止与Root升级suite并发。",
+      "execution_blocker": "当前沙箱连接拒绝Errno1且私密连接资料已消失；未执行上述下一步。"
+    },
+    {
+      "case_id": "AR-23",
+      "title": "Process Group Cleanup；恢复后幂等、持久化、Desired State与实际状态一致",
+      "status": "PARTIAL",
+      "classification": "EXISTING_REAL_EVIDENCE_AUDIT",
+      "prior_actual": "两种路径的父/孙PID在host init收割后/proc完全不存在。；两种路径没有活进程；每种路径2个Z态由容器PID1未收割，原始stat保留。",
+      "additional_covered": "",
+      "remaining_dimensions": "Docker两条路径仍观察到Z态；Native全部PID收割已通过。",
+      "evidence": [
+        "backend/evidence/feature.process.native-bab6a27a.json",
+        "backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+      ],
+      "next_live_test": "同E2E-08，只测试本轮Docker进程，不终止其他进程。",
+      "execution_blocker": "当前沙箱连接拒绝Errno1且私密连接资料已消失；未执行上述下一步。"
+    },
+    {
+      "case_id": "AR-27",
+      "title": "Upgrade；恢复后幂等、持久化、Desired State与实际状态一致",
+      "status": "PARTIAL",
+      "classification": "EXISTING_REAL_EVIDENCE_AUDIT",
+      "prior_actual": "Native部署/升级/回滚已实测，Host升级被安装126前置阻断。",
+      "additional_covered": "Native跨文件系统升级、损坏缓存恢复、缺失backup明确失败、多阶段crash恢复已实测；PREPARING缺陷保留。",
+      "remaining_dimensions": "Host升级被已确认部署exit126缺陷阻断；不能改产品或绕过nsenter宣称通过。",
+      "evidence": [
+        "backend/evidence/feature.application.lifecycle-e22782da.json",
+        "environment/summary.json",
+        "main/cross-fs-result.json",
+        "main/cache-recovery-result.json",
+        "main/backup-missing-result.json",
+        "main/native-results.json"
+      ],
+      "next_live_test": "Host部署exit126为既有产品阻断，本轮仅报告，不修复产品；Native已测事实保留。",
+      "execution_blocker": "当前沙箱连接拒绝Errno1且私密连接资料已消失；未执行上述下一步。"
+    },
+    {
+      "case_id": "AR-32",
+      "title": "Host Adapter Permission Denied；恢复后幂等、持久化、Desired State与实际状态一致",
+      "status": "PARTIAL",
+      "classification": "EXISTING_REAL_EVIDENCE_AUDIT",
+      "prior_actual": "真实缺cap/只读拒绝，无HostOperation效果。",
+      "additional_covered": "Native用户/私有目录和RO文件系统拒绝；Host RO、allowlist、symlink、缺cap均保存真实效果证据。",
+      "remaining_dimensions": "独立宿主owner/group与文件权限的完整组合。",
+      "evidence": [
+        "environment/host-negative-results.json",
+        "main/native-storage-edge-results.json"
+      ],
+      "next_live_test": "专属HostIntegration测试目录，仅变更测试文件owner/group/mode，对照宿主原文件不变。",
+      "execution_blocker": "当前沙箱连接拒绝Errno1且私密连接资料已消失；未执行上述下一步。"
+    },
+    {
+      "case_id": "INV-01",
+      "title": "Hub 是 Desired State 唯一权威源。",
+      "status": "PARTIAL",
+      "classification": "EXISTING_REAL_EVIDENCE_AUDIT",
+      "prior_actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "additional_covered": "",
+      "remaining_dimensions": "Hub修改与重连收敛已测；Agent本地永久篡改对账维度未注入。",
+      "evidence": [
+        "backend/isolated/evidence/arch.agent_offline_during_hub_script_update-4c6237be.json",
+        "backend/isolated/evidence/arch.agent_offline_during_task_update-bf905097.json"
+      ],
+      "next_live_test": "专属新Agent local store只改本轮Task/Script副本，真实Hub reconcile后与权威revision/SHA一致；禁止改Hub DB。",
+      "execution_blocker": "当前沙箱连接拒绝Errno1且私密连接资料已消失；未执行上述下一步。"
+    },
+    {
+      "case_id": "INV-02",
+      "title": "Agent 主动连接 Hub。",
+      "status": "PARTIAL",
+      "classification": "EXISTING_REAL_EVIDENCE_AUDIT",
+      "prior_actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "additional_covered": "四Native实际Agent进程Socket均主动连Hub8080且无TCP listener。",
+      "remaining_dimensions": "Docker/Host等其余拓扑的实际进程Socket和反向监听核验；正常连接日志不能证明无监听。",
+      "evidence": [
+        "backend/isolated/evidence/arch.hub_restart-56006af8.json",
+        "main/agent-outbound-sockets.json"
+      ],
+      "next_live_test": "对专属Docker/Host Agent只读其实际进程fd sockets，检查主动Hub连接和无反向listener。",
+      "execution_blocker": "当前沙箱连接拒绝Errno1且私密连接资料已消失；未执行上述下一步。"
+    },
+    {
+      "case_id": "INV-13",
+      "title": "Native 与 Docker 共享 Agent Core。",
+      "status": "PARTIAL",
+      "classification": "EXISTING_REAL_EVIDENCE_AUDIT",
+      "prior_actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "additional_covered": "真实HostCore纳管在线synced且capability已记录，HostAdapter错误已复现并单列。",
+      "remaining_dimensions": "完整HostIntegration与Native/Docker相同任务/离线调度等共享Core行为链路，不能由代码共用直接推定。",
+      "evidence": [
+        "backend/isolated/evidence/arch.docker_agent_restart-660b369c.json",
+        "environment/hostintegration-application.json",
+        "environment/host-negative-results.json"
+      ],
+      "next_live_test": "专属Host Agent跑与Native/Docker同一短任务和离线调度对照，不能绕过已确认HostAdapter错误。",
+      "execution_blocker": "当前沙箱连接拒绝Errno1且私密连接资料已消失；未执行上述下一步。"
+    },
+    {
+      "case_id": "INV-18",
+      "title": "Artifact/File Payload 不走控制长连接。",
+      "status": "PARTIAL",
+      "classification": "EXISTING_REAL_EVIDENCE_AUDIT",
+      "prior_actual": "已按关联真实运行证据执行；以各case断言和客户机事实为准。",
+      "additional_covered": "已记录HTTPS Artifact API与多目标Relay独立HTTP请求、真实物理SHA、WSS连接；Prefetch私有CA失败单列。",
+      "remaining_dimensions": "全部payload种类与控制长连接的完整流量分离抓包；TLS已测，不再列为未执行。",
+      "evidence": [
+        "backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+        "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+        "environment/tls-full-results.json"
+      ],
+      "next_live_test": "在专属代理记录全部payload种类HTTP及控制WS metadata；不记录凭据或业务secret。",
+      "execution_blocker": "当前沙箱连接拒绝Errno1且私密连接资料已消失；未执行上述下一步。"
+    }
+  ],
+  "delegation": "backend会话续派被平台用量限制拒绝，主Agent按客观例外完成此审计。"
+}

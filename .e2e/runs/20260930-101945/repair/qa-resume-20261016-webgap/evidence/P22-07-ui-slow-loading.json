@@ -1,0 +1,147 @@
+{
+ "case_ids": [
+  "P22-07"
+ ],
+ "method_note": "in-page fetch wrapper delays POST /api/transfers by 2s; request is still forwarded to the real Hub",
+ "steps": [
+  {
+   "step": "patch-fetch",
+   "value": {
+    "base": "function",
+    "patched": true
+   }
+  },
+  {
+   "step": "ready",
+   "value": {
+    "disabled": false,
+    "text": "开始传输"
+   }
+  },
+  {
+   "step": "p22-07-slow-loading",
+   "value": {
+    "before": {
+     "disabled": false,
+     "text": "开始传输"
+    },
+    "sawLoading": true,
+    "secondClick": {
+     "at_loading_text": "创建中...",
+     "t": 50,
+     "was_disabled": true
+    },
+    "distinct_texts": [
+     "创建中...",
+     "开始传输"
+    ],
+    "first_samples": [
+     {
+      "disabled": true,
+      "t": 50,
+      "text": "创建中..."
+     },
+     {
+      "disabled": true,
+      "t": 100,
+      "text": "创建中..."
+     },
+     {
+      "disabled": true,
+      "t": 150,
+      "text": "创建中..."
+     },
+     {
+      "disabled": true,
+      "t": 200,
+      "text": "创建中..."
+     },
+     {
+      "disabled": true,
+      "t": 250,
+      "text": "创建中..."
+     },
+     {
+      "disabled": true,
+      "t": 300,
+      "text": "创建中..."
+     }
+    ],
+    "loading_samples": [
+     {
+      "disabled": true,
+      "t": 50,
+      "text": "创建中..."
+     },
+     {
+      "disabled": true,
+      "t": 100,
+      "text": "创建中..."
+     },
+     {
+      "disabled": true,
+      "t": 150,
+      "text": "创建中..."
+     },
+     {
+      "disabled": true,
+      "t": 200,
+      "text": "创建中..."
+     }
+    ]
+   }
+  },
+  {
+   "step": "restore-fetch",
+   "value": {
+    "delay_hits": 1,
+    "restored": true
+   }
+  },
+  {
+   "step": "p22-07-slow-created",
+   "value": {
+    "n_before": 68,
+    "n_after": 69,
+    "post_count": 1,
+    "posts": [
+     "[4101594.1943] POST http://192.168.100.209:18080/api/transfers (Fetch) 200"
+    ],
+    "created": [
+     {
+      "id": "bbb85e51-1958-4b90-8f3b-dbf80fcc54ef",
+      "status": "FAILED",
+      "dst": [
+       "/etc/hostname/qa-webgap-6456ada2-ui-slow-dst.bin"
+      ]
+     },
+     {
+      "id": "7f61f22a-54c1-4b19-b921-b7b8635fb8f7",
+      "status": "FAILED",
+      "dst": [
+       "/etc/hostname/qa-webgap-6456ada2-ui-invalid-dst.bin"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "step": "p22-07-slow-terminal",
+   "value": {
+    "id": "bbb85e51-1958-4b90-8f3b-dbf80fcc54ef",
+    "status": "FAILED",
+    "targets": [
+     {
+      "node": "03cb50cc-eab6-4afd-bbe0-f73c4e326773",
+      "status": "FAILED",
+      "error": "mkdir /etc/hostname: not a directory"
+     }
+    ]
+   }
+  }
+ ],
+ "session": "qawebgap-6456ada2",
+ "origin": "http://192.168.100.209:18080",
+ "slow_transfer_id": "bbb85e51-1958-4b90-8f3b-dbf80fcc54ef",
+ "captured_at_utc": "2026-10-16T07:40:38Z"
+}

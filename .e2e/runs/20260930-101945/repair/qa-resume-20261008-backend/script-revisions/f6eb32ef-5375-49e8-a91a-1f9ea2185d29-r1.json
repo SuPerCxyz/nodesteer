@@ -1,0 +1,8 @@
+{
+  "script_id": "f6eb32ef-5375-49e8-a91a-1f9ea2185d29",
+  "revision": 1,
+  "sha256": "5adc2b3fb31bf4ef7acff53ff0a7764c1affee182d66b93495a52a6e60720d8b",
+  "source_sha256_recomputed": "5adc2b3fb31bf4ef7acff53ff0a7764c1affee182d66b93495a52a6e60720d8b",
+  "content_sha_matches": true,
+  "content": "import os, sys, time\nv=os.environ[\"NODESTEER_PARAM_password\"]\ntag=os.environ[\"NODESTEER_TEST_MARKER\"]\nfor b in v.encode():\n sys.stdout.buffer.write(bytes([b])); sys.stdout.flush()\n sys.stderr.buffer.write(bytes([b])); sys.stderr.flush()\n time.sleep(0.025)\nprint(\"LIVE-START-\"+tag,flush=True)\ntime.sleep(10)\nfor i in range(80):\n print(\"LIVE-LINE-%03d-%s\"%(i,tag),flush=True)\n time.sleep(0.15)\ntime.sleep(8)\nprint(\"LIVE-TAIL-\"+tag,flush=True)\nprint(\"LIVE-ERR-TAIL-\"+tag,file=sys.stderr,flush=True)\n"
+}

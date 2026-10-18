@@ -1,0 +1,530 @@
+{
+  "result": {
+    "id": "feature.transfer.multitarget-retry",
+    "name": "多目标故障隔离/失败目标重试/权限/原子替换",
+    "started_at": "2026-09-30T02:41:54.011204+00:00",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-09-30T02:42:01.189927+00:00",
+    "evidence": "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json"
+  },
+  "events": [
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-relay-source-c4e1e7",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "56765828-4896-492b-b562-64afdc0fb8d6"
+          ]
+        },
+        "command": "mkdir -p /tmp/qa-20260930-101945-be; printf retry-relay-real > /tmp/qa-20260930-101945-be/src-86e99e",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "18f21b2a-a058-49b2-a6a1-a88043b1728f",
+        "name": "qa-20260930-101945-be-relay-source-c4e1e7",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "56765828-4896-492b-b562-64afdc0fb8d6"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /tmp/qa-20260930-101945-be; printf retry-relay-real > /tmp/qa-20260930-101945-be/src-86e99e",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:41:54 GMT",
+        "Content-Length": "509",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/18f21b2a-a058-49b2-a6a1-a88043b1728f/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "c1d208b0-674c-4224-99cd-b12b1b37b422",
+          "task_id": "18f21b2a-a058-49b2-a6a1-a88043b1728f",
+          "task_revision": 1,
+          "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:41:54 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/c1d208b0-674c-4224-99cd-b12b1b37b422",
+      "terminal": {
+        "id": "c1d208b0-674c-4224-99cd-b12b1b37b422",
+        "task_id": "18f21b2a-a058-49b2-a6a1-a88043b1728f",
+        "task_revision": 1,
+        "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T02:41:53.931861663Z",
+        "end_time": "2026-09-30T02:41:53.938287583Z",
+        "status": "SUCCESS",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "agent": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "read_command": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; r=c.execute('\"'\"'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?'\"'\"',(sys.argv[2],)).fetchone(); print(json.dumps(dict(r) if r else None))' /var/lib/nodesteer c1d208b0-674c-4224-99cd-b12b1b37b422\n",
+      "exit_code": 0,
+      "stdout": "{\"id\": \"c1d208b0-674c-4224-99cd-b12b1b37b422\", \"task_id\": \"18f21b2a-a058-49b2-a6a1-a88043b1728f\", \"node_id\": \"56765828-4896-492b-b562-64afdc0fb8d6\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}\n",
+      "stderr": ""
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-relay-blocker-4dd962",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d77e2440-919f-4431-a488-733817dcd809"
+          ]
+        },
+        "command": "mkdir -p /tmp/qa-20260930-101945-be; printf blocker > /tmp/qa-20260930-101945-be/block-86e99e",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "d55e7cc7-97e1-49b1-ab49-74c3502136e4",
+        "name": "qa-20260930-101945-be-relay-blocker-4dd962",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d77e2440-919f-4431-a488-733817dcd809"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /tmp/qa-20260930-101945-be; printf blocker > /tmp/qa-20260930-101945-be/block-86e99e",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:41:55 GMT",
+        "Content-Length": "503",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/d55e7cc7-97e1-49b1-ab49-74c3502136e4/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "1cfde544-25f1-4010-a728-06e0d3bb9fdc",
+          "task_id": "d55e7cc7-97e1-49b1-ab49-74c3502136e4",
+          "task_revision": 1,
+          "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:41:55 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/1cfde544-25f1-4010-a728-06e0d3bb9fdc",
+      "terminal": {
+        "id": "1cfde544-25f1-4010-a728-06e0d3bb9fdc",
+        "task_id": "d55e7cc7-97e1-49b1-ab49-74c3502136e4",
+        "task_revision": 1,
+        "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T02:41:55.43514915Z",
+        "end_time": "2026-09-30T02:41:55.448320828Z",
+        "status": "SUCCESS",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "agent": "d77e2440-919f-4431-a488-733817dcd809",
+      "read_command": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; r=c.execute('\"'\"'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?'\"'\"',(sys.argv[2],)).fetchone(); print(json.dumps(dict(r) if r else None))' /var/lib/nodesteer 1cfde544-25f1-4010-a728-06e0d3bb9fdc\n",
+      "exit_code": 0,
+      "stdout": "{\"id\": \"1cfde544-25f1-4010-a728-06e0d3bb9fdc\", \"task_id\": \"d55e7cc7-97e1-49b1-ab49-74c3502136e4\", \"node_id\": \"d77e2440-919f-4431-a488-733817dcd809\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}\n",
+      "stderr": ""
+    },
+    {
+      "api": "POST /api/transfers",
+      "status": 200,
+      "request": {
+        "source_node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "source_path": "/tmp/qa-20260930-101945-be/src-86e99e",
+        "targets": [
+          {
+            "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+            "destination_path": "/tmp/qa-20260930-101945-be/block-86e99e/received"
+          },
+          {
+            "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+            "destination_path": "/tmp/qa-20260930-101945-be/good-86e99e"
+          }
+        ]
+      },
+      "response": {
+        "id": "4b134593-fb79-4769-a2d9-0e38d93e971e",
+        "source_node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "source_path": "/tmp/qa-20260930-101945-be/src-86e99e",
+        "size": 0,
+        "status": "UPLOADING",
+        "created_at": "2026-09-30T02:41:56.874981753Z",
+        "updated_at": "2026-09-30T02:41:56.881990324Z",
+        "targets": [
+          {
+            "transfer_id": "4b134593-fb79-4769-a2d9-0e38d93e971e",
+            "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+            "destination_path": "/tmp/qa-20260930-101945-be/good-86e99e",
+            "status": "PENDING",
+            "updated_at": "2026-09-30T02:41:56.874981753Z"
+          },
+          {
+            "transfer_id": "4b134593-fb79-4769-a2d9-0e38d93e971e",
+            "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+            "destination_path": "/tmp/qa-20260930-101945-be/block-86e99e/received",
+            "status": "PENDING",
+            "updated_at": "2026-09-30T02:41:56.874981753Z"
+          }
+        ]
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:41:56 GMT",
+        "Content-Length": "758",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/transfers/4b134593-fb79-4769-a2d9-0e38d93e971e",
+      "terminal": {
+        "id": "4b134593-fb79-4769-a2d9-0e38d93e971e",
+        "source_node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "source_path": "/tmp/qa-20260930-101945-be/src-86e99e",
+        "source_mode": 420,
+        "size": 16,
+        "sha256": "0c3f718f4453e07689077bbc3c212eb7948ca1f70115169decafa6b61d58b6f6",
+        "status": "FAILED",
+        "created_at": "2026-09-30T02:41:56.874981753Z",
+        "updated_at": "2026-09-30T02:41:56.934185848Z",
+        "targets": [
+          {
+            "transfer_id": "4b134593-fb79-4769-a2d9-0e38d93e971e",
+            "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+            "destination_path": "/tmp/qa-20260930-101945-be/good-86e99e",
+            "status": "SUCCESS",
+            "updated_at": "2026-09-30T02:41:56.929597827Z"
+          },
+          {
+            "transfer_id": "4b134593-fb79-4769-a2d9-0e38d93e971e",
+            "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+            "destination_path": "/tmp/qa-20260930-101945-be/block-86e99e/received",
+            "status": "FAILED",
+            "error": "mkdir /tmp/qa-20260930-101945-be/block-86e99e: not a directory",
+            "updated_at": "2026-09-30T02:41:56.919799882Z"
+          }
+        ]
+      }
+    },
+    {
+      "agent": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+      "read_command": "cat -- /tmp/qa-20260930-101945-be/good-86e99e\n",
+      "exit_code": 0,
+      "stdout": "retry-relay-real",
+      "stderr": ""
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-relay-fix-2e9ec1",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d77e2440-919f-4431-a488-733817dcd809"
+          ]
+        },
+        "command": "rm -- /tmp/qa-20260930-101945-be/block-86e99e; mkdir /tmp/qa-20260930-101945-be/block-86e99e",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "d8657256-ed8d-4b8f-9265-b67818a09776",
+        "name": "qa-20260930-101945-be-relay-fix-2e9ec1",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d77e2440-919f-4431-a488-733817dcd809"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "rm -- /tmp/qa-20260930-101945-be/block-86e99e; mkdir /tmp/qa-20260930-101945-be/block-86e99e",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:41:58 GMT",
+        "Content-Length": "493",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/d8657256-ed8d-4b8f-9265-b67818a09776/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "0e0ba106-cc5a-4edd-b862-d56354df91d9",
+          "task_id": "d8657256-ed8d-4b8f-9265-b67818a09776",
+          "task_revision": 1,
+          "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:41:58 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/0e0ba106-cc5a-4edd-b862-d56354df91d9",
+      "terminal": {
+        "id": "0e0ba106-cc5a-4edd-b862-d56354df91d9",
+        "task_id": "d8657256-ed8d-4b8f-9265-b67818a09776",
+        "task_revision": 1,
+        "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T02:41:58.217622975Z",
+        "end_time": "2026-09-30T02:41:58.228140612Z",
+        "status": "SUCCESS",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "agent": "d77e2440-919f-4431-a488-733817dcd809",
+      "read_command": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; r=c.execute('\"'\"'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?'\"'\"',(sys.argv[2],)).fetchone(); print(json.dumps(dict(r) if r else None))' /var/lib/nodesteer 0e0ba106-cc5a-4edd-b862-d56354df91d9\n",
+      "exit_code": 0,
+      "stdout": "{\"id\": \"0e0ba106-cc5a-4edd-b862-d56354df91d9\", \"task_id\": \"d8657256-ed8d-4b8f-9265-b67818a09776\", \"node_id\": \"d77e2440-919f-4431-a488-733817dcd809\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}\n",
+      "stderr": ""
+    },
+    {
+      "api": "POST /api/transfers/4b134593-fb79-4769-a2d9-0e38d93e971e/retry?target_id=d77e2440-919f-4431-a488-733817dcd809",
+      "status": 200,
+      "request": {},
+      "response": {
+        "id": "4b134593-fb79-4769-a2d9-0e38d93e971e",
+        "source_node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "source_path": "/tmp/qa-20260930-101945-be/src-86e99e",
+        "source_mode": 420,
+        "size": 16,
+        "sha256": "0c3f718f4453e07689077bbc3c212eb7948ca1f70115169decafa6b61d58b6f6",
+        "status": "DELIVERING",
+        "created_at": "2026-09-30T02:41:56.874981753Z",
+        "updated_at": "2026-09-30T02:41:59.652343105Z",
+        "targets": [
+          {
+            "transfer_id": "4b134593-fb79-4769-a2d9-0e38d93e971e",
+            "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+            "destination_path": "/tmp/qa-20260930-101945-be/good-86e99e",
+            "status": "SUCCESS",
+            "updated_at": "2026-09-30T02:41:56.929597827Z"
+          },
+          {
+            "transfer_id": "4b134593-fb79-4769-a2d9-0e38d93e971e",
+            "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+            "destination_path": "/tmp/qa-20260930-101945-be/block-86e99e/received",
+            "status": "DELIVERING",
+            "updated_at": "2026-09-30T02:41:59.649264107Z"
+          }
+        ]
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:41:59 GMT",
+        "Content-Length": "857",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/transfers/4b134593-fb79-4769-a2d9-0e38d93e971e",
+      "terminal": {
+        "id": "4b134593-fb79-4769-a2d9-0e38d93e971e",
+        "source_node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "source_path": "/tmp/qa-20260930-101945-be/src-86e99e",
+        "source_mode": 420,
+        "size": 16,
+        "sha256": "0c3f718f4453e07689077bbc3c212eb7948ca1f70115169decafa6b61d58b6f6",
+        "status": "SUCCESS",
+        "created_at": "2026-09-30T02:41:56.874981753Z",
+        "updated_at": "2026-09-30T02:41:59.663546324Z",
+        "targets": [
+          {
+            "transfer_id": "4b134593-fb79-4769-a2d9-0e38d93e971e",
+            "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+            "destination_path": "/tmp/qa-20260930-101945-be/good-86e99e",
+            "status": "SUCCESS",
+            "updated_at": "2026-09-30T02:41:56.929597827Z"
+          },
+          {
+            "transfer_id": "4b134593-fb79-4769-a2d9-0e38d93e971e",
+            "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+            "destination_path": "/tmp/qa-20260930-101945-be/block-86e99e/received",
+            "status": "SUCCESS",
+            "updated_at": "2026-09-30T02:41:59.657231633Z"
+          }
+        ]
+      }
+    },
+    {
+      "agent": "d77e2440-919f-4431-a488-733817dcd809",
+      "read_command": "cat -- /tmp/qa-20260930-101945-be/block-86e99e/received\n",
+      "exit_code": 0,
+      "stdout": "retry-relay-real",
+      "stderr": ""
+    },
+    {
+      "agent": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+      "read_command": "cat -- /tmp/qa-20260930-101945-be/good-86e99e\n",
+      "exit_code": 0,
+      "stdout": "retry-relay-real",
+      "stderr": ""
+    }
+  ]
+}

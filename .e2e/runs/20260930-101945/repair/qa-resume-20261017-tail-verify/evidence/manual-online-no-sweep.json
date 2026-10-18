@@ -1,0 +1,168 @@
+{
+ "instance": "nodesteer-qa-tail202610177588afab",
+ "port": 18088,
+ "at_utc": "2026-10-17T15:06:47Z",
+ "steps": [
+  {
+   "step": "PUT /api/nodes/{id} status=online",
+   "http": 200,
+   "body": {
+    "ok": "true"
+   }
+  },
+  {
+   "step": "GET node after manual online",
+   "http": 200,
+   "status": "online"
+  },
+  {
+   "step": "status over observation window (no agent session)",
+   "samples": [
+    {
+     "t_plus_s": 20,
+     "status": "online",
+     "http": 200
+    },
+    {
+     "t_plus_s": 40,
+     "status": "online",
+     "http": 200
+    },
+    {
+     "t_plus_s": 70,
+     "status": "online",
+     "http": 200
+    }
+   ]
+  },
+  {
+   "step": "create script",
+   "http": 200,
+   "id": "070c060a-7481-4824-bc47-4a17f970285b"
+  },
+  {
+   "step": "create task",
+   "http": 400,
+   "id": null,
+   "body": {
+    "error": "invalid task: referenced script is disabled"
+   }
+  },
+  {
+   "step": "POST /api/tasks/{id}/run (manual dispatch)",
+   "http": 400,
+   "body": {
+    "error": "invalid request"
+   }
+  },
+  {
+   "step": "GET executions for task",
+   "http": 200,
+   "executions": []
+  },
+  {
+   "step": "list applications (deploy path uses same online gate)",
+   "http": 200,
+   "count": 0
+  },
+  {
+   "step": "cleanup script",
+   "http": 200
+  },
+  {
+   "step": "cleanup node",
+   "http": 200
+  },
+  {
+   "step": "GET node after cleanup (expect 404)",
+   "http": 404
+  }
+ ],
+ "owned_nodes": [
+  {
+   "id": "cee94a42-4c1b-41d4-a6b3-80eedfa99420",
+   "hostname": "qa-tail202610177588afab-conc-00",
+   "status": "pending"
+  },
+  {
+   "id": "20e8a15d-c622-4dcc-887d-b9714004f7dc",
+   "hostname": "qa-tail202610177588afab-conc-03",
+   "status": "pending"
+  },
+  {
+   "id": "b349f48b-3401-4967-9674-57c3346a1fea",
+   "hostname": "qa-tail202610177588afab-csame",
+   "status": "pending"
+  },
+  {
+   "id": "05906ab2-92a2-4964-8a90-7da4da03022c",
+   "hostname": "qa-tail202610177588afab-diff-00",
+   "status": "pending"
+  },
+  {
+   "id": "5aefae35-df56-4885-b121-73c3d8ad7d4c",
+   "hostname": "qa-tail202610177588afab-diff-01",
+   "status": "pending"
+  },
+  {
+   "id": "37f8733e-b664-464a-a10c-7818953d20a1",
+   "hostname": "qa-tail202610177588afab-diff-02",
+   "status": "pending"
+  },
+  {
+   "id": "424c1b89-5fb6-45e1-b40d-44090df0b10d",
+   "hostname": "qa-tail202610177588afab-diff-03",
+   "status": "pending"
+  },
+  {
+   "id": "fcfca06d-db0c-413c-8f7e-08267b5d921b",
+   "hostname": "qa-tail202610177588afab-diff-04",
+   "status": "pending"
+  },
+  {
+   "id": "af3c900e-07f7-4825-a8e6-1415a7acc9f6",
+   "hostname": "qa-tail202610177588afab-diff-05",
+   "status": "pending"
+  },
+  {
+   "id": "263ce9b8-e6bb-417d-afe0-cd4aee5459a7",
+   "hostname": "qa-tail202610177588afab-diff-06",
+   "status": "pending"
+  },
+  {
+   "id": "2fe51471-cfe4-4a10-bd3c-4167cfa81a4e",
+   "hostname": "qa-tail202610177588afab-diff-07",
+   "status": "pending"
+  },
+  {
+   "id": "241daac4-0548-4e40-a9da-ffe9384cf100",
+   "hostname": "qa-tail202610177588afab-diff-08",
+   "status": "pending"
+  },
+  {
+   "id": "0ddb4257-593c-48dc-8ea0-b9ed96678d37",
+   "hostname": "qa-tail202610177588afab-diff-09",
+   "status": "pending"
+  },
+  {
+   "id": "ce8f757b-e764-421a-a8f2-7b0b311b18aa",
+   "hostname": "qa-tail202610177588afab-diff-10",
+   "status": "pending"
+  },
+  {
+   "id": "2eaa0b97-7489-4753-9dd8-e5481aa7418a",
+   "hostname": "qa-tail202610177588afab-diff-11",
+   "status": "pending"
+  },
+  {
+   "id": "6bcc9382-50fa-43be-b6da-34624e8484ba",
+   "hostname": "qa-tail202610177588afab-same",
+   "status": "pending"
+  },
+  {
+   "id": "50631094-ab2d-4282-9525-428a380a88ae",
+   "hostname": "qa-tail202610177588afab-same2",
+   "status": "pending"
+  }
+ ]
+}

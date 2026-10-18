@@ -1,0 +1,88 @@
+{
+  "at_utc": "2026-10-17T04:37:41Z",
+  "proxy": {
+    "listen_port": 40137,
+    "owner": "workstation 192.168.100.170",
+    "label": "a",
+    "upstream": "ws://192.168.100.209:18080"
+  },
+  "children": {
+    "a": {
+      "enroll_http": 200,
+      "node_id": "8a68174e-685c-4db0-a90a-d363a76c07da",
+      "agent_id": "agent-beaaa939-d0c3-4093-a765-3da08038fd30",
+      "deployment_mode": "native",
+      "hub_url": "ws://192.168.100.170:40137",
+      "connect_wait_seconds": 4.0,
+      "node_after_start": {
+        "status": "online",
+        "sync_status": "synced",
+        "deployment_mode": "native",
+        "capabilities": {
+          "agent_upgrade": true,
+          "application_deploy": true,
+          "host_filesystem": true,
+          "local_scheduler": true,
+          "managed_systemd": true,
+          "offline_execution": true,
+          "script": true
+        }
+      },
+      "root_on_native1": "/var/lib/nodesteer-qa-g6-1fdba63d-a"
+    },
+    "b": {
+      "enroll_http": 200,
+      "node_id": "59b2f808-baff-4185-b640-19e4ed9f80f3",
+      "agent_id": "agent-14d5f322-1c73-4090-bfc7-a72e6321aab4",
+      "deployment_mode": "native",
+      "hub_url": "ws://192.168.100.209:18080",
+      "connect_wait_seconds": 4.0,
+      "node_after_start": {
+        "status": "online",
+        "sync_status": "synced",
+        "deployment_mode": "native",
+        "capabilities": {
+          "agent_upgrade": true,
+          "application_deploy": true,
+          "host_filesystem": true,
+          "local_scheduler": true,
+          "managed_systemd": true,
+          "offline_execution": true,
+          "script": true
+        }
+      },
+      "root_on_native1": "/var/lib/nodesteer-qa-g6-1fdba63d-b"
+    },
+    "c": {
+      "enroll_http": 200,
+      "node_id": "6750ef54-7340-48e1-bc71-f9d7f5947182",
+      "agent_id": "agent-5adbc086-8788-4244-a296-c5059381d690",
+      "deployment_mode": "docker",
+      "hub_url": "ws://192.168.100.209:18080",
+      "connect_wait_seconds": 5.0,
+      "node_after_start": {
+        "status": "online",
+        "sync_status": "synced",
+        "deployment_mode": "docker",
+        "capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        }
+      },
+      "root_on_native1": "/var/lib/nodesteer-qa-g6-1fdba63d-c"
+    }
+  },
+  "child_ips": {
+    "a": "192.168.100.204",
+    "b": "192.168.100.203",
+    "c": "192.168.100.202"
+  },
+  "child_ip_note": "all three children run on the physical host 192.168.100.204; each self-reports a distinct node_ip because Hub enrollment de-duplicates by hostname and then by IP (findEnrollableNode). node_ip is metadata only and is never dialed by the Hub.",
+  "node_id_distinctness_guard": "enforced in _make_child",
+  "capability_note": "child c runs deployment_mode=docker -> the Agent advertises application_deploy=false (internal/agent/agent.go capabilities()), which yields a real ONLINE node with a capability mismatch"
+}

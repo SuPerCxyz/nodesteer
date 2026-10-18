@@ -1,0 +1,149 @@
+{
+  "review_id": "ROOT-LATEST-EVIDENCE-INTEGRATION-20261014",
+  "reviewed_at": "2026-10-14T06:28:05.205009+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认：先汇入最新证据，再继续测试；504 场景既有授权",
+  "scope": "复核并汇入 2026-10-12T15:39Z 之后产生的 4 组未入表证据；不改产品源码、不做 Git/Archive/环境变更",
+  "method": "只读复核证据文件 + 独立复算 harness SHA；台账判定由 main-agent 串行写入（不采信子 Agent 结论）",
+  "evidence_groups": {
+    "sys34-40": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/",
+    "web_batch28_29": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/batch28/ , .e2e/runs/20260930-101945/repair/qa-resume-20261010-web/batch29/",
+    "sys12_artifact_cache_preparation": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/",
+    "sys09_source_prep": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys09/"
+  },
+  "verdicts": [
+    {
+      "case_id": "SYS-34",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "medium-high",
+      "reason": "原待补项（多块双流完整内容、seq 顺序/stream 标记、终态尾部独立断言）已由真实 Native3 UI Run 覆盖：18 chunk、seq 0..17 连续、逐 chunk stream 标记、3 次 attempt 双流各 71680B；stdout 215080 = 3x71680 + 40（终态 state-removed 尾行），stderr 215040 = 3x71680；UI 日志面板 430120 字符 = stdout+stderr 之和。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/business-execution-log-oracle.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/business-ui-detail-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/ui-execution-detail.png",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/business-linkage-audit-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/fixture-cleanup-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/final-readonly-cleanup-guard.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/verifier-postcheck-evidence.json"
+      ],
+      "limitations": [
+        "raw logs 未保存，18 个 chunk SHA 无法独立复算（oracle 自报）",
+        "无独立 Root 复跑；本判定基于文件证据",
+        "progress.target_global_revision=1605 与该批 1607/1608/1625 快照时点不同，非冲突"
+      ]
+    },
+    {
+      "case_id": "FL-05",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "medium-high",
+      "reason": "修复版全链已实测：真实 Run Now 表单要求必填 qa_value、确认弹窗 1 次点击、执行列表 RUNNING→SUCCESS、详情页 Execution ID/状态成功/Task 回链/Node（Agent）回链可见、日志面板含 3 次 attempt 双流且只出现 length/SHA 标记无明文回显、execute 审计与定义 DELETE200→GET404 且历史保留。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/business-ui-pre-run-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/business-run-api-observation.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/business-execution-log-oracle.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/business-linkage-audit-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/business-ui-detail-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/fixture-cleanup-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/final-readonly-cleanup-guard.json"
+      ],
+      "limitations": [
+        "Execution 详情未显示 Script ID/revision 回链（超出 FL-05 的 Task/Execution/Agent 回链要求，另记观察）"
+      ]
+    },
+    {
+      "case_id": "SYS-12",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "medium",
+      "reason": "原唯一待补项 ArtifactCache 未上传/预取/A→B 已由 attempt04(ad9bf531b28a) 覆盖：真实 32B artifact 上传、assignment 驱动预取写入 ArtifactCache DB 行与物理文件，A/pre-B/B 三快照 8 字段（含 path_relative）一致，B 容器同 DB dev/inode 且有同 inode 打开 FD 与 quick_check=ok，revision 1630/1632/1634 单调，未 Deploy、Unit 缺失；API 对象与 root 精确清理闭合。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/artifact-cache-ad9bf531b28a-final-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/artifact-cache-ad9bf531b28a-ledger.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/artifact-cache-ad9bf531b28a-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/artifact-cache-harness-repair-review.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/sys12-artifact-cache-fourth-launch-review-20261013.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/sys12-artifact-cache-third-launch-review-20261012.json"
+      ],
+      "limitations": [
+        "artifact/node 的 DELETE 200→GET404 响应未落盘（仅由冻结恢复代码门禁保证）",
+        "attempt04 result.json 的 manual_recovery_app_delete 非 controller 产出，属 harness 外人工步骤写入",
+        "final-summary.runtime_status=RUNTIME_REMOVED_ROOT_RETAINED 为 cleanup-runtime 中间态拷贝，同文件 root_status=EXACT_OWNED_ROOT_REMOVED/root_absent=true 才是终态"
+      ]
+    },
+    {
+      "case_id": "SYS-40",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PARTIAL",
+      "confidence": "high",
+      "reason": "批次自身 proposed_after 即为 PARTIAL：仅补齐每次日志/UI 维度；retry 间隔无规范阈值可断言（实测 49763362ns/61448500ns）、无 per-attempt 审计、错误边界未探。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/case-result.json"
+      ]
+    },
+    {
+      "case_id": "SYS-09",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PARTIAL",
+      "confidence": "high",
+      "reason": "该批自述 SOURCE_PREP_ONLY，外部 API 调用/变更计数全为 0，仅本地 fake DB 与命令管道 smoke；原两条待补项无运行时证据。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys09/progress.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys09/source-review.json"
+      ]
+    },
+    {
+      "case_id": "P05B-04",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PARTIAL",
+      "confidence": "high",
+      "reason": "batch29 首次真实取得 4 个 false API 值与 4 个 Disabled 徽章键哈希一一对应，实质覆盖原缺口；但观测时间 16:05:55.979Z 晚于 Root 名义截止 16:05:25Z 31s，按窗口门禁不升级；样本保留为观察。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/batch29/results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/batch29/evidence/false-capability-ui-api.json"
+      ]
+    }
+  ],
+  "unknown_atleast_verified": "harness 固定值复算全部匹配：sys34-40 retry_multistream/readonly_verifier、sys09 三个 py、artifact_cache_lifecycle/controller/fakeapi_smoke、resource-plan",
+  "pin_mismatch_recorded": "grant03 source_pins（c454794d/99b24c88/bb12cdaa/cd52d213）已被 15:55Z 修版后的 grant04 固定值取代，属 harness 迭代而非产品变更",
+  "anomalies": [
+    "batch28/29 的 results.json/progress.json 出现事后手改：updated_at 早于证据 captured_at 与文件 mtime，batch28 phase 与自身 .mjs 判定分支不一致",
+    "batch29 remaining_dimensions 文本误写为 batch28 的采样时间戳",
+    "SYS-12 attempt04 正常路径在 GET /api/applications/{id}/nodes 返回 HTTP200 JSON null（非 []）处中止，可能为产品空值形状缺陷，未单独立案",
+    "sys34-40/web batch28-29/artifact-cache 三批均无 Root 事后复核件（本次即该复核）"
+  ],
+  "counts_before": {
+    "PASS": 210,
+    "FAIL": 4,
+    "PARTIAL": 159,
+    "NOT_RUN": 131,
+    "BLOCKED": 0
+  },
+  "counts_after": {
+    "PASS": 213,
+    "FAIL": 4,
+    "PARTIAL": 157,
+    "NOT_RUN": 130,
+    "BLOCKED": 0
+  },
+  "defect_matrix_unchanged": {
+    "PASS": 20,
+    "NOT_RUN": 1,
+    "BLOCKED": 1,
+    "note": "原 22 缺陷分母不变"
+  },
+  "unchanged_cases": [
+    "SYS-40",
+    "SYS-09",
+    "P05B-04"
+  ],
+  "next_actions": [
+    "SYS-09 tombstone 消费维度：本地 harness 就绪，等待 Root 准入后在连接态 Agent 上执行",
+    "继续测试前需恢复 repair 环境（kvm2 上 5 个 nodesteer VM 当前全部 shut off）"
+  ],
+  "not_claimed": "不声明整体验收完成；未执行产品修复、Git 交付或 Archive"
+}

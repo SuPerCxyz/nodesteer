@@ -1,0 +1,165 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch08",
+  "authority": "http://192.168.100.209:18080 (repair)",
+  "primary_8080_touched": false,
+  "nonce": "4a7fd1c2",
+  "prefix": "qa-w1410b08-4a7fd1c2",
+  "captured_at_utc": "2026-10-14T10:35:10Z",
+  "counts_baseline": {
+    "nodes": 7,
+    "artifacts": 1,
+    "applications": 1,
+    "tasks": 3,
+    "scripts": 5,
+    "schedules": 0,
+    "executions": 762
+  },
+  "counts_after": {
+    "nodes": 6,
+    "artifacts": 2,
+    "applications": 2,
+    "tasks": 0,
+    "scripts": 2,
+    "schedules": 0,
+    "executions": 768
+  },
+  "deltas": {
+    "nodes": -1,
+    "artifacts": 1,
+    "applications": 1,
+    "tasks": -3,
+    "scripts": -3,
+    "schedules": 0,
+    "executions": 6
+  },
+  "delta_attribution": {
+    "nodes -1": "batch08 owned child node created (+1) then deleted (-1); net 0 from batch08. The other node churn in the window (qa-sysb02-*-child) belongs to the parallel sys-b02 batch.",
+    "artifacts +1 / applications +1 / tasks -3 / scripts -3": "NOT batch08: batch08 created and deleted exactly 1 artifact, 1 application, 2 scripts, 1 business task (+2 transient probe tasks). The sys-b02 fixtures (3 tasks + 3 scripts) were removed by that batch; 1 artifact and 1 application were added by another parallel actor.",
+    "executions +6": "batch08 contributed 4 (1 business + 2 read-only probe + 1 extra probe attempt); the remaining 2 belong to parallel batches."
+  },
+  "owned_leftovers": {
+    "nodes": [],
+    "artifacts": [],
+    "applications": [],
+    "tasks": [],
+    "scripts": [],
+    "schedules": [],
+    "transfers": []
+  },
+  "owned_get404": {
+    "script": 404,
+    "task": 404,
+    "probe_script": 404,
+    "artifact": 404,
+    "application": 404,
+    "child_node": 404
+  },
+  "node_side_native4": {
+    "owned_root": "/var/lib/nodesteer-qa-w1410b08-4a7fd1c2",
+    "root_exists_after": false,
+    "config_exists_after": false,
+    "owned_process_count_after": 0,
+    "marker_exists_after": false,
+    "protected_native4_unit": {
+      "Id": "nodesteer-agent-repair-20260930-101945-native-4.service",
+      "ActiveState": "active",
+      "MainPID": "1481"
+    },
+    "primary_agent_unit": {
+      "Id": "nodesteer-agent.service",
+      "ActiveState": "active",
+      "MainPID": "1002"
+    },
+    "agent_binary_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "agent_binary_sha_matches_baseline": true
+  },
+  "protected_resources": {
+    "hub_restarted": false,
+    "protected_agents_stopped": false,
+    "node_state_of_protected_nodes_changed_by_batch08": false,
+    "protected_node_status_now": {
+      "native-1": "online",
+      "native-2": "online",
+      "native-3": "online",
+      "native-4": "online"
+    },
+    "protected_status_note": "guard 时 native-1/native-3 为 offline、结束时为 online；该变化非本批造成（本批只使用 native-4，且未对 native-1/3 发任何写请求）。并行批次与 Agent 自身重连都可能造成。",
+    "other_actors_nodes_now": {
+      "qa-resume-20261008-native4-child-c5d48ea9-da08-4123-94fb-69b11abd59a7": "offline (未触碰)",
+      "qa-resume-20261010-host-f174890c3846-host001": "online (未触碰)"
+    },
+    "users_created_or_deleted": 0,
+    "groups_created_or_deleted": 0,
+    "product_source_changes": "none",
+    "git_operations": "none"
+  },
+  "non_deletable_history": {
+    "business_execution": {
+      "id": "4fa1aef7-c92e-45ac-9897-153c028a46c6",
+      "status": "SUCCESS",
+      "http": 200,
+      "note": "task_id/script_id 指向已删除定义，Hub 保留执行历史（P07_P08-10 目标语义）"
+    },
+    "owned_execution_ids": [
+      "a81006f5-0142-49a4-bed2-c9fd0d4c42c9",
+      "5f6ced96-eaa0-4bab-adb4-01459e3e704b",
+      "74423f5e-cdc8-4018-a722-f52dc82c4ebf",
+      "4fa1aef7-c92e-45ac-9897-153c028a46c6"
+    ],
+    "hub_tombstones_written": 4,
+    "hub_tombstone_rows": [
+      {
+        "object_type": "task",
+        "object_id": "d5d24025-bb52-460e-897f-a69a9de46e71",
+        "global_revision": 1963
+      },
+      {
+        "object_type": "script",
+        "object_id": "ad218436-df59-4acf-b1f0-3dc524e653ff",
+        "global_revision": 1964
+      },
+      {
+        "object_type": "application",
+        "object_id": "d5dc31b2-baf7-45da-804b-2cb317af9f9a",
+        "global_revision": 2033
+      },
+      {
+        "object_type": "script",
+        "object_id": "bc0dc280-804c-483a-acb5-e0256ff3b77c",
+        "global_revision": 2034
+      }
+    ],
+    "artifact_and_node_have_no_tombstone_by_design": true
+  },
+  "no_leftovers": true,
+  "server_writes_issued_by_batch08": [
+    "POST /api/nodes/enrollment (1)",
+    "POST /api/nodes/{child} status=online (2: once via UI 设为在线, once via API verification helper)",
+    "DELETE /api/nodes/{child} (1, via UI)",
+    "POST /api/scripts (2: 1 UI business + 1 API probe)",
+    "POST /api/tasks (3: 1 business + 2 transient probe)",
+    "POST /api/tasks/{id}/run (3: 1 UI business run + 2 probe runs)",
+    "DELETE /api/tasks/{id} (3: 1 UI business + 2 transient probe)",
+    "POST /api/artifacts (1 upload)",
+    "DELETE /api/artifacts/{id} (1, via UI; the first UI attempt returned 409 and wrote nothing)",
+    "POST /api/applications (1)",
+    "PUT /api/applications/{id} (1: dangling artifact reference for the artifact-missing dimension)",
+    "DELETE /api/applications/{id} (1, via UI)",
+    "POST /api/applications/{id}/deploy (4 failed attempts, HTTP 400, no execution created)"
+  ],
+  "harness_notes": [
+    "所有 DELETE 均通过 UI 确认框执行并复验 GET404；2 次取消路径确认未产生任何 HTTP 请求。",
+    "无遗留后台进程/容器：native-4 上的 owned 进程数 0，非 systemd 单元启动的进程已 SIGTERM/SIGKILL 收尾。",
+    "agent-browser 会话已关闭（未留后台浏览器进程）。"
+  ],
+  "harness_interference": [
+    {
+      "id": "B08-HARNESS-01",
+      "severity": "medium",
+      "what": "用 `agent-browser close --session qaweb1410b08 --all` 收尾时，`--all` 同时关闭了并行批次 web batch07 的浏览器会话 qaweb1410b07。",
+      "impact": "batch07 若仍在执行 UI 步骤，其下一次 agent-browser 调用将需要重新拉起浏览器并重新登录（登录态可能丢失）；其已落盘证据与请求不受影响。",
+      "detected_by": "close --all 的输出同时列出 qaweb1410b07 与 qaweb1410b08。",
+      "mitigation": "未再启动任何会话；需要时由 batch07 自行重开会话并重新登录。建议后续对并行批次统一改用 `close --session <own>`（不带 --all）。"
+    }
+  ]
+}

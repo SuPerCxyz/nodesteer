@@ -1,0 +1,83 @@
+{
+  "run_id": "20260930-101945",
+  "target_revision": "dddee4f0",
+  "review_type": "existing_evidence_only",
+  "reviewed_at": "2026-10-03",
+  "current_live_verification": {
+    "status": "unavailable",
+    "reason": "本轮恢复后仅 root 会话存活；网络受限且 KVM 连接返回 Errno 1 Operation not permitted，旧私密 connection 文件已不存在。未尝试 live/SSH、猜测凭据或提权。",
+    "scope": "以下记录仅核对已保存证据，不能代表当前 Hub/Agent 健康状态。"
+  },
+  "environment_empty_ttl": {
+    "summary_status_field": "completed",
+    "classification": "REAL_ISOLATED_HUB_UI",
+    "case_results": {
+      "P03-09": {
+        "reviewed_status": "PASS",
+        "basis": "自有隔离 Hub 登录及 /api/me=200；Dashboard 使用真实空列表并呈现空态；无 Agent 注册或业务资源创建。",
+        "evidence": [
+          ".e2e/runs/20260930-101945/environment/empty-ttl/empty-ttl-summary.json",
+          ".e2e/runs/20260930-101945/environment/empty-ttl/dashboard-empty-isolated.png"
+        ],
+        "pointers_exist": true
+      },
+      "FL-14": {
+        "reviewed_status": "FAIL",
+        "basis": "TTL=3s 登录后记录 /api/me=200；等待 5.512 秒；真实 Dashboard API 请求返回 401，并记录最终 URL、登录表单和 localStorage token 状态。内部 /executions 返回目标经重新登录保留。失败维度是过期 Dashboard 未自动跳转 /sign-in。",
+        "evidence": [
+          ".e2e/runs/20260930-101945/environment/empty-ttl/empty-ttl-summary.json",
+          ".e2e/runs/20260930-101945/environment/empty-ttl/dashboard-ttl-expired.png"
+        ],
+        "pointers_exist": true
+      }
+    },
+    "cleanup_and_preservation": {
+      "reviewed_status": "recorded_pass_with_current_state_unverified",
+      "evidence": ".e2e/runs/20260930-101945/environment/empty-ttl/empty-ttl-summary.json",
+      "recorded": [
+        "两阶段自有 TTL Hub 均 stop 成功；各自 tunnel 已停止且本地转发端口关闭，监听端口关闭。",
+        "自有临时数据目录清理标记为 removed；TTL 用私密 database backup integrity_check=ok、mode=0600，记录 backup 路径和 SHA256。",
+        "私密运行目录字段标记为供 Root 最后 secret scan 保留；因此不将所有临时/private 目录概括成已删除。",
+        "原 Hub PID 412437、四个 Native 节点及 primary API 有当时的结束快照，记录为健康/在线且未变化；它们是历史快照，不是本轮 live 检查。"
+      ],
+      "not_currently_verified": "远端备份路径、原 Hub 与 Native 节点当前状态，以及本轮恢复后的端口/目录状态无法 live 复核。"
+    }
+  },
+  "web_roles": {
+    "P14P15-12": {
+      "inventory_status": "NOT_RUN",
+      "review_conclusion": "存在有价值的 Operator/Viewer API 与真实部署结果，但不能将整条 Admin/Operator/Viewer UI+API+业务效果用例标 PASS。保存的 Playwright ROLE-02 suite 仍失败；失败记录包含 fixture/harness 状态读取不匹配。Operator 部署证据本身显示 API 200、Execution SUCCESS、Guest unit active、binary/config 已落盘且 health=healthy。Viewer 定义写入及部署 API 返回 403。Admin 全维度没有在这些证据中证明。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/web/case-inventory.json",
+        ".e2e/runs/20260930-101945/web/luna-role-app-permissions-results.json",
+        ".e2e/runs/20260930-101945/web/luna-role-app-permissions-fixed-results.json",
+        ".e2e/runs/20260930-101945/web/evidence/role-application-permissions.json",
+        ".e2e/runs/20260930-101945/web/evidence/role-application-unit-cleanup.json",
+        ".e2e/runs/20260930-101945/web/evidence/role-application-units-final-state.json"
+      ],
+      "evidence_files_exist": true,
+      "cleanup": "应用对应 systemd unit inactive 且 unit file absent；两条记录均确认 owned files empty / cleanup_confirmed=true。",
+      "qualification": "suite 的健康失败属于首轮 fixture/harness 漏传 arguments 后未能正确读取结果的证据路径；不能据此新增产品缺陷，也不能抹去 suite FAIL。独立保存的 Operator 真实部署证据通过 API 与 Guest 状态证明实际效果。"
+    },
+    "P19-05": {
+      "inventory_status": "PASS",
+      "review_conclusion": "fresh Operator 与 Viewer 会话均读取自有审计记录；界面无修改/删除控件。针对同一记录的 PUT/DELETE 返回 HTTP 200 只读数组，前后审计字段不变，符合当前只读 handler 行为；这不是 mutation 成功。exact QA account 恢复 Viewer，两角色会话 logout 已记录。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/web/luna-role-audit-verified3-results.json",
+        ".e2e/runs/20260930-101945/web/evidence/role-audit-operator.json",
+        ".e2e/runs/20260930-101945/web/evidence/role-audit-operator-viewer.json",
+        ".e2e/runs/20260930-101945/web/evidence/viewer-audit-immutable.json",
+        ".e2e/runs/20260930-101945/web/case-inventory.json"
+      ],
+      "evidence_files_exist": true,
+      "identity_and_cleanup": "证据中的 QA user ID 为 8ac0ef0f-fea5-4be3-8707-2c580363353b；只记录标识符，不包含 token、密码或认证头。role 恢复为 Viewer、会话登出已记录。",
+      "qualification": "保留 suite soft-assert FAIL WEB-APP-LIVE-STATE；不把它抹除或重复计为新的产品缺陷。"
+    }
+  },
+  "record_consistency": {
+    "run_state_counts": {"PASS": 314, "FAIL": 41, "PARTIAL": 147, "NOT_RUN": 1, "BLOCKED": 1},
+    "coverage_counts": {"PASS": 314, "FAIL": 41, "PARTIAL": 147, "NOT_RUN": 1, "BLOCKED": 1},
+    "case_inventory_note": "P14P15-12 remains NOT_RUN; P19-05 is PASS. Do not infer a global status update from this review file alone.",
+    "secret_handling": "未复制凭据、token、cookie、完整认证头或私密日志内容。"
+  }
+}

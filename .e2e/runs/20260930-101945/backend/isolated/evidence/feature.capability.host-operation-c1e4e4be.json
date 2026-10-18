@@ -1,0 +1,327 @@
+{
+  "result": {
+    "id": "feature.capability.host-operation",
+    "name": "Basic Docker全部应用HostOperation缺cap拒绝且无下发效果",
+    "started_at": "2026-10-01T04:29:39.710073+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "failed",
+    "reason": "POST /api/tasks: HTTP 400, expected (200,): {'error': 'invalid task: app_deploy operation must be deploy or upgrade'}",
+    "traceback": "Traceback (most recent call last):\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/runner.py\", line 627, in execute\n    self.normal_case(case['id'])\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated_runner.py\", line 871, in normal_case\n    task = self.task('cap-' + task_type, type=task_type, application_id=app['id'], app_operation='restart')\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated_runner.py\", line 53, in task\n    return super().task(label, command, [self.core_node_id], **extra)\n           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/runner.py\", line 159, in task\n    return self.create('task', value)\n           ~~~~~~~~~~~^^^^^^^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/runner.py\", line 105, in create\n    value, _, _ = self.api('POST', '/api/' + {'application': 'applications'}.get(kind, kind + 's'), body)\n                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated_runner.py\", line 62, in api\n    result = super().api(method, path, *args, **kwargs)\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/runner.py\", line 88, in api\n    assert status in expected, f'{method} {path}: HTTP {status}, expected {expected}: {self.safe(value)}'\n           ^^^^^^^^^^^^^^^^^^\nAssertionError: POST /api/tasks: HTTP 400, expected (200,): {'error': 'invalid task: app_deploy operation must be deploy or upgrade'}\n",
+    "finished_at": "2026-10-01T04:29:42.984557+00:00",
+    "evidence": "backend/isolated/evidence/feature.capability.host-operation-c1e4e4be.json"
+  },
+  "events": [
+    {
+      "control": "python3 -c 'import pathlib,sys;pathlib.Path(sys.argv[1]).write_text(sys.argv[2])' /root/qa-20260930-101945-env/qa-20260930-101945-be-proxy.controls.json '{}'",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "control": "docker rm -f qa-20260930-101945-env-agent",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-env-agent\n",
+      "stderr": ""
+    },
+    {
+      "control": "docker run -d --name qa-20260930-101945-env-agent --network qa-20260930-101945-env-net --restart unless-stopped --hostname 6f6041279833 -v qa-20260930-101945-env-agentdata:/var/lib/nodesteer -e NODESTEER_NODE_IP=192.168.100.209 -e NODESTEER_DEPLOYMENT_MODE=docker -e NODESTEER_DATA_DIR=/var/lib/nodesteer -e PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin -e NODESTEER_HUB_URL=ws://192.168.100.209:18084/ws -e NODESTEER_REGISTRATION_TOKEN=[redacted] -e NODESTEER_AGENT_ID=agent-9b83b1d6-e376-4e76-a46f-f5c45e495329 -e NODESTEER_NODE_NAME=qa-20260930-101945-env-docker-agent qa-20260930-101945-env-agent:dddee4f0",
+      "exit_code": 0,
+      "stdout": "46def677e97a4a1a0983583d9057fddf5ab832749cf9f90937899d86ae32e15f\n",
+      "stderr": ""
+    },
+    {
+      "core_node": {
+        "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "hostname": "qa-20260930-101945-env-docker-agent",
+        "ip": "192.168.100.209",
+        "os": "Alpine Linux v3.20",
+        "arch": "amd64",
+        "agent_version": "dddee4f0",
+        "deployment_mode": "docker",
+        "host_integration": false,
+        "status": "online",
+        "labels": {},
+        "capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        },
+        "global_revision": 211,
+        "sync_status": "synced",
+        "last_seen": "2026-10-01T04:29:41.94799206Z",
+        "first_seen": "2026-09-30T02:36:32.656149623Z"
+      }
+    },
+    {
+      "api": "GET /api/nodes/d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "status": 200,
+      "request": null,
+      "response": {
+        "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "hostname": "qa-20260930-101945-env-docker-agent",
+        "ip": "192.168.100.209",
+        "os": "Alpine Linux v3.20",
+        "arch": "amd64",
+        "agent_version": "dddee4f0",
+        "deployment_mode": "docker",
+        "host_integration": false,
+        "status": "online",
+        "labels": {},
+        "capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        },
+        "global_revision": 211,
+        "sync_status": "synced",
+        "last_seen": "2026-10-01T04:29:41.94799206Z",
+        "first_seen": "2026-09-30T02:36:32.656149623Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:42 GMT",
+        "Content-Length": "635",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/artifacts",
+      "status": 200,
+      "request": null,
+      "response": {
+        "id": "32b6dd42-a013-4048-9ff3-a569be6919db",
+        "name": "qa-20260930-101945-be-artifact-6e8f03",
+        "version": "qa-v1",
+        "architecture": "amd64",
+        "filename": "qa-payload.bin",
+        "size": 30,
+        "sha256": "5703f2f12e238578ce3e8fa74ffea5f6531617c645ea5d3521a3af47fc655b5f",
+        "uploaded_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:42 GMT",
+        "Content-Length": "285",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/applications",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-capability-4ed66b.service",
+        "version": "qa-cap",
+        "artifact_id": "32b6dd42-a013-4048-9ff3-a569be6919db",
+        "binary_path": "/var/lib/nodesteer/qa-20260930-101945-be/capability-1958c9/bin",
+        "config_path": "/var/lib/nodesteer/qa-20260930-101945-be/capability-1958c9/bin.conf",
+        "config": "never-install",
+        "unit_name": "qa-20260930-101945-be-capability-4ed66b.service",
+        "health_check": {
+          "type": "systemd"
+        }
+      },
+      "response": {
+        "id": "8c23d26c-3082-4cfb-86ae-a3ad42cfb433",
+        "name": "qa-20260930-101945-be-capability-4ed66b.service",
+        "description": "",
+        "artifact_id": "32b6dd42-a013-4048-9ff3-a569be6919db",
+        "version": "qa-cap",
+        "binary_path": "/var/lib/nodesteer/qa-20260930-101945-be/capability-1958c9/bin",
+        "arguments": null,
+        "environment": null,
+        "config": "never-install",
+        "config_path": "/var/lib/nodesteer/qa-20260930-101945-be/capability-1958c9/bin.conf",
+        "unit_name": "qa-20260930-101945-be-capability-4ed66b.service",
+        "health_check": {
+          "type": "systemd",
+          "target": "",
+          "timeout": 0,
+          "attempts": 0,
+          "interval": 0
+        },
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:42 GMT",
+        "Content-Length": "647",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/applications/8c23d26c-3082-4cfb-86ae-a3ad42cfb433/deploy",
+      "status": 400,
+      "request": {
+        "node_ids": [
+          "d940ab68-9f29-434b-bfe8-5d075a519edc"
+        ],
+        "operation": "deploy"
+      },
+      "response": {
+        "error": "node d940ab68-9f29-434b-bfe8-5d075a519edc lacks capability application_deploy"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:42 GMT",
+        "Content-Length": "90",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/applications/8c23d26c-3082-4cfb-86ae-a3ad42cfb433/deploy",
+      "status": 400,
+      "request": {
+        "node_ids": [
+          "d940ab68-9f29-434b-bfe8-5d075a519edc"
+        ],
+        "operation": "upgrade"
+      },
+      "response": {
+        "error": "node d940ab68-9f29-434b-bfe8-5d075a519edc lacks capability application_deploy"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:42 GMT",
+        "Content-Length": "90",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/applications/8c23d26c-3082-4cfb-86ae-a3ad42cfb433/deploy",
+      "status": 400,
+      "request": {
+        "node_ids": [
+          "d940ab68-9f29-434b-bfe8-5d075a519edc"
+        ],
+        "operation": "start"
+      },
+      "response": {
+        "error": "node d940ab68-9f29-434b-bfe8-5d075a519edc lacks capability application_deploy"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:42 GMT",
+        "Content-Length": "90",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/applications/8c23d26c-3082-4cfb-86ae-a3ad42cfb433/deploy",
+      "status": 400,
+      "request": {
+        "node_ids": [
+          "d940ab68-9f29-434b-bfe8-5d075a519edc"
+        ],
+        "operation": "stop"
+      },
+      "response": {
+        "error": "node d940ab68-9f29-434b-bfe8-5d075a519edc lacks capability application_deploy"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:42 GMT",
+        "Content-Length": "90",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/applications/8c23d26c-3082-4cfb-86ae-a3ad42cfb433/deploy",
+      "status": 400,
+      "request": {
+        "node_ids": [
+          "d940ab68-9f29-434b-bfe8-5d075a519edc"
+        ],
+        "operation": "restart"
+      },
+      "response": {
+        "error": "node d940ab68-9f29-434b-bfe8-5d075a519edc lacks capability application_deploy"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:42 GMT",
+        "Content-Length": "90",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 400,
+      "request": {
+        "name": "qa-20260930-101945-be-cap-app_deploy-32eee2",
+        "type": "app_deploy",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "application_id": "8c23d26c-3082-4cfb-86ae-a3ad42cfb433",
+        "app_operation": "restart"
+      },
+      "response": {
+        "error": "invalid task: app_deploy operation must be deploy or upgrade"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 04:29:42 GMT",
+        "Content-Length": "73",
+        "Connection": "close"
+      }
+    }
+  ]
+}

@@ -1,0 +1,418 @@
+{
+  "task_id": "7b65f872-2e9f-455e-8e57-50bc14157e8e",
+  "task_name": "qa-resume-20261010-native4-supervisor-source-restart-readonly-870358cd92ee",
+  "source_sha256": "3b4c3b67b94079e82b40a4e1420cd80110f442086a43e471a9014a5e34f23a85",
+  "command_sha256": "0e6d8d68268e74f6394b404197c02311e3141f926d04b069674d186f63e92ab0",
+  "target_parent_node_id": "03cb50cc-eab6-4afd-bbe0-f73c4e326773",
+  "timeout": 60,
+  "retry": 0,
+  "schedule": false,
+  "scope": "read-only existing owned supervisor source and sanitized log keyword metadata",
+  "execution_id": "65daf525-7888-449c-af01-3e364d471578",
+  "run_http_status": 200,
+  "execution_status": "SUCCESS",
+  "execution_node_id": "03cb50cc-eab6-4afd-bbe0-f73c4e326773",
+  "stdout_sha256": "e74685ce6b8612d43b65b138fad7e3e1485380c44566b81247b337660c3aa7c2",
+  "stdout_bytes": 6167,
+  "result": {
+    "status": "OWNED_SUPERVISOR_SOURCE_AND_SAFE_LOG_TAGS",
+    "source_path": "/tmp/qa-resume-20261008-child-ciivjupc/supervisor.py",
+    "source_sha256": "fb486284ca7a13da78555b05aed039eeb20122649a5e7a2d43390ce7404901c1",
+    "source_bytes": 970,
+    "source_line_count": 27,
+    "source_lines_redacted": [
+      {
+        "line": 1,
+        "tags": [],
+        "source": "import asyncio,json,os,sys"
+      },
+      {
+        "line": 2,
+        "tags": [],
+        "source": "from pathlib import Path"
+      },
+      {
+        "line": 3,
+        "tags": [],
+        "source": "sys.path.insert(0,sys.argv[1])"
+      },
+      {
+        "line": 4,
+        "tags": [],
+        "source": "from ws_proxy import Proxy"
+      },
+      {
+        "line": 5,
+        "tags": [],
+        "source": "node_ip=sys.argv[2]; upstream_host=sys.argv[3]; upstream_port=int(sys.argv[4]); controls=Path(sys.argv[5]); events=Path(sys.argv[6]); ready=Path(sys.argv[7])"
+      },
+      {
+        "line": 6,
+        "tags": [],
+        "source": "proxy=Proxy(controls,events,upstream_host,upstream_port)"
+      },
+      {
+        "line": 7,
+        "tags": [],
+        "source": "active=False"
+      },
+      {
+        "line": 8,
+        "tags": [],
+        "source": "async def handler(reader,writer):"
+      },
+      {
+        "line": 9,
+        "tags": [],
+        "source": " global active"
+      },
+      {
+        "line": 10,
+        "tags": [],
+        "source": " peer=writer.get_extra_info(\"peername\")"
+      },
+      {
+        "line": 11,
+        "tags": [],
+        "source": " if not peer or not peer[0].startswith(\"127.\") or active:"
+      },
+      {
+        "line": 12,
+        "tags": [],
+        "source": "  writer.close()"
+      },
+      {
+        "line": 13,
+        "tags": [
+          "wait"
+        ],
+        "source": "  try: await writer.wait_closed()"
+      },
+      {
+        "line": 14,
+        "tags": [],
+        "source": "  except Exception: pass"
+      },
+      {
+        "line": 15,
+        "tags": [],
+        "source": "  return"
+      },
+      {
+        "line": 16,
+        "tags": [],
+        "source": " active=True"
+      },
+      {
+        "line": 17,
+        "tags": [
+          "wait"
+        ],
+        "source": " try: await proxy.connection(reader,writer)"
+      },
+      {
+        "line": 18,
+        "tags": [],
+        "source": " finally: active=False"
+      },
+      {
+        "line": 19,
+        "tags": [],
+        "source": "async def run():"
+      },
+      {
+        "line": 20,
+        "tags": [
+          "wait"
+        ],
+        "source": " server=await asyncio.start_server(handler,node_ip,0)"
+      },
+      {
+        "line": 21,
+        "tags": [],
+        "source": " port=server.sockets[0].getsockname()[1]"
+      },
+      {
+        "line": 22,
+        "tags": [],
+        "source": " temp=ready.with_suffix(\".tmp\")"
+      },
+      {
+        "line": 23,
+        "tags": [],
+        "source": " temp.write_text(json.dumps({\"port\":port},separators=(\",\",\":\")))"
+      },
+      {
+        "line": 24,
+        "tags": [],
+        "source": " os.chmod(temp,0o600)"
+      },
+      {
+        "line": 25,
+        "tags": [],
+        "source": " temp.replace(ready)"
+      },
+      {
+        "line": 26,
+        "tags": [
+          "wait"
+        ],
+        "source": " async with server: await server.serve_forever()"
+      },
+      {
+        "line": 27,
+        "tags": [],
+        "source": "asyncio.run(run())"
+      }
+    ],
+    "logs": [
+      {
+        "name": "supervisor.log",
+        "bytes": 470,
+        "sha256": "2551cdad579d1030ad9c59901924ad38111d2cc6cebac4549f09abc257afd1f4",
+        "keyword_lines": [
+          {
+            "line": 2,
+            "tags": [
+              "child"
+            ],
+            "line_sha256": "5a0248a88dd3f706bcf474cb4a4d333c4bcbcb670f47a71560bf737f8f009689"
+          },
+          {
+            "line": 5,
+            "tags": [
+              "child"
+            ],
+            "line_sha256": "4a47527480a162a07925fdab7abae22bac4e49ca64b95f3d20b15947b352abe9"
+          }
+        ]
+      },
+      {
+        "name": "agent.log",
+        "bytes": 29657,
+        "sha256": "f48f7e45cc0a8d70146f13ee833e652c2b64946a405a46e5fb5038fe96dacaa9",
+        "keyword_lines": [
+          {
+            "line": 154,
+            "tags": [
+              "child",
+              "starting"
+            ],
+            "line_sha256": "35778f6888fb5e7c56acef0c17a6d89c4b8ff9a228fb0dd1f248d8236fdc70dc"
+          },
+          {
+            "line": 157,
+            "tags": [
+              "child",
+              "starting"
+            ],
+            "line_sha256": "3c7f675cb980e08489cf254b43c5bef90431b5490f80b6d328476ee5301725a0"
+          },
+          {
+            "line": 159,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "9615f5a67e3aee030bb0f8927fece7426d842365340ed51eb60d25a7c9fb2d05"
+          },
+          {
+            "line": 160,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "13164f95c1c219e673253e343035be9d3764733ff13c5b6b4903ad7e9f117d7f"
+          },
+          {
+            "line": 161,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "e913f9fcf08a94d464d5684c52fd11d7e34a93a6fccabed6eb6f350d76e26378"
+          },
+          {
+            "line": 162,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "86d0df6ee639cc9125a34f972489266e1708fa76d2ef975a3532cb41781e31ff"
+          },
+          {
+            "line": 163,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "477b7a7f752f6ce8e3cf4bcbdd327e6dc8909905f452e979f539a416fc0cacc7"
+          },
+          {
+            "line": 164,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "55cb623e49fd4849a5b1abaf18ef356be28f7f548c4da8a25d27e6f70dd01562"
+          },
+          {
+            "line": 165,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "5d6ddda1cf46b65859f81079d33444a0be324a8ba4c9d23e2492c86e3ef65967"
+          },
+          {
+            "line": 166,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "1b5aea2abc5de7971874b3bd2ad13c30a948f32dc775d527c18558c48f6469ea"
+          },
+          {
+            "line": 167,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "a4469181cd6384ace1ab5b5b4dd63b28ada423640aebe8bc76cfdd9cbee63e0b"
+          },
+          {
+            "line": 168,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "91b12d2fb580bc0c7e5cf09e34c68f2b414d218dd22f106a98819557ef1308ce"
+          },
+          {
+            "line": 169,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "18f3a4be29724fda47667399d7f3f549d802a7db073d0f3acb182cfa013b4bb2"
+          },
+          {
+            "line": 171,
+            "tags": [
+              "child",
+              "starting"
+            ],
+            "line_sha256": "4a70134e8d32f3ea5bee6c466459ef0dad44ab4bd29171508b527b6e7b852b9f"
+          },
+          {
+            "line": 172,
+            "tags": [
+              "hello"
+            ],
+            "line_sha256": "a3651b178025bbf229cb95686bafdc177187d5737ebb7577f166ea272a78ae55"
+          },
+          {
+            "line": 175,
+            "tags": [
+              "child",
+              "starting"
+            ],
+            "line_sha256": "a22e218b08601f954b19a64d51046d855d82c52e19eaefb55870f873e341e59b"
+          },
+          {
+            "line": 178,
+            "tags": [
+              "child",
+              "starting"
+            ],
+            "line_sha256": "efc03dba1ba7559434b45448a94bd1b5861a4639155dfd5d54f191f71c4313ea"
+          },
+          {
+            "line": 180,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "01dcfdae89c4f53dfb825936a9ea82e02a3498df7634f7aa27486c67a6b5e3f4"
+          },
+          {
+            "line": 181,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "50501a55613fcfff965093d9fc5e899ef6d7239189e2826f8878d253edbfca76"
+          },
+          {
+            "line": 182,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "cc2f04fa7a901739b625261c6a0e8ba1bd01f0327c33aee1bea42d75a43d65bc"
+          },
+          {
+            "line": 183,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "70bc75a169e6e7951c9254e39c1deda6f1a94146f275829803e815639746ea91"
+          },
+          {
+            "line": 184,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "3d6bce3d234e66b2c173e797fb7500decbcc6ded5ce2ddfe7d2b06a95bd02be0"
+          },
+          {
+            "line": 185,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "08fcc3fd57fe914aaf677b9df5b3657761f075ee25f0872c10dec302b84ce667"
+          },
+          {
+            "line": 186,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "d26a472cc7913431a4e7f5e11b80ae92a1f6b4fa5b6c2f2c9ee40ed1ef78b4dd"
+          },
+          {
+            "line": 187,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "3b587edbbac1632c00d1b18889aec7144ede193721d8895efdcab4bf18578722"
+          },
+          {
+            "line": 188,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "26cb8425ccf469acc52f5032e8ad81f8c6be109d6daa3770a913bc9b5dc43002"
+          },
+          {
+            "line": 189,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "0a492dbb93f7692b31bb0a5274e95e260236d36286244a6012879941693b7fa9"
+          },
+          {
+            "line": 190,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "dcd6e1d44e2478d809bd64ca10540806881885660402751a8cfbf5ffba3c2390"
+          },
+          {
+            "line": 193,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "667aaafc85d5d350ce5d4358c5f96e88165f23bbfae0ccd693c1e7e4edb9e5d0"
+          },
+          {
+            "line": 194,
+            "tags": [
+              "heartbeat"
+            ],
+            "line_sha256": "89714e524b19c9a83dd915d02e483955939c0cc66023622cffd32b9d5bb3332f"
+          }
+        ]
+      }
+    ],
+    "credentials_or_env_emitted": false
+  },
+  "credentials_or_env_emitted": false,
+  "task_delete_status": 200,
+  "task_get_404": true
+}

@@ -1,0 +1,168 @@
+{
+  "result": {
+    "id": "schedule.interval.hub",
+    "name": "interval / hub owner真实触发/Journal/引用保护/删除",
+    "started_at": "2026-10-04T05:30:20.023393+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-10-04T05:30:52.503727+00:00",
+    "evidence": "backend-runner/evidence/schedule.interval.hub-fe755b7c.json"
+  },
+  "events": [
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-schedule-interval-hub-f49dd6",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "91f44866-8a28-435e-bbda-2f2367126c00"
+          ]
+        },
+        "command": "printf schedule-real",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "a1aa38ad-8377-495d-8564-eb9ff984d9a8",
+        "name": "qa-20260930-101945-be-schedule-interval-hub-f49dd6",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "91f44866-8a28-435e-bbda-2f2367126c00"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "printf schedule-real",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Sun, 04 Oct 2026 05:30:20 GMT",
+        "Content-Length": "433",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/schedules",
+      "status": 200,
+      "request": {
+        "task_id": "a1aa38ad-8377-495d-8564-eb9ff984d9a8",
+        "type": "interval",
+        "timezone": "Asia/Shanghai",
+        "execution_owner": "hub",
+        "offline_policy": "hub_online_required",
+        "misfire_policy": "run_once",
+        "enabled": true,
+        "interval_sec": 10
+      },
+      "response": {
+        "id": "16c9f621-c403-4076-a39e-6fa417eb0ade",
+        "task_id": "a1aa38ad-8377-495d-8564-eb9ff984d9a8",
+        "revision": 1,
+        "type": "interval",
+        "expression": "",
+        "interval_sec": 10,
+        "run_at": "0001-01-01T00:00:00Z",
+        "timezone": "Asia/Shanghai",
+        "execution_owner": "hub",
+        "offline_policy": "hub_online_required",
+        "misfire_policy": "run_once",
+        "enabled": true,
+        "created_at": "2026-10-04T13:30:20.044878709+08:00",
+        "updated_at": "2026-10-04T13:30:20.044878819+08:00"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Sun, 04 Oct 2026 05:30:20 GMT",
+        "Content-Length": "427",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "DELETE /api/tasks/a1aa38ad-8377-495d-8564-eb9ff984d9a8",
+      "status": 409,
+      "request": null,
+      "response": {
+        "error": "task a1aa38ad-8377-495d-8564-eb9ff984d9a8 is referenced by schedule 16c9f621-c403-4076-a39e-6fa417eb0ade"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Sun, 04 Oct 2026 05:30:20 GMT",
+        "Content-Length": "117",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/775430b2-b797-47a0-b9d0-797472e7cef9",
+      "terminal": {
+        "id": "775430b2-b797-47a0-b9d0-797472e7cef9",
+        "task_id": "a1aa38ad-8377-495d-8564-eb9ff984d9a8",
+        "task_revision": 1,
+        "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+        "trigger_type": "schedule",
+        "scheduled_time": "2026-10-04T05:30:50Z",
+        "start_time": "2026-10-04T05:30:51.71252229Z",
+        "end_time": "2026-10-04T05:30:51.719006935Z",
+        "status": "SUCCESS",
+        "stdout": "schedule-real",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "agent": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "read_command": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; r=c.execute('\"'\"'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?'\"'\"',(sys.argv[2],)).fetchone(); print(json.dumps(dict(r) if r else None))' /var/lib/nodesteer-repair-20260930-101945/native-1 775430b2-b797-47a0-b9d0-797472e7cef9\n",
+      "exit_code": 0,
+      "stdout": "{\"id\": \"775430b2-b797-47a0-b9d0-797472e7cef9\", \"task_id\": \"a1aa38ad-8377-495d-8564-eb9ff984d9a8\", \"node_id\": \"91f44866-8a28-435e-bbda-2f2367126c00\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"2026-10-04T05:30:50Z\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}\n",
+      "stderr": ""
+    },
+    {
+      "api": "DELETE /api/schedules/16c9f621-c403-4076-a39e-6fa417eb0ade",
+      "status": 200,
+      "request": null,
+      "response": {
+        "ok": "true"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Sun, 04 Oct 2026 05:30:52 GMT",
+        "Content-Length": "14",
+        "Connection": "close"
+      }
+    }
+  ]
+}

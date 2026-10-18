@@ -1,0 +1,495 @@
+{
+  "failures": [
+    {
+      "id": "FAIL-ENV-HOST-001",
+      "severity": "high",
+      "status": "open",
+      "feature_id": "docker_host_integration.application.systemd",
+      "title": "Docker Host Integration的nsenter root参数导致托管systemd部署失败",
+      "preconditions": [
+        "SUSE test VM; explicit Host Integration",
+        "No privileged; only documented test mounts/caps/path allowlist",
+        "Assigned Node online/synced before deploy"
+      ],
+      "steps": [
+        "Upload real amd64 /bin/sh artifact",
+        "Create application with explicit owned binary/config/Unit paths",
+        "Assign Host Node",
+        "Wait online/synced",
+        "POST deploy",
+        "Wait terminal Execution and Application state"
+      ],
+      "expected": "SUCCESS, registered owned systemd Unit active",
+      "actual": {
+        "execution_id": "b009053b-3ee8-4b99-8dcf-5a60a5a322c9",
+        "execution_status": "FAILED",
+        "application_state": [
+          {
+            "application_id": "a405d85f-34d0-43c3-b704-3bc9a2de29d1",
+            "node_id": "544a2988-59fe-4efe-9bfd-538af11e632f",
+            "version": "1.0.0",
+            "operation": "deploy",
+            "health": "unhealthy",
+            "error": "install unit failed: exit status 126",
+            "updated_at": "2026-09-30T06:46:57.530803479Z"
+          }
+        ]
+      },
+      "reproducible": true,
+      "full_product_path_reproduction_count": 1,
+      "source": [
+        "internal/agent/host/container.go:239"
+      ],
+      "root_cause": "nsenter -r takes an optional attached argument; separate /proc/1/root becomes the executable. --root=/proc/1/root with unchanged caps/mounts succeeds for read-only host systemctl.",
+      "evidence": [
+        "environment/hostintegration-application.json",
+        "environment/hostintegration-preflight.json",
+        "environment/hostintegration-host-cleanup.json"
+      ],
+      "cleanup": "Owned applications/artifacts removed by API; exact host unit/binary/config absent; LocalStore desired application rows removed; historical executions retained."
+    },
+    {
+      "id": "FAIL-ENV-TLS-001",
+      "severity": "high",
+      "status": "open",
+      "feature_id": "agent.artifact_prefetch.private_ca",
+      "title": "Agent tls_ca_file未用于Artifact HTTP下载，私有CA环境预取失败",
+      "preconditions": [
+        "Explicit NODESTEER_TLS_CA_FILE, real wss connection online/synced",
+        "Same CA-verified HTTPS Hub entry for API, advertised URLs and File Relay"
+      ],
+      "steps": [
+        "Upload Artifact through HTTPS and verify download SHA",
+        "Assign application to real TLS Agent and invoke prefetch path",
+        "Observe Agent warning and actual cache/tmp files",
+        "Run real TLS File Relay to two distinct target Agents and inspect HTTPS URI access logs"
+      ],
+      "expected": "Artifact prefetch trusts configured Hub CA and creates SHA-verified cache",
+      "actual": {
+        "logs": [
+          "time=2026-10-01T01:12:23.796Z level=WARN msg=\"artifact prefetch failed\" id=8a55b698-09ca-4446-907c-209dbf4f95cb error=\"Get \\\"https://192.168.100.209:18444/api/artifacts/8a55b698-09ca-4446-907c-209dbf4f95cb/download\\\": tls: failed to verify certificate: x509: certificate signed by unknown authority\"",
+          "time=2026-10-01T01:12:23.813Z level=WARN msg=\"application artifact prefetch failed\" app=bb611c0f-51bc-46d7-ad32-8f0e28a8c52e error=\"Get \\\"https://192.168.100.209:18444/api/artifacts/8a55b698-09ca-4446-907c-209dbf4f95cb/download\\\": tls: failed to verify certificate: x509: certificate signed by unknown authority\""
+        ],
+        "cache_file_exists": false,
+        "temporary_file_exists": false,
+        "status": "failed",
+        "source": [
+          "internal/agent/artifact.go:82",
+          "internal/agent/util.go:45"
+        ],
+        "expected": "Agent tls_ca_file also permits HTTPS Artifact prefetch"
+      },
+      "contrasting_verified_behavior": {
+        "file_relay": "SUCCESS, two actual target SHA match",
+        "wss_and_https_management": "passed"
+      },
+      "source": [
+        "internal/agent/artifact.go:82",
+        "internal/agent/util.go:45"
+      ],
+      "root_cause": "ArtifactCache calls http.DefaultClient rather than the configured connection HTTPClient; no skipVerify or system CA modification used.",
+      "evidence": [
+        "environment/tls-full-results.json",
+        "environment/tls-full-cleanup.json"
+      ]
+    },
+    {
+      "id": "FAIL-ENV-HOST-002",
+      "severity": "high",
+      "status": "open",
+      "feature_id": "docker_host_integration.file_relay.mount_mapping",
+      "title": "Host Integration缺失或错误挂载时FileRelay返回SUCCESS，逻辑宿主目标未写入",
+      "preconditions": [
+        "Explicit docker_host_integration receiver; reported host_filesystem=true",
+        "Allowed logical destination is the unique owned /opt test prefix",
+        "Missing directory bind, or bind points at a different owned host directory; no privileged"
+      ],
+      "steps": [
+        "Enroll independent source Docker and HostIntegration target against restore18083",
+        "Send actual payload through FileRelay to allowed logical host destination",
+        "Compare user-facing SUCCESS, container mapped file SHA and physical expected host file",
+        "Repeat with correct bind and confirm physical host SHA to exclude source/payload failure"
+      ],
+      "expected": "HostIntegration should validate required logical-to-host mapping or reject unavailable mapping; SUCCESS must mean the intended host target was written.",
+      "actual": {
+        "cases": [
+          {
+            "id": "ENV-HOSTNEG-MISSING",
+            "expected": "Reject unsafe configuration or write to real owned host path; readonly must reject",
+            "http_status": 200,
+            "transfer": {
+              "id": "c02e3655-a751-48f4-9a6e-317eeb4bbda9",
+              "source_node_id": "2ffcd581-cf30-45a2-9043-f89b6aa03c91",
+              "source_path": "/var/lib/nodesteer/host-negative-source.bin",
+              "source_mode": 420,
+              "size": 59,
+              "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d",
+              "status": "SUCCESS",
+              "created_at": "2026-10-01T04:26:20.76463743Z",
+              "updated_at": "2026-10-01T04:26:20.82053635Z",
+              "targets": [
+                {
+                  "transfer_id": "c02e3655-a751-48f4-9a6e-317eeb4bbda9",
+                  "node_id": "07db588f-28dc-44d3-bf67-7c4d154afa96",
+                  "destination_path": "/opt/qa-20260930-101945-env-hostneg/missing.bin",
+                  "status": "SUCCESS",
+                  "updated_at": "2026-10-01T04:26:20.815555583Z"
+                }
+              ]
+            },
+            "before": {
+              "host_destination": {
+                "exists": false,
+                "sha256": null
+              },
+              "host_sentinel": {
+                "exists": true,
+                "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+              },
+              "wrong_sentinel": {
+                "exists": true,
+                "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+              },
+              "unit": {
+                "exists": false,
+                "sha256": null
+              },
+              "container_mapped": {
+                "exit_code": 1,
+                "sha256": null
+              },
+              "native_agent": {
+                "active": "active",
+                "pid": "16703"
+              }
+            },
+            "after": {
+              "host_destination": {
+                "exists": false,
+                "sha256": null
+              },
+              "host_sentinel": {
+                "exists": true,
+                "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+              },
+              "wrong_sentinel": {
+                "exists": true,
+                "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+              },
+              "unit": {
+                "exists": false,
+                "sha256": null
+              },
+              "container_mapped": {
+                "exit_code": 0,
+                "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d"
+              },
+              "native_agent": {
+                "active": "active",
+                "pid": "16703"
+              }
+            },
+            "status": "FAIL",
+            "failure_id": "FAIL-ENV-HOST-002",
+            "interpretation": "HostIntegration reports FileRelay SUCCESS and host_filesystem=true although the logical host target was not written; invalid mount configuration is not detected."
+          },
+          {
+            "id": "ENV-HOSTNEG-WRONG",
+            "expected": "Reject unsafe configuration or write to real owned host path; readonly must reject",
+            "http_status": 200,
+            "transfer": {
+              "id": "8213dfb4-b64b-4e59-a4b0-e9f5fcf2783c",
+              "source_node_id": "2ffcd581-cf30-45a2-9043-f89b6aa03c91",
+              "source_path": "/var/lib/nodesteer/host-negative-source.bin",
+              "source_mode": 420,
+              "size": 59,
+              "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d",
+              "status": "SUCCESS",
+              "created_at": "2026-10-01T04:26:27.672003862Z",
+              "updated_at": "2026-10-01T04:26:27.724532624Z",
+              "targets": [
+                {
+                  "transfer_id": "8213dfb4-b64b-4e59-a4b0-e9f5fcf2783c",
+                  "node_id": "07db588f-28dc-44d3-bf67-7c4d154afa96",
+                  "destination_path": "/opt/qa-20260930-101945-env-hostneg/wrong.bin",
+                  "status": "SUCCESS",
+                  "updated_at": "2026-10-01T04:26:27.719630594Z"
+                }
+              ]
+            },
+            "before": {
+              "host_destination": {
+                "exists": false,
+                "sha256": null
+              },
+              "host_sentinel": {
+                "exists": true,
+                "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+              },
+              "wrong_sentinel": {
+                "exists": true,
+                "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+              },
+              "unit": {
+                "exists": false,
+                "sha256": null
+              },
+              "container_mapped": {
+                "exit_code": 1,
+                "sha256": null
+              },
+              "native_agent": {
+                "active": "active",
+                "pid": "16703"
+              }
+            },
+            "after": {
+              "host_destination": {
+                "exists": false,
+                "sha256": null
+              },
+              "host_sentinel": {
+                "exists": true,
+                "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+              },
+              "wrong_sentinel": {
+                "exists": true,
+                "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+              },
+              "unit": {
+                "exists": false,
+                "sha256": null
+              },
+              "container_mapped": {
+                "exit_code": 0,
+                "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d"
+              },
+              "native_agent": {
+                "active": "active",
+                "pid": "16703"
+              }
+            },
+            "status": "FAIL",
+            "failure_id": "FAIL-ENV-HOST-002",
+            "interpretation": "HostIntegration reports FileRelay SUCCESS and host_filesystem=true although the logical host target was not written; invalid mount configuration is not detected."
+          }
+        ],
+        "physical_host_final": {
+          "expected_missing": {
+            "path": "/opt/qa-20260930-101945-env-hostneg/missing.bin",
+            "exists": false,
+            "sha256": null
+          },
+          "expected_wrong": {
+            "path": "/opt/qa-20260930-101945-env-hostneg/wrong.bin",
+            "exists": false,
+            "sha256": null
+          },
+          "actual_wrong_bind_file": {
+            "path": "/opt/qa-20260930-101945-env-hostneg-wrong/wrong.bin",
+            "exists": true,
+            "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d"
+          },
+          "host_unit": {
+            "path": "/etc/systemd/system/qa-20260930-101945-env-hostneg.service",
+            "exists": false,
+            "sha256": null
+          },
+          "host_valid": {
+            "path": "/opt/qa-20260930-101945-env-hostneg/valid.bin",
+            "exists": true,
+            "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d"
+          }
+        },
+        "correct_bind_control": {
+          "id": "ENV-HOSTNEG-VALID",
+          "expected": "Reject unsafe configuration or write to real owned host path; readonly must reject",
+          "http_status": 200,
+          "transfer": {
+            "id": "aa162492-c26e-47c2-b60f-70bd99aedb91",
+            "source_node_id": "2ffcd581-cf30-45a2-9043-f89b6aa03c91",
+            "source_path": "/var/lib/nodesteer/host-negative-source.bin",
+            "source_mode": 420,
+            "size": 59,
+            "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d",
+            "status": "SUCCESS",
+            "created_at": "2026-10-01T04:26:31.076581958Z",
+            "updated_at": "2026-10-01T04:26:31.117480343Z",
+            "targets": [
+              {
+                "transfer_id": "aa162492-c26e-47c2-b60f-70bd99aedb91",
+                "node_id": "07db588f-28dc-44d3-bf67-7c4d154afa96",
+                "destination_path": "/opt/qa-20260930-101945-env-hostneg/valid.bin",
+                "status": "SUCCESS",
+                "updated_at": "2026-10-01T04:26:31.114256391Z"
+              }
+            ]
+          },
+          "before": {
+            "host_destination": {
+              "exists": false,
+              "sha256": null
+            },
+            "host_sentinel": {
+              "exists": true,
+              "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+            },
+            "wrong_sentinel": {
+              "exists": true,
+              "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+            },
+            "unit": {
+              "exists": false,
+              "sha256": null
+            },
+            "container_mapped": {
+              "exit_code": 1,
+              "sha256": null
+            },
+            "native_agent": {
+              "active": "active",
+              "pid": "16703"
+            }
+          },
+          "after": {
+            "host_destination": {
+              "exists": true,
+              "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d"
+            },
+            "host_sentinel": {
+              "exists": true,
+              "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+            },
+            "wrong_sentinel": {
+              "exists": true,
+              "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+            },
+            "unit": {
+              "exists": false,
+              "sha256": null
+            },
+            "container_mapped": {
+              "exit_code": 0,
+              "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d"
+            },
+            "native_agent": {
+              "active": "active",
+              "pid": "16703"
+            }
+          },
+          "status": "PASS"
+        }
+      },
+      "reproducible": true,
+      "source": [
+        "internal/agent/host/container.go:49",
+        "internal/agent/host/container.go:97",
+        "internal/agent/host/container.go:191",
+        "internal/agent/agent.go:1290",
+        "docs/PRODUCT.md:247",
+        "docs/ARCHITECTURE.md:1168"
+      ],
+      "root_cause": "ContainerHostAdapter maps to /host and validates logical allowlist/symlinks but does not verify that the destination bind is present and maps to the intended physical host path. Missing bind permits writes to container overlay; wrong bind writes the other physical host directory. Mode-derived capabilities still advertise host_filesystem=true.",
+      "configuration_boundary": "Invalid mount inputs are intentional negative cases. This is an operational success-feedback/host mapping gap, not evidence that all default HostIntegration deployments fail or that unrelated host paths were accessed.",
+      "evidence": [
+        "environment/host-negative-results.json",
+        "environment/host-negative-cleanup.json"
+      ]
+    },
+    {
+      "id": "FAIL-ENV-UI-THEME-001",
+      "severity": "low",
+      "status": "open",
+      "case_id": "G02-02",
+      "feature_id": "ui.theme.system.meta_color",
+      "title": "System主题遇暗色媒体时页面已暗色，theme-color仍为白色",
+      "preconditions": [
+        "Independent fresh browser/profile; real primaryHub8080 authenticated UI",
+        "Theme selected by real light/dark/system menu; no configuration/definition changes"
+      ],
+      "steps": [
+        "Verify explicit light/dark selection and reload: class, cookie and actual meta RGBA match expected palette",
+        "Select system while media prefers light and reload",
+        "Change media preference to dark: actual root class/body RGB become dark",
+        "Reload while media remains dark and inspect meta actual content/RGBA again"
+      ],
+      "expected": "System mode dark resolution updates theme-color to dark palette (#020817 / RGBA2,8,23,255), including reload",
+      "actual": {
+        "failed_steps": [
+          "system-media-dark",
+          "system-dark-reloaded"
+        ],
+        "observations": [
+          {
+            "step": "system-media-dark",
+            "theme_cookie": "system",
+            "resolved_class": "dark",
+            "media_dark": true,
+            "meta_content": "#fff",
+            "meta_rgb": [
+              255,
+              255,
+              255,
+              255
+            ],
+            "body_rgb": [
+              2,
+              6,
+              24,
+              255
+            ],
+            "expected_meta_rgb": [
+              2,
+              8,
+              23,
+              255
+            ]
+          },
+          {
+            "step": "system-dark-reloaded",
+            "theme_cookie": "system",
+            "resolved_class": "dark",
+            "media_dark": true,
+            "meta_content": "#fff",
+            "meta_rgb": [
+              255,
+              255,
+              255,
+              255
+            ],
+            "body_rgb": [
+              2,
+              6,
+              24,
+              255
+            ],
+            "expected_meta_rgb": [
+              2,
+              8,
+              23,
+              255
+            ]
+          }
+        ],
+        "explicit_dark_selection_and_reload": "PASS",
+        "other_observations_passed": 11
+      },
+      "failure_scope": "Only system-media-dark and system-dark-reloaded failed; explicit dark-selected/dark-reloaded and other light/dark persistence/media observations passed.",
+      "root_cause": "ThemeSwitch derives meta from selected theme (system is treated as light) and effect only depends on theme. ThemeProvider media handler changes root class but does not notify this meta effect; context resolvedTheme is memoized by theme.",
+      "source": [
+        "web/src/components/theme-switch.tsx:20",
+        "web/src/context/theme-provider.tsx:58",
+        "web/src/context/theme-provider.tsx:76"
+      ],
+      "evidence": [
+        "environment/readonly-ui-continuation/summary.json",
+        "environment/readonly-ui-continuation/theme-system-media-dark.png",
+        "environment/readonly-ui-continuation/theme-system-dark-reloaded.png"
+      ],
+      "business_mutations": 0,
+      "product_fix_applied": false,
+      "reproducible": true,
+      "runtime_reproduction_count": 2
+    }
+  ]
+}

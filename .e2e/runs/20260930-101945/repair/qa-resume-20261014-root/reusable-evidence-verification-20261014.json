@@ -1,0 +1,227 @@
+{
+  "verified_at_utc": "2026-10-14T08:06:57Z",
+  "reviewer": "reusable-evidence-reviewer",
+  "mode": "read-only; no network/remote/browser access; no test execution",
+  "sources": {
+    "plan_under_review": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/system-batch-plan-20261014.json#reusable_prior_evidence",
+    "authoritative_inventory": ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+    "case_definitions": ".e2e/full-feature-prompts.md (AR definition: 稳定baseline + 授权单一故障注入 + 失败/恢复观测 + 文件/Journal/Revision/幂等/UI 收敛; §66/§67)",
+    "defect_matrix": ".e2e/runs/20260930-101945/repair/defect-regression-matrix.json",
+    "root_integration_review": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/latest-evidence-integration-20261014.json",
+    "plan_review": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/system-batch-plan-review-20261014.json (5 项列为 pending_evidence_review，注明『可复用证据须经独立复核后才可升级状态』)"
+  },
+  "verdicts": [
+    {
+      "case_id": "E2E-18",
+      "current_status": "NOT_RUN",
+      "recommended_status": "PARTIAL",
+      "confidence": "medium",
+      "reason": "E2E-18 要求容器重建后 Identity/Revision/Journal/Cache 四项均不丢。被引用的 attempt04(ad9bf531b28a) 只覆盖 Identity/Revision/Cache 三项：全文 0 处 'journal'，0 处 Journal 类字段；它确实有 same NodeID/AgentID、revision 1630/1632/1634 单调、ArtifactCache DB 行+物理文件 8 字段（含 path_relative）、B 容器同 DB dev/inode 且有同 inode 打开 FD、quick_check=ok。Journal（及 Schedule）证据在同案 attempt02(b9e47f16deb9，属 SYS-12 canonical PASS 的一部分) 里：execution_journal_status=SUCCESS/exit_code=0/script_revision=1、disabled_schedule、rows_unchanged_across_a_b=true、revision 1571/1573/1575、同 DB inode 56333。因此『仅凭 plan 引用的文件』不构成 E2E-18 四项语义的完整覆盖，需显式共同采纳 attempt02 方可谈四项齐备；此外无 UI/用户路径观测（本 fixture 唯一只读 UI 窗口 P05B-04 被记录为 PARTIAL、仅观察），也未记录 docker run/Compose 形态。",
+      "evidence_actual": [
+        {
+          "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/artifact-cache-ad9bf531b28a-final-summary.json (+ -ledger.json/-result.json)",
+          "covers": [
+            "Identity：A/pre-B/B 三快照同一 node_id/agent_id，Application/Artifact 关联不变",
+            "Revision：真实 revision 1630/1632/1634 单调不回退",
+            "Cache：ArtifactCache DB 行 8 字段（含 path_relative）与 32B 物理缓存文件 SHA 三快照一致",
+            "物理：B 容器与 pre-B 同 DB dev/inode(65025/8703452)，B 内 Agent 进程持有同 inode DB 打开 FD，quick_check=ok",
+            "真实容器 A→B 重建（A 移除后新建 B），非容器内层拷贝"
+          ],
+          "does_not_cover": [
+            "Journal：该证据全无 journal/Journal 字段或读数",
+            "Schedule 持久化",
+            "任何部署/业务执行（status 自述 PASS_NOT_DEPLOYED，app_deploy_execution_count=0、Managed Unit 缺失）",
+            "UI 反馈：唯一只读 UI 窗口自述 P05B-04 remains PARTIAL、no further probes were run",
+            "docker run 与 Compose 两种接入形态的区分（引用文件无 volume/compose/docker run 字段）"
+          ]
+        },
+        {
+          "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/sys12-b9e47f16deb9-final-summary.json（plan 未引用，但属 SYS-12 canonical PASS）",
+          "covers": [
+            "Journal：execution_journal_status=SUCCESS、exit_code=0、script_revision=1，且 rows_unchanged_across_a_b=true",
+            "Schedule：disabled schedule revision 1 跨 A→B 保持",
+            "Revision：1571→1573→1575；同一 DB dev/inode 65025/56333",
+            "Identity：same node/agent；A 与 B 均以 UID65534 + repair agent SHA d55dc5cd… 打开 DB（FD proof）",
+            "真实 A→B 容器重建 + Script Task 真实执行 SUCCESS/marker"
+          ],
+          "does_not_cover": [
+            "ArtifactCache（自述 artifact_cache=NOT_TESTED）",
+            "B 恢复后 online/synced 的 Hub readback（B 在网络读回时已 stopped/exited）",
+            "Desired State 对账：sampled_b_hub_desired_revision=1573 与 b_db_after_sync=1575 数值不一致且未解释",
+            "UI 反馈"
+          ]
+        }
+      ],
+      "still_missing": [
+        "Journal 维度必须显式采纳 attempt02（plan 只引用 attempt04，单看引用证据不足以覆盖 E2E-18 的 Journal）",
+        "UI/用户路径观测（P05B-04 只读窗口 PARTIAL，未升级）",
+        "Compose 形态的容器重建（E2E-17 才区分 docker run/Compose；E2E-18 未记录形态）",
+        "B 容器恢复后 online/synced 的 Hub API readback"
+      ],
+      "flags": [
+        "plan 的 rationale 把 attempt04 概括为覆盖『Identity/Revision/Journal/Cache』，但该文件实际无 Journal 证据，属引用与自述不完全一致",
+        "attempt04 自留限制：status=ARTIFACT_CACHE_A_TO_B_VERIFIED_CLEANUP_COMPLETE_WITH_UNASSIGN_READBACK_SHAPE_GAP；controller_end_status=GET /api/applications/{id}/nodes 返回 HTTP200 JSON null（非 []）；runtime_status=RUNTIME_REMOVED_ROOT_RETAINED 为中间态拷贝；manual_recovery_app_delete 属 harness 外人工写入；result.json safe_error=exception_RuntimeError",
+        "Root 复核件 latest-evidence-integration-20261014.json 对 SYS-12 的判定为 confidence=medium 且列出 3 条 limitation；跨用例复用是新推论，非该复核结论"
+      ]
+    },
+    {
+      "case_id": "AR-04",
+      "current_status": "NOT_RUN",
+      "recommended_status": "PARTIAL",
+      "confidence": "medium",
+      "reason": "AR-04 按 full-feature-prompts.md 的 AR 定义要求：稳定 baseline + 授权单一故障注入 + 失败/恢复观测，再验证文件、Journal、Revision、幂等与 UI 收敛。被引用证据只实质覆盖『持久化』一项：Identity/Revision/Cache 行与物理文件跨容器重建不变。『恢复后幂等』没有任何直接证据——attempt04 自述 PASS_NOT_DEPLOYED、app_deploy_execution_count=0、Managed Unit 缺失，全程 0 次部署/0 次业务 Execution，无法观测重复执行/重复上传的去重；『Desired State 与实际状态一致』也无对账读数：attempt02 的 Hub desired revision(1573) 与 B 本地 after-sync revision(1575) 不一致且未解释，且 B 在读回时已 stopped。plan 自述『仅补恢复后 Desired State 与实际状态一致的读数即可』方向正确，但同样未提『幂等』完全无证据。",
+      "evidence_actual": [
+        {
+          "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/artifact-cache-ad9bf531b28a-*.json",
+          "covers": [
+            "容器重建后状态持久：同 node/agent 身份、revision 单调、cache 行与物理文件一致、同 DB dev/inode + 打开 FD、quick_check=ok",
+            "未产生半状态：无 Deploy、Unit 缺失、清理为 EXACT_OWNED_ROOT_REMOVED/root_absent=true"
+          ],
+          "does_not_cover": [
+            "恢复后幂等（无任何 Execution/重复请求/重复上传去重证据）",
+            "Desired State 与实际状态一致（无 Hub desired vs Agent actual 的成对读数）",
+            "恢复后 Agent online/synced 的 Hub readback",
+            "UI 收敛"
+          ]
+        },
+        {
+          "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/sys12-b9e47f16deb9-final-summary.json（plan 未引用）",
+          "covers": [
+            "重建后 script/DB/journal 行不改（rows_unchanged_across_a_b=true）、revision 不回退",
+            "真实 Script Task 执行 SUCCESS（重建前），无重复 Execution 痕迹"
+          ],
+          "does_not_cover": [
+            "恢复后重放同一操作是否幂等的直接对照",
+            "Hub desired revision 与 B 本地 revision 的一致结论（1573 vs 1575）",
+            "UI"
+          ]
+        }
+      ],
+      "still_missing": [
+        "『恢复后幂等』的直接证据：同一手动 UUID/同一离线上传重复执行后仍只 1 条 Execution",
+        "『Desired State 与实际状态一致』的成对 readback（Hub current revision/desired 行 = Agent 落盘状态）",
+        "恢复后 online/synced 的 API 读回与 UI 收敛",
+        "未结案形状缺口：GET /api/applications/{id}/nodes 返回 JSON null"
+      ],
+      "flags": [
+        "plan 对 AR-04 的 rationale 只承认缺 Desired State 读数，未指出『幂等』完全无证据",
+        "AR-04 与 E2E-18 语义确实不同：E2E-18 是四项持久化断言，AR-04 还要求失败/恢复闭环 + 幂等 + Desired State 对账，不能因共用 SYS-12 证据而等同处理"
+      ]
+    },
+    {
+      "case_id": "INV-15",
+      "current_status": "NOT_RUN",
+      "recommended_status": "PASS",
+      "confidence": "high",
+      "reason": "不变量原文（ARCHITECTURE.md §28/§67-15）：『Docker Agent state 必须 Persistent / Docker 必须使用 Persistent Volume』。两次真实 A→B 容器重建（A 容器移除后新建 B）后读到同一 DB 物理身份并由新容器内 Agent 进程持有其打开 FD（attempt02 dev/inode=65025/56333；attempt04 dev/inode=65025/8703452），identity/revision/artifact cache 行与物理文件均未变、quick_check=ok。若状态落在容器可写层，容器移除后 dev/inode 必然变化，故这是该不变量的直接运行证据，语义匹配度高。",
+      "evidence_actual": [
+        {
+          "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/sys12-b9e47f16deb9-final-summary.json 与 artifact-cache-preparation/artifact-cache-ad9bf531b28a-final-summary.json/-result.json",
+          "covers": [
+            "Docker Agent 核心状态（state.db、scripts、artifacts cache、identity、revision、journal 行）在容器被移除并重建后保持一致",
+            "B 容器内 Agent 进程实际打开同一个 DB 文件（FD proof，非仅宿主机旁观）",
+            "修复版 Agent 二进制 SHA d55dc5cd…，authority=repair:18080"
+          ],
+          "does_not_cover": [
+            "容器 volume/bind 挂载声明本身（引用文件无 volume/mount/compose 字段，仅以 dev/inode 反证持久路径）",
+            "多容器形态（Compose）下的持久性"
+          ]
+        }
+      ],
+      "still_missing": [],
+      "flags": [
+        "证据为物理层证明（同 dev/inode + 打开 FD），非容器挂载配置的静态证据；作为不变量运行证据足够，但 plan 未说明这一点",
+        "样本为 1 个自有 Docker fixture 节点、两个顺序尝试"
+      ]
+    },
+    {
+      "case_id": "E2E-16",
+      "current_status": "NOT_RUN",
+      "recommended_status": "PARTIAL",
+      "confidence": "medium",
+      "reason": "plan 的主引用文件 recreate-owned-child-evidence.json 实为 P0-002 的『owned child Unit restart/recreate』证据（case_ids=[E2E-20260930-101945-P0-002]），内容是重启同一子单元，与 Enrollment 无关，属引用错配。真正覆盖 Enrollment 的是 plan 顺带提到的 child-setup-evidence.json（SYS-01）：enrollment HTTP 200 + 新 node_id/agent_id + gateway_origin 来源为该 enrollment 响应 + registration_token 仅写入 0600 私有配置（未进 systemd/子进程环境）+ 子 Agent 以 repair 二进制 SHA d55dc5cd… 启动 + child_api_state.status=online/sync_status=synced。因此『Enrollment → … → online/synced』的末态与身份/凭据处理有真实证据，但 E2E-16 明写『pending → HELLO』：证据中没有 pending 阶段的任何观测（Hub 侧离线待接入记录的 pending 读回），也没有 HELLO/heartbeat 报文级证据（全库检索无 HELLO 帧证据可用于该 fixture），且无 UI 观测。",
+      "evidence_actual": [
+        {
+          "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/child-setup-evidence.json（+ child-setup-source.py、child-runtime-extension-evidence.json）",
+          "covers": [
+            "Enrollment：HTTP 200、新 node_id/agent_id、gateway origin 取自 enrollment 响应",
+            "凭据安全：registration_token 仅落 0600 私有 config，未写入 systemd/子进程环境",
+            "启动后状态：child_api_state.status=online、sync_status=synced、deployment_mode=native、host_integration=false",
+            "真实 Agent 进程与 repair 二进制 SHA d55dc5cd…、父单元未受影响"
+          ],
+          "does_not_cover": [
+            "pending：未见任何 pending/离线待接入节点记录读回",
+            "HELLO/heartbeat：无报文级或帧级证据",
+            "UI 反馈"
+          ]
+        },
+        {
+          "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/recreate-owned-child-evidence.json（plan 主引用）",
+          "covers": [
+            "仅是同一 owned child Unit 的 restart/recreate + owner/Journal 门禁 + Task DELETE200/GET404",
+            "节点前后仍 online/synced"
+          ],
+          "does_not_cover": [
+            "Enrollment：无 registration token、无 enrollment HTTP、无 pending、无 HELLO，与 E2E-16 语义无关"
+          ]
+        }
+      ],
+      "still_missing": [
+        "pending 阶段的直接观测（Hub 侧待接入节点记录）",
+        "HELLO/heartbeat 报文级证据",
+        "UI 反馈一致性",
+        "（SYS-01 另有待补）无效/过期/吊销 Token 与重复 re-enrollment"
+      ],
+      "flags": [
+        "plan 引用的文件名与用例语义不符，需改以 child-setup-evidence.json 为准",
+        "plan 自述缺口『只在 HELLO/heartbeat 报文级』不完整：pending 同样未被观测",
+        "旧版 environment/agent-install-results.json 仅 baseline（agent SHA 43bf33d0…）且无 pending/HELLO，按台账规则『旧版证据不能计入新版通过』不可用于补足"
+      ]
+    },
+    {
+      "case_id": "AR-26",
+      "current_status": "NOT_RUN",
+      "recommended_status": "PARTIAL",
+      "confidence": "medium",
+      "reason": "证据覆盖原生分支的 Application Install 全链：初次部署 FAILED（block_reason=『read-only file system; rollback failed』，application_state=unhealthy，deployment_journal 停留 ROLLING_BACK、backup_path=absent，失败态下 app 文件/Unit 均不存在 → 无半安装），随后在『仅给自有 child 单元加 ReadWritePaths』的 harness 调整后重试成功（execution SUCCESS、app healthy、Unit enabled+active、binary/config SHA、registry、journal DONE、cache 同 SHA 且无 .tmp、API/UI 核验）。但相对 AR 定义与 AR-26 语义仍有实质缺口：(1) 该失败自述为 harness 环境限制（child ProtectSystem=strict 只读 /etc/systemd/system），非授权产品故障注入，且回滚本身报『rollback failed』、ROLLING_BACK 未闭合，plan 所称『首次 EROFS 回滚』高估了证据；(2)『恢复后幂等』无直接观测（无对健康应用重复安装/重复部署的去重对照）；(3) 『Desired State 与实际状态一致』无显式对账读数；(4) AR-26 baseline_status=FAIL 且缺陷矩阵把 AR-26 归入 FAIL-ENV-HOST-001（Docker Host Integration，regression BLOCKED），该分支恰是 plan 自己声明不可复用、无法运行的部分。故只能算部分覆盖，升级 PASS 不可辩护。",
+      "evidence_actual": [
+        {
+          "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/tls-final-summary.json（+ application-deploy-api.json、app-failure-state.json、application-deploy-retry-api.json、managed-app-ui.json）",
+          "covers": [
+            "初次安装失败的可核对失败态：FAILED + block_reason 明确 + application_state unhealthy + deployment_journal=ROLLING_BACK",
+            "无半安装：失败后 app binary/config/Unit 均不存在、unit_registry 空",
+            "harness 调整后重试成功：execution SUCCESS、app healthy、Unit enabled+active、binary/config SHA、registry、local journal DONE、cache 同 SHA 且 .tmp 不存在",
+            "UI/资源侧核验与精确清理（App/Artifact/child Node DELETE 200→404，原 4 节点 online/synced）"
+          ],
+          "does_not_cover": [
+            "产品语义下的回滚成功闭环（证据为 rollback failed；失败被归类为测试 harness 环境限制，非产品故障）",
+            "恢复后幂等（无重复安装/重复部署对照）",
+            "Desired State 与实际状态的显式对账",
+            "baseline FAIL 对应的 Docker Host Integration 安装分支（FAIL-ENV-HOST-001，BLOCKED）",
+            "升级/Health 失败/回滚（AR-27/AR-28/AR-29 语义）",
+            "UI 完全收敛（自述 execution detail 标题渲染『未知任务』display_limitation）"
+          ]
+        }
+      ],
+      "still_missing": [
+        "产品故障注入下的失败→恢复（回滚成功）完整顺序证据",
+        "恢复后幂等（重复安装不产生重复/半状态）",
+        "Desired State 与实际状态一致的对账读数",
+        "AR-26 baseline FAIL 所在 host-integration 分支（当前环境 BLOCKED，需另立项）",
+        "UI 收敛（execution detail 标题缺陷）"
+      ],
+      "flags": [
+        "AR-26 baseline_status=FAIL，defect-regression-matrix.json 将 AR-26 列入 FAIL-ENV-HOST-001（inventory_case_ids=[SYS-45, AR-26, INV-14]，regression_status=BLOCKED）→ 与 plan 同一份文件的 environment_infeasible 判断自相呼应，复用原生证据不可能覆盖该 FAIL",
+        "plan 的『首次 EROFS 回滚』与证据原文『rollback failed』不一致，属表述夸大",
+        "证据自述首次失败『classic test-harness environment limitation … not product defect』，因此不能当作 AR-26 的故障注入观测"
+      ]
+    }
+  ],
+  "cannot_verify": [
+    "站点策略层面『他案证据可跨用例复用并直接升级状态』是否成立：本审查只做证据↔用例语义对账；Root 计划复核件亦声明『可复用证据须经独立复核后才可升级状态』，最终是否升级需 Root/用户裁决。",
+    "受只读与禁网约束，未访问 repair :18080、4 个 native 节点、Docker daemon 或容器，无法现场复核 fixture 是否确已清理、二进制 SHA、pinned 镜像 sha256、以及容器 volume/bind 声明确实存在（引用文件内均无 volume/compose 字段）。",
+    "E2E-18 是否强制要求 Compose 形态重建与真实 UI 用户路径：引用证据与 plan 均未定义该边界（plan 仅说『若 Root 要求补充 Compose 形态重建，再并入 sys-b13』）。",
+    "attempt02 中 B 容器是否真正向 Hub 完成 HELLO/online-synced：被引用文件未记录（B 在网络读回时已 stopped/exited），无法据此判定恢复后 Hub 侧一致性。",
+    "log/progress 类文件的时间戳自洽性（部分为 harness 事后写入）未逐项复算；仅按字段自述与交叉引用判断。"
+  ]
+}

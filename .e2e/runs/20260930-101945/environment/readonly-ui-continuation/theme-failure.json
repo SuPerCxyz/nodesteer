@@ -1,0 +1,95 @@
+{
+  "id": "FAIL-ENV-UI-THEME-001",
+  "severity": "low",
+  "status": "open",
+  "case_id": "G02-02",
+  "feature_id": "ui.theme.system.meta_color",
+  "title": "System主题遇暗色媒体时页面已暗色，theme-color仍为白色",
+  "preconditions": [
+    "Independent fresh browser/profile; real primaryHub8080 authenticated UI",
+    "Theme selected by real light/dark/system menu; no configuration/definition changes"
+  ],
+  "steps": [
+    "Verify explicit light/dark selection and reload: class, cookie and actual meta RGBA match expected palette",
+    "Select system while media prefers light and reload",
+    "Change media preference to dark: actual root class/body RGB become dark",
+    "Reload while media remains dark and inspect meta actual content/RGBA again"
+  ],
+  "expected": "System mode dark resolution updates theme-color to dark palette (#020817 / RGBA2,8,23,255), including reload",
+  "actual": {
+    "failed_steps": [
+      "system-media-dark",
+      "system-dark-reloaded"
+    ],
+    "observations": [
+      {
+        "step": "system-media-dark",
+        "theme_cookie": "system",
+        "resolved_class": "dark",
+        "media_dark": true,
+        "meta_content": "#fff",
+        "meta_rgb": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "body_rgb": [
+          2,
+          6,
+          24,
+          255
+        ],
+        "expected_meta_rgb": [
+          2,
+          8,
+          23,
+          255
+        ]
+      },
+      {
+        "step": "system-dark-reloaded",
+        "theme_cookie": "system",
+        "resolved_class": "dark",
+        "media_dark": true,
+        "meta_content": "#fff",
+        "meta_rgb": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "body_rgb": [
+          2,
+          6,
+          24,
+          255
+        ],
+        "expected_meta_rgb": [
+          2,
+          8,
+          23,
+          255
+        ]
+      }
+    ],
+    "explicit_dark_selection_and_reload": "PASS",
+    "other_observations_passed": 11
+  },
+  "failure_scope": "Only system-media-dark and system-dark-reloaded failed; explicit dark-selected/dark-reloaded and other light/dark persistence/media observations passed.",
+  "root_cause": "ThemeSwitch derives meta from selected theme (system is treated as light) and effect only depends on theme. ThemeProvider media handler changes root class but does not notify this meta effect; context resolvedTheme is memoized by theme.",
+  "source": [
+    "web/src/components/theme-switch.tsx:20",
+    "web/src/context/theme-provider.tsx:58",
+    "web/src/context/theme-provider.tsx:76"
+  ],
+  "evidence": [
+    "environment/readonly-ui-continuation/summary.json",
+    "environment/readonly-ui-continuation/theme-system-media-dark.png",
+    "environment/readonly-ui-continuation/theme-system-dark-reloaded.png"
+  ],
+  "business_mutations": 0,
+  "product_fix_applied": false,
+  "reproducible": true,
+  "runtime_reproduction_count": 2
+}

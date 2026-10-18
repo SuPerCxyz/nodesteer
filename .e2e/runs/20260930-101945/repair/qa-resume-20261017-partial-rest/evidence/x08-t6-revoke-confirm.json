@@ -1,0 +1,76 @@
+{
+ "case_id": "X08",
+ "test": "T6_revoke_confirm_single_request",
+ "at_utc": "2026-10-17T14:46:32Z",
+ "authority": "http://192.168.100.209:18080",
+ "owned_node": {
+  "name": "qa-prst-621bfad5-revnode",
+  "id": "9ab139d0-4b3c-4656-a1bb-00944f5ab75f"
+ },
+ "node_before": {
+  "http": 200,
+  "status": "pending"
+ },
+ "login": {
+  "submit": {
+   "ok": true
+  },
+  "token_in_localStorage": true,
+  "url": "http://192.168.100.209:18080/"
+ },
+ "inject": {
+  "delay_ms": 0,
+  "delay_path": null,
+  "patched": true
+ },
+ "mark_menu": {
+  "ok": true,
+  "text": ""
+ },
+ "click_menu": {
+  "rc": 0,
+  "out": "✓ Done",
+  "err": ""
+ },
+ "mark_revoke": {
+  "ok": true,
+  "text": "撤销凭证"
+ },
+ "click_revoke": {
+  "rc": 0,
+  "out": "✓ Done",
+  "err": "⚠ A JavaScript confirm dialog is blocking the page: \"确定撤销该节点凭证吗？Agent 需要重新纳管。\" — use `dialog accept` or `dialog dismiss` to resolve it"
+ },
+ "dialog_status": "⚠ JavaScript confirm dialog is open: \"确定撤销该节点凭证吗？Agent 需要重新纳管。\"\n  Default prompt text: \"\"\n  Use `dialog accept [text]` or `dialog dismiss` to resolve it",
+ "dialog_accept": {
+  "rc": 0,
+  "out": "✓ Done"
+ },
+ "obs": {
+  "counts": {
+   "/api/nodes/9ab139d0-4b3c-4656-a1bb-00944f5ab75f/revoke-credential": 1
+  },
+  "requests": [
+   {
+    "method": "POST",
+    "path": "/api/nodes/9ab139d0-4b3c-4656-a1bb-00944f5ab75f/revoke-credential",
+    "query": "",
+    "t": 1792248399990
+   }
+  ]
+ },
+ "revoke_post_count": 1,
+ "single_request_on_confirm": true,
+ "node_after": {
+  "http": 200,
+  "status": "disabled"
+ },
+ "confirm_effect_ok": true,
+ "screenshot": "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261017-partial-rest/evidence/x08-revoke-confirm.png",
+ "status": "PASS",
+ "cleanup": {
+  "delete_http": 200,
+  "get_after_http": 404,
+  "get404": true
+ }
+}

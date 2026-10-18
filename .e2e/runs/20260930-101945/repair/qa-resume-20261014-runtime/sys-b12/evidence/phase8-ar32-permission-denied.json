@@ -1,0 +1,329 @@
+{
+  "at_utc": "2026-10-14T10:06:30Z",
+  "unit": "qa-sysb12-530b8e2c5b77-app.service",
+  "binary_path": "/opt/qa-sysb12-530b8e2c5b77/app/bin/app",
+  "config_path": "/opt/qa-sysb12-530b8e2c5b77/app/config/app.env",
+  "seam": {
+    "action": "chattr +i on owned bin dir",
+    "path": "/opt/qa-sysb12-530b8e2c5b77/app/bin",
+    "lsattr_before": "---------------------- /opt/qa-sysb12-530b8e2c5b77/app/bin",
+    "chattr_rc": 0,
+    "lsattr_after_set": "----i----------------- /opt/qa-sysb12-530b8e2c5b77/app/bin",
+    "note": "the owned Agent runs as root, so DAC mode bits cannot deny it; immutable (EPERM) is the real kernel-level denial seam"
+  },
+  "definition_put_http": 200,
+  "deploy_http": 200,
+  "denied_execution": {
+    "id": "fb43f95e-4e9e-41af-b79c-fdfca3a710fa",
+    "task_id": "a8879252-75b0-49e3-8daa-46989da18491",
+    "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+    "status": "FAILED",
+    "trigger_type": "manual",
+    "start_time": "2026-10-14T10:06:30.98201458Z",
+    "end_time": "2026-10-14T18:06:31.488383238+08:00",
+    "block_reason": "install binary failed: open /opt/qa-sysb12-530b8e2c5b77/app/bin/.tmp-685914644: operation not permitted"
+  },
+  "denied_reason_expected": "operation not permitted",
+  "denied_reason_matches_eperm": true,
+  "new_executions_on_denial": 1,
+  "host_after_denial": {
+    "binary": {
+      "lexists": false,
+      "exists": false
+    },
+    "config": {
+      "lexists": false,
+      "exists": false
+    },
+    "unit_file": {
+      "lexists": false,
+      "exists": false
+    },
+    "unit_state": {
+      "MainPID": "0",
+      "Id": "qa-sysb12-530b8e2c5b77-app.service",
+      "LoadState": "not-found",
+      "ActiveState": "inactive",
+      "SubState": "dead",
+      "FragmentPath": "",
+      "UnitFileState": ""
+    },
+    "journal_rows": [
+      {
+        "id": "1939badb-69f1-4f32-9643-e7ca705d272c",
+        "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+        "from_version": "1.0",
+        "to_version": "1.0",
+        "phase": "DONE",
+        "backup_path": "absent:",
+        "started_at": "2026-10-14T10:06:30.989855713Z",
+        "updated_at": "2026-10-14T10:06:31.328240205Z"
+      },
+      {
+        "id": "22ce1540-fcb4-471b-a3c5-77552d91b5bc",
+        "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+        "from_version": "1.0",
+        "to_version": "1.0",
+        "phase": "ROLLING_BACK",
+        "backup_path": "/var/lib/nodesteer-qa-sysb12-530b8e2c5b77/data/applications/backup-53faa62e-0183-40f8-b7d2-1cbc0f22d276.binary",
+        "started_at": "2026-10-14T10:06:25.657433042Z",
+        "updated_at": "2026-10-14T10:06:25.689257612Z"
+      },
+      {
+        "id": "9f91d25f-aefe-40e8-98e1-621539970851",
+        "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+        "from_version": "1.0",
+        "to_version": "1.0",
+        "phase": "DONE",
+        "backup_path": "",
+        "started_at": "2026-10-14T10:06:23.53191996Z",
+        "updated_at": "2026-10-14T10:06:23.539834385Z"
+      },
+      {
+        "id": "121e35ab-7a4f-40cd-8aa6-70337db01338",
+        "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+        "from_version": "1.0",
+        "to_version": "1.0",
+        "phase": "DONE",
+        "backup_path": "",
+        "started_at": "2026-10-14T10:06:22.147810918Z",
+        "updated_at": "2026-10-14T10:06:22.157566203Z"
+      },
+      {
+        "id": "8fd81c28-e52f-42f9-ab08-91cd3a610882",
+        "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+        "from_version": "1.0",
+        "to_version": "1.0",
+        "phase": "DONE",
+        "backup_path": "",
+        "started_at": "2026-10-14T10:06:20.766273571Z",
+        "updated_at": "2026-10-14T10:06:20.775816566Z"
+      }
+    ],
+    "unit_registry": []
+  },
+  "no_partial_file": true,
+  "node_state_after_denial": [
+    {
+      "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+      "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+      "version": "1.0",
+      "operation": "deploy",
+      "health": "unhealthy",
+      "error": "install binary failed: open /opt/qa-sysb12-530b8e2c5b77/app/bin/.tmp-685914644: operation not permitted",
+      "updated_at": "2026-10-14T10:06:31.483164824Z"
+    }
+  ],
+  "seam_release": {
+    "result": {
+      "rc": 0,
+      "out": "",
+      "err": ""
+    },
+    "lsattr": null
+  },
+  "recovery_deploy_http": 200,
+  "recovery_execution": {
+    "id": "686654a1-a37a-405b-93ba-3d912cfa78d4",
+    "task_id": "a8879252-75b0-49e3-8daa-46989da18491",
+    "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+    "status": "SUCCESS",
+    "trigger_type": "manual",
+    "start_time": "2026-10-14T10:06:32.013457474Z",
+    "end_time": "2026-10-14T18:06:33.393682773+08:00",
+    "block_reason": null
+  },
+  "host_after_recovery": {
+    "binary": {
+      "lexists": true,
+      "exists": true,
+      "is_symlink": false,
+      "is_dir": false,
+      "mode": "0o755",
+      "size": 1048652,
+      "dev": 65025,
+      "sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16"
+    },
+    "config": {
+      "lexists": true,
+      "exists": true,
+      "is_symlink": false,
+      "is_dir": false,
+      "mode": "0o644",
+      "size": 16,
+      "dev": 65025,
+      "sha256": "9e94c912a842ea72ead332eae8c015fb84a9954d8b3608e1d90286a22f74fc85"
+    },
+    "unit_file": {
+      "lexists": true,
+      "exists": true,
+      "is_symlink": false,
+      "is_dir": false,
+      "mode": "0o644",
+      "size": 366,
+      "dev": 65025,
+      "sha256": "39ddccc1e53c0d921c43e55c570743c72987e79abf705bfb4c0b00976b05f9ee"
+    },
+    "enable_symlink": {
+      "lexists": true,
+      "exists": true,
+      "is_symlink": true,
+      "is_dir": false,
+      "mode": "0o777",
+      "size": 54,
+      "dev": 65025,
+      "target": "/etc/systemd/system/qa-sysb12-530b8e2c5b77-app.service"
+    },
+    "unit_state": {
+      "MainPID": "25342",
+      "Id": "qa-sysb12-530b8e2c5b77-app.service",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running",
+      "FragmentPath": "/etc/systemd/system/qa-sysb12-530b8e2c5b77-app.service",
+      "UnitFileState": "enabled"
+    },
+    "unit_registry": [
+      {
+        "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+        "unit_name": "qa-sysb12-530b8e2c5b77-app.service"
+      }
+    ],
+    "journal_rows": [
+      {
+        "id": "3d1f0f16-4742-4bc9-a1b0-b8ef721789ff",
+        "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+        "from_version": "1.0",
+        "to_version": "1.0",
+        "phase": "DONE",
+        "backup_path": "absent:",
+        "started_at": "2026-10-14T10:06:32.018957143Z",
+        "updated_at": "2026-10-14T10:06:33.23545023Z"
+      },
+      {
+        "id": "1939badb-69f1-4f32-9643-e7ca705d272c",
+        "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+        "from_version": "1.0",
+        "to_version": "1.0",
+        "phase": "DONE",
+        "backup_path": "absent:",
+        "started_at": "2026-10-14T10:06:30.989855713Z",
+        "updated_at": "2026-10-14T10:06:31.328240205Z"
+      },
+      {
+        "id": "22ce1540-fcb4-471b-a3c5-77552d91b5bc",
+        "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+        "from_version": "1.0",
+        "to_version": "1.0",
+        "phase": "ROLLING_BACK",
+        "backup_path": "/var/lib/nodesteer-qa-sysb12-530b8e2c5b77/data/applications/backup-53faa62e-0183-40f8-b7d2-1cbc0f22d276.binary",
+        "started_at": "2026-10-14T10:06:25.657433042Z",
+        "updated_at": "2026-10-14T10:06:25.689257612Z"
+      },
+      {
+        "id": "9f91d25f-aefe-40e8-98e1-621539970851",
+        "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+        "from_version": "1.0",
+        "to_version": "1.0",
+        "phase": "DONE",
+        "backup_path": "",
+        "started_at": "2026-10-14T10:06:23.53191996Z",
+        "updated_at": "2026-10-14T10:06:23.539834385Z"
+      },
+      {
+        "id": "121e35ab-7a4f-40cd-8aa6-70337db01338",
+        "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+        "from_version": "1.0",
+        "to_version": "1.0",
+        "phase": "DONE",
+        "backup_path": "",
+        "started_at": "2026-10-14T10:06:22.147810918Z",
+        "updated_at": "2026-10-14T10:06:22.157566203Z"
+      },
+      {
+        "id": "8fd81c28-e52f-42f9-ab08-91cd3a610882",
+        "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+        "from_version": "1.0",
+        "to_version": "1.0",
+        "phase": "DONE",
+        "backup_path": "",
+        "started_at": "2026-10-14T10:06:20.766273571Z",
+        "updated_at": "2026-10-14T10:06:20.775816566Z"
+      }
+    ]
+  },
+  "binary_matches_artifact": true,
+  "unit_active": true,
+  "node_state_after_recovery": [
+    {
+      "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+      "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+      "version": "1.0",
+      "operation": "deploy",
+      "health": "healthy",
+      "updated_at": "2026-10-14T10:06:33.387826837Z"
+    }
+  ],
+  "desired_equals_actual": {
+    "app_id": "a8879252-75b0-49e3-8daa-46989da18491",
+    "hub_version": "1.0",
+    "hub_binary_path": "/opt/qa-sysb12-530b8e2c5b77/app/bin/app",
+    "agent_definition_version": "1.0",
+    "agent_definition_binary_path": "/opt/qa-sysb12-530b8e2c5b77/app/bin/app",
+    "disk_binary_sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+    "expected_artifact_sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+    "equal": true
+  },
+  "restart": {
+    "stop": {
+      "signalled": [
+        24718
+      ],
+      "remaining": []
+    },
+    "start": {
+      "launcher_pid": 25378,
+      "owned_processes": [
+        "25379 /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent --config /var/lib/nodesteer-qa-sysb12-530b8e2c5b77/child.yaml"
+      ]
+    }
+  },
+  "node_after_restart": {
+    "status": "online",
+    "sync_status": "synced",
+    "deployment_mode": "native"
+  },
+  "host_after_restart": {
+    "binary_sha256": "f601cb6446e61cb8e428b45ace7d4ac77d592755a177a29e9b56ace2f98b7ae5",
+    "unit_active": "inactive",
+    "unit_registry": [
+      {
+        "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+        "unit_name": "qa-sysb12-530b8e2c5b77-app.service"
+      }
+    ],
+    "journal_rows": 6,
+    "db_quick_check": "ok",
+    "local_apps": 1
+  },
+  "persisted": false,
+  "idempotent_redeploy": {
+    "http": 200,
+    "execution": {
+      "id": "256cc07f-7129-4305-ba81-7396cb1346c7",
+      "task_id": "a8879252-75b0-49e3-8daa-46989da18491",
+      "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+      "status": "SUCCESS",
+      "trigger_type": "manual",
+      "start_time": "2026-10-14T10:06:38.829497459Z",
+      "end_time": "2026-10-14T18:06:40.259466317+08:00",
+      "block_reason": null
+    },
+    "binary_sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+    "unit_active": "active",
+    "unit_count_owned": [
+      "qa-sysb12-530b8e2c5b77-app.service                                                                                 loaded    active   running   NodeSteer managed application a8879252-75b0-49e3-8daa-46989da18491"
+    ],
+    "journal_rows": 7
+  }
+}

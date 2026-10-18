@@ -1,0 +1,144 @@
+{
+  "result": {
+    "id": "task.cancel",
+    "name": "Cancel真实终态且不Retry",
+    "started_at": "2026-09-30T02:31:03.755382+00:00",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-09-30T02:31:09.053124+00:00",
+    "evidence": "backend/evidence/task.cancel.json"
+  },
+  "events": [
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-cancel-fd2c88",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "56765828-4896-492b-b562-64afdc0fb8d6"
+          ]
+        },
+        "command": "sleep 120",
+        "timeout": 130,
+        "retry": 2,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "b080f5f6-ecc4-4fe2-93f3-2da5eb16a293",
+        "name": "qa-20260930-101945-be-cancel-fd2c88",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "56765828-4896-492b-b562-64afdc0fb8d6"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "sleep 120",
+        "timeout": 130,
+        "retry": 2,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:31:03 GMT",
+        "Content-Length": "408",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/b080f5f6-ecc4-4fe2-93f3-2da5eb16a293/run",
+      "status": 200,
+      "request": {},
+      "response": [
+        {
+          "id": "45bf9177-7fc0-4635-8f4e-9a0568debfb5",
+          "task_id": "b080f5f6-ecc4-4fe2-93f3-2da5eb16a293",
+          "task_revision": 1,
+          "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:31:03 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/executions/45bf9177-7fc0-4635-8f4e-9a0568debfb5/cancel",
+      "status": 200,
+      "request": {},
+      "response": {
+        "ok": "true"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:31:05 GMT",
+        "Content-Length": "14",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/45bf9177-7fc0-4635-8f4e-9a0568debfb5",
+      "terminal": {
+        "id": "45bf9177-7fc0-4635-8f4e-9a0568debfb5",
+        "task_id": "b080f5f6-ecc4-4fe2-93f3-2da5eb16a293",
+        "task_revision": 1,
+        "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T02:31:03.676873216Z",
+        "end_time": "2026-09-30T02:31:07.680333734Z",
+        "status": "CANCELED",
+        "exit_code": -1,
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "agent": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "read_command": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; r=c.execute('\"'\"'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?'\"'\"',(sys.argv[2],)).fetchone(); print(json.dumps(dict(r) if r else None))' /var/lib/nodesteer 45bf9177-7fc0-4635-8f4e-9a0568debfb5\n",
+      "exit_code": 0,
+      "stdout": "{\"id\": \"45bf9177-7fc0-4635-8f4e-9a0568debfb5\", \"task_id\": \"b080f5f6-ecc4-4fe2-93f3-2da5eb16a293\", \"node_id\": \"56765828-4896-492b-b562-64afdc0fb8d6\", \"status\": \"CANCELED\", \"exit_code\": -1, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}\n",
+      "stderr": ""
+    }
+  ]
+}

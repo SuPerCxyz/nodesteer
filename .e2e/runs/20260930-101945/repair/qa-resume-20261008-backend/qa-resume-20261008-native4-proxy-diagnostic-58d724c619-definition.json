@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "qa-resume-20261008-native4-proxy-diagnostic-58d724c619",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport json,hashlib\nfrom pathlib import Path\np=Path(\"/tmp/qa-resume-20261008-child-ciivjupc\")\nfor n in [\"proxy_source_sha256\",\"supervisor_log_tail\"]:\n pass\nlog=(p/\"supervisor.log\").read_text(errors=\"replace\").splitlines() if (p/\"supervisor.log\").is_file() else []\nlines=[x[-240:] for x in log[-10:]]\nprint(json.dumps({\"owned_dir_exists\":p.is_dir(),\"proxy_source_sha256\":hashlib.sha256((p/\"ws_proxy.py\").read_bytes()).hexdigest() if (p/\"ws_proxy.py\").is_file() else None,\"supervisor_log_tail\":lines},separators=(\",\",\":\")))\nPY",
+    "timeout": 30,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "20b7f2ddf15edbe36e8b61df755c95248a21a34c39ed4ed454ffc5076a73c3ca",
+  "source_contains_connection_token": false
+}

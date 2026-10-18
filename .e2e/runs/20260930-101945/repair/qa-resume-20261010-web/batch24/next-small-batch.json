@@ -1,0 +1,42 @@
+{
+  "generated_at_utc": "2026-10-12T15:31:23.271Z",
+  "source_inventory": ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+  "recommendation": "one cross-linked, disabled-fixture UI batch; do not create Nodes or execute Tasks/Schedules",
+  "cases": [
+    {
+      "case_id": "P06-01",
+      "title": "列表、搜索、分页、空态、Error/Retry。"
+    },
+    {
+      "case_id": "P06-08",
+      "title": "Group 变化后 Task Target 和 Node Detail 任务列表同步。"
+    },
+    {
+      "case_id": "P09P11-01",
+      "title": "列表、搜索、分页、View、空态、Error/Retry。"
+    },
+    {
+      "case_id": "P09P11-11",
+      "title": "Target label：key/value、匹配节点变化。"
+    },
+    {
+      "case_id": "P12P13-01",
+      "title": "列表、搜索、分页、类型/表达式/时区/Owner/Offline/Misfire/Enabled。"
+    }
+  ],
+  "minimum_fixture_budget": {
+    "Groups": 11,
+    "ordinary_disabled_Command_Tasks": 11,
+    "disabled_Schedules": 11,
+    "max_concurrent_objects": 33,
+    "Task_retry": 0,
+    "Task_timeout_seconds": 15,
+    "Task_target_NodeIDs": [],
+    "Schedule_enabled": false,
+    "Runs": 0,
+    "Users": 0,
+    "Nodes": 0
+  },
+  "isolation_and_cleanup": "Unique QA labels, no Group Node members, Schedules reference only owned disabled Tasks. Record each create response ID before assertions. Cleanup exact owned objects in dependency order Schedule → Task → Group; verify each exact GET404. No original resources touched.",
+  "reason": "One fixture family supports the Groups, Task target-label/list, and Schedule list dimensions; only controls actually present in source/UI should be claimed."
+}

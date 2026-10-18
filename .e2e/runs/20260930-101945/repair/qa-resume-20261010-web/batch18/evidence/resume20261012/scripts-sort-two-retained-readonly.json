@@ -1,0 +1,44 @@
+{
+  "captured_at_utc": "2026-10-12T13:12:00Z",
+  "canonical": "TABLE-SCRIPTS-SORT",
+  "method": "Same-session agent-browser clicks on the actual Name header; authenticated same-origin GET /api/scripts used only in page memory as comparator oracle.",
+  "source_refs": [
+    "web/src/features/catalog/index.tsx:1245-1252",
+    "web/src/components/data-table/column-header.tsx:27-33"
+  ],
+  "api_status": 200,
+  "api_count": 2,
+  "visible_rows": 2,
+  "comparator": "`${row.name} ${row.description || ''} ${row.id}` using ascending code-unit string comparison; descending is reverse order.",
+  "click_cycle": [
+    {
+      "action": "Click button aria-label 名称: 升序",
+      "state": "ascending",
+      "next_action_label": "名称: 降序",
+      "actual_order_id_sha256": "a04bf84ef5f98db8e8936cfccc3b7190b426698dd959820a702b7d6954c4414f",
+      "expected_order_id_sha256": "a04bf84ef5f98db8e8936cfccc3b7190b426698dd959820a702b7d6954c4414f",
+      "matches": true
+    },
+    {
+      "action": "Click button aria-label 名称: 降序",
+      "state": "descending",
+      "next_action_label": "名称: 清除排序",
+      "actual_order_id_sha256": "ed7075d24e6aafca88de092367e57021010b20c3117e9eb75c02be67cf25b043",
+      "expected_order_id_sha256": "ed7075d24e6aafca88de092367e57021010b20c3117e9eb75c02be67cf25b043",
+      "matches": true
+    },
+    {
+      "action": "Click button aria-label 名称: 清除排序",
+      "state": "unsorted",
+      "next_action_label": "名称: 升序",
+      "actual_order_id_sha256": "ed7075d24e6aafca88de092367e57021010b20c3117e9eb75c02be67cf25b043",
+      "api_order_id_sha256": "ed7075d24e6aafca88de092367e57021010b20c3117e9eb75c02be67cf25b043",
+      "restores_api_order": true
+    }
+  ],
+  "observations": "The ordered SHA is computed from the actual DOM row-ID sequence without sorting the sequence first. The currently preserved two rows discriminate ascending from descending. Clear returns to API order; in this two-row dataset that order equals descending. This is a fresh supplemental check; it does not rewrite batch18 9-row historical evidence.",
+  "raw_script_content_saved": false,
+  "token_or_headers_saved": false,
+  "server_writes": 0,
+  "runs": 0
+}

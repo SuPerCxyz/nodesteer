@@ -1,0 +1,50 @@
+{
+  "captured_at_utc": "2026-10-10T14:32:52.170016+00:00",
+  "canonical": "ROUTE-26",
+  "branch": "fresh missing Application ID -> UI error -> recovery through fresh actual list-row href",
+  "missing_application_id": "1c29e3e2-f312-46c3-9760-376ba0d7a5e4",
+  "actions": [
+    "authenticated GET /api/applications/:fresh-missing first",
+    "direct-open /applications/:fresh-missing and observe actual UI error",
+    "open /applications and get fresh snapshot ref for UUID-shaped row href only (exclude /applications/new)",
+    "click actual row href",
+    "verify GET200/id equality and browser history"
+  ],
+  "observations": {
+    "preflight_get_status": 404,
+    "route_get_status": 404,
+    "error_route_status": 200,
+    "error_heading": "编辑托管应用",
+    "role_alert_text": "托管应用不存在或已被删除。\n重试",
+    "retry_button_visible": true,
+    "error_input_count": 0,
+    "recovery_row_href_id_matches_list_id": true,
+    "recovery_item_get_status": 200,
+    "recovery_response_id_matches_href_id": true,
+    "recovery_heading_present": true,
+    "recovery_alert_count": 0,
+    "recovery_back_path": "/applications",
+    "recovery_forward_same_actual_id": true
+  },
+  "api_requests": [
+    {
+      "method": "GET",
+      "path": "/api/applications/:fresh-missing",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/api/applications/:fresh-missing",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/api/applications/:actual-list-row-id",
+      "status": 200
+    }
+  ],
+  "list_href_integrity_evidence": "evidence/route-26-list-href-integrity.json",
+  "write_request_count": 0,
+  "raw_application_names_or_data_saved": false,
+  "note": "An earlier stale-ref selector matched /applications/new (e17); it was a harness false positive, not a list-link defect. Fresh UUID-only row selector chose actual detail href e45, whose ID matches GET list and item response."
+}

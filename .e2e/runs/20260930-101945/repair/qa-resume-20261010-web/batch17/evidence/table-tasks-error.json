@@ -1,0 +1,50 @@
+{
+  "case_id": "TABLE-TASKS-ERROR",
+  "status": "PARTIAL",
+  "route": "/tasks",
+  "origin": "http://127.0.0.1:38181",
+  "method": "GET",
+  "api_path": "/api/tasks",
+  "precondition": {
+    "navigator_online": true,
+    "owned_cdp_target": true,
+    "page_cache_disabled_for_fault_window": true
+  },
+  "fault_window": {
+    "duration_seconds": 18,
+    "request_failures_observed": 5,
+    "timestamps_per_event_captured": false,
+    "event_timing": "bounded 18s window; per-event timestamps unavailable in recorder"
+  },
+  "failure_oracle": {
+    "source": "CDP Network.loadingFailed for actual page target",
+    "error_text": "net::ERR_FAILED",
+    "request_path_matches_case": true,
+    "request_method": "GET",
+    "response_status": null
+  },
+  "ui_before_retry": {
+    "error_state_visible": true,
+    "error_feedback": "Failed to fetch",
+    "retry_control_visible": true,
+    "empty_state_visible": false
+  },
+  "user_action": "Clicked the visible Retry control once after disabling the failpoint and enabling a response observer.",
+  "recovery_oracle": {
+    "route_unchanged": true,
+    "navigator_online": true,
+    "error_state_cleared": true,
+    "empty_state_visible": true,
+    "actual_retry_http_200_captured": false,
+    "reason": "Response observer recorded no matching success event; recovery was established by live UI transition only."
+  },
+  "observation": "Actual app GET failures and ErrorState were observed; Retry restored the empty UI state. HTTP 200 for the retry was not independently captured, so this remains PARTIAL. No conclusion is made about product or harness root cause.",
+  "cleanup": {
+    "failpoint_disabled": true,
+    "network_cache_restored": true,
+    "observer_stopped": true,
+    "server_writes": 0,
+    "resources_created": 0
+  },
+  "evidence_recorded_at_utc": "2026-10-10T15:43:28.310792+00:00"
+}

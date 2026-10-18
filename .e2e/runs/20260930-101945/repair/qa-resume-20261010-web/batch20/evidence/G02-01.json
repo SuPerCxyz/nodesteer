@@ -1,0 +1,56 @@
+{
+  "case_id": "G02-01",
+  "captured_at_utc": "2026-10-12T13:32:30.081090+00:00",
+  "session": "qawebsecure20261010-b18-clean38181",
+  "route": "/users",
+  "source_refs": [
+    "web/src/components/language-switch.tsx:13-31",
+    "web/src/i18n.ts:6-24",
+    "web/src/components/layout/nodesteer-header.tsx:62-68"
+  ],
+  "steps": [
+    {
+      "action": "Click authenticated Header language button then English item",
+      "ui_result": {
+        "path": "/users",
+        "storage_lang": "en",
+        "dashboard_link_english": true,
+        "page_heading_english": true,
+        "page_heading_chinese": false
+      }
+    },
+    {
+      "action": "Hard reload same route",
+      "ui_result": {
+        "path": "/users",
+        "storage_lang": "en",
+        "dashboard_link_english": true,
+        "page_heading_english": true
+      }
+    },
+    {
+      "action": "Click Header language button then 中文 item",
+      "ui_result": {
+        "path": "/users",
+        "storage_lang": "zh",
+        "dashboard_link_chinese": true,
+        "page_heading_chinese": true,
+        "page_heading_english": false
+      }
+    },
+    {
+      "action": "Hard reload after restoring Chinese",
+      "ui_result": {
+        "path": "/users",
+        "storage_lang": "zh",
+        "dashboard_link_chinese": true,
+        "page_heading_chinese": true
+      }
+    }
+  ],
+  "api_oracle": "No business API writes; route remained the authenticated /users page.",
+  "status": "PASS",
+  "remaining_dimensions": [],
+  "server_writes": 0,
+  "sensitive_text_or_credentials_saved": false
+}

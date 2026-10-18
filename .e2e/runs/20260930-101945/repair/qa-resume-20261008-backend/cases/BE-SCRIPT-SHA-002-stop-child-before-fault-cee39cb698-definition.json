@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "BE-SCRIPT-SHA-002-stop-child-before-fault-cee39cb698",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport hashlib,json,os,signal,time\nfrom pathlib import Path\np=Path(\"/tmp/qa-resume-20261008-child-ciivjupc\");mp=p/\"owner-manifest.json\";raw=mp.read_bytes();m=json.loads(raw)\ndef sha(x): return hashlib.sha256(Path(x).read_bytes()).hexdigest()\ndef start(pid):\n x=Path(\"/proc\",str(pid),\"stat\").read_text();return int(x[x.rfind(\")\")+2:].split()[19])\ndef uid(pid):\n for x in Path(\"/proc\",str(pid),\"status\").read_text().splitlines():\n  if x.startswith(\"Uid:\"):return int(x.split()[1])\n raise RuntimeError(\"uid_missing\")\ndef argv(pid):return [x.decode(errors=\"replace\") for x in Path(\"/proc\",str(pid),\"cmdline\").read_bytes().split(bytes([0])) if x]\ndef match(row):\n pid=int(row[\"pid\"]);return start(pid)==int(row[\"starttime\"]) and uid(pid)==int(row[\"uid\"])==65534 and sha(\"/proc/\"+str(pid)+\"/exe\")==row[\"exe_sha256\"] and any(a==str(p) or a.startswith(str(p)+os.sep) for a in argv(pid))\nif (p.stat().st_dev,p.stat().st_ino,p.stat().st_uid)!=(33,135,65534) or sha(mp)!='2c8f726f550a4d6543a33f2db55a4331a95ba1978e0cd6cfe79bb42d5e0acc30' or m[\"node_id\"]!=\"15961ef7-81b4-43f3-80c8-1b6977ca2aea\" or m[\"agent_id\"]!=\"agent-ab15a133-73cd-4025-8c97-f2ff37e000f5\" or (p/\"owner.marker\").read_text()!=m[\"owner_marker\"]:raise RuntimeError(\"owned_directory_manifest_guard_failed\")\nif m[\"child\"][\"pid\"]!=44160 or m[\"child\"][\"starttime\"]!=121359886 or m[\"child\"][\"exe_sha256\"]!=\"d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add\" or not match(m[\"child\"]) or not match(m[\"supervisor\"]):raise RuntimeError(\"owned_process_identity_guard_failed_no_signal\")\npid=m[\"child\"][\"pid\"];os.kill(pid,signal.SIGTERM);end=time.monotonic()+6\nwhile time.monotonic()<end:\n try:\n  if start(pid)!=m[\"child\"][\"starttime\"]:break\n except OSError:break\n time.sleep(.1)\nelse:\n if match(m[\"child\"]):os.kill(pid,signal.SIGKILL)\nend=time.monotonic()+3\nwhile time.monotonic()<end:\n try:\n  if start(pid)!=m[\"child\"][\"starttime\"]:break\n except OSError:break\n time.sleep(.1)\nelse:raise RuntimeError(\"owned_child_stop_failed\")\nprint(json.dumps({\"status\":\"PASS\",\"child_stopped\":True,\"supervisor_still_owned\":match(m[\"supervisor\"]),\"node_id\":m[\"node_id\"],\"child_pid\":pid,\"manifest_sha256\":sha(mp)},separators=(\",\",\":\")))\nPY",
+    "timeout": 20,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "845bac0366771c570e1d2dac076b209fc73a1a7858da56a3a3d5313d71cd289d",
+  "source_contains_connection_token": false
+}

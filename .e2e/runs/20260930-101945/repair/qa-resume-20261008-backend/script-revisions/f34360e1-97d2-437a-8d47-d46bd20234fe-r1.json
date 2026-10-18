@@ -1,0 +1,8 @@
+{
+  "script_id": "f34360e1-97d2-437a-8d47-d46bd20234fe",
+  "revision": 1,
+  "sha256": "b95d21c467fcb067acbc6e120c56c591d89e738016a542bbb8df1cc257ee661e",
+  "source_sha256_recomputed": "b95d21c467fcb067acbc6e120c56c591d89e738016a542bbb8df1cc257ee661e",
+  "content_sha_matches": true,
+  "content": "import os,sys,time\nsecret=os.environ[\"NODESTEER_PARAM_secret\"]\nmode=os.environ[\"NODESTEER_PARAM_mode\"]\nlimit=int(os.environ[\"NODESTEER_LOG_LIMIT\"])\nhalf=len(secret)//2\nif mode==\"prefix-cancel\":\n sys.stdout.write(secret[:half]);sys.stdout.flush();time.sleep(120)\nelif mode==\"prefix-timeout\":\n sys.stdout.write(secret[:half]);sys.stdout.flush();time.sleep(20)\nelif mode==\"split-streams\":\n sys.stdout.write(secret[:half]);sys.stdout.flush();time.sleep(0.5)\n sys.stderr.write(secret[half:]);sys.stderr.flush();time.sleep(0.5)\nelif mode==\"limit-mid-secret\":\n sys.stdout.write(\"L\"*(limit-half)+secret[:half]);sys.stdout.flush();time.sleep(0.3)\n sys.stdout.write(secret[half:]+\"\\nLIMIT-TAIL\");sys.stdout.flush()\n sys.stderr.write(\"LIMIT-ERR-TAIL\");sys.stderr.flush()\n"
+}

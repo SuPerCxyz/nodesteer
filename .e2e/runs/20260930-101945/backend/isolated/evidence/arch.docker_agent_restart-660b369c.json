@@ -1,0 +1,297 @@
+{
+  "result": {
+    "id": "arch.docker_agent_restart",
+    "name": "Docker Agent Restart",
+    "started_at": "2026-09-30T06:28:08.813047+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-09-30T06:28:19.947472+00:00",
+    "evidence": "backend/isolated/evidence/arch.docker_agent_restart-660b369c.json"
+  },
+  "events": [
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-iso-restart-61baac",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be; printf seed-real > /var/lib/nodesteer/qa-20260930-101945-be/restart-46d9bb",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "c74d2923-6d8f-4274-a570-109fc07d9bba",
+        "name": "qa-20260930-101945-be-iso-restart-61baac",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be; printf seed-real > /var/lib/nodesteer/qa-20260930-101945-be/restart-46d9bb",
+        "timeout": 20,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 06:28:08 GMT",
+        "Content-Length": "533",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/c74d2923-6d8f-4274-a570-109fc07d9bba/run",
+      "status": 200,
+      "request": {
+        "params": {}
+      },
+      "response": [
+        {
+          "id": "ab278954-2bc1-4827-a561-de4bf82d1e5b",
+          "task_id": "c74d2923-6d8f-4274-a570-109fc07d9bba",
+          "task_revision": 1,
+          "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 06:28:08 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/ab278954-2bc1-4827-a561-de4bf82d1e5b",
+      "terminal": {
+        "id": "ab278954-2bc1-4827-a561-de4bf82d1e5b",
+        "task_id": "c74d2923-6d8f-4274-a570-109fc07d9bba",
+        "task_revision": 1,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T06:28:08.844017292Z",
+        "end_time": "2026-09-30T06:28:08.873698513Z",
+        "status": "SUCCESS",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"ab278954-2bc1-4827-a561-de4bf82d1e5b\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"ab278954-2bc1-4827-a561-de4bf82d1e5b\", \"task_id\": \"c74d2923-6d8f-4274-a570-109fc07d9bba\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys,hashlib; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); r=c.execute('\"'\"'select key,value from identity order by key'\"'\"').fetchall(); print(json.dumps({'\"'\"'keys'\"'\"':[v[0] for v in r],'\"'\"'fingerprint'\"'\"':hashlib.sha256(json.dumps(r).encode()).hexdigest(),'\"'\"'revision'\"'\"':c.execute('\"'\"'select global_revision from sync_state where id=1'\"'\"').fetchone()[0]}))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data",
+      "exit_code": 0,
+      "stdout": "{\"keys\": [\"agent_id\", \"credential\", \"node_id\"], \"fingerprint\": \"c98510c4f92ac400a00e05236191dafb056b9e73e1c4b7149b62533baf6ce14b\", \"revision\": 3}\n",
+      "stderr": ""
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-iso-running-restart-1b264b",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "sleep 120",
+        "timeout": 130,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "caa86804-5c37-4bf2-8edb-ca6a30c13f42",
+        "name": "qa-20260930-101945-be-iso-running-restart-1b264b",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "sleep 120",
+        "timeout": 130,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 06:28:12 GMT",
+        "Content-Length": "421",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/caa86804-5c37-4bf2-8edb-ca6a30c13f42/run",
+      "status": 200,
+      "request": {},
+      "response": [
+        {
+          "id": "7c068583-cd8e-4a53-81e5-7f8725b5857c",
+          "task_id": "caa86804-5c37-4bf2-8edb-ca6a30c13f42",
+          "task_revision": 1,
+          "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 06:28:12 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "control": "docker restart -t 2 qa-20260930-101945-env-agent",
+      "exit_code": 0,
+      "stdout": "qa-20260930-101945-env-agent\n",
+      "stderr": ""
+    },
+    {
+      "core_node": {
+        "id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "hostname": "qa-20260930-101945-env-docker-agent",
+        "ip": "192.168.100.209",
+        "os": "Alpine Linux v3.20",
+        "arch": "amd64",
+        "agent_version": "dddee4f0",
+        "deployment_mode": "docker",
+        "host_integration": false,
+        "status": "online",
+        "labels": {},
+        "capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        },
+        "global_revision": 4,
+        "sync_status": "synced",
+        "last_seen": "2026-09-30T06:28:15.607261369Z",
+        "first_seen": "2026-09-30T02:36:32.656149623Z"
+      }
+    },
+    {
+      "api": "GET /api/executions/7c068583-cd8e-4a53-81e5-7f8725b5857c",
+      "terminal": {
+        "id": "7c068583-cd8e-4a53-81e5-7f8725b5857c",
+        "task_id": "caa86804-5c37-4bf2-8edb-ca6a30c13f42",
+        "task_revision": 1,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T06:28:12.483988566Z",
+        "end_time": "2026-09-30T06:28:15.570490688Z",
+        "status": "FAILED",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true,
+        "block_reason": "agent_restarted"
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"7c068583-cd8e-4a53-81e5-7f8725b5857c\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"7c068583-cd8e-4a53-81e5-7f8725b5857c\", \"task_id\": \"caa86804-5c37-4bf2-8edb-ca6a30c13f42\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"FAILED\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"agent_restarted\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys,hashlib; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); r=c.execute('\"'\"'select key,value from identity order by key'\"'\"').fetchall(); print(json.dumps({'\"'\"'keys'\"'\"':[v[0] for v in r],'\"'\"'fingerprint'\"'\"':hashlib.sha256(json.dumps(r).encode()).hexdigest(),'\"'\"'revision'\"'\"':c.execute('\"'\"'select global_revision from sync_state where id=1'\"'\"').fetchone()[0]}))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data",
+      "exit_code": 0,
+      "stdout": "{\"keys\": [\"agent_id\", \"credential\", \"node_id\"], \"fingerprint\": \"c98510c4f92ac400a00e05236191dafb056b9e73e1c4b7149b62533baf6ce14b\", \"revision\": 4}\n",
+      "stderr": ""
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "cat -- /var/lib/nodesteer/qa-20260930-101945-be/restart-46d9bb\n",
+      "exit_code": 0,
+      "stdout": "seed-real",
+      "stderr": ""
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"ab278954-2bc1-4827-a561-de4bf82d1e5b\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"ab278954-2bc1-4827-a561-de4bf82d1e5b\", \"task_id\": \"c74d2923-6d8f-4274-a570-109fc07d9bba\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"SUCCESS\", \"exit_code\": 0, \"scheduled_time\": \"\", \"synced\": 1, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    }
+  ]
+}

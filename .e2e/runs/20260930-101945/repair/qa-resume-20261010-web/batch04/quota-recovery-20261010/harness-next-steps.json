@@ -1,0 +1,28 @@
+{
+  "captured_at_utc": "2026-10-10T10:36:36.232+00:00",
+  "source_refs": {
+    "router_preload": "web/src/main.tsx:89-90",
+    "dashboard_query": "web/src/features/overview/index.tsx:53-61, 97-100, 151-156",
+    "groups_empty_state": "web/src/features/catalog/index.tsx:2325-2368",
+    "empty_state_component": "web/src/features/shared/ui.tsx:133-151"
+  },
+  "observed_harness_failure": {
+    "canonical": "P03-10",
+    "result": "PARTIAL",
+    "offline_requests": "Only actual navigation/root and authenticated route JS chunk requests failed; no Dashboard data API request/error alert was observed.",
+    "classification": "harness route-code chunk was not cached before browser session went offline; do not infer product defect."
+  },
+  "shortest_preload_procedure": [
+    "Login dedicated account by API in sign-in page; set token in this isolated origin context without printing it.",
+    "Hard-navigate to /groups before any Dashboard mount. Verify /api/me=200 and /api/groups=200/count=0; the current build renders EmptyState with no table/search toolbar, which is expected for zero rows.",
+    "While online, hover the actual sidebar Dashboard href once. Intent preload should fetch the authenticated route chunk while location stays /groups; assert no Dashboard data query paths were requested.",
+    "Set only this agent-browser session offline. Click the same sidebar Dashboard link; record actual /api/nodes, /api/executions, /api/applications, /api/schedules, /api/tasks request failures, ErrorState alert, and Retry button.",
+    "Click Retry while offline, restore online, click Retry again; assert expected API GETs return 200 and ErrorState clears. Keep API request records to http(s) whitelist (scheme/host/path/method/status/failure); drop data:, blob:, file:, browser-internal URLs and all request/response bodies.",
+    "Finally API logout only this dedicated token and verify that token /api/me=401; clear network, close owned session, stop exact guarded SSH tunnel and verify listener absent."
+  ],
+  "constraints": [
+    "No route interception, mock, fixtures, Group/User/Task/Run/Node writes, or product-source edits.",
+    "Log every phase before proceeding; if first route chunk is not prefetched, remain PARTIAL and do not label product failure.",
+    "The previous phase2-readonly case P03-10 contains data-URL paths emitted by a too-broad network whitelist; do not use those raw paths as evidence. This recovery task is scoped to quota-recovery-20261010; Root should sanitize or exclude that case file during integration."
+  ]
+}

@@ -1,0 +1,67 @@
+--- attempt04/ui_driver.py
++++ attempt05/ui_driver.py
+@@ -291,7 +291,13 @@
+     result = browser(["snapshot", "-i"], timeout=1.5)
+     if result.returncode != 0:
+         return ""
+-    refs = re.findall(r"(@e\d+) \[button[^\]]*\] [^\n]*\"" + re.escape(label) + r"\"", result.stdout)
++    refs = []
++    for line in result.stdout.splitlines():
++        if "button" not in line or '"' + label + '"' not in line:
++            continue
++        match = re.search(r"@e(\d+)|\[ref=e(\d+)\]", line)
++        if match:
++            refs.append("@e" + (match.group(1) or match.group(2)))
+     if not refs:
+         return ""
+     return refs[-1] if last else refs[0]
+@@ -313,7 +319,7 @@
+ def check_prepared_proof(path: Path, args) -> dict:
+     proof = json.loads(path.read_text())
+     expected_path = "/tasks/" + args.task_id + "/run"
+-    if proof.get("status") != "UI_PREPARED_NO_RUN" or proof.get("task_id") != args.task_id or proof.get("task_name") != args.task_name or proof.get("marker") != args.marker or proof.get("node_id") != NODE or proof.get("agent_id") != AGENT or proof.get("browser_session") != SESSION or proof.get("browser_cdp_guard", {}).get("loopback") is not True or not isinstance(proof.get("browser_cdp_guard", {}).get("port"), int) or proof.get("authenticated_role") != "administrator" or proof.get("task_exact_scope_verified") is not True or proof.get("run_button", {}).get("has_run_button") is not True or proof.get("run_page_path") != expected_path or proof.get("browser_session_left_open") is not True or proof.get("run_clicked") is not False:
++    if proof.get("status") != "UI_PREPARED_NO_RUN" or proof.get("task_id") != args.task_id or proof.get("task_name") != args.task_name or proof.get("marker") != args.marker or proof.get("node_id") != NODE or proof.get("agent_id") != AGENT or proof.get("browser_session") != SESSION or proof.get("browser_cdp_guard", {}).get("loopback") is not True or not isinstance(proof.get("browser_cdp_guard", {}).get("port"), int) or proof.get("authenticated_role") != "administrator" or proof.get("task_exact_scope_verified") is not True or proof.get("run_button", {}).get("has_run_button") is not True or not re.fullmatch(r"@e\d+", proof.get("run_button", {}).get("ref", "")) or proof.get("run_page_path") != expected_path or proof.get("browser_session_left_open") is not True or proof.get("run_clicked") is not False:
+         raise RuntimeError("prepared_ui_proof_identity_mismatch")
+     expected_profile = proof.get("browser_profile") or {}
+     activate_owned_browser_profile(expected_profile)
+@@ -326,6 +332,13 @@
+     browser_task_readback(args.task_id, args.task_name, args.marker)
+     if not snapshot_meta().get("has_run_button"):
+         raise RuntimeError("prepared_browser_run_button_missing")
++    live_run_ref = ""
++    for label in ("Run Now", "立即运行"):
++        live_run_ref = snapshot_button_ref(label)
++        if live_run_ref:
++            break
++    if not re.fullmatch(r"@e\d+", live_run_ref):
++        raise RuntimeError("prepared_browser_run_button_ref_missing")
+     return proof
+ 
+ 
+@@ -503,8 +516,8 @@
+         raise SystemExit("unique_marker_format_invalid")
+     if not args.task_name.endswith(args.marker[-12:]):
+         raise SystemExit("task_name_must_bind_to_unique_marker")
+-    if args.hold_nonce and args.marker != "QA_PENDING_UI_" + args.hold_nonce:
+-        raise SystemExit("marker_must_bind_to_hold_nonce")
++    if args.hold_nonce and not re.fullmatch(r"[0-9a-f]{12,32}", args.hold_nonce):
++        raise SystemExit("control_nonce_format_invalid")
+     if args.evidence.resolve().parent != HERE.resolve() or (args.prepared_proof and args.prepared_proof.resolve().parent != HERE.resolve()) or (args.hold_proof and args.hold_proof.resolve().parent != HERE.resolve()):
+         raise SystemExit("ui_evidence_must_stay_in_exclusive_pending_ui_directory")
+     reserved = [args.evidence]
+@@ -542,8 +555,15 @@
+             evidence["run_page_visible_text_sha256"] = hashlib.sha256(page.encode()).hexdigest()
+             evidence["run_page_bytes"] = len(page.encode())
+             evidence["run_button"] = snapshot_meta()
++            evidence["run_button"]["ref"] = ""
++            for label in ("Run Now", "立即运行"):
++                evidence["run_button"]["ref"] = snapshot_button_ref(label)
++                if evidence["run_button"]["ref"]:
++                    break
+             if not evidence["run_button"]["has_run_button"]:
+                 raise RuntimeError("run_button_missing_from_ui")
++            if not re.fullmatch(r"@e\d+", evidence["run_button"]["ref"]):
++                raise RuntimeError("run_button_ref_missing_from_ui")
+             evidence["status"] = "UI_PREPARED_NO_RUN"
+             evidence["task_id"] = args.task_id
+             evidence["task_name"] = args.task_name

@@ -1,0 +1,233 @@
+{
+  "run_id": "20260930-101945",
+  "case_id": "SYS18",
+  "status": "PARTIAL",
+  "classification": "ISOLATED_DUMMY_AGENT_RECONNECT_JITTER",
+  "target_guest": {
+    "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+    "ssh_host": "192.168.100.222"
+  },
+  "dummy": {
+    "agent_id": "42cfa8f9-3709-4f2e-8ccd-21e0feb90623",
+    "hub_url": "ws://127.0.0.1:18997/ws",
+    "data_dir": "/tmp/qa-20260930-101945-luna-jitter-22b875b444",
+    "data_dir_preflight": {
+      "data_dir_created": true,
+      "mode": "0700",
+      "empty_before_launch": true
+    }
+  },
+  "capture": {
+    "interface": "lo",
+    "filter": "TCP dst port 18997 and SYN=1 ACK=0",
+    "snaplen": 96,
+    "payload_capture": false,
+    "path": "environment/jitter/reconnect-syn.txt",
+    "dedup_key": "source_port+tcp_sequence"
+  },
+  "code_reference": {
+    "path": "internal/agent/connection/manager.go",
+    "delay": "2 seconds + random [0, 2 seconds)",
+    "line": 229
+  },
+  "remote_primary_mutations": 0,
+  "uses_primary_credentials": false,
+  "uses_primary_config_or_data": false,
+  "baseline": {
+    "guest": {
+      "service_active": "active",
+      "pid": 398003,
+      "exe": "/usr/local/bin/nodesteer-agent",
+      "sha256": "43bf33d06e775bd6581f120a002d6d904de36de6c6d4e18eaef90f6862fb6998",
+      "listener18997": "",
+      "timeout": "/usr/bin/timeout",
+      "tcpdump": "/usr/bin/tcpdump",
+      "python3": "/usr/bin/python3"
+    },
+    "primary_node2": {
+      "http": 200,
+      "id": "d77e2440-919f-4431-a488-733817dcd809",
+      "agent_id": "agent-1fbe0fa7-501a-49d6-8af8-6cdb6ec777f5",
+      "status": "online",
+      "sync_status": "synced",
+      "agent_version": "dddee4f0"
+    }
+  },
+  "recorded_at": "2026-10-03T06:18:08.224395+00:00",
+  "tcpdump": {
+    "pid": 407533,
+    "local_pgid": 6,
+    "local_session": true,
+    "listening_confirmed": {
+      "pid": 407533,
+      "alive": true,
+      "command_matches": true
+    },
+    "stop": {
+      "stopped": true,
+      "signal": "INT",
+      "target": "tcpdump"
+    },
+    "wrapper_exit": 0
+  },
+  "agent_process": {
+    "timeout_pid": 407632,
+    "local_pgid": 13,
+    "local_session": true,
+    "timeout_seconds": 180,
+    "started_monotonic_recorded": true,
+    "wrapper_exit": 0,
+    "exit_verification": {
+      "timeout_pid_absent_after_wrapper_exit": true,
+      "no_process_env_contains_dummy_data_dir": true,
+      "natural_timeout_window_seconds": 180
+    }
+  },
+  "samples": {
+    "unique_syn_attempts": 57,
+    "duplicate_syn_packets_removed": 0,
+    "unique_inter_attempt_gaps": 56,
+    "gap_seconds": {
+      "min": 2.085,
+      "max": 3.992,
+      "p50": 3.351,
+      "p95": 3.973
+    },
+    "observed_gap_spread_seconds": 1.908,
+    "whole_second_bins": {
+      "2": 23,
+      "3": 33
+    },
+    "seconds_scale_jitter_demonstrated": true,
+    "gap_bins_0_1s": {
+      "2.1": 3,
+      "2.2": 1,
+      "2.3": 3,
+      "2.4": 1,
+      "2.5": 3,
+      "2.6": 1,
+      "2.7": 3,
+      "2.8": 4,
+      "2.9": 4,
+      "3.1": 1,
+      "3.2": 3,
+      "3.3": 1,
+      "3.4": 6,
+      "3.5": 4,
+      "3.6": 3,
+      "3.7": 1,
+      "3.8": 3,
+      "3.9": 6,
+      "4.0": 5
+    },
+    "tcpdump_statistics": {
+      "captured_packets": 57,
+      "received_by_filter": 114,
+      "dropped_by_kernel": 0
+    },
+    "capture_span_seconds": 178.568,
+    "percentile_method": "linear interpolation over sorted inter-attempt gaps"
+  },
+  "elapsed_seconds": 180.0,
+  "duration_seconds": 190.01,
+  "agent_private_observations": [
+    {
+      "file_count": 2,
+      "sqlite_databases": [
+        {
+          "file": "state.db",
+          "tables": [
+            "applications",
+            "artifacts",
+            "deployments",
+            "executions",
+            "identity",
+            "schedules",
+            "scripts",
+            "sync_state",
+            "tasks",
+            "unit_registry"
+          ],
+          "business_counts": {
+            "deployments": 0,
+            "executions": 0,
+            "schedules": 0,
+            "tasks": 0
+          }
+        }
+      ]
+    },
+    {
+      "log_present": true,
+      "line_count": 5,
+      "reconnect_error_lines": 3,
+      "failures_total_mentions": 3
+    }
+  ],
+  "post_baseline": {
+    "guest": {
+      "service_active": "active",
+      "pid": 398003,
+      "exe": "/usr/local/bin/nodesteer-agent",
+      "sha256": "43bf33d06e775bd6581f120a002d6d904de36de6c6d4e18eaef90f6862fb6998",
+      "listener18997": "",
+      "timeout": "/usr/bin/timeout",
+      "tcpdump": "/usr/bin/tcpdump",
+      "python3": "/usr/bin/python3"
+    },
+    "primary_node2": {
+      "http": 200,
+      "id": "d77e2440-919f-4431-a488-733817dcd809",
+      "agent_id": "agent-1fbe0fa7-501a-49d6-8af8-6cdb6ec777f5",
+      "status": "online",
+      "sync_status": "synced",
+      "agent_version": "dddee4f0"
+    },
+    "guest_unchanged": true,
+    "primary_node2_unchanged": true
+  },
+  "cleanup": {
+    "tcpdump_stopped": true,
+    "agent_timeout_completed": true,
+    "own_data_dir": {
+      "own_dir_removed": true
+    },
+    "remote_owned_process_verification": {
+      "timeout_pid_alive": false,
+      "tcpdump_pid_alive": false,
+      "processes_with_dummy_data_dir_env": []
+    }
+  },
+  "remaining_dimensions": [
+    "Successful Hub HELLO and revision-cycle jitter were not exercised because localhost:18997 intentionally has no listener."
+  ],
+  "harness_attempts": [
+    {
+      "attempt": 1,
+      "classification": "HARNESS_FAILURE",
+      "failure": "The controller closed the guest-exec stdin without writing the tcpdump shell script; no tcpdump ready marker arrived.",
+      "agent_started": false,
+      "tcpdump_started": false,
+      "remote_data_dir_created": false,
+      "error": "readiness marker timeout",
+      "cleanup_evidence": {
+        "reported_data_dir": "/tmp/qa-20260930-101945-luna-jitter-ce2591c65a",
+        "reported_removed": true,
+        "later_readonly_check_absent": true,
+        "owned_process_pid_recorded": false,
+        "later_owned_pid_alive_check": false
+      },
+      "product_result": "NOT_A_PRODUCT_FAILURE"
+    }
+  ],
+  "observed_log_cross_check": {
+    "agent_log_line_count": 5,
+    "failure_or_reconnect_lines": 3,
+    "failures_total_mentions": 3,
+    "used_for_interval_estimation": false,
+    "note": "Manager logs are throttled; TCP SYN timestamps are the interval source."
+  },
+  "execution_status": "completed",
+  "sampling_status": "PASS",
+  "result_scope": "仅真实重连attempt间隔与秒级jitter采样维度；完整SYS18尚有成功HELLO/revision-cycle等未覆盖项，由Root按用例边界判定。"
+}

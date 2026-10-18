@@ -1,0 +1,94 @@
+{
+  "result": {
+    "id": "feature.node.docker-upgrade",
+    "name": "Docker Agent自升级拒绝/批内去重/无实际替换",
+    "started_at": "2026-10-01T01:06:17.869304+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-10-01T01:06:20.320604+00:00",
+    "evidence": "backend/isolated/evidence/feature.node.docker-upgrade-78e2a7d2.json"
+  },
+  "events": [
+    {
+      "control": "docker exec qa-20260930-101945-env-agent sha256sum /usr/local/bin/nodesteer-agent",
+      "exit_code": 0,
+      "stdout": "43bf33d06e775bd6581f120a002d6d904de36de6c6d4e18eaef90f6862fb6998  /usr/local/bin/nodesteer-agent\n",
+      "stderr": ""
+    },
+    {
+      "api": "POST /api/nodes/upgrade",
+      "status": 200,
+      "request": {
+        "node_ids": [
+          "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "d940ab68-9f29-434b-bfe8-5d075a519edc"
+        ]
+      },
+      "response": [
+        {
+          "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "execution_id": "1da1ae2d-c839-4a1b-b44a-8c9bf830acba",
+          "status": "SKIPPED",
+          "block_reason": "self-upgrade unsupported for deployment mode "
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:06:18 GMT",
+        "Content-Length": "189",
+        "Connection": "close"
+      }
+    },
+    {
+      "control": "docker exec qa-20260930-101945-env-agent sha256sum /usr/local/bin/nodesteer-agent",
+      "exit_code": 0,
+      "stdout": "43bf33d06e775bd6581f120a002d6d904de36de6c6d4e18eaef90f6862fb6998  /usr/local/bin/nodesteer-agent\n",
+      "stderr": ""
+    },
+    {
+      "api": "GET /api/executions/1da1ae2d-c839-4a1b-b44a-8c9bf830acba",
+      "status": 200,
+      "request": null,
+      "response": {
+        "id": "1da1ae2d-c839-4a1b-b44a-8c9bf830acba",
+        "task_id": "agent_upgrade",
+        "task_revision": 0,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-10-01T01:06:18.784550353Z",
+        "end_time": "2026-10-01T01:06:18.784550353Z",
+        "status": "SKIPPED",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true,
+        "block_reason": "self-upgrade unsupported for deployment mode "
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:06:19 GMT",
+        "Content-Length": "479",
+        "Connection": "close"
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id FROM executions WHERE id=?' '[\"1da1ae2d-c839-4a1b-b44a-8c9bf830acba\"]'",
+      "exit_code": 0,
+      "stdout": "[]\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,248 @@
+{
+  "at_utc": "2026-10-15T09:06:06Z",
+  "steps": {
+    "enroll_c": {
+      "enrollment": {
+        "http": 200,
+        "node_id": "6d8fc2f2-25e8-4fa0-97cb-348cad83051f",
+        "agent_id": "agent-b89350ce-f713-4e72-ba91-6c191caf2fce",
+        "node_name": "qa-psm-a8fd4885-child-c",
+        "node_ip": "qa-psm-a8fd4885-c.invalid",
+        "gateway_url": "ws://192.168.100.209:18080",
+        "has_native_snippet": true,
+        "registration_token_persisted_to_evidence": false
+      }
+    },
+    "baseline": {
+      "prepare": {
+        "root": "/var/lib/nodesteer-qa-psm-a8fd4885-c",
+        "data": "/var/lib/nodesteer-qa-psm-a8fd4885-c/data",
+        "data_is_tmpfs": true
+      },
+      "node": {
+        "id": "6d8fc2f2-25e8-4fa0-97cb-348cad83051f",
+        "agent_id": "agent-b89350ce-f713-4e72-ba91-6c191caf2fce",
+        "hostname": "qa-psm-a8fd4885-child-c",
+        "ip": "qa-psm-a8fd4885-c.invalid",
+        "status": "online",
+        "sync_status": "synced",
+        "global_revision": 2575,
+        "deployment_mode": "native",
+        "agent_version": "dddee4f0-e2e-repair-20261004"
+      },
+      "db_meta": {
+        "db_files": {
+          "state.db": {
+            "exists": true,
+            "size": 4096
+          },
+          "state.db-wal": {
+            "exists": true,
+            "size": 210152
+          },
+          "state.db-shm": {
+            "exists": true,
+            "size": 32768
+          }
+        },
+        "journal_mode": "wal",
+        "quick_check": "ok",
+        "identity": [
+          {
+            "key": "node_id",
+            "present": true,
+            "chars": 36
+          },
+          {
+            "key": "agent_id",
+            "present": true,
+            "chars": 42
+          },
+          {
+            "key": "credential",
+            "present": true,
+            "chars": 41
+          }
+        ],
+        "sync_state": [
+          {
+            "global_revision": 2575,
+            "last_sync": "2026-10-15T09:06:06.457300784Z"
+          }
+        ]
+      }
+    },
+    "space_constrained": {
+      "fill": {
+        "wrote": 12267520,
+        "free_after": 65536,
+        "junk": "/var/lib/nodesteer-qa-psm-a8fd4885-c/data/junk-holder"
+      },
+      "stat": {
+        "is_mount": true,
+        "free_bytes": 65536,
+        "total_bytes": 12582912,
+        "junk": [
+          {
+            "name": "junk-holder",
+            "size": 12267520
+          }
+        ]
+      },
+      "script_big_id": "f859f368-fe69-4761-ac3e-94b74fd4a587",
+      "task_big_id": "a5602e59-91de-47d3-8259-6bc50ef52120",
+      "content_bytes": 1048597
+    },
+    "commit_failure": {
+      "sync_ack_tail": [],
+      "failed_ack_frames": [],
+      "failed_ack_present": false,
+      "sync_ack_ok_values": [],
+      "sync_ack_errors": [],
+      "applied_rev_values": [],
+      "agent_crashed": true,
+      "crash_detail": {
+        "pids_before": [
+          22916
+        ],
+        "pids_after": []
+      },
+      "panic_lines": [
+        "fatal error: sync: unlock of unlocked mutex",
+        "\t/home/superc/code/nodesteer/internal/agent/store.go:258 +0x33",
+        "\t/home/superc/code/nodesteer/internal/agent/agent.go:800 +0x34",
+        "\t/home/superc/code/nodesteer/internal/agent/agent.go:918 +0x630"
+      ],
+      "commit_error_branch_hit": true,
+      "rollback_double_unlock": true,
+      "local_revision_before": 2575,
+      "local_revision_after_failed_commit": 2576,
+      "big_script_local_rows_after_fail": [],
+      "big_script_absent_locally": true,
+      "node_sync_status_samples": [
+        {
+          "t_utc": "2026-10-15T09:06:13Z",
+          "sync_status": "synced",
+          "global_revision": 2576
+        },
+        {
+          "t_utc": "2026-10-15T09:06:15Z",
+          "sync_status": "synced",
+          "global_revision": 2576
+        },
+        {
+          "t_utc": "2026-10-15T09:06:16Z",
+          "sync_status": "synced",
+          "global_revision": 2576
+        },
+        {
+          "t_utc": "2026-10-15T09:06:18Z",
+          "sync_status": "synced",
+          "global_revision": 2576
+        }
+      ],
+      "agent_log_tail": {
+        "exists": true,
+        "line_count": 31,
+        "lines": [
+          "time=2026-10-15T17:06:06.444+08:00 level=INFO msg=\"nodesteer agent starting\" version=dddee4f0-e2e-repair-20261004 hub=ws://192.168.100.170:35933 mode=native data_dir=/var/lib/nodesteer-qa-psm-a8fd4885-c/data",
+          "time=2026-10-15T17:06:06.452+08:00 level=INFO msg=\"agent connected\" recovered=false fail_duration=0s failures=0",
+          "fatal error: sync: unlock of unlocked mutex",
+          "",
+          "goroutine 1 [running]:",
+          "internal/sync.fatal({0xa4266f?, 0x6b5195?})",
+          "\t/usr/lib/go-1.26/src/runtime/panic.go:1191 +0x18",
+          "internal/sync.(*Mutex).unlockSlow(0x197a90119df0, 0xffffffff)",
+          "\t/usr/lib/go-1.26/src/internal/sync/mutex.go:204 +0x35",
+          "internal/sync.(*Mutex).Unlock(...)",
+          "\t/usr/lib/go-1.26/src/internal/sync/mutex.go:198",
+          "sync.(*Mutex).Unlock(...)",
+          "\t/usr/lib/go-1.26/src/sync/mutex.go:65",
+          "github.com/SuPerCxyz/nodesteer/internal/agent.(*LocalStore).RollbackSync(0xa6c9c0?)",
+          "\t/home/superc/code/nodesteer/internal/agent/store.go:258 +0x33",
+          "github.com/SuPerCxyz/nodesteer/internal/agent.(*Agent).applySync.func1()",
+          "\t/home/superc/code/nodesteer/internal/agent/agent.go:800 +0x34",
+          "github.com/SuPerCxyz/nodesteer/internal/agent.(*Agent).applySync(0x197a90192000, 0x197a90156900)",
+          "\t/home/superc/code/nodesteer/internal/agent/agent.go:918 +0x630",
+          "github.com/SuPerCxyz/nodesteer/internal/agent.(*Agent).OnSyncResponse(0x197a90192000, {{0x197a9005f8a0, 0xd}, {0x0, 0x0}, {0x2acb1e7e, 0xee2628e85, 0x0}, {0x197a90464000, 0x100467, ...}})",
+          "\t/home/superc/code/nodesteer/internal/agent/agent.go:749 +0x2fd",
+          "github.com/SuPerCxyz/nodesteer/internal/agent/connection.(*Manager).dispatch(0x197a90115720, {{0x197a9005f8a0, 0xd}, {0x0, 0x0}, {0x2acb1e7e, 0xee2628e85, 0x0}, {0x197a90464000, 0x100467, ...}})",
+          "\t/home/superc/code/nodesteer/internal/agent/connection/manager.go:334 +0x46a",
+          "github.com/SuPerCxyz/nodesteer/internal/agent/connection.(*Manager).connectAndServe(0x197a90115720, {0xa70080, 0x197a9016a230}, 0x197a90161bf8)",
+          "\t/home/superc/code/nodesteer/internal/agent/connection/manager.go:289 +0x67b",
+          "github.com/SuPerCxyz/nodesteer/internal/agent/connection.(*Manager).Run(0x197a90115720, {0xa70080, 0x197a9016a230}, 0x197a90161bf8)",
+          "\t/home/superc/code/nodesteer/internal/agent/connection/manager.go:169 +0xd3",
+          "github.com/SuPerCxyz/nodesteer/internal/agent.(*Agent).Run(0x197a90192000, {0xa70080, 0x197a9016a230})",
+          "\t/home/superc/code/nodesteer/internal/agent/agent.go:184 +0x156",
+          "main.main()",
+          "\t/home/superc/code/nodesteer/cmd/agent/main.go:123 +0xac5"
+        ]
+      }
+    },
+    "recovery": {
+      "cleared": {
+        "removed": [
+          "junk-holder"
+        ],
+        "free_after": 12267520
+      },
+      "restart_launcher": {
+        "launcher_pid": 23252,
+        "owned_processes": [
+          "23253 /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent --config /var/lib/nodesteer-qa-psm-a8fd4885-c/child.yaml"
+        ]
+      },
+      "node_after_restart": {
+        "id": "6d8fc2f2-25e8-4fa0-97cb-348cad83051f",
+        "agent_id": "agent-b89350ce-f713-4e72-ba91-6c191caf2fce",
+        "hostname": "qa-psm-a8fd4885-child-c",
+        "ip": "qa-psm-a8fd4885-c.invalid",
+        "status": "online",
+        "sync_status": "synced",
+        "global_revision": 2577,
+        "deployment_mode": "native",
+        "agent_version": "dddee4f0-e2e-repair-20261004"
+      },
+      "online_after_restart": true,
+      "sync_ack_after_fail": [
+        {
+          "seq": 23,
+          "at": 1792055180.5904162,
+          "at_utc": "2026-10-15T09:06:20Z",
+          "direction": "agent_to_hub",
+          "type": "SYNC_ACK",
+          "env_id": "",
+          "ok": true,
+          "applied_rev": 2577,
+          "error": null
+        }
+      ],
+      "recovered_ok_ack_present": true,
+      "local_revision_after_recovery": 2577,
+      "big_script_local_rows_after_recovery": [
+        {
+          "id": "f859f368-fe69-4761-ac3e-94b74fd4a587",
+          "revision": 1
+        }
+      ],
+      "big_script_present_locally_after_recovery": true
+    }
+  },
+  "assertions": {
+    "commit_failure_path_exercised": true,
+    "commit_error_branch_hit": true,
+    "object_absent_after_failed_commit": true,
+    "failure_handled_gracefully": false,
+    "recovery_after_restart": true
+  },
+  "defect": {
+    "id": "psm-INV05-commit-failure-double-unlock",
+    "summary": "CommitSync error path double-unlocks the local store mutex: applySync defers RollbackSync after CommitSync has already unlocked and cleared tx, so any CommitSync error (here an injected SQLITE_FULL) panics the Agent with \"fatal error: sync: unlock of unlocked mutex\".",
+    "code_refs": [
+      "internal/agent/store.go:244-265",
+      "internal/agent/agent.go:794-802",
+      "internal/agent/agent.go:917-919"
+    ]
+  },
+  "assertions_pass": false
+}

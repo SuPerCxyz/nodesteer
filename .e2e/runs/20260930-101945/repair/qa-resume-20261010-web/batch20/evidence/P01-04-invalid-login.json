@@ -1,0 +1,83 @@
+{
+  "case_id": "P01-04",
+  "captured_at_utc": "2026-10-12T13:40:40.649922+00:00",
+  "session": "qawebunauth20261012-b20",
+  "route": "/sign-in",
+  "target_guard": {
+    "phase": "READY",
+    "route": "/sign-in",
+    "ownedPages": 1,
+    "externalPages": 0,
+    "cdpPort": "40767",
+    "unauthenticated": true,
+    "at": "2026-10-12T13:40:34.471Z"
+  },
+  "input_metadata": {
+    "username_sha256": "192d0878a3ed8f0e87b13f02daa04f6d055a278712b69b86d7d3a5ce363db31f",
+    "username_length": 37,
+    "password_sha256": "faadc34af3c72cb9840e72207accf577522e069c05183b1ba35120895a5aaeaa",
+    "password_length": 36,
+    "username_is_nonexistent_unique_prefix": true,
+    "password_is_non_real_dummy": true,
+    "dom_input_values_saved": false
+  },
+  "first_user_action": "single UI click on submit button",
+  "pending_ui_sample": {
+    "route": "/sign-in",
+    "buttonPresent": true,
+    "buttonDisabled": true,
+    "spinner": true,
+    "alertCount": 0,
+    "tokenPresent": false,
+    "usernameInputCount": 1,
+    "passwordInputCount": 1
+  },
+  "followup_user_actions": [
+    "double-click submit while first request pending",
+    "focus password field",
+    "press Enter while pending"
+  ],
+  "client_request_observation": {
+    "method": "POST",
+    "path": "/api/login",
+    "client_post_attempts": 1,
+    "duplicate_posts_blocked_before_server": 0,
+    "first_request_forwarded": true,
+    "pause_ms": 161
+  },
+  "actual_response_status": 401,
+  "error_feedback_observed": false,
+  "final_ui_oracle": {
+    "route": "/sign-in",
+    "tokenPresent": false,
+    "alertCount": 0,
+    "buttonPresent": true,
+    "buttonDisabled": false,
+    "usernameInputCount": 1,
+    "passwordInputCount": 1
+  },
+  "server_effect": {
+    "forwarded_login_posts": 1,
+    "status": 401,
+    "new_user_created": false,
+    "session_token_present": false
+  },
+  "node_runner_output_whitelisted": true,
+  "response_body_headers_or_raw_form_values_saved": false,
+  "server_writes": 1,
+  "assertions": {
+    "one_client_post": true,
+    "one_forwarded_post": true,
+    "http_401": true,
+    "disabled_while_pending": true,
+    "loading_spinner_while_pending": true,
+    "error_feedback": null,
+    "no_token": true,
+    "pause_within_500ms": true,
+    "post_401_button_enabled": true
+  },
+  "status": "PASS",
+  "remaining_dimensions": [],
+  "owned_unauth_profile_closed": true,
+  "canonical_scope_note": "P01-04 requires pending loading/disabled and exactly one login request under repeat click. Both were directly verified; after 401 the submit button was enabled. role=alert count was zero but canonical does not require a role=alert toast; this does not establish absence of other feedback and is not used to downgrade the case."
+}

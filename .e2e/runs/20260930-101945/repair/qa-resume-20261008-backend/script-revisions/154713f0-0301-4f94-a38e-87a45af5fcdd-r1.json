@@ -1,0 +1,8 @@
+{
+  "script_id": "154713f0-0301-4f94-a38e-87a45af5fcdd",
+  "revision": 1,
+  "sha256": "e6a0de870febbd1a946ecd021822c8b38d70aa093c958cdcd24935c7a4c0c857",
+  "source_sha256_recomputed": "e6a0de870febbd1a946ecd021822c8b38d70aa093c958cdcd24935c7a4c0c857",
+  "content_sha_matches": true,
+  "content": "import os, sys, time\nfrom pathlib import Path\nv = os.environ[\"NODESTEER_PARAM_password\"]\nmode = os.environ[\"NODESTEER_PARAM_mode\"]\ntag = os.environ[\"NODESTEER_TEST_MARKER\"]\nfor b in v.encode():\n    sys.stdout.buffer.write(bytes([b])); sys.stdout.flush()\n    sys.stderr.buffer.write(bytes([b])); sys.stderr.flush()\n    time.sleep(0.025)\nif mode == \"live\":\n    print(\"LIVE-START-\" + tag, flush=True)\n    time.sleep(4)\n    for i in range(80):\n        print(\"LIVE-LINE-%03d-%s\" % (i, tag), flush=True)\n        time.sleep(0.04)\n    time.sleep(4)\n    print(\"LIVE-TAIL-\" + tag, flush=True)\n    print(\"LIVE-ERR-TAIL-\" + tag, file=sys.stderr, flush=True)\nelif mode == \"retry\":\n    marker = Path(tag)\n    count = int(marker.read_text()) if marker.exists() else 0\n    marker.write_text(str(count + 1))\n    print(\"RETRY-ATTEMPT-%d-TAIL-%s\" % (count + 1, tag), flush=True)\n    print(\"RETRY-ERR-ATTEMPT-%d\" % (count + 1), file=sys.stderr, flush=True)\n    if count == 0:\n        sys.exit(7)\n    marker.unlink(missing_ok=True)\nelif mode == \"cancel\":\n    print(\"CANCEL-TAIL-\" + tag, flush=True)\n    print(\"CANCEL-ERR-TAIL-\" + tag, file=sys.stderr, flush=True)\n    time.sleep(120)\nelif mode == \"timeout\":\n    print(\"TIMEOUT-TAIL-\" + tag, flush=True)\n    print(\"TIMEOUT-ERR-TAIL-\" + tag, file=sys.stderr, flush=True)\n    time.sleep(20)\nelse:\n    print(\"UNEXPECTED-MODE\", flush=True)\n"
+}

@@ -1,0 +1,103 @@
+{
+  "case_id": "FL-14",
+  "subcase_id": "AUTH_TTL_BACKGROUND_POLL_401",
+  "status": "passed",
+  "authority": "independent loopback TTL=3s Hub",
+  "build_label": "dddee4f0-e2e-repair-20261004",
+  "hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+  "initial_url": "http://127.0.0.1:18995/",
+  "wait_seconds": 16,
+  "browser_interactions_after_login_before_401": 0,
+  "url_after_poll": "http://127.0.0.1:18995/sign-in?redirect=%2F",
+  "checks": {
+    "login_200": true,
+    "initial_me_200": true,
+    "dashboard_poll_started_while_dashboard_open": true,
+    "poll_expired_401_paths": [
+      "/api/applications",
+      "/api/executions",
+      "/api/nodes",
+      "/api/schedules",
+      "/api/tasks"
+    ],
+    "no_manual_reload_or_route_change_during_wait": true
+  },
+  "token_storage_after_redirect": {
+    "nodesteer_token_present": false,
+    "keys": []
+  },
+  "network_timeline": [
+    {
+      "method": "POST",
+      "path": "/api/login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/me",
+      "status": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/executions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/applications",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/schedules",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/executions",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/applications",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/schedules",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks",
+      "status": 401
+    },
+    {
+      "method": "GET",
+      "path": "/api/oidc/state",
+      "status": 200
+    }
+  ],
+  "screenshot": "ttl-background-401-signin.png",
+  "secrets_included": false
+}

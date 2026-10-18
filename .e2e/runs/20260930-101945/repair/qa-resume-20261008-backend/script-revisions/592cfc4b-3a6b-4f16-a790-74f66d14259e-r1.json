@@ -1,0 +1,8 @@
+{
+  "script_id": "592cfc4b-3a6b-4f16-a790-74f66d14259e",
+  "revision": 1,
+  "sha256": "1b343ff0bc941a047cc6d346e010c1daf3b391c8cb4f1246337063a4c9d4576d",
+  "source_sha256_recomputed": "1b343ff0bc941a047cc6d346e010c1daf3b391c8cb4f1246337063a4c9d4576d",
+  "content_sha_matches": true,
+  "content": "import os, sys, time\nv=os.environ[\"NODESTEER_PARAM_password\"].encode()\nlimit=int(os.environ[\"NODESTEER_LOG_LIMIT\"])\nhalf=len(v)//2\nout_head=b\"BEGIN-64K-OUT:\"+b\"O\"*(65536-len(b\"BEGIN-64K-OUT:\")-half)+v[:half]\nerr_head=b\"BEGIN-64K-ERR:\"+b\"E\"*(65536-len(b\"BEGIN-64K-ERR:\")-half)+v[:half]\nassert len(out_head)==65536 and len(err_head)==65536\nsys.stdout.buffer.write(out_head);sys.stdout.flush();time.sleep(0.5)\nsys.stderr.buffer.write(err_head);sys.stderr.flush();time.sleep(0.5)\nsys.stdout.buffer.write(v[half:]+b\"\\nAFTER-64K-OUT\\nTRUNC-BEGIN\\n\");sys.stdout.flush();time.sleep(0.5)\nsys.stderr.buffer.write(v[half:]+b\"\\nAFTER-64K-ERR\\n\");sys.stderr.flush();time.sleep(0.5)\nsys.stdout.buffer.write(b\"O\"*(limit+65536)+b\"TRUNC-END\\n\");sys.stdout.flush()\n"
+}

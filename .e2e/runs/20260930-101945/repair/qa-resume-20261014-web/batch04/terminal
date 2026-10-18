@@ -1,0 +1,132 @@
+==== batch04 terminal transcript (redacted) ====
+# Everything below is a condensed, human-readable transcript of the commands that
+# produced the evidence in this directory. Credentials never appear here: sign-in
+# was done by piping runners/login_fill.py into `agent-browser eval --stdin`.
+# The Authorization header is stripped from every saved network capture.
+
+== 0. environment ==
+$ node: /home/superc/code/nodesteer   authority: http://192.168.100.209:18080 (repair)  primary :8080 NOT touched
+$ agent-browser --version -> 0.32.4      session: qaweb1410b04
+$ nonce -> 89fe789d      prefix -> qa-w1410b04-89fe789d
+
+== 1. baseline snapshot (read-only) ==
+$ python3 runners/b04.py snapshot evidence/baseline-snapshot.json
+{"nodes":{"count":7},"applications":{"count":1},"tasks":{"count":0},"schedules":{"count":0},
+ "artifacts":{"count":4},"scripts":{"count":2},"groups":{"count":0},"users":{"count":8},
+ "transfers":{"count":7},"executions_head":{"count":1}}
+nodes: native-1..native-4 online, native4-child OFFLINE (15961ef7-...), host001 online (docker_host_integration),
+       qa-sysb10-b36cbf4e3d15-child online (parallel batch)
+owned_baseline: all empty
+
+== 2. FL-09 assign write path (owned Application) ==
+$ agent-browser open http://192.168.100.209:18080/applications/new ; fill 名称/Unit ; check native-3 ; 保存
+  page POST /api/applications 200 -> 862cf8d9-aef8-46c3-adc9-b5c14711bf5c
+  page POST /api/applications/862cf8d9-.../assign {"node_ids":["37989297-..."]} 200
+$ python3 runners/fl09_api.py evidence/FL09-03-api-after-assign.json 862cf8d9-...
+  owned_app_nodes = [37989297-...] (= native-3)      bidirectional_mismatches = []      consistent = true
+  non_owned_apps_untouched = {804e6b14-...: [91f44866-...]}  (unchanged)
+$ UI /agents/37989297-... -> managed_app_links = [{/applications/862cf8d9-..., "qa-w1410b04-89fe789d-app-fl09"}]
+$ UI /nodes/37989297-...  -> managed_app_links = [{/applications/862cf8d9-..., "qa-w1410b04-89fe789d-app-fl09"}]
+$ UI /agents/91f44866-... -> only the pre-existing non-owned application (no leak)
+
+== 3. FL-09 unassign write path ==
+$ UI /applications/862cf8d9-... ; uncheck native-3 ; 保存
+  page PUT  /api/applications/862cf8d9-... 200
+  page POST /api/applications/862cf8d9-.../assign {"node_ids":["37989297-..."],"remove":true} 200
+$ python3 runners/fl09_api.py evidence/FL09-09-api-after-unassign.json 862cf8d9-...
+  owned_app_nodes = null          node_to_app_names[native-3] = []          consistent = true
+$ UI /agents/37989297-... and /nodes/37989297-... -> managed apps [] , 暂无托管应用
+
+== 4. FL-09 cleanup ==
+$ UI /applications row 操作 -> 删除 -> confirm "删除: qa-w1410b04-89fe789d-app-fl09" -> 删除
+  page DELETE /api/applications/862cf8d9-... 200
+$ GET /api/applications/862cf8d9-... -> 404 {"error":"application not found"}
+$ GET /api/applications/862cf8d9-.../nodes -> 200 null      (OBS-B04-02)
+
+== 5. P11-07 / P11-08 fixture + manual runs ==
+$ UI /tasks/new : 类型 命令, 命令 "echo qa-w1410b04-89fe789d-p11-$(hostname)", 目标节点 native-1 + native-3, 保存
+  page POST /api/tasks 200 -> 33332cdc-0311-465d-8516-4ae7cc64456b  target.node_ids = [native-1, native-3]
+  UI /tasks : 目标 = "2 节点"
+$ python3 runners/fetch_executions.py evidence/P11-02-executions-before-run.json   -> count 0
+$ UI /tasks/33332cdc-.../run -> 立即运行 -> confirm dialog -> 立即运行
+  page POST /api/tasks/33332cdc-.../run {"params":{}} 200
+$ python3 runners/fetch_executions.py evidence/P11-04-executions-run1.json
+  run1: ee33f0e0-... native-3 SUCCESS | 92db8733-... native-1 SUCCESS   (1 per node)
+  UI /executions: 2 rows, 节点 native-1/native-3, 触发方式 手动, 状态 成功
+$ UI run again (identical request) -> POST /api/tasks/{id}/run {"params":{}} 200
+$ python3 runners/fetch_executions.py evidence/P11-06-executions-run2.json
+  run2: efea53bf-... native-3 SUCCESS | f620ea0f-... native-1 SUCCESS
+  all 4 ids distinct, run2 disjoint from run1, 2 per node
+$ UI /executions/efea53bf-... : ID / 状态 成功 / 节点 native-3 / 触发方式 手动 / stdout 47 字符 / 已同步 是
+
+== 6. transfers: node-side fixtures (native-1) ==
+$ ssh root@192.168.100.204 "mkdir -p /tmp/qa-w1410b04-89fe789d && dd ... && truncate -s 300M src-big.bin"
+  src-small.bin 1048576  sha256 aa3709761f9320063adfe98e8e8e182a080980727ce729015f58a3994aaee9f2
+  src-2mb.bin   2097152  sha256 e69d75f18ee7299d366d09193e8edbf779c7cd5d1e3bd4af738ded44b844a8bc
+  src-big.bin 314572800 (sparse, 3 MB on disk)
+
+== 7. P22-12a: PENDING -> cancel ==
+$ UI form: 源 Agent = native4-child (OFFLINE), 源文件路径 = /tmp/.../pending-src.bin,
+          目标 Agent = native-3, 目标文件路径 = /tmp/.../pending-dst.bin, 添加目标, 开始传输
+$ python3 runners/poll_transfers.py ... (20 ms cadence)
+  timeline b5ecb82a-...: 0.002s PENDING [target PENDING]
+$ UI row 操作 -> 取消传输  (row text at click: ".../pending-src.bin 等待中 - native-3 等待中")
+  page POST /api/transfers/b5ecb82a-.../cancel 200       dialogs after click = 0
+  timeline b5ecb82a-...: 0.315s CANCELED [target CANCELED]
+  UI row after: ".../pending-src.bin 已取消 - native-3 已取消"     action cell buttons = 0
+
+== 8. P22-12b: UPLOADING -> cancel (300 MiB) ==
+$ UI form: 源 Agent = native-1, 源文件路径 = /tmp/.../src-big.bin, 目标 = native-3 -> /tmp/.../big-dst.bin, 开始传输
+  page POST /api/transfers 200 -> 6bb56f76-f725-4158-9609-f2589fb8045d
+$ UI row 操作 -> 取消传输  (row text at click: ".../src-big.bin UPLOADING - native-3 等待中")
+  page POST /api/transfers/6bb56f76-.../cancel 200 (issued at t+385 ms)   dialogs after click = 0
+  timeline 6bb56f76-...: 0.293s UPLOADING [PENDING] -> 2.711s DELIVERING [PENDING, 314572800 B staged]
+                          -> 2.734s CANCELED [target CANCELED]
+  UI row after: ".../src-big.bin 已取消 - native-3 已取消"
+$ ssh root@192.168.100.222 "ls /tmp/qa-w1410b04-89fe789d" -> No such file or directory   (no delivery)
+$ ssh root@192.168.100.209 "ls /var/lib/nodesteer-hub-repair-20260930-101945/file-transfers/" -> empty
+
+== 9. P22-09: per-target independent status + aggregation ==
+$ UI form: 源 native-1 -> /tmp/.../src-small.bin ; 3 targets:
+    native-3 -> /tmp/.../c-native3.bin
+    host001  -> /tmp/.../c-host001.bin
+    offline  -> /tmp/.../c-offline.bin
+$ timeline ec3772f9-...:
+    0.271s PENDING    [offline PENDING, native-3 PENDING, host001 PENDING]
+    0.294s UPLOADING  [...]
+    0.316s DELIVERING [offline PENDING, native-3 DELIVERING, host001 FAILED "path is outside host allowlist"]
+    0.339s DELIVERING [offline PENDING, native-3 SUCCESS,  host001 FAILED]
+$ UI observe row (12 s): ".../src-small.bin DELIVERING - offline 等待中  native-3 成功  host001 失败 <allowlist error>"
+$ UI row 操作 -> 取消传输  (row text at click: DELIVERING) -> POST /cancel 200, dialogs 0
+$ timeline ec3772f9-...: 12.375s CANCELED [offline CANCELED, native-3 SUCCESS (preserved), host001 CANCELED]
+
+== 10. P22-08: success + form reset ==
+$ UI form: 源 native-1 -> /tmp/.../src-2mb.bin ; target native-3 -> /tmp/.../d-2mb.bin, 添加目标
+$ form before submit  (evidence/P22-08-01-form-before-submit.json)
+   源 Agent native-1 | 源文件路径 /tmp/.../src-2mb.bin | 1 target chip | 开始传输 enabled
+$ click 开始传输  -> page POST /api/transfers 200
+$ form 0.6 s after submit (evidence/P22-08-02-form-after-submit.json)
+   源 Agent native-1 | 源文件路径 "" | 0 target chips | 目标 Agent "选择目标 Agent" | 目标文件路径 "" | 开始传输 disabled
+$ timeline f62913ec-...: 0.296s UPLOADING -> 0.342s DELIVERING (2097152 staged) -> 0.364s SUCCESS [target SUCCESS]
+$ UI terminal row: ".../src-2mb.bin 成功 - native-3 成功"      action cell buttons = 0
+$ ssh root@192.168.100.222 "sha256sum /tmp/qa-w1410b04-89fe789d/*"
+  aa370976...9aaee9f2  c-native3.bin (1048576)
+  e69d75f1...44a8bc  d-2mb.bin    (2097152)   == source sha
+$ ssh root@192.168.100.209 ".../file-transfers/" -> empty (success cleanup)
+
+== 11. cleanup ==
+$ ssh root@192.168.100.204 "rm -rf /tmp/qa-w1410b04-89fe789d" -> verified absent (0 matches)
+$ ssh root@192.168.100.222 "rm -rf /tmp/qa-w1410b04-89fe789d" -> verified absent (0 matches)
+$ UI /tasks row 操作 -> 删除 -> confirm "删除: qa-w1410b04-89fe789d-task-p11" -> 删除
+  page DELETE /api/tasks/33332cdc-... 200 ; GET /api/tasks/33332cdc-... -> 404
+  GET /api/executions?task_id=33332cdc-... -> still 4 records (history preserved)
+$ python3 runners/fetch_transfers.py evidence/P22-11-owned-transfers-final.json
+  total_transfers 11 , owned 4   (f62913ec SUCCESS; ec3772f9 CANCELED; 6bb56f76 CANCELED; b5ecb82a CANCELED)
+  DELETE /api/transfers/{id} probe -> 403 permission denied (no DELETE case in handleTransferByID)
+
+== 12. final guard ==
+$ python3 runners/b04.py snapshot evidence/final-snapshot.json
+  counts_after: nodes 6, applications 1, tasks 0, schedules 0, artifacts 1, scripts 2, groups 0, users 8, transfers 11
+  owned leftovers: 4 transfers only (0 artifacts/applications/tasks/scripts)
+  deltas: nodes -1 / artifacts -3 = parallel batches (sys-b09 + sys-b10 + a third actor); transfers +4 = batch04
+$ final-cleanup-guard.json written (no_leftovers = true)

@@ -1,0 +1,1989 @@
+{
+  "run_id": "20260930-101945",
+  "remaining_by_module": {
+    "G": [
+      {
+        "case_id": "G-01-05",
+        "status": "PARTIAL",
+        "title": "修改 localStorage Token 后刷新页面 → 401、清理 Token、跳转登录",
+        "actual": "实际本地替换invalid-token后刷新转/sign-in已在P02-04 PASS；该用例未专门保存network401及token清理截图。真实服务端会话失效停留页X17另FAIL。",
+        "covered_dimensions": [
+          "invalid local token refresh redirect"
+        ],
+        "remaining_dimensions": [
+          "explicit 401/token-clear evidence"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json"
+        ]
+      }
+    ],
+    "G02": [
+      {
+        "case_id": "G02-02",
+        "status": "PARTIAL",
+        "title": "Theme 菜单验证 `light/dark/system`，刷新后保持，`theme-color` 正确。",
+        "actual": "light/dark/system、媒体dark/light和刷新持久化实际过；theme-color单独值未断言。",
+        "covered_dimensions": [
+          "three themes",
+          "persist",
+          "media matching"
+        ],
+        "remaining_dimensions": [
+          "theme-color actual value"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/global-controls.json",
+          ".e2e/runs/20260930-101945/web/root-gap-round2-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/readonly-user-settings.json"
+        ]
+      }
+    ],
+    "G03": [
+      {
+        "case_id": "G03-04",
+        "status": "PARTIAL",
+        "title": "Reset 清除搜索/筛选。",
+        "actual": "10页Reset已过；Execution当前无Reset，清空输入恢复",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "G03-09",
+        "status": "PARTIAL",
+        "title": "API 失败显示 Error，Retry 会重新请求。",
+        "actual": "Groups503→Error/Retry恢复仅UI_MOCK；其它真实状态未全覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/safe-tables-results.json"
+        ]
+      },
+      {
+        "case_id": "G03-10",
+        "status": "PARTIAL",
+        "title": "Loading、Empty、No Results 三种空数据语义不混淆。",
+        "actual": "Groups503→Error/Retry恢复仅UI_MOCK；其它真实状态未全覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/safe-tables-results.json"
+        ]
+      }
+    ],
+    "G04": [
+      {
+        "case_id": "G04-02",
+        "status": "PARTIAL",
+        "title": "删除菜单必须打开确认框；取消不发送 DELETE，确认后才删除。",
+        "actual": "Artifact 列表真实验证删除菜单→确认框；取消0次DELETE且行仍在，确认1次DELETE成功并从列表移除，对象读取与下载均404。已覆盖Artifact无引用分支；其它资源类型与错误分支未由本例覆盖。",
+        "covered_dimensions": [
+          "artifact delete opens confirmation dialog",
+          "cancel sends zero DELETE and preserves row",
+          "confirm sends exactly one DELETE and removes row",
+          "object GET and download return 404 after deletion"
+        ],
+        "remaining_dimensions": [
+          "other resource deletion menus and error branches"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/luna-gap19-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/artifact-unreferenced-ui-delete.json"
+        ]
+      },
+      {
+        "case_id": "G04-03",
+        "status": "PARTIAL",
+        "title": "所有 Alert/Error 文案具体、无重复通用错误。",
+        "actual": "真实UI表单在保存禁用Script的Task时收到HTTP400，并显示具体错误“invalid task: referenced script is disabled”；本例未检查全部Alert/Error类别及重复通用文案。",
+        "covered_dimensions": [
+          "specific server validation error displayed in the actual Task editor",
+          "no generic duplicate message observed in this validation flow"
+        ],
+        "remaining_dimensions": [
+          "other alert/error sources and duplicate generic-message check across pages"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/luna-gap20-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/script-disabled-reference-boundaries.json"
+        ]
+      },
+      {
+        "case_id": "G04-05",
+        "status": "PARTIAL",
+        "title": "所有图标按钮具备可识别 aria-label/title。",
+        "actual": "此前19基础页与Node等详情由Root覆盖；本轮用精确自建App、Group、Schedule只读详情及列表操作菜单补测，3页可见button均有名称，操作菜单项分别为编辑/删除、编辑/删除、编辑/启用/删除。全部自建定义精确清理。其它详情、参数表单和动态Dialog尚未完整遍历。",
+        "covered_dimensions": [
+          "Application detail visible buttons named",
+          "Group detail visible buttons named",
+          "Schedule detail visible buttons named",
+          "App/Group/Schedule action menu entries have accessible names"
+        ],
+        "remaining_dimensions": [
+          "remaining detail pages",
+          "parameter/dynamic dialog button names",
+          "complete AX-tree query including non-button controls"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/luna-gap22-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/dynamic-detail-menu-button-names.json"
+        ]
+      },
+      {
+        "case_id": "G04-07",
+        "status": "PARTIAL",
+        "title": "长 ID、SHA256、路径、命令可复制或换行，不覆盖按钮。",
+        "actual": "真实Task详情在760×720窄视口完整显示并可选中2144字符命令；pre使用white-space:pre/overflow-x:auto，滚动宽度15040px，操作入口保持视口内且可用。HTTP下剪贴板API不可读，不能证明真实复制成功；长ID/SHA256/路径其它控件仍需逐项覆盖。",
+        "covered_dimensions": [
+          "2144-character Task command fully rendered",
+          "long text selectable in browser",
+          "horizontal overflow contained in scrollable code block",
+          "Run action remains visible and enabled at 760×720"
+        ],
+        "remaining_dimensions": [
+          "clipboard paste/read exactness under secure clipboard context",
+          "long ID, SHA256, and path controls/layout"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/luna-gap21-final-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/long-command-detail-layout.json"
+        ]
+      }
+    ],
+    "P01": [
+      {
+        "case_id": "P01-07",
+        "status": "PARTIAL",
+        "title": "OIDC disabled 时 SSO 按钮不显示。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P01-08",
+        "status": "NOT_RUN",
+        "title": "OIDC enabled 时 SSO 按钮跳转 IdP，state/PKCE 正常。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      },
+      {
+        "case_id": "P01-09",
+        "status": "NOT_RUN",
+        "title": "OIDC enabled且local_fallback=false拒绝本地登录；本地fallback按实际配置验证",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      },
+      {
+        "case_id": "P01-10",
+        "status": "NOT_RUN",
+        "title": "OIDC callback 缺少 state/code、错误 state、重复 state、错误 code。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      }
+    ],
+    "P02": [
+      {
+        "case_id": "P02-04",
+        "status": "PARTIAL",
+        "title": "浏览器前进、后退、刷新、直接输入子路由。",
+        "actual": "实际浏览器前进/后退/详情刷新及直接路由已验证，所有详情错误/深链逐项仍未全覆盖。",
+        "covered_dimensions": [
+          "browser history",
+          "node/schedule direct and reload"
+        ],
+        "remaining_dimensions": [
+          "all detail subroute permutations"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/auth-keyboard-results.json",
+          ".e2e/runs/20260930-101945/web/root-gap-round1-results.json",
+          ".e2e/runs/20260930-101945/web/readonly-entry-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/dashboard-node-links.json"
+        ]
+      },
+      {
+        "case_id": "P02-05",
+        "status": "NOT_RUN",
+        "title": "Hub unavailable 状态点和文案变化。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      }
+    ],
+    "P03": [
+      {
+        "case_id": "P03-02",
+        "status": "PARTIAL",
+        "title": "Running Executions 的 View All 和每条执行链接。",
+        "actual": "Running实际点击ViewAll到正确页面，单条详情/名称链接未全点验。",
+        "covered_dimensions": [
+          "View All navigation"
+        ],
+        "remaining_dimensions": [
+          "all record detail links"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/root-gap-round1-results.json",
+          ".e2e/runs/20260930-101945/web/readonly-entry-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/dashboard-node-links.json"
+        ]
+      },
+      {
+        "case_id": "P03-09",
+        "status": "PARTIAL",
+        "title": "无运行执行、无应用、无调度、无失败执行的空态。",
+        "actual": "同场真实API/界面：limit50中RUNNING=0，Dashboard显示“当前没有正在执行的任务。”；应用列表=0并显示“暂无托管应用”；enabled schedules=0并显示“暂无调度”。真实最近执行limit50仍含2条失败记录，未清库或注入空数组，因此无失败执行空态不适用。",
+        "covered_dimensions": [
+          "real running executions empty message",
+          "real zero applications empty message",
+          "real zero enabled schedules empty message"
+        ],
+        "remaining_dimensions": [
+          "real no-failed-execution state cannot be reached without clearing preserved history; not mocked"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/luna-gap24-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/dashboard-real-empty-state-applicability.json"
+        ]
+      },
+      {
+        "case_id": "P03-10",
+        "status": "NOT_RUN",
+        "title": "Dashboard API 任一请求失败时 Error/Retry，不显示假数据。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      }
+    ],
+    "P04": [
+      {
+        "case_id": "P04-01",
+        "status": "PARTIAL",
+        "title": "列表字段：hostname、status、IP、Agent version、arch、deployment mode、last seen、操作。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P04-03",
+        "status": "PARTIAL",
+        "title": "hostname 进入 `/agents/{id}`。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P04-06",
+        "status": "PARTIAL",
+        "title": "operator/viewer 点击受限操作的 UI 可见性、403 和状态不变。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P04-09",
+        "status": "NOT_RUN",
+        "title": "节点 API 失败 Retry。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      }
+    ],
+    "P05A": [
+      {
+        "case_id": "P05A-05",
+        "status": "PARTIAL",
+        "title": "Hub 地址仅允许 http/https 且 Host 有效。",
+        "actual": "历史http/ftp错误及本轮https正确路径有真证据；缺Host单项未断言。",
+        "covered_dimensions": [
+          "http valid",
+          "ftp rejected",
+          "empty rejected",
+          "HTTPS Hub accepted"
+        ],
+        "remaining_dimensions": [
+          "missing Host native validity UI edge"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/enrollment-validation-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/enrollment-real-validation.json",
+          ".e2e/runs/20260930-101945/web/evidence/enrollment-retry-pending.json"
+        ]
+      },
+      {
+        "case_id": "P05A-09",
+        "status": "PARTIAL",
+        "title": "三种命令包含 Gateway、Registration Token、节点身份和节点参数。",
+        "actual": "三命令真实包含registration key/agent_id/name/ip，未保存命令/凭据；Gateway显式配置正确优先和值尚未专门断言。",
+        "covered_dimensions": [
+          "registration key",
+          "identity",
+          "node name/ip"
+        ],
+        "remaining_dimensions": [
+          "gateway value assertion"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/enrollment-validation-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/enrollment-real-validation.json"
+        ]
+      },
+      {
+        "case_id": "P05A-10",
+        "status": "PARTIAL",
+        "title": "Copy 成功显示 Copied；剪贴板失败显示 copy failed。",
+        "actual": "HTTP真实Copy触发手动Ctrl+C提示；HTTPS Copied与失败注入未做。",
+        "covered_dimensions": [
+          "HTTP manual fallback"
+        ],
+        "remaining_dimensions": [
+          "secure copied",
+          "clipboard failure"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/enrollment-validation-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/enrollment-real-validation.json"
+        ]
+      },
+      {
+        "case_id": "P05A-12",
+        "status": "PARTIAL",
+        "title": "提交后校验 Hub 侧 pending 节点记录；Agent HELLO 后复用 Node ID/Agent ID 并变为 online/synced。",
+        "actual": "UI生成实际Hub pending记录name/ip/id核验并精确删除；HELLO复用ID的真实安装由env证据补。",
+        "covered_dimensions": [
+          "actual pending node creation"
+        ],
+        "remaining_dimensions": [
+          "HELLO identity reuse/online/sync"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/enrollment-validation-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/enrollment-real-validation.json"
+        ]
+      }
+    ],
+    "P05B": [
+      {
+        "case_id": "P05B-01",
+        "status": "PARTIAL",
+        "title": "Node Detail 单页各分区：Overview、Inventory、Capability、Labels、Tasks、Schedules、Applications、Executions；不要求不存在的 Tab。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P05B-02",
+        "status": "PARTIAL",
+        "title": "Node ID、Agent ID、IP、OS、Version、Arch、Mode、Revision、Sync、Last Seen。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P05B-03",
+        "status": "PARTIAL",
+        "title": "Inventory：OS、Kernel、CPU、Memory、Filesystem、Network。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P05B-04",
+        "status": "PARTIAL",
+        "title": "Capability enabled/disabled 展示。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P05B-10",
+        "status": "PARTIAL",
+        "title": "Execution 表中的 Task 链接，ID 是否可点击按当前设计验证。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P05B-11",
+        "status": "PARTIAL",
+        "title": "返回按钮回 `/agents`。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      }
+    ],
+    "P06": [
+      {
+        "case_id": "P06-01",
+        "status": "PARTIAL",
+        "title": "列表、搜索、分页、空态、Error/Retry。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      }
+    ],
+    "P07_P08": [
+      {
+        "case_id": "P07_P08-01",
+        "status": "PARTIAL",
+        "title": "列表字段、搜索、空态、分页、View 列控制。",
+        "actual": "对应真实列表/搜索/无结果/排序/列持久化/分页已在11表逐项执行；标题中其余错误/Empty/角色项未全测。",
+        "covered_dimensions": [
+          "search hit/no result",
+          "sort cycle",
+          "column persist",
+          "page size and boundary"
+        ],
+        "remaining_dimensions": [
+          "remaining title-specific dimensions"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "P07_P08-02",
+        "status": "PARTIAL",
+        "title": "新建入口、编辑入口、返回/取消。",
+        "actual": "三解释器主路径/环境新增/参数默认/目录用户生效与revision已证；删除/覆盖/空输入/其他参数类型等仍待补",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/interpreter-final-results.json",
+          ".e2e/runs/20260930-101945/web/final-results.json"
+        ]
+      },
+      {
+        "case_id": "P07_P08-08",
+        "status": "PARTIAL",
+        "title": "编辑保存 Revision +1，历史内容可展开查看。",
+        "actual": "三解释器主路径/环境新增/参数默认/目录用户生效与revision已证；删除/覆盖/空输入/其他参数类型等仍待补",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/interpreter-final-results.json",
+          ".e2e/runs/20260930-101945/web/final-results.json"
+        ]
+      },
+      {
+        "case_id": "P07_P08-11",
+        "status": "PARTIAL",
+        "title": "后端错误、重复名称、超长内容、超时边界。",
+        "actual": "真实UI禁用Script被Task引用时保存PUT返回400且具体错误可见；启用后保存并在Node1真实运行成功。真实API同名Script返回400；294958字节内容SHA256精确往返；timeout=0和更新为-1均被接受。超时边界契约需结合主控文档/代码审查，本轮未定为产品缺陷；大内容编辑器UI呈现、明确后端错误注入仍未覆盖。",
+        "covered_dimensions": [
+          "disabled script reference rejected by real UI save with visible server error",
+          "enable script then save Task and real Node1 execution succeeds",
+          "duplicate script name rejected with HTTP 400",
+          "294958-byte script content and SHA256 round-trip exactly",
+          "timeout zero accepted",
+          "negative timeout update accepted as observed"
+        ],
+        "remaining_dimensions": [
+          "script editor UI display/interaction at 294958 bytes",
+          "explicit script backend-error UI path",
+          "timeout negative-value contract review"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/luna-gap20-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/script-disabled-reference-boundaries.json"
+        ]
+      }
+    ],
+    "P09P11": [
+      {
+        "case_id": "P09P11-01",
+        "status": "PARTIAL",
+        "title": "列表、搜索、分页、View、空态、Error/Retry。",
+        "actual": "对应真实列表/搜索/无结果/排序/列持久化/分页已在11表逐项执行；标题中其余错误/Empty/角色项未全测。",
+        "covered_dimensions": [
+          "search hit/no result",
+          "sort cycle",
+          "column persist",
+          "page size and boundary"
+        ],
+        "remaining_dimensions": [
+          "remaining title-specific dimensions"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "P09P11-02",
+        "status": "PARTIAL",
+        "title": "Task 名称详情、编辑、立即运行入口。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P09P11-05",
+        "status": "PARTIAL",
+        "title": "类型 command：命令必填、保存、实际执行。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P09P11-06",
+        "status": "PARTIAL",
+        "title": "类型 script：脚本选择、禁用脚本不可引用、保存、实际执行。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P09P11-09",
+        "status": "PARTIAL",
+        "title": "Target node：单节点、多节点、去选节点。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P09P11-16",
+        "status": "PARTIAL",
+        "title": "Remote Condition online、last_execution、operator、节点和 task_id 校验。",
+        "actual": "真实UI选择online和last_execution，填写task_id，再保存online并回显；非法node/task_id和operator全选边界未做。",
+        "covered_dimensions": [
+          "online",
+          "last_execution controls",
+          "node/task_id fields",
+          "online save/readback"
+        ],
+        "remaining_dimensions": [
+          "remote operator variants",
+          "invalid node/task validation"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/task-form-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/task-form-switch-condition.json"
+        ]
+      },
+      {
+        "case_id": "P09P11-22",
+        "status": "PARTIAL",
+        "title": "空名称、空命令、无脚本、无应用、无目标、非法 ID 的错误反馈。",
+        "actual": "空名称0请求，其余5缺字段经真实UI提交Hub400且不创建；未冒充任意ID输入可通过UI完成。",
+        "covered_dimensions": [
+          "UI empty name client reject",
+          "command/script/application/operation/target missing real 400 feedback"
+        ],
+        "remaining_dimensions": [
+          "invalid ID injection API evidence belongs to Root; UI selectors do not accept nonexistent IDs"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/evidence/task-missing-fields.json"
+        ]
+      }
+    ],
+    "P11": [
+      {
+        "case_id": "P11-03",
+        "status": "PARTIAL",
+        "title": "运行中按钮 loading/禁用。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P11-05",
+        "status": "PARTIAL",
+        "title": "command/script/application 三类任务实际运行结果。",
+        "actual": "command/script/app三类实际Agent结果已执行，最新FULL09五App Task操作全部PASS；尚未逐条断言停留在每个Execution列表当前页的终态自动刷新。",
+        "covered_dimensions": [
+          "real Task UI create/save",
+          "Task Run UI",
+          "per-operation execution SUCCESS",
+          "Unit/config/binary SHA/health"
+        ],
+        "remaining_dimensions": [
+          "same-page terminal feedback for every task type"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/managed-app-task-path-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/managed-app-792c2de9.json",
+          ".e2e/runs/20260930-101945/web/evidence/managed-app-792c2de9-cleanup.json",
+          ".e2e/runs/20260930-101945/web/managed-app-task-traced-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/managed-app-765608ef.json",
+          ".e2e/runs/20260930-101945/web/evidence/managed-app-765608ef-cleanup.json",
+          ".e2e/runs/20260930-101945/web/final-results.json"
+        ]
+      },
+      {
+        "case_id": "P11-06",
+        "status": "PARTIAL",
+        "title": "参数值、环境变量、Working Directory、Run User 实际生效。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P11-08",
+        "status": "PARTIAL",
+        "title": "每次Manual Run生成新UUID代表新意图；同Execution ID/Key重复投递/上传按幂等验证",
+        "actual": "两次ManualRun不同UUID与实际root输出已验证；不将新意图测试冒充同ID重复投递幂等。",
+        "covered_dimensions": [
+          "two real Manual Run requests generate distinct fresh UUIDs"
+        ],
+        "remaining_dimensions": [
+          "same Execution ID delivery/upload idempotence is backend/system evidence"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/evidence/task-runuser-policy-uuid.json"
+        ]
+      }
+    ],
+    "P12P13": [
+      {
+        "case_id": "P12P13-01",
+        "status": "PARTIAL",
+        "title": "列表、搜索、分页、类型/表达式/时区/Owner/Offline/Misfire/Enabled。",
+        "actual": "Schedule11表搜索/分页/View与独立route已实测，Cron的Owner/Offline/Misfire列表和保存已补证；所有类型字段/空数据/错误尚未逐个。",
+        "covered_dimensions": [
+          "table controls",
+          "cron fields"
+        ],
+        "remaining_dimensions": [
+          "all type rendered fields",
+          "error/empty data"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/cron-form-complete-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/cron-fields-safe.json"
+        ]
+      },
+      {
+        "case_id": "P12P13-02",
+        "status": "PARTIAL",
+        "title": "调度任务名链接、编辑、启用/禁用、删除确认。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P12P13-03",
+        "status": "PARTIAL",
+        "title": "Cron 表达式必填和非法表达式。",
+        "actual": "Cron空/非法、Interval0、One-Time缺时间过；其它数值/时间/IANA仍待补",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/safe-tables-results.json"
+        ]
+      },
+      {
+        "case_id": "P12P13-04",
+        "status": "PARTIAL",
+        "title": "Interval 最小值、0、负数、小数和超大值。",
+        "actual": "Cron空/非法、Interval0、One-Time缺时间过；其它数值/时间/IANA仍待补",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/safe-tables-results.json"
+        ]
+      },
+      {
+        "case_id": "P12P13-05",
+        "status": "PARTIAL",
+        "title": "One-Time 未来时间、过去时间、时区、空 run_at。",
+        "actual": "真实未来OneTime AsiaShanghai墙钟保存到正确UTC，编辑切UTC回显同一instant；此前空run_at错误过，过去时间/DST边界未做。",
+        "covered_dimensions": [
+          "future time",
+          "IANA wall to UTC",
+          "timezone edit same instant",
+          "empty validation"
+        ],
+        "remaining_dimensions": [
+          "past time",
+          "DST observed behavior"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/safe-tables-results.json",
+          ".e2e/runs/20260930-101945/web/schedule-four-types-final-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/schedule-four-types.json"
+        ]
+      },
+      {
+        "case_id": "P12P13-07",
+        "status": "PARTIAL",
+        "title": "`allow_offline` 与 `hub_online_required` 组合。",
+        "actual": "真实UI hub+hub_online_required及agent+allow_offline分别保存核验；其他Owner×Offline交叉组合、离线运行效果未测。",
+        "covered_dimensions": [
+          "hub/required persisted",
+          "agent/allow persisted"
+        ],
+        "remaining_dimensions": [
+          "two cross combinations",
+          "actual offline scheduling"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/cron-form-complete-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/cron-fields-safe.json"
+        ]
+      }
+    ],
+    "P14P15": [
+      {
+        "case_id": "P14P15-02",
+        "status": "PARTIAL",
+        "title": "新建名称、版本、描述、Artifact、Binary Path、Config Path、Unit、Config。",
+        "actual": "真实v1/v2分配/5操作/systemd/不同ELF SHA已证；标题其余维度尚待补",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/managed-app-complete-results.json"
+        ]
+      },
+      {
+        "case_id": "P14P15-06",
+        "status": "PARTIAL",
+        "title": "创建后 Revision、Artifact Usage、Node Assignment。",
+        "actual": "真实v1/v2分配/5操作/systemd/不同ELF SHA已证；标题其余维度尚待补",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/managed-app-complete-results.json"
+        ]
+      },
+      {
+        "case_id": "P14P15-07",
+        "status": "PARTIAL",
+        "title": "编辑保存 Revision +1、版本历史。",
+        "actual": "真实v1/v2分配/5操作/systemd/不同ELF SHA已证；标题其余维度尚待补",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/managed-app-complete-results.json"
+        ]
+      },
+      {
+        "case_id": "P14P15-08",
+        "status": "PARTIAL",
+        "title": "勾选多个节点分配，取消勾选后取消分配。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P14P15-12",
+        "status": "NOT_RUN",
+        "title": "Admin/operator/viewer 的部署、定义修改权限。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      },
+      {
+        "case_id": "P14P15-13",
+        "status": "PARTIAL",
+        "title": "state 页面显示 version、operation、health、error、updated_at。",
+        "actual": "真实v1/v2分配/5操作/systemd/不同ELF SHA已证；标题其余维度尚待补",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/managed-app-complete-results.json"
+        ]
+      },
+      {
+        "case_id": "P14P15-14",
+        "status": "PARTIAL",
+        "title": "无状态、UNKNOWN、healthy、unhealthy、stopped。",
+        "actual": "真实v1/v2分配/5操作/systemd/不同ELF SHA已证；标题其余维度尚待补",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/managed-app-complete-results.json"
+        ]
+      },
+      {
+        "case_id": "P14P15-15",
+        "status": "PARTIAL",
+        "title": "systemd/TCP/HTTP/Command 健康检查实际结果。",
+        "actual": "真实v1/v2分配/5操作/systemd/不同ELF SHA已证；标题其余维度尚待补",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/managed-app-complete-results.json"
+        ]
+      },
+      {
+        "case_id": "P14P15-17",
+        "status": "NOT_RUN",
+        "title": "Artifact 不存在、节点离线、Capability 缺失、Agent 不可达。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      },
+      {
+        "case_id": "P14P15-18",
+        "status": "NOT_RUN",
+        "title": "应用部署失败后 Binary、Config、Unit、Health、Deployment Journal 均可恢复。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      }
+    ],
+    "P16": [
+      {
+        "case_id": "P16-01",
+        "status": "PARTIAL",
+        "title": "列表、搜索、分页、View、空态、Error/Retry。",
+        "actual": "对应真实列表/搜索/无结果/排序/列持久化/分页已在11表逐项执行；标题中其余错误/Empty/角色项未全测。",
+        "covered_dimensions": [
+          "search hit/no result",
+          "sort cycle",
+          "column persist",
+          "page size and boundary"
+        ],
+        "remaining_dimensions": [
+          "remaining title-specific dimensions"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "P16-04",
+        "status": "PARTIAL",
+        "title": "重复对象、空文件、超大文件、上传中按钮禁用。",
+        "actual": "同名同版本不同ID与空文件当前允许，8MiB真实上传/pending禁用/SHA与列表大小通过；无配置最大值，不虚构超限拒绝契约。",
+        "covered_dimensions": [
+          "actual 8MiB multipart upload",
+          "pending upload disabled and one request",
+          "size/SHA correct"
+        ],
+        "remaining_dimensions": [
+          "current API has no maximum size contract; unbounded enormous-file stress not executed"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/evidence/artifact-large-pending.json"
+        ]
+      },
+      {
+        "case_id": "P16-08",
+        "status": "PARTIAL",
+        "title": "删除确认框取消/确认；被应用引用时行为明确。",
+        "actual": "应用引用制品取消0DELETE、确认1DELETE409，制品及应用保留且UI有行；无引用清理由exact API执行，未冒充UI分支。",
+        "covered_dimensions": [
+          "referenced Artifact cancel0DELETE",
+          "confirm1DELETE409 concrete reference error and retained object"
+        ],
+        "remaining_dimensions": [
+          "unreferenced Artifact UI delete-success branch (API cleanup already completed)"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/evidence/artifact-boundaries-reference-delete.json"
+        ]
+      },
+      {
+        "case_id": "P16-09",
+        "status": "NOT_RUN",
+        "title": "Agent Cache 下载 `.tmp`、校验失败不安装、不污染正式缓存。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      },
+      {
+        "case_id": "P16-10",
+        "status": "NOT_RUN",
+        "title": "下载中断后临时文件清理和重试。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      }
+    ],
+    "P17P18": [
+      {
+        "case_id": "P17P18-01",
+        "status": "PARTIAL",
+        "title": "列表字段、分页、空态、无匹配结果。",
+        "actual": "对应真实列表/搜索/无结果/排序/列持久化/分页已在11表逐项执行；标题中其余错误/Empty/角色项未全测。",
+        "covered_dimensions": [
+          "search hit/no result",
+          "sort cycle",
+          "column persist",
+          "page size and boundary"
+        ],
+        "remaining_dimensions": [
+          "remaining title-specific dimensions"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "P17P18-04",
+        "status": "PARTIAL",
+        "title": "trigger：manual/schedule/system。",
+        "actual": "真实当前页动态trigger选项仅manual，切换/URL正确；schedule/system历史目前不在首server page，尚未验证其可发现性。",
+        "covered_dimensions": [
+          "manual trigger filter"
+        ],
+        "remaining_dimensions": [
+          "schedule/system trigger discovery across pages"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/transfer-source-change-ui-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/execution-filters.json",
+          ".e2e/runs/20260930-101945/web/evidence/execution-filter-transfer-draft.json"
+        ]
+      },
+      {
+        "case_id": "P17P18-06",
+        "status": "PARTIAL",
+        "title": "Task、Execution、Agent 三类回链。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P17P18-07",
+        "status": "PARTIAL",
+        "title": "Detail 元数据：Task/Revision/Script/Node/Trigger/Offline/Synced/Exit/Duration。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "P17P18-10",
+        "status": "PARTIAL",
+        "title": "Wrap、Follow、Copy Logs。",
+        "actual": "真实Wrap开关class、Follow双向、HTTP Copy手动提示已过；Follow新增分片滚动和HTTPS Clipboard成功尚未具备。",
+        "covered_dimensions": [
+          "wrap toggle",
+          "follow toggle",
+          "HTTP manual Copy"
+        ],
+        "remaining_dimensions": [
+          "follow on new chunks",
+          "secure Clipboard exact contents"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/execution-log-cancel-http-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/execution-log-cancel.json"
+        ]
+      },
+      {
+        "case_id": "P17P18-14",
+        "status": "NOT_RUN",
+        "title": "Agent Offline 执行 synced=false，恢复后幂等上传为 synced=true。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      },
+      {
+        "case_id": "P17P18-15",
+        "status": "PARTIAL",
+        "title": "Task/Script Revision 在 Execution 中固定记录。",
+        "actual": "已执行相关主路径；标题中的全部维度/错误/反向项尚未逐项覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      }
+    ],
+    "P19": [
+      {
+        "case_id": "P19-01",
+        "status": "PARTIAL",
+        "title": "列表、搜索、分页、空态、Error/Retry。",
+        "actual": "11表实际Audit搜索/分页/无匹配/列排序已过；Error/Retry/真空Audit未测。",
+        "covered_dimensions": [
+          "Audit table controls"
+        ],
+        "remaining_dimensions": [
+          "API error/retry",
+          "empty audit dataset"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/execution-log-cancel-http-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/execution-log-cancel.json"
+        ]
+      },
+      {
+        "case_id": "P19-03",
+        "status": "PARTIAL",
+        "title": "执行、取消、部署、升级、节点状态、用户角色/密码修改。",
+        "actual": "实际执行run/cancel产生审计条，UI搜索ExecutionID查到cancel；部署/用户修改全部事件由Root证据补。",
+        "covered_dimensions": [
+          "run audit",
+          "cancel audit UI"
+        ],
+        "remaining_dimensions": [
+          "all other action types"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/execution-log-cancel-http-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/execution-log-cancel.json"
+        ]
+      }
+    ],
+    "P20": [
+      {
+        "case_id": "P20-01",
+        "status": "PARTIAL",
+        "title": "Admin 列表、搜索、分页、角色下拉。",
+        "actual": "对应真实列表/搜索/无结果/排序/列持久化/分页已在11表逐项执行；标题中其余错误/Empty/角色项未全测。",
+        "covered_dimensions": [
+          "search hit/no result",
+          "sort cycle",
+          "column persist",
+          "page size and boundary"
+        ],
+        "remaining_dimensions": [
+          "remaining title-specific dimensions"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "P20-04",
+        "status": "PARTIAL",
+        "title": "创建成功、重复用户名、错误输入。",
+        "actual": "新QA User真实UI创建/同用户名重复400与表单取消已过；其他错误输入未由UI逐项注入，Root API空密码/非法Role缺陷另保留。",
+        "covered_dimensions": [
+          "UI create",
+          "duplicate400"
+        ],
+        "remaining_dimensions": [
+          "other invalid input UI cases"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/user-lifecycle-ui-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/user-lifecycle-ui.json"
+        ]
+      }
+    ],
+    "P21": [
+      {
+        "case_id": "P21-03",
+        "status": "NOT_RUN",
+        "title": "修改、保存、成功提示、失败提示、重复保存。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      },
+      {
+        "case_id": "P21-04",
+        "status": "NOT_RUN",
+        "title": "非法数字、0、负数、超大值、非法 Gateway URL。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      },
+      {
+        "case_id": "P21-05",
+        "status": "NOT_RUN",
+        "title": "保存后刷新持久化。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      },
+      {
+        "case_id": "P21-06",
+        "status": "NOT_RUN",
+        "title": "设置变更是否广播到在线 Agent。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      }
+    ],
+    "P22": [
+      {
+        "case_id": "P22-07",
+        "status": "PARTIAL",
+        "title": "开始传输按钮的禁用条件和 loading。",
+        "actual": "主路径与FAILED重试/取消及实际文件已过；pending禁用/单target retry/mode/半文件边界未全部验证",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/relay-verified-results.json"
+        ]
+      },
+      {
+        "case_id": "P22-10",
+        "status": "NOT_RUN",
+        "title": "目标失败隔离，其他目标仍成功。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      },
+      {
+        "case_id": "P22-11",
+        "status": "PARTIAL",
+        "title": "FAILED → retry，验证整体重试和 `target_id` 单目标重试。",
+        "actual": "主路径与FAILED重试/取消及实际文件已过；pending禁用/单target retry/mode/半文件边界未全部验证",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/relay-verified-results.json"
+        ]
+      },
+      {
+        "case_id": "P22-12",
+        "status": "PARTIAL",
+        "title": "PENDING/UPLOADING/DELIVERING → cancel，取消确认按当前产品设计验证。",
+        "actual": "主路径与FAILED重试/取消及实际文件已过；pending禁用/单target retry/mode/半文件边界未全部验证",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/relay-verified-results.json"
+        ]
+      },
+      {
+        "case_id": "P22-13",
+        "status": "NOT_RUN",
+        "title": "源/目标相对路径、路径逃逸、错误 Agent Credential、文件超限。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      },
+      {
+        "case_id": "P22-14",
+        "status": "PARTIAL",
+        "title": "目标文件内容、Mode、SHA256、原子替换和半文件清理。",
+        "actual": "主路径与FAILED重试/取消及实际文件已过；pending禁用/单target retry/mode/半文件边界未全部验证",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/relay-verified-results.json"
+        ]
+      },
+      {
+        "case_id": "P22-15",
+        "status": "NOT_RUN",
+        "title": "Hub 重启、Agent 重连、目标离线后的传输恢复。",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      }
+    ],
+    "FL": [
+      {
+        "case_id": "FL-04",
+        "status": "PARTIAL",
+        "title": "Script Create/Edit/Clone → Task Script → 副本独立、Revision/SHA、任务引用正确",
+        "actual": "真实UI Script/Env/Task/Run/Agent输出/Revision/Clone主链已过；标题其它维度仍按单项清单保留",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/interpreter-final-results.json"
+        ]
+      },
+      {
+        "case_id": "FL-05",
+        "status": "PARTIAL",
+        "title": "Task → Run Now → Execution → Logs → 参数、环境、stdout/stderr、状态和回链",
+        "actual": "真实UI Script/Env/Task/Run/Agent输出/Revision/Clone主链已过；标题其它维度仍按单项清单保留",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/interpreter-final-results.json"
+        ]
+      },
+      {
+        "case_id": "FL-10",
+        "status": "PARTIAL",
+        "title": "Application Deploy → State/Execution → 部署执行、健康、版本、错误一致",
+        "actual": "真实v1/v2分配/5操作/systemd/不同ELF SHA已证；标题其余维度尚待补",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/managed-app-complete-results.json"
+        ]
+      },
+      {
+        "case_id": "FL-11",
+        "status": "NOT_RUN",
+        "title": "Application Upgrade → Rollback → 版本、备份、Unit、Config、Health、Journal 一致",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      },
+      {
+        "case_id": "FL-14",
+        "status": "NOT_RUN",
+        "title": "Token Expire → Login Redirect → 回跳目标安全且路径正确",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      },
+      {
+        "case_id": "FL-16",
+        "status": "NOT_RUN",
+        "title": "Settings Save → Agent Runtime → Agent 心跳/Revision/日志设置实际消费或明确不消费",
+        "actual": null,
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": []
+      }
+    ],
+    "E2E": [
+      {
+        "case_id": "E2E-01",
+        "status": "PARTIAL",
+        "title": "Script → Script Task → Node → Run → Logs → Audit → SUCCESS、输出和审计完整",
+        "actual": "真实UI Script/Env/Task/Run/Agent输出/Revision/Clone主链已过；标题其它维度仍按单项清单保留",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/interpreter-final-results.json"
+        ]
+      },
+      {
+        "case_id": "E2E-03",
+        "status": "PARTIAL",
+        "title": "Script Task 参数/环境/用户/目录 → 客户机实际读取到正确值",
+        "actual": "真实UI Script/Env/Task/Run/Agent输出/Revision/Clone主链已过；标题其它维度仍按单项清单保留",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/interpreter-final-results.json"
+        ]
+      },
+      {
+        "case_id": "E2E-14",
+        "status": "PARTIAL",
+        "title": "File Relay 多目标 → 成功、失败、重试、取消、Hub 重启均正确",
+        "actual": "真实UI双目标成功/失败源/重试/取消已过；Hub重启/目标离线恢复由system owner继续",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/relay-verified-results.json"
+        ]
+      }
+    ],
+    "X04": [
+      {
+        "case_id": "X04",
+        "status": "PARTIAL",
+        "title": "Cron 图形五字段/预设/原始表达式双向同步、非法表达式、下次执行预览与浏览器/IANA时区。",
+        "actual": "所有当前Cron预设、raw→图形分同步、图形分→raw、5次preview、Asia/Shanghai/UTC及非法IANA已真实观察；其余四图形字段和浏览器时区组合未做。",
+        "covered_dimensions": [
+          "all presets",
+          "minute/raw bidirectional",
+          "five next-runs",
+          "valid/invalid IANA"
+        ],
+        "remaining_dimensions": [
+          "four other graphical fields",
+          "browser timezone combinations"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/cron-form-complete-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/cron-fields-safe.json",
+          ".e2e/runs/20260930-101945/web/safe-tables-results.json"
+        ]
+      }
+    ],
+    "X06": [
+      {
+        "case_id": "X06",
+        "status": "PARTIAL",
+        "title": "Artifact 列表新建 Application 预选 artifact_id/version；应用内嵌上传成功自动选中，失败/取消不覆盖已有定义。",
+        "actual": "真实内嵌上传取消/必填零写，成功自动选newArtifact/v2，App实际保存正确；server-error分支仍区分。",
+        "covered_dimensions": [
+          "inline cancel zero upload",
+          "native required invalid zero upload preserves v1",
+          "actual successful inline upload auto-picks new artifact/v2 and App saved"
+        ],
+        "remaining_dimensions": [
+          "server-side upload failure does not overwrite draft; native required is not that branch"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/final-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/inline-artifact-upload.json"
+        ]
+      }
+    ],
+    "X07": [
+      {
+        "case_id": "X07",
+        "status": "PARTIAL",
+        "title": "所有详情/编辑/Run 深链刷新和前进后退；不存在 ID、并发删除、404/Error/Retry/返回；旧 tasks?view=schedules 重定向 /schedules。",
+        "actual": "12实际详情/编辑/Run/preset深链直访刷新history，9不存在资源Error/Retry/back完成；普通列表已巡检；并发删除、invalid preset和快导航丢会话另待审查。",
+        "covered_dimensions": [
+          "12 detailed routes",
+          "nine missing-resource pages",
+          "Retry/back",
+          "old schedule redirect"
+        ],
+        "remaining_dimensions": [
+          "concurrent deletion",
+          "invalid presets",
+          "rapid navigation auth"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/detail-deep-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/detail-deep-links.json"
+        ]
+      }
+    ],
+    "X10": [
+      {
+        "case_id": "X10",
+        "status": "PARTIAL",
+        "title": "Schedule四类型往返字段裁剪/非法时区切on_start/One-Time时区转换/Owner-Offline组合；DST边界按当前解析实现观察，不新增拒绝或补偿契约。",
+        "actual": "四类型真实独立保存/readback；on_start裁剪trigger fields、nonOneTime不传run_at；OneTime墙钟↔UTC通过；Cron/OneTime GET仍可能带忽略的interval_sec60属当前契约。Owner组合另一SAFE09已测，全部往返/DST未做。",
+        "covered_dimensions": [
+          "all four type persistence",
+          "on_start cropping",
+          "nonOneTime run_at crop",
+          "OneTime zone conversion"
+        ],
+        "remaining_dimensions": [
+          "same-resource type roundtrip",
+          "DST"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/schedule-four-types-final-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/schedule-four-types.json",
+          ".e2e/runs/20260930-101945/web/cron-form-complete-results.json"
+        ]
+      }
+    ],
+    "X11": [
+      {
+        "case_id": "X11",
+        "status": "PARTIAL",
+        "title": "Local/Remote/AND 条件编辑回显、AND 勾选未设置的语义、覆盖/清除一个和最后一个条件后实际执行/阻断。",
+        "actual": "本轮Agent实际Local false→SKIPPED、Remote UNKNOWN→BLOCKED，均无命令marker；不把Local false错误期待为BLOCKED。",
+        "covered_dimensions": [
+          "GUI condition set/clear",
+          "AND readback",
+          "final condition removed",
+          "actual local false SKIPPED no command",
+          "actual remote UNKNOWN BLOCKED no command"
+        ],
+        "remaining_dimensions": [
+          "AND unchecked/unset/clear-last full execution matrix still open",
+          "BLOCKED UI reason missing"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/task-form-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/task-form-switch-condition.json",
+          ".e2e/runs/20260930-101945/web/evidence/offline-node-condition-blocked.json"
+        ]
+      }
+    ],
+    "X12": [
+      {
+        "case_id": "X12",
+        "status": "PARTIAL",
+        "title": "Label/Group/Application Assignment 改变后立即及缓存收敛后检查跨页与下次真实执行目标；空目标、重叠组、离线/禁用/维护/Capability 不匹配。",
+        "actual": "Label Group动态与空目标反向已过；重叠组/禁用离线/Capability其它维度未全覆盖",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/dynamic-targets-results.json"
+        ]
+      }
+    ],
+    "X19": [
+      {
+        "case_id": "X19",
+        "status": "PARTIAL",
+        "title": "键盘 Tab/Enter/Escape 确认/取消与焦点返回；批量工具栏 Arrow/Home/End/Escape 不误清选择或误执行。",
+        "actual": "实际工具栏Home/End/Arrow左右焦点循环，升级/维护取消保持选择且0 POST，Escape清选择；Profile Enter/Escape此前通过。Tab焦点返回/Dropdown-Escape分支未做。",
+        "covered_dimensions": [
+          "bulk Home/End/Arrow",
+          "upgrade cancel",
+          "maintenance cancel",
+          "Escape clear",
+          "Profile Enter/Escape"
+        ],
+        "remaining_dimensions": [
+          "Tab focus return",
+          "Dropdown Escape branch"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/auth-keyboard-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/keyboard-history-safe.json",
+          ".e2e/runs/20260930-101945/web/bulk-selection-keyboard-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/bulk-selection-keyboard.json"
+        ]
+      }
+    ],
+    "X20": [
+      {
+        "case_id": "X20",
+        "status": "PARTIAL",
+        "title": "长中文名称/路径/ID/SHA/命令/大量参数/日志；列全部隐藏再恢复、空搜索恢复、窄屏表单/菜单/确认框。",
+        "actual": "11真实表共66可隐藏列逐项全隐藏、刷新保持、恢复baseline并再次刷新；长文本及窄屏完整矩阵继续保留。",
+        "covered_dimensions": [
+          "all eleven tables sixty-six hideable columns all hidden, reload-persisted, baseline restored"
+        ],
+        "remaining_dimensions": [
+          "long Chinese/path/ID/command/parameters/log cases and narrow form/menu/dialog layout"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/evidence/all-tables-all-columns.json"
+        ]
+      }
+    ],
+    "ROUTE": [
+      {
+        "case_id": "ROUTE-01",
+        "status": "PARTIAL",
+        "title": "/sign-in 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-02",
+        "status": "PARTIAL",
+        "title": "/ 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-03",
+        "status": "PARTIAL",
+        "title": "/agents 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-04",
+        "status": "PARTIAL",
+        "title": "/nodes 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-07",
+        "status": "PARTIAL",
+        "title": "/groups 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-08",
+        "status": "PARTIAL",
+        "title": "/groups/new 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-10",
+        "status": "PARTIAL",
+        "title": "/scripts 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-11",
+        "status": "PARTIAL",
+        "title": "/scripts/new 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-13",
+        "status": "PARTIAL",
+        "title": "/tasks 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-14",
+        "status": "PARTIAL",
+        "title": "/tasks/new 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-18",
+        "status": "PARTIAL",
+        "title": "/schedules 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-19",
+        "status": "PARTIAL",
+        "title": "/tasks?view=schedules 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-20",
+        "status": "PARTIAL",
+        "title": "/schedules/new 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-21",
+        "status": "PARTIAL",
+        "title": "/schedules/new?task_id={own_task_id} 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "真实preset deep-link直接访问/刷新/history已完成；非法preset和关联对象并发删除未覆盖。",
+        "covered_dimensions": [
+          "actual preset query",
+          "reload",
+          "back/forward"
+        ],
+        "remaining_dimensions": [
+          "invalid preset",
+          "concurrent delete"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/detail-deep-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/detail-deep-links.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-23",
+        "status": "PARTIAL",
+        "title": "/applications 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-24",
+        "status": "PARTIAL",
+        "title": "/applications/new 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-25",
+        "status": "PARTIAL",
+        "title": "/applications/new?artifact_id={own_artifact_id} 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "真实preset deep-link直接访问/刷新/history已完成；非法preset和关联对象并发删除未覆盖。",
+        "covered_dimensions": [
+          "actual preset query",
+          "reload",
+          "back/forward"
+        ],
+        "remaining_dimensions": [
+          "invalid preset",
+          "concurrent delete"
+        ],
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/detail-deep-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/detail-deep-links.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-27",
+        "status": "PARTIAL",
+        "title": "/artifacts 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-28",
+        "status": "PARTIAL",
+        "title": "/artifacts/new 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-29",
+        "status": "PARTIAL",
+        "title": "/executions 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-31",
+        "status": "PARTIAL",
+        "title": "/audit 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-32",
+        "status": "PARTIAL",
+        "title": "/users 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-33",
+        "status": "PARTIAL",
+        "title": "/settings 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-34",
+        "status": "PARTIAL",
+        "title": "/transfers 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      },
+      {
+        "case_id": "ROUTE-35",
+        "status": "PARTIAL",
+        "title": "/invalid-e2e-route 直接访问/刷新/回链/前进后退/错误空态",
+        "actual": "该真实入口已打开/截图/视口验证；未把完整浏览器历史及每种错误一概计PASS",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/page-discovery.json"
+        ]
+      }
+    ],
+    "TABLE": [
+      {
+        "case_id": "TABLE-NODES-ERROR",
+        "status": "PARTIAL",
+        "title": "nodes Loading/Empty/Error/Retry",
+        "actual": "加载与无结果已观察；该页服务端异常/Retry未全部注入",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "TABLE-GROUPS-ERROR",
+        "status": "PARTIAL",
+        "title": "groups Loading/Empty/Error/Retry",
+        "actual": "加载与无结果已观察；该页服务端异常/Retry未全部注入",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "TABLE-SCRIPTS-ERROR",
+        "status": "PARTIAL",
+        "title": "scripts Loading/Empty/Error/Retry",
+        "actual": "加载与无结果已观察；该页服务端异常/Retry未全部注入",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "TABLE-TASKS-ERROR",
+        "status": "PARTIAL",
+        "title": "tasks Loading/Empty/Error/Retry",
+        "actual": "加载与无结果已观察；该页服务端异常/Retry未全部注入",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "TABLE-SCHEDULES-ERROR",
+        "status": "PARTIAL",
+        "title": "schedules Loading/Empty/Error/Retry",
+        "actual": "加载与无结果已观察；该页服务端异常/Retry未全部注入",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "TABLE-APPLICATIONS-ERROR",
+        "status": "PARTIAL",
+        "title": "applications Loading/Empty/Error/Retry",
+        "actual": "加载与无结果已观察；该页服务端异常/Retry未全部注入",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "TABLE-ARTIFACTS-ERROR",
+        "status": "PARTIAL",
+        "title": "artifacts Loading/Empty/Error/Retry",
+        "actual": "加载与无结果已观察；该页服务端异常/Retry未全部注入",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "TABLE-EXECUTIONS-SEARCH",
+        "status": "PARTIAL",
+        "title": "executions 搜索命中/无结果/清空/Reset",
+        "actual": "搜索命中/无结果/恢复真实执行；Execution无Reset且跨页有缺陷",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "TABLE-EXECUTIONS-ERROR",
+        "status": "PARTIAL",
+        "title": "executions Loading/Empty/Error/Retry",
+        "actual": "加载与无结果已观察；该页服务端异常/Retry未全部注入",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "TABLE-TRANSFERS-ERROR",
+        "status": "PARTIAL",
+        "title": "transfers Loading/Empty/Error/Retry",
+        "actual": "加载与无结果已观察；该页服务端异常/Retry未全部注入",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "TABLE-AUDIT-ERROR",
+        "status": "PARTIAL",
+        "title": "audit Loading/Empty/Error/Retry",
+        "actual": "加载与无结果已观察；该页服务端异常/Retry未全部注入",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      },
+      {
+        "case_id": "TABLE-USERS-ERROR",
+        "status": "PARTIAL",
+        "title": "users Loading/Empty/Error/Retry",
+        "actual": "加载与无结果已观察；该页服务端异常/Retry未全部注入",
+        "covered_dimensions": null,
+        "remaining_dimensions": null,
+        "evidence": [
+          ".e2e/runs/20260930-101945/web/tables-verified-results.json",
+          ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,825 @@
+{
+  "run_id": "20260930-101945",
+  "created_at": "2026-10-04T00:25:21.169539+00:00",
+  "change": "repair-e2e-confirmed-defects",
+  "definition": "22缺陷回归台账，不增加504功能分母；修复某缺陷不自动把关联复合场景升级PASS。",
+  "execution_boundary": "只执行repair authority和独占资源，旧证据的URL/ID仅溯源，不向primary :8080发管理写请求，不复用原Agent身份/凭证。",
+  "acceptance": "每项正常/负向/恢复适用维度及真实用户操作→请求→状态→客户机业务效果→UI/调用方反馈，标注实际binary/source SHA；Mock与静态不计实时通过。",
+  "failures": [
+    {
+      "failure_id": "E2E-20260930-101945-P1-001",
+      "priority": "P1",
+      "title": "停留页面的会话失效后，401清空Token但不自动跳转登录",
+      "baseline_failure_status": "OPEN",
+      "regression_status": "PASS",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "X17",
+        "G-01-05",
+        "FL-14"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "401后清除认证状态并跳转/sign-in，保留合法回跳路径",
+      "baseline_reproduction_reference": "main/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/session-expiry-before-3.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/session-expiry-after-3.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/session-expiry-repro-3.webm",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/session-expiry-network.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/empty-ttl/empty-ttl-summary.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/empty-ttl/dashboard-ttl-expired.png"
+      ],
+      "runtime_evidence": [
+        "repair/qa/ttl-live.json",
+        "repair/qa/ttl-ui-browser-results.json",
+        "repair/qa/ttl-background-expiry.json",
+        "repair/qa/ttl-background-401-signin.png"
+      ],
+      "remaining_dimensions": [],
+      "covered_dimensions": [
+        "AUTH_TTL_API自然过期401",
+        "protected page reload me401清Auth/安全sign-in",
+        "valid UI login内部query/hash返回",
+        "external redirect拒绝",
+        "显式logout清身份",
+        "Operator403同token me200 API层"
+      ],
+      "verified_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+      "actual": "最新Hub独立3秒TTL，UI login/me200后原Dashboard无操作16秒，五后台GET自然401，自动sign-in并清Token；合法query/hash回跳、外站拒绝与logout另有真实证据。500/403更广泛边界独立记录。"
+    },
+    {
+      "failure_id": "E2E-20260930-101945-P0-002",
+      "priority": "P0",
+      "title": "升级PREPARING阶段崩溃后恢复删除旧Binary/Config/Unit，旧服务未恢复",
+      "baseline_failure_status": "OPEN",
+      "regression_status": "PASS",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "AR-30",
+        "INV-11",
+        "SYS-51",
+        "P14P15-18",
+        "FL-11",
+        "E2E-13"
+      ],
+      "declared_supplementary_ids": [
+        "MAIN-PHASE-PREPARING"
+      ],
+      "expected": "崩溃后恢复旧版本或保留可恢复的旧文件，托管服务存在明确恢复路径",
+      "baseline_reproduction_reference": "main/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/native-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/native-second-attempt.json"
+      ],
+      "runtime_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/p0-002-final-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/attempt03/p0-preparing-fault-attempt03-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/attempt03/post-restart-local-state-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/attempt03/restart-after-fault-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/attempt03/progress.json"
+      ],
+      "remaining_dimensions": [],
+      "covered_dimensions": [
+        "无人工desired PUT的attempt03真实PREPARING崩溃/重启保留v1三SHA及服务，明确inspection/FAILED符合有效Spec保守分支。"
+      ],
+      "actual": "无人工desired PUT的attempt03真实PREPARING崩溃/重启保留v1三SHA及服务，明确inspection/FAILED符合有效Spec保守分支。",
+      "reviewed_at": "2026-10-10T01:50:58.783049+00:00",
+      "historical_evidence_is_not_new_20261010_runtime": true
+    },
+    {
+      "failure_id": "MAIN-USER-EMPTY-PASSWORD",
+      "priority": "P1",
+      "title": "创建用户服务端接受空密码，空密码可真实登录",
+      "baseline_failure_status": "OPEN",
+      "regression_status": "PASS",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "API-CONTRACT",
+        "P20-03"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "密码必填；role仅administrator/operator/viewer；非法值原子拒绝",
+      "baseline_reproduction_reference": "main/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/user-validation-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/user-validation-harness-note.json"
+      ],
+      "runtime_evidence": [
+        "repair/qa/user-validation-live-final.json"
+      ],
+      "remaining_dimensions": [],
+      "verified_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+      "actual": "最新Hub真实User create/update/login/me/403边界与错误后密码、角色保持已验证；legacy旧空hash由独立Go真store回归覆盖，不改历史用户。"
+    },
+    {
+      "failure_id": "MAIN-USER-INVALID-ROLE",
+      "priority": "P2",
+      "title": "用户Role更新接受三种有效角色之外的字符串并持久化",
+      "baseline_failure_status": "OPEN",
+      "regression_status": "PASS",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "API-CONTRACT",
+        "P20-03"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "密码必填；role仅administrator/operator/viewer；非法值原子拒绝",
+      "baseline_reproduction_reference": "main/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/user-validation-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/user-validation-harness-note.json"
+      ],
+      "runtime_evidence": [
+        "repair/qa/user-validation-live-final.json"
+      ],
+      "remaining_dimensions": [],
+      "verified_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+      "actual": "最新Hub真实User create/update/login/me/403边界与错误后密码、角色保持已验证；legacy旧空hash由独立Go真store回归覆盖，不改历史用户。"
+    },
+    {
+      "failure_id": "BE-SECRET-STREAM-001",
+      "priority": "P1",
+      "title": "secret参数跨实时日志分块后可重组为明文",
+      "baseline_failure_status": "confirmed",
+      "regression_status": "PASS",
+      "executor": "gpt-6-luna + Root independent review",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "X16"
+      ],
+      "declared_supplementary_ids": [
+        "task.secret-split-stream"
+      ],
+      "expected": "实时日志与终态日志均不得暴露完整secret参数值",
+      "baseline_reproduction_reference": "backend/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/task.secret-split-stream-e0308807.json"
+      ],
+      "runtime_evidence": [
+        "repair/qa/backend-live-batch.json",
+        "repair/qa/backend-runner/latest-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/resources-created.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/resilience-created.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/live-long-created.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/boundary-created.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/partial-secret-created.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/live-ui-initial.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/retry-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/cancel-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/timeout-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/boundary-verification.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/boundary-order.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/prefix-cancel-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/prefix-timeout-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/split-streams-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/limit-mid-secret-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/partial-secret-cleanup.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/revision-recovery-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/script-revisions/154713f0-0301-4f94-a38e-87a45af5fcdd-r1.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/script-revisions/4779bd1a-c341-47f1-9353-3787cb05d3b0-r1.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/script-revisions/592cfc4b-3a6b-4f16-a790-74f66d14259e-r1.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/script-revisions/f34360e1-97d2-437a-8d47-d46bd20234fe-r1.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/script-revisions/f6eb32ef-5375-49e8-a91a-1f9ea2185d29-r1.json"
+      ],
+      "remaining_dimensions": [],
+      "actual": "同流跨块、程序逐字节、stdout/stderr各65536边界、retry两轮、cancel/timeout、仅prefix结束、1MiB中间截断和跨流拆分均满足完整secret不暴露/不重组，非secret尾部可用。stdout前缀被遮蔽而stderr/UI后缀片段仍可见，观察保留。",
+      "covered_dimensions": [
+        "正常实时/终态完整secret脱敏。",
+        "程序逐字节双流、两同流64KiB边界。",
+        "retry/cancel/timeout flush及非secret尾部。",
+        "prefix取消/超时终态遮蔽。",
+        "1MiB正中secret摘要截断安全、完整chunks无marker并保正常tail。",
+        "跨stdout/stderr拆分完整值不可重组。"
+      ],
+      "updated_at": "2026-10-08T07:45:46.741160+00:00",
+      "acceptance_limits": [
+        "物理单字节protocol frame未单独取得，程序逐字节输出已真测。",
+        "跨流后缀可见事实不得删除。",
+        "不自动升级X16其他Revision/Audit/输入/错误位置。"
+      ],
+      "review_evidence": ".e2e/runs/20260930-101945/repair/runtime-case-review-20261008.json",
+      "acceptance_policy": "按当前已确认口径：完整secret值不得重组；不要求任意后缀/片段一概遮蔽。"
+    },
+    {
+      "failure_id": "BE-SCRIPT-SHA-002",
+      "priority": "P1",
+      "title": "Agent接受控制同步中SHA256不匹配的脚本内容并前进Revision",
+      "baseline_failure_status": "confirmed",
+      "regression_status": "PASS",
+      "executor": "/root/luna_backend_cases (20261008 runtime) / Root evidence audit 20261009",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "INV-05"
+      ],
+      "declared_supplementary_ids": [
+        "feature.sync.script-sha"
+      ],
+      "expected": "校验失败拒绝应用，保持旧脚本与旧GlobalRevision",
+      "baseline_reproduction_reference": "backend/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.sync.script-sha-a7d33af9.json"
+      ],
+      "runtime_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-checkpoint.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-frame-events.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-local-oracle.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-db-task-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-file-oracle-task-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-execution-ui.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-case-cleanup.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-root/sha-case-review.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/armed-child-restart-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/negative-oracle-attempt02-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/release-good-snapshot-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/positive-prune-oracle-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/good-script-execution-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/good-v2-marker-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/good-script-execution-ui-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/combined-cleanup-plan.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/hub-fixture-cleanup-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/owned-roots-removal-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/final-cleanup-oracle-evidence.json"
+      ],
+      "remaining_dimensions": [],
+      "covered_dimensions": [
+        "同一SYNC_RESPONSE含good/bad Script v2，单坏SHA导致SYNC_ACK ok=false/applied_rev=0",
+        "数据库只读oracle保持revision692，与checkpoint fault前692相同；两Script仍revision1",
+        "good物理文件仍good-v1，bad/injected marker不存在",
+        "撤故障后两Script revision2及内容SHA一致，Task SUCCESS，Execution UI反馈",
+        "两Task/两Script精确删除并GET404；child为后续场景保留"
+      ],
+      "actual": "真实Snapshot=true/FullResync=false、Apps omitted、双Script齐全；仅坏Script Content改变导致exact SHA NACK/applied0，DB revision1274/App row、v1 Binary/Config/Unit SHA/active PID均保留。release后ACK1289，真实App row/Registry/Unit/symlink/files清理，双Script v2 SHA正确落地；Good脚本marker实际字节与UI SUCCESS/同步。全部owned API对象/两进程/两nonce目录精确清理，原4online/synced，baseline/repairNative1 PID/ticks保持。",
+      "reviewed_at": "2026-10-10T02:47:59.958937+00:00",
+      "historical_evidence_is_not_new_runtime": true,
+      "limits": [
+        "本例local Script baseline为空，旧Script/v1与GlobalRevision保存由此前普通SHA case提供证据",
+        "实际FullSnapshot而FullResync flag=false；不声称FullResync flag=true新运行",
+        "INV05 SQLite写/Commit故障未测，canonical仍PARTIAL"
+      ]
+    },
+    {
+      "failure_id": "BE-REENROLL-STATUS-003",
+      "priority": "P2",
+      "title": "撤销后重新纳管换新凭证成功但节点仍disabled",
+      "baseline_failure_status": "confirmed",
+      "regression_status": "PASS",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "X02"
+      ],
+      "declared_supplementary_ids": [
+        "feature.node.revoke"
+      ],
+      "expected": "PrepareEnrollment进入pending并在接受HELLO后online（源码注释与纳管闭环），或界面明确额外Enable步骤",
+      "baseline_reproduction_reference": "backend/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.node.revoke-3dfd204f.json"
+      ],
+      "runtime_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/e2e-resume-20261009-final-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/reenroll-revoke-cancel.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/reenroll-reconnect-oracle.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/owned-process-ledger.json"
+      ],
+      "remaining_dimensions": [],
+      "covered_dimensions": [
+        "同身份pending→真实重连old credential拒绝/new credential旋转→online/synced；状态/标签/历史与UI业务闭环通过。"
+      ],
+      "actual": "同身份pending→真实重连old credential拒绝/new credential旋转→online/synced；状态/标签/历史与UI业务闭环通过。",
+      "reviewed_at": "2026-10-10T01:50:58.783049+00:00",
+      "historical_evidence_is_not_new_20261010_runtime": true
+    },
+    {
+      "failure_id": "BE-REMOTE-TTL-004",
+      "priority": "P1",
+      "title": "Agent忽略Remote State ObservedAt/TTL并执行过期条件任务",
+      "baseline_failure_status": "confirmed",
+      "regression_status": "PASS",
+      "executor": "/root/e2e_recovery (20261009 runtime) / /root/luna_backend_cases (20261008 negatives)",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "E2E-10",
+        "SYS-29",
+        "INV-09"
+      ],
+      "declared_supplementary_ids": [
+        "feature.condition.remote-ttl"
+      ],
+      "expected": "Expired Remote State→UNKNOWN→BLOCKED且无业务效果",
+      "baseline_reproduction_reference": "backend/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.condition.remote-ttl-bf27e07e.json"
+      ],
+      "runtime_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/ttl-recovery-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/ttl-blocked-execution-ui.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/ttl-recovery-success-execution-ui.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/owned-process-ledger.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/preflight.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-REMOTE-TTL-004-checkpoint.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-root/ttl-case-review.json"
+      ],
+      "remaining_dimensions": [],
+      "covered_dimensions": [
+        "既有7单因子/负向状态任务BLOCKED及marker absent、local journal已留证据",
+        "新20261009 BLOCKED真实Execution UI显示后端block_reason",
+        "合法payload未改仅transport-delay500ms，request/response关联，Task SUCCESS",
+        "物理恢复marker SHA/mode0600/UID65534与local journal SUCCESS/synced匹配",
+        "真实成功Execution UI反馈与API/output一致，proxy controls清空"
+      ],
+      "actual": "7负例真实BLOCKED且无marker；20261009成功恢复、journal/文件/关联response、BLOCKED/SUCCESS真实UI已通过；批次cleanup进行中。",
+      "reviewed_at": "2026-10-09T08:22:25.111965+00:00"
+    },
+    {
+      "failure_id": "WEB-SECRET-DEFAULT",
+      "priority": "P1",
+      "title": "Script/Task Editor secret参数默认值摘要明文展示",
+      "baseline_failure_status": "OPEN",
+      "regression_status": "PASS",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "P09P11-14",
+        "X16"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "secret值在页面摘要遮蔽",
+      "baseline_reproduction_reference": "web/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/secret-default-repro.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/secret-default-repro.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/task-pending-secret.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/gap-core-results.json"
+      ],
+      "runtime_evidence": [
+        "repair/qa/secret-default-live.json",
+        "repair/qa/secret-default-editor-masked.png",
+        "repair/qa/task-secret-default-live.json",
+        "repair/qa/task-secret-default-cleanup.json",
+        "repair/qa/secret-default-cleanup.json",
+        "repair/qa/full-feature-01-05-07-results.json"
+      ],
+      "remaining_dimensions": [],
+      "covered_dimensions": [
+        "Script创建/保存/重开摘要遮蔽",
+        "Task创建/保存/重开摘要遮蔽",
+        "API保留secret类型和默认值",
+        "两套fixture精确删除后GET404"
+      ],
+      "verified_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+      "actual": "Task及最终版本FULL-03真实UI证据已核验。Script保存/重开来自前一次repair Hub，两个manifest的前端web_index SHA一致；该旧Script证据保留原Hub SHA，不伪称重新执行。关联复合场景仍为PARTIAL。",
+      "evidence_audited_at": "2026-10-04T15:12:04.562474+00:00"
+    },
+    {
+      "failure_id": "WEB-LIVE-LOG",
+      "priority": "P2",
+      "title": "Execution详情已有chunks后新日志及终态stdout不更新",
+      "baseline_failure_status": "OPEN",
+      "regression_status": "PASS",
+      "executor": "gpt-6-luna + Root independent review",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "P17P18-11",
+        "X15"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "页面日志显示first和second",
+      "baseline_reproduction_reference": "web/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json"
+      ],
+      "runtime_evidence": [
+        "repair/qa/live-log-ui.json",
+        "repair/qa/live-log-detail-chunks.png",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/live-long-running-start.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/live-follow-running.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/live-ui-live-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/retry-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/cancel-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/timeout-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/boundary-order.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/boundary-verification.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/boundary-final-log-view.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/empty-verification.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/copy-fallback-state.json",
+        "web/src/lib/execution-logs.ts",
+        "web/src/features/executions/index.tsx",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-web/batch01-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-web/offline-online-fetch.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-web/filter-clear-recovery.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-web/clipboard-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-web/cdp-context-clipboard-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-root/web-batch01-review.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/attempt05/follow-scroll-oracle.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/attempt05/execution-final-oracle.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/attempt05/pending-ui-observation.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/attempt05/clipboard-oracle.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/attempt05/cleanup-verification.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/clipboard-cold/clipboard-cold-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/restart-clipboard-not-found-review.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/clipboard-denial/clipboard-denial-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/clipboard-denial-review.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/owner-inspection-attempt06/result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/web-batch09-14-pending-ui-review.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt06/ui-evidence-c2ce573d4aea.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt06/stdout-container-final-readonly-attempt02.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/pending-ui-live-log-closure-review.json"
+      ],
+      "remaining_dimensions": [],
+      "actual": "既有同页新chunks/终态双流、断网恢复、empty/truncation、Follow/Search/Copy全部已验；新增真实同Execution PENDING→RUNNING→SUCCESS完整同页UI/API与stdout pre marker27B。最后physical controls{}、watchdog OWNED_HOLD_RELEASED/PID50803ABSENT及exact helperTask404。原缺陷验收已覆盖。",
+      "covered_dimensions": [
+        "RUNNING→终态同页无reload，navCount1。",
+        "新chunks/双流tail、retry两轮、seq顺序、空/限额截断。",
+        "正常连接Follow/Search/Copy回退。",
+        "Task retry真实最终FAILED；browser断网TypeError→online200，同detail navCount1恢复终态和完整日志；Copy真实按钮success，准确值/拒绝未验。",
+        "真实secure clipboard精确1920bytes/SHA读回；三个流过滤精确匹配API。",
+        "双clipboard权限denied后真实按钮产生fresh manual fallback提示；实际clipboard精确更新为显示日志，清理完成。",
+        "真实API/UI同一ID PENDING→RUNNING→SUCCESS，同document无reload；最终控制释放和专属清理核验。"
+      ],
+      "updated_at": "2026-10-10T15:21:14.826946+00:00",
+      "acceptance_limits": [
+        "proxy frame hold/release schema/source未被本次只读检查独立确认，不将零匹配推断为没有帧；该协议维度不属于原WEB-LIVE-LOG验收。",
+        "X15 retry attempt metadata分组维度仍PARTIAL，未扩大原22缺陷完成判定。"
+      ],
+      "review_evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/pending-ui-live-log-closure-review.json",
+      "reviewed_at": "2026-10-10T15:21:14.826946+00:00"
+    },
+    {
+      "failure_id": "WEB-APP-LIVE-STATE",
+      "priority": "P2",
+      "title": "Managed Application操作成功后Health/Execution History仍旧状态",
+      "baseline_failure_status": "OPEN",
+      "regression_status": "PASS",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "P14P15-11",
+        "E2E-11"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "当前详情反馈最新健康与执行终态",
+      "baseline_reproduction_reference": "web/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/managed-app-complete-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/managed-app-cb765bf3-cleanup.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/managed-app-5994994a-cleanup.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/managed-app-f504bb57-cleanup.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/managed-app-4ee17830-cleanup.json"
+      ],
+      "runtime_evidence": [
+        "repair/qa-resume-20261004/app-live-state-full08.py",
+        "repair/qa-resume-20261004/app-live-state-full08.json",
+        "repair/qa-resume-20261004/app-full08-host-cycle.py",
+        "repair/qa-resume-20261004/app-full08-host-cycle-retry.json"
+      ],
+      "remaining_dimensions": [],
+      "covered_dimensions": "Current App page Health changes to exact new operation and healthy/stopped, History entry count increases after actual unique SUCCESS executions; no open/reload between operation click and captured feedback. Independent original four-op loop is continuously same page except normal definition Save before upgrade.",
+      "actual": "Current App page Health changes to exact new operation and healthy/stopped, History entry count increases after actual unique SUCCESS executions; no open/reload between operation click and captured feedback. Independent original four-op loop is continuously same page except normal definition Save before upgrade.",
+      "verified_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+      "evidence_audited_at": "2026-10-04T23:39:39.788799+00:00"
+    },
+    {
+      "failure_id": "WEB-EXEC-SEARCH-PAGE",
+      "priority": "P2",
+      "title": "Execution/Audit搜索仅过滤当前服务端页",
+      "baseline_failure_status": "OPEN",
+      "regression_status": "PASS",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "P17P18-02",
+        "P19-04",
+        "X14"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "以当前OpenSpec对应Requirement和实际业务状态为准",
+      "baseline_reproduction_reference": "web/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/safe-tables-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/execution-cross-page-search.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/audit-cross-page-search.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/gap-audit-tables-verified-results.json"
+      ],
+      "runtime_evidence": [
+        "repair/qa-resume-20261004/resume-20261004-safe-results.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-cross-page-search.json",
+        "repair/qa-resume-20261004/resume-20261004-gap07b-results.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-gap07b/audit-cross-page-search.json"
+      ],
+      "remaining_dimensions": [],
+      "covered_dimensions": "Execution and Audit each find actual known beyond-page records; Audit q actual request200 and matching total/hits.",
+      "actual": "Execution and Audit each find actual known beyond-page records; Audit q actual request200 and matching total/hits.",
+      "evidence_audited_at": "2026-10-04T16:20:35.688452+00:00",
+      "verified_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+    },
+    {
+      "failure_id": "WEB-AUTH-SIGN-IN",
+      "priority": "P2",
+      "title": "已认证访问/sign-in仍显示登录表单",
+      "baseline_failure_status": "OPEN",
+      "regression_status": "PASS",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "G-01-02"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "回到业务页",
+      "baseline_reproduction_reference": "web/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/root-gap-round2-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/authenticated-sign-in.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/authenticated-sign-in.png"
+      ],
+      "runtime_evidence": [
+        "repair/qa-resume-20261004/resume-20261004-safe-results.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-safe/authenticated-sign-in.json"
+      ],
+      "remaining_dimensions": [],
+      "covered_dimensions": "Authenticated direct sign-in reaches local business root without form.",
+      "actual": "Authenticated direct sign-in reaches local business root without form.",
+      "evidence_audited_at": "2026-10-04T16:20:35.688452+00:00",
+      "verified_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+    },
+    {
+      "failure_id": "WEB-TASK-DELETE-CANCEL",
+      "priority": "P2",
+      "title": "Task删除取消后菜单残留并锁住页面",
+      "baseline_failure_status": "OPEN",
+      "regression_status": "PASS",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "P09P11-04",
+        "G04-04",
+        "X08"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "取消0 DELETE并恢复页面交互",
+      "baseline_reproduction_reference": "web/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/group-task-cancel-state-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/delete-cancel-tasks.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/delete-cancel-tasks.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/delete-cancel-groups.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/group-task-roundtrip.json"
+      ],
+      "runtime_evidence": [
+        "repair/qa-resume-20261004/resume-20261004-safe-results.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-safe/group-task-roundtrip.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-tasks.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-groups.json"
+      ],
+      "remaining_dimensions": [],
+      "covered_dimensions": "Task cancellation preserves unlock/actions; no residue; subsequent confirm and GET404 succeed.",
+      "actual": "Task cancellation preserves unlock/actions; no residue; subsequent confirm and GET404 succeed.",
+      "evidence_audited_at": "2026-10-04T16:20:35.688452+00:00",
+      "verified_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+    },
+    {
+      "failure_id": "WEB-TRANSFER-SOURCE-CHANGE",
+      "priority": "P2",
+      "title": "Transfer切换Source后已选目标成为自身且仍可开始",
+      "baseline_failure_status": "OPEN",
+      "regression_status": "PASS",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "P22-03",
+        "X18"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "维持Target不能选Source的当前UI约束，移除该草稿或禁用Start并提示",
+      "baseline_reproduction_reference": "web/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/transfer-source-change-ui-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/execution-filter-transfer-draft.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/transfer-source-change-ui.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/transfer-source-change-self.json"
+      ],
+      "runtime_evidence": [
+        "repair/qa-resume-20261004/resume-20261004-safe-results.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filter-transfer-draft.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filters.json"
+      ],
+      "remaining_dimensions": [],
+      "covered_dimensions": "Self-target cleared on source change; Start disabled; zero transfer POST.",
+      "actual": "Self-target cleared on source change; Start disabled; zero transfer POST.",
+      "evidence_audited_at": "2026-10-04T16:20:35.688452+00:00",
+      "verified_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+    },
+    {
+      "failure_id": "WEB-ROLE-LIVE-STATE",
+      "priority": "P3",
+      "title": "自身降权后当前页面仍显示并允许打开Admin创建表单",
+      "baseline_failure_status": "OPEN",
+      "regression_status": "PASS",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "P20-06",
+        "FL-15"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "权限改变后当前页面控件反映Viewer权限",
+      "baseline_reproduction_reference": "web/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/self-role-feedback-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/self-role-downgrade.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/self-role-downgrade.png"
+      ],
+      "runtime_evidence": [
+        "repair/qa-resume-20261004/user-role-self-demote-ui.json"
+      ],
+      "remaining_dimensions": [],
+      "covered_dimensions": "Exact original defect path reproduced on repaired authority: own QA Administrator demotes itself to Viewer via actual Users PUT200 while original /users page stays open; now New User disabled, no Admin form, Viewer row and same token meViewer without reload.",
+      "actual": "Exact original defect path reproduced on repaired authority: own QA Administrator demotes itself to Viewer via actual Users PUT200 while original /users page stays open; now New User disabled, no Admin form, Viewer row and same token meViewer without reload.",
+      "verified_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+      "evidence_audited_at": "2026-10-04T18:00:35.403409+00:00"
+    },
+    {
+      "failure_id": "WEB-TASK-PENDING-SAVE",
+      "priority": "P2",
+      "title": "Task保存pending期间按钮未禁用，重复点击发重复PUT",
+      "baseline_failure_status": "OPEN",
+      "regression_status": "PASS",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "G04-01",
+        "X08"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "pending保存禁用，重复点击不生成第二请求",
+      "baseline_reproduction_reference": "web/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/task-pending-secret.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/gap-core-results.json"
+      ],
+      "runtime_evidence": [
+        "repair/qa-resume-20261004/resume-20261004-gap-results.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-gap/task-pending-secret.json"
+      ],
+      "remaining_dimensions": [],
+      "covered_dimensions": "Unchanged real delayed PUT; disabled Save; one request and persisted revision2.",
+      "actual": "Unchanged real delayed PUT; disabled Save; one request and persisted revision2.",
+      "evidence_audited_at": "2026-10-04T16:20:35.688452+00:00",
+      "verified_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+    },
+    {
+      "failure_id": "WEB-BLOCK-REASON",
+      "priority": "P2",
+      "title": "真实BLOCKED执行详情未显示Hub保存的block_reason",
+      "baseline_failure_status": "OPEN",
+      "regression_status": "PASS",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "P17P18-13"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "BLOCKED详情显示实际block_reason，用户可理解为何没有执行",
+      "baseline_reproduction_reference": "web/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/offline-node-condition-blocked.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/gap-block-reason-real-results.json"
+      ],
+      "runtime_evidence": [
+        "repair/qa-resume-20261004/resume-20261004-gap-results.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-gap/offline-node-condition-blocked.json"
+      ],
+      "remaining_dimensions": [],
+      "covered_dimensions": "Actual BLOCKED reason rendered and command not executed.",
+      "actual": "Actual BLOCKED reason rendered and command not executed.",
+      "evidence_audited_at": "2026-10-04T16:20:35.688452+00:00",
+      "verified_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+    },
+    {
+      "failure_id": "FAIL-ENV-HOST-001",
+      "priority": "P1",
+      "title": "Docker Host Integration的nsenter root参数导致托管systemd部署失败",
+      "baseline_failure_status": "open",
+      "regression_status": "BLOCKED",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "SYS-45",
+        "AR-26",
+        "INV-14"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "SUCCESS, registered owned systemd Unit active",
+      "baseline_reproduction_reference": "environment/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/hostintegration-application.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/hostintegration-preflight.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/hostintegration-host-cleanup.json"
+      ],
+      "runtime_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host001-environment-blocker.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host-apparmor-source-unavailable.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host-docker-server-owner-recheck.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/quota-host001-stop-evidence.json"
+      ],
+      "remaining_dimensions": [
+        "真实Host ManagedApp deploy/Unit生命周期及文件/健康/UI闭环未执行；proc-root权限环境门禁"
+      ],
+      "actual": "独占DockerHost容器内/proc/1/root Permission denied，nsenter无法操作；3caps、默认seccomp/NoNewPrivs、mount samefile实证正确，AppArmor enforce但无DENIED证据，根因未独立确定。没有App/Artifact/HostUnit写入；需要可信匹配Server GitCommit6a43e3d的policy/准确环境方案，另Review授权才改变安全配置。",
+      "reviewed_at": "2026-10-10T05:51:55.839451+00:00"
+    },
+    {
+      "failure_id": "FAIL-ENV-TLS-001",
+      "priority": "P1",
+      "title": "Agent tls_ca_file未用于Artifact HTTP下载，私有CA环境预取失败",
+      "baseline_failure_status": "open",
+      "regression_status": "PASS",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "SYS-44",
+        "SYS-45"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "Artifact prefetch trusts configured Hub CA and creates SHA-verified cache",
+      "baseline_reproduction_reference": "environment/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/tls-full-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/tls-full-cleanup.json"
+      ],
+      "runtime_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/tls-final-summary.json"
+      ],
+      "remaining_dimensions": [],
+      "actual": "正确CA真实HTTPS GET200/77B/SHA缓存及SQLite row1；无CA/错误CA零GET无缓存，独立坏SHA拒绝无缓存；资源/路径/Unit清理实证。",
+      "limits": [
+        "ManagedApp部署为HTTPS预取同SHA cache hit；direct TLS deploy-fetch未测，不推广为该维度PASS。"
+      ],
+      "reviewed_at": "2026-10-10T02:32:49.471536+00:00"
+    },
+    {
+      "failure_id": "FAIL-ENV-HOST-002",
+      "priority": "P1",
+      "title": "Host Integration缺失或错误挂载时FileRelay返回SUCCESS，逻辑宿主目标未写入",
+      "baseline_failure_status": "open",
+      "regression_status": "NOT_RUN",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "SYS-55",
+        "AR-31"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "HostIntegration should validate required logical-to-host mapping or reject unavailable mapping; SUCCESS must mean the intended host target was written.",
+      "baseline_reproduction_reference": "environment/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/host-negative-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/host-negative-cleanup.json"
+      ],
+      "runtime_evidence": [],
+      "remaining_dimensions": []
+    },
+    {
+      "failure_id": "FAIL-ENV-UI-THEME-001",
+      "priority": "P3",
+      "title": "System主题遇暗色媒体时页面已暗色，theme-color仍为白色",
+      "baseline_failure_status": "open",
+      "regression_status": "PASS",
+      "executor": "luna_result_audit",
+      "model": "gpt-6-luna",
+      "inventory_case_ids": [
+        "G02-02"
+      ],
+      "declared_supplementary_ids": [],
+      "expected": "System mode dark resolution updates theme-color to dark palette (#020817 / RGBA2,8,23,255), including reload",
+      "baseline_reproduction_reference": "environment/failures.json",
+      "baseline_evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/readonly-ui-continuation/summary.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/readonly-ui-continuation/theme-system-media-dark.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/readonly-ui-continuation/theme-system-dark-reloaded.png"
+      ],
+      "runtime_evidence": [
+        "repair/qa-resume-20261004/theme-media-roundtrip.json"
+      ],
+      "remaining_dimensions": [],
+      "covered_dimensions": "Real system dark-media update and reload both show dark class plus #020817 theme-color; nine manual/system light/dark/media/persistence observations all match.",
+      "actual": "Real system dark-media update and reload both show dark class plus #020817 theme-color; nine manual/system light/dark/media/persistence observations all match.",
+      "verified_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+      "evidence_audited_at": "2026-10-04T17:04:26.445290+00:00"
+    }
+  ],
+  "updated_at": "2026-10-10T15:21:14.826946+00:00",
+  "summary": {
+    "PASS": 20,
+    "FAIL": 0,
+    "PARTIAL": 0,
+    "NOT_RUN": 1,
+    "BLOCKED": 1
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "run_id": "20260930-101945",
+  "source": ".e2e/coverage.json",
+  "selection_rule": "仅列 coverage 中 status=PARTIAL 且剩余维度有明确、可执行验收项的场景；不把未测项改写成 PASS，也不降低 504 场景总范围。",
+  "execution_status": "本次不执行续测。当前网络/KVM 限制使这些真实 Web/Hub 场景不可达；不得尝试 live/SSH、猜凭据或提权。",
+  "items": [
+    {
+      "case_id": "P01-08",
+      "priority": "P0",
+      "remaining": "真实启用 OIDC 后留存 AuthLocation URL 的 state/nonce/code_challenge/code_challenge_method，并核对授权码交换与 verifier 结果。",
+      "existing_evidence": [".e2e/runs/20260930-101945/environment/idp-down-ui-results.json", ".e2e/runs/20260930-101945/environment/oidc-negative-results.json", ".e2e/runs/20260930-101945/environment/readonly-ui-continuation/transport-summary.json"],
+      "blocked_reason": "需要真实 Hub/IdP 浏览器授权链；当前网络/KVM 不可用。"
+    },
+    {
+      "case_id": "P02-04",
+      "priority": "P1",
+      "remaining": "按详情路由补齐直接输入、刷新、前进/后退、回链的组合矩阵，并验证不存在/删除对象的错误态。",
+      "existing_evidence": [".e2e/runs/20260930-101945/web/readonly-entry-results.json", ".e2e/runs/20260930-101945/web/evidence/dashboard-node-links.json"],
+      "blocked_reason": "需要当前 Web 应用可访问；本次恢复无法连接运行环境。"
+    },
+    {
+      "case_id": "P03-02",
+      "priority": "P1",
+      "remaining": "逐条验证 Dashboard 最近执行记录链接进入对应详情，覆盖不同终态与无效记录。",
+      "existing_evidence": [".e2e/runs/20260930-101945/web/root-gap-round1-results.json", ".e2e/runs/20260930-101945/web/evidence/dashboard-node-links.json"],
+      "blocked_reason": "需要当前 Web 应用与真实执行数据；本次网络不可达。"
+    },
+    {
+      "case_id": "G04-02",
+      "priority": "P1",
+      "remaining": "将 Artifact 已覆盖的确认/取消/删除链扩展到其他资源删除菜单与失败分支，逐项核对 DELETE 次数和最终资源状态。",
+      "existing_evidence": [".e2e/runs/20260930-101945/web/luna-gap19-results.json", ".e2e/runs/20260930-101945/web/evidence/artifact-unreferenced-ui-delete.json"],
+      "blocked_reason": "需要在线 UI/API 并创建或操作自有资源；当前运行环境不可达。"
+    },
+    {
+      "case_id": "G04-05",
+      "priority": "P1",
+      "remaining": "扩展到剩余详情页、动态参数对话框按钮和非 button 控件的完整 AX 树命名检查。",
+      "existing_evidence": [".e2e/runs/20260930-101945/web/luna-gap22-verified-results.json", ".e2e/runs/20260930-101945/web/evidence/dynamic-detail-menu-button-names.json", ".e2e/runs/20260930-101945/backend/detail-accessibility.json"],
+      "blocked_reason": "需要浏览器实际页面；当前环境不可达。"
+    },
+    {
+      "case_id": "G04-07",
+      "priority": "P1",
+      "remaining": "对长 ID、SHA256 与路径逐项验证换行/溢出和剪贴板精确粘贴回读，确认关键按钮仍可见可操作。",
+      "existing_evidence": [".e2e/runs/20260930-101945/web/luna-gap21-final-results.json", ".e2e/runs/20260930-101945/web/evidence/long-command-detail-layout.json"],
+      "blocked_reason": "需要浏览器安全剪贴板交互与在线页面；当前环境不可达。"
+    },
+    {
+      "case_id": "G03-09",
+      "priority": "P1",
+      "remaining": "按真实 API 错误路径验证各适用列表的 Error 文案、Retry 是否重新发请求及恢复后状态；区分已有 UI mock 证据。",
+      "existing_evidence": [".e2e/runs/20260930-101945/web/safe-tables-results.json", ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"],
+      "blocked_reason": "需要真实在线 API/UI；不能将 mock 结果扩写为真实链路。"
+    },
+    {
+      "case_id": "G03-10",
+      "priority": "P1",
+      "remaining": "在真实数据/API 条件下逐表区分 Loading、Empty、No Results，并覆盖请求恢复后的状态变化。",
+      "existing_evidence": [".e2e/runs/20260930-101945/web/safe-tables-results.json", ".e2e/runs/20260930-101945/web/evidence/tables-safe.json"],
+      "blocked_reason": "需要真实在线 API/UI；现有相关故障恢复证据为 mock，不能代替真实服务端验证。"
+    }
+  ]
+}

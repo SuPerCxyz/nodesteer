@@ -1,0 +1,535 @@
+{
+ "nonce": "g89202610178970c813",
+ "at_utc": "2026-10-17T04:01:44Z",
+ "authority": "http://192.168.100.209:18086",
+ "markers": {
+  "script_default": "QAMARK-SCRIPTDEFAULT-8970c813-0123456789abcdef",
+  "task_default": "QAMARK-TASKDEFAULT-8970c813-fedcba9876543210",
+  "task_value": "QAMARK-TASKVALUE-8970c813-abcdef0123456789",
+  "revision": "QAMARK-REVISION-8970c813-0123456789abcdef",
+  "ui_input": "QAMARK-UIINPUT-8970c813-0123456789abcdef",
+  "error": "QAMARK-ERRPATH-8970c813-0123456789abcdef"
+ },
+ "task_ids": {
+  "full": "fc6247b4-7419-41a7-a879-9a85511bbde6",
+  "split": "d23f45ed-1cae-465e-b266-acd20a9826b9",
+  "stderr": "7815d7b8-5370-48fe-86d8-63458e439ec4",
+  "fail": "1d89492a-62d7-4279-806f-5fcb0399d0f3",
+  "script_default": "03217e57-6179-498f-a4c6-c7378ae50bad",
+  "missing_required": "e338ec9b-970f-4a3e-8361-d3169f4a375f"
+ },
+ "script_id": "87659f46-3dda-4540-ba35-38d74d67f43b",
+ "A_default_masking": {
+  "script_get_http": 200,
+  "task_get_http": 200,
+  "script_response_contains_script_default": true,
+  "task_response_contains_task_default": true,
+  "task_response_contains_task_value": true,
+  "script_param_fields": [
+   {
+    "name": "probe",
+    "type": "string",
+    "default_present": true,
+    "default_len": 4
+   },
+   {
+    "name": "marker_secret",
+    "type": "secret",
+    "default_present": true,
+    "default_len": 46
+   }
+  ],
+  "task_param_fields": [
+   {
+    "name": "marker_secret",
+    "type": "secret",
+    "default_present": true
+   }
+  ],
+  "note": "管理员鉴权 API 返回明文 default/param_values 是编辑所必需（同一取值用于下发执行）；本用例的“默认值遮蔽”断言面为 UI 摘要 + 执行侧，见 g8_ui.py 与下面 C 段。"
+ },
+ "B_revision_masking": {
+  "put_http": 200,
+  "revisions_http": 200,
+  "revision_count": 2,
+  "revision_summaries": [
+   {
+    "revision": 2,
+    "sha256": "160e725d0725c30cccb79fd21595f47508784875c137f4a1148cce6e1..."
+   },
+   {
+    "revision": 1,
+    "sha256": "160e725d0725c30cccb79fd21595f47508784875c137f4a1148cce6e1..."
+   }
+  ],
+  "per_revision_marker_scan": [
+   {
+    "revision": 2,
+    "http": 200,
+    "contains_script_default": false,
+    "contains_revision_marker": false,
+    "contains_redacted_token": false,
+    "len": 627
+   },
+   {
+    "revision": 1,
+    "http": 200,
+    "contains_script_default": false,
+    "contains_revision_marker": false,
+    "contains_redacted_token": false,
+    "len": 629
+   }
+  ],
+  "note": "Revision 历史为管理员鉴权 API；记录明文/遮蔽实况（UI 侧见 g8_ui.py）。"
+ },
+ "C_execution_masking": {
+  "full": {
+   "tag": "full",
+   "run": {
+    "http": 200,
+    "exec_ids": [
+     "468b0ae2-0709-4bfa-872e-6a0d77229fbd"
+    ],
+    "body_head": "[{\"id\":\"468b0ae2-0709-4bfa-872e-6a0d77229fbd\",\"task_id\":\"fc6247b4-7419-41a7-a879-9a85511bbde6\",\"task_revision\":1,\"node_id\":\"f7d6ce8c-9108-46c6-ac3e-d86ac78e74fa\",\"trigger_type\":\"manual\",\"scheduled_time\":\"0001-01-01T00:00:00Z\",\"start_time\":\"0001-01-01T00:00:00Z\",\"end_time\":\"0001-01-01T00:00:00Z\",\"sta"
+   },
+   "execution_id": "468b0ae2-0709-4bfa-872e-6a0d77229fbd",
+   "terminal_status": "SUCCESS",
+   "exit_code": null,
+   "chunk_count": 1,
+   "chunks": [
+    {
+     "stream": "stdout",
+     "seq": 0,
+     "len": 11,
+     "head": "[REDACTED]\n"
+    }
+   ],
+   "stdout_head": "[REDACTED]\n",
+   "stderr_head": "",
+   "analysis": {
+    "stdout_len": 11,
+    "stderr_len": 0,
+    "full_in_stdout[script_default]": false,
+    "full_in_stderr[script_default]": false,
+    "prefix8_in_stdout[script_default]": false,
+    "suffix8_in_stderr[script_default]": false,
+    "full_in_execution_detail[script_default]": false,
+    "full_in_stdout[task_default]": false,
+    "full_in_stderr[task_default]": false,
+    "prefix8_in_stdout[task_default]": false,
+    "suffix8_in_stderr[task_default]": false,
+    "full_in_execution_detail[task_default]": false,
+    "full_in_stdout[task_value]": false,
+    "full_in_stderr[task_value]": false,
+    "prefix8_in_stdout[task_value]": false,
+    "suffix8_in_stderr[task_value]": false,
+    "full_in_execution_detail[task_value]": false,
+    "full_in_stdout[revision]": false,
+    "full_in_stderr[revision]": false,
+    "prefix8_in_stdout[revision]": false,
+    "suffix8_in_stderr[revision]": false,
+    "full_in_execution_detail[revision]": false,
+    "full_in_stdout[ui_input]": false,
+    "full_in_stderr[ui_input]": false,
+    "prefix8_in_stdout[ui_input]": false,
+    "suffix8_in_stderr[ui_input]": false,
+    "full_in_execution_detail[ui_input]": false,
+    "full_in_stdout[error]": false,
+    "full_in_stderr[error]": false,
+    "prefix8_in_stdout[error]": false,
+    "suffix8_in_stderr[error]": false,
+    "full_in_execution_detail[error]": false,
+    "redacted_token_count_stdout": 1,
+    "redacted_token_count_stderr": 0
+   },
+   "execution_detail_scan": {
+    "stdout": false,
+    "stderr": false
+   }
+  },
+  "split_realtime": {
+   "tag": "split",
+   "run": {
+    "http": 200,
+    "exec_ids": [
+     "ec829853-a812-4a73-b50d-731365ecd0a6"
+    ],
+    "body_head": "[{\"id\":\"ec829853-a812-4a73-b50d-731365ecd0a6\",\"task_id\":\"d23f45ed-1cae-465e-b266-acd20a9826b9\",\"task_revision\":1,\"node_id\":\"f7d6ce8c-9108-46c6-ac3e-d86ac78e74fa\",\"trigger_type\":\"manual\",\"scheduled_time\":\"0001-01-01T00:00:00Z\",\"start_time\":\"0001-01-01T00:00:00Z\",\"end_time\":\"0001-01-01T00:00:00Z\",\"sta"
+   },
+   "execution_id": "ec829853-a812-4a73-b50d-731365ecd0a6",
+   "terminal_status": "SUCCESS",
+   "exit_code": null,
+   "chunk_count": 1,
+   "chunks": [
+    {
+     "stream": "stdout",
+     "seq": 0,
+     "len": 69,
+     "head": "QAMARK-TASKVALUE-8970c813-abcdef01ASKVALUE-8970c813-abcdef01"
+    }
+   ],
+   "stdout_head": "QAMARK-TASKVALUE-8970c813-abcdef01ASKVALUE-8970c813-abcdef0123456789\n",
+   "stderr_head": "",
+   "analysis": {
+    "stdout_len": 69,
+    "stderr_len": 0,
+    "full_in_stdout[script_default]": false,
+    "full_in_stderr[script_default]": false,
+    "prefix8_in_stdout[script_default]": false,
+    "suffix8_in_stderr[script_default]": false,
+    "full_in_execution_detail[script_default]": false,
+    "full_in_stdout[task_default]": false,
+    "full_in_stderr[task_default]": false,
+    "prefix8_in_stdout[task_default]": true,
+    "suffix8_in_stderr[task_default]": false,
+    "full_in_execution_detail[task_default]": false,
+    "full_in_stdout[task_value]": false,
+    "full_in_stderr[task_value]": false,
+    "prefix8_in_stdout[task_value]": true,
+    "suffix8_in_stderr[task_value]": false,
+    "full_in_execution_detail[task_value]": false,
+    "full_in_stdout[revision]": false,
+    "full_in_stderr[revision]": false,
+    "prefix8_in_stdout[revision]": false,
+    "suffix8_in_stderr[revision]": false,
+    "full_in_execution_detail[revision]": false,
+    "full_in_stdout[ui_input]": false,
+    "full_in_stderr[ui_input]": false,
+    "prefix8_in_stdout[ui_input]": false,
+    "suffix8_in_stderr[ui_input]": false,
+    "full_in_execution_detail[ui_input]": false,
+    "full_in_stdout[error]": false,
+    "full_in_stderr[error]": false,
+    "prefix8_in_stdout[error]": false,
+    "suffix8_in_stderr[error]": false,
+    "full_in_execution_detail[error]": false,
+    "redacted_token_count_stdout": 0,
+    "redacted_token_count_stderr": 0
+   },
+   "realtime": {
+    "polls": 7,
+    "snapshots_with_full_marker": [],
+    "last_stdout_head": "QAMARK-TASKVALUE-8970c813-abcdef01ASKVALUE-8970c813-abcdef0123456789\n"
+   },
+   "execution_detail_scan": {
+    "stdout": false,
+    "stderr": false
+   }
+  },
+  "stderr": {
+   "tag": "stderr",
+   "run": {
+    "http": 200,
+    "exec_ids": [
+     "4bcc19dc-dbae-4418-9559-d572960f006f"
+    ],
+    "body_head": "[{\"id\":\"4bcc19dc-dbae-4418-9559-d572960f006f\",\"task_id\":\"7815d7b8-5370-48fe-86d8-63458e439ec4\",\"task_revision\":1,\"node_id\":\"f7d6ce8c-9108-46c6-ac3e-d86ac78e74fa\",\"trigger_type\":\"manual\",\"scheduled_time\":\"0001-01-01T00:00:00Z\",\"start_time\":\"0001-01-01T00:00:00Z\",\"end_time\":\"0001-01-01T00:00:00Z\",\"sta"
+   },
+   "execution_id": "4bcc19dc-dbae-4418-9559-d572960f006f",
+   "terminal_status": "SUCCESS",
+   "exit_code": null,
+   "chunk_count": 1,
+   "chunks": [
+    {
+     "stream": "stderr",
+     "seq": 0,
+     "len": 19,
+     "head": "ERR-[REDACTED]-END\n"
+    }
+   ],
+   "stdout_head": "",
+   "stderr_head": "ERR-[REDACTED]-END\n",
+   "analysis": {
+    "stdout_len": 0,
+    "stderr_len": 19,
+    "full_in_stdout[script_default]": false,
+    "full_in_stderr[script_default]": false,
+    "prefix8_in_stdout[script_default]": false,
+    "suffix8_in_stderr[script_default]": false,
+    "full_in_execution_detail[script_default]": false,
+    "full_in_stdout[task_default]": false,
+    "full_in_stderr[task_default]": false,
+    "prefix8_in_stdout[task_default]": false,
+    "suffix8_in_stderr[task_default]": false,
+    "full_in_execution_detail[task_default]": false,
+    "full_in_stdout[task_value]": false,
+    "full_in_stderr[task_value]": false,
+    "prefix8_in_stdout[task_value]": false,
+    "suffix8_in_stderr[task_value]": false,
+    "full_in_execution_detail[task_value]": false,
+    "full_in_stdout[revision]": false,
+    "full_in_stderr[revision]": false,
+    "prefix8_in_stdout[revision]": false,
+    "suffix8_in_stderr[revision]": false,
+    "full_in_execution_detail[revision]": false,
+    "full_in_stdout[ui_input]": false,
+    "full_in_stderr[ui_input]": false,
+    "prefix8_in_stdout[ui_input]": false,
+    "suffix8_in_stderr[ui_input]": false,
+    "full_in_execution_detail[ui_input]": false,
+    "full_in_stdout[error]": false,
+    "full_in_stderr[error]": false,
+    "prefix8_in_stdout[error]": false,
+    "suffix8_in_stderr[error]": false,
+    "full_in_execution_detail[error]": false,
+    "redacted_token_count_stdout": 0,
+    "redacted_token_count_stderr": 1
+   },
+   "execution_detail_scan": {
+    "stdout": false,
+    "stderr": false
+   }
+  },
+  "fail": {
+   "tag": "fail",
+   "run": {
+    "http": 200,
+    "exec_ids": [
+     "b6eaff60-a0fb-4a27-a628-c2c273f24988"
+    ],
+    "body_head": "[{\"id\":\"b6eaff60-a0fb-4a27-a628-c2c273f24988\",\"task_id\":\"1d89492a-62d7-4279-806f-5fcb0399d0f3\",\"task_revision\":1,\"node_id\":\"f7d6ce8c-9108-46c6-ac3e-d86ac78e74fa\",\"trigger_type\":\"manual\",\"scheduled_time\":\"0001-01-01T00:00:00Z\",\"start_time\":\"0001-01-01T00:00:00Z\",\"end_time\":\"0001-01-01T00:00:00Z\",\"sta"
+   },
+   "execution_id": "b6eaff60-a0fb-4a27-a628-c2c273f24988",
+   "terminal_status": "FAILED",
+   "exit_code": 7,
+   "chunk_count": 2,
+   "chunks": [
+    {
+     "stream": "stderr",
+     "seq": 0,
+     "len": 35,
+     "head": "QAMARK-TASKVALUE-8970c813-abcdef01\n"
+    },
+    {
+     "stream": "stdout",
+     "seq": 1,
+     "len": 34,
+     "head": "ASKVALUE-8970c813-abcdef0123456789"
+    }
+   ],
+   "stdout_head": "ASKVALUE-8970c813-abcdef0123456789",
+   "stderr_head": "QAMARK-TASKVALUE-8970c813-abcdef01\n",
+   "analysis": {
+    "stdout_len": 34,
+    "stderr_len": 35,
+    "full_in_stdout[script_default]": false,
+    "full_in_stderr[script_default]": false,
+    "prefix8_in_stdout[script_default]": false,
+    "suffix8_in_stderr[script_default]": false,
+    "full_in_execution_detail[script_default]": false,
+    "full_in_stdout[task_default]": false,
+    "full_in_stderr[task_default]": false,
+    "prefix8_in_stdout[task_default]": false,
+    "suffix8_in_stderr[task_default]": false,
+    "full_in_execution_detail[task_default]": false,
+    "full_in_stdout[task_value]": false,
+    "full_in_stderr[task_value]": false,
+    "prefix8_in_stdout[task_value]": false,
+    "suffix8_in_stderr[task_value]": false,
+    "full_in_execution_detail[task_value]": false,
+    "full_in_stdout[revision]": false,
+    "full_in_stderr[revision]": false,
+    "prefix8_in_stdout[revision]": false,
+    "suffix8_in_stderr[revision]": false,
+    "full_in_execution_detail[revision]": false,
+    "full_in_stdout[ui_input]": false,
+    "full_in_stderr[ui_input]": false,
+    "prefix8_in_stdout[ui_input]": false,
+    "suffix8_in_stderr[ui_input]": false,
+    "full_in_execution_detail[ui_input]": false,
+    "full_in_stdout[error]": false,
+    "full_in_stderr[error]": false,
+    "prefix8_in_stdout[error]": false,
+    "suffix8_in_stderr[error]": false,
+    "full_in_execution_detail[error]": false,
+    "redacted_token_count_stdout": 0,
+    "redacted_token_count_stderr": 0
+   },
+   "execution_detail_scan": {
+    "stdout": false,
+    "stderr": false
+   }
+  },
+  "script_default_chain": {
+   "tag": "script_default",
+   "run": {
+    "http": 200,
+    "exec_ids": [
+     "048d264b-a46d-4a39-8d56-02cdadae8e34"
+    ],
+    "body_head": "[{\"id\":\"048d264b-a46d-4a39-8d56-02cdadae8e34\",\"task_id\":\"03217e57-6179-498f-a4c6-c7378ae50bad\",\"task_revision\":1,\"script_id\":\"87659f46-3dda-4540-ba35-38d74d67f43b\",\"script_revision\":2,\"node_id\":\"f7d6ce8c-9108-46c6-ac3e-d86ac78e74fa\",\"trigger_type\":\"manual\",\"scheduled_time\":\"0001-01-01T00:00:00Z\",\"st"
+   },
+   "execution_id": "048d264b-a46d-4a39-8d56-02cdadae8e34",
+   "terminal_status": "SUCCESS",
+   "exit_code": null,
+   "chunk_count": 2,
+   "chunks": [
+    {
+     "stream": "stdout",
+     "seq": 0,
+     "len": 11,
+     "head": "[REDACTED]\n"
+    },
+    {
+     "stream": "stdout",
+     "seq": 1,
+     "len": 35,
+     "head": "qa-g89202610178970c813-script-done\n"
+    }
+   ],
+   "stdout_head": "[REDACTED]\nqa-g89202610178970c813-script-done\n",
+   "stderr_head": "",
+   "analysis": {
+    "stdout_len": 46,
+    "stderr_len": 0,
+    "full_in_stdout[script_default]": false,
+    "full_in_stderr[script_default]": false,
+    "prefix8_in_stdout[script_default]": false,
+    "suffix8_in_stderr[script_default]": false,
+    "full_in_execution_detail[script_default]": false,
+    "full_in_stdout[task_default]": false,
+    "full_in_stderr[task_default]": false,
+    "prefix8_in_stdout[task_default]": false,
+    "suffix8_in_stderr[task_default]": false,
+    "full_in_execution_detail[task_default]": false,
+    "full_in_stdout[task_value]": false,
+    "full_in_stderr[task_value]": false,
+    "prefix8_in_stdout[task_value]": false,
+    "suffix8_in_stderr[task_value]": false,
+    "full_in_execution_detail[task_value]": false,
+    "full_in_stdout[revision]": false,
+    "full_in_stderr[revision]": false,
+    "prefix8_in_stdout[revision]": false,
+    "suffix8_in_stderr[revision]": false,
+    "full_in_execution_detail[revision]": false,
+    "full_in_stdout[ui_input]": false,
+    "full_in_stderr[ui_input]": false,
+    "prefix8_in_stdout[ui_input]": false,
+    "suffix8_in_stderr[ui_input]": false,
+    "full_in_execution_detail[ui_input]": false,
+    "full_in_stdout[error]": false,
+    "full_in_stderr[error]": false,
+    "prefix8_in_stdout[error]": false,
+    "suffix8_in_stderr[error]": false,
+    "full_in_execution_detail[error]": false,
+    "redacted_token_count_stdout": 1,
+    "redacted_token_count_stderr": 0
+   },
+   "execution_detail_scan": {
+    "stdout": false,
+    "stderr": false
+   }
+  },
+  "run_with_supplied_secret": {
+   "tag": "full+supplied",
+   "run": {
+    "http": 200,
+    "exec_ids": [
+     "813ed6a3-2b79-4565-a826-7fa2e892789c"
+    ],
+    "body_head": "[{\"id\":\"813ed6a3-2b79-4565-a826-7fa2e892789c\",\"task_id\":\"fc6247b4-7419-41a7-a879-9a85511bbde6\",\"task_revision\":1,\"node_id\":\"f7d6ce8c-9108-46c6-ac3e-d86ac78e74fa\",\"trigger_type\":\"manual\",\"scheduled_time\":\"0001-01-01T00:00:00Z\",\"start_time\":\"0001-01-01T00:00:00Z\",\"end_time\":\"0001-01-01T00:00:00Z\",\"sta"
+   },
+   "execution_id": "813ed6a3-2b79-4565-a826-7fa2e892789c",
+   "terminal_status": "SUCCESS",
+   "exit_code": null,
+   "chunk_count": 1,
+   "chunks": [
+    {
+     "stream": "stdout",
+     "seq": 0,
+     "len": 11,
+     "head": "[REDACTED]\n"
+    }
+   ],
+   "stdout_head": "[REDACTED]\n",
+   "stderr_head": "",
+   "analysis": {
+    "stdout_len": 11,
+    "stderr_len": 0,
+    "full_in_stdout[script_default]": false,
+    "full_in_stderr[script_default]": false,
+    "prefix8_in_stdout[script_default]": false,
+    "suffix8_in_stderr[script_default]": false,
+    "full_in_execution_detail[script_default]": false,
+    "full_in_stdout[task_default]": false,
+    "full_in_stderr[task_default]": false,
+    "prefix8_in_stdout[task_default]": false,
+    "suffix8_in_stderr[task_default]": false,
+    "full_in_execution_detail[task_default]": false,
+    "full_in_stdout[task_value]": false,
+    "full_in_stderr[task_value]": false,
+    "prefix8_in_stdout[task_value]": false,
+    "suffix8_in_stderr[task_value]": false,
+    "full_in_execution_detail[task_value]": false,
+    "full_in_stdout[revision]": false,
+    "full_in_stderr[revision]": false,
+    "prefix8_in_stdout[revision]": false,
+    "suffix8_in_stderr[revision]": false,
+    "full_in_execution_detail[revision]": false,
+    "full_in_stdout[ui_input]": false,
+    "full_in_stderr[ui_input]": false,
+    "prefix8_in_stdout[ui_input]": false,
+    "suffix8_in_stderr[ui_input]": false,
+    "full_in_execution_detail[ui_input]": false,
+    "full_in_stdout[error]": false,
+    "full_in_stderr[error]": false,
+    "prefix8_in_stdout[error]": false,
+    "suffix8_in_stderr[error]": false,
+    "full_in_execution_detail[error]": false,
+    "redacted_token_count_stdout": 1,
+    "redacted_token_count_stderr": 0
+   },
+   "execution_detail_scan": {
+    "stdout": false,
+    "stderr": false
+   }
+  }
+ },
+ "D_audit_masking": {
+  "http": 200,
+  "rows": 19,
+  "row_keys": [
+   "action",
+   "created_at",
+   "id",
+   "resource",
+   "resource_id",
+   "user_id",
+   "username"
+  ],
+  "marker_hits": {},
+  "sample_actions": [
+   "create",
+   "execute",
+   "login",
+   "update"
+  ]
+ },
+ "E_error_masking": {
+  "required_fixture_put_http": 200,
+  "required_missing_run": {
+   "http": 400,
+   "exec_ids": [],
+   "error_head": "{\"error\":\"required parameter marker_secret is missing\"}\n",
+   "echoes_error_marker": false
+  },
+  "bogus_target_run": {
+   "http": 400,
+   "exec_ids": [],
+   "error_head": "{\"error\":\"sql: no rows in result set\"}\n",
+   "echoes_supplied_secret": false
+  },
+  "runtime_failure": {
+   "execution_id": "b6eaff60-a0fb-4a27-a628-c2c273f24988",
+   "status": "FAILED",
+   "exit_code": 7,
+   "full_marker_in_stdout": false,
+   "error_field_present": true
+  },
+  "invalid_type_put": {
+   "http": 200,
+   "error_head": "{\"id\":\"87659f46-3dda-4540-ba35-38d74d67f43b\",\"name\":\"qa-g89202610178970c813-script\",\"description\":\"g89 fixture 8970c813\",\"interpreter\":\"bash\",\"content\":\"#!/bin/sh\\nS=\\\"${NODESTEER_PARAM_marker_secret}",
+   "echoes_error_marker": true
+  }
+ }
+}

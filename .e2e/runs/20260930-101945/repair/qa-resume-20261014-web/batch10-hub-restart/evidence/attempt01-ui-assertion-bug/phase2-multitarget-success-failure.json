@@ -1,0 +1,68 @@
+{
+  "at_utc": "2026-10-15T11:53:40Z",
+  "scenario": "multi-target File Relay: one target succeeds and one fails (symlink destination); the failing target must not block the succeeding one.",
+  "transfer_id": "4a369c7d-85de-4c3a-8736-2c6eeaf2f387",
+  "source_file": {
+    "path": "/var/lib/nodesteer-qa-b10-f9c3a763c052/xfer/src-multi.bin",
+    "size": 2097152,
+    "sha256": "6bfa735125fbd1956bae357e2b6a780286e43d370bc058dd8167a4bff50c852b"
+  },
+  "targets": {
+    "tgt_a": "b44576b4-1163-4d1b-809e-abd7c1676002",
+    "tgt_b": "d1044f07-b5cb-43c6-b1c2-af54ec71462e"
+  },
+  "final": {
+    "id": "4a369c7d-85de-4c3a-8736-2c6eeaf2f387",
+    "source_node_id": "ca4bfe75-446c-4a64-8ef2-3987a6c505af",
+    "source_path": "/var/lib/nodesteer-qa-b10-f9c3a763c052/xfer/src-multi.bin",
+    "size": 2097152,
+    "sha256": "6bfa735125fbd1956bae357e2b6a780286e43d370bc058dd8167a4bff50c852b",
+    "source_mode": 420,
+    "status": "FAILED",
+    "error": null,
+    "targets": [
+      {
+        "node_id": "b44576b4-1163-4d1b-809e-abd7c1676002",
+        "destination_path": "/var/lib/nodesteer-qa-b10-f9c3a763c052/xfer/dst-multi-a.bin",
+        "mode": null,
+        "status": "SUCCESS",
+        "error": null
+      },
+      {
+        "node_id": "d1044f07-b5cb-43c6-b1c2-af54ec71462e",
+        "destination_path": "/var/lib/nodesteer-qa-b10-f9c3a763c052/xfer/dst-multi-b.bin",
+        "mode": null,
+        "status": "FAILED",
+        "error": "destination is a symlink: /var/lib/nodesteer-qa-b10-f9c3a763c052/xfer/dst-multi-b.bin"
+      }
+    ]
+  },
+  "tgt_a_destination": {
+    "path": "/var/lib/nodesteer-qa-b10-f9c3a763c052/xfer/dst-multi-a.bin",
+    "exists": true,
+    "size": 2097152,
+    "mode": "644",
+    "is_symlink": false,
+    "is_dir": false,
+    "sha256": "6bfa735125fbd1956bae357e2b6a780286e43d370bc058dd8167a4bff50c852b"
+  },
+  "tgt_b_destination": {
+    "path": "/var/lib/nodesteer-qa-b10-f9c3a763c052/xfer/dst-multi-b.bin",
+    "exists": true,
+    "size": 13,
+    "mode": "777",
+    "is_symlink": true,
+    "is_dir": false,
+    "symlink_target": "/etc/hostname"
+  },
+  "assertions": {
+    "overall_failed_because_one_target_failed": true,
+    "tgt_a_success": true,
+    "tgt_b_failed": true,
+    "tgt_a_file_correct": true,
+    "tgt_b_isolated_no_install": true,
+    "tgt_b_error_mentions_symlink": true,
+    "two_target_rows": true
+  },
+  "assertions_pass": true
+}

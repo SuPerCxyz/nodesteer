@@ -1,0 +1,1807 @@
+{
+  "run_id": "20260930-101945",
+  "generated_at": "2026-10-03T01:41:20.061415+00:00",
+  "scope": "只读已有 runtime 证据，10 个最新 NOT_RUN Web owner 机制/流程的逐维 crossmap；不新增测试/不修改 Web、global或远程状态。",
+  "cases": [
+    {
+      "case_id": "P14P15-17",
+      "title": "Artifact 不存在、节点离线、Capability 缺失、Agent 不可达。",
+      "inventory_status_at_read": "NOT_RUN",
+      "status": "PARTIAL",
+      "classification": "REAL_API_AGENT",
+      "covered": [
+        {
+          "dimension": "没有 application_deploy capability 的节点拒绝派发",
+          "status": "PASS",
+          "actual": "真实 Basic Docker application_deploy=false，5 种 direct operation 与 app_deploy/app_operation Task run 均 HTTP400；无 RUN_EXECUTION、无 local execution row、无 binary/unit。",
+          "evidence": [
+            {
+              "path": "backend/isolated/evidence/feature.capability.host-operation-eb048d21.json",
+              "json_pointer": "/events/7",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/feature.capability.host-operation-eb048d21.json",
+              "json_pointer": "/events/13",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/feature.capability.host-operation-eb048d21.json",
+              "json_pointer": "/events/17",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/feature.capability.host-operation-eb048d21.json",
+              "json_pointer": "/events/23/capability_rejection",
+              "actual": ""
+            }
+          ]
+        },
+        {
+          "dimension": "Artifact 下载网络故障相关边界",
+          "status": "PARTIAL",
+          "actual": "真实 HTTP body 截断/错误 body 没有提升可信正式 cache；解除故障并 Desired State 更新后成功恢复 SHA。",
+          "evidence": [
+            {
+              "path": "backend/continuation/artifact-web-crossmap.json",
+              "json_pointer": "/cases",
+              "actual": ""
+            }
+          ],
+          "limit": "这两个 Basic Docker case 是 Prefetch，不能代替有能力节点实际 deploy 不可达/timeout 的终态。"
+        }
+      ],
+      "remaining": [
+        {
+          "dimension": "应用引用不存在 Artifact",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "已有 Artifact GET missing 404 不是 App POST/PUT/Deploy 引用不存在 Artifact 的同一条校验链。未找到该实际请求与无定义/无执行/无客户机副作用证据。",
+          "missing_gui": false
+        },
+        {
+          "dimension": "应用动作目标物理离线",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "已有 bulk Agent upgrade 离线失败不等于 Application deploy；未找到同一 App 动作在物理离线节点的实际响应/终态证据。",
+          "missing_gui": false
+        },
+        {
+          "dimension": "有 capability Agent 不可达",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "没有有能力 Agent 不可达时 App 派发/超时、无额外安装副作用的同场证据；Prefetch 截断不能替代。",
+          "missing_gui": false
+        },
+        {
+          "dimension": "上述负向的应用页面反馈",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "没有同场应用页面操作→对应错误/执行结果的 GUI 记录。",
+          "missing_gui": true
+        }
+      ],
+      "actual": "已有缺 Capability 的完整拒绝闭环；其余三类应用负向不能由不同动作或 Prefetch 的近似测试补成通过。",
+      "evidence": [
+        {
+          "path": "backend/isolated/evidence/feature.capability.host-operation-eb048d21.json",
+          "json_pointer": "/events/7",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/feature.capability.host-operation-eb048d21.json",
+          "json_pointer": "/events/13",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/feature.capability.host-operation-eb048d21.json",
+          "json_pointer": "/events/17",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/feature.capability.host-operation-eb048d21.json",
+          "json_pointer": "/events/23/capability_rejection",
+          "actual": ""
+        },
+        {
+          "path": "backend/continuation/artifact-web-crossmap.json",
+          "json_pointer": "/cases",
+          "actual": ""
+        }
+      ],
+      "gui_required_for_original_case": true,
+      "gui_missing": true,
+      "是否缺GUI": true
+    },
+    {
+      "case_id": "P14P15-18",
+      "title": "应用部署失败后 Binary、Config、Unit、Health、Deployment Journal 均可恢复。",
+      "inventory_status_at_read": "NOT_RUN",
+      "status": "FAIL",
+      "classification": "REAL_API_AGENT",
+      "covered": [
+        {
+          "dimension": "普通健康检查失败后回滚已运行旧版本",
+          "status": "PARTIAL",
+          "actual": "qa-v3-fails 使用 exit17 引发 upgrade FAILED/health check failed; rolled back；客户机恢复 config-v2、Unit active，Agent Execution Journal synced=1。",
+          "evidence": [
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/61/request",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/63/terminal",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/64/stdout",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/65/stdout",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/66/stdout",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/67/response",
+              "actual": ""
+            }
+          ],
+          "limit": "此例复用同一 Artifact；回滚后未直接重测 binary SHA/Unit 内容/Deployment Journal/backup。Hub AppState 仍报告尝试版本 qa-v3-fails 与 unhealthy，不将旧 config+active 等同所有状态一致，也不在本审计新宣判该报告语义为缺陷。"
+        },
+        {
+          "dimension": "PREPARING 中途崩溃恢复旧文件",
+          "status": "FAIL",
+          "actual": "有效重测 /7：原 v1 binary/config/unit 全部存在、Unit active；PREPARING 三 BackupPath 为空时 kill。恢复 Journal DONE/Execution FAILED agent_restarted，但旧 binary/config/unit 均不存在、Unit failed。已确认 P0-002。",
+          "evidence": [
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/7/baseline",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/7/injection",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/7/recovered",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/7/execution_terminal",
+              "actual": ""
+            },
+            {
+              "path": "main/failures.json",
+              "json_pointer": "",
+              "actual": ""
+            }
+          ],
+          "limit": "这是升级中途 crash/restart，不能写成普通健康失败回滚同样删除旧文件。/1 首轮 online 恢复超时不作为本缺陷的有效判据。"
+        },
+        {
+          "dimension": "已保存备份的四个升级阶段崩溃恢复",
+          "status": "PASS",
+          "actual": "REPLACED/STARTED/VERIFYING/ROLLING_BACK 精确实际阶段 kill，恢复旧 v1 SHA/ec6d007d...、config-v1、Unit active、Journal DONE、Execution FAILED agent_restarted；对应注入时三个 backup_present 均 true。",
+          "evidence": [
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/2/injection",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/2/recovered",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/2/execution_terminal",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/3/injection",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/3/recovered",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/3/execution_terminal",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/4/injection",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/4/recovered",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/4/execution_terminal",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/5/injection",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/5/recovered",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/5/execution_terminal",
+              "actual": ""
+            }
+          ],
+          "limit": "不能替代 PREPARING；当前 STOPPED 没有可注入实际阶段。未单独把 Unit active 推断为所有自定义健康探针均通过。"
+        },
+        {
+          "dimension": "首次安装空间不足/只读文件系统的失败清理",
+          "status": "PASS",
+          "actual": "Native 新应用实际 ENOSPC/EROFS，Execution FAILED、App unhealthy 有具体错误、客户机目录 entries=[]、unit_exists=false、Agent active。",
+          "evidence": [
+            {
+              "path": "main/native-storage-edge-results.json",
+              "json_pointer": "/2/detail",
+              "actual": ""
+            },
+            {
+              "path": "main/native-storage-edge-results.json",
+              "json_pointer": "/3/detail",
+              "actual": ""
+            }
+          ],
+          "limit": "验证首次失败不留下文件；没有旧版本的首次安装与升级恢复分别统计。"
+        }
+      ],
+      "remaining": [
+        {
+          "dimension": "普通失败的完整恢复组合",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "普通坏健康 upgrade 尚缺回滚后直接 binary SHA、Unit 内容、Deployment Journal 和备份的同场审计；不能把 Execution Journal synced=1 当 Deployment Journal DONE。",
+          "missing_gui": false
+        },
+        {
+          "dimension": "部署恢复的页面反馈",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "这些故障/恢复证据为真实 API+Agent，不包含同场失败/恢复后的 App GUI 刷新反馈。",
+          "missing_gui": true
+        }
+      ],
+      "actual": "此恢复安全性条目不能继续 NOT_RUN 或被普通回滚成功覆盖：已确认 PREPARING crash 使旧文件丢失。普通健康失败、首次安装失败、各 crash phase 明确分开。",
+      "evidence": [
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/61/request",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/63/terminal",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/64/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/65/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/66/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/67/response",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/7/baseline",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/7/injection",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/7/recovered",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/7/execution_terminal",
+          "actual": ""
+        },
+        {
+          "path": "main/failures.json",
+          "json_pointer": "",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/2/injection",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/2/recovered",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/2/execution_terminal",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/3/injection",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/3/recovered",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/3/execution_terminal",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/4/injection",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/4/recovered",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/4/execution_terminal",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/5/injection",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/5/recovered",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/5/execution_terminal",
+          "actual": ""
+        },
+        {
+          "path": "main/native-storage-edge-results.json",
+          "json_pointer": "/2/detail",
+          "actual": ""
+        },
+        {
+          "path": "main/native-storage-edge-results.json",
+          "json_pointer": "/3/detail",
+          "actual": ""
+        }
+      ],
+      "gui_required_for_original_case": true,
+      "gui_missing": true,
+      "是否缺GUI": true,
+      "confirmed_failure_ids": [
+        "E2E-20260930-101945-P0-002"
+      ],
+      "baseline": [
+        "docs/PRODUCT.md:1150",
+        "docs/PRODUCT.md:1167",
+        "docs/PRODUCT.md:1189"
+      ]
+    },
+    {
+      "case_id": "P17P18-14",
+      "title": "Agent Offline 执行 synced=false，恢复后幂等上传为 synced=true。",
+      "inventory_status_at_read": "NOT_RUN",
+      "status": "PARTIAL",
+      "classification": "REAL_API_AGENT",
+      "covered": [
+        {
+          "dimension": "Hub 真离线时执行结果 synced=false，重连 ACK 后 true",
+          "status": "PASS",
+          "actual": "隔离 Hub 实际 stop 后，Agent-owned schedule 本地 SUCCESS/offline=1/synced=0，物理 marker=offline-slot；start Hub 后同 ID API SUCCESS/offline=true/synced=true、本地 synced=1，Hub 列表仅1条、marker未增加。",
+          "evidence": [
+            {
+              "path": "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+              "json_pointer": "/events/3",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+              "json_pointer": "/events/8/stdout",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+              "json_pointer": "/events/9/stdout",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+              "json_pointer": "/events/10",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+              "json_pointer": "/events/14/terminal",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+              "json_pointer": "/events/15/stdout",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+              "json_pointer": "/events/16/response",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+              "json_pointer": "/events/17/stdout",
+              "actual": ""
+            }
+          ]
+        },
+        {
+          "dimension": "丢 ACK 后原卷重建重连补传/重复上传幂等",
+          "status": "PASS",
+          "actual": "proxy 明确丢 EXECUTION_ACK；本地终态 synced=0；恢复透传并用原卷重建 Agent 后同 ID synced=1。额外再次重建，Hub 同 Task 仍只有同一 Execution 行。",
+          "evidence": [
+            {
+              "path": "backend/isolated/evidence/arch.execution_re_upload-7e09dabb.json",
+              "json_pointer": "/events/7/stdout",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/arch.execution_re_upload-7e09dabb.json",
+              "json_pointer": "/events/8/proxy_events",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/arch.execution_re_upload-7e09dabb.json",
+              "json_pointer": "/events/14/stdout",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/arch.execution_re_upload-7e09dabb.json",
+              "json_pointer": "/events/15/response",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/arch.duplicate_execution_upload-75196223.json",
+              "json_pointer": "/events/19/response",
+              "actual": ""
+            }
+          ],
+          "limit": "ACK-loss case 的 offline=0；它验证补传幂等，不能被单独冒充 Hub 离线产生的 offline=1 证据。"
+        }
+      ],
+      "remaining": [
+        {
+          "dimension": "执行页 Offline/Synced 同场过渡反馈",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "机制已经全部实际验证；未在同一离线执行上记录页面 offline/synced 展示→重连更新的 GUI 反馈。",
+          "missing_gui": true
+        }
+      ],
+      "actual": "API/Agent 的离线→上传→ACK→幂等全部覆盖；原 Web execution 页面条目仍缺该执行的 GUI 过渡观察。",
+      "evidence": [
+        {
+          "path": "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+          "json_pointer": "/events/3",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+          "json_pointer": "/events/8/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+          "json_pointer": "/events/9/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+          "json_pointer": "/events/10",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+          "json_pointer": "/events/14/terminal",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+          "json_pointer": "/events/15/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+          "json_pointer": "/events/16/response",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+          "json_pointer": "/events/17/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/arch.execution_re_upload-7e09dabb.json",
+          "json_pointer": "/events/7/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/arch.execution_re_upload-7e09dabb.json",
+          "json_pointer": "/events/8/proxy_events",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/arch.execution_re_upload-7e09dabb.json",
+          "json_pointer": "/events/14/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/arch.execution_re_upload-7e09dabb.json",
+          "json_pointer": "/events/15/response",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/arch.duplicate_execution_upload-75196223.json",
+          "json_pointer": "/events/19/response",
+          "actual": ""
+        }
+      ],
+      "gui_required_for_original_case": true,
+      "gui_missing": true,
+      "是否缺GUI": true,
+      "mechanism_status": "PASS",
+      "mechanism_classification": "REAL_API_AGENT",
+      "baseline": [
+        "docs/ARCHITECTURE.md:835"
+      ]
+    },
+    {
+      "case_id": "P22-10",
+      "title": "目标失败隔离，其他目标仍成功。",
+      "inventory_status_at_read": "NOT_RUN",
+      "status": "PARTIAL",
+      "classification": "REAL_API_AGENT",
+      "covered": [
+        {
+          "dimension": "失败目标隔离、成功目标实际文件正确",
+          "status": "PASS",
+          "actual": "同一 Transfer 一个目标 parent 是普通文件导致 mkdir not a directory/FAILED，另一个目标 SUCCESS，实际读 bytes=retry-relay-real。总 Transfer FAILED 不影响成功目标。",
+          "evidence": [
+            {
+              "path": "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+              "json_pointer": "/events/8/request",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+              "json_pointer": "/events/9/terminal",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+              "json_pointer": "/events/10/stdout",
+              "actual": ""
+            }
+          ]
+        },
+        {
+          "dimension": "失败目标单独重试而保持成功目标",
+          "status": "PASS",
+          "actual": "修复本轮阻塞后 retry?target_id 指定失败目标；成功目标 status/updated_at 保持原值，最终两者 SUCCESS、两端真实 bytes 一致。",
+          "evidence": [
+            {
+              "path": "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+              "json_pointer": "/events/15",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+              "json_pointer": "/events/16/terminal",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+              "json_pointer": "/events/17/stdout",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+              "json_pointer": "/events/18/stdout",
+              "actual": ""
+            }
+          ]
+        }
+      ],
+      "remaining": [
+        {
+          "dimension": "混合成功/失败目标的 GUI 呈现与反馈",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "同一 mixed-target Transfer 的详情页逐目标成功/错误呈现未与 API/物理文件同场关联；单独其他全成功 UI 流程不能替代。",
+          "missing_gui": true
+        }
+      ],
+      "actual": "后端与客户机失败隔离已真实 PASS；原 transfers 页场景尚缺对应混合目标结果 GUI。",
+      "evidence": [
+        {
+          "path": "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+          "json_pointer": "/events/8/request",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+          "json_pointer": "/events/9/terminal",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+          "json_pointer": "/events/10/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+          "json_pointer": "/events/15",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+          "json_pointer": "/events/16/terminal",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+          "json_pointer": "/events/17/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+          "json_pointer": "/events/18/stdout",
+          "actual": ""
+        }
+      ],
+      "gui_required_for_original_case": true,
+      "gui_missing": true,
+      "是否缺GUI": true,
+      "mechanism_status": "PASS",
+      "mechanism_classification": "REAL_API_AGENT"
+    },
+    {
+      "case_id": "P22-13",
+      "title": "源/目标相对路径、路径逃逸、错误 Agent Credential、文件超限。",
+      "inventory_status_at_read": "NOT_RUN",
+      "status": "PARTIAL",
+      "classification": "REAL_API_AGENT",
+      "covered": [
+        {
+          "dimension": "目标 traversal/allowlist/symlink 逃逸拒绝",
+          "status": "PASS",
+          "actual": "Host target traversal 在 Hub400拒绝且 owned sentinel不变；outside allowlist/解析 symlink 逃逸 Target FAILED，明确 path outside/escapes host root。Native destination symlink 也 FAILED、旧 sentinel保留、tmp=[]。",
+          "evidence": [
+            {
+              "path": "environment/host-negative-results.json",
+              "json_pointer": "/cases/4",
+              "actual": ""
+            },
+            {
+              "path": "environment/host-negative-results.json",
+              "json_pointer": "/cases/5",
+              "actual": ""
+            },
+            {
+              "path": "environment/host-negative-results.json",
+              "json_pointer": "/cases/6",
+              "actual": ""
+            },
+            {
+              "path": "main/relay-edge-results.json",
+              "json_pointer": "/22/detail",
+              "actual": ""
+            }
+          ],
+          "limit": "Host Integration allowlist/hostRoot 的拓扑特有边界不泛化成 Native 源路径的全组合覆盖。Host missing/wrong mount 的既有 FAIL-HOST-002 不受此路径边界 PASS 影响。"
+        },
+        {
+          "dimension": "持有有效但错误 Agent 身份的 Relay 越权",
+          "status": "PASS",
+          "actual": "wrong-source upload403；Stage completed 后 Source/Other download403、指定 Target200 bytes相符。",
+          "evidence": [
+            {
+              "path": "main/relay-edge-results.json",
+              "json_pointer": "/1/detail",
+              "actual": ""
+            },
+            {
+              "path": "main/relay-edge-results.json",
+              "json_pointer": "/17/detail",
+              "actual": ""
+            },
+            {
+              "path": "main/relay-edge-results.json",
+              "json_pointer": "/18/detail",
+              "actual": ""
+            },
+            {
+              "path": "main/relay-edge-results.json",
+              "json_pointer": "/19/detail",
+              "actual": ""
+            }
+          ],
+          "limit": "是有效 credential 的错误身份；失效 token 身份认证属于其他实际认证 case，不能声称这里都发送过。"
+        },
+        {
+          "dimension": "Relay 声明文件大小超限/缺失/负值/非数字",
+          "status": "PASS",
+          "actual": "上传元数据 size>10GiB、absent、negative、text 均400 invalid file size，未允许 Stage 完整发布。",
+          "evidence": [
+            {
+              "path": "main/relay-edge-results.json",
+              "json_pointer": "/2/detail",
+              "actual": ""
+            },
+            {
+              "path": "main/relay-edge-results.json",
+              "json_pointer": "/3/detail",
+              "actual": ""
+            },
+            {
+              "path": "main/relay-edge-results.json",
+              "json_pointer": "/4/detail",
+              "actual": ""
+            },
+            {
+              "path": "main/relay-edge-results.json",
+              "json_pointer": "/5/detail",
+              "actual": ""
+            }
+          ],
+          "limit": "这是实际 HTTP size 字段边界，没有创建10GiB物理文件，不能称源 Agent 实际超大文件读取/拒传路径已执行。"
+        }
+      ],
+      "remaining": [
+        {
+          "dimension": "源相对路径与源 traversal",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "未找到 source_path 相对/包含 .. 的真实请求拒绝与无资源/无副作用证据。",
+          "missing_gui": false
+        },
+        {
+          "dimension": "目标相对路径",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "traversal/allowlist/symlink 有真实证据；未找到相对 destination_path 的独立实际请求。",
+          "missing_gui": false
+        },
+        {
+          "dimension": "传输编辑器非法路径的 GUI 校验/反馈",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "没有这些具体输入在表单层与对应 HTTP 拒绝/错误反馈的同场观察。",
+          "missing_gui": true
+        }
+      ],
+      "actual": "错误 Agent 身份、Relay size、目标逃逸已运行；source/target 相对路径与 source traversal 不能由目标 Host 逃逸补齐。",
+      "evidence": [
+        {
+          "path": "environment/host-negative-results.json",
+          "json_pointer": "/cases/4",
+          "actual": ""
+        },
+        {
+          "path": "environment/host-negative-results.json",
+          "json_pointer": "/cases/5",
+          "actual": ""
+        },
+        {
+          "path": "environment/host-negative-results.json",
+          "json_pointer": "/cases/6",
+          "actual": ""
+        },
+        {
+          "path": "main/relay-edge-results.json",
+          "json_pointer": "/22/detail",
+          "actual": ""
+        },
+        {
+          "path": "main/relay-edge-results.json",
+          "json_pointer": "/1/detail",
+          "actual": ""
+        },
+        {
+          "path": "main/relay-edge-results.json",
+          "json_pointer": "/17/detail",
+          "actual": ""
+        },
+        {
+          "path": "main/relay-edge-results.json",
+          "json_pointer": "/18/detail",
+          "actual": ""
+        },
+        {
+          "path": "main/relay-edge-results.json",
+          "json_pointer": "/19/detail",
+          "actual": ""
+        },
+        {
+          "path": "main/relay-edge-results.json",
+          "json_pointer": "/2/detail",
+          "actual": ""
+        },
+        {
+          "path": "main/relay-edge-results.json",
+          "json_pointer": "/3/detail",
+          "actual": ""
+        },
+        {
+          "path": "main/relay-edge-results.json",
+          "json_pointer": "/4/detail",
+          "actual": ""
+        },
+        {
+          "path": "main/relay-edge-results.json",
+          "json_pointer": "/5/detail",
+          "actual": ""
+        }
+      ],
+      "gui_required_for_original_case": true,
+      "gui_missing": true,
+      "是否缺GUI": true
+    },
+    {
+      "case_id": "P22-15",
+      "title": "Hub 重启、Agent 重连、目标离线后的传输恢复。",
+      "inventory_status_at_read": "NOT_RUN",
+      "status": "PARTIAL",
+      "classification": "REAL_API_AGENT",
+      "covered": [
+        {
+          "dimension": "目标真实离线、Hub Stage 持久、重启重连恢复完整文件",
+          "status": "PASS",
+          "actual": "精确 generatedDocker peer 原卷停机；源实际524306bytes SHA ed7a... Stage DELIVERING/Target PENDING、目标旧内容保持。真实 Hub stop/start 后 Stage/SHA/size 与旧目标仍保持；source 节点重新 online/synced；peer 原卷 start 最终 SUCCESS，目标 SHA=源且目录只有 received，无tmp，identity hash不变。",
+          "evidence": [
+            {
+              "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+              "json_pointer": "/events/10",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+              "json_pointer": "/events/15/offline_target_staged",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+              "json_pointer": "/events/16",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+              "json_pointer": "/events/17",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+              "json_pointer": "/events/20/core_node",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+              "json_pointer": "/events/21/response",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+              "json_pointer": "/events/22/stdout",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+              "json_pointer": "/events/23",
+              "actual": ""
+            },
+            {
+              "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+              "json_pointer": "/events/33/relay_restart_delivery",
+              "actual": ""
+            }
+          ],
+          "limit": "这是已经完成 Stage 后重启 Hub；不将其替代 Stage AtomicRename 精确边界故障，也未在接收替换边界 kill Agent。"
+        }
+      ],
+      "remaining": [
+        {
+          "dimension": "对应故障后 transfer 页面恢复显示",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "未记录该同一 Transfer 的网页 DELIVERING/PENDING→最终SUCCESS 连续反馈；原 API/Agent 恢复完整，不需重做机制。",
+          "missing_gui": true
+        }
+      ],
+      "actual": "实际 Hub restart/source reconnect/offline target 恢复全部已覆盖；原 Web 场景 GUI 同场反馈未证。",
+      "evidence": [
+        {
+          "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+          "json_pointer": "/events/10",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+          "json_pointer": "/events/15/offline_target_staged",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+          "json_pointer": "/events/16",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+          "json_pointer": "/events/17",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+          "json_pointer": "/events/20/core_node",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+          "json_pointer": "/events/21/response",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+          "json_pointer": "/events/22/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+          "json_pointer": "/events/23",
+          "actual": ""
+        },
+        {
+          "path": "backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json",
+          "json_pointer": "/events/33/relay_restart_delivery",
+          "actual": ""
+        }
+      ],
+      "gui_required_for_original_case": true,
+      "gui_missing": true,
+      "是否缺GUI": true,
+      "mechanism_status": "PASS",
+      "mechanism_classification": "REAL_API_AGENT"
+    },
+    {
+      "case_id": "FL-11",
+      "title": "Application Upgrade → Rollback → 版本、备份、Unit、Config、Health、Journal 一致",
+      "inventory_status_at_read": "NOT_RUN",
+      "status": "FAIL",
+      "classification": "REAL_API_AGENT",
+      "covered": [
+        {
+          "dimension": "普通健康检查失败后回滚已运行旧版本",
+          "status": "PARTIAL",
+          "actual": "qa-v3-fails 使用 exit17 引发 upgrade FAILED/health check failed; rolled back；客户机恢复 config-v2、Unit active，Agent Execution Journal synced=1。",
+          "evidence": [
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/61/request",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/63/terminal",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/64/stdout",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/65/stdout",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/66/stdout",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/67/response",
+              "actual": ""
+            }
+          ],
+          "limit": "此例复用同一 Artifact；回滚后未直接重测 binary SHA/Unit 内容/Deployment Journal/backup。Hub AppState 仍报告尝试版本 qa-v3-fails 与 unhealthy，不将旧 config+active 等同所有状态一致，也不在本审计新宣判该报告语义为缺陷。"
+        },
+        {
+          "dimension": "PREPARING 中途崩溃恢复旧文件",
+          "status": "FAIL",
+          "actual": "有效重测 /7：原 v1 binary/config/unit 全部存在、Unit active；PREPARING 三 BackupPath 为空时 kill。恢复 Journal DONE/Execution FAILED agent_restarted，但旧 binary/config/unit 均不存在、Unit failed。已确认 P0-002。",
+          "evidence": [
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/7/baseline",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/7/injection",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/7/recovered",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/7/execution_terminal",
+              "actual": ""
+            },
+            {
+              "path": "main/failures.json",
+              "json_pointer": "",
+              "actual": ""
+            }
+          ],
+          "limit": "这是升级中途 crash/restart，不能写成普通健康失败回滚同样删除旧文件。/1 首轮 online 恢复超时不作为本缺陷的有效判据。"
+        },
+        {
+          "dimension": "已保存备份的四个升级阶段崩溃恢复",
+          "status": "PASS",
+          "actual": "REPLACED/STARTED/VERIFYING/ROLLING_BACK 精确实际阶段 kill，恢复旧 v1 SHA/ec6d007d...、config-v1、Unit active、Journal DONE、Execution FAILED agent_restarted；对应注入时三个 backup_present 均 true。",
+          "evidence": [
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/2/injection",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/2/recovered",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/2/execution_terminal",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/3/injection",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/3/recovered",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/3/execution_terminal",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/4/injection",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/4/recovered",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/4/execution_terminal",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/5/injection",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/5/recovered",
+              "actual": ""
+            },
+            {
+              "path": "main/native-results.json",
+              "json_pointer": "/5/execution_terminal",
+              "actual": ""
+            }
+          ],
+          "limit": "不能替代 PREPARING；当前 STOPPED 没有可注入实际阶段。未单独把 Unit active 推断为所有自定义健康探针均通过。"
+        },
+        {
+          "dimension": "备份实际缺失时明确失败/不误报成功",
+          "status": "PASS",
+          "actual": "在 VERIFYING 删除本轮唯一 binary backup，升级 FAILED + rollback health check also failed，App unhealthy、Unit inactive；旧 config保留但实际新 binary仍在，诚实记录无法恢复旧Binary。",
+          "evidence": [
+            {
+              "path": "main/backup-missing-result.json",
+              "json_pointer": "/baseline",
+              "actual": ""
+            },
+            {
+              "path": "main/backup-missing-result.json",
+              "json_pointer": "/injection",
+              "actual": ""
+            },
+            {
+              "path": "main/backup-missing-result.json",
+              "json_pointer": "/execution",
+              "actual": ""
+            },
+            {
+              "path": "main/backup-missing-result.json",
+              "json_pointer": "/actual",
+              "actual": ""
+            }
+          ],
+          "limit": "这是缺失备份的受控失败门禁，不是“旧Binary恢复成功”，不能提升正常完整回滚为 PASS。"
+        }
+      ],
+      "remaining": [
+        {
+          "dimension": "普通升级健康失败后的版本/全部文件/备份/健康/Journal 同场一致",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "普通 rollback case 没有所有物理 after SHA、Unit内容、backup实存和 Deployment Journal 的一起证据。Hub AppState的 attempted-version/unhealthy 与物理旧config/active 已如实列出，未据此新宣判契约。",
+          "missing_gui": false
+        },
+        {
+          "dimension": "用户通过 GUI 升级→失败→Rollback 的反馈闭环",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "本组故障/回滚均 API+Agent，不包含同一个 UpgradeRollback 的 GUI 回滚/状态反馈。",
+          "missing_gui": true
+        }
+      ],
+      "actual": "升级回滚的普通失败路径部分通过；架构要求的 crash-recovery 回滚路径已确认 PREPARING 破坏旧版本，因此整体安全性合并 FAIL。若 Root 严格将 FL-11 限定无 crash 的普通健康失败，则该 narrower_subcase_status 仅 PARTIAL，仍必须关联已确认 P0。",
+      "evidence": [
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/61/request",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/63/terminal",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/64/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/65/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/66/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/67/response",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/7/baseline",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/7/injection",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/7/recovered",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/7/execution_terminal",
+          "actual": ""
+        },
+        {
+          "path": "main/failures.json",
+          "json_pointer": "",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/2/injection",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/2/recovered",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/2/execution_terminal",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/3/injection",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/3/recovered",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/3/execution_terminal",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/4/injection",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/4/recovered",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/4/execution_terminal",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/5/injection",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/5/recovered",
+          "actual": ""
+        },
+        {
+          "path": "main/native-results.json",
+          "json_pointer": "/5/execution_terminal",
+          "actual": ""
+        },
+        {
+          "path": "main/backup-missing-result.json",
+          "json_pointer": "/baseline",
+          "actual": ""
+        },
+        {
+          "path": "main/backup-missing-result.json",
+          "json_pointer": "/injection",
+          "actual": ""
+        },
+        {
+          "path": "main/backup-missing-result.json",
+          "json_pointer": "/execution",
+          "actual": ""
+        },
+        {
+          "path": "main/backup-missing-result.json",
+          "json_pointer": "/actual",
+          "actual": ""
+        }
+      ],
+      "gui_required_for_original_case": true,
+      "gui_missing": true,
+      "是否缺GUI": true,
+      "confirmed_failure_ids": [
+        "E2E-20260930-101945-P0-002"
+      ],
+      "narrower_subcase_status": "PARTIAL",
+      "baseline": [
+        "docs/PRODUCT.md:1150",
+        "docs/PRODUCT.md:1189"
+      ]
+    },
+    {
+      "case_id": "FL-16",
+      "title": "Settings Save → Agent Runtime → Agent 心跳/Revision/日志设置实际消费或明确不消费",
+      "inventory_status_at_read": "NOT_RUN",
+      "status": "PARTIAL",
+      "classification": "REUSED_REAL_UI_API_AGENT",
+      "covered": [
+        {
+          "dimension": "真实 Settings UI 保存→四 Native 心跳运行消费→恢复",
+          "status": "PASS",
+          "actual": "UI heartbeat_interval_sec 30→3，PUT200/已保存；四实际 Agent LastSeen 多次间隔约3～4秒；最后精确恢复30/API原4设置。",
+          "evidence": [
+            {
+              "path": "main/settings-runtime-evidence.json",
+              "json_pointer": "/changed",
+              "actual": ""
+            },
+            {
+              "path": "main/settings-runtime-evidence.json",
+              "json_pointer": "/intervals_sec",
+              "actual": ""
+            },
+            {
+              "path": "main/settings-runtime-evidence.json",
+              "json_pointer": "/ui_feedback",
+              "actual": ""
+            },
+            {
+              "path": "main/settings-runtime-evidence.json",
+              "json_pointer": "/restoration_ok",
+              "actual": ""
+            }
+          ]
+        },
+        {
+          "dimension": "Settings UI 非法值拒绝与 heartbeat 修改持久化",
+          "status": "PASS",
+          "actual": "4字段的非数字/0/-1/极大值各真实400，UI error_visible且 original_unchanged；heartbeat30→31 UI保存/刷新/API保持31，恢复30。",
+          "evidence": [
+            {
+              "path": "main/settings-ui-results.json",
+              "json_pointer": "/0",
+              "actual": ""
+            },
+            {
+              "path": "main/settings-ui-results.json",
+              "json_pointer": "/15",
+              "actual": ""
+            },
+            {
+              "path": "main/settings-persistence-result.json",
+              "json_pointer": "",
+              "actual": ""
+            }
+          ],
+          "limit": "四字段非法边界与既有值重新保存≠四字段均改变并被 Agent消费；持久化另例仅修改heartbeat。"
+        }
+      ],
+      "remaining": [
+        {
+          "dimension": "revision_check_interval_sec 改值后的 Agent 运行周期",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "已有丢通知最终45sec轮询恢复是原值行为，不是经 UI 改为新值后周期改变/明确不消费的采样。",
+          "missing_gui": false
+        },
+        {
+          "dimension": "max_log_bytes 改值后的执行实际截断",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "既有默认1MiB截断或 baseline值匹配不能证明新设置被消费；没有改值→新Execution→chunk/terminal阈值采样。",
+          "missing_gui": false
+        }
+      ],
+      "actual": "真实 UI→Agent 消费已有心跳闭环。Revision/日志改值消费缺直接证据；不从默认值等于 metrics 或设置保存成功推断。",
+      "evidence": [
+        {
+          "path": "main/settings-runtime-evidence.json",
+          "json_pointer": "/changed",
+          "actual": ""
+        },
+        {
+          "path": "main/settings-runtime-evidence.json",
+          "json_pointer": "/intervals_sec",
+          "actual": ""
+        },
+        {
+          "path": "main/settings-runtime-evidence.json",
+          "json_pointer": "/ui_feedback",
+          "actual": ""
+        },
+        {
+          "path": "main/settings-runtime-evidence.json",
+          "json_pointer": "/restoration_ok",
+          "actual": ""
+        },
+        {
+          "path": "main/settings-ui-results.json",
+          "json_pointer": "/0",
+          "actual": ""
+        },
+        {
+          "path": "main/settings-ui-results.json",
+          "json_pointer": "/15",
+          "actual": ""
+        },
+        {
+          "path": "main/settings-persistence-result.json",
+          "json_pointer": "",
+          "actual": ""
+        }
+      ],
+      "gui_required_for_original_case": true,
+      "gui_missing": false,
+      "是否缺GUI": false
+    },
+    {
+      "case_id": "P14P15-12",
+      "title": "Admin/operator/viewer 的部署、定义修改权限。",
+      "inventory_status_at_read": "NOT_RUN",
+      "status": "PARTIAL",
+      "classification": "REUSED_REAL_UI_API_AGENT",
+      "covered": [
+        {
+          "dimension": "三角色应用读取、Operator/Viewer定义创建拒绝",
+          "status": "PASS",
+          "actual": "三角色 GET applications200；Operator/Viewer POST applications403。Admin真实创建/修改/分配及部署链实际成功。",
+          "evidence": [
+            {
+              "path": "main/api-results.json",
+              "json_pointer": "/37",
+              "actual": ""
+            },
+            {
+              "path": "main/api-results.json",
+              "json_pointer": "/38",
+              "actual": ""
+            },
+            {
+              "path": "main/api-results.json",
+              "json_pointer": "/39",
+              "actual": ""
+            },
+            {
+              "path": "main/api-results.json",
+              "json_pointer": "/72",
+              "actual": ""
+            },
+            {
+              "path": "main/api-results.json",
+              "json_pointer": "/81",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/3",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/61",
+              "actual": ""
+            }
+          ],
+          "limit": "写拒绝99-case矩阵此项是 POST create，不泛化为已逐一测试 PUT/DELETE。"
+        },
+        {
+          "dimension": "Operator实际首次部署/操作成功，Viewer操作拒绝",
+          "status": "PASS",
+          "actual": "Operator首次Deploy200→ExecutionSUCCESS→原生Unit active/config-v1/SHA正确；Operator restart成功；Viewer restart403。",
+          "evidence": [
+            {
+              "path": "backend/evidence/feature.application.operator-deploy-6d0afc51.json",
+              "json_pointer": "/events/6",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.operator-deploy-6d0afc51.json",
+              "json_pointer": "/events/7/terminal",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.operator-deploy-6d0afc51.json",
+              "json_pointer": "/events/9/stdout",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.operator-deploy-6d0afc51.json",
+              "json_pointer": "/events/10/stdout",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.operator-deploy-6d0afc51.json",
+              "json_pointer": "/events/11/stdout",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/56",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/57",
+              "actual": ""
+            },
+            {
+              "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+              "json_pointer": "/events/58/terminal",
+              "actual": ""
+            }
+          ],
+          "limit": "Viewer拒绝此输入operation=restart，不能将全部5 operation的 direct API拒绝机械宣为全部已测。"
+        },
+        {
+          "dimension": "Operator/Viewer应用 GUI权限和按钮",
+          "status": "PASS",
+          "actual": "真实两角色 UI 登陆：应用定义Save/CUD不可用、assignment checkbox disabled；Operator操作菜单实际打开5个选项再关闭但未派发；Viewer操作控件隐藏。",
+          "evidence": [
+            {
+              "path": "environment/role-ui-results.json",
+              "json_pointer": "/roles/operator/pages/application-detail",
+              "actual": ""
+            },
+            {
+              "path": "environment/role-ui-results.json",
+              "json_pointer": "/roles/viewer/pages/application-detail",
+              "actual": ""
+            },
+            {
+              "path": "environment/role-ui-results.json",
+              "json_pointer": "/roles/operator/application_operation_control",
+              "actual": ""
+            },
+            {
+              "path": "environment/role-ui-results.json",
+              "json_pointer": "/roles/viewer/application_operation_control",
+              "actual": ""
+            }
+          ]
+        }
+      ],
+      "remaining": [
+        {
+          "dimension": "Operator/Viewer 修改和删除定义的直接 API 拒绝",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "没有同一合法已有 App PUT/DELETE403 的逐角色实际请求与定义不变证据；不能仅用POST403/UI隐藏推出。",
+          "missing_gui": false
+        },
+        {
+          "dimension": "Operator GUI Deploy→物理效果→执行/状态反馈",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "既有 Operator Deploy 为 API+Agent；Env仅打开/关闭操作菜单，actual_operation_dispatched=false，不冒充角色实际 UI Deploy。",
+          "missing_gui": true
+        }
+      ],
+      "actual": "实际 API角色边界、Operator部署物理效果和两角色 UI只读/操作控件已有覆盖；明确剩余定义PUT/DELETE与Operator同场GUI派发。",
+      "evidence": [
+        {
+          "path": "main/api-results.json",
+          "json_pointer": "/37",
+          "actual": ""
+        },
+        {
+          "path": "main/api-results.json",
+          "json_pointer": "/38",
+          "actual": ""
+        },
+        {
+          "path": "main/api-results.json",
+          "json_pointer": "/39",
+          "actual": ""
+        },
+        {
+          "path": "main/api-results.json",
+          "json_pointer": "/72",
+          "actual": ""
+        },
+        {
+          "path": "main/api-results.json",
+          "json_pointer": "/81",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/3",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/61",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.operator-deploy-6d0afc51.json",
+          "json_pointer": "/events/6",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.operator-deploy-6d0afc51.json",
+          "json_pointer": "/events/7/terminal",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.operator-deploy-6d0afc51.json",
+          "json_pointer": "/events/9/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.operator-deploy-6d0afc51.json",
+          "json_pointer": "/events/10/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.operator-deploy-6d0afc51.json",
+          "json_pointer": "/events/11/stdout",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/56",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/57",
+          "actual": ""
+        },
+        {
+          "path": "backend/evidence/feature.application.lifecycle-e22782da.json",
+          "json_pointer": "/events/58/terminal",
+          "actual": ""
+        },
+        {
+          "path": "environment/role-ui-results.json",
+          "json_pointer": "/roles/operator/pages/application-detail",
+          "actual": ""
+        },
+        {
+          "path": "environment/role-ui-results.json",
+          "json_pointer": "/roles/viewer/pages/application-detail",
+          "actual": ""
+        },
+        {
+          "path": "environment/role-ui-results.json",
+          "json_pointer": "/roles/operator/application_operation_control",
+          "actual": ""
+        },
+        {
+          "path": "environment/role-ui-results.json",
+          "json_pointer": "/roles/viewer/application_operation_control",
+          "actual": ""
+        }
+      ],
+      "gui_required_for_original_case": true,
+      "gui_missing": true,
+      "是否缺GUI": true
+    },
+    {
+      "case_id": "P19-05",
+      "title": "审计记录不可被普通用户修改或删除。",
+      "inventory_status_at_read": "NOT_RUN",
+      "status": "PARTIAL",
+      "classification": "REUSED_REAL_UI_API_AGENT",
+      "covered": [
+        {
+          "dimension": "普通用户审计可读，页面没有修改/删除控件",
+          "status": "PASS",
+          "actual": "Operator/Viewer GET /api/audit200；真实两角色 /audit 页面只有查询/排序/分页等观察，unexpected_cud_controls=[]，没有业务写请求。",
+          "evidence": [
+            {
+              "path": "main/api-results.json",
+              "json_pointer": "/54",
+              "actual": ""
+            },
+            {
+              "path": "main/api-results.json",
+              "json_pointer": "/55",
+              "actual": ""
+            },
+            {
+              "path": "environment/role-ui-results.json",
+              "json_pointer": "/roles/operator/pages/audit",
+              "actual": ""
+            },
+            {
+              "path": "environment/role-ui-results.json",
+              "json_pointer": "/roles/viewer/pages/audit",
+              "actual": ""
+            }
+          ]
+        }
+      ],
+      "remaining": [
+        {
+          "dimension": "绕过 UI 修改/删除既有审计记录仍不改变历史",
+          "status": "NOT_VERIFIED",
+          "actual_missing": "尚无普通用户对 audit collection/具体既有记录 PUT/PATCH/DELETE 的实际请求与同记录前后快照。需按真实路由处理：无mutation路由可能404/405，collection可能200返回只读列表，不能机械期待所有请求403或把200解释为修改成功。",
+          "missing_gui": false
+        }
+      ],
+      "actual": "普通用户 GUI 缺少 CUD与读取权限已真实验证；“不可修改/删除”的直调越权和历史不变仍缺证，不能整条 PASS。",
+      "evidence": [
+        {
+          "path": "main/api-results.json",
+          "json_pointer": "/54",
+          "actual": ""
+        },
+        {
+          "path": "main/api-results.json",
+          "json_pointer": "/55",
+          "actual": ""
+        },
+        {
+          "path": "environment/role-ui-results.json",
+          "json_pointer": "/roles/operator/pages/audit",
+          "actual": ""
+        },
+        {
+          "path": "environment/role-ui-results.json",
+          "json_pointer": "/roles/viewer/pages/audit",
+          "actual": ""
+        }
+      ],
+      "gui_required_for_original_case": true,
+      "gui_missing": false,
+      "是否缺GUI": false
+    }
+  ],
+  "counts": {
+    "PARTIAL": 8,
+    "FAIL": 2
+  },
+  "summary": {
+    "existing_runtime_mechanisms_fully_covered_but_gui_partial": [
+      "P17P18-14",
+      "P22-10",
+      "P22-15"
+    ],
+    "confirmed_failure_preserved": [
+      "P14P15-18",
+      "FL-11"
+    ],
+    "no_default_metric_consumption_inference": true,
+    "original_failure_not_erased_by_partial_positive": true
+  },
+  "validation": {
+    "all_evidence_paths_exist": true,
+    "json_pointers_checked": 125,
+    "new_runtime_mutations": 0,
+    "product_changes": 0,
+    "owned_artifact_writes": [
+      "backend/continuation/remaining-web-system-crossmap.json"
+    ]
+  }
+}

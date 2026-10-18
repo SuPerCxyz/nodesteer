@@ -1,0 +1,60 @@
+{
+  "captured_at_utc": "2026-10-10T14:15:33.074683+00:00",
+  "canonical": "TABLE-EXECUTIONS-SEARCH",
+  "actions": [
+    "search for exact retained owned Execution ID in UI textbox",
+    "search guaranteed nonmatch",
+    "clear nonmatch with fill empty (did not trigger router update)",
+    "re-search exact owned ID then user-like Control+A and Backspace to clear",
+    "confirm restored current page rows"
+  ],
+  "observations": [
+    {
+      "query_kind": "owned existing Execution ID",
+      "url_q_present": true,
+      "visible_rows": 1,
+      "matched_owned_execution": true
+    },
+    {
+      "query_kind": "qa-b08-no-match-xyz",
+      "url_q_present": true,
+      "visible_rows": 0,
+      "empty_feedback": "没有匹配的执行记录"
+    },
+    {
+      "clear_attempt": "fill empty",
+      "dom_input_empty": true,
+      "url_q_still_present": true,
+      "rows_still_zero": true,
+      "classification": "agent-browser fill-empty did not dispatch the route update; do not count as product behavior"
+    },
+    {
+      "clear_action": "Control+A then Backspace on populated input",
+      "url_q_present": false,
+      "input_empty": true,
+      "visible_rows": 10,
+      "dataset_page_restored": true,
+      "alert_count": 0
+    }
+  ],
+  "api_requests": [
+    {
+      "method": "GET",
+      "path": "/api/executions",
+      "status": 200,
+      "query_q_present": true,
+      "event_count_for_queries": 3
+    },
+    {
+      "method": "GET",
+      "path": "/api/executions",
+      "status": 200,
+      "query_q_present": false,
+      "dataset_count": 565
+    }
+  ],
+  "separate_reset_button_present": false,
+  "write_request_count": 0,
+  "raw_query_or_row_text_saved": false,
+  "note": "Search term was a known existing owned Execution ID because the actual search placeholder supports Task, Node, or Execution ID; no row contents or query value were persisted."
+}

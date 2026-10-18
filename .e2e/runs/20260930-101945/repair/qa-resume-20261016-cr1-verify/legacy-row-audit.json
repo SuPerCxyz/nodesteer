@@ -1,0 +1,271 @@
+{
+ "at_utc": "2026-10-16T10:21:36Z",
+ "scope": "CR-1 报告 §7.2 指出的中间版本行（有 app_revision+三路径绑定列、无 completed_kind 列）写成因未知的 DONE 行",
+ "method": [
+  "只读打开 4 台节点 Agent 本地 state.db（mode=ro），SELECT deployments。",
+  "中间版本行判定：phase=DONE 且 completed_kind=\"\" 且（app_revision>0 或三路径任一非空）。",
+  "有害重放可达性：同 app 存在更晚成因未知 DONE 行（旧谓词会据此误判取代）+ 更早半完成行绑定与「当前本地定义」完全匹配（app_revision 与三路径一致）。",
+  "应用是否仍存在：Hub GET /api/applications/{id}（404 = 已删除）。",
+  "实证：部署后与 crash 阶段两次 Agent 重启的恢复日志 + 行相位前后对比。"
+ ],
+ "enumeration": {
+  "native-1": {
+   "db": "/var/lib/nodesteer-repair-20260930-101945/native-1/state.db",
+   "row_count": 2,
+   "completed_kind_column_before_deploy": false,
+   "completed_kind_column_after_deploy": true,
+   "legacy_done_unknown_cause": 0,
+   "active_rows": 0,
+   "legacy_rows": [],
+   "rows_unchanged_across_deploy_restart": true,
+   "phase_changes_across_deploy_restart": {},
+   "local_application_definitions": 1
+  },
+  "native-2": {
+   "db": "/var/lib/nodesteer-repair-20260930-101945/native-2/state.db",
+   "row_count": 27,
+   "completed_kind_column_before_deploy": false,
+   "completed_kind_column_after_deploy": true,
+   "legacy_done_unknown_cause": 12,
+   "active_rows": 9,
+   "legacy_rows": [
+    {
+     "id": "a82a4ea5-8160-41c9-8455-7a0b4bb6fe40",
+     "application_id": "3e837037-9541-4afd-9e23-a9ae26bf474f",
+     "phase": "DONE",
+     "completed_kind": "",
+     "app_revision": 1,
+     "binary_path": "/opt/qa-r1610-0348872d-app/bin/app",
+     "config_path": "/opt/qa-r1610-0348872d-app/config/app.env",
+     "unit_name": "qa-r1610-0348872d-app.service",
+     "backup_path": "absent:",
+     "started_at": "2026-10-16T07:09:03.360810909Z"
+    },
+    {
+     "id": "aaad8bec-83e8-422b-8eca-6b3fdfec128b",
+     "application_id": "59567cf7-0e0a-49d7-8b02-4c6d778472dc",
+     "phase": "DONE",
+     "completed_kind": "",
+     "app_revision": 2,
+     "binary_path": "/opt/qa-r1610-0348872d-app/bin-sup/app",
+     "config_path": "/opt/qa-r1610-0348872d-app/config-sup/app.env",
+     "unit_name": "qa-r1610-0348872d-app-sup.service",
+     "backup_path": "absent:",
+     "started_at": "2026-10-16T07:12:39.215886686Z"
+    },
+    {
+     "id": "51a3a64d-cd9d-48c9-9c3f-3b101082abde",
+     "application_id": "59567cf7-0e0a-49d7-8b02-4c6d778472dc",
+     "phase": "DONE",
+     "completed_kind": "",
+     "app_revision": 3,
+     "binary_path": "/opt/qa-r1610-0348872d-app/bin-sup/app",
+     "config_path": "/opt/qa-r1610-0348872d-app/config-sup/app.env",
+     "unit_name": "qa-r1610-0348872d-app-sup.service",
+     "backup_path": "absent:",
+     "started_at": "2026-10-16T07:12:43.240044456Z"
+    },
+    {
+     "id": "8200fcdc-6bde-4739-9014-eab110639311",
+     "application_id": "59567cf7-0e0a-49d7-8b02-4c6d778472dc",
+     "phase": "DONE",
+     "completed_kind": "",
+     "app_revision": 4,
+     "binary_path": "/opt/qa-r1610-0348872d-app/bin-sup/app",
+     "config_path": "/opt/qa-r1610-0348872d-app/config-sup/app.env",
+     "unit_name": "qa-r1610-0348872d-app-sup.service",
+     "backup_path": "absent:",
+     "started_at": "2026-10-16T07:12:47.152669932Z"
+    },
+    {
+     "id": "0409e2e5-5e4e-48a4-8b61-aea0e1c4f188",
+     "application_id": "6403b0b6-6615-4c5e-ac27-9987ebea6bc1",
+     "phase": "DONE",
+     "completed_kind": "",
+     "app_revision": 1,
+     "binary_path": "/opt/qa-r1610-0348872d-app/bin/app",
+     "config_path": "/opt/qa-r1610-0348872d-app/config/app.env",
+     "unit_name": "qa-r1610-0348872d-app.service",
+     "backup_path": "absent:",
+     "started_at": "2026-10-16T07:09:44.065728962Z"
+    },
+    {
+     "id": "1477e207-259f-470a-b167-149a86f5cbb3",
+     "application_id": "6403b0b6-6615-4c5e-ac27-9987ebea6bc1",
+     "phase": "DONE",
+     "completed_kind": "",
+     "app_revision": 2,
+     "binary_path": "/opt/qa-r1610-0348872d-app/bin/app",
+     "config_path": "/opt/qa-r1610-0348872d-app/config/app.env",
+     "unit_name": "qa-r1610-0348872d-app.service",
+     "backup_path": "absent:",
+     "started_at": "2026-10-16T07:09:48.298108677Z"
+    },
+    {
+     "id": "3fa2f163-f470-489f-9128-51f1afd5fa2b",
+     "application_id": "6403b0b6-6615-4c5e-ac27-9987ebea6bc1",
+     "phase": "DONE",
+     "completed_kind": "",
+     "app_revision": 3,
+     "binary_path": "/opt/qa-r1610-0348872d-app/bin/app",
+     "config_path": "/opt/qa-r1610-0348872d-app/config/app.env",
+     "unit_name": "qa-r1610-0348872d-app.service",
+     "backup_path": "absent:",
+     "started_at": "2026-10-16T07:09:52.340461534Z"
+    },
+    {
+     "id": "9dc47dc0-e0bf-4b1a-865d-923f38750998",
+     "application_id": "6b147fcd-e456-41bf-b4d3-f114b3756049",
+     "phase": "DONE",
+     "completed_kind": "",
+     "app_revision": 2,
+     "binary_path": "/opt/qa-r1610-0348872d-app/bin/app",
+     "config_path": "/opt/qa-r1610-0348872d-app/config/app.env",
+     "unit_name": "qa-r1610-0348872d-app.service",
+     "backup_path": "/var/lib/nodesteer-repair-20260930-101945/native-2/applications/backup-478e87b0-c07e-413c-88a0-1aefdfb9ea34.binary",
+     "started_at": "2026-10-16T07:11:34.956396897Z"
+    },
+    {
+     "id": "d74bb316-4c22-4231-bfc2-3dddf1ab3d82",
+     "application_id": "ad16c7bf-cb59-4865-af9a-c9223d4318ba",
+     "phase": "DONE",
+     "completed_kind": "",
+     "app_revision": 2,
+     "binary_path": "/opt/qa-r1610-0348872d-app/bin-bind/app",
+     "config_path": "/opt/qa-r1610-0348872d-app/config-bind/app.env",
+     "unit_name": "qa-r1610-0348872d-app-bind.service",
+     "backup_path": "absent:",
+     "started_at": "2026-10-16T07:12:49.432505547Z"
+    },
+    {
+     "id": "7e382716-0d26-4ad8-ae04-23104b0dfcf9",
+     "application_id": "e0291942-bcf1-40f5-b515-30e8b7feb435",
+     "phase": "DONE",
+     "completed_kind": "",
+     "app_revision": 2,
+     "binary_path": "/opt/qa-r1610-0348872d-app/bin/app",
+     "config_path": "/opt/qa-r1610-0348872d-app/config/app.env",
+     "unit_name": "qa-r1610-0348872d-app.service",
+     "backup_path": "absent:",
+     "started_at": "2026-10-16T07:11:24.891463651Z"
+    },
+    {
+     "id": "6ae0ee31-6b5b-431e-bdc7-743e5d1dd383",
+     "application_id": "e0291942-bcf1-40f5-b515-30e8b7feb435",
+     "phase": "DONE",
+     "completed_kind": "",
+     "app_revision": 3,
+     "binary_path": "/opt/qa-r1610-0348872d-app/bin/app",
+     "config_path": "/opt/qa-r1610-0348872d-app/config/app.env",
+     "unit_name": "qa-r1610-0348872d-app.service",
+     "backup_path": "absent:",
+     "started_at": "2026-10-16T07:11:28.858858279Z"
+    },
+    {
+     "id": "e5e124f5-09ce-45b3-a59c-1d0b3d0edd35",
+     "application_id": "e0291942-bcf1-40f5-b515-30e8b7feb435",
+     "phase": "DONE",
+     "completed_kind": "",
+     "app_revision": 4,
+     "binary_path": "/opt/qa-r1610-0348872d-app/bin/app",
+     "config_path": "/opt/qa-r1610-0348872d-app/config/app.env",
+     "unit_name": "qa-r1610-0348872d-app.service",
+     "backup_path": "absent:",
+     "started_at": "2026-10-16T07:11:32.822443359Z"
+    }
+   ],
+   "rows_unchanged_across_deploy_restart": true,
+   "phase_changes_across_deploy_restart": {},
+   "local_application_definitions": 0
+  },
+  "native-3": {
+   "db": "/var/lib/nodesteer-repair-20260930-101945/native-3/state.db",
+   "row_count": 1,
+   "completed_kind_column_before_deploy": false,
+   "completed_kind_column_after_deploy": true,
+   "legacy_done_unknown_cause": 0,
+   "active_rows": 0,
+   "legacy_rows": [],
+   "rows_unchanged_across_deploy_restart": true,
+   "phase_changes_across_deploy_restart": {},
+   "local_application_definitions": 0
+  },
+  "native-4": {
+   "db": "/var/lib/nodesteer-repair-20260930-101945/native-4/state.db",
+   "row_count": 0,
+   "completed_kind_column_before_deploy": false,
+   "completed_kind_column_after_deploy": true,
+   "legacy_done_unknown_cause": 0,
+   "active_rows": 0,
+   "legacy_rows": [],
+   "rows_unchanged_across_deploy_restart": true,
+   "phase_changes_across_deploy_restart": {},
+   "local_application_definitions": 0
+  }
+ },
+ "risk_evaluation": {
+  "definition": "有害重放 = 旧谓词把成因未知的 DONE 当作取代 → 修复后不再取代 → 半完成行的陈旧 backup 被重放、覆盖当前成功部署",
+  "flagged_pairs_where_a_later_unknown_done_row_exists": {
+   "native-1": 0,
+   "native-2": 6,
+   "native-3": 0,
+   "native-4": 0
+  },
+  "pairs_with_binding_match_and_live_definition": {
+   "native-1": [],
+   "native-2": [],
+   "native-3": [],
+   "native-4": []
+  },
+  "reachability_conclusion": "全部 flagged 行所属应用的本地定义均已随应用删除而消失（local_application_definitions 计数不含它们），RecoverDeployments 在绑定校验之前即以 \"lacks application definition\" 跳过，重放不可达",
+  "pairs_with_binding_match_and_live_definition_total": 0
+ },
+ "app_existence": {
+  "checked": 6,
+  "still_exist": [],
+  "details": {
+   "3e837037-9541-4afd-9e23-a9ae26bf474f": {
+    "http": 404,
+    "error": "application not found"
+   },
+   "59567cf7-0e0a-49d7-8b02-4c6d778472dc": {
+    "http": 404,
+    "error": "application not found"
+   },
+   "6403b0b6-6615-4c5e-ac27-9987ebea6bc1": {
+    "http": 404,
+    "error": "application not found"
+   },
+   "6b147fcd-e456-41bf-b4d3-f114b3756049": {
+    "http": 404,
+    "error": "application not found"
+   },
+   "ad16c7bf-cb59-4865-af9a-c9223d4318ba": {
+    "http": 404,
+    "error": "application not found"
+   },
+   "e0291942-bcf1-40f5-b515-30e8b7feb435": {
+    "http": 404,
+    "error": "application not found"
+   }
+  }
+ },
+ "empirical_restart_evidence": {
+  "restart_events": [
+   "部署后重启（18:06 CST / 10:06Z，staged recovery）",
+   "crash 阶段 SIGKILL 自动拉起（18:19 CST / 10:19Z，真实崩溃恢复）"
+  ],
+  "lacks_application_definition_lines": 17,
+  "superseded_lines": 3,
+  "binding_mismatch_lines": 2,
+  "rollback_failed_lines": 1,
+  "conclusion": "两条历史行均在重启时被读取并按既有分支处理：成因未知行所属应用已删除 → 跳过且不触碰文件；行相位在部署重启前后完全一致（见 rows_unchanged_across_deploy_restart）"
+ },
+ "disposition": {
+  "cleanup_performed": false,
+  "reason": "残余风险在本环境的判定为「不可达」（应用定义已删除 + 绑定不可能匹配），不存在有害重放；且不清理可避免对已删除应用的历史行做无必要写操作。",
+  "rows_belong_to": "20261014/20261016 批次的自有测试应用（已通过产品路径删除，Hub GET 404）",
+  "live_proof_of_cr1_semantics": "成因未知（completed_kind=\"\"）的更晚 DONE 行「不构成取代」的语义已由 AR-32/unk 场景在活动应用上实测：注入的 DONE('') 行未能阻止半完成行重放，二进制由 Y-unk 内容回滚为 X-unk 备份内容并收敛 DONE(rolled_back)。",
+  "suggested_followup": "若后续上游判定中间版本曾在生产环境写入过 DONE 行，按 CR-1 报告 §7.2 建议做人工核对；本项目本次批次的中间版本未单独下发（单一构建一次部署），故无新增沿用风险。"
+ }
+}

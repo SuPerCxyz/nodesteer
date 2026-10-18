@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "BE-REMOTE-TTL-004-fresh-valid-delayed-journal-5fbf00ba4d",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport json,sqlite3,pathlib\nroot=pathlib.Path(\"/tmp/qa-resume-20261008-child-ciivjupc/data\")\ndb=root/\"state.db\"\nc=sqlite3.connect(\"file:\"+str(db)+\"?mode=ro\",uri=True,timeout=3)\nc.row_factory=sqlite3.Row\nrows=[dict(r) for r in c.execute('SELECT id,task_id,node_id,status,exit_code,synced,offline,block_reason FROM executions WHERE id=?',('6c55062b-8fc4-4480-92a3-550187495aa0',)).fetchall()]\nprint(json.dumps(rows,separators=(\",\",\":\")))\nPY",
+    "timeout": 60,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "d5448d435129c3cc01c955dcd9b6a3f0635fba8235d58f29cf1cdea5243be6b5",
+  "source_contains_connection_token": false
+}

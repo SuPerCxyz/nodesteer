@@ -1,0 +1,247 @@
+{
+ "case_id": "P20-04",
+ "at_utc": "2026-10-16T08:59:01Z",
+ "authority": "http://192.168.100.209:18085",
+ "run_suffix": "df74",
+ "api_create": {
+  "http": 200,
+  "user_id": "32fb7e05-03d0-44d4-b43e-87fa7834a249",
+  "role": "operator",
+  "count_before": 12,
+  "count_after": 13
+ },
+ "audit_rows_for_created_user": [
+  {
+   "id": "4be57b96-7083-449e-86ba-434cef8dfae4",
+   "user_id": "525145d4-f641-4595-a564-534787f878b5",
+   "username": "qa-g1202610163692428a-admin",
+   "action": "create",
+   "resource": "user",
+   "resource_id": "32fb7e05-03d0-44d4-b43e-87fa7834a249",
+   "created_at": "2026-10-16T08:59:02.030320345Z"
+  }
+ ],
+ "api_duplicate": {
+  "http": 400,
+  "error": "constraint failed: UNIQUE constraint failed: users.username (2067)",
+  "count_after": 13
+ },
+ "api_invalid_inputs": {
+  "empty_username": {
+   "http": 400,
+   "error": "username and password required",
+   "created_user": null
+  },
+  "empty_password": {
+   "http": 400,
+   "error": "username and password required",
+   "created_user": null
+  },
+  "missing_password": {
+   "http": 400,
+   "error": "username and password required",
+   "created_user": null
+  },
+  "invalid_role": {
+   "http": 400,
+   "error": "invalid role",
+   "created_user": null
+  },
+  "default_role": {
+   "http": 400,
+   "error": "constraint failed: UNIQUE constraint failed: users.username (2067)",
+   "created_user": null
+  },
+  "whitespace_username": {
+   "http": 400,
+   "error": "constraint failed: UNIQUE constraint failed: users.username (2067)",
+   "created_user": null
+  },
+  "short_password": {
+   "http": 400,
+   "error": "constraint failed: UNIQUE constraint failed: users.username (2067)",
+   "created_user": null
+  }
+ },
+ "user_count_after_invalid": 13,
+ "main_user_empty_password": {
+  "api_create_empty_password_http": 400,
+  "api_create_empty_password_rejected": true,
+  "login_created_user_with_empty_password": 401,
+  "login_created_user_with_wrong_password": 401,
+  "login_created_user_with_correct_password": 200
+ },
+ "ui_login": {
+  "token": true,
+  "url": "http://192.168.100.209:18085/"
+ },
+ "ui_create_success": {
+  "detail": {
+   "open_form": {
+    "clicked": true,
+    "disabled": false,
+    "tag": "BUTTON",
+    "text": "新建用户"
+   },
+   "fill": {
+    "create_disabled": false,
+    "ok": true,
+    "password_len": 16,
+    "password_masked": true,
+    "username_len": 30
+   },
+   "click_create": {
+    "clicked": true,
+    "disabled": false,
+    "tag": "BUTTON",
+    "text": "创建"
+   },
+   "rows_before": "10",
+   "after": {
+    "form_open": false,
+    "has_user": false,
+    "rows": 10,
+    "toast_like": [
+     "应用",
+     "审计",
+     "用户",
+     "设置",
+     "qa-g1202610163692428a-admin\n管理员",
+     "已创建"
+    ]
+   },
+   "shot_after": "evidence/P2004-uidf74-after.png",
+   "last_page_check": {
+    "has_new": true,
+    "joined": "qa-g1202610163692428a-u-shortpw\n\t\n查看者\n\t2分钟前|qa-g1202610163692428a-u-ui\n\t\n查看者\n\t1分钟前|qa-g1202610163692428a-u-apidf74\n\t\n操作员\n\t刚刚|qa-g1202610163692428a-u-uidf74\n\t\n查看者\n\t刚刚",
+    "rows": 4
+   },
+   "last_page_shot": "evidence/P2004-ui-created-lastpage.png"
+  },
+  "api_count_before": 13,
+  "api_count_after": 14,
+  "created_in_api": true
+ },
+ "ui_duplicate": {
+  "detail": {
+   "open_form": {
+    "clicked": true,
+    "disabled": false,
+    "tag": "BUTTON",
+    "text": "新建用户"
+   },
+   "fill": {
+    "create_disabled": false,
+    "ok": true,
+    "password_len": 16,
+    "password_masked": true,
+    "username_len": 30
+   },
+   "click_create": {
+    "clicked": true,
+    "disabled": false,
+    "tag": "BUTTON",
+    "text": "创建"
+   },
+   "rows_before": "10",
+   "after": {
+    "form_open": true,
+    "has_user": false,
+    "rows": 10,
+    "toast_like": [
+     "应用",
+     "审计",
+     "用户",
+     "设置",
+     "qa-g1202610163692428a-admin\n管理员",
+     "constraint failed: UNIQUE constraint failed: users.username (2067)"
+    ]
+   },
+   "shot_after": "evidence/P2004-uidf74-after.png"
+  },
+  "api_count_after": 14,
+  "duplicate_count": 1
+ },
+ "ui_client_validation": {
+  "create_button_disabled_when_both_empty": true,
+  "create_button_disabled_when_password_empty": true
+ },
+ "ui_probe_user_created": false,
+ "legacy_empty_hash_injection": {
+  "injector": "sqlite3 direct INSERT into isolated instance state.db (disposable instance only)",
+  "inject_out": [
+   "{\"injected_row\": [\"qa-g1202610163692428a-legacy-emptyhash\", 0]}"
+  ],
+  "login_empty_password_http": 401,
+  "login_empty_password_body": "invalid credentials",
+  "login_any_password_http": 401,
+  "verdict": "empty-hash account cannot log in with an empty password"
+ },
+ "legacy_injection_cleaned": "DELETED 1",
+ "verdict": {
+  "ui_create_success": true,
+  "ui_create_evidence": {
+   "api_count": [
+    13,
+    14
+   ],
+   "toast": "已创建",
+   "row_on_last_page": true,
+   "screenshot": "evidence/P2004-uidf74-after.png"
+  },
+  "duplicate_ui_400_no_new_row": true,
+  "duplicate_api_400": true,
+  "invalid_inputs": {
+   "empty_username": 400,
+   "empty_password": 400,
+   "missing_password": 400,
+   "invalid_role": 400,
+   "default_role": 400,
+   "whitespace_username": 400,
+   "short_password": 400
+  },
+  "empty_password_rejected": true,
+  "legacy_empty_hash_login_rejected": true,
+  "ui_client_validation": {
+   "create_button_disabled_when_both_empty": true,
+   "create_button_disabled_when_password_empty": true
+  }
+ },
+ "edge_inputs": {
+  "whitespace_only_username": {
+   "http": 200,
+   "error": null,
+   "created": "   3d97   ",
+   "login_with_whitespace_username": 200
+  },
+  "one_char_password": {
+   "http": 200,
+   "error": null,
+   "created": "qa-g1202610163692428a-edge1char3d97"
+  },
+  "very_long_username": {
+   "http": 200,
+   "error": null,
+   "created": "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL"
+  },
+  "unicode_username": {
+   "http": 200,
+   "error": null,
+   "created": "qa-g1202610163692428a-用户名3d97"
+  }
+ },
+ "observations": [
+  {
+   "id": "OBS-USER-DUP-SQL-MESSAGE",
+   "severity": "low",
+   "detail": "重复用户名/唯一约束冲突时，API 与 UI 直接暴露 SQLite 内部错误文本 （示例：constraint failed: UNIQUE constraint failed: users.username (2067)），而不是领域化提示；状态码 400 正确。",
+   "evidence": "api_duplicate.error / ui_duplicate.detail.after.toast_like"
+  },
+  {
+   "id": "OBS-USER-INPUT-NOT-TRIMMED",
+   "severity": "low",
+   "detail": "用户名未做 trim/空白校验：首次探测以纯空白用户名可创建成功（P20-04 run1）；密码无最小长度限制（1 字符可创建）。均为 admin-only 路径。",
+   "evidence": "edge_inputs"
+  }
+ ]
+}

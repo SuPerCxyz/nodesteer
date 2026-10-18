@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "qa-resume-20261008-native4-proxy-current-state-ae08e669",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport hashlib,json,os\nfrom pathlib import Path\np=Path(\"/tmp/qa-resume-20261008-child-ciivjupc\");m=json.loads((p/\"owner-manifest.json\").read_bytes());w=p/\"ws_proxy.py\"\ndef alive(r):\n try: return os.path.exists(\"/proc/\"+str(r[\"pid\"]))\n except Exception: return False\nprint(json.dumps({\"manifest_sha\":hashlib.sha256((p/\"owner-manifest.json\").read_bytes()).hexdigest(),\"proxy_sha\":hashlib.sha256(w.read_bytes()).hexdigest(),\"hashlib_import_present\":\"import hashlib\" in w.read_text(),\"child_pid\":m[\"child\"][\"pid\"],\"child_alive\":alive(m[\"child\"]),\"supervisor_pid\":m[\"supervisor\"][\"pid\"],\"supervisor_alive\":alive(m[\"supervisor\"])},separators=(\",\",\":\")))\nPY",
+    "timeout": 30,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "cca1eab2d258565d0760b3bb48db41f83ba5c6b907474b0cf0ddbc5988e6936f",
+  "source_contains_connection_token": false
+}

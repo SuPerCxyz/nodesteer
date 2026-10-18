@@ -1,0 +1,153 @@
+{
+  "result": {
+    "id": "arch.process_group_cleanup",
+    "name": "Process Group Cleanup",
+    "started_at": "2026-10-01T01:15:55.711809+00:00",
+    "hub_url": "http://192.168.100.209:18080",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "failed",
+    "reason": "Agent 客户机读取失败: No ED25519 host key is known for 192.168.100.209 and you have requested strict checking.\nHost key verification failed.\n",
+    "traceback": "Traceback (most recent call last):\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/runner.py\", line 570, in execute\n    self.normal_case(case['id'])\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated_runner.py\", line 596, in normal_case\n    pids = [int(self.remote(self.node(), 'cat ' + shlex.quote(directory + '/' + part) + '\\n')) for part in ['parent', 'child']]\n                ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/runner.py\", line 144, in remote\n    assert result.returncode == 0, f'Agent 客户机读取失败: {self.safe(result.stderr)}'\n           ^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Agent 客户机读取失败: No ED25519 host key is known for 192.168.100.209 and you have requested strict checking.\nHost key verification failed.\n\n",
+    "finished_at": "2026-10-01T01:16:00.534761+00:00",
+    "evidence": "backend/isolated/evidence/arch.process_group_cleanup-d4a11112.json"
+  },
+  "events": [
+    {
+      "api": "POST /api/tasks",
+      "status": 200,
+      "request": {
+        "name": "qa-20260930-101945-be-pg-cancel-656853",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be/pg-cancel-513aaf; sh -c 'trap \"\" TERM; sleep 120 & printf %s \"$!\" > /var/lib/nodesteer/qa-20260930-101945-be/pg-cancel-513aaf/child; wait' & child=$!; printf %s \"$child\" > /var/lib/nodesteer/qa-20260930-101945-be/pg-cancel-513aaf/parent; wait \"$child\"",
+        "timeout": 130,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true
+      },
+      "response": {
+        "id": "43bbcebd-8851-4c88-8cac-26e31faa312f",
+        "name": "qa-20260930-101945-be-pg-cancel-656853",
+        "type": "command",
+        "target": {
+          "type": "node",
+          "node_ids": [
+            "d940ab68-9f29-434b-bfe8-5d075a519edc"
+          ]
+        },
+        "parameters": null,
+        "param_values": null,
+        "command": "mkdir -p /var/lib/nodesteer/qa-20260930-101945-be/pg-cancel-513aaf; sh -c 'trap \"\" TERM; sleep 120 & printf %s \"$!\" > /var/lib/nodesteer/qa-20260930-101945-be/pg-cancel-513aaf/child; wait' & child=$!; printf %s \"$child\" > /var/lib/nodesteer/qa-20260930-101945-be/pg-cancel-513aaf/parent; wait \"$child\"",
+        "timeout": 130,
+        "retry": 0,
+        "offline_policy": "hub_online_required",
+        "enabled": true,
+        "revision": 1,
+        "updated_at": "0001-01-01T00:00:00Z",
+        "created_at": "0001-01-01T00:00:00Z"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:15:55 GMT",
+        "Content-Length": "731",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/43bbcebd-8851-4c88-8cac-26e31faa312f/run",
+      "status": 200,
+      "request": {},
+      "response": [
+        {
+          "id": "2441ea76-288f-4dcc-a091-bb1148ba0317",
+          "task_id": "43bbcebd-8851-4c88-8cac-26e31faa312f",
+          "task_revision": 1,
+          "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:15:55 GMT",
+        "Content-Length": "422",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/executions/2441ea76-288f-4dcc-a091-bb1148ba0317/cancel",
+      "status": 200,
+      "request": {},
+      "response": {
+        "ok": "true"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Thu, 01 Oct 2026 01:15:56 GMT",
+        "Content-Length": "14",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/executions/2441ea76-288f-4dcc-a091-bb1148ba0317",
+      "terminal": {
+        "id": "2441ea76-288f-4dcc-a091-bb1148ba0317",
+        "task_id": "43bbcebd-8851-4c88-8cac-26e31faa312f",
+        "task_revision": 1,
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-10-01T01:15:55.753884815Z",
+        "end_time": "2026-10-01T01:15:58.757717005Z",
+        "status": "CANCELED",
+        "exit_code": -1,
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true
+      }
+    },
+    {
+      "control": "python3 -c 'import sqlite3,json,sys; c=sqlite3.connect('\"'\"'file:'\"'\"'+sys.argv[1]+'\"'\"'/state.db?mode=ro'\"'\"',uri=True); c.row_factory=sqlite3.Row; print(json.dumps([dict(r) for r in c.execute(sys.argv[2],json.loads(sys.argv[3])).fetchall()]))' /var/lib/docker/volumes/qa-20260930-101945-env-agentdata/_data 'SELECT id,task_id,node_id,status,exit_code,scheduled_time,synced,offline,block_reason,task_revision,script_revision FROM executions WHERE id=?' '[\"2441ea76-288f-4dcc-a091-bb1148ba0317\"]'",
+      "exit_code": 0,
+      "stdout": "[{\"id\": \"2441ea76-288f-4dcc-a091-bb1148ba0317\", \"task_id\": \"43bbcebd-8851-4c88-8cac-26e31faa312f\", \"node_id\": \"d940ab68-9f29-434b-bfe8-5d075a519edc\", \"status\": \"CANCELED\", \"exit_code\": -1, \"scheduled_time\": \"\", \"synced\": 1, \"offline\": 0, \"block_reason\": \"\", \"task_revision\": 1, \"script_revision\": 0}]\n",
+      "stderr": ""
+    },
+    {
+      "agent": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+      "read_command": "cat /var/lib/nodesteer/qa-20260930-101945-be/pg-cancel-513aaf/parent\n",
+      "exit_code": 255,
+      "stdout": "",
+      "stderr": "No ED25519 host key is known for 192.168.100.209 and you have requested strict checking.\nHost key verification failed.\n"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "run": "qa-resume-20261008-crosspage-5bebfff5",
+  "status": "PARTIAL_WITH_RUNTIME_GATES_PASSED",
+  "task_id": "303739e4-95b2-4fb3-a9e0-2889d2d56017",
+  "schedule_id": "11b12e24-1c70-4b96-bd43-db0cdc6f8bba",
+  "target_singleton": {
+    "status": "PASS",
+    "assertion": "GET task.target.node_ids has length 1 and its only value equals native-3 ID",
+    "evidence": "run-crosspage-delete.mjs creates no Group and proceeds to create the linked Schedule; result includes schedule create/readback for exact Task ID"
+  },
+  "schedule_delete_cancel_and_confirm": {
+    "status": "PASS",
+    "cancel_delete_count": 0,
+    "cancel_followup_get_http": 200,
+    "confirmed_delete_count": 1,
+    "confirmed_delete_get_http": 404,
+    "runtime_gate_evidence": "The script passed the zero-delete + GET200 assertion, then passed a wait predicate requiring exactly one DELETE and GET404, marked the Schedule deleted, and only then timed out on the subsequent Task detail page navigation. The raw request count was held in process memory and not serialized by the runner's error handler."
+  },
+  "task_delete_cancel_and_confirm": {
+    "status": "NOT_REACHED",
+    "reason": "After Schedule deletion, direct Task detail navigation timed out before the Task delete actions. Task was exact-ID cleaned in finally and GET404 verified."
+  },
+  "task_schedule_link_removal_after_delete": {
+    "status": "NOT_VERIFIED",
+    "reason": "Same Task detail navigation timeout occurred before checking the removed Schedule link."
+  },
+  "cleanup": {"task_delete_http": 200, "task_get_after_delete_http": 404, "schedule_get_after_confirm_http": 404}
+}

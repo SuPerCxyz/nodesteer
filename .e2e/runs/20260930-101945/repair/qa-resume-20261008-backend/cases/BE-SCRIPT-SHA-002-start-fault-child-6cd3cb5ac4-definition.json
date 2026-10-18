@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "BE-SCRIPT-SHA-002-start-fault-child-6cd3cb5ac4",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport hashlib,json,os,pwd,subprocess,time\nfrom pathlib import Path\np=Path(\"/tmp/qa-resume-20261008-child-ciivjupc\");mp=p/\"owner-manifest.json\";owner=json.loads(mp.read_bytes())\nexpected=\"14f3adb750b9021b87856e7794f3126cd71a0dc338c20b86719c89bb497b907c\"\ndef sha(x):return hashlib.sha256(Path(x).read_bytes()).hexdigest()\ndef start(pid):\n raw=Path(\"/proc\",str(pid),\"stat\").read_text();return int(raw[raw.rfind(\")\")+2:].split()[19])\ndef uid(pid):\n for row in Path(\"/proc\",str(pid),\"status\").read_text().splitlines():\n  if row.startswith(\"Uid:\"):return int(row.split()[1])\n raise RuntimeError(\"uid_missing\")\ndef argv(pid):return [x.decode(errors=\"replace\") for x in Path(\"/proc\",str(pid),\"cmdline\").read_bytes().split(bytes([0])) if x]\nds=p.lstat();raw=mp.read_bytes()\nif (ds.st_dev,ds.st_ino,ds.st_uid)!=(33,135,65534) or sha(mp)!=expected or owner[\"node_id\"]!=\"15961ef7-81b4-43f3-80c8-1b6977ca2aea\" or owner[\"agent_id\"]!=\"agent-ab15a133-73cd-4025-8c97-f2ff37e000f5\" or (p/\"owner.marker\").read_text()!=owner[\"owner_marker\"]:raise RuntimeError(\"owned_manifest_guard_failed\")\nif sha(p/\"ws_proxy.py\")!=\"7573c838dc562af47c5903c6f72c1c3ab4b8a4c7f3a0f8ee3042f753ad51103d\" or sha(p/\"nodesteer-agent\")!=\"d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add\":raise RuntimeError(\"owned_binary_or_proxy_sha_guard_failed\")\ntry:start(owner[\"child\"][\"pid\"]);raise RuntimeError(\"old_child_pid_alive\")\nexcept FileNotFoundError:pass\ncontrols=p/\"controls.json\";st=controls.lstat();cfg=Path(owner[\"config\"][\"path\"]);cs=cfg.lstat()\nif controls.is_symlink() or st.st_uid!=65534 or (cfg.is_symlink() or cs.st_uid!=65534 or cs.st_mode&0o777!=0o600):raise RuntimeError(\"private_file_guard_failed\")\nfault=json.loads(controls.read_text())\nif fault!={\"corrupt_script_sha\":\"92c0e242-0f67-4553-92e0-f7b8ffe675e4\"}:raise RuntimeError(\"fault_target_guard_failed\")\ngid=pwd.getpwnam(\"nobody\").pw_gid\ndef drop():os.setgroups([]);os.setgid(gid);os.setuid(65534)\nwith (p/\"agent.log\").open(\"ab\") as log:proc=subprocess.Popen([str(p/\"nodesteer-agent\"),\"--config\",str(cfg)],cwd=str(p),stdin=subprocess.DEVNULL,stdout=log,stderr=log,close_fds=True,start_new_session=True,preexec_fn=drop,env={\"PATH\":\"/usr/bin:/bin\",\"HOME\":str(p)})\ntime.sleep(1)\nif proc.poll() is not None:raise RuntimeError(\"child_restart_exited\")\nchild={\"pid\":proc.pid,\"starttime\":start(proc.pid),\"uid\":65534,\"exe_path\":os.readlink(\"/proc/\"+str(proc.pid)+\"/exe\"),\"exe_sha256\":sha(\"/proc/\"+str(proc.pid)+\"/exe\"),\"argv_owner_path_match\":any(a==str(p) or a.startswith(str(p)+os.sep) for a in argv(proc.pid))}\nif child[\"exe_sha256\"]!=\"d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add\" or not child[\"argv_owner_path_match\"]:raise RuntimeError(\"new_child_process_proof_failed\")\nowner[\"child\"]=child\nwith mp.open(\"w\") as f:json.dump(owner,f,separators=(\",\",\":\"))\nos.chmod(mp,0o600);os.chown(mp,65534,65534)\nprint(json.dumps({\"status\":\"PASS\",\"node_id\":owner[\"node_id\"],\"agent_id\":owner[\"agent_id\"],\"child\":child,\"supervisor\":owner[\"supervisor\"],\"proxy_port\":owner[\"proxy\"][\"port\"],\"proxy_source_sha256\":owner[\"proxy\"][\"source_sha256\"],\"owner_manifest_sha256\":sha(mp),\"secret_values_emitted\":False},separators=(\",\",\":\")))\nPY",
+    "timeout": 25,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "c920a58b9bc6bd642e9c53684a11af1c4683c9ed7a712bcf3fdfab2dcc11adab",
+  "source_contains_connection_token": false
+}

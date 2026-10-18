@@ -1,0 +1,24 @@
+Traceback (most recent call last):
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b06/run_sysb06.py", line 958, in main
+    mark('journal_first'); evidence['phases']['journal_first'] = run.phase3_journal_first()
+                                                                 ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b06/run_sysb06.py", line 491, in phase3_journal_first
+    local = self.row_dict(self.local_row(exec_id))
+                          ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b06/run_sysb06.py", line 268, in local_row
+    return self.child.execution_row(exec_id)
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b06/child_agent.py", line 267, in execution_row
+    rows = self.sql(q, args=[exec_id])['rows']
+           ~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b06/child_agent.py", line 252, in sql
+    return self.py_json(program, args=[self.data + '/state.db', query, json.dumps(list(args))],
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        timeout=timeout, label='child_sql')
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b06/child_agent.py", line 239, in py_json
+    raise RuntimeError('%s_failed: %s' % (label, (err or out)[-400:]))
+RuntimeError: child_sql_failed:  the list of known hosts.
+bash: -c: line 1: syntax error near unexpected token `('
+bash: -c: line 1: `python3 - /var/lib/nodesteer-qa-sysb06-2200f26673a4/data/state.db SELECT id,task_id,node_id,status,trigger_type,scheduled_time,start_time,end_time,offline,synced,exit_code,block_reason,length(stdout),length(stderr),stdout,stderr FROM executions WHERE id=? ["4ec60bac-07a4-4f55-944a-076d06107c75"]'
+

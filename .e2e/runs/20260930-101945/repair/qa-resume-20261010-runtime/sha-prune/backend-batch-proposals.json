@@ -1,0 +1,87 @@
+{
+  "updated_at_utc": "2026-10-10T02:52:31Z",
+  "status": "PROPOSAL_ONLY_AWAIT_ROOT_DISPATCH",
+  "max_proposals": 8,
+  "execution_authorized": false,
+  "selection_rule": "Only gaps not already demonstrated by actual runtime; smallest owned fixture, repair:18080, no product source changes, pre/post GET readback and exact cleanup. Existing native3/native4 ownership remains excluded.",
+  "proposals": [
+    {
+      "proposal_id": "INV-05-SQLITE-WRITE-LOCK-RETRY",
+      "case_id": "INV-05",
+      "priority": "P0",
+      "gap": "Current true bad-SHA plus App-prune run proves negative frame does not advance revision and legal snapshot persists; does not force SQLite transaction/COMMIT failure or prove retry after restart.",
+      "minimal_runtime": "Create one unique isolated Native-1 QA child with exact owner Unit/config/state. With a second read-only helper connection, begin a bounded SQLite BEGIN IMMEDIATE on only its state.db, then deliver one known-good changed Script snapshot through the normal Hub. Capture Agent result/timeout and local global_revision/Script SHA while lock is held; release lock in finally; trigger a normal revision check and verify exact persisted revision/Script SHA and no duplicate marker.",
+      "oracle": [
+        "Before lock: child DB revision/hash baseline and Hub target rev/SHA.",
+        "While lock held: DB revision unchanged and no Script side effect; no successful ACK claiming unapplied revision.",
+        "After release/reconciliation: actual local DB revision and Script SHA equal Hub desired, one marker/Execution, no half state; restart same identity once only if runtime remains clean."
+      ],
+      "side_effect": "One isolated child DB lock held for ≤5s; lock owner process is unique, read-only except transient BEGIN IMMEDIATE with ROLLBACK in finally.",
+      "cleanup": "Delete only transient QA Task/Script/Artifact/Node/root and exact child Unit; preserve all history.",
+      "approval_dependency": "Root to confirm dedicated child fixture and lock duration before run."
+    },
+    {
+      "proposal_id": "SYS-09-CONNECTED-TOMBSTONE-FUTURE-SCHEDULE",
+      "case_id": "SYS-09",
+      "priority": "P0",
+      "gap": "The current SHA cleanup deleted definitions only after its Agent was stopped; it did not prove connected Agent consumes tombstones or that a future schedule stops. Existing historical canonical evidence remains; this would be an independent strengthened lifecycle sample.",
+      "minimal_runtime": "On one isolated online QA child, create one benign Script, one retry0/noSchedule Script Task, one far-future one-time Schedule, and one deployed App with unique Unit. Read back all IDs/assignments. Delete Script/Task/Schedule/Application in dependency-safe order through repair:18080 while child remains connected; observe resulting snapshot/tombstone ACK and local SQLite rows/Unit state. Verify far-future Schedule produces no Execution and preserve one completed prior Execution.",
+      "oracle": [
+        "All four Hub GETs become 404 after delete; Agent sees same revisions/tombstones and removes local definitions/assignment.",
+        "App-specific DB registry/files/Unit absence verified when relevant.",
+        "No future Execution from the Schedule; earlier completed Execution remains queryable after Node cleanup."
+      ],
+      "side_effect": "Only unique isolated QA objects and a far-future Schedule that cannot run during the bounded test; no existing Agent/Task/Schedule is modified.",
+      "cleanup": "Delete exact owned definitions/Artifact and child Node/root; keep Execution/Audit evidence.",
+      "approval_dependency": "No need to repeat old test if Root considers existing `feature.sync.tombstone` + Application/Schedule lifecycle sufficient; only run if an independent fresh sample is valuable."
+    },
+    {
+      "proposal_id": "AR-08-REPEATED-SNAPSHOT-IDEMPOTENCE",
+      "case_id": "AR-08",
+      "priority": "P1",
+      "gap": "Offline Hub Script update and recovery are now proven; no notification-loss/duplicate/replay fault was deliberately injected in the same actual path.",
+      "minimal_runtime": "Use one owned QA child and one benign Script content rev update while it is offline. On reconnect relay one exact valid desired Snapshot twice with identical object/revisions, holding the second until first ACK. Do not mutate payload or Hub state. Verify local revision and Script SHA converge once, and a single manual Script Task produces exactly one marker/Execution.",
+      "oracle": [
+        "Two actual deliveries/ACKs are correlated without raw-frame retention; local revision never regresses or creates duplicate Script rows.",
+        "One Task run yields exactly one marker and one Execution."
+      ],
+      "side_effect": "Repeat only one read-only desired-state payload; one owned child and benign Script, no App/Unit objects.",
+      "cleanup": "Delete only exact QA Script/Task/Node/root; preserve execution history.",
+      "approval_dependency": "Requires Root review of transport replay control flow; may be omitted because previous accepted AR-08 canonical evidence already PASS."
+    },
+    {
+      "proposal_id": "SYS-01-INVALID-REGISTRATION-TOKEN-NO-RESIDUE",
+      "case_id": "SYS-01",
+      "priority": "P1",
+      "gap": "Positive first enrollment is directly evidenced; invalid-token rejection and no-partial-Node behavior have not been asserted by this fixture.",
+      "minimal_runtime": "Submit one enrollment request with a deliberately invalid synthetic token and unique throwaway node name/IP to repair:18080, then exact GET/list check for no Node/Agent registration record; never use valid credentials or output token values.",
+      "oracle": [
+        "API rejects request with expected auth status and leaves no new Node, Agent identity, or enrollment Task.",
+        "Neighboring original four Nodes remain unchanged."
+      ],
+      "side_effect": "Single request containing only a synthetic invalid value; no valid registration token is used.",
+      "cleanup": "No object expected. If a record appears unexpectedly, stop and have Root inspect before removal.",
+      "approval_dependency": "Root must confirm documented API behavior/status before execution."
+    },
+    {
+      "proposal_id": "INV-02-NATIVE-PROCESS-SOCKET-SNAPSHOT",
+      "case_id": "INV-02",
+      "priority": "P2",
+      "gap": "Real child outbound HELLO is proven; no child `/proc` socket/listener inventory was captured. Existing four Native Agents have historical socket evidence; remaining canonical gap names Docker/Host topology.",
+      "minimal_runtime": "First inventory already-owned Native-1/2 process identities without starting/stopping services. If an authorized Docker/Host Agent already exists, exact owner PID/starttime/UID/argv/exeSHA then read `/proc/<pid>/fd` socket inode mapping and `/proc/net/{tcp,tcp6}`; otherwise report topology absent and leave case partial.",
+      "oracle": [
+        "Process identity is exact; outbound socket remote endpoint is the Hub/proxy endpoint; no LISTEN socket owned by that process.",
+        "Do not infer all topology coverage from Native-only results."
+      ],
+      "side_effect": "Read-only procfs/systemd inspection; no network or service mutation.",
+      "cleanup": "None.",
+      "approval_dependency": "Root to name the intended existing Docker/Host target; do not assume one exists."
+    }
+  ],
+  "not_proposed_as_new_tests": [
+    "SYS-02 same-identity restart: this session already recorded exact restart, HELLO, online/synced; missing only explicit heartbeat packet telemetry and other platform variants.",
+    "Historical backend/coverage entries are background only; repair feature inventory keeps SYS-01/SYS-02/SYS-09/AR-08/INV-02 NOT_RUN. SYS-09 connected tombstone/future schedule test remains an optional proposal, not a PASS."
+  ],
+  "note": "No Tasks, fixtures, Agent processes, or global ledger were changed to prepare these proposals.",
+  "canonical_status_source": ".e2e/runs/20260930-101945/repair/feature-inventory.json (sole repair-version status source)"
+}

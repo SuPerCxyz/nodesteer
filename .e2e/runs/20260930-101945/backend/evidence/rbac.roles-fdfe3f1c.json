@@ -1,0 +1,1364 @@
+{
+  "result": {
+    "id": "rbac.roles",
+    "name": "Operator/Viewer登录读取与越权/注销",
+    "started_at": "2026-09-30T02:36:05.725634+00:00",
+    "ui_coverage": "由 frontend 单元另行核验；本 runner 仅真实 API+Agent 客户机链路",
+    "layer": "real-api-agent",
+    "status": "passed",
+    "finished_at": "2026-09-30T02:36:06.299908+00:00",
+    "evidence": "backend/evidence/rbac.roles-fdfe3f1c.json"
+  },
+  "events": [
+    {
+      "api": "POST /api/login",
+      "status": 200,
+      "request": {
+        "username": "qa-20260930-101945-main-operator",
+        "password": "[redacted]"
+      },
+      "response": {
+        "token": "[redacted]",
+        "user": {
+          "Token": "[redacted]",
+          "UserID": "2d3f6bc4-2d3a-406a-b9a7-9462b8f0ddc4",
+          "Username": "qa-20260930-101945-main-operator",
+          "Role": "operator",
+          "Expires": "2026-10-01T10:36:05.998632309+08:00"
+        }
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "265",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/me",
+      "status": 200,
+      "request": null,
+      "response": {
+        "Token": "[redacted]",
+        "UserID": "2d3f6bc4-2d3a-406a-b9a7-9462b8f0ddc4",
+        "Username": "qa-20260930-101945-main-operator",
+        "Role": "operator",
+        "Expires": "2026-10-01T10:36:05.998632309+08:00"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "209",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/nodes",
+      "status": 200,
+      "request": null,
+      "response": [
+        {
+          "id": "56765828-4896-492b-b562-64afdc0fb8d6",
+          "agent_id": "agent-b1b8b170-c9e4-4869-bb3b-6a895d621e60",
+          "hostname": "agent-1-clean",
+          "ip": "192.168.100.207",
+          "os": "Debian GNU/Linux 13 (trixie)",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "native",
+          "host_integration": false,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": true,
+            "application_deploy": true,
+            "host_filesystem": true,
+            "local_scheduler": true,
+            "managed_systemd": true,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 464,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T10:36:05.898156047+08:00",
+          "first_seen": "2026-09-24T15:21:27.650946894+08:00",
+          "inventory": {
+            "os": "Debian GNU/Linux 13 (trixie)",
+            "os_version": "13",
+            "kernel": "6.12.94+deb13-amd64",
+            "arch": "amd64",
+            "cpu": [
+              {
+                "model": "Intel(R) Core(TM) i5-4670T CPU @ 2.30GHz",
+                "cores": 2,
+                "mhz": 2294
+              }
+            ],
+            "memory": {
+              "total_kb": 870232,
+              "available_kb": 446464
+            },
+            "filesystem": [
+              {
+                "mount": "/run",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 401596,
+                "free_kb": 400952
+              },
+              {
+                "mount": "/",
+                "device": "/dev/vda1",
+                "fs_type": "xfs",
+                "total_kb": 5175296,
+                "free_kb": 3057448
+              },
+              {
+                "mount": "/run/credentials/systemd-journald.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/tmp",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 2007980,
+                "free_kb": 2007936
+              },
+              {
+                "mount": "/run/lock",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 5120,
+                "free_kb": 5120
+              },
+              {
+                "mount": "/run/credentials/getty@tty1.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/run/credentials/serial-getty@ttyS0.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              }
+            ],
+            "network": [
+              {
+                "interface": "enp1s0",
+                "addresses": [
+                  "192.168.100.207/24",
+                  "2408:823d:e17:58b4::35b/128",
+                  "2408:823d:e17:58b4:1db7:5da6:6d0d:b029/64",
+                  "fe80::5c3d:af44:2cb0:cb97/64"
+                ],
+                "mac": "52:54:00:fc:eb:93"
+              }
+            ]
+          }
+        },
+        {
+          "id": "d77e2440-919f-4431-a488-733817dcd809",
+          "agent_id": "agent-1fbe0fa7-501a-49d6-8af8-6cdb6ec777f5",
+          "hostname": "e2e-20260930-101945-nodesteer-agent-2",
+          "ip": "192.168.100.222",
+          "os": "Fedora Linux 42 (Server Edition)",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "native",
+          "host_integration": false,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": true,
+            "application_deploy": true,
+            "host_filesystem": true,
+            "local_scheduler": true,
+            "managed_systemd": true,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 464,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T10:36:05.866231264+08:00",
+          "first_seen": "2026-09-30T10:26:47.154351702+08:00",
+          "inventory": {
+            "os": "Fedora Linux 42 (Server Edition)",
+            "os_version": "42",
+            "kernel": "6.14.0-63.fc42.x86_64",
+            "arch": "amd64",
+            "cpu": [
+              {
+                "model": "Intel Core Processor (Haswell, no TSX, IBRS)",
+                "cores": 2,
+                "mhz": 2294
+              }
+            ],
+            "memory": {
+              "total_kb": 954448,
+              "available_kb": 559664
+            },
+            "filesystem": [
+              {
+                "mount": "/",
+                "device": "/dev/vda2",
+                "fs_type": "xfs",
+                "total_kb": 5175276,
+                "free_kb": 2378948
+              },
+              {
+                "mount": "/run",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 400608,
+                "free_kb": 399508
+              },
+              {
+                "mount": "/tmp",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1001512,
+                "free_kb": 1001512
+              },
+              {
+                "mount": "/run/credentials/systemd-journald.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/run/credentials/systemd-resolved.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/var/lib/nfs/rpc_pipefs",
+                "device": "sunrpc",
+                "fs_type": "rpc_pipefs",
+                "total_kb": 0,
+                "free_kb": 0
+              },
+              {
+                "mount": "/run/credentials/serial-getty@ttyS0.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/run/credentials/getty@tty1.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/run/user/0",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 95444,
+                "free_kb": 95440
+              }
+            ],
+            "network": [
+              {
+                "interface": "enp6s0",
+                "addresses": [
+                  "192.168.100.222/24",
+                  "2408:823d:e17:58b4::a7b/128",
+                  "2408:823d:e17:58b4:e3cd:5e6f:3497:d00d/64",
+                  "fe80::75bc:837:f1f6:4b01/64"
+                ],
+                "mac": "52:54:00:6a:af:05"
+              }
+            ]
+          }
+        },
+        {
+          "id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+          "agent_id": "agent-a5a3aca2-097a-4de1-b870-13e2c76d9612",
+          "hostname": "e2e-20260930-101945-nodesteer-agent-3",
+          "ip": "192.168.100.204",
+          "os": "Rocky Linux 9.8 (Blue Onyx)",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "native",
+          "host_integration": false,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": true,
+            "application_deploy": true,
+            "host_filesystem": true,
+            "local_scheduler": true,
+            "managed_systemd": true,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 464,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T10:36:05.782200938+08:00",
+          "first_seen": "2026-09-30T10:27:15.374206272+08:00",
+          "inventory": {
+            "os": "Rocky Linux 9.8 (Blue Onyx)",
+            "os_version": "9.8",
+            "kernel": "5.14.0-687.10.1.el9_8.0.1.x86_64",
+            "arch": "amd64",
+            "cpu": [
+              {
+                "model": "Intel Core Processor (Haswell, no TSX, IBRS)",
+                "cores": 2,
+                "mhz": 2294
+              }
+            ],
+            "memory": {
+              "total_kb": 961796,
+              "available_kb": 618872
+            },
+            "filesystem": [
+              {
+                "mount": "/run",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 402076,
+                "free_kb": 390300
+              },
+              {
+                "mount": "/",
+                "device": "/dev/vda1",
+                "fs_type": "xfs",
+                "total_kb": 5176320,
+                "free_kb": 947116
+              },
+              {
+                "mount": "/run/credentials/systemd-tmpfiles-setup-dev.service",
+                "device": "none",
+                "fs_type": "ramfs",
+                "total_kb": 0,
+                "free_kb": 0
+              },
+              {
+                "mount": "/run/credentials/systemd-sysctl.service",
+                "device": "none",
+                "fs_type": "ramfs",
+                "total_kb": 0,
+                "free_kb": 0
+              },
+              {
+                "mount": "/run/credentials/systemd-tmpfiles-setup.service",
+                "device": "none",
+                "fs_type": "ramfs",
+                "total_kb": 0,
+                "free_kb": 0
+              },
+              {
+                "mount": "/run/user/0",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 96176,
+                "free_kb": 96172
+              }
+            ],
+            "network": [
+              {
+                "interface": "enp6s0",
+                "addresses": [
+                  "192.168.100.204/24",
+                  "2408:823d:e17:58b4::729/128",
+                  "2408:823d:e17:58b4:c747:aae:9a7e:3ff/64",
+                  "fe80::b540:8106:722f:fabc/64"
+                ],
+                "mac": "52:54:00:0e:0b:b9"
+              }
+            ]
+          }
+        },
+        {
+          "id": "1c59cf12-97ef-412f-9a06-aea04e6423c1",
+          "agent_id": "agent-f088585f-676a-4e7b-9c64-441e22a3e85d",
+          "hostname": "e2e-20260930-101945-nodesteer-agent-4",
+          "ip": "192.168.100.247",
+          "os": "openSUSE Leap 16.0",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "native",
+          "host_integration": false,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": true,
+            "application_deploy": true,
+            "host_filesystem": true,
+            "local_scheduler": true,
+            "managed_systemd": true,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 464,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T10:36:03.763666097+08:00",
+          "first_seen": "2026-09-30T10:27:55.152457175+08:00",
+          "inventory": {
+            "os": "openSUSE Leap 16.0",
+            "os_version": "16.0",
+            "kernel": "6.12.0-160000.35-default",
+            "arch": "amd64",
+            "cpu": [
+              {
+                "model": "Intel(R) Core(TM) i5-4670T CPU @ 2.30GHz",
+                "cores": 2,
+                "mhz": 2294
+              }
+            ],
+            "memory": {
+              "total_kb": 968180,
+              "available_kb": 607640
+            },
+            "filesystem": [
+              {
+                "mount": "/",
+                "device": "/dev/vda2",
+                "fs_type": "xfs",
+                "total_kb": 6216684,
+                "free_kb": 3047300
+              },
+              {
+                "mount": "/run",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 403352,
+                "free_kb": 402620
+              },
+              {
+                "mount": "/tmp",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1008380,
+                "free_kb": 1008380
+              },
+              {
+                "mount": "/run/credentials/systemd-journald.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/run/credentials/serial-getty@ttyS0.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/run/credentials/getty@tty1.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/run/user/0",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 114428,
+                "free_kb": 114424
+              }
+            ],
+            "network": [
+              {
+                "interface": "enp1s0",
+                "addresses": [
+                  "192.168.100.247/24",
+                  "2408:823d:e17:58b4:88d0:91aa:259d:5f36/64",
+                  "2408:823d:e17:58b4:323a:a874:a474:929f/64",
+                  "2408:823d:e17:58b4:154c:9433:1ddf:d06e/64",
+                  "2408:823d:e17:58b4:3da0:7156:64c3:404d/64",
+                  "2408:823d:e17:58b4:3acb:438c:e104:b142/64",
+                  "2408:823d:e17:58b4::58e/128",
+                  "2408:823d:e17:58b4:c35d:b1b8:37fd:eb87/64",
+                  "2408:823d:e17:58b4:ac4f:2c35:2676:a97d/64",
+                  "fe80::6adc:1f59:e9a9:c59e/64"
+                ],
+                "mac": "52:54:00:c3:e2:44"
+              }
+            ]
+          }
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Connection": "close",
+        "Transfer-Encoding": "chunked"
+      }
+    },
+    {
+      "api": "GET /api/users",
+      "status": 403,
+      "request": null,
+      "response": {
+        "error": "permission denied"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "30",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/scripts",
+      "status": 403,
+      "request": {},
+      "response": {
+        "error": "permission denied"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "30",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 403,
+      "request": {},
+      "response": {
+        "error": "permission denied"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "30",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/groups",
+      "status": 403,
+      "request": {},
+      "response": {
+        "error": "permission denied"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "30",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/artifacts",
+      "status": 403,
+      "request": {},
+      "response": {
+        "error": "permission denied"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "30",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/applications",
+      "status": 403,
+      "request": {},
+      "response": {
+        "error": "permission denied"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "30",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/transfers",
+      "status": 403,
+      "request": {},
+      "response": {
+        "error": "permission denied"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "30",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/logout",
+      "status": 200,
+      "request": {},
+      "response": {
+        "ok": "true"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "14",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/me",
+      "status": 401,
+      "request": null,
+      "response": {
+        "error": "invalid or expired session"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "39",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/login",
+      "status": 200,
+      "request": {
+        "username": "qa-20260930-101945-main-viewer",
+        "password": "[redacted]"
+      },
+      "response": {
+        "token": "[redacted]",
+        "user": {
+          "Token": "[redacted]",
+          "UserID": "2574c14f-83db-4d1a-91dd-14dc5bb209d9",
+          "Username": "qa-20260930-101945-main-viewer",
+          "Role": "viewer",
+          "Expires": "2026-10-01T10:36:06.280477786+08:00"
+        }
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "261",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/me",
+      "status": 200,
+      "request": null,
+      "response": {
+        "Token": "[redacted]",
+        "UserID": "2574c14f-83db-4d1a-91dd-14dc5bb209d9",
+        "Username": "qa-20260930-101945-main-viewer",
+        "Role": "viewer",
+        "Expires": "2026-10-01T10:36:06.280477786+08:00"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "205",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/nodes",
+      "status": 200,
+      "request": null,
+      "response": [
+        {
+          "id": "56765828-4896-492b-b562-64afdc0fb8d6",
+          "agent_id": "agent-b1b8b170-c9e4-4869-bb3b-6a895d621e60",
+          "hostname": "agent-1-clean",
+          "ip": "192.168.100.207",
+          "os": "Debian GNU/Linux 13 (trixie)",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "native",
+          "host_integration": false,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": true,
+            "application_deploy": true,
+            "host_filesystem": true,
+            "local_scheduler": true,
+            "managed_systemd": true,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 464,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T10:36:05.898156047+08:00",
+          "first_seen": "2026-09-24T15:21:27.650946894+08:00",
+          "inventory": {
+            "os": "Debian GNU/Linux 13 (trixie)",
+            "os_version": "13",
+            "kernel": "6.12.94+deb13-amd64",
+            "arch": "amd64",
+            "cpu": [
+              {
+                "model": "Intel(R) Core(TM) i5-4670T CPU @ 2.30GHz",
+                "cores": 2,
+                "mhz": 2294
+              }
+            ],
+            "memory": {
+              "total_kb": 870232,
+              "available_kb": 446464
+            },
+            "filesystem": [
+              {
+                "mount": "/run",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 401596,
+                "free_kb": 400952
+              },
+              {
+                "mount": "/",
+                "device": "/dev/vda1",
+                "fs_type": "xfs",
+                "total_kb": 5175296,
+                "free_kb": 3057448
+              },
+              {
+                "mount": "/run/credentials/systemd-journald.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/tmp",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 2007980,
+                "free_kb": 2007936
+              },
+              {
+                "mount": "/run/lock",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 5120,
+                "free_kb": 5120
+              },
+              {
+                "mount": "/run/credentials/getty@tty1.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/run/credentials/serial-getty@ttyS0.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              }
+            ],
+            "network": [
+              {
+                "interface": "enp1s0",
+                "addresses": [
+                  "192.168.100.207/24",
+                  "2408:823d:e17:58b4::35b/128",
+                  "2408:823d:e17:58b4:1db7:5da6:6d0d:b029/64",
+                  "fe80::5c3d:af44:2cb0:cb97/64"
+                ],
+                "mac": "52:54:00:fc:eb:93"
+              }
+            ]
+          }
+        },
+        {
+          "id": "d77e2440-919f-4431-a488-733817dcd809",
+          "agent_id": "agent-1fbe0fa7-501a-49d6-8af8-6cdb6ec777f5",
+          "hostname": "e2e-20260930-101945-nodesteer-agent-2",
+          "ip": "192.168.100.222",
+          "os": "Fedora Linux 42 (Server Edition)",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "native",
+          "host_integration": false,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": true,
+            "application_deploy": true,
+            "host_filesystem": true,
+            "local_scheduler": true,
+            "managed_systemd": true,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 464,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T10:36:05.866231264+08:00",
+          "first_seen": "2026-09-30T10:26:47.154351702+08:00",
+          "inventory": {
+            "os": "Fedora Linux 42 (Server Edition)",
+            "os_version": "42",
+            "kernel": "6.14.0-63.fc42.x86_64",
+            "arch": "amd64",
+            "cpu": [
+              {
+                "model": "Intel Core Processor (Haswell, no TSX, IBRS)",
+                "cores": 2,
+                "mhz": 2294
+              }
+            ],
+            "memory": {
+              "total_kb": 954448,
+              "available_kb": 559664
+            },
+            "filesystem": [
+              {
+                "mount": "/",
+                "device": "/dev/vda2",
+                "fs_type": "xfs",
+                "total_kb": 5175276,
+                "free_kb": 2378948
+              },
+              {
+                "mount": "/run",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 400608,
+                "free_kb": 399508
+              },
+              {
+                "mount": "/tmp",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1001512,
+                "free_kb": 1001512
+              },
+              {
+                "mount": "/run/credentials/systemd-journald.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/run/credentials/systemd-resolved.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/var/lib/nfs/rpc_pipefs",
+                "device": "sunrpc",
+                "fs_type": "rpc_pipefs",
+                "total_kb": 0,
+                "free_kb": 0
+              },
+              {
+                "mount": "/run/credentials/serial-getty@ttyS0.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/run/credentials/getty@tty1.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/run/user/0",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 95444,
+                "free_kb": 95440
+              }
+            ],
+            "network": [
+              {
+                "interface": "enp6s0",
+                "addresses": [
+                  "192.168.100.222/24",
+                  "2408:823d:e17:58b4::a7b/128",
+                  "2408:823d:e17:58b4:e3cd:5e6f:3497:d00d/64",
+                  "fe80::75bc:837:f1f6:4b01/64"
+                ],
+                "mac": "52:54:00:6a:af:05"
+              }
+            ]
+          }
+        },
+        {
+          "id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+          "agent_id": "agent-a5a3aca2-097a-4de1-b870-13e2c76d9612",
+          "hostname": "e2e-20260930-101945-nodesteer-agent-3",
+          "ip": "192.168.100.204",
+          "os": "Rocky Linux 9.8 (Blue Onyx)",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "native",
+          "host_integration": false,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": true,
+            "application_deploy": true,
+            "host_filesystem": true,
+            "local_scheduler": true,
+            "managed_systemd": true,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 464,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T10:36:05.782200938+08:00",
+          "first_seen": "2026-09-30T10:27:15.374206272+08:00",
+          "inventory": {
+            "os": "Rocky Linux 9.8 (Blue Onyx)",
+            "os_version": "9.8",
+            "kernel": "5.14.0-687.10.1.el9_8.0.1.x86_64",
+            "arch": "amd64",
+            "cpu": [
+              {
+                "model": "Intel Core Processor (Haswell, no TSX, IBRS)",
+                "cores": 2,
+                "mhz": 2294
+              }
+            ],
+            "memory": {
+              "total_kb": 961796,
+              "available_kb": 618872
+            },
+            "filesystem": [
+              {
+                "mount": "/run",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 402076,
+                "free_kb": 390300
+              },
+              {
+                "mount": "/",
+                "device": "/dev/vda1",
+                "fs_type": "xfs",
+                "total_kb": 5176320,
+                "free_kb": 947116
+              },
+              {
+                "mount": "/run/credentials/systemd-tmpfiles-setup-dev.service",
+                "device": "none",
+                "fs_type": "ramfs",
+                "total_kb": 0,
+                "free_kb": 0
+              },
+              {
+                "mount": "/run/credentials/systemd-sysctl.service",
+                "device": "none",
+                "fs_type": "ramfs",
+                "total_kb": 0,
+                "free_kb": 0
+              },
+              {
+                "mount": "/run/credentials/systemd-tmpfiles-setup.service",
+                "device": "none",
+                "fs_type": "ramfs",
+                "total_kb": 0,
+                "free_kb": 0
+              },
+              {
+                "mount": "/run/user/0",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 96176,
+                "free_kb": 96172
+              }
+            ],
+            "network": [
+              {
+                "interface": "enp6s0",
+                "addresses": [
+                  "192.168.100.204/24",
+                  "2408:823d:e17:58b4::729/128",
+                  "2408:823d:e17:58b4:c747:aae:9a7e:3ff/64",
+                  "fe80::b540:8106:722f:fabc/64"
+                ],
+                "mac": "52:54:00:0e:0b:b9"
+              }
+            ]
+          }
+        },
+        {
+          "id": "1c59cf12-97ef-412f-9a06-aea04e6423c1",
+          "agent_id": "agent-f088585f-676a-4e7b-9c64-441e22a3e85d",
+          "hostname": "e2e-20260930-101945-nodesteer-agent-4",
+          "ip": "192.168.100.247",
+          "os": "openSUSE Leap 16.0",
+          "arch": "amd64",
+          "agent_version": "dddee4f0",
+          "deployment_mode": "native",
+          "host_integration": false,
+          "status": "online",
+          "labels": {},
+          "capabilities": {
+            "agent_upgrade": true,
+            "application_deploy": true,
+            "host_filesystem": true,
+            "local_scheduler": true,
+            "managed_systemd": true,
+            "offline_execution": true,
+            "script": true
+          },
+          "global_revision": 464,
+          "sync_status": "synced",
+          "last_seen": "2026-09-30T10:36:03.763666097+08:00",
+          "first_seen": "2026-09-30T10:27:55.152457175+08:00",
+          "inventory": {
+            "os": "openSUSE Leap 16.0",
+            "os_version": "16.0",
+            "kernel": "6.12.0-160000.35-default",
+            "arch": "amd64",
+            "cpu": [
+              {
+                "model": "Intel(R) Core(TM) i5-4670T CPU @ 2.30GHz",
+                "cores": 2,
+                "mhz": 2294
+              }
+            ],
+            "memory": {
+              "total_kb": 968180,
+              "available_kb": 607640
+            },
+            "filesystem": [
+              {
+                "mount": "/",
+                "device": "/dev/vda2",
+                "fs_type": "xfs",
+                "total_kb": 6216684,
+                "free_kb": 3047300
+              },
+              {
+                "mount": "/run",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 403352,
+                "free_kb": 402620
+              },
+              {
+                "mount": "/tmp",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1008380,
+                "free_kb": 1008380
+              },
+              {
+                "mount": "/run/credentials/systemd-journald.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/run/credentials/serial-getty@ttyS0.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/run/credentials/getty@tty1.service",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 1024,
+                "free_kb": 1024
+              },
+              {
+                "mount": "/run/user/0",
+                "device": "tmpfs",
+                "fs_type": "tmpfs",
+                "total_kb": 114428,
+                "free_kb": 114424
+              }
+            ],
+            "network": [
+              {
+                "interface": "enp1s0",
+                "addresses": [
+                  "192.168.100.247/24",
+                  "2408:823d:e17:58b4:88d0:91aa:259d:5f36/64",
+                  "2408:823d:e17:58b4:323a:a874:a474:929f/64",
+                  "2408:823d:e17:58b4:154c:9433:1ddf:d06e/64",
+                  "2408:823d:e17:58b4:3da0:7156:64c3:404d/64",
+                  "2408:823d:e17:58b4:3acb:438c:e104:b142/64",
+                  "2408:823d:e17:58b4::58e/128",
+                  "2408:823d:e17:58b4:c35d:b1b8:37fd:eb87/64",
+                  "2408:823d:e17:58b4:ac4f:2c35:2676:a97d/64",
+                  "fe80::6adc:1f59:e9a9:c59e/64"
+                ],
+                "mac": "52:54:00:c3:e2:44"
+              }
+            ]
+          }
+        }
+      ],
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Connection": "close",
+        "Transfer-Encoding": "chunked"
+      }
+    },
+    {
+      "api": "GET /api/users",
+      "status": 403,
+      "request": null,
+      "response": {
+        "error": "permission denied"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "30",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/scripts",
+      "status": 403,
+      "request": {},
+      "response": {
+        "error": "permission denied"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "30",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks",
+      "status": 403,
+      "request": {},
+      "response": {
+        "error": "permission denied"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "30",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/groups",
+      "status": 403,
+      "request": {},
+      "response": {
+        "error": "permission denied"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "30",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/artifacts",
+      "status": 403,
+      "request": {},
+      "response": {
+        "error": "permission denied"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "30",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/applications",
+      "status": 403,
+      "request": {},
+      "response": {
+        "error": "permission denied"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "30",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/transfers",
+      "status": 403,
+      "request": {},
+      "response": {
+        "error": "permission denied"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "30",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/tasks/51b3b35d-fc91-42a8-bee4-d46d20a475de/run",
+      "status": 403,
+      "request": {},
+      "response": {
+        "error": "permission denied"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "30",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "POST /api/logout",
+      "status": 200,
+      "request": {},
+      "response": {
+        "ok": "true"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "14",
+        "Connection": "close"
+      }
+    },
+    {
+      "api": "GET /api/me",
+      "status": 401,
+      "request": null,
+      "response": {
+        "error": "invalid or expired session"
+      },
+      "headers": {
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-NodeSteer-Agent-Token, X-NodeSteer-Agent-ID",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Total-Count",
+        "Content-Type": "application/json",
+        "Date": "Wed, 30 Sep 2026 02:36:06 GMT",
+        "Content-Length": "39",
+        "Connection": "close"
+      }
+    }
+  ]
+}

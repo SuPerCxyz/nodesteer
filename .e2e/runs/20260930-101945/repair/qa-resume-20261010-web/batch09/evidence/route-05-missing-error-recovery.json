@@ -1,0 +1,44 @@
+{
+  "captured_at_utc": "2026-10-10T14:18:56.394098+00:00",
+  "canonical": "ROUTE-05",
+  "branch": "missing Agent detail ID -> actual UI error -> recovery to actual current href",
+  "missing_id": "18c5d8b1-f30c-459a-a545-0b8d8e23b84b",
+  "actions": [
+    "authenticated GET /api/nodes/:fresh-missing first",
+    "direct-open /agents/:fresh-missing",
+    "observe UI error",
+    "open /agents actual list and click actual current /agents/:id row href",
+    "verify restored detail GET200 and no error"
+  ],
+  "observations": {
+    "preflight_get_status": 404,
+    "route_get_status": 404,
+    "error_route_status": 200,
+    "heading": "节点",
+    "role_alert_text": "节点不存在或已被删除。\n重试",
+    "retry_button_visible": true,
+    "recovery_actual_href": true,
+    "recovery_detail_heading_present": true,
+    "recovery_alert_count": 0
+  },
+  "api_requests": [
+    {
+      "method": "GET",
+      "path": "/api/nodes/:fresh-missing",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/:fresh-missing",
+      "status": 404
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/:existing-from-live-href",
+      "status": 200
+    }
+  ],
+  "write_request_count": 0,
+  "raw_response_saved": false,
+  "token_saved": false
+}

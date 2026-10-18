@@ -1,0 +1,90 @@
+{
+  "reviewed_at": "2026-10-10T06:39:03.220981+00:00",
+  "hub": "http://192.168.100.209:18080",
+  "routes": {
+    "Nodes": {
+      "get": true,
+      "delete": true,
+      "missing_delete": "node lookup returns 404 before Delete()",
+      "refs": [
+        "internal/hub/api/api.go:841-875"
+      ]
+    },
+    "Groups": {
+      "get": true,
+      "delete": true,
+      "missing_delete": "exact group_id SQL deletes; desired-state revision/audit/sync event may be emitted",
+      "refs": [
+        "internal/hub/api/api.go:1089-1128",
+        "internal/hub/node.go:318-349",
+        "internal/store/sqlite_users_nodes.go:354-371"
+      ]
+    },
+    "Scripts": {
+      "get": true,
+      "delete": true,
+      "missing_delete": "exact ID SQL delete; revision/tombstone/audit/sync event may be emitted",
+      "refs": [
+        "internal/hub/api/api.go:1168-1235",
+        "internal/hub/definitions.go:112-149",
+        "internal/store/sqlite_definitions.go:134-137"
+      ]
+    },
+    "Tasks": {
+      "get": true,
+      "delete": true,
+      "missing_delete": "exact ID SQL delete; revision/tombstone/audit/sync event may be emitted",
+      "refs": [
+        "internal/hub/api/api.go:1270-1318",
+        "internal/hub/definitions.go:352-389",
+        "internal/store/sqlite_definitions.go:291-294"
+      ]
+    },
+    "Schedules": {
+      "get": true,
+      "delete": true,
+      "missing_delete": "exact ID SQL delete; revision/tombstone/audit/sync event may be emitted",
+      "refs": [
+        "internal/hub/api/api.go:1428-1466",
+        "internal/hub/schedule.go:148-180",
+        "internal/store/sqlite_definitions.go:371-374"
+      ]
+    },
+    "Applications": {
+      "get": true,
+      "delete": true,
+      "missing_delete": "exact app ID SQL deletes assignment/state/app rows; revision/tombstone/audit/sync event may be emitted",
+      "refs": [
+        "internal/hub/api/api.go:1602-1732",
+        "internal/hub/application.go:100-135",
+        "internal/store/sqlite_artifacts_apps.go:209-235"
+      ]
+    },
+    "Artifacts": {
+      "get": true,
+      "delete": true,
+      "missing_delete": "missing artifact returns nil without file deletion; API audit entry is still written",
+      "refs": [
+        "internal/hub/api/api.go:1513-1542",
+        "internal/hub/artifact.go:105-128"
+      ]
+    },
+    "Transfers": {
+      "get": true,
+      "delete": false,
+      "missing_delete": "single-id GET supported; DELETE fails method/admin gate before retry/cancel switch (current code returns 403)",
+      "refs": [
+        "internal/hub/api/api.go:1009-1053"
+      ]
+    },
+    "Users": {
+      "get": true,
+      "delete": false,
+      "missing_delete": "item GET/DELETE unsupported; excluded per prior batch",
+      "refs": [
+        "internal/hub/api/api.go:2056-2116"
+      ]
+    }
+  },
+  "guard": "Each mutation uses fresh UUID; require authenticated pre-DELETE GET=404; then verify DELETE response and GET=404; compare collection IDs/counts before/after."
+}

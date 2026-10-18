@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b08/run_sysb08.py", line 805, in main
+    mark('fixtures'); evidence['phases']['fixtures'] = run.phase2_fixtures()
+                                                       ~~~~~~~~~~~~~~~~~~~^^
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b08/run_sysb08.py", line 385, in phase2_fixtures
+    child_view = self.child.sql(
+        'SELECT id,task_id,revision,enabled,definition_json FROM schedules '
+        'WHERE id IN (?,?)', args=[self.state['schedule_allow_id'],
+                                   self.state['schedule_required_id']])
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b08/child_agent.py", line 256, in sql
+    return self.py_json(program, timeout=timeout, label='child_sql')
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b08/child_agent.py", line 244, in py_json
+    raise RuntimeError('%s_failed: %s' % (label, (err or out)[-400:]))
+RuntimeError: child_sql_failed: Warning: Permanently added '192.168.100.222' (ED25519) to the list of known hosts.
+Traceback (most recent call last):
+  File "<stdin>", line 4, in <module>
+sqlite3.OperationalError: no such column: task_id
+

@@ -1,0 +1,81 @@
+{
+ "at_utc": "2026-10-16T09:45:53Z",
+ "authority": "http://192.168.100.209:18085",
+ "ghost_app_id": "00000000-0000-0000-0000-000000000000",
+ "probes": {
+  "GET application": {
+   "method": "GET",
+   "path": "/api/applications/31954481-dec3-411f-b30e-a37eeb1c8aa6",
+   "http": 404,
+   "body": "{\"error\":\"application not found\"}\n"
+  },
+  "PUT application": {
+   "method": "PUT",
+   "path": "/api/applications/31954481-dec3-411f-b30e-a37eeb1c8aa6",
+   "http": 404,
+   "body": "{\"error\":\"application not found\"}\n"
+  },
+  "DELETE application": {
+   "method": "DELETE",
+   "path": "/api/applications/31954481-dec3-411f-b30e-a37eeb1c8aa6",
+   "http": 200,
+   "body": "{\"ok\":\"true\"}\n"
+  },
+  "POST assign": {
+   "method": "POST",
+   "path": "/api/applications/31954481-dec3-411f-b30e-a37eeb1c8aa6/assign",
+   "http": 500,
+   "body": "{\"error\":\"sql: no rows in result set\"}\n"
+  },
+  "POST deploy": {
+   "method": "POST",
+   "path": "/api/applications/31954481-dec3-411f-b30e-a37eeb1c8aa6/deploy",
+   "http": 400,
+   "body": "{\"error\":\"sql: no rows in result set\"}\n"
+  },
+  "GET state": {
+   "method": "GET",
+   "path": "/api/applications/31954481-dec3-411f-b30e-a37eeb1c8aa6/state",
+   "http": 200,
+   "body": "[]\n"
+  },
+  "GET executions": {
+   "method": "GET",
+   "path": "/api/applications/31954481-dec3-411f-b30e-a37eeb1c8aa6/executions",
+   "http": 200,
+   "body": "[]\n"
+  },
+  "GET nodes": {
+   "method": "GET",
+   "path": "/api/applications/31954481-dec3-411f-b30e-a37eeb1c8aa6/nodes",
+   "http": 200,
+   "body": "null\n"
+  },
+  "GET revisions": {
+   "method": "GET",
+   "path": "/api/applications/31954481-dec3-411f-b30e-a37eeb1c8aa6/revisions",
+   "http": 200,
+   "body": "[{\"revision\":1,\"content\":\"{\\\"id\\\":\\\"31954481-dec3-411f-b30e-a37eeb1c8aa6\\\",\\\"name\\\":\\\"qa-g1202610163692428a-def-probe\\\",\\\"description\\\":\\\"\\\",\\\"artifact_id\\\":\\\"\\\",\\\"version\\\":\\\"1.0.0\\\",\\\"binary_path\\\":"
+  }
+ },
+ "created": {
+  "http": 200,
+  "id": "31954481-dec3-411f-b30e-a37eeb1c8aa6"
+ },
+ "created_assign_http": 200,
+ "deleted": {
+  "http": 200
+ },
+ "after_delete_get": 404,
+ "finding": {
+  "id": "DEF-ASSIGN-MISSING-APP-500",
+  "severity": "medium",
+  "title": "对不存在的 application 调用 assign 返回 500 并回显内部 SQL 错误（应 404/400）",
+  "repro": [
+   "POST /api/applications/{已删除 id}/assign → HTTP 500 {\"error\":\"sql: no rows in result set\"}",
+   "POST /api/applications/{已删除 id}/deploy → HTTP 400，错误正文同样为 \"sql: no rows in result set\""
+  ],
+  "impact": "错误语义与状态码错误；向调用方回显持久层内部错误文本；对 UI 的分配流程表现为“服务器错误”而非“应用不存在”。",
+  "note": "同 id 下 GET → 404 application not found、PUT → 404，说明 assign/deploy 路径缺少存在性前置检查；两条路径都把持久层内部错误文本回显给调用方。DELETE → 200 {\"ok\":\"true\"}（删除不存在的应用按幂等处理）；GET state/executions/nodes → 200 空集，GET revisions → 200 保留历史快照。"
+ }
+}
