@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -68,6 +69,7 @@ func TestContainerAtomicReplace(t *testing.T) {
 	// 用临时目录模拟 hostRoot
 	tmpRoot := t.TempDir()
 	a := NewContainerHostAdapter(tmpRoot)
+	a.hostView = tmpRoot // 同一临时目录代表真实宿主视角。
 	ctx := context.Background()
 	logical := "/usr/local/bin/test-app"
 
@@ -95,5 +97,74 @@ func TestContainerAllowlist(t *testing.T) {
 	}
 	if err := a.ValidatePath("/etc/systemd/system/app.service"); err != nil {
 		t.Fatalf("managed unit path rejected: %v", err)
+	}
+}
+
+func TestContainerMappingMustMatchActualHost(t *testing.T) {
+	for _, name := range []string{"correct", "missing", "wrong", "unavailable"} {
+		t.Run(name, func(t *testing.T) {
+			mappedRoot := t.TempDir()
+			actualRoot := mappedRoot
+			if name != "correct" {
+				actualRoot = t.TempDir()
+			}
+			for _, root := range []string{mappedRoot, actualRoot} {
+				if err := os.MkdirAll(filepath.Join(root, "opt", "owned"), 0o755); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if name == "missing" {
+				os.RemoveAll(filepath.Join(mappedRoot, "opt"))
+			}
+			if name == "unavailable" {
+				actualRoot = filepath.Join(actualRoot, "absent-view")
+			}
+			a := NewContainerHostAdapter(mappedRoot)
+			a.hostView = actualRoot
+			logical := "/opt/owned/new/file"
+			err := a.AtomicReplaceReader(t.Context(), logical, strings.NewReader("new payload"), 0o644)
+			if name == "correct" {
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got, err := os.ReadFile(filepath.Join(actualRoot, logical)); err != nil || string(got) != "new payload" {
+					t.Fatalf("host did not receive file: %q %v", got, err)
+				}
+			} else {
+				if err == nil {
+					t.Fatal("unproven mapping accepted")
+				}
+				for _, root := range []string{mappedRoot, actualRoot} {
+					if _, err := os.Stat(filepath.Join(root, "opt/owned/new")); !os.IsNotExist(err) {
+						t.Fatalf("invalid mapping created directory: %s %v", root, err)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestContainerCommandsAttachNsenterRoot(t *testing.T) {
+	bin := t.TempDir()
+	argsFile := filepath.Join(t.TempDir(), "arguments")
+	script := "#!/bin/sh\nprintf '%s\\n' \"$@\" > \"$NODESTEER_TEST_ARGS\"\nprintf active\n"
+	if err := os.WriteFile(filepath.Join(bin, "nsenter"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv("NODESTEER_TEST_ARGS", argsFile)
+	a := NewContainerHostAdapter("/host")
+	for _, run := range []func() (string, error){
+		func() (string, error) { return a.ServiceStatus(t.Context(), "owned.service") },
+		func() (string, error) { return a.RunCommand(t.Context(), "true") },
+		func() (string, error) { return a.RunCommandWithEnv(t.Context(), "true", []string{"OWNED_TEST=1"}) },
+	} {
+		if _, err := run(); err != nil {
+			t.Fatal(err)
+		}
+		args, err := os.ReadFile(argsFile)
+		if err != nil || !strings.Contains(string(args), "--root=/proc/1/root\n") || strings.Contains(string(args), "-r\n/proc/1/root\n") {
+			t.Fatalf("root argument not attached: %q %v", args, err)
+		}
 	}
 }

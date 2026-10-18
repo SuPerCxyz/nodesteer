@@ -324,6 +324,10 @@ func (h *Hub) Start() error {
 
 	h.sessions.StartHeartbeatChecker(h.ctx, h.cfg.HeartbeatTimeout, h.handleHeartbeatTimeout)
 
+	// 交付停滞看门狗：终结长期停在 DELIVERING 的目标，避免传输永久非终态
+	// （否则 DELETE /api/nodes/{id} 被 409 永久阻断）。
+	h.transfers.StartDeliveryWatchdog(h.ctx, time.Minute)
+
 	interval := time.Duration(h.cfg.RevisionCheckSec) * time.Second
 	h.schedules.StartHubScheduler(h.ctx, interval)
 

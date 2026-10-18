@@ -83,7 +83,7 @@ func TestResolveRemoteStateReportsPending(t *testing.T) {
 	if err != nil {
 		t.Fatalf("prepare enrollment: %v", err)
 	}
-	value, _, _ := g.resolveRemoteState(ctx, protocol.RemoteStateReqPayload{
+	value, _, _, _ := g.resolveRemoteState(ctx, protocol.RemoteStateReqPayload{
 		TargetNodeID: node.ID,
 		Property:     "online",
 	})

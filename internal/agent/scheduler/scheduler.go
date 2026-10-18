@@ -71,6 +71,14 @@ func (s *Scheduler) IsPaused() bool {
 	return s.paused
 }
 
+// Online 返回 hub 在线门禁当前值（权威来源：SetOnlineFunc 注入，agent 侧为
+// 「HELLO_ACK accepted」握手标志）。供测试与诊断读取，不改变门禁语义。
+func (s *Scheduler) Online() bool {
+	s.mu <- struct{}{}
+	defer func() { <-s.mu }()
+	return s.online()
+}
+
 // UpdateSchedules 替换本地调度表
 func (s *Scheduler) UpdateSchedules(schedules []*models.Schedule) {
 	s.mu <- struct{}{}

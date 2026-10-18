@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -33,6 +34,25 @@ func createTestUser(t *testing.T, st *store.SQLiteStore, username, password, rol
 		t.Fatalf("create user: %v", err)
 	}
 	return u
+}
+
+func TestLoginRejectsEmptyCredentialsInLegacyUsers(t *testing.T) {
+	for _, entry := range []struct{ username, password string }{
+		{username: "legacy-empty-password", password: ""},
+		{username: "", password: "valid-password"},
+	} {
+		t.Run(entry.username, func(t *testing.T) {
+			m, st := newAuthTestManager(t)
+			legacy := createTestUser(t, st, entry.username, entry.password, models.RoleViewer)
+			if session, err := m.Login(t.Context(), entry.username, entry.password); session != nil || !errors.Is(err, ErrInvalidCredentials) {
+				t.Fatalf("empty legacy credentials accepted: session issued=%t err=%v", session != nil, err)
+			}
+			persisted, err := st.GetUserByUsername(t.Context(), entry.username)
+			if err != nil || persisted.PasswordHash != legacy.PasswordHash {
+				t.Fatalf("login guard must not rewrite legacy user: err=%v", err)
+			}
+		})
+	}
 }
 
 // 角色变更（含降权）必须对已登录会话立即生效，且不改写共享 Session。

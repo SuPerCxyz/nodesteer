@@ -45,7 +45,16 @@ func (nm *NodeManager) RegisterAgent(ctx context.Context, hostname, ip, os, arch
 // 若同名（忽略大小写）或同地址的节点已存在，则复用其 Node ID / Agent ID 并重新签发凭证，
 // 避免「撤销凭证 → 重新纳管」产生重复节点记录；既有标签与历史保留。
 func (nm *NodeManager) PrepareEnrollment(ctx context.Context, hostname, ip string, _ string) (*models.Node, error) {
-	if existing := nm.findEnrollableNode(ctx, hostname, ip); existing != nil {
+	var pending *models.Node
+	err := runMutationTx(ctx, nm.store, func(txCtx context.Context) error {
+		existing, err := nm.findEnrollableNode(txCtx, hostname, ip)
+		if err != nil {
+			return err
+		}
+		if existing == nil {
+			pending, _, err = nm.createNode(txCtx, hostname, ip, "", "", "", "", false, nil, models.NodeStatusPending, "pending")
+			return err
+		}
 		existing.Hostname = hostname
 		if ip != "" {
 			existing.IP = ip
@@ -59,43 +68,55 @@ func (nm *NodeManager) PrepareEnrollment(ctx context.Context, hostname, ip strin
 		existing.DeploymentMode = ""
 		existing.HostIntegration = false
 		existing.Capabilities = nil
-		if err := nm.store.UpsertNode(ctx, existing); err != nil {
-			return nil, err
+		if err := nm.store.UpsertNode(txCtx, existing); err != nil {
+			return err
+		}
+		// 普通Upsert保留人工状态；仅重新纳管明确进入pending。
+		if err := nm.store.UpdateNodeStatus(txCtx, existing.ID, existing.Status); err != nil {
+			return err
+		}
+		if err := nm.store.UpdateNodeSyncState(txCtx, existing.ID, existing.GlobalRevision, existing.SyncStatus); err != nil {
+			return err
 		}
 		cred := "cred-" + uuid.NewString()
-		if err := nm.store.SetSetting(ctx, "cred:"+existing.ID, cred); err != nil {
-			return nil, err
+		if err := nm.store.SetSetting(txCtx, "cred:"+existing.ID, cred); err != nil {
+			return err
 		}
 		// 重新纳管即重新授权：清除撤销标记，允许 Agent 用新凭证接入
-		_ = nm.store.DeleteSetting(ctx, "revoked:"+existing.ID)
-		return existing, nil
+		if err := nm.store.DeleteSetting(txCtx, "revoked:"+existing.ID); err != nil {
+			return err
+		}
+		pending = existing
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
-	n, _, err := nm.createNode(ctx, hostname, ip, "", "", "", "", false, nil, models.NodeStatusPending, "pending")
-	return n, err
+	return pending, nil
 }
 
 // findEnrollableNode 按节点名（忽略大小写）或节点地址查找可复用的既有节点。
-func (nm *NodeManager) findEnrollableNode(ctx context.Context, hostname, ip string) *models.Node {
+func (nm *NodeManager) findEnrollableNode(ctx context.Context, hostname, ip string) (*models.Node, error) {
 	nodes, err := nm.store.ListNodes(ctx)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	name := strings.ToLower(strings.TrimSpace(hostname))
 	if name != "" {
 		for _, n := range nodes {
 			if strings.ToLower(strings.TrimSpace(n.Hostname)) == name {
-				return n
+				return n, nil
 			}
 		}
 	}
 	if ip != "" {
 		for _, n := range nodes {
 			if n.IP == ip {
-				return n
+				return n, nil
 			}
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 func (nm *NodeManager) createNode(ctx context.Context, hostname, ip, os, arch, agentVersion, mode string, hostInt bool, caps map[string]bool, status, syncStatus string) (*models.Node, string, error) {
@@ -255,6 +276,9 @@ func (nm *NodeManager) SetLabels(ctx context.Context, id string, labels map[stri
 
 // CreateGroup 创建节点组并推进 Desired State Revision。
 func (nm *NodeManager) CreateGroup(ctx context.Context, g *models.Group) error {
+	if err := validateGroupName(ctx, nm.store, g.Name, ""); err != nil {
+		return err
+	}
 	var rev int64
 	if err := runMutationTx(ctx, nm.store, func(txctx context.Context) error {
 		if err := nm.store.CreateGroup(txctx, g); err != nil {
@@ -275,6 +299,9 @@ func (nm *NodeManager) CreateGroup(ctx context.Context, g *models.Group) error {
 
 // UpdateGroup 更新节点组并推进 Desired State Revision。
 func (nm *NodeManager) UpdateGroup(ctx context.Context, g *models.Group) error {
+	if err := validateGroupName(ctx, nm.store, g.Name, g.ID); err != nil {
+		return err
+	}
 	var rev int64
 	if err := runMutationTx(ctx, nm.store, func(txctx context.Context) error {
 		if err := nm.store.UpdateGroup(txctx, g); err != nil {
@@ -289,6 +316,24 @@ func (nm *NodeManager) UpdateGroup(ctx context.Context, g *models.Group) error {
 	_ = rev
 	if nm.syncMgr != nil {
 		nm.syncMgr.NotifyAll(ctx)
+	}
+	return nil
+}
+
+// validateGroupName 校验组名非空且唯一（忽略大小写与首尾空白），selfID 为空时用于创建。
+func validateGroupName(ctx context.Context, st store.Store, name, selfID string) error {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return fmt.Errorf("group name is required")
+	}
+	groups, err := st.ListGroups(ctx)
+	if err != nil {
+		return err
+	}
+	for _, other := range groups {
+		if other.ID != selfID && strings.EqualFold(strings.TrimSpace(other.Name), name) {
+			return fmt.Errorf("group name already exists: %s", name)
+		}
 	}
 	return nil
 }

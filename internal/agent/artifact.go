@@ -20,6 +20,7 @@ type ArtifactCache struct {
 	logger  *slog.Logger
 	token   string
 	agentID string
+	client  *http.Client
 	mu      sync.RWMutex
 }
 
@@ -35,7 +36,7 @@ func (c *ArtifactCache) SetIdentity(agentID, token string) {
 // NewArtifactCache 创建缓存
 func NewArtifactCache(dir string, st *LocalStore, logger *slog.Logger, token string) *ArtifactCache {
 	os.MkdirAll(dir, 0o755)
-	return &ArtifactCache{dir: dir, store: st, logger: logger, token: token}
+	return &ArtifactCache{dir: dir, store: st, logger: logger, token: token, client: http.DefaultClient}
 }
 
 // Path 返回 sha 对应缓存路径
@@ -79,7 +80,14 @@ func (c *ArtifactCache) Prefetch(ctx context.Context, url, sha string) error {
 	c.mu.RLock()
 	token, agentID := c.token, c.agentID
 	c.mu.RUnlock()
-	resp, err := httpGetWithAgentToken(ctx, url, token, agentID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		f.Close()
+		return err
+	}
+	req.Header.Set("X-NodeSteer-Agent-Token", token)
+	req.Header.Set("X-NodeSteer-Agent-ID", agentID)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		f.Close()
 		return err

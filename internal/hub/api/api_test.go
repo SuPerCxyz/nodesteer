@@ -84,8 +84,20 @@ func TestMeReturnsAvatar(t *testing.T) {
 	if body["avatar"] != "https://idp.example/a.png" {
 		t.Fatalf("/api/me avatar = %v, want https://idp.example/a.png", body["avatar"])
 	}
-	if body["Username"] != "with-avatar" {
-		t.Fatalf("/api/me Username = %v", body["Username"])
+	if body["username"] != "with-avatar" {
+		t.Fatalf("/api/me username = %v", body["username"])
+	}
+	// 键名统一小写 snake_case（缺陷 OBS-20261015-API-CONTRACT-DEVIATIONS-LOW ⑤）：
+	// 旧 PascalCase 键不得再出现。
+	for _, legacy := range []string{"Username", "UserID", "Token", "Role", "Expires"} {
+		if _, ok := body[legacy]; ok {
+			t.Fatalf("/api/me must not expose legacy key %q: %v", legacy, body)
+		}
+	}
+	for _, key := range []string{"token", "user_id", "username", "role", "expires"} {
+		if _, ok := body[key]; !ok {
+			t.Fatalf("/api/me missing snake_case key %q: %v", key, body)
+		}
 	}
 }
 

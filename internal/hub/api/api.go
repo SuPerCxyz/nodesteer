@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -299,6 +300,59 @@ func writeErr(w http.ResponseWriter, status int, msg string) {
 	writeJSON(w, status, map[string]string{"error": msg})
 }
 
+// writeInternalError 归一化内部/存储层错误响应并补 error 级日志：
+//   - SQLITE_BUSY/LOCKED 家族（可重试）→ 503 storage busy，客户端重试即可成功；
+//   - 其余 → 500 internal error。
+//
+// 驱动原文（如 "database is locked (5) (SQLITE_BUSY)"）只进日志、不回客户端
+// （缺陷 OBS-20261016-G1-ENROLL-TRANSIENT-500 的次生问题①②：错误外泄 + 零日志）。
+// 日志仅含 method/path（不含 query，避免 agent_token 等敏感值）与错误原文。
+func (s *Server) writeInternalError(w http.ResponseWriter, r *http.Request, err error) {
+	if s.logger != nil {
+		s.logger.Error("api request failed",
+			"method", r.Method,
+			"path", r.URL.Path,
+			"error", err)
+	}
+	if store.IsBusyError(err) {
+		writeErr(w, http.StatusServiceUnavailable, "storage busy, please retry")
+		return
+	}
+	writeErr(w, http.StatusInternalServerError, "internal error")
+}
+
+// writeUpdateError 统一资源更新错误映射：不存在的 id（sql.ErrNoRows）映射为 404
+// 归一化文案，不把底层存储错误原文回给调用方；其余校验错误保留既有 400 契约文案。
+func writeUpdateError(w http.ResponseWriter, notFoundMsg string, err error) {
+	if errors.Is(err, sql.ErrNoRows) {
+		writeErr(w, http.StatusNotFound, notFoundMsg)
+		return
+	}
+	writeErr(w, http.StatusBadRequest, err.Error())
+}
+
+// requireApplication 子资源路径（assign/deploy）的存在性前置检查。
+// 应用不存在时统一 404 + 归一化文案，避免把存储层 sql.ErrNoRows 原文
+// 以 500（assign）/400（deploy）返回给调用方（缺陷 E2E-20261016-ASSIGN-MISSING-APP-500-SQL-LEAK）。
+func (s *Server) requireApplication(w http.ResponseWriter, r *http.Request, id string) bool {
+	if _, err := s.apps.Get(r.Context(), id); err != nil {
+		writeErr(w, http.StatusNotFound, "application not found")
+		return false
+	}
+	return true
+}
+
+// writeApplicationSubresourceError 归一化 assign/deploy 的错误响应：
+// 记录不存在 → 404 归一化文案；其余为业务校验文案（节点不存在/离线/缺能力等），
+// 存储层原文不外泄。
+func writeApplicationSubresourceError(w http.ResponseWriter, err error) {
+	if errors.Is(err, sql.ErrNoRows) {
+		writeErr(w, http.StatusNotFound, "application not found")
+		return
+	}
+	writeErr(w, http.StatusBadRequest, err.Error())
+}
+
 func readJSON(r *http.Request, v any) error {
 	return json.NewDecoder(r.Body).Decode(v)
 }
@@ -434,6 +488,12 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
+	// 注销是有副作用的操作，仅接受 POST；GET 等不再隐式注销（Allow: POST）。
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
 	token := bearerToken(r)
 	if token != "" {
 		s.auth.Logout(token)
@@ -442,6 +502,11 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
+		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
 	sess := currentUser(r.Context())
 	if sess == nil {
 		writeErr(w, http.StatusUnauthorized, "unauthorized")
@@ -540,7 +605,7 @@ func (s *Server) handleNodes(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		nodes, err := s.nodes.ListNodes(r.Context())
 		if err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			s.writeInternalError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, nodes)
@@ -564,13 +629,13 @@ func (s *Server) handleNodes(w http.ResponseWriter, r *http.Request) {
 		}
 		if req.Status != "" {
 			if err := s.nodes.SetNodeStatus(r.Context(), req.ID, req.Status); err != nil {
-				writeErr(w, http.StatusInternalServerError, err.Error())
+				s.writeInternalError(w, r, err)
 				return
 			}
 		}
 		if req.Labels != nil {
 			if err := s.nodes.SetLabels(r.Context(), req.ID, req.Labels); err != nil {
-				writeErr(w, http.StatusInternalServerError, err.Error())
+				s.writeInternalError(w, r, err)
 				return
 			}
 		}
@@ -603,7 +668,7 @@ func (s *Server) handleNodeEnrollment(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		node, err := s.nodes.PrepareEnrollment(r.Context(), nodeName, nodeIP, models.DeploymentModeNative)
 		if err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			s.writeInternalError(w, r, err)
 			return
 		}
 		nodeID = node.ID
@@ -843,7 +908,12 @@ func (s *Server) handleNodeByID(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(path, "/")
 	id := parts[0]
 	if len(parts) >= 2 && parts[1] == "revoke-credential" {
-		if r.Method != http.MethodPost || !s.canAdmin(r) {
+		if r.Method != http.MethodPost {
+			w.Header().Set("Allow", "POST")
+			writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+			return
+		}
+		if !s.canAdmin(r) {
 			writeErr(w, http.StatusForbidden, "permission denied")
 			return
 		}
@@ -855,17 +925,24 @@ func (s *Server) handleNodeByID(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 		return
 	}
-	node, err := s.nodes.GetNode(r.Context(), id)
-	if err != nil {
-		writeErr(w, http.StatusNotFound, "node not found")
-		return
-	}
+	// 鉴权先于存在性：此前 GetNode 在方法分支前执行，无写权限用户对「存在 id」
+	// 得 403、对「不存在 id」得 404，可据差异枚举 node id（存在性 oracle，
+	// 缺陷 OBS-20261015-API-CONTRACT-DEVIATIONS-LOW ⑧）。
 	switch r.Method {
 	case http.MethodGet:
+		node, err := s.nodes.GetNode(r.Context(), id)
+		if err != nil {
+			writeErr(w, http.StatusNotFound, "node not found")
+			return
+		}
 		writeJSON(w, http.StatusOK, node)
 	case http.MethodDelete:
 		if !s.canAdmin(r) {
 			writeErr(w, http.StatusForbidden, "permission denied")
+			return
+		}
+		if _, err := s.nodes.GetNode(r.Context(), id); err != nil {
+			writeErr(w, http.StatusNotFound, "node not found")
 			return
 		}
 		if err := s.nodes.Delete(r.Context(), id); err != nil {
@@ -877,6 +954,10 @@ func (s *Server) handleNodeByID(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost, http.MethodPut:
 		if !s.canWrite(r) {
 			writeErr(w, http.StatusForbidden, "permission denied")
+			return
+		}
+		if _, err := s.nodes.GetNode(r.Context(), id); err != nil {
+			writeErr(w, http.StatusNotFound, "node not found")
 			return
 		}
 		var req struct {
@@ -895,13 +976,14 @@ func (s *Server) handleNodeByID(w http.ResponseWriter, r *http.Request) {
 		}
 		if req.Labels != nil {
 			if err := s.nodes.SetLabels(r.Context(), id, req.Labels); err != nil {
-				writeErr(w, http.StatusInternalServerError, err.Error())
+				s.writeInternalError(w, r, err)
 				return
 			}
 		}
 		s.audit(r, "node", id, "update")
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 	default:
+		w.Header().Set("Allow", "GET, POST, PUT, DELETE")
 		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
 }
@@ -976,7 +1058,7 @@ func (s *Server) handleTransfers(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		items, err := s.transfers.List(r.Context())
 		if err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			s.writeInternalError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, items)
@@ -1018,6 +1100,13 @@ func (s *Server) handleTransferByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := parts[0]
+	// 方法守卫先于鉴权与存在性：方法不支持一律 405 + Allow，不因权限差异
+	// 把方法错误伪装成 403（缺陷 OBS-20261015-API-CONTRACT-DEVIATIONS-LOW ③）。
+	if r.Method != http.MethodGet && r.Method != http.MethodPost {
+		w.Header().Set("Allow", "GET, POST")
+		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
 	if len(parts) == 1 && r.Method == http.MethodGet {
 		item, err := s.transfers.Get(r.Context(), id)
 		if err != nil {
@@ -1027,8 +1116,18 @@ func (s *Server) handleTransferByID(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, item)
 		return
 	}
-	if !s.canAdmin(r) || r.Method != http.MethodPost || len(parts) != 2 {
+	// 动作子路径（retry/cancel）仅支持 POST；GET /{id}/{action} 同属方法不匹配。
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	if !s.canAdmin(r) {
 		writeErr(w, http.StatusForbidden, "permission denied")
+		return
+	}
+	if len(parts) != 2 {
+		writeErr(w, http.StatusNotFound, "transfer action not found")
 		return
 	}
 	var item *models.FileTransfer
@@ -1059,7 +1158,7 @@ func (s *Server) handleGroups(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		groups, err := s.store.ListGroups(r.Context())
 		if err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			s.writeInternalError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, groups)
@@ -1071,6 +1170,10 @@ func (s *Server) handleGroups(w http.ResponseWriter, r *http.Request) {
 		var g models.Group
 		if err := readJSON(r, &g); err != nil {
 			writeErr(w, http.StatusBadRequest, "invalid request")
+			return
+		}
+		if strings.TrimSpace(g.Name) == "" {
+			writeErr(w, http.StatusBadRequest, "name required")
 			return
 		}
 		if g.Type == "" {
@@ -1106,15 +1209,32 @@ func (s *Server) handleGroupByID(w http.ResponseWriter, r *http.Request) {
 			writeErr(w, http.StatusBadRequest, "invalid request")
 			return
 		}
+		if strings.TrimSpace(g.Name) == "" {
+			writeErr(w, http.StatusBadRequest, "name required")
+			return
+		}
 		g.ID = id
+		// 不存在 id：不做 upsert，明确 404（store 层 RowsAffected 兜底同一语义）。
+		if _, err := s.store.GetGroup(r.Context(), id); err != nil {
+			writeErr(w, http.StatusNotFound, "group not found")
+			return
+		}
 		if err := s.nodes.UpdateGroup(r.Context(), &g); err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			if errors.Is(err, sql.ErrNoRows) {
+				writeErr(w, http.StatusNotFound, "group not found")
+				return
+			}
+			writeErr(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		writeJSON(w, http.StatusOK, g)
 	case http.MethodDelete:
 		if !s.canWrite(r) {
 			writeErr(w, http.StatusForbidden, "permission denied")
+			return
+		}
+		if _, err := s.store.GetGroup(r.Context(), id); err != nil {
+			writeErr(w, http.StatusNotFound, "group not found")
 			return
 		}
 		if err := s.nodes.DeleteGroup(r.Context(), id); err != nil {
@@ -1134,7 +1254,7 @@ func (s *Server) handleScripts(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		list, err := s.scripts.List(r.Context())
 		if err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			s.writeInternalError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, list)
@@ -1176,7 +1296,7 @@ func (s *Server) handleScriptByID(w http.ResponseWriter, r *http.Request) {
 				// 列出全部历史版本
 				entries, err := s.scripts.ListRevisions(r.Context(), id)
 				if err != nil {
-					writeErr(w, http.StatusInternalServerError, err.Error())
+					s.writeInternalError(w, r, err)
 					return
 				}
 				writeJSON(w, http.StatusOK, entries)
@@ -1213,13 +1333,19 @@ func (s *Server) handleScriptByID(w http.ResponseWriter, r *http.Request) {
 		}
 		sc.ID = id
 		if err := s.scripts.Update(r.Context(), &sc); err != nil {
-			writeErr(w, http.StatusBadRequest, err.Error())
+			writeUpdateError(w, "script not found", err)
 			return
 		}
 		writeJSON(w, http.StatusOK, sc)
 	case http.MethodDelete:
 		if !s.canWrite(r) {
 			writeErr(w, http.StatusForbidden, "permission denied")
+			return
+		}
+		// 不存在/缺 id 统一 404（与 nodes 一致），不再对不存在的资源静默 200
+		// （缺陷 OBS-20261015-API-CONTRACT-DEVIATIONS-LOW ②）。
+		if _, err := s.scripts.Get(r.Context(), id); err != nil {
+			writeErr(w, http.StatusNotFound, "script not found")
 			return
 		}
 		if err := s.scripts.Delete(r.Context(), id); err != nil {
@@ -1239,7 +1365,7 @@ func (s *Server) handleTasks(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		list, err := s.tasks.List(r.Context())
 		if err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			s.writeInternalError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, list)
@@ -1302,13 +1428,17 @@ func (s *Server) handleTaskByID(w http.ResponseWriter, r *http.Request) {
 		}
 		t.ID = id
 		if err := s.tasks.Update(r.Context(), &t); err != nil {
-			writeErr(w, http.StatusBadRequest, err.Error())
+			writeUpdateError(w, "task not found", err)
 			return
 		}
 		writeJSON(w, http.StatusOK, t)
 	case http.MethodDelete:
 		if !s.canWrite(r) {
 			writeErr(w, http.StatusForbidden, "permission denied")
+			return
+		}
+		if _, err := s.tasks.Get(r.Context(), id); err != nil {
+			writeErr(w, http.StatusNotFound, "task not found")
 			return
 		}
 		if err := s.tasks.Delete(r.Context(), id); err != nil {
@@ -1342,7 +1472,7 @@ func (s *Server) handleRunNow(w http.ResponseWriter, r *http.Request, taskID str
 	// 解析目标
 	nodeIDs, err := s.resolveTargetNodeIDs(r.Context(), task)
 	if err != nil {
-		writeErr(w, http.StatusInternalServerError, err.Error())
+		s.writeInternalError(w, r, err)
 		return
 	}
 	if len(req.NodeIDs) > 0 {
@@ -1397,7 +1527,7 @@ func (s *Server) handleSchedules(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		list, err := s.schedules.List(r.Context())
 		if err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			s.writeInternalError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, list)
@@ -1447,13 +1577,17 @@ func (s *Server) handleScheduleByID(w http.ResponseWriter, r *http.Request) {
 		}
 		sc.ID = id
 		if err := s.schedules.Update(r.Context(), &sc); err != nil {
-			writeErr(w, http.StatusBadRequest, err.Error())
+			writeUpdateError(w, "schedule not found", err)
 			return
 		}
 		writeJSON(w, http.StatusOK, sc)
 	case http.MethodDelete:
 		if !s.canWrite(r) {
 			writeErr(w, http.StatusForbidden, "permission denied")
+			return
+		}
+		if _, err := s.schedules.Get(r.Context(), id); err != nil {
+			writeErr(w, http.StatusNotFound, "schedule not found")
 			return
 		}
 		if err := s.schedules.Delete(r.Context(), id); err != nil {
@@ -1473,7 +1607,7 @@ func (s *Server) handleArtifacts(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		list, err := s.artifacts.List(r.Context())
 		if err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			s.writeInternalError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, list)
@@ -1500,7 +1634,7 @@ func (s *Server) handleArtifacts(w http.ResponseWriter, r *http.Request) {
 		defer file.Close()
 		a, err := s.artifacts.Upload(r.Context(), name, version, arch, header.Filename, file)
 		if err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			s.writeInternalError(w, r, err)
 			return
 		}
 		s.audit(r, "artifact", a.ID, "upload")
@@ -1526,6 +1660,10 @@ func (s *Server) handleArtifactByID(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		if !s.canWrite(r) {
 			writeErr(w, http.StatusForbidden, "permission denied")
+			return
+		}
+		if _, err := s.artifacts.Get(r.Context(), id); err != nil {
+			writeErr(w, http.StatusNotFound, "artifact not found")
 			return
 		}
 		if err := s.artifacts.Delete(r.Context(), id); err != nil {
@@ -1571,7 +1709,7 @@ func (s *Server) handleApplications(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		list, err := s.apps.List(r.Context())
 		if err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			s.writeInternalError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, list)
@@ -1613,7 +1751,7 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 			}
 			states, err := s.store.ListApplicationNodeStates(r.Context(), id)
 			if err != nil {
-				writeErr(w, http.StatusInternalServerError, err.Error())
+				s.writeInternalError(w, r, err)
 				return
 			}
 			writeJSON(w, http.StatusOK, states)
@@ -1625,7 +1763,7 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 			}
 			execs, err := s.applicationExecutions(r.Context(), id)
 			if err != nil {
-				writeErr(w, http.StatusInternalServerError, err.Error())
+				s.writeInternalError(w, r, err)
 				return
 			}
 			writeJSON(w, http.StatusOK, execs)
@@ -1633,7 +1771,7 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 		case "revisions":
 			entries, err := s.store.ListApplicationRevisions(r.Context(), id)
 			if err != nil {
-				writeErr(w, http.StatusInternalServerError, err.Error())
+				s.writeInternalError(w, r, err)
 				return
 			}
 			writeJSON(w, http.StatusOK, entries)
@@ -1641,6 +1779,11 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 		case "assign":
 			if !s.canWrite(r) {
 				writeErr(w, http.StatusForbidden, "permission denied")
+				return
+			}
+			// 存在性前置检查：不存在的应用必须先归一化为 404，
+			// 否则存储层 sql.ErrNoRows 原文会以 500 外泄。
+			if !s.requireApplication(w, r, id) {
 				return
 			}
 			var req struct {
@@ -1652,7 +1795,7 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if err := s.apps.Assign(r.Context(), id, req.NodeIDs, !req.Remove); err != nil {
-				writeErr(w, http.StatusInternalServerError, err.Error())
+				writeApplicationSubresourceError(w, err)
 				return
 			}
 			writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
@@ -1660,6 +1803,10 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 		case "deploy":
 			if !s.canRun(r) {
 				writeErr(w, http.StatusForbidden, "permission denied")
+				return
+			}
+			// 存在性前置检查：与 assign 同一语义（此前 400 + sql: no rows in result set）。
+			if !s.requireApplication(w, r, id) {
 				return
 			}
 			var req struct {
@@ -1675,7 +1822,7 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 			}
 			execs, err := s.apps.Deploy(r.Context(), id, req.NodeIDs, req.Operation)
 			if err != nil {
-				writeErr(w, http.StatusBadRequest, err.Error())
+				writeApplicationSubresourceError(w, err)
 				return
 			}
 			s.audit(r, "application", id, "deploy")
@@ -1684,7 +1831,7 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 		case "nodes":
 			nodes, err := s.apps.GetNodes(r.Context(), id)
 			if err != nil {
-				writeErr(w, http.StatusInternalServerError, err.Error())
+				s.writeInternalError(w, r, err)
 				return
 			}
 			writeJSON(w, http.StatusOK, nodes)
@@ -1712,13 +1859,17 @@ func (s *Server) handleApplicationByID(w http.ResponseWriter, r *http.Request) {
 		}
 		a.ID = id
 		if err := s.apps.Update(r.Context(), &a); err != nil {
-			writeErr(w, http.StatusBadRequest, err.Error())
+			writeUpdateError(w, "application not found", err)
 			return
 		}
 		writeJSON(w, http.StatusOK, a)
 	case http.MethodDelete:
 		if !s.canWrite(r) {
 			writeErr(w, http.StatusForbidden, "permission denied")
+			return
+		}
+		if _, err := s.apps.Get(r.Context(), id); err != nil {
+			writeErr(w, http.StatusNotFound, "application not found")
 			return
 		}
 		if err := s.apps.Delete(r.Context(), id); err != nil {
@@ -1761,9 +1912,11 @@ func (s *Server) handleExecutions(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		filter := store.ExecutionFilter{
-			NodeID: r.URL.Query().Get("node_id"),
-			TaskID: r.URL.Query().Get("task_id"),
-			Status: r.URL.Query().Get("status"),
+			NodeID:      r.URL.Query().Get("node_id"),
+			TaskID:      r.URL.Query().Get("task_id"),
+			Status:      r.URL.Query().Get("status"),
+			Query:       r.URL.Query().Get("q"),
+			TriggerType: r.URL.Query().Get("trigger_type"),
 		}
 		if lim := r.URL.Query().Get("limit"); lim != "" {
 			if n, err := strconv.Atoi(lim); err == nil {
@@ -1777,7 +1930,7 @@ func (s *Server) handleExecutions(w http.ResponseWriter, r *http.Request) {
 		}
 		list, err := s.execs.ListExecutions(r.Context(), filter)
 		if err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			s.writeInternalError(w, r, err)
 			return
 		}
 		// 计数失败不影响列表返回：省略 X-Total-Count 并记录日志。
@@ -1804,7 +1957,7 @@ func (s *Server) handleExecutionByID(w http.ResponseWriter, r *http.Request) {
 		}
 		chunks, err := s.execs.ListLogChunks(r.Context(), id)
 		if err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			s.writeInternalError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, chunks)
@@ -1845,6 +1998,8 @@ func (s *Server) handleExecutionByID(w http.ResponseWriter, r *http.Request) {
 		}
 		writeJSON(w, http.StatusOK, ex)
 	default:
+		// 执行记录不支持 DELETE（方法不支持统一 405 + Allow）。
+		w.Header().Set("Allow", "GET")
 		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
 }
@@ -1852,6 +2007,11 @@ func (s *Server) handleExecutionByID(w http.ResponseWriter, r *http.Request) {
 // ---------- Audit ----------
 
 func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
+		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
 	if s.metrics == nil {
 		writeErr(w, http.StatusNotFound, "metrics not enabled")
 		return
@@ -1861,9 +2021,15 @@ func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleAudit(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
+		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
 	filter := store.AuditFilter{
 		UserID: r.URL.Query().Get("user_id"),
 		Action: r.URL.Query().Get("action"),
+		Query:  r.URL.Query().Get("q"),
 	}
 	if lim := r.URL.Query().Get("limit"); lim != "" {
 		if n, err := strconv.Atoi(lim); err == nil {
@@ -1877,7 +2043,7 @@ func (s *Server) handleAudit(w http.ResponseWriter, r *http.Request) {
 	}
 	list, err := s.store.ListAudit(r.Context(), filter)
 	if err != nil {
-		writeErr(w, http.StatusInternalServerError, err.Error())
+		s.writeInternalError(w, r, err)
 		return
 	}
 	// 计数失败不影响列表返回：省略 X-Total-Count 并记录日志。
@@ -1919,7 +2085,7 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		}
 		for k, v := range body {
 			if err := s.store.SetSetting(r.Context(), k, v); err != nil {
-				writeErr(w, http.StatusInternalServerError, err.Error())
+				s.writeInternalError(w, r, err)
 				return
 			}
 		}
@@ -2004,7 +2170,7 @@ func (s *Server) handleUsers(w http.ResponseWriter, r *http.Request) {
 		}
 		list, err := s.store.ListUsers(r.Context())
 		if err != nil {
-			writeErr(w, http.StatusInternalServerError, err.Error())
+			s.writeInternalError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, list)
@@ -2022,22 +2188,44 @@ func (s *Server) handleUsers(w http.ResponseWriter, r *http.Request) {
 			writeErr(w, http.StatusBadRequest, "invalid request")
 			return
 		}
-		hash, err := auth.HashPassword(req.Password)
-		if err != nil {
-			writeErr(w, http.StatusInternalServerError, "hash failed")
+		// 用户名归一化：纯空白用户名不得创建（缺陷 OBS-20261016-G1-USER-INPUT-NOT-TRIMMED）。
+		req.Username = strings.TrimSpace(req.Username)
+		if req.Username == "" || req.Password == "" {
+			writeErr(w, http.StatusBadRequest, "username and password required")
 			return
 		}
 		if req.Role == "" {
 			req.Role = models.RoleViewer
 		}
+		if !auth.ValidRole(req.Role) {
+			writeErr(w, http.StatusBadRequest, "invalid role")
+			return
+		}
+		hash, err := auth.HashPassword(req.Password)
+		if err != nil {
+			writeErr(w, http.StatusBadRequest, "invalid password")
+			return
+		}
+		// 重名归一化（与 groups 的 "group name already exists" 同风格）：
+		// 不把 SQLite UNIQUE 原文回给调用方（缺陷 OBS-20261016-G1-USER-DUP-SQL-MESSAGE）。
+		if _, err := s.store.GetUserByUsername(r.Context(), req.Username); err == nil {
+			writeErr(w, http.StatusBadRequest, "username already exists")
+			return
+		}
 		u := &models.User{Username: req.Username, PasswordHash: hash, Role: req.Role}
 		if err := s.store.CreateUser(r.Context(), u); err != nil {
-			writeErr(w, http.StatusBadRequest, err.Error())
+			// 并发创建时唯一索引兜底：同归一化文案。
+			if store.IsUniqueViolation(err) {
+				writeErr(w, http.StatusBadRequest, "username already exists")
+				return
+			}
+			s.writeInternalError(w, r, err)
 			return
 		}
 		s.audit(r, "user", u.ID, "create")
 		writeJSON(w, http.StatusOK, u)
 	default:
+		w.Header().Set("Allow", "GET, POST")
 		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
 }
@@ -2061,27 +2249,48 @@ func (s *Server) handleUserByID(w http.ResponseWriter, r *http.Request) {
 			writeErr(w, http.StatusBadRequest, "role or password required")
 			return
 		}
-		if req.Role != "" {
-			if err := s.store.UpdateUserRole(r.Context(), id, req.Role); err != nil {
-				writeErr(w, http.StatusInternalServerError, err.Error())
-				return
-			}
+		if req.Role != "" && !auth.ValidRole(req.Role) {
+			writeErr(w, http.StatusBadRequest, "invalid role")
+			return
 		}
+		var passwordHash string
 		if req.Password != "" {
 			hash, err := auth.HashPassword(req.Password)
 			if err != nil {
-				writeErr(w, http.StatusInternalServerError, "password hash failed")
+				writeErr(w, http.StatusBadRequest, "invalid password")
 				return
 			}
-			if err := s.store.UpdateUserPassword(r.Context(), id, hash); err != nil {
-				writeErr(w, http.StatusInternalServerError, err.Error())
-				return
+			passwordHash = hash
+		}
+		update := func(ctx context.Context) error {
+			if req.Role != "" {
+				if err := s.store.UpdateUserRole(ctx, id, req.Role); err != nil {
+					return err
+				}
 			}
+			if passwordHash != "" {
+				return s.store.UpdateUserPassword(ctx, id, passwordHash)
+			}
+			return nil
+		}
+		var err error
+		if txStore, ok := s.store.(interface {
+			WithTx(context.Context, func(context.Context) error) error
+		}); ok {
+			err = txStore.WithTx(r.Context(), update)
+		} else {
+			err = update(r.Context())
+		}
+		if err != nil {
+			s.writeInternalError(w, r, err)
+			return
 		}
 		s.audit(r, "user", id, "update")
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 		return
 	}
+	// 用户资源不支持 DELETE（方法不支持统一 405 + Allow）。
+	w.Header().Set("Allow", "PUT")
 	writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
 }
 

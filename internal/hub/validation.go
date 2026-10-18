@@ -15,6 +15,16 @@ import (
 
 var validConditionOperators = map[string]bool{"==": true, "!=": true, ">": true, "<": true, ">=": true, "<=": true}
 
+// validParameterTypes 脚本/任务参数类型白名单：与 models.Parameter 的类型注释、
+// 前端参数类型下拉（string | number | bool | secret）保持一致。
+// 只有 secret 影响执行语义（值进入脱敏列表），其余类型仅作输入提示。
+var validParameterTypes = map[string]bool{
+	"string": true,
+	"number": true,
+	"bool":   true,
+	"secret": true,
+}
+
 // validDeploymentModes HELLO 上报 deployment_mode 的枚举白名单。
 // 取值集合以 models 常量与 packaging/systemd/agent.yaml.example 注释
 // （native | docker | docker_host_integration）为准；"container" 仅为
@@ -158,7 +168,11 @@ func validateCondition(ctx context.Context, st store.Store, c *models.Condition)
 
 const protocolUnknown = "unknown"
 
-func validateSchedule(s *models.Schedule) error {
+// validateSchedule 校验调度定义。previousRunAt 为既有记录的 run_at（创建时传零值）：
+// 一次性调度的 run_at 必须晚于当前时刻，否则默认 misfire_policy=run_once 会立即补跑
+// 一次、skip 则留下永久启用却永不触发的空转调度（缺陷 OBS-20261014-PAST-ONETIME-SAVE-ENABLED）。
+// run_at 与既有值相同（未修改）时放行，避免修复前创建的过去时间记录被锁死无法编辑/禁用。
+func validateSchedule(s *models.Schedule, previousRunAt time.Time) error {
 	if s.TaskID == "" {
 		return fmt.Errorf("task_id required")
 	}
@@ -178,6 +192,9 @@ func validateSchedule(s *models.Schedule) error {
 		if s.RunAt.IsZero() {
 			return fmt.Errorf("run_at required")
 		}
+		if !s.RunAt.Equal(previousRunAt) && !s.RunAt.After(time.Now()) {
+			return fmt.Errorf("run_at must be in the future")
+		}
 	case models.ScheduleTypeOnStart:
 		// on_start 由目标节点的 Agent 进程启动触发，无触发时间字段
 		// （不需要 expression / interval_sec / run_at / timezone）。
@@ -195,6 +212,26 @@ func validateSchedule(s *models.Schedule) error {
 	}
 	if s.MisfirePolicy != models.MisfirePolicySkip && s.MisfirePolicy != models.MisfirePolicyRunOnce {
 		return fmt.Errorf("invalid misfire_policy")
+	}
+	return nil
+}
+
+// maxScriptContentBytes 脚本内容上限（256 KiB）。按字节数判定，
+// 与 scripts.content 的存储体量对齐，避免单脚本定义过大拖垮同步与执行链路。
+const maxScriptContentBytes = 256 * 1024
+
+// validateScriptDefinition 校验脚本定义：
+// timeout 不允许负数；0 归一为默认 300s（与任务语义、DB 默认值、前端 min=0 一致）；
+// content 不得超过 maxScriptContentBytes。
+func validateScriptDefinition(s *models.Script) error {
+	if s.Timeout < 0 {
+		return fmt.Errorf("timeout cannot be negative")
+	}
+	if s.Timeout == 0 {
+		s.Timeout = 300
+	}
+	if len(s.Content) > maxScriptContentBytes {
+		return fmt.Errorf("script content too large: %d bytes (max %d)", len(s.Content), maxScriptContentBytes)
 	}
 	return nil
 }

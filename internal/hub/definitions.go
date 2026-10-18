@@ -35,6 +35,9 @@ func (m *ScriptManager) Create(ctx context.Context, s *models.Script) error {
 	if s.ID == "" {
 		s.ID = uuid.NewString()
 	}
+	if err := validateScriptDefinition(s); err != nil {
+		return err
+	}
 	if err := validateParameters(s.Parameters); err != nil {
 		return err
 	}
@@ -70,6 +73,9 @@ func (m *ScriptManager) Create(ctx context.Context, s *models.Script) error {
 
 // Update 更新脚本
 func (m *ScriptManager) Update(ctx context.Context, s *models.Script) error {
+	if err := validateScriptDefinition(s); err != nil {
+		return err
+	}
 	if err := validateParameters(s.Parameters); err != nil {
 		return err
 	}
@@ -425,10 +431,12 @@ func validateUniqueTaskName(items []*models.Task, name, selfID string) error {
 	return nil
 }
 
-// validateParameters 校验参数名称非空且不重复（缺陷 FAIL-A-014）。
+// validateParameters 校验参数名称非空且不重复（缺陷 FAIL-A-014），
+// 并校验参数类型属于白名单（缺陷 OBS-20261017-SCRIPT-PUT-TYPE-UNVALIDATED）。
 func validateParameters(params []models.Parameter) error {
 	seen := map[string]bool{}
-	for _, p := range params {
+	for i := range params {
+		p := &params[i]
 		name := strings.TrimSpace(p.Name)
 		if name == "" {
 			return fmt.Errorf("parameter name is required")
@@ -438,6 +446,15 @@ func validateParameters(params []models.Parameter) error {
 			return fmt.Errorf("duplicate parameter name: %s", name)
 		}
 		seen[key] = true
+		// 类型白名单：此前 PUT/POST 接受任意 type（type=not-a-type 也返回 200，
+		// 缺陷 OBS-20261017-SCRIPT-PUT-TYPE-UNVALIDATED）。空类型归一为 string。
+		if p.Type == "" {
+			p.Type = "string"
+			continue
+		}
+		if !validParameterTypes[p.Type] {
+			return fmt.Errorf("invalid parameter type: %s", p.Type)
+		}
 	}
 	return nil
 }

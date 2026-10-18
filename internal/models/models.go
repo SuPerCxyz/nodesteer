@@ -292,25 +292,27 @@ type RemoteCondition struct {
 
 // Execution 执行
 type Execution struct {
-	ID              string    `json:"id"`
-	TaskID          string    `json:"task_id"`
-	TaskRevision    int64     `json:"task_revision"`
-	ScriptID        string    `json:"script_id,omitempty"`
-	ScriptRevision  int64     `json:"script_revision,omitempty"`
-	NodeID          string    `json:"node_id"`
-	TriggerType     string    `json:"trigger_type"` // manual | schedule
-	ScheduledTime   time.Time `json:"scheduled_time,omitempty"`
-	StartTime       time.Time `json:"start_time,omitempty"`
-	EndTime         time.Time `json:"end_time,omitempty"`
-	Status          string    `json:"status"`
-	ExitCode        int       `json:"exit_code,omitempty"`
-	Stdout          string    `json:"stdout"`
-	Stderr          string    `json:"stderr"`
-	StdoutTruncated bool      `json:"stdout_truncated"`
-	StderrTruncated bool      `json:"stderr_truncated"`
-	Offline         bool      `json:"offline"`
-	Synced          bool      `json:"synced"`
-	BlockReason     string    `json:"block_reason,omitempty"`
+	ID             string    `json:"id"`
+	TaskID         string    `json:"task_id"`
+	TaskRevision   int64     `json:"task_revision"`
+	ScriptID       string    `json:"script_id,omitempty"`
+	ScriptRevision int64     `json:"script_revision,omitempty"`
+	NodeID         string    `json:"node_id"`
+	TriggerType    string    `json:"trigger_type"` // manual | schedule
+	ScheduledTime  time.Time `json:"scheduled_time,omitempty"`
+	StartTime      time.Time `json:"start_time,omitempty"`
+	EndTime        time.Time `json:"end_time,omitempty"`
+	Status         string    `json:"status"`
+	// ExitCode 为可空退出码：只有真正执行过进程的终态才带值（合法 0 必须能序列化），
+	// 未执行/未知状态为 nil，JSON 省略该字段（缺陷 OBS-20261008-EXECUTION-ZERO-EXIT-CODE）。
+	ExitCode        *int   `json:"exit_code,omitempty"`
+	Stdout          string `json:"stdout"`
+	Stderr          string `json:"stderr"`
+	StdoutTruncated bool   `json:"stdout_truncated"`
+	StderrTruncated bool   `json:"stderr_truncated"`
+	Offline         bool   `json:"offline"`
+	Synced          bool   `json:"synced"`
+	BlockReason     string `json:"block_reason,omitempty"`
 }
 
 // 执行状态
@@ -324,6 +326,35 @@ const (
 	ExecStatusTimedOut = "TIMED_OUT"
 	ExecStatusBlocked  = "BLOCKED"
 )
+
+// ExecutionExitCode 判定一条执行记录应对外暴露的退出码（nil 表示未知）。
+// 存储层 executions.exit_code 为 NOT NULL DEFAULT 0，无法自行区分“合法 0”与“从未产生”，
+// 因此按执行状态判定：
+//   - SUCCESS：恒有退出码，0 是合法成功值（缺陷 OBS-20261008-EXECUTION-ZERO-EXIT-CODE）；
+//   - FAILED / TIMED_OUT / CANCELED：需非 0。Agent runner 对失败/超时/取消一律写非 0，
+//     0 只出现在“进程根本没启动”的 Hub 侧失败（如下发失败、节点离线），此时退出码未知；
+//   - PENDING / RUNNING / SKIPPED / BLOCKED：无进程退出码。
+//
+// 这样既能让合法 0 显示为 0，也不会把未执行状态的默认 0 伪装成已知成功退出码。
+func ExecutionExitCode(status string, code int) *int {
+	switch status {
+	case ExecStatusSuccess:
+		return &code
+	case ExecStatusFailed, ExecStatusTimedOut, ExecStatusCanceled:
+		if code != 0 {
+			return &code
+		}
+	}
+	return nil
+}
+
+// ExitCodeValue 取可空退出码的数值，nil 视为 0（写回 NOT NULL 列的默认值）。
+func ExitCodeValue(p *int) int {
+	if p == nil {
+		return 0
+	}
+	return *p
+}
 
 // Trigger 类型
 const (

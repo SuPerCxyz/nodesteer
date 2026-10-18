@@ -327,13 +327,19 @@ type DeployResultPayload struct {
 // RemoteStateUnknown 远程状态不可解析标记
 const RemoteStateUnknown = "UNKNOWN"
 
-// RemoteStatePayload 远程状态
+// RemoteStatePayload 远程状态。
+// TTLRemainingSec 为自 Hub 判定时刻起的剩余有效秒数（向上取整），是 Agent 新鲜度
+// 判定的唯一依据：字段缺失或 <= 0 一律视为未知并 Fail Closed；判定不做跨主机时钟
+// 比较，不承诺与不下发该字段的旧 Hub 兼容。
+// ObservedAt 与 TTL 保留但仅作诊断/展示用途（TTL 在 Agent 上报缓存时仍由 Hub 用于
+// 有效期计算），不参与 Agent 新鲜度判定。
 type RemoteStatePayload struct {
-	NodeID     string `json:"node_id"`
-	Property   string `json:"property"`
-	Value      string `json:"value"`
-	ObservedAt string `json:"observed_at"`
-	TTL        int64  `json:"ttl_sec"`
+	NodeID          string `json:"node_id"`
+	Property        string `json:"property"`
+	Value           string `json:"value"`
+	ObservedAt      string `json:"observed_at"`                 // 仅诊断：观测时刻
+	TTL             int64  `json:"ttl_sec"`                     // 观测窗口长度（秒）：上报用于 Hub 缓存有效期，下发仅诊断
+	TTLRemainingSec *int64 `json:"ttl_remaining_sec,omitempty"` // 新鲜度判定唯一依据，缺失/<=0 视为未知
 }
 
 // RemoteStateReqPayload 远程状态查询

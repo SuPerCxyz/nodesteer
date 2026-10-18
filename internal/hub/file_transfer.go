@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/SuPerCxyz/nodesteer/internal/models"
 	"github.com/SuPerCxyz/nodesteer/internal/protocol"
@@ -25,6 +26,31 @@ import (
 )
 
 const defaultMaxFileTransferBytes = int64(10 << 30)
+
+// 交付停滞阈值：目标进入 DELIVERING 后超过该时限仍未上报结果，判定投递失败并终态化。
+//
+// 为什么必须有：Hub 可能把目标写成 DELIVERING 而指令实际未送达（websocket 写失败、
+// 消息丢在发送缓冲区等），此时既没有目标回报也没有超时，传输永久停在非终态，
+// DELETE /api/nodes/{id} 会被 409 has active file transfer 永久阻断
+// （缺陷 E2E-20261017-XFER-REMOTE-TARGET-STUCK-DELIVERING）。
+//
+// 阈值取“基线 + 按文件大小线性放宽”，因为交付阶段是目标 Agent 通过 HTTP 下载整个文件，
+// 没有进度上报，大文件在慢链路上的合法耗时可能很长：
+// 基线 30 分钟，另按保守下限 1 MiB/s 折算下载时间（10 GiB 文件约 2.8 小时）。
+// 仅作用于 DELIVERING（指令已下发、等待目标回报）；PENDING 表示“等源暂存/等节点重连”，
+// 属正常可恢复状态，不在此终结。
+const (
+	defaultDeliveryStallTimeout = 30 * time.Minute
+	deliveryStallBytesPerSecond = int64(1 << 20)
+)
+
+// deliveryStallTimeout 按文件大小计算交付停滞阈值。
+func deliveryStallTimeout(size int64) time.Duration {
+	if size <= 0 {
+		return defaultDeliveryStallTimeout
+	}
+	return defaultDeliveryStallTimeout + time.Duration(size/deliveryStallBytesPerSecond)*time.Second
+}
 
 // ResolveGatewayBaseURL 返回 Agent 可访问的 Gateway HTTP 基址。
 func ResolveGatewayBaseURL(configured, webBaseURL, gatewayAddr string) string {
@@ -89,6 +115,85 @@ func (m *FileTransferManager) SetMaxBytes(n int64) {
 	}
 }
 
+// StartDeliveryWatchdog 周期性终结停滞在 DELIVERING 的目标（见 deliveryStallTimeout）。
+func (m *FileTransferManager) StartDeliveryWatchdog(ctx context.Context, interval time.Duration) {
+	if interval <= 0 {
+		interval = time.Minute
+	}
+	go func() {
+		t := time.NewTicker(interval)
+		defer t.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				if _, err := m.SweepStalledDeliveries(ctx, time.Now()); err != nil {
+					m.logger.Warn("file delivery watchdog sweep failed", "error", err)
+				}
+			}
+		}
+	}()
+}
+
+// SweepStalledDeliveries 把超过交付时限仍未上报结果的 DELIVERING 目标终结为 FAILED，
+// 并同步聚合传输状态，使传输回到终态（从而释放节点删除）。返回被终结的目标数。
+// now 由调用方注入，便于测试确定性地跨过时限。
+func (m *FileTransferManager) SweepStalledDeliveries(ctx context.Context, now time.Time) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	transfers, err := m.store.ListFileTransfers(ctx)
+	if err != nil {
+		return 0, err
+	}
+	stalled := 0
+	for _, t := range transfers {
+		// 未暂存（等源上传）、已取消、已终态的传输不涉及交付停滞。
+		if t.SHA256 == "" || t.Status == models.FileTransferCanceled ||
+			t.Status == models.FileTransferSuccess || t.Status == models.FileTransferFailed {
+			continue
+		}
+		changed := false
+		for _, target := range t.Targets {
+			if target.Status != models.FileTargetDelivering {
+				continue
+			}
+			since := deliverySince(target, t)
+			if since.IsZero() || now.Sub(since) < deliveryStallTimeout(t.Size) {
+				continue
+			}
+			target.Status = models.FileTargetFailed
+			target.Error = fmt.Sprintf("delivery timed out after %s without a result from the target agent",
+				deliveryStallTimeout(t.Size).Truncate(time.Second))
+			if err := m.store.UpdateFileTransferTarget(ctx, target); err != nil {
+				return stalled, err
+			}
+			stalled++
+			changed = true
+			m.logger.Warn("file delivery timed out; target marked failed",
+				"transfer", t.ID, "node", target.NodeID, "since", since)
+		}
+		if !changed {
+			continue
+		}
+		if err := m.updateTransferAggregate(ctx, t); err != nil {
+			return stalled, err
+		}
+	}
+	return stalled, nil
+}
+
+// deliverySince 返回目标进入当前状态的参考时刻；全部时间缺失时返回零值（不判定停滞）。
+func deliverySince(target *models.FileTransferTarget, t *models.FileTransfer) time.Time {
+	if !target.UpdatedAt.IsZero() {
+		return target.UpdatedAt
+	}
+	if !t.UpdatedAt.IsZero() {
+		return t.UpdatedAt
+	}
+	return t.CreatedAt
+}
+
 // Create 创建传输并尽快通知源 Agent。
 func (m *FileTransferManager) Create(ctx context.Context, sourceNodeID, sourcePath string, targets []FileTransferTargetRequest) (*models.FileTransfer, error) {
 	if err := validateTransferPath(sourcePath); err != nil {
@@ -108,6 +213,11 @@ func (m *FileTransferManager) Create(ctx context.Context, sourceNodeID, sourcePa
 	for _, req := range targets {
 		if req.NodeID == "" || seen[req.NodeID] {
 			return nil, errors.New("target node is empty or duplicated")
+		}
+		// 服务端自传拒绝：源与目标同节点没有中继意义，且会与源侧暂存/投递路径
+		// 相互覆盖（缺陷 OBS-20261017-XFER-API-NO-SELF-TRANSFER-CHECK，此前仅前端裁剪）。
+		if req.NodeID == sourceNodeID {
+			return nil, fmt.Errorf("self transfer is not allowed: target node %s is the source node", req.NodeID)
 		}
 		if err := validateTransferPath(req.DestinationPath); err != nil {
 			return nil, fmt.Errorf("destination path: %w", err)
@@ -500,11 +610,20 @@ func (m *FileTransferManager) HandleDeliveryResult(ctx context.Context, nodeID s
 	if err := m.store.UpdateFileTransferTarget(ctx, target); err != nil {
 		return err
 	}
-	allSuccess, allTerminal, anyFailed := true, true, false
+	// 内存中的目标对象与切片元素可能不是同一实例，聚合前先同步。
 	for _, item := range t.Targets {
 		if item.NodeID == target.NodeID {
 			item.Status, item.Error = target.Status, target.Error
 		}
+	}
+	return m.updateTransferAggregate(ctx, t)
+}
+
+// updateTransferAggregate 依据各目标状态推进传输聚合状态并持久化：
+// 全部成功 → SUCCESS；全部终态且存在失败 → FAILED；否则仍为 DELIVERING。
+func (m *FileTransferManager) updateTransferAggregate(ctx context.Context, t *models.FileTransfer) error {
+	allSuccess, allTerminal, anyFailed := true, true, false
+	for _, item := range t.Targets {
 		switch item.Status {
 		case models.FileTargetSuccess:
 		case models.FileTargetFailed, models.FileTargetCanceled:

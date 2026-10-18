@@ -2,12 +2,62 @@ package hub
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/SuPerCxyz/nodesteer/internal/models"
 	"github.com/SuPerCxyz/nodesteer/internal/store"
 )
+
+// TestGroupNameValidationAndMissingUpdate 覆盖缺陷：组名非空且唯一（归一化文案），
+// 更新不存在的组返回 sql.ErrNoRows（不再静默 0 行命中），且不写孤儿成员、不推进 revision。
+func TestGroupNameValidationAndMissingUpdate(t *testing.T) {
+	ctx := context.Background()
+	st, err := store.OpenInMemory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	rm := NewRevisionManager(st)
+	nm := NewNodeManager(st, rm)
+
+	if err := nm.CreateGroup(ctx, &models.Group{Name: "   "}); err == nil || !strings.Contains(err.Error(), "group name is required") {
+		t.Fatalf("empty group name must be rejected: %v", err)
+	}
+	if err := nm.CreateGroup(ctx, &models.Group{Name: "Prod"}); err != nil {
+		t.Fatalf("create group: %v", err)
+	}
+	if err := nm.CreateGroup(ctx, &models.Group{Name: " prod "}); err == nil || !strings.Contains(err.Error(), "already exists") {
+		t.Fatalf("duplicate group name must be rejected: %v", err)
+	}
+	groups, err := st.ListGroups(ctx)
+	if err != nil || len(groups) != 1 {
+		t.Fatalf("groups = %+v err=%v", groups, err)
+	}
+	// 自身重命名/描述修改不冲突
+	groups[0].Description = "updated"
+	if err := nm.UpdateGroup(ctx, groups[0]); err != nil {
+		t.Fatalf("self update: %v", err)
+	}
+
+	revBefore, err := rm.Current(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = nm.UpdateGroup(ctx, &models.Group{ID: "missing", Name: "ghost", Type: "static", Members: []string{"node-1"}})
+	if !errors.Is(err, sql.ErrNoRows) {
+		t.Fatalf("missing group update = %v, want sql.ErrNoRows", err)
+	}
+	if ids, err := st.GroupMemberIDs(ctx, "missing"); err != nil || len(ids) != 0 {
+		t.Fatalf("orphan members written: %v err=%v", ids, err)
+	}
+	if rev, err := rm.Current(ctx); err != nil || rev != revBefore {
+		t.Fatalf("revision advanced on rejected update: %d -> %d err=%v", revBefore, rev, err)
+	}
+}
 
 // TestResolveTargetLabelGroup 验证 Bug G：label 分组成员为动态解析，
 // 作为 group 目标时应命中带对应 label 的节点。
@@ -167,6 +217,13 @@ func TestReenrollmentReusesExistingNodeIdentity(t *testing.T) {
 	if err := st.SetSetting(ctx, "revoked:"+first.ID, "true"); err != nil {
 		t.Fatalf("mark revoked: %v", err)
 	}
+	if err := st.UpdateNodeStatus(ctx, first.ID, models.NodeStatusDisabled); err != nil {
+		t.Fatal(err)
+	}
+	oldCredential, err := st.GetSetting(ctx, "cred:"+first.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	again, err := nm.PrepareEnrollment(ctx, "host-x", "10.0.0.20", models.DeploymentModeNative)
 	if err != nil {
@@ -180,6 +237,13 @@ func TestReenrollmentReusesExistingNodeIdentity(t *testing.T) {
 	}
 	if again.Labels["env"] != "prod" {
 		t.Fatalf("labels should be preserved, got %v", again.Labels)
+	}
+	persisted, err := st.GetNode(ctx, first.ID)
+	if err != nil || persisted.Status != models.NodeStatusPending || persisted.SyncStatus != "pending" {
+		t.Fatalf("re-enrollment must persist pending status: node=%+v err=%v", persisted, err)
+	}
+	if nm.AuthenticateAgent(ctx, first.ID, oldCredential) {
+		t.Fatal("old credential must be rejected after re-enrollment")
 	}
 	if revoked, _ := st.GetSetting(ctx, "revoked:"+first.ID); revoked == "true" {
 		t.Fatalf("revoked flag should be cleared on re-enrollment")

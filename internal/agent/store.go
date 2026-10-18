@@ -47,7 +47,9 @@ func OpenLocalStore(dir string) (*LocalStore, error) {
 	for _, sub := range []string{"scripts", "artifacts", "applications", "executions", "logs", "tmp"} {
 		os.MkdirAll(filepath.Join(dir, sub), 0o755)
 	}
-	dsn := filepath.Join(dir, "state.db") + "?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"
+	// _txlock=immediate 与 Hub 侧同因：写事务在 BEGIN 即取锁，锁等待走 busy_timeout，
+	// 避免 WAL 下 deferred 事务读→写升级直接返回 SQLITE_BUSY（见 internal/store/sqlite.go）。
+	dsn := filepath.Join(dir, "state.db") + "?_txlock=immediate&_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, err
@@ -160,9 +162,14 @@ CREATE TABLE IF NOT EXISTS deployments (
 	from_version TEXT NOT NULL DEFAULT '',
 	to_version TEXT NOT NULL DEFAULT '',
 	phase TEXT NOT NULL,
+	completed_kind TEXT NOT NULL DEFAULT '',
 	backup_path TEXT NOT NULL DEFAULT '',
 	backup_config_path TEXT NOT NULL DEFAULT '',
 	backup_unit_path TEXT NOT NULL DEFAULT '',
+	app_revision INTEGER NOT NULL DEFAULT 0,
+	binary_path TEXT NOT NULL DEFAULT '',
+	config_path TEXT NOT NULL DEFAULT '',
+	unit_name TEXT NOT NULL DEFAULT '',
 	started_at TEXT NOT NULL,
 	updated_at TEXT NOT NULL
 );
@@ -225,6 +232,23 @@ func (s *LocalStore) migrate() error {
 			return err
 		}
 	}
+	// 旧库迁移：deployments 增加部署上下文绑定列（旧行为空，恢复时不重放）。
+	for _, column := range []string{
+		`ALTER TABLE deployments ADD COLUMN app_revision INTEGER NOT NULL DEFAULT 0`,
+		`ALTER TABLE deployments ADD COLUMN binary_path TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE deployments ADD COLUMN config_path TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE deployments ADD COLUMN unit_name TEXT NOT NULL DEFAULT ''`,
+	} {
+		if _, err := s.db.Exec(column); err != nil && !strings.Contains(err.Error(), "duplicate column") {
+			return err
+		}
+	}
+	// 旧库迁移：deployments 增加终态成因列（旧行为空，视为未知，不构成取代）。
+	if _, err := s.db.Exec(`ALTER TABLE deployments ADD COLUMN completed_kind TEXT NOT NULL DEFAULT ''`); err != nil {
+		if !strings.Contains(err.Error(), "duplicate column") {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -240,10 +264,11 @@ func (s *LocalStore) BeginSync(ctx context.Context) error {
 	return nil
 }
 
-// CommitSync 提交同步事务
+// CommitSync 提交同步事务。
+// 无活动事务时不得 Unlock：写锁只在 BeginSync 成功获取，只由 Commit/Rollback 释放一次；
+// Commit 失败后事务已结束（tx 置空），随后 defer 的 RollbackSync 必须是 no-op。
 func (s *LocalStore) CommitSync() error {
 	if s.tx == nil {
-		s.mu.Unlock()
 		return nil
 	}
 	err := s.tx.Commit()
@@ -252,10 +277,9 @@ func (s *LocalStore) CommitSync() error {
 	return err
 }
 
-// RollbackSync 回滚同步事务
+// RollbackSync 回滚同步事务；无活动事务时为 no-op（不持有写锁，不得 Unlock）。
 func (s *LocalStore) RollbackSync() error {
 	if s.tx == nil {
-		s.mu.Unlock()
 		return nil
 	}
 	err := s.tx.Rollback()
@@ -672,24 +696,56 @@ func (s *LocalStore) ListRunningExecutions(ctx context.Context) ([]*LocalExecuti
 
 // DeploymentRow 部署 Journal
 type DeploymentRow struct {
-	ID               string
-	ApplicationID    string
-	FromVersion      string
-	ToVersion        string
-	Phase            string
+	ID            string
+	ApplicationID string
+	FromVersion   string
+	ToVersion     string
+	Phase         string
+	// CompletedKind 终态成因：仅 DONE 行有值（deployed / rolled_back / prepare_failed）。
+	// 旧行（升级前写入）为空，视为“未知”，不构成已被更晚成功部署取代。
+	CompletedKind    string
 	BackupPath       string
 	BackupConfigPath string
 	BackupUnitPath   string
-	StartedAt        string
-	UpdatedAt        string
+	// 部署上下文绑定：记录部署当时解析的应用 revision 与三路径，
+	// 恢复回滚前必须与当前定义一致，防止陈旧 backup 覆盖已部署版本。
+	// 旧行（升级前写入）为空值/0，视为“未知”，不参与重放。
+	AppRevision int64
+	BinaryPath  string
+	ConfigPath  string
+	UnitName    string
+	StartedAt   string
+	UpdatedAt   string
+}
+
+const deploymentColumns = `id, application_id, from_version, to_version, phase, completed_kind, backup_path,
+	backup_config_path, backup_unit_path, app_revision, binary_path, config_path, unit_name, started_at, updated_at`
+
+func scanDeploymentRow(scan func(dest ...any) error) (*DeploymentRow, error) {
+	var d DeploymentRow
+	if err := scan(&d.ID, &d.ApplicationID, &d.FromVersion, &d.ToVersion, &d.Phase, &d.CompletedKind,
+		&d.BackupPath, &d.BackupConfigPath, &d.BackupUnitPath, &d.AppRevision,
+		&d.BinaryPath, &d.ConfigPath, &d.UnitName, &d.StartedAt, &d.UpdatedAt); err != nil {
+		return nil, err
+	}
+	return &d, nil
 }
 
 func (s *LocalStore) CreateDeployment(ctx context.Context, d *DeploymentRow) error {
 	_, err := s.execContext(ctx, `
-		INSERT INTO deployments (id, application_id, from_version, to_version, phase, backup_path, backup_config_path, backup_unit_path, started_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		d.ID, d.ApplicationID, d.FromVersion, d.ToVersion, d.Phase, d.BackupPath,
-		d.BackupConfigPath, d.BackupUnitPath, d.StartedAt, d.UpdatedAt)
+		INSERT INTO deployments (id, application_id, from_version, to_version, phase, completed_kind, backup_path, backup_config_path, backup_unit_path, app_revision, binary_path, config_path, unit_name, started_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		d.ID, d.ApplicationID, d.FromVersion, d.ToVersion, d.Phase, d.CompletedKind, d.BackupPath,
+		d.BackupConfigPath, d.BackupUnitPath, d.AppRevision, d.BinaryPath, d.ConfigPath, d.UnitName,
+		d.StartedAt, d.UpdatedAt)
+	return err
+}
+
+// SetDeploymentBinding 记录部署上下文（应用 revision 与解析后的 binary/config/unit 路径），
+// 供重启恢复时校验 backup 仍然绑定当前应用定义。
+func (s *LocalStore) SetDeploymentBinding(ctx context.Context, id string, appRevision int64, binaryPath, configPath, unitName string) error {
+	_, err := s.execContext(ctx, `UPDATE deployments SET app_revision = ?, binary_path = ?, config_path = ?, unit_name = ?, updated_at = ? WHERE id = ?`,
+		appRevision, binaryPath, configPath, unitName, time.Now().UTC().Format(time.RFC3339Nano), id)
 	return err
 }
 
@@ -706,8 +762,16 @@ func (s *LocalStore) UpdateDeploymentPhase(ctx context.Context, id, phase, backu
 	return err
 }
 
+// CompleteDeployment 落部署终态 DONE 并记录终态成因（completed_kind），两者必须一次写入：
+// 恢复侧的 superseded 判定只承认“成功部署”成因的 DONE，分开写会留下成因未知的 DONE 窗口。
+func (s *LocalStore) CompleteDeployment(ctx context.Context, id, completedKind, backupPath string) error {
+	_, err := s.execContext(ctx, `UPDATE deployments SET phase = 'DONE', completed_kind = ?, backup_path = ?, updated_at = ? WHERE id = ?`,
+		completedKind, backupPath, time.Now().UTC().Format(time.RFC3339Nano), id)
+	return err
+}
+
 func (s *LocalStore) GetActiveDeployments(ctx context.Context) ([]*DeploymentRow, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id, application_id, from_version, to_version, phase, backup_path, backup_config_path, backup_unit_path, started_at, updated_at
+	rows, err := s.db.QueryContext(ctx, `SELECT `+deploymentColumns+`
 		FROM deployments WHERE phase NOT IN ('DONE') ORDER BY started_at`)
 	if err != nil {
 		return nil, err
@@ -715,19 +779,57 @@ func (s *LocalStore) GetActiveDeployments(ctx context.Context) ([]*DeploymentRow
 	defer rows.Close()
 	var out []*DeploymentRow
 	for rows.Next() {
-		var d DeploymentRow
-		if err := rows.Scan(&d.ID, &d.ApplicationID, &d.FromVersion, &d.ToVersion, &d.Phase,
-			&d.BackupPath, &d.BackupConfigPath, &d.BackupUnitPath, &d.StartedAt, &d.UpdatedAt); err != nil {
+		d, err := scanDeploymentRow(rows.Scan)
+		if err != nil {
 			return nil, err
 		}
-		out = append(out, &d)
+		out = append(out, d)
 	}
 	return out, rows.Err()
 }
 
+// ListDeploymentsByApplication 返回指定应用的全部部署记录（含 DONE），
+// 供恢复阶段判定半完成部署是否已被更晚的成功部署取代。
+func (s *LocalStore) ListDeploymentsByApplication(ctx context.Context, appID string) ([]*DeploymentRow, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT `+deploymentColumns+`
+		FROM deployments WHERE application_id = ? ORDER BY started_at`, appID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []*DeploymentRow
+	for rows.Next() {
+		d, err := scanDeploymentRow(rows.Scan)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, d)
+	}
+	return out, rows.Err()
+}
+
+// InstalledApplicationVersion 返回该应用当前实际安装的版本：最近一次成功部署
+// （DONE + completed_kind=deployed）的 to_version；从未成功部署过时返回空字符串。
+// 回滚成功的记录不代表装了新版本（宿主实际仍是更早版本），因此不参与取值；
+// 应用定义里的 version 是期望版本，可能尚未部署到本节点，不能当已安装版本
+// （缺陷 OBS-20261016-JOURNAL-FROM-VERSION）。
+func (s *LocalStore) InstalledApplicationVersion(ctx context.Context, appID string) (string, error) {
+	var version string
+	err := s.db.QueryRowContext(ctx, `SELECT to_version FROM deployments
+		WHERE application_id = ? AND phase = 'DONE' AND completed_kind = ?
+		ORDER BY started_at DESC, updated_at DESC LIMIT 1`, appID, CompletedKindDeployed).Scan(&version)
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return version, nil
+}
+
 // ListAllDeployments 所有部署记录
 func (s *LocalStore) ListAllDeployments(ctx context.Context) ([]*DeploymentRow, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id, application_id, from_version, to_version, phase, backup_path, backup_config_path, backup_unit_path, started_at, updated_at
+	rows, err := s.db.QueryContext(ctx, `SELECT `+deploymentColumns+`
 		FROM deployments ORDER BY started_at DESC LIMIT 100`)
 	if err != nil {
 		return nil, err
@@ -735,12 +837,11 @@ func (s *LocalStore) ListAllDeployments(ctx context.Context) ([]*DeploymentRow, 
 	defer rows.Close()
 	var out []*DeploymentRow
 	for rows.Next() {
-		var d DeploymentRow
-		if err := rows.Scan(&d.ID, &d.ApplicationID, &d.FromVersion, &d.ToVersion, &d.Phase,
-			&d.BackupPath, &d.BackupConfigPath, &d.BackupUnitPath, &d.StartedAt, &d.UpdatedAt); err != nil {
+		d, err := scanDeploymentRow(rows.Scan)
+		if err != nil {
 			return nil, err
 		}
-		out = append(out, &d)
+		out = append(out, d)
 	}
 	return out, rows.Err()
 }

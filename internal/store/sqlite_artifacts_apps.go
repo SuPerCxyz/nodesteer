@@ -251,7 +251,7 @@ func (s *SQLiteStore) GetApplicationNodes(ctx context.Context, appID string) ([]
 		return nil, err
 	}
 	defer rows.Close()
-	var out []string
+	out := []string{}
 	for rows.Next() {
 		var id string
 		if err := rows.Scan(&id); err != nil {
@@ -259,7 +259,12 @@ func (s *SQLiteStore) GetApplicationNodes(ctx context.Context, appID string) ([]
 		}
 		out = append(out, id)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	// 契约形状固定为数组：无绑定节点时序列化 [] 而不是 null
+	// （缺陷 OBS-20261012-APP-NODES-NULL-SHAPE）。
+	return out, nil
 }
 
 // SetApplicationNodeState 保存应用在节点上的最近部署/健康状态。

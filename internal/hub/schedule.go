@@ -55,7 +55,7 @@ func (sm *ScheduleManager) Create(ctx context.Context, s *models.Schedule) error
 	if _, err := sm.store.GetTask(ctx, s.TaskID); err != nil {
 		return fmt.Errorf("referenced task not found")
 	}
-	if err := validateSchedule(s); err != nil {
+	if err := validateSchedule(s, time.Time{}); err != nil {
 		return err
 	}
 	var rev int64
@@ -117,7 +117,7 @@ func (sm *ScheduleManager) Update(ctx context.Context, s *models.Schedule) error
 	if _, err := sm.store.GetTask(ctx, s.TaskID); err != nil {
 		return fmt.Errorf("referenced task not found")
 	}
-	if err := validateSchedule(s); err != nil {
+	if err := validateSchedule(s, existing.RunAt); err != nil {
 		return err
 	}
 	s.Revision = existing.Revision + 1

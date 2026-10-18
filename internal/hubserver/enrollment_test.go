@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -266,6 +268,99 @@ func TestNodeEnrollmentCreatesPendingNode(t *testing.T) {
 	}
 	if len(nodes) != 1 || nodes[0].Hostname != "docker-node" || nodes[0].Status != models.NodeStatusPending || nodes[0].AgentID != result["agent_id"] {
 		t.Fatalf("unexpected pending nodes: %+v", nodes)
+	}
+}
+
+// TestNodeEnrollmentConcurrentWritesAllSucceed 并发纳管回归（P2）：
+// 12 个并发 POST /api/nodes/enrollment 必须全部 200。
+// 此前 DSN 缺 _txlock=immediate，WAL 下 deferred 事务读→写升级立即返回
+// SQLITE_BUSY（不受 busy_timeout 保护），并发 12 次会出现 10~11 个 500
+// （缺陷 OBS-20261016-G1-ENROLL-TRANSIENT-500 / OBS-20261017-ENROLL-INTERMITTENT-500-AGAIN）。
+func TestNodeEnrollmentConcurrentWritesAllSucceed(t *testing.T) {
+	dir := t.TempDir()
+	h, err := New(Config{
+		RegistrationToken: "registration-test",
+		DataDir:           dir,
+		ArtifactDir:       filepath.Join(dir, "artifacts"),
+		BaseURL:           "http://hub.example:8080",
+		GatewayAddr:       ":8443",
+		HeartbeatTimeout:  30 * time.Second,
+		AdminUsername:     "admin",
+		AdminPassword:     "admin123",
+		SessionTTL:        time.Hour,
+	}, slog.Default())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer h.Close()
+	ctx := context.Background()
+	if err := h.EnsureDefaultAdmin(ctx); err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(h.ServeMux())
+	defer ts.Close()
+	login, err := http.Post(ts.URL+"/api/login", "application/json", strings.NewReader(`{"username":"admin","password":"admin123"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var session struct {
+		Token string `json:"token"`
+	}
+	if err := json.NewDecoder(login.Body).Decode(&session); err != nil {
+		t.Fatal(err)
+	}
+	login.Body.Close()
+
+	const concurrency = 12
+	statuses := make([]int, concurrency)
+	bodies := make([]string, concurrency)
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	for i := 0; i < concurrency; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			payload := fmt.Sprintf(
+				`{"node_name":"concurrent-%02d","node_ip":"203.0.113.%d","hub_address":"http://public.example:8080"}`,
+				i, 100+i)
+			req, err := http.NewRequest(http.MethodPost, ts.URL+"/api/nodes/enrollment", strings.NewReader(payload))
+			if err != nil {
+				statuses[i] = -1
+				bodies[i] = err.Error()
+				return
+			}
+			req.Header.Set("Authorization", "Bearer "+session.Token)
+			req.Header.Set("Content-Type", "application/json")
+			<-start
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				statuses[i] = -1
+				bodies[i] = err.Error()
+				return
+			}
+			raw, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			statuses[i] = resp.StatusCode
+			bodies[i] = string(raw)
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+
+	for i, code := range statuses {
+		if code != http.StatusOK {
+			t.Fatalf("concurrent enrollment #%d: status %d body %s", i, code, bodies[i])
+		}
+		if strings.Contains(bodies[i], "database is locked") {
+			t.Fatalf("concurrent enrollment #%d leaked storage error: %s", i, bodies[i])
+		}
+	}
+	nodes, err := h.Nodes().ListNodes(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(nodes) != concurrency {
+		t.Fatalf("enrolled nodes = %d, want %d", len(nodes), concurrency)
 	}
 }
 

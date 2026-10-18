@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,15 +17,18 @@ import (
 // ErrInvalidCredentials 凭证无效
 var ErrInvalidCredentials = errors.New("invalid credentials")
 
-// Session 用户会话
+// Session 用户会话。
+// json tag 统一小写 snake_case（/api/me、/api/login 共用本结构输出）；
+// 此前缺 tag 时按 Go 导出名原样序列化（Token/UserID/Username/Role/Expires），
+// 与其余 API 的键名风格不一致（缺陷 OBS-20261015-API-CONTRACT-DEVIATIONS-LOW ⑤）。
 type Session struct {
-	Token    string
-	UserID   string
-	Username string
-	Role     string
-	// Avatar 头像 URL（OIDC picture claim 同步），小写 json key 供 /api/me、/api/login 输出；空值省略
-	Avatar  string `json:"avatar,omitempty"`
-	Expires time.Time
+	Token    string `json:"token"`
+	UserID   string `json:"user_id"`
+	Username string `json:"username"`
+	Role     string `json:"role"`
+	// Avatar 头像 URL（OIDC picture claim 同步）；空值省略
+	Avatar  string    `json:"avatar,omitempty"`
+	Expires time.Time `json:"expires"`
 }
 
 // Manager 认证管理器
@@ -108,6 +112,13 @@ func (m *Manager) EnsureDefaultAdmin(ctx context.Context, username, password str
 
 // Login 用户登录
 func (m *Manager) Login(ctx context.Context, username, password string) (*Session, error) {
+	// 旧版本可能已经持久化空密码用户；拒绝空凭据而不改写历史数据或会话。
+	// 纯空白用户名同样拒绝：这类身份无法在 UI 中可靠输入，属无效账号
+	// （缺陷 OBS-20261016-G1-USER-INPUT-NOT-TRIMMED）。登录仍按原样精确匹配，
+	// 不改写历史账号的用户名，避免存量账号被锁定。
+	if username == "" || strings.TrimSpace(username) == "" || password == "" {
+		return nil, ErrInvalidCredentials
+	}
 	u, err := m.store.GetUserByUsername(ctx, username)
 	if err != nil {
 		return nil, ErrInvalidCredentials

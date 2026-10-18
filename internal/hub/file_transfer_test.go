@@ -237,6 +237,47 @@ func TestFileTransferRejectsWrongAgentAndPath(t *testing.T) {
 	}
 }
 
+// TestFileTransferRejectsSelfTransfer 服务端自传拒绝：目标与源同节点必须 400
+// 语义报错，不能只靠前端裁剪（缺陷 OBS-20261017-XFER-API-NO-SELF-TRANSFER-CHECK）。
+func TestFileTransferRejectsSelfTransfer(t *testing.T) {
+	ctx := context.Background()
+	st, err := store.OpenInMemory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	rm := NewRevisionManager(st)
+	nm := NewNodeManager(st, rm)
+	source, _, _, err := nm.RegisterOrUpdate(ctx, "self-source", "source", "10.0.0.1", "linux", "amd64", "1", models.DeploymentModeNative, false, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := NewFileTransferManager(st, t.TempDir(), "http://hub:8443", NewSessionManager(), nm, slog.Default())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = m.Create(ctx, source.ID, "/var/lib/nodesteer/source.txt",
+		[]FileTransferTargetRequest{{NodeID: source.ID, DestinationPath: "/var/lib/nodesteer/copy.txt"}})
+	if err == nil || !strings.Contains(err.Error(), "self transfer is not allowed") {
+		t.Fatalf("self transfer must be rejected with clear message, got %v", err)
+	}
+	// 混合同批：自传目标同样整体拒绝，不产生部分提交
+	other, _, _, err := nm.RegisterOrUpdate(ctx, "self-target", "target", "10.0.0.2", "linux", "amd64", "1", models.DeploymentModeNative, false, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.Create(ctx, source.ID, "/var/lib/nodesteer/source.txt", []FileTransferTargetRequest{
+		{NodeID: other.ID, DestinationPath: "/var/lib/nodesteer/target.txt"},
+		{NodeID: source.ID, DestinationPath: "/var/lib/nodesteer/copy.txt"},
+	}); err == nil || !strings.Contains(err.Error(), "self transfer is not allowed") {
+		t.Fatalf("mixed batch with self target must be rejected, got %v", err)
+	}
+	if items, err := st.ListFileTransfers(ctx); err != nil || len(items) != 0 {
+		t.Fatalf("rejected transfers must not persist: items=%d err=%v", len(items), err)
+	}
+}
+
 func TestFileTransferTargetFailureIsolatedAndRetryable(t *testing.T) {
 	ctx := context.Background()
 	st, err := store.OpenInMemory()

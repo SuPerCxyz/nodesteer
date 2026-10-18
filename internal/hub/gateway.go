@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -119,7 +120,7 @@ func (g *Gateway) handle(w http.ResponseWriter, r *http.Request) {
 	}
 	go conn.writeLoop(ctx)
 	defer func() {
-		close(conn.done)
+		conn.markUnavailable()
 		g.handleDisconnect(conn.meta.nodeID, conn)
 	}()
 
@@ -576,44 +577,52 @@ func (g *Gateway) handleRemoteStateReq(ctx context.Context, conn *wsConn, env pr
 	if err := json.Unmarshal(env.Payload, &p); err != nil {
 		return err
 	}
-	value, observedAt, ttl := g.resolveRemoteState(ctx, p)
+	value, observedAt, ttl, ttlRemaining := g.resolveRemoteState(ctx, p)
 	reply := protocol.NewEnvelope(protocol.MsgRemoteState, env.ID, protocol.RemoteStatePayload{
-		NodeID:     p.TargetNodeID,
-		Property:   p.Property,
-		Value:      value,
-		ObservedAt: observedAt.Format(time.RFC3339Nano),
-		TTL:        ttl,
+		NodeID:          p.TargetNodeID,
+		Property:        p.Property,
+		Value:           value,
+		ObservedAt:      observedAt.Format(time.RFC3339Nano),
+		TTL:             ttl,
+		TTLRemainingSec: &ttlRemaining,
 	})
 	return conn.send(reply)
 }
 
-// resolveRemoteState 解析远程状态：online → 节点在线状态；last_execution → 最近执行结果
-func (g *Gateway) resolveRemoteState(ctx context.Context, p protocol.RemoteStateReqPayload) (string, time.Time, int64) {
+// resolveRemoteState 解析远程状态：online → 节点在线状态；last_execution → 最近执行结果。
+// 返回值：value、observed_at、观测窗口 TTL（既有语义，兼容旧 Agent）、
+// 自本次判定时刻起的剩余有效秒数（向上取整，供新 Agent 做不依赖时钟同步的判定）。
+func (g *Gateway) resolveRemoteState(ctx context.Context, p protocol.RemoteStateReqPayload) (string, time.Time, int64, int64) {
 	now := time.Now()
 	// 先查缓存（Agent 主动上报）
 	if value, observed, expires, err := g.nodes.store.GetRemoteState(ctx, p.TargetNodeID, p.Property); err == nil {
 		if expires.After(now) {
-			return value, observed, int64(expires.Sub(observed).Seconds())
+			// 向上取整：0 < 剩余 < 1s 也视为仍有 1s，避免被截断为 0 而误判过期。
+			remaining := int64(math.Ceil(expires.Sub(now).Seconds()))
+			if remaining < 1 {
+				remaining = 1
+			}
+			return value, observed, int64(expires.Sub(observed).Seconds()), remaining
 		}
 	}
 	switch p.Property {
 	case "online":
 		node, err := g.nodes.GetNode(ctx, p.TargetNodeID)
 		if err != nil {
-			return protocol.RemoteStateUnknown, now, 60
+			return protocol.RemoteStateUnknown, now, 60, 60
 		}
-		return strings.ToLower(node.Status), now, 60
+		return strings.ToLower(node.Status), now, 60, 60
 	case "last_execution":
 		if p.TaskID == "" {
-			return protocol.RemoteStateUnknown, now, 60
+			return protocol.RemoteStateUnknown, now, 60, 60
 		}
 		execs, err := g.nodes.store.ListExecutions(ctx, store.ExecutionFilter{TaskID: p.TaskID, NodeID: p.TargetNodeID, Limit: 1})
 		if err != nil || len(execs) == 0 {
-			return protocol.RemoteStateUnknown, now, 60
+			return protocol.RemoteStateUnknown, now, 60, 60
 		}
-		return execs[0].Status, now, 60
+		return execs[0].Status, now, 60, 60
 	default:
-		return protocol.RemoteStateUnknown, now, 60
+		return protocol.RemoteStateUnknown, now, 60, 60
 	}
 }
 
@@ -685,20 +694,31 @@ type NodeWithCred struct {
 
 // wsConn Agent 连接包装
 type wsConn struct {
-	c       *websocket.Conn
-	meta    *connMeta
-	gateway *Gateway
-	sendCh  chan protocol.Envelope
-	done    chan struct{}
-	once    sync.Once
+	c        *websocket.Conn
+	meta     *connMeta
+	gateway  *Gateway
+	sendCh   chan protocol.Envelope
+	done     chan struct{}
+	once     sync.Once
+	doneOnce sync.Once
 }
 
+// errConnUnavailable 写通道已判定不可用（写失败或连接关闭）时的发送错误。
+var errConnUnavailable = errors.New("conn unavailable")
+
 func (w *wsConn) send(env protocol.Envelope) error {
+	// 先探测通道状态：done 已关闭时立即失败，避免与 sendCh 同时就绪时
+	// 被 select 随机选中而把消息静默塞进缓冲区（永不送达）。
+	select {
+	case <-w.done:
+		return errConnUnavailable
+	default:
+	}
 	select {
 	case w.sendCh <- env:
 		return nil
 	case <-w.done:
-		return fmt.Errorf("conn closed")
+		return errConnUnavailable
 	}
 }
 
@@ -711,6 +731,12 @@ func (w *wsConn) sendSync(ctx context.Context, env protocol.Envelope) error {
 	return w.c.Write(ctx, websocket.MessageText, data)
 }
 
+// markUnavailable 关闭 done 通道，使后续 send 立即失败并唤醒已阻塞的发送方。
+// 可重入：连接正常关闭与写失败可能先后触发。
+func (w *wsConn) markUnavailable() {
+	w.doneOnce.Do(func() { close(w.done) })
+}
+
 func (w *wsConn) writeLoop(ctx context.Context) {
 	for {
 		select {
@@ -720,6 +746,17 @@ func (w *wsConn) writeLoop(ctx context.Context) {
 				continue
 			}
 			if err := w.c.Write(ctx, websocket.MessageText, data); err != nil {
+				// 写失败必须可观测且立即让上层知道通道不可用：
+				// 此前静默 return 会让 send() 继续返回成功（消息进缓冲区但永不送达），
+				// 缓冲区满后发送方永久阻塞，表现为“指令已下发但 Agent 从未收到”、
+				// 传输永久停在 DELIVERING（缺陷 E2E-20261017-XFER-REMOTE-TARGET-STUCK-DELIVERING）。
+				// 关闭底层连接可让读循环立即失败 → 会话回收 → Agent 重连后按 ResumeNode 重投。
+				w.gateway.logger.Error("agent websocket write failed; closing connection",
+					"node", w.meta.nodeID, "type", env.Type, "error", err)
+				w.markUnavailable()
+				// 写已失败，连接不可用：不做 close 握手（对端可能已失联），直接断开，
+				// 让读循环立刻返回并回收会话，Agent 重连后按 ResumeNode 重投。
+				w.c.CloseNow()
 				return
 			}
 		case <-w.done:

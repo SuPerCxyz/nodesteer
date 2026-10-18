@@ -24,43 +24,62 @@ func TestValidateScheduleOnStart(t *testing.T) {
 		}
 	}
 
+	// 创建语义（previousRunAt 为零值）：以下均按新建校验
+	var noPrevious time.Time
+
 	// on_start：不提供 expression / interval_sec / run_at / timezone 也必须通过
-	if err := validateSchedule(base(models.ScheduleTypeOnStart)); err != nil {
+	if err := validateSchedule(base(models.ScheduleTypeOnStart), noPrevious); err != nil {
 		t.Fatalf("on_start without time fields must validate: %v", err)
 	}
 
 	// 回归：cron 仍要求合法 expression
 	cronSch := base(models.ScheduleTypeCron)
-	if err := validateSchedule(cronSch); err == nil || !strings.Contains(err.Error(), "cron expression") {
+	if err := validateSchedule(cronSch, noPrevious); err == nil || !strings.Contains(err.Error(), "cron expression") {
 		t.Fatalf("cron without expression must fail, got %v", err)
 	}
 	cronSch.Expression = "*/5 * * * *"
-	if err := validateSchedule(cronSch); err != nil {
+	if err := validateSchedule(cronSch, noPrevious); err != nil {
 		t.Fatalf("valid cron must pass: %v", err)
 	}
 
 	// 回归：interval 仍要求 interval_sec
 	intervalSch := base(models.ScheduleTypeInterval)
-	if err := validateSchedule(intervalSch); err == nil || !strings.Contains(err.Error(), "interval_sec") {
+	if err := validateSchedule(intervalSch, noPrevious); err == nil || !strings.Contains(err.Error(), "interval_sec") {
 		t.Fatalf("interval without interval_sec must fail, got %v", err)
 	}
 	intervalSch.IntervalSec = 60
-	if err := validateSchedule(intervalSch); err != nil {
+	if err := validateSchedule(intervalSch, noPrevious); err != nil {
 		t.Fatalf("valid interval must pass: %v", err)
 	}
 
 	// 回归：one_time 仍要求 run_at
 	oneTimeSch := base(models.ScheduleTypeOneTime)
-	if err := validateSchedule(oneTimeSch); err == nil || !strings.Contains(err.Error(), "run_at") {
+	if err := validateSchedule(oneTimeSch, noPrevious); err == nil || !strings.Contains(err.Error(), "run_at") {
 		t.Fatalf("one_time without run_at must fail, got %v", err)
 	}
-	oneTimeSch.RunAt = time.Now()
-	if err := validateSchedule(oneTimeSch); err != nil {
+	// 新建时过去时间必须拒绝（缺陷 OBS-20261014-PAST-ONETIME-SAVE-ENABLED）
+	oneTimeSch.RunAt = time.Now().Add(-time.Hour)
+	if err := validateSchedule(oneTimeSch, noPrevious); err == nil || !strings.Contains(err.Error(), "must be in the future") {
+		t.Fatalf("past one_time run_at must fail with clear message, got %v", err)
+	}
+	// 未修改既有值时放行：修复前创建的过去时间记录仍可编辑/禁用
+	past := time.Now().Add(-24 * time.Hour)
+	oneTimeSch.RunAt = past
+	if err := validateSchedule(oneTimeSch, past); err != nil {
+		t.Fatalf("unchanged legacy past run_at must pass: %v", err)
+	}
+	// 改为新的过去时间同样拒绝
+	if err := validateSchedule(oneTimeSch, past.Add(-time.Hour)); err == nil || !strings.Contains(err.Error(), "must be in the future") {
+		t.Fatalf("changed past run_at must fail, got %v", err)
+	}
+	// 未来时间通过
+	oneTimeSch.RunAt = time.Now().Add(time.Hour)
+	if err := validateSchedule(oneTimeSch, noPrevious); err != nil {
 		t.Fatalf("valid one_time must pass: %v", err)
 	}
 
 	// 未知类型仍拒绝，错误信息覆盖新枚举
-	err := validateSchedule(base("every_full_moon"))
+	err := validateSchedule(base("every_full_moon"), noPrevious)
 	if err == nil || !strings.Contains(err.Error(), models.ScheduleTypeOnStart) {
 		t.Fatalf("unknown type must be rejected listing on_start, got %v", err)
 	}

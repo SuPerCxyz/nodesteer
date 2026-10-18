@@ -3,10 +3,13 @@ package store
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
-	_ "modernc.org/sqlite"
+	sqlite "modernc.org/sqlite"
+	sqlite3 "modernc.org/sqlite/lib"
 )
 
 // SQLiteStore SQLite 实现
@@ -58,11 +61,17 @@ func (s *SQLiteStore) WithTx(ctx context.Context, fn func(context.Context) error
 	return tx.Commit()
 }
 
-// OpenSQLite 打开 SQLite 数据库并应用迁移
+// OpenSQLite 打开 SQLite 数据库并应用迁移。
+//
+// _txlock=immediate：写事务（WithTx）在 BEGIN 阶段即取写锁，而不是 WAL 下
+// deferred 事务的「先读后写再升级」。升级路径一旦发现其它连接已推进快照，
+// SQLite 会立刻返回 SQLITE_BUSY/BUSY_SNAPSHOT，且不受 busy_timeout 保护，
+// 表现为并发纳管等写路径随机 500（缺陷 OBS-20261016-G1-ENROLL-TRANSIENT-500）。
+// 改为 immediate 后锁等待统一走 busy_timeout（5s），并发写按序完成。
 func OpenSQLite(path string) (*SQLiteStore, error) {
 	dsn := path
 	if path != ":memory:" {
-		dsn = path + "?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"
+		dsn = path + "?_txlock=immediate&_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"
 	}
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
@@ -92,6 +101,38 @@ func OpenInMemory() (*SQLiteStore, error) {
 		return nil, err
 	}
 	return &SQLiteStore{db: db}, nil
+}
+
+// IsBusyError 判定 SQLite 忙锁类错误（SQLITE_BUSY / SQLITE_LOCKED 家族，含
+// BUSY_SNAPSHOT）。这类错误是可重试语义：调用方应归一化为 503，而不是把驱动
+// 原文（"database is locked (5) (SQLITE_BUSY)"）当 500 回给客户端。
+func IsBusyError(err error) bool {
+	if err == nil {
+		return false
+	}
+	var se *sqlite.Error
+	if errors.As(err, &se) {
+		switch se.Code() & 0xff {
+		case sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED:
+			return true
+		}
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "database is locked") ||
+		strings.Contains(msg, "database table is locked") ||
+		strings.Contains(msg, "sqlite_busy") ||
+		strings.Contains(msg, "sqlite_locked")
+}
+
+// IsUniqueViolation 判定唯一约束冲突（重复用户名/重名等）。调用方据此归一化
+// 业务文案（如 "username already exists"），不外泄 SQLite UNIQUE 原文。
+func IsUniqueViolation(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "unique constraint failed") ||
+		strings.Contains(msg, "constraint failed: unique")
 }
 
 // DB 暴露底层连接（供测试与扩展使用）

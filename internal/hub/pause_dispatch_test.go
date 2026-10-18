@@ -324,6 +324,29 @@ func TestRunManualPausedNodeRejected(t *testing.T) {
 	}
 }
 
+// TestRunManualDisabledNodeAccurateMessage disabled 节点手动执行必须得到准确文案
+// "is disabled"（缺陷 OBS-20261017-EXEC-DISABLED-BRANCH-UNREACHABLE：
+// 专用分支此前先被 not-online 通用分支拦截，实际不可达）。
+func TestRunManualDisabledNodeAccurateMessage(t *testing.T) {
+	ctx := context.Background()
+	st := newTestStore(t)
+	em := newTestExecMgr(t, st)
+	upsertTestNode(t, st, "n-disabled-manual", models.NodeStatusDisabled)
+	task := pausedScheduleTask(t, st, "task-manual-disabled", "n-disabled-manual")
+
+	_, err := em.RunManual(ctx, task, []string{"n-disabled-manual"}, nil)
+	if err == nil || !strings.Contains(err.Error(), "is disabled") {
+		t.Fatalf("disabled node manual run must report disabled, got %v", err)
+	}
+	if strings.Contains(err.Error(), "not online") {
+		t.Fatalf("disabled message must not degrade to not-online: %v", err)
+	}
+	list, err := st.ListExecutions(ctx, store.ExecutionFilter{NodeID: "n-disabled-manual"})
+	if err != nil || len(list) != 0 {
+		t.Fatalf("disabled rejection must not create execution records: %d err=%v", len(list), err)
+	}
+}
+
 // TestRunDueHUBPausedNodeCreatesSkipped 端到端：Hub owner 调度循环触发暂停节点 →
 // 产生 SKIPPED 记录（此前被静默吞掉）。
 func TestRunDueHUBPausedNodeCreatesSkipped(t *testing.T) {

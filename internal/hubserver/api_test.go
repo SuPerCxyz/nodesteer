@@ -120,7 +120,8 @@ func TestAPILifecycle(t *testing.T) {
 	}
 	json.Unmarshal([]byte(schBody), &schedule)
 
-	// Artifact DELETE must be idempotent for client retries.
+	// Artifact DELETE：首次 200，重复删除同一 id 统一 404（不存在/缺 id 归一化，
+	// 缺陷 OBS-20261015-API-CONTRACT-DEVIATIONS-LOW ②）。
 	var artifactForm bytes.Buffer
 	form := multipart.NewWriter(&artifactForm)
 	if err := form.WriteField("name", "api-test-artifact"); err != nil {
@@ -161,7 +162,7 @@ func TestAPILifecycle(t *testing.T) {
 		t.Fatalf("artifact upload: expected 200 and id, got %d/%q", uploadResp.StatusCode, artifact.ID)
 	}
 	do("DELETE", "/api/artifacts/"+artifact.ID, "", 200)
-	do("DELETE", "/api/artifacts/"+artifact.ID, "", 200)
+	do("DELETE", "/api/artifacts/"+artifact.ID, "", 404)
 
 	// Settings
 	do("GET", "/api/settings", "", 200)

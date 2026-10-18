@@ -218,11 +218,13 @@ func (em *ExecutionManager) createAndDispatch(ctx context.Context, task *models.
 	if !isDispatchableStatus(node.Status) && trigger == models.TriggerSchedule {
 		return em.createPausedSkip(ctx, task, nodeID, trigger, schedTime)
 	}
-	if node.Status != models.NodeStatusOnline {
-		return nil, fmt.Errorf("node %s is not online (status=%s)", nodeID, node.Status)
-	}
+	// disabled 必须先于 online 判定：否则「非 online」通用分支会先命中，
+	// 被禁用节点的派发错误文案退化为 not online（缺陷 OBS-20261017-EXEC-DISABLED-BRANCH-UNREACHABLE）。
 	if node.Status == models.NodeStatusDisabled {
 		return nil, fmt.Errorf("node %s is disabled", nodeID)
+	}
+	if node.Status != models.NodeStatusOnline {
+		return nil, fmt.Errorf("node %s is not online (status=%s)", nodeID, node.Status)
 	}
 
 	// Capability 校验
@@ -371,7 +373,7 @@ func (em *ExecutionManager) MarkFinished(ctx context.Context, nodeID string, p p
 				NodeID:          p.NodeID,
 				TriggerType:     p.TriggerType,
 				Status:          p.Status,
-				ExitCode:        p.ExitCode,
+				ExitCode:        models.ExecutionExitCode(p.Status, p.ExitCode),
 				Stdout:          truncateLog(p.Stdout),
 				Stderr:          truncateLog(p.Stderr),
 				StdoutTruncated: p.StdoutTruncated,
@@ -410,7 +412,7 @@ func (em *ExecutionManager) MarkFinished(ctx context.Context, nodeID string, p p
 	// p.BlockReason（升级失败的 sha256/回滚结果只携带在该字段，导致 Hub 创建的
 	// 记录收不到失败原因）。此分支仅非终态可达，非终态记录当前恒无 BlockReason。
 	ex.BlockReason = p.BlockReason
-	ex.ExitCode = p.ExitCode
+	ex.ExitCode = models.ExecutionExitCode(p.Status, p.ExitCode)
 	if p.TaskID != "" {
 		ex.TaskID = p.TaskID
 	}
@@ -631,7 +633,7 @@ func (em *ExecutionManager) UpsertFromAgent(ctx context.Context, e *models.Execu
 			existing.ScriptID = e.ScriptID
 			existing.ScriptRevision = e.ScriptRevision
 			existing.StartTime = e.StartTime
-			existing.ExitCode = e.ExitCode
+			existing.ExitCode = models.ExecutionExitCode(existing.Status, models.ExitCodeValue(e.ExitCode))
 			existing.Stdout = truncateLog(e.Stdout)
 			existing.Stderr = truncateLog(e.Stderr)
 			existing.EndTime = e.EndTime

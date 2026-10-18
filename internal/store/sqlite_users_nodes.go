@@ -17,14 +17,14 @@ func (s *SQLiteStore) CreateUser(ctx context.Context, u *models.User) error {
 	if u.ID == "" {
 		u.ID = uuid.NewString()
 	}
-	_, err := s.db.ExecContext(ctx,
+	_, err := s.execer(ctx).ExecContext(ctx,
 		`INSERT INTO users (id, username, password_hash, avatar_url, role, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
 		u.ID, u.Username, u.PasswordHash, u.AvatarURL, u.Role, now())
 	return err
 }
 
 func (s *SQLiteStore) GetUserByID(ctx context.Context, id string) (*models.User, error) {
-	row := s.db.QueryRowContext(ctx,
+	row := s.queryer(ctx).QueryRowContext(ctx,
 		`SELECT id, username, avatar_url, role, created_at FROM users WHERE id = ?`, id)
 	var u models.User
 	var created string
@@ -36,7 +36,7 @@ func (s *SQLiteStore) GetUserByID(ctx context.Context, id string) (*models.User,
 }
 
 func (s *SQLiteStore) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
-	row := s.db.QueryRowContext(ctx,
+	row := s.queryer(ctx).QueryRowContext(ctx,
 		`SELECT id, username, password_hash, avatar_url, role, created_at FROM users WHERE username = ?`, username)
 	var u models.User
 	var created string
@@ -48,7 +48,7 @@ func (s *SQLiteStore) GetUserByUsername(ctx context.Context, username string) (*
 }
 
 func (s *SQLiteStore) ListUsers(ctx context.Context) ([]*models.User, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id, username, avatar_url, role, created_at FROM users ORDER BY created_at`)
+	rows, err := s.queryer(ctx).QueryContext(ctx, `SELECT id, username, avatar_url, role, created_at FROM users ORDER BY created_at`)
 	if err != nil {
 		return nil, err
 	}
@@ -67,17 +67,17 @@ func (s *SQLiteStore) ListUsers(ctx context.Context) ([]*models.User, error) {
 }
 
 func (s *SQLiteStore) UpdateUserRole(ctx context.Context, id, role string) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE users SET role = ? WHERE id = ?`, role, id)
+	_, err := s.execer(ctx).ExecContext(ctx, `UPDATE users SET role = ? WHERE id = ?`, role, id)
 	return err
 }
 
 func (s *SQLiteStore) UpdateUserAvatar(ctx context.Context, id, avatarURL string) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE users SET avatar_url = ? WHERE id = ?`, avatarURL, id)
+	_, err := s.execer(ctx).ExecContext(ctx, `UPDATE users SET avatar_url = ? WHERE id = ?`, avatarURL, id)
 	return err
 }
 
 func (s *SQLiteStore) UpdateUserPassword(ctx context.Context, id, passwordHash string) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE users SET password_hash = ? WHERE id = ?`, passwordHash, id)
+	_, err := s.execer(ctx).ExecContext(ctx, `UPDATE users SET password_hash = ? WHERE id = ?`, passwordHash, id)
 	return err
 }
 
@@ -96,7 +96,7 @@ func (s *SQLiteStore) UpsertNode(ctx context.Context, n *models.Node) error {
 	if inv == nil {
 		inv = []byte("{}")
 	}
-	_, err := s.db.ExecContext(ctx, `
+	_, err := s.execer(ctx).ExecContext(ctx, `
 		INSERT INTO nodes (id, agent_id, hostname, ip, os, arch, agent_version, deployment_mode,
 			host_integration, status, global_revision, sync_status, last_seen, first_seen,
 			inventory_json, capabilities_json, labels_json)
@@ -114,7 +114,7 @@ func (s *SQLiteStore) UpsertNode(ctx context.Context, n *models.Node) error {
 }
 
 func (s *SQLiteStore) GetNode(ctx context.Context, id string) (*models.Node, error) {
-	row := s.db.QueryRowContext(ctx, `
+	row := s.queryer(ctx).QueryRowContext(ctx, `
 		SELECT id, agent_id, hostname, ip, os, arch, agent_version, deployment_mode,
 			host_integration, status, global_revision, sync_status, last_seen, first_seen,
 			inventory_json, capabilities_json, labels_json FROM nodes WHERE id = ?`, id)
@@ -122,7 +122,7 @@ func (s *SQLiteStore) GetNode(ctx context.Context, id string) (*models.Node, err
 }
 
 func (s *SQLiteStore) GetNodeByAgentID(ctx context.Context, agentID string) (*models.Node, error) {
-	row := s.db.QueryRowContext(ctx, `
+	row := s.queryer(ctx).QueryRowContext(ctx, `
 		SELECT id, agent_id, hostname, ip, os, arch, agent_version, deployment_mode,
 			host_integration, status, global_revision, sync_status, last_seen, first_seen,
 			inventory_json, capabilities_json, labels_json FROM nodes WHERE agent_id = ?`, agentID)
@@ -149,7 +149,7 @@ func scanNode(row *sql.Row) (*models.Node, error) {
 }
 
 func (s *SQLiteStore) ListNodes(ctx context.Context) ([]*models.Node, error) {
-	rows, err := s.db.QueryContext(ctx, `
+	rows, err := s.queryer(ctx).QueryContext(ctx, `
 		SELECT id, agent_id, hostname, ip, os, arch, agent_version, deployment_mode,
 			host_integration, status, global_revision, sync_status, last_seen, first_seen,
 			inventory_json, capabilities_json, labels_json FROM nodes ORDER BY hostname`)
@@ -180,18 +180,18 @@ func (s *SQLiteStore) ListNodes(ctx context.Context) ([]*models.Node, error) {
 }
 
 func (s *SQLiteStore) UpdateNodeStatus(ctx context.Context, id, status string) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE nodes SET status = ? WHERE id = ?`, status, id)
+	_, err := s.execer(ctx).ExecContext(ctx, `UPDATE nodes SET status = ? WHERE id = ?`, status, id)
 	return err
 }
 
 func (s *SQLiteStore) UpdateNodeSyncState(ctx context.Context, id string, rev int64, syncStatus string) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE nodes SET global_revision = ?, sync_status = ? WHERE id = ?`, rev, syncStatus, id)
+	_, err := s.execer(ctx).ExecContext(ctx, `UPDATE nodes SET global_revision = ?, sync_status = ? WHERE id = ?`, rev, syncStatus, id)
 	return err
 }
 
 func (s *SQLiteStore) UpdateNodeHeartbeat(ctx context.Context, id string, lastSeen time.Time) error {
 	// 仅当当前状态为 online 时更新为 online；maintenance/disabled 不被心跳覆盖
-	_, err := s.db.ExecContext(ctx, `
+	_, err := s.execer(ctx).ExecContext(ctx, `
 		UPDATE nodes SET last_seen = ?,
 			status = CASE WHEN status IN ('maintenance', 'disabled') THEN status ELSE ? END
 		WHERE id = ?`,
@@ -259,7 +259,7 @@ func (s *SQLiteStore) CreateGroup(ctx context.Context, g *models.Group) error {
 }
 
 func (s *SQLiteStore) GetGroup(ctx context.Context, id string) (*models.Group, error) {
-	row := s.db.QueryRowContext(ctx,
+	row := s.queryer(ctx).QueryRowContext(ctx,
 		`SELECT id, name, description, type, label_key, label_value, created_at FROM node_groups WHERE id = ?`, id)
 	var g models.Group
 	var created string
@@ -276,7 +276,7 @@ func (s *SQLiteStore) GetGroup(ctx context.Context, id string) (*models.Group, e
 }
 
 func (s *SQLiteStore) ListGroups(ctx context.Context) ([]*models.Group, error) {
-	rows, err := s.db.QueryContext(ctx,
+	rows, err := s.queryer(ctx).QueryContext(ctx,
 		`SELECT id, name, description, type, label_key, label_value, created_at FROM node_groups ORDER BY name`)
 	if err != nil {
 		return nil, err
@@ -331,10 +331,19 @@ func (s *SQLiteStore) UpdateGroup(ctx context.Context, g *models.Group) error {
 		defer tx.Rollback()
 	}
 	execer := s.execer(ctx)
-	if _, err := execer.ExecContext(ctx, `
+	res, err := execer.ExecContext(ctx, `
 		UPDATE node_groups SET name=?, description=?, type=?, label_key=?, label_value=? WHERE id=?`,
-		g.Name, g.Description, g.Type, g.LabelKey, g.LabelValue, g.ID); err != nil {
+		g.Name, g.Description, g.Type, g.LabelKey, g.LabelValue, g.ID)
+	if err != nil {
 		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		// 不存在的组：不得继续写成员（产生孤儿行）或让调用方推进无效 revision。
+		return sql.ErrNoRows
 	}
 	if _, err := execer.ExecContext(ctx, `DELETE FROM node_group_members WHERE group_id = ?`, g.ID); err != nil {
 		return err
@@ -388,7 +397,7 @@ func (s *SQLiteStore) RemoveGroupMember(ctx context.Context, groupID, nodeID str
 }
 
 func (s *SQLiteStore) GroupMemberIDs(ctx context.Context, groupID string) ([]string, error) {
-	rows, err := s.db.QueryContext(ctx,
+	rows, err := s.queryer(ctx).QueryContext(ctx,
 		`SELECT node_id FROM node_group_members WHERE group_id = ?`, groupID)
 	if err != nil {
 		return nil, err

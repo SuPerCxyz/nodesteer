@@ -15,6 +15,8 @@ import (
 type ContainerHostAdapter struct {
 	hostRoot        string
 	allowedPrefixes []string
+	// hostView 由宿主 PID namespace 的 PID 1 提供真实路径身份。
+	hostView string
 }
 
 // NewContainerHostAdapter 创建容器宿主适配器
@@ -30,7 +32,7 @@ func NewContainerHostAdapterWithAllowlist(hostRoot string, allowed []string) *Co
 	if len(allowed) == 0 {
 		allowed = []string{"/etc", "/opt", "/usr/local/bin", "/var/lib"}
 	}
-	return &ContainerHostAdapter{hostRoot: hostRoot, allowedPrefixes: allowed}
+	return &ContainerHostAdapter{hostRoot: hostRoot, allowedPrefixes: allowed, hostView: "/proc/1/root"}
 }
 
 func (a *ContainerHostAdapter) HostRoot() string { return a.hostRoot }
@@ -96,8 +98,42 @@ func (a *ContainerHostAdapter) ValidatePath(logicalPath string) error {
 	return nil
 }
 
+// validateMappedPath 在任何文件副作用前确认 bind 指向请求的宿主目录。
+// 逐级寻找共同存在的祖先，允许在已验证的最小目录挂载内创建新子目录。
+func (a *ContainerHostAdapter) validateMappedPath(logicalPath string) error {
+	if err := a.ValidatePath(logicalPath); err != nil {
+		return err
+	}
+	if a.hostView == "/proc/1/root" {
+		pid1NS, pid1Err := os.Readlink("/proc/1/ns/mnt")
+		selfNS, selfErr := os.Readlink("/proc/self/ns/mnt")
+		if pid1Err != nil || selfErr != nil || pid1NS == selfNS {
+			return fmt.Errorf("cannot verify host PID 1 mount namespace for %s", logicalPath)
+		}
+	}
+	logical := filepath.Clean("/" + strings.TrimPrefix(logicalPath, "/"))
+	for {
+		mapped, mappedErr := os.Stat(a.MapPath(logical))
+		real, realErr := os.Stat(filepath.Join(a.hostView, logical))
+		if mappedErr == nil && realErr == nil {
+			if !os.SameFile(mapped, real) {
+				return fmt.Errorf("host mount does not map logical path: %s", logicalPath)
+			}
+			return nil
+		}
+		if !os.IsNotExist(mappedErr) || !os.IsNotExist(realErr) {
+			return fmt.Errorf("cannot verify host mount for %s: mapped=%v host=%v", logicalPath, mappedErr, realErr)
+		}
+		parent := filepath.Dir(logical)
+		if parent == logical {
+			return fmt.Errorf("cannot verify host mount for %s", logicalPath)
+		}
+		logical = parent
+	}
+}
+
 func (a *ContainerHostAdapter) WriteFile(ctx context.Context, p string, data []byte, mode os.FileMode) error {
-	if err := a.ValidatePath(p); err != nil {
+	if err := a.validateMappedPath(p); err != nil {
 		return err
 	}
 	mapped := a.MapPath(p)
@@ -108,7 +144,7 @@ func (a *ContainerHostAdapter) WriteFile(ctx context.Context, p string, data []b
 }
 
 func (a *ContainerHostAdapter) AtomicReplace(ctx context.Context, p string, data []byte, mode os.FileMode) error {
-	if err := a.ValidatePath(p); err != nil {
+	if err := a.validateMappedPath(p); err != nil {
 		return err
 	}
 	mapped := a.MapPath(p)
@@ -140,42 +176,42 @@ func (a *ContainerHostAdapter) AtomicReplace(ctx context.Context, p string, data
 }
 
 func (a *ContainerHostAdapter) Chmod(ctx context.Context, p string, mode os.FileMode) error {
-	if err := a.ValidatePath(p); err != nil {
+	if err := a.validateMappedPath(p); err != nil {
 		return err
 	}
 	return os.Chmod(a.MapPath(p), mode)
 }
 
 func (a *ContainerHostAdapter) Chown(ctx context.Context, p, user, group string) error {
-	if err := a.ValidatePath(p); err != nil {
+	if err := a.validateMappedPath(p); err != nil {
 		return err
 	}
 	return chown(a.MapPath(p), user, group)
 }
 
 func (a *ContainerHostAdapter) MkdirAll(ctx context.Context, p string, mode os.FileMode) error {
-	if err := a.ValidatePath(p); err != nil {
+	if err := a.validateMappedPath(p); err != nil {
 		return err
 	}
 	return os.MkdirAll(a.MapPath(p), mode)
 }
 
 func (a *ContainerHostAdapter) Remove(ctx context.Context, p string) error {
-	if err := a.ValidatePath(p); err != nil {
+	if err := a.validateMappedPath(p); err != nil {
 		return err
 	}
 	return os.Remove(a.MapPath(p))
 }
 
 func (a *ContainerHostAdapter) ReadFile(ctx context.Context, p string) ([]byte, error) {
-	if err := a.ValidatePath(p); err != nil {
+	if err := a.validateMappedPath(p); err != nil {
 		return nil, err
 	}
 	return os.ReadFile(a.MapPath(p))
 }
 
 func (a *ContainerHostAdapter) OpenRead(ctx context.Context, p string) (io.ReadCloser, os.FileInfo, error) {
-	if err := a.ValidatePath(p); err != nil {
+	if err := a.validateMappedPath(p); err != nil {
 		return nil, nil, err
 	}
 	f, err := os.Open(a.MapPath(p))
@@ -191,7 +227,7 @@ func (a *ContainerHostAdapter) OpenRead(ctx context.Context, p string) (io.ReadC
 }
 
 func (a *ContainerHostAdapter) AtomicReplaceReader(ctx context.Context, p string, r io.Reader, mode os.FileMode) error {
-	if err := a.ValidatePath(p); err != nil {
+	if err := a.validateMappedPath(p); err != nil {
 		return err
 	}
 	mapped := a.MapPath(p)
@@ -227,7 +263,7 @@ func (a *ContainerHostAdapter) AtomicReplaceReader(ctx context.Context, p string
 }
 
 func (a *ContainerHostAdapter) Stat(ctx context.Context, p string) (os.FileInfo, error) {
-	if err := a.ValidatePath(p); err != nil {
+	if err := a.validateMappedPath(p); err != nil {
 		return nil, err
 	}
 	return os.Stat(a.MapPath(p))
@@ -236,7 +272,7 @@ func (a *ContainerHostAdapter) Stat(ctx context.Context, p string) (os.FileInfo,
 func (a *ContainerHostAdapter) systemctl(ctx context.Context, args ...string) (string, error) {
 	// 通过 nsenter/systemctl 访问宿主 systemd
 	// 推荐：nsenter -t 1 -m -u -i -n -p systemctl
-	nsenterArgs := append([]string{"-t", "1", "-m", "-u", "-i", "-n", "-p", "-r", "/proc/1/root", "systemctl"}, args...)
+	nsenterArgs := append([]string{"-t", "1", "-m", "-u", "-i", "-n", "-p", "--root=/proc/1/root", "systemctl"}, args...)
 	cmd := exec.CommandContext(ctx, "nsenter", nsenterArgs...)
 	out, err := cmd.CombinedOutput()
 	return strings.TrimSpace(string(out)), err
@@ -291,13 +327,13 @@ func (a *ContainerHostAdapter) ServiceStatus(ctx context.Context, unitName strin
 }
 
 func (a *ContainerHostAdapter) RunCommand(ctx context.Context, name string, args ...string) (string, error) {
-	cmd := exec.CommandContext(ctx, "nsenter", append([]string{"-t", "1", "-m", "-u", "-i", "-n", "-p", "-r", "/proc/1/root"}, append([]string{name}, args...)...)...)
+	cmd := exec.CommandContext(ctx, "nsenter", append([]string{"-t", "1", "-m", "-u", "-i", "-n", "-p", "--root=/proc/1/root"}, append([]string{name}, args...)...)...)
 	out, err := cmd.CombinedOutput()
 	return strings.TrimSpace(string(out)), err
 }
 
 func (a *ContainerHostAdapter) RunCommandWithEnv(ctx context.Context, name string, env []string, args ...string) (string, error) {
-	nsenterArgs := append([]string{"-t", "1", "-m", "-u", "-i", "-n", "-p", "-r", "/proc/1/root"}, name)
+	nsenterArgs := append([]string{"-t", "1", "-m", "-u", "-i", "-n", "-p", "--root=/proc/1/root"}, name)
 	nsenterArgs = append(nsenterArgs, args...)
 	cmd := exec.CommandContext(ctx, "nsenter", nsenterArgs...)
 	cmd.Env = append(os.Environ(), env...)

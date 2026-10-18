@@ -232,7 +232,8 @@ func (m *AppManager) Deploy(ctx context.Context, appID string, nodeIDs []string,
 		// 节点状态与 Capability 校验（仿 ExecutionManager）
 		node, err := m.store.GetNode(ctx, nodeID)
 		if err != nil {
-			return out, err
+			// 归一化为业务文案：存储层 sql.ErrNoRows 原文不得外泄给调用方。
+			return out, fmt.Errorf("node %s not found", nodeID)
 		}
 		if node.Status != models.NodeStatusOnline {
 			return out, fmt.Errorf("node %s is not online (status=%s)", nodeID, node.Status)
@@ -286,7 +287,8 @@ func (m *AppManager) DeployTask(ctx context.Context, task *models.Task, nodeIDs 
 	for _, nodeID := range nodeIDs {
 		node, err := m.store.GetNode(ctx, nodeID)
 		if err != nil {
-			return out, err
+			// 同上：不把存储层原文交给调用方。
+			return out, fmt.Errorf("node %s not found", nodeID)
 		}
 		if node.Status != models.NodeStatusOnline {
 			return out, fmt.Errorf("node %s is not online (status=%s)", nodeID, node.Status)

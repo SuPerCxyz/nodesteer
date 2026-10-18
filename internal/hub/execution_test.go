@@ -38,7 +38,7 @@ func TestUpsertFromAgentIdempotent(t *testing.T) {
 	// 离线执行创建
 	e := &models.Execution{
 		ID: "offline-exec-1", TaskID: "t1", NodeID: "n1",
-		Status: "FAILED", ExitCode: 3, TriggerType: "schedule",
+		Status: "FAILED", ExitCode: models.ExecutionExitCode("FAILED", 3), TriggerType: "schedule",
 		ScheduledTime: time.Now().UTC().Truncate(time.Second),
 		EndTime:       time.Now(), Stdout: "out", Offline: true,
 	}
@@ -49,7 +49,7 @@ func TestUpsertFromAgentIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}
-	if got.Status != "FAILED" || got.ExitCode != 3 {
+	if got.Status != "FAILED" || models.ExitCodeValue(got.ExitCode) != 3 {
 		t.Fatalf("execution not persisted correctly")
 	}
 	// 重复上传（幂等）

@@ -139,17 +139,20 @@ type Store interface {
 
 // ExecutionFilter 执行过滤
 type ExecutionFilter struct {
-	NodeID string
-	TaskID string
-	Status string
-	Limit  int
-	Offset int
+	NodeID      string
+	TaskID      string
+	Status      string
+	Query       string
+	TriggerType string
+	Limit       int
+	Offset      int
 }
 
 // AuditFilter 审计过滤
 type AuditFilter struct {
 	UserID string
 	Action string
+	Query  string
 	Limit  int
 	Offset int
 }

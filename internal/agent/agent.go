@@ -137,14 +137,17 @@ func New(cfg Config, logger *slog.Logger) (*Agent, error) {
 		store.Close()
 		return nil, fmt.Errorf("configure agent TLS: %w", err)
 	}
+	a.artifact.client = a.conn.HTTPClient()
 	a.conn.SetCredential(a.credential)
 
 	// 自升级执行链（默认实现绑定；测试按需覆盖字段注入）
 	a.upgrade = a.defaultUpgradeRunner()
 
-	// 调度器
+	// 调度器：hub_online_required 门禁以「HELLO_ACK accepted」为准，
+	// 而不是 Dial 成功即置真的传输层连接标志——后者在重连窗口内会误放行调度
+	// （缺陷 OBS-20261016-G23-RECONNECT-WINDOW）。
 	a.sch = scheduler.New(a, logger)
-	a.sch.SetOnlineFunc(a.conn.IsConnected)
+	a.sch.SetOnlineFunc(a.conn.HandshakeComplete)
 	a.cond.Remote = a.queryRemoteCondition
 
 	return a, nil
@@ -737,6 +740,11 @@ func (a *Agent) OnSyncResponse(env protocol.Envelope) {
 		a.logger.Error("bad sync response", "error", err)
 		return
 	}
+	if err := validateSyncScripts(&p); err != nil {
+		a.logger.Error("invalid sync scripts", "error", err)
+		a.conn.Send(protocol.NewEnvelope(protocol.MsgSyncAck, env.ID, protocol.SyncAckPayload{OK: false, Error: err.Error()}))
+		return
+	}
 	if p.Snapshot || p.FullResync {
 		a.cleanupPrunedApplications(p.Apps)
 	}
@@ -781,6 +789,9 @@ func (a *Agent) cleanupPrunedApplications(entries []protocol.ObjectEntry) {
 
 // applySync 原子应用同步结果
 func (a *Agent) applySync(p *protocol.SyncResponsePayload) (err error) {
+	if err := validateSyncScripts(p); err != nil {
+		return err
+	}
 	// 原子同步：BEGIN → 写入 → COMMIT；任何失败 ROLLBACK，不产生半同步状态
 	if err := a.store.BeginSync(a.ctx); err != nil {
 		return err
@@ -1069,9 +1080,23 @@ func (a *Agent) executeTask(p protocol.RunExecutionPayload, ex *LocalExecution) 
 	if attempts < 0 {
 		attempts = 0
 	}
+	// Secret 分片索引：一次执行构建一次，实时分片与终态字段共用同一套判定
+	idx := newSecretIndex(p.SecretValues)
 	var lastResult *execution.Result
 	var lastErr error
 	for attempt := 0; attempt <= attempts; attempt++ {
+		var logMu sync.Mutex
+		redactors := map[string]*streamRedactor{
+			"stdout": newStreamRedactor(idx),
+			"stderr": newStreamRedactor(idx),
+		}
+		sendLog := func(stream, data string) {
+			if data != "" && a.conn.IsConnected() {
+				a.conn.Send(protocol.NewEnvelope(protocol.MsgLogChunk, execID, protocol.LogChunkPayload{
+					ExecutionID: execID, Stream: stream, Chunk: data,
+				}))
+			}
+		}
 		lastResult, lastErr = a.runner.Run(a.ctx, execID, execution.RunConfig{
 			Command:        command,
 			Script:         script,
@@ -1084,18 +1109,15 @@ func (a *Agent) executeTask(p protocol.RunExecutionPayload, ex *LocalExecution) 
 			MaxStderrBytes: maxBytes,
 			MaxTotalBytes:  maxBytes * 2,
 			OnLogChunk: func(stream string, chunk []byte) {
-				if len(chunk) == 0 || !a.conn.IsConnected() {
-					return
-				}
-				// 复制数据：chunk 复用 runner 内部 buffer，异步发送前必须拷贝
-				data := redact(string(chunk), p.SecretValues)
-				a.conn.Send(protocol.NewEnvelope(protocol.MsgLogChunk, execID, protocol.LogChunkPayload{
-					ExecutionID: execID,
-					Stream:      stream,
-					Chunk:       data,
-				}))
+				logMu.Lock()
+				defer logMu.Unlock()
+				sendLog(stream, redactors[stream].write(string(chunk), false))
 			},
 		})
+		// 收尾：两流尾部联合判定后写出，覆盖"两流各留一段"的跨流拆片形态
+		outTail, errTail := finishStreamPair(redactors["stdout"], redactors["stderr"])
+		sendLog("stdout", outTail)
+		sendLog("stderr", errTail)
 		if lastErr != nil {
 			break
 		}
@@ -1121,7 +1143,8 @@ func (a *Agent) executeTask(p protocol.RunExecutionPayload, ex *LocalExecution) 
 			status = models.ExecStatusFailed
 		}
 	}
-	a.finishExecution(p.ExecutionID, status, result.ExitCode, redact(result.Stdout, p.SecretValues), redact(result.Stderr, p.SecretValues),
+	stdout, stderr := redactStreams(idx, result.Stdout, result.Stderr)
+	a.finishExecution(p.ExecutionID, status, result.ExitCode, stdout, stderr,
 		result.StdoutTruncated, result.StderrTruncated, "", false)
 }
 
@@ -1536,8 +1559,10 @@ func (a *Agent) TriggerSchedule(ctx context.Context, sch *models.Schedule, sched
 		ScheduledTime: slot,
 		Status:        models.ExecStatusRunning,
 		StartTime:     time.Now().UTC().Format(time.RFC3339Nano),
-		Offline:       !a.conn.IsConnected(),
-		Synced:        false,
+		// Offline 与调度门禁同源：握手未完成（HELLO 未被 accepted）时结果无法同步，
+		// 必须标记离线等待重连对账，避免重连窗口内产生「看似已同步」的记录。
+		Offline: !a.conn.HandshakeComplete(),
+		Synced:  false,
 	}
 	if err := a.store.CreateExecution(ctx, ex); err != nil {
 		return err
@@ -1622,15 +1647,6 @@ func localSecretValues(taskParams, scriptParams []models.Parameter, values map[s
 	return out
 }
 
-func redact(value string, secrets []string) string {
-	for _, secret := range secrets {
-		if secret != "" {
-			value = strings.ReplaceAll(value, secret, "[REDACTED]")
-		}
-	}
-	return value
-}
-
 func applicationVersion(st *LocalStore, id string) string {
 	if id == "" {
 		return ""
@@ -1700,8 +1716,8 @@ func (a *Agent) queryRemoteCondition(ctx context.Context, rc *models.RemoteCondi
 	// 等待 Hub 响应（短超时，避免条件求值无限阻塞）
 	select {
 	case p := <-respCh:
-		if p.Value == "" || p.Value == protocol.RemoteStateUnknown {
-			// 空值或 UNKNOWN → Fail Closed（视为不可评估）
+		if !validRemoteState(p) {
+			// 空值/UNKNOWN 或缺少剩余 TTL → Fail Closed（视为不可评估）
 			return "", false, nil
 		}
 		return p.Value, true, nil

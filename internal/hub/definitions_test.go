@@ -50,6 +50,88 @@ func TestTaskTimeoutValidation(t *testing.T) {
 	}
 }
 
+// TestScriptDefinitionValidation 覆盖缺陷：脚本 timeout 负数拒绝、0 归一为默认 300s、
+// content 超过 256 KiB 拒绝（按字节数，含多字节 UTF-8）；Create/Update 一致，
+// 拒绝时不落库也不产生 revision 副作用。
+func TestScriptDefinitionValidation(t *testing.T) {
+	ctx := context.Background()
+	st, err := store.OpenInMemory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	rm := NewRevisionManager(st)
+	nm := NewNodeManager(st, rm)
+	syncMgr := NewSyncManager(st, rm, NewSessionManager(), nm)
+	sm := NewScriptManager(st, rm, syncMgr)
+
+	baseRev, err := rm.Current(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	negative := &models.Script{Name: "negative-timeout", Interpreter: "bash", Content: "echo", Timeout: -5, Enabled: true}
+	if err := sm.Create(ctx, negative); err == nil || !strings.Contains(err.Error(), "timeout cannot be negative") {
+		t.Fatalf("negative timeout must be rejected: %v", err)
+	}
+	if _, err := st.GetScript(ctx, negative.ID); err == nil {
+		t.Fatal("rejected script must not persist")
+	}
+	if rev, _ := rm.Current(ctx); rev != baseRev {
+		t.Fatalf("rejected create advanced revision: %d -> %d", baseRev, rev)
+	}
+
+	zero := &models.Script{Name: "default-timeout", Interpreter: "bash", Content: "echo", Enabled: true}
+	if err := sm.Create(ctx, zero); err != nil {
+		t.Fatalf("zero timeout should default: %v", err)
+	}
+	if zero.Timeout != 300 {
+		t.Fatalf("zero timeout normalized to %d, want 300", zero.Timeout)
+	}
+	if persisted, err := st.GetScript(ctx, zero.ID); err != nil || persisted.Timeout != 300 {
+		t.Fatalf("persisted timeout = %+v err=%v, want 300", persisted, err)
+	}
+	zero.Timeout = 0
+	if err := sm.Update(ctx, zero); err != nil {
+		t.Fatalf("update with zero timeout: %v", err)
+	}
+	if zero.Timeout != 300 {
+		t.Fatalf("update zero timeout normalized to %d, want 300", zero.Timeout)
+	}
+
+	atLimit := &models.Script{Name: "content-at-limit", Interpreter: "bash", Content: strings.Repeat("a", maxScriptContentBytes), Enabled: true}
+	if err := sm.Create(ctx, atLimit); err != nil {
+		t.Fatalf("content at limit must be accepted: %v", err)
+	}
+	over := &models.Script{Name: "content-over-limit", Interpreter: "bash", Content: strings.Repeat("a", maxScriptContentBytes+1), Enabled: true}
+	if err := sm.Create(ctx, over); err == nil || !strings.Contains(err.Error(), "content too large") {
+		t.Fatalf("oversized content must be rejected: %v", err)
+	}
+	if _, err := st.GetScript(ctx, over.ID); err == nil {
+		t.Fatal("oversized script must not persist")
+	}
+	// 多字节 UTF-8 按字节数判定：262146 字节 > 256 KiB
+	multibyte := &models.Script{Name: "content-multibyte", Interpreter: "bash", Content: strings.Repeat("汉", maxScriptContentBytes/3+1), Enabled: true}
+	if err := sm.Create(ctx, multibyte); err == nil || !strings.Contains(err.Error(), "content too large") {
+		t.Fatalf("multibyte oversized content must be rejected: %v", err)
+	}
+
+	revBefore, err := rm.Current(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	atLimit.Content = strings.Repeat("a", maxScriptContentBytes+1)
+	if err := sm.Update(ctx, atLimit); err == nil || !strings.Contains(err.Error(), "content too large") {
+		t.Fatalf("oversized update must be rejected: %v", err)
+	}
+	atLimit.Content, atLimit.Timeout = "echo", -1
+	if err := sm.Update(ctx, atLimit); err == nil || !strings.Contains(err.Error(), "timeout cannot be negative") {
+		t.Fatalf("negative timeout update must be rejected: %v", err)
+	}
+	if rev, _ := rm.Current(ctx); rev != revBefore {
+		t.Fatalf("rejected updates advanced revision: %d -> %d", revBefore, rev)
+	}
+}
+
 // TestTaskUpdateHealsDeletedTargetNode 验证目标节点被删除后任务仍可编辑/启停，
 // 失效节点在更新时被自动剔除（缺陷 FAIL-A-009）。
 func TestTaskUpdateHealsDeletedTargetNode(t *testing.T) {

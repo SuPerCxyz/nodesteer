@@ -23,7 +23,7 @@ func (s *SQLiteStore) CreateExecution(ctx context.Context, e *models.Execution) 
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		e.ID, e.TaskID, e.TaskRevision, e.ScriptID, e.ScriptRevision, e.NodeID,
 		e.TriggerType, timeToDB(e.ScheduledTime), timeToDB(e.StartTime),
-		timeToDB(e.EndTime), e.Status, e.ExitCode, e.Stdout, e.Stderr,
+		timeToDB(e.EndTime), e.Status, models.ExitCodeValue(e.ExitCode), e.Stdout, e.Stderr,
 		boolToInt(e.StdoutTruncated), boolToInt(e.StderrTruncated), boolToInt(e.Offline), boolToInt(e.Synced),
 		e.BlockReason, now())
 	return err
@@ -37,7 +37,7 @@ func (s *SQLiteStore) UpdateExecution(ctx context.Context, e *models.Execution) 
 		WHERE id=?`,
 		e.TaskID, e.TaskRevision, e.ScriptID, e.ScriptRevision, e.NodeID,
 		e.TriggerType, timeToDB(e.ScheduledTime), timeToDB(e.StartTime),
-		timeToDB(e.EndTime), e.Status, e.ExitCode, e.Stdout, e.Stderr,
+		timeToDB(e.EndTime), e.Status, models.ExitCodeValue(e.ExitCode), e.Stdout, e.Stderr,
 		boolToInt(e.StdoutTruncated), boolToInt(e.StderrTruncated), boolToInt(e.Offline), boolToInt(e.Synced),
 		e.BlockReason, e.ID)
 	return err
@@ -56,8 +56,9 @@ func scanExecution(sc interface{ Scan(...any) error }) (*models.Execution, error
 	var sched, start, end string
 	var outT, errT int
 	var offline, synced int
+	var exitCode int
 	if err := sc.Scan(&e.ID, &e.TaskID, &e.TaskRevision, &e.ScriptID, &e.ScriptRevision, &e.NodeID,
-		&e.TriggerType, &sched, &start, &end, &e.Status, &e.ExitCode, &e.Stdout, &e.Stderr,
+		&e.TriggerType, &sched, &start, &end, &e.Status, &exitCode, &e.Stdout, &e.Stderr,
 		&outT, &errT, &offline, &synced, &e.BlockReason); err != nil {
 		return nil, err
 	}
@@ -68,6 +69,8 @@ func scanExecution(sc interface{ Scan(...any) error }) (*models.Execution, error
 	e.StderrTruncated = errT == 1
 	e.Offline = offline == 1
 	e.Synced = synced == 1
+	// 退出码按状态判定：只有真正执行过进程的终态才对外带值（列默认 0 不代表已知 0）。
+	e.ExitCode = models.ExecutionExitCode(e.Status, exitCode)
 	return &e, nil
 }
 
@@ -99,6 +102,17 @@ func executionFilterWhere(filter ExecutionFilter) (string, []any) {
 	if filter.Status != "" {
 		query += ` AND status = ?`
 		args = append(args, filter.Status)
+	}
+	if filter.TriggerType != "" {
+		query += ` AND trigger_type = ?`
+		args = append(args, filter.TriggerType)
+	}
+	if filter.Query != "" {
+		// instr 作字面子串匹配，避免将用户输入中的 %/_ 当作通配符。
+		query += ` AND (instr(lower(id), lower(?)) > 0 OR instr(lower(task_id), lower(?)) > 0
+			OR instr(lower(node_id), lower(?)) > 0
+			OR EXISTS (SELECT 1 FROM tasks WHERE tasks.id = executions.task_id AND instr(lower(tasks.name), lower(?)) > 0))`
+		args = append(args, filter.Query, filter.Query, filter.Query, filter.Query)
 	}
 	return query, args
 }
@@ -366,6 +380,14 @@ func auditFilterWhere(filter AuditFilter) (string, []any) {
 		query += ` AND action = ?`
 		args = append(args, filter.Action)
 	}
+	if filter.Query != "" {
+		query += ` AND (instr(lower(created_at), lower(?)) > 0 OR instr(lower(username), lower(?)) > 0
+			OR instr(lower(action), lower(?)) > 0 OR instr(lower(resource), lower(?)) > 0
+			OR instr(lower(resource_id), lower(?)) > 0 OR instr(lower(detail), lower(?)) > 0)`
+		for i := 0; i < 6; i++ {
+			args = append(args, filter.Query)
+		}
+	}
 	return query, args
 }
 
@@ -414,18 +436,18 @@ func (s *SQLiteStore) CountAudit(ctx context.Context, filter AuditFilter) (int64
 
 func (s *SQLiteStore) GetSetting(ctx context.Context, key string) (string, error) {
 	var v string
-	err := s.db.QueryRowContext(ctx, `SELECT value FROM settings WHERE key = ?`, key).Scan(&v)
+	err := s.queryer(ctx).QueryRowContext(ctx, `SELECT value FROM settings WHERE key = ?`, key).Scan(&v)
 	return v, err
 }
 
 func (s *SQLiteStore) SetSetting(ctx context.Context, key, value string) error {
-	_, err := s.db.ExecContext(ctx, `
+	_, err := s.execer(ctx).ExecContext(ctx, `
 		INSERT INTO settings (key, value) VALUES (?, ?)
 		ON CONFLICT(key) DO UPDATE SET value=excluded.value`, key, value)
 	return err
 }
 
 func (s *SQLiteStore) DeleteSetting(ctx context.Context, key string) error {
-	_, err := s.db.ExecContext(ctx, `DELETE FROM settings WHERE key = ?`, key)
+	_, err := s.execer(ctx).ExecContext(ctx, `DELETE FROM settings WHERE key = ?`, key)
 	return err
 }
