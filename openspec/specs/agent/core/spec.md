@@ -245,7 +245,6 @@ The Agent SHALL load a preassigned Agent ID from generated configuration or envi
 - **THEN** 恢复 Previous 二进制、config、unit，daemon-reload 后启动 Previous
 - **AND** 对 Previous 执行 Health Check
 
-
 ### Requirement: Agent 自助升级
 
 系统 SHALL 支持对 native 部署的 Agent 执行自助升级（单节点或批量）：Hub 下发升级执行并记录于执行历史；Agent 下载 Hub 提供的当前构建二进制、校验 SHA256、备份当前可执行文件、替换自身并重启服务；任一失败步骤 SHALL 回滚到备份版本并回报失败。升级完成重连后 Agent SHALL 上报新版本。docker 部署形态 SHALL 不提供自升级（升级入口隐藏），由镜像更新流程处理。版本粒度为「升至 Hub 同版本」。
@@ -276,3 +275,11 @@ The Agent SHALL load a preassigned Agent ID from generated configuration or envi
 
 - **WHEN** 管理员多选多个 native 节点执行批量升级
 - **THEN** 逐节点创建独立升级执行，各自产出成功/失败终态与原因
+
+### Requirement: 同步内容可信后才能改变状态
+Agent SHALL 校验同步帧所有 Script 的实际内容与 SHA 一致；任一校验失败 SHALL 拒绝整帧，不改变 Revision、持久对象或物理应用文件。
+
+#### Scenario: 坏 SHA 帧包含删除意图
+- **WHEN** 同步帧包含内容与 SHA 不一致的 Script 及 pruned Application
+- **THEN** 返回失败确认，旧 Script/Task/Schedule/Application、Revision 与应用文件全部保留；正确重试后才收敛
+

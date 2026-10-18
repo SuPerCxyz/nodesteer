@@ -3,9 +3,7 @@
 ## Purpose
 
 定义 NodeSteer Web UI 的 Bright Theme 视觉规格。本规格只约束前端呈现方式（颜色、布局、组件、状态、排版、图标与一致性），不改变任何产品功能、业务流程、数据与权限。
-
 ## Requirements
-
 ### Requirement: 视觉基准与主题
 系统 SHALL 以 Light Mode 为唯一主题呈现 Web UI，整体明亮、干净、信息密度紧凑，参考现代 shadcn Admin 布局骨架，不呈现深色主界面或大面积深色背景；仅 Terminal / Log Viewer 允许使用深色背景。
 
@@ -90,3 +88,11 @@
 #### Scenario: 业务行为不变
 - **WHEN** 完成视觉统一后执行任一既有业务流程（如创建任务、触发执行、上传制品）
 - **THEN** 行为、数据与 API 交互与统一前一致
+
+### Requirement: 系统主题与浏览器颜色同步
+Web SHALL 在 light/dark/system、系统媒体变化、重载和重置时同步页面解析主题与 theme-color；系统变化不得覆盖用户明确选择。
+
+#### Scenario: system 模式暗色变化
+- **WHEN** system 模式的系统偏好变为暗色或暗色模式重载
+- **THEN** 页面class、实际背景和theme-color均为暗色；明确light选择保持light
+
