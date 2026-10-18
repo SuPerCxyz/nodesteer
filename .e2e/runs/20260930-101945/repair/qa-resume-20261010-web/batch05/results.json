@@ -1,0 +1,150 @@
+{
+  "captured_at_utc": "2026-10-10T11:37:07.394863+00:00",
+  "status": "BEHAVIOR_COMPLETE_RETAIN_OWNED_FIXTURES_FOR_NEXT_READONLY_MATRIX",
+  "cases": [
+    {
+      "id": "P07_P08-01",
+      "status": "PARTIAL",
+      "verified": [
+        "Initial empty list with API count0 and EmptyState",
+        "row fields visible after creation",
+        "search hit, zero-result UI and Reset",
+        "View column hide/persist across reload/restore"
+      ],
+      "remaining": [
+        "Pagination stays PARTIAL: only one owned Script row; page controls disabled."
+      ],
+      "evidence": [
+        "evidence/script-list-baseline.json",
+        "evidence/script-list-ui.json",
+        "evidence/list-view-before-reload.json"
+      ]
+    },
+    {
+      "id": "P07_P08-02",
+      "status": "PASS",
+      "verified": [
+        "New form Cancel route and zero POST/audit",
+        "owned edit entry then unsaved name change Cancel; zero POST/PUT",
+        "same Script GET, revision list content SHA and audit rows unchanged"
+      ],
+      "evidence": [
+        "evidence/new-cancel-before.json",
+        "evidence/new-cancel-result.json",
+        "evidence/edit-cancel-before.json",
+        "evidence/edit-cancel-result.json"
+      ]
+    },
+    {
+      "id": "P07_P08-04",
+      "status": "PARTIAL",
+      "verified": [
+        "Description/content/working_dir/run_user/timeout0 persisted and re-opened",
+        "timeout changed to17 on edit",
+        "enabled true→false through Save and false→true through list action; GET/API/UI checked"
+      ],
+      "remaining": [
+        "No Task/Run was authorized; actual execution consumption of working_dir/run_user was not tested. Saved UI field values and enabled toggles are verified."
+      ],
+      "evidence": [
+        "evidence/ui-create-intent.json",
+        "evidence/original-script-readback.json",
+        "evidence/original-edit-readback.json",
+        "evidence/enabled-restored.json",
+        "evidence/original-reopen-ui.json"
+      ]
+    },
+    {
+      "id": "P07_P08-05",
+      "status": "PASS",
+      "verified": [
+        "All four supported parameter types and safe defaults saved and API-read back",
+        "UI secret default masked; only its hash recorded",
+        "qa_number removed on edit and stayed absent after reload/readback",
+        "empty add did not add a parameter"
+      ],
+      "evidence": [
+        "evidence/ui-create-intent.json",
+        "evidence/original-script-readback.json",
+        "evidence/original-edit-readback.json",
+        "evidence/original-reopen-ui.json"
+      ]
+    },
+    {
+      "id": "P07_P08-06",
+      "status": "PASS",
+      "verified": [
+        "Environment add and same-key overwrite reflected one current UI value",
+        "second key saved, then removed on edit",
+        "re-open/readback shows only final key/hash"
+      ],
+      "evidence": [
+        "evidence/ui-create-intent.json",
+        "evidence/original-script-readback.json",
+        "evidence/original-edit-readback.json",
+        "evidence/original-reopen-ui.json"
+      ]
+    },
+    {
+      "id": "P07_P08-07",
+      "status": "PASS",
+      "verified": [
+        "Initial Script list GET count0",
+        "one UI POST /api/scripts status200 during create window",
+        "unique name GET exact same-ID returns revision1 and local content SHA matches",
+        "create audit resource ID matches owned Script ID"
+      ],
+      "limitations": [
+        "Direct POST response body/id was not available from CLI; user-visible create POST200, zero baseline, unique GET same-name ID revision1/SHA, and create audit resource_id matching that ID form the causal oracle. This is a tooling capture limitation, not a product defect."
+      ],
+      "evidence": [
+        "evidence/script-list-baseline.json",
+        "evidence/original-script-readback.json",
+        "evidence/edit-cancel-before.json",
+        "owned-ledger.json"
+      ]
+    },
+    {
+      "id": "P07_P08-08",
+      "status": "PASS",
+      "verified": [
+        "Owned original edit advanced r1→r2; subsequent enabled toggle advanced r2→r3",
+        "Revisions API returns r2 and r1 with expected content SHA",
+        "Both actual UI history disclosure summaries expanded and displayed content matching known hashes"
+      ],
+      "evidence": [
+        "evidence/original-edit-readback.json",
+        "evidence/revision-history-ui.json"
+      ]
+    },
+    {
+      "id": "P07_P08-09",
+      "status": "PASS",
+      "verified": [
+        "UI Clone POST200 navigated to ID from mutation onSuccess route",
+        "distinct ID, copy name, r1; content SHA, params and env hashes match original at creation",
+        "editing clone advanced to r2; original stayed byte-field/hash/revision unchanged"
+      ],
+      "evidence": [
+        "evidence/clone-readback.json",
+        "evidence/clone-edit-before.json",
+        "evidence/clone-edit-result.json",
+        "evidence/clone-isolation-after-original-update.json"
+      ]
+    }
+  ],
+  "resource_budget": {
+    "created_ui_script": 1,
+    "created_ui_clone": 1,
+    "max_concurrent_owned": 2,
+    "tasks": 0,
+    "runs": 0,
+    "users": 0,
+    "groups": 0,
+    "nodes": 0,
+    "agents": 0
+  },
+  "cleanup": "Deferred by Root approval for next ROUTE/TABLE read-only batch; both exact owned IDs remain in owned-ledger.json. Cleanup after that stage by UI then exact GET404.",
+  "no_product_source_changed": true,
+  "no_global_ledger_changed": true
+}

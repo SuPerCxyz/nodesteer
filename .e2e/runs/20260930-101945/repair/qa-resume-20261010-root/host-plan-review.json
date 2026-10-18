@@ -1,0 +1,63 @@
+{
+  "reviewed_at": "2026-10-10T02:33:45.932755+00:00",
+  "proposal": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host-fixture-plan-proposal.json",
+  "proposal_sha256": "07b607093648a6ccdf2254d32cf7354e7b5f589b78cf1c5aa850edc9db5dfe18",
+  "status": "APPROVED_WITH_SPECIFIC_CORRECTIONS",
+  "scope": [
+    "FAIL-ENV-HOST-001",
+    "FAIL-ENV-HOST-002"
+  ],
+  "target_native2_node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+  "identifiers": {
+    "nonce": "f174890c3846",
+    "run": "qa-resume-20261010-host-f174890c3846",
+    "root": "/opt/qa-resume-20261010-host-f174890c3846",
+    "private_dir": "/opt/qa-resume-20261010-host-f174890c3846/private",
+    "rootfs_stage": "/opt/qa-resume-20261010-host-f174890c3846/rootfs",
+    "tar": "/opt/qa-resume-20261010-host-f174890c3846/agent-rootfs.tar",
+    "image_tag": "nodesteer-qa/agent-host:f174890c3846",
+    "image_label": "nodesteer.e2e.owner=qa-resume-20261010-host-f174890c3846",
+    "bridge": "nodesteer-qa-host-f174890c3846",
+    "bridge_label": "nodesteer-e2e-run=qa-resume-20261010-host-f174890c3846",
+    "containers": [
+      "qa-resume-20261010-host-f174890c3846-source",
+      "qa-resume-20261010-host-f174890c3846-host001",
+      "qa-resume-20261010-host-f174890c3846-host002-missing",
+      "qa-resume-20261010-host-f174890c3846-host002-wrong",
+      "qa-resume-20261010-host-f174890c3846-host002-correct",
+      "qa-resume-20261010-host-f174890c3846-host002-readonly"
+    ],
+    "volumes": [
+      "qa-resume-20261010-host-f174890c3846-data-0",
+      "qa-resume-20261010-host-f174890c3846-data-1",
+      "qa-resume-20261010-host-f174890c3846-data-2",
+      "qa-resume-20261010-host-f174890c3846-data-3",
+      "qa-resume-20261010-host-f174890c3846-data-4",
+      "qa-resume-20261010-host-f174890c3846-data-5"
+    ],
+    "app_root": "/opt/qa-resume-20261010-host-f174890c3846/host001/app",
+    "hostroot": "/opt/qa-resume-20261010-host-f174890c3846/hostroot",
+    "wrongroot": "/opt/qa-resume-20261010-host-f174890c3846/wrongroot",
+    "unit": "nodesteer-qa-host-f174890c3846-app.service"
+  },
+  "authorization": "此前已确认22缺陷/504运行时验收，独占DockerHost fixture细化；不扩大产品实现范围",
+  "approved": [
+    "本地已有7文件SHA核验后复制20MB rootfs和docker import到该唯一owner tag/label；不pull/install",
+    "6独占Node/container/volume及唯一bridge，所有immutable ID记录与按依赖finally cleanup",
+    "Host001 host PID namespace与SYS_ADMIN/SYS_CHROOT/SYS_PTRACE；capdropALL/no-new-privileges，默认seccomp先readonly nsenter smoke，禁止unconfined/privileged fallback",
+    "Host001仅owned app root + systemd目录RW；逻辑allowlist精确Unit/app root及API assignments精确自建Node；除该Unit及enable symlink不写父目录其他内容",
+    "Bridge egress不宣称sole-destination隔离；执行helper/Agent配置只使用repair18080及同fixture FileRelay，禁止primary8080管理写，禁止外部下载"
+  ],
+  "corrections": [
+    "Docker默认seccomp应省略seccomp参数；seccomp=runtime/default通常是OCI配置名而非Docker内置selector，不猜路径，不关闭seccomp",
+    "创建前/清理后保存systemd目录原有条目names/modes/SHA元数据（不复制内容），确保除ownedUnit/symlink无本测试写入；新fixture物理owner/permissions/parent guards每次刷新",
+    "6容器按需要串行启动，Host002 negatives先独立unique payload/no prior cache；在nsenter smoke失败时停止Host001写入，保留真实环境限制",
+    "default rootfs构建/Image inspect无需秘密输出；private config只0600文件/secretparams，不使用raw docker inspect输出包含敏感config值"
+  ],
+  "completion_gate": [
+    "HOST001需要API/Agent/UI/physicalUnit/PID/cgroup/FileSHA/Registry/Journal真实oracle",
+    "HOST002需missing/wrong/readOnly各真实失败及no pollution，与correct实际宿主SHA对照",
+    "完成准确owned IDs/Unit/symlink/tree/image/container/network/volume清理，保留history，原四online/synced；未测不能泛化"
+  ],
+  "product_source_write_authorized": false
+}

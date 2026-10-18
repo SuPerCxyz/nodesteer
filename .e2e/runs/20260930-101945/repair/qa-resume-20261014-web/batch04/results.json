@@ -1,0 +1,304 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch04",
+  "updated_at_utc": "2026-10-14T09:25:00Z",
+  "status": "COMPLETE_FOR_ROOT_REVIEW",
+  "environment": {
+    "authority": "http://192.168.100.209:18080",
+    "authority_type": "repair",
+    "primary_8080_touched": false,
+    "browser": "agent-browser 0.32.4 (session qaweb1410b04)",
+    "nonce": "89fe789d",
+    "fixture_prefix": "qa-w1410b04-89fe789d",
+    "hub_revision_note": "not re-read this batch; case evidence is UI+API+node-fs based",
+    "nodes_used": ["native-1 91f44866-8a28-435e-bbda-2f2367126c00", "native-3 37989297-3bc8-4c0c-b302-7c6efbdba630"],
+    "nodes_never_used": ["native-2", "native-4", "host001 write path", "parallel sys-b10 child"]
+  },
+  "cases": [
+    {
+      "case_id": "P22-12",
+      "title": "PENDING/UPLOADING/DELIVERING -> cancel，取消确认按当前产品设计验证",
+      "canonical_before": {"status": "PARTIAL", "baseline_status": "PARTIAL", "priority": "P0"},
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        "PENDING -> cancel via row 操作 menu (取消传输): offline-source transfer never dispatched, stayed PENDING",
+        "UPLOADING -> cancel: 300 MiB source; cancel POST issued at t+385 ms while the only server-observed state was UPLOADING (last UPLOADING sample t+0.293 s, DELIVERING only at t+2.711 s)",
+        "DELIVERING -> cancel: mixed 3-target transfer observed in DELIVERING, cancel -> CANCELED (also independently re-confirmed from batch03)",
+        "cancel confirmation per current product design: no dialog for any of the three cancels (dialogs_present_after_click = 0, menu item list = ['取消传输'] only)",
+        "POST /api/transfers/{id}/cancel -> 200 for all three",
+        "final aggregate CANCELED for all three; non-SUCCESS targets normalized to CANCELED; an already SUCCESS target is preserved (mixed transfer: native-3 stayed SUCCESS)",
+        "hub staging directory empty after every cancel (no .part/.blob leftovers)",
+        "no delivery side effect: native-3 received no big-dst.bin / c-offline.bin / c-host001.bin / pending-dst.bin",
+        "terminal rows (CANCELED) render no empty action menu (action cell contains 0 buttons)"
+      ],
+      "remaining_or_limitations": [
+        "cancel during UPLOADING is serialized behind the in-flight upload (FileTransferManager.Cancel takes m.mu which handleUpload holds for the whole upload), so the observable CANCELED lands only once the staged upload finishes (t+2.734 s); the cancel intent is still honored and nothing is delivered - recorded as observation OBS-B04-04, not a failure"
+      ],
+      "evidence": [
+        "evidence/P22-12a-01-pending-transfer-form-ready.png",
+        "evidence/P22-12a-timeline.json",
+        "evidence/P22-12a-05-cancel-eval.json",
+        "evidence/P22-12b-01-uploading-form-ready.png",
+        "evidence/P22-12b-timeline.json",
+        "evidence/P22-12b-02-network-create-cancel.json",
+        "evidence/P22-12b-05-cancel-eval.json",
+        "evidence/P22-09-timeline.json",
+        "evidence/P22-09-05-cancel-eval.json",
+        "evidence/P22-12-http-actions.json",
+        "evidence/P22-12-06-cancel-summary.json",
+        "evidence/P22-11-owned-transfers-final.json"
+      ],
+      "actual": {
+        "cancels": [
+          {"transfer_id": "b5ecb82a-7603-43a6-b243-a7af8a80ad3b", "state_at_cancel": "PENDING", "http": 200, "final": "CANCELED", "targets": "CANCELED", "dialog": false},
+          {"transfer_id": "6bb56f76-f725-4158-9609-f2589fb8045d", "state_at_cancel": "UPLOADING", "http": 200, "final": "CANCELED", "targets": "CANCELED", "dialog": false, "staged_bytes_before_cancel": 314572800},
+          {"transfer_id": "ec3772f9-606d-493f-bdef-762861b6e93e", "state_at_cancel": "DELIVERING", "http": 200, "final": "CANCELED", "targets": "offline CANCELED / native-3 SUCCESS preserved / host001 CANCELED", "dialog": false}
+        ],
+        "staging_dir_after": "empty",
+        "ui_labels": {"PENDING": "等待中", "UPLOADING": "UPLOADING (raw enum, see OBS-B04-01)", "DELIVERING": "DELIVERING (raw enum)", "CANCELED": "已取消", "SUCCESS": "成功"}
+      }
+    },
+    {
+      "case_id": "FL-09",
+      "title": "Application Assign -> Agent Detail -> Node Detail 托管应用与 Application 节点列表一致",
+      "canonical_before": {"status": "PASS", "baseline_status": "PASS", "priority": "P0", "batch03_remaining": "分配写路径（勾选节点->保存->POST /assign）未执行"},
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        "assign write path: owned Application created via UI, native-3 checked, 保存 -> POST /api/applications 200 + POST /api/applications/{id}/assign {node_ids:[native-3]} 200",
+        "post-assign consistency: Application assign card shows only native-3 checked; GET /applications/{id}/nodes = [native-3]; Agent Detail(native-3) and Node Detail(native-3) both list the application",
+        "negative control: Agent Detail(native-1) lists only the pre-existing non-owned application (no leak of the owned app)",
+        "unassign write path: uncheck native-3 -> 保存 -> POST /api/applications/{id}/assign {node_ids:[native-3], remove:true} 200",
+        "post-unassign consistency: GET /applications/{id}/nodes = null; Agent Detail(native-3) and Node Detail(native-3) show the empty state 暂无托管应用",
+        "bidirectional API consistency (all nodes x all applications) after assign and after unassign: 0 mismatches",
+        "non-owned Application 804e6b14-eb84-4dda-90de-8bcab9586c4c unchanged (still native-1 only) at all three checkpoints",
+        "owned Application deleted via UI and GET404-verified"
+      ],
+      "remaining_or_limitations": [],
+      "evidence": [
+        "evidence/FL09-01-new-app-assign-native3.png",
+        "evidence/FL09-02-app-editor-native3-assigned.png",
+        "evidence/FL09-03-api-after-assign.json",
+        "evidence/FL09-04-agent-detail-native3-scan.json",
+        "evidence/FL09-04-agent-detail-native3.png",
+        "evidence/FL09-05-node-detail-native3-scan.json",
+        "evidence/FL09-05-node-detail-native3.png",
+        "evidence/FL09-06-agent-detail-native1-scan.json",
+        "evidence/FL09-07-editor-native3-unchecked.png",
+        "evidence/FL09-08-network-save-unassign.json",
+        "evidence/FL09-09-api-after-unassign.json",
+        "evidence/FL09-10-agent-detail-native3-after-unassign-scan.json",
+        "evidence/FL09-11-node-detail-native3-after-unassign-scan.json",
+        "evidence/FL09-14-delete-confirm-dialog.png",
+        "evidence/FL09-15-cleanup-get404.json"
+      ],
+      "actual": {
+        "owned_application": "qa-w1410b04-89fe789d-app-fl09 (862cf8d9-aef8-46c3-adc9-b5c14711bf5c)",
+        "assign_nodes_card_after_assign": [{"node": "native-1", "state": "unchecked"}, {"node": "native-2", "state": "unchecked"}, {"node": "native-3", "state": "checked"}, {"node": "native-4", "state": "unchecked"}, {"node": "native4-child(offline)", "state": "unchecked"}, {"node": "host001", "state": "unchecked"}],
+        "api_app_nodes_after_assign": ["37989297-3bc8-4c0c-b302-7c6efbdba630"],
+        "agent_detail_native3_managed_apps": ["qa-w1410b04-89fe789d-app-fl09 -> /applications/862cf8d9-aef8-46c3-adc9-b5c14711bf5c"],
+        "node_detail_native3_managed_apps": ["qa-w1410b04-89fe789d-app-fl09 -> /applications/862cf8d9-aef8-46c3-adc9-b5c14711bf5c"],
+        "api_app_nodes_after_unassign": null,
+        "agent_detail_native3_after_unassign": {"managed_apps": [], "empty_text": "暂无托管应用"},
+        "node_detail_native3_after_unassign": {"managed_apps": [], "empty_text": "暂无托管应用"},
+        "bidirectional_mismatches": [],
+        "consistent": true,
+        "post_delete_get": {"http": 404, "body": {"error": "application not found"}}
+      }
+    },
+    {
+      "case_id": "P11-07",
+      "title": "多节点执行每个 Node 一条 Execution",
+      "canonical_before": {"status": "NOT_RUN", "baseline_status": "PASS", "priority": "P1"},
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        "owned task with target type node and 2 target nodes (native-1 + native-3) created via UI; task list shows 目标 = 2 节点",
+        "manual run via UI (/tasks/{id}/run -> 立即运行 -> confirm dialog -> POST /api/tasks/{id}/run 200)",
+        "exactly one Execution per targeted Node per run (run 1: 2 executions, one on native-1, one on native-3)",
+        "each Execution carries its own node_id and reaches status SUCCESS with the command output",
+        "Executions list UI shows one row per node with 节点 = the targeted hostname and 触发方式 = 手动",
+        "Execution detail UI shows ID / 状态 成功 / 节点 native-3 / 触发方式 手动 / stdout 47 字符 / 已同步 是"
+      ],
+      "remaining_or_limitations": [
+        "the command ran as an inline 'command' task (no Script fixture needed); a script-type task would exercise the same createAndDispatch path"
+      ],
+      "evidence": [
+        "evidence/P11-01-task-new-multinode.png",
+        "evidence/P11-02-executions-before-run.json",
+        "evidence/P11-03-run-confirm-dialog.png",
+        "evidence/P11-04-executions-run1.json",
+        "evidence/P11-05-executions-ui-run1.png",
+        "evidence/P11-05-executions-ui-run1-scan.json",
+        "evidence/P11-08-execution-detail-run2-native3.png",
+        "evidence/P11-08-execution-detail-scan.json",
+        "evidence/P11-09-multinode-and-uuid-analysis.json",
+        "evidence/P11-10-tasks-list-scan.json"
+      ],
+      "actual": {
+        "task": "qa-w1410b04-89fe789d-task-p11 (33332cdc-0311-465d-8516-4ae7cc64456b) type=command target=[native-1,native-3]",
+        "run_1": {"ee33f0e0-1552-4fda-84e6-ceeb2ae89450": "native-3 SUCCESS", "92db8733-246f-4a6d-9927-2d3389e54877": "native-1 SUCCESS"},
+        "executions_per_node_per_run": 1,
+        "command_stdout": "qa-w1410b04-89fe789d-p11-localhost.localdomain"
+      }
+    },
+    {
+      "case_id": "P11-08",
+      "title": "每次 Manual Run 生成新 UUID 代表新意图；同 Execution ID/Key 重复投递/上传按幂等验证",
+      "canonical_before": {"status": "NOT_RUN", "baseline_status": "PARTIAL", "priority": "P1"},
+      "proposed_after": "PARTIAL",
+      "confidence": "medium-high (half a verified, half b not runtime-triggerable)",
+      "covered_dimensions": [
+        "manual run #1 -> 2 fresh execution UUIDs; identical manual run #2 -> 2 more fresh UUIDs disjoint from run #1 (4 distinct UUIDs across 2 runs, 2 per node)",
+        "an identical POST /api/tasks/{id}/run body is deliberately NOT deduplicated: each manual run is a new intent, so the hub mints new Execution IDs (this is the 'new intent' half of the case, verified with real requests)",
+        "Executions list UI shows 4 rows for the task (2 per run) with distinct IDs - no row merging"
+      ],
+      "remaining_or_limitations": [
+        "the 'same Execution ID/Key repeated delivery/upload is idempotent' half was NOT exercised at runtime: no UI or HTTP path re-delivers one Execution ID (the hub always creates a fresh UUID for a manual run and there is no client-supplied idempotency key), and injecting a duplicate protocol frame (RUN_EXECUTION / EXECUTION_FINISHED) is outside this batch's authorization",
+        "read-only corroboration only (not counted as runtime evidence): internal/agent/agent.go OnRunExecution returns early when the local journal already holds the Execution ID; internal/hub/execution.go MarkFinished returns nil for an already-terminal record and UpsertFromAgent ('Agent 重连后上报执行结果（幂等）') never regresses a terminal record; scheduled runs dedupe on the task+node+slot key (errSlotExists)",
+        "closing this dimension needs either Root authorization for a duplicate-frame injector/protocol harness, or explicit acceptance of the code-level corroboration"
+      ],
+      "evidence": [
+        "evidence/P11-04-executions-run1.json",
+        "evidence/P11-06-executions-run2.json",
+        "evidence/P11-07-executions-ui-run2.png",
+        "evidence/P11-07-executions-ui-run2-scan.json",
+        "evidence/P11-09-multinode-and-uuid-analysis.json",
+        "evidence/P11-13-executions-after-task-delete.json"
+      ],
+      "actual": {
+        "run_1_ids": ["92db8733-246f-4a6d-9927-2d3389e54877", "ee33f0e0-1552-4fda-84e6-ceeb2ae89450"],
+        "run_2_ids": ["efea53bf-09c0-4b22-b211-032e2e2afa24", "f620ea0f-c7f4-4058-bb32-d8d1e8f684d8"],
+        "all_ids_distinct": true,
+        "run2_disjoint_from_run1": true,
+        "duplicate_delivery_idempotency_runtime_evidence": "NOT_CAPTURED"
+      }
+    },
+    {
+      "case_id": "P22-08",
+      "title": "成功后源路径、目标列表、输入状态重置",
+      "canonical_before": {"status": "NOT_RUN", "baseline_status": "PASS", "priority": "P1"},
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        "form state captured right before submit: source Agent native-1, source path filled, 1 target chip present (移除 button), 开始传输 enabled",
+        "form state captured 0.6 s after the create request resolved (POST /api/transfers 200): source path cleared, target list cleared (target chip gone), target Agent select back to the placeholder, destination path cleared, 开始传输 disabled",
+        "source Agent selector is intentionally retained (implementation: onSuccess resets sourcePath/targets/targetNodeID/destinationPath only) - recorded as the actual behaviour",
+        "end-to-end success proven, not just the form: transfer SUCCESS, delivered file on native-3 with the same size and sha256 as the source",
+        "hub staging blob removed after SUCCESS (cleanupFiles)",
+        "terminal SUCCESS row renders no empty action menu",
+        "no extra side effects on native-1 / native-3 beyond the two owned files"
+      ],
+      "remaining_or_limitations": [],
+      "evidence": [
+        "evidence/P22-08-01-form-before-submit.json",
+        "evidence/P22-08-02-form-after-submit.json",
+        "evidence/P22-08-timeline.json",
+        "evidence/P22-08-03-terminal-row.json",
+        "evidence/P22-08-04-terminal.png",
+        "evidence/P22-10-fs-verification.json",
+        "evidence/P22-11-owned-transfers-final.json",
+        "evidence/P22-12-http-actions.json"
+      ],
+      "actual": {
+        "transfer_id": "f62913ec-dc41-47e4-bb93-62596f418c41",
+        "source": "native-1 /tmp/qa-w1410b04-89fe789d/src-2mb.bin (2097152 B, sha256 e69d75f1...44a8bc)",
+        "target": "native-3 /tmp/qa-w1410b04-89fe789d/d-2mb.bin (2097152 B, sha256 e69d75f1...44a8bc)",
+        "status_timeline": "UPLOADING(0.296s) -> DELIVERING(0.342s) -> SUCCESS(0.364s)",
+        "form_before": {"source_agent": "native-1", "source_path": "/tmp/qa-w1410b04-89fe789d/src-2mb.bin", "target_chips": 1, "start_button": "enabled"},
+        "form_after": {"source_agent": "native-1", "source_path": "", "target_chips": 0, "target_agent": "选择目标 Agent", "destination_path": "", "start_button": "disabled"},
+        "sha_consistent": true,
+        "ui_status": "成功, target native-3 成功"
+      }
+    },
+    {
+      "case_id": "P22-09",
+      "title": "每目标独立状态，整体状态正确聚合",
+      "canonical_before": {"status": "NOT_RUN", "baseline_status": "PASS", "priority": "P1"},
+      "proposed_after": "PARTIAL",
+      "confidence": "high for the covered dimensions",
+      "covered_dimensions": [
+        "one transfer with 3 targets held 3 different target states at the same time: native-3 SUCCESS, host001 FAILED, offline target PENDING (UI row showed 成功/失败/等待中 simultaneously)",
+        "per-target error is surfaced per target (host001: destination path: path is outside host allowlist) while the other targets are unaffected",
+        "aggregate stays DELIVERING (not FAILED, not SUCCESS) while one target is non-terminal, even though another target already FAILED",
+        "aggregate SUCCESS when the only target succeeded (transfer f62913ec)",
+        "aggregate CANCELED after cancel, with the already-SUCCESS target preserved as SUCCESS and the FAILED/CANCELED target normalised to CANCELED",
+        "successful target file verified byte-identical to the source (size 1048576, sha256 aa370976...9aaee9f2)"
+      ],
+      "remaining_or_limitations": [
+        "the aggregate FAILED branch (all targets terminal AND at least one failed -> aggregate FAILED) was not exercised: reaching it needs a transfer whose only targets are terminal-failing, which would consume a 5th owned transfer beyond this batch's <=4 authorization",
+        "closing it needs Root authorization for one more owned transfer (source native-1 -> single target host001 with a non-allowlisted path, which fails fast and writes nothing)"
+      ],
+      "evidence": [
+        "evidence/P22-09-01-form-ready.json",
+        "evidence/P22-09-03-observe-row.json",
+        "evidence/P22-09-04-observe.png",
+        "evidence/P22-09-timeline.json",
+        "evidence/P22-09-05-cancel-eval.json",
+        "evidence/P22-08-timeline.json",
+        "evidence/P22-10-fs-verification.json",
+        "evidence/P22-11-owned-transfers-final.json"
+      ],
+      "actual": {
+        "transfer_id": "ec3772f9-606d-493f-bdef-762861b6e93e",
+        "source": "native-1 /tmp/qa-w1410b04-89fe789d/src-small.bin (1048576 B)",
+        "targets_at_observe": [
+          {"node": "native-4-child(offline)", "status": "PENDING", "ui": "等待中"},
+          {"node": "native-3", "status": "SUCCESS", "ui": "成功"},
+          {"node": "host001", "status": "FAILED", "ui": "失败", "error": "destination path: path is outside host allowlist: /tmp/qa-w1410b04-89fe789d/c-host001.bin"}
+        ],
+        "aggregate_at_observe": "DELIVERING",
+        "after_cancel": {"aggregate": "CANCELED", "targets": "offline CANCELED / native-3 SUCCESS / host001 CANCELED"},
+        "all_success_aggregate": {"transfer_id": "f62913ec-dc41-47e4-bb93-62596f418c41", "aggregate": "SUCCESS"},
+        "all_terminal_with_failure_aggregate": "NOT_OBSERVED"
+      }
+    }
+  ],
+  "counts": {"PASS": 4, "PARTIAL": 2, "FAIL": 0, "NOT_RUN": 0},
+  "server_writes": {
+    "transfers_created": 4,
+    "transfers_canceled": 3,
+    "applications_created": 1,
+    "applications_deleted": 1,
+    "application_assign_calls": 2,
+    "tasks_created": 1,
+    "tasks_deleted": 1,
+    "manual_runs_triggered": 2,
+    "executions_created": 4,
+    "artifacts_created": 0,
+    "scripts_created": 0,
+    "node_state_changes": 0,
+    "deploys_triggered": 0,
+    "persistent_resources_left": 0,
+    "retained_history": {"transfers": 4, "executions": 4}
+  },
+  "observations": [
+    {"id": "OBS-B04-01", "severity": "low", "where": "/transfers status badge", "detail": "UPLOADING and DELIVERING have no zh/en label in StatusBadge, so the transfers table shows the raw enum while PENDING/SUCCESS/CANCELED/FAILED are localized (re-confirmation of batch03 OBS-B03-01; web/src/features/shared/ui.tsx).", "blocks_case": false},
+    {"id": "OBS-B04-02", "severity": "low", "where": "GET /api/applications/{id}/nodes", "detail": "for a deleted application the sub-resource still answers 200 with a null body instead of 404, while GET /api/applications/{id} correctly answers 404 (no existence guard on the sub-resource).", "blocks_case": false},
+    {"id": "OBS-B04-03", "severity": "low", "where": "/executions 退出码 column + API payload", "detail": "models.Execution.ExitCode is tagged exit_code,omitempty, so a successful run (exit 0) omits the field and the UI shows '-' instead of '0'.", "blocks_case": false},
+    {"id": "OBS-B04-04", "severity": "low", "where": "transfer cancel during UPLOADING", "detail": "FileTransferManager.Cancel takes m.mu, which handleUpload holds for the whole upload body, so a cancel issued while UPLOADING is applied only after the staged upload finishes (observed: cancel POST at t+385 ms, CANCELED at t+2.734 s after 300 MiB was staged). Intent is honored (nothing delivered, staged blob removed) but the cancel can appear to lag on large files and the hub accepts the full upload first.", "blocks_case": false},
+    {"id": "OBS-B04-05", "severity": "info", "where": "task delete vs execution history", "detail": "deleting the owned task left its 4 execution records queryable (GET /api/executions?task_id=... still returns them) - history is preserved as expected; task_name resolves to null in the UI.", "blocks_case": false}
+  ],
+  "harness_notes": [
+    "radix dropdown menus do not open on a synthetic element.click(); the row-menu automation had to dispatch a pointerdown/mousedown/pointerup/mouseup/click sequence. Recorded because a naive click silently leaves the menu closed (first P22-12a attempt).",
+    "the accessibility refs renumber after every radix menu open/close, so a fill issued against a ref captured before a Select interaction silently lands on the wrong element; the form driver re-snapshots before every interaction (runners/form_transfer.py).",
+    "agent-browser 'network requests --json' includes the Authorization: Bearer header; all saved network evidence was redacted (header dropped, Bearer tokens replaced) before writing to evidence/.",
+    "a background poller (20 ms cadence) was used to record the server-side status timeline; it writes to a file and is parsed afterwards because piping the CLI output races with the pipeline stages.",
+    "no agent-browser or harness failure changed any case conclusion."
+  ],
+  "credentials": {
+    "password_or_token_in_evidence": false,
+    "admin_display_name_in_evidence": "the session user's own admin display name (visible in the app chrome of every screenshot) appears inside one DOM-text scan (evidence/P11-08-execution-detail-scan.json) and inside the node hostnames; it is not a secret",
+    "redaction": "network evidence files carry {\"redaction\": \"authorization header removed...\"} and contain no Bearer values",
+    "signin_technique": "credentials read from the 0600 file and injected through a piped JS eval so they never entered argv, stdout or evidence"
+  },
+  "final_cleanup_guard": {
+    "evidence": "final-cleanup-guard.json",
+    "no_leftovers": true,
+    "owned_objects_after": {"artifacts": 0, "applications": 0, "tasks": 0, "scripts": 0, "transfers": 4},
+    "counts_baseline": {"nodes": 7, "applications": 1, "tasks": 0, "schedules": 0, "artifacts": 4, "scripts": 2, "groups": 0, "users": 8, "transfers": 7},
+    "counts_after": {"nodes": 6, "applications": 1, "tasks": 0, "schedules": 0, "artifacts": 1, "scripts": 2, "groups": 0, "users": 8, "transfers": 11},
+    "note": "transfers +4 are the batch04 owned records (no DELETE endpoint; terminal history). nodes -1 and artifacts -3 are parallel-batch (sys-b09/sys-b10 and a third actor) activity, not batch04: batch04 created/deleted no node and no artifact.",
+    "node_side": "native-1 and native-3 /tmp/qa-w1410b04-89fe789d removed and verified absent; hub file-transfers staging dir empty; native-4 untouched"
+  }
+}

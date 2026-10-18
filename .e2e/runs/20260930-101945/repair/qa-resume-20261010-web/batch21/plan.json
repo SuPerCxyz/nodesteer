@@ -1,0 +1,37 @@
+{
+  "batch_id": "qa-resume-20261010-web-batch21-p05a10-copy-and-notrun-triage",
+  "created_at_utc": "2026-10-12T13:53:53.635182+00:00",
+  "canonical_case": {
+    "case_id": "P05A-10",
+    "title": "Copy 成功显示 Copied；剪贴板失败显示 copy failed。",
+    "source": "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/feature-inventory.json"
+  },
+  "scope": {
+    "allowed": [
+      "Read /nodes UI; inspect existing Enrollment dialog; copy/read actual command only if already available in UI; for successful/denied clipboard test use fresh real preview and same-origin browser clipboard; classify inventory NOT_RUN cases."
+    ],
+    "forbidden": [
+      "Do not submit enrollment; do not create Node, Agent, User, Task, Run, or any resource; do not reveal/record command, token, clipboard text, or screenshot including command region; do not alter service/global settings."
+    ]
+  },
+  "source_review": {
+    "product": "docs/PRODUCT.md §17 says the admin Node enrollment wizard generates Native, Docker and Compose commands containing Node identity and Registration Token.",
+    "ui": "web/src/features/catalog/index.tsx:328-523; enrollment preview is populated only from POST /api/nodes/enrollment (form submit), then Copy button is rendered.",
+    "copy_callback": "web/src/features/catalog/index.tsx:375-391; calls copyText, shows Copied on async success, manual-copy info when helper returns false, copy-failed error on throw.",
+    "clipboard_helper": "web/src/lib/clipboard.ts; secure-context asynchronous writeText first, then legacy fallback; false means manual fallback rather than proof of actual clipboard write."
+  },
+  "observed_precondition": {
+    "session": "qawebsecure20261010-b18-clean38181",
+    "origin": "http://127.0.0.1:38181",
+    "secure_context": true,
+    "route": "/nodes",
+    "actual_nodes_rows": 6,
+    "dialog_opened_without_submit": true,
+    "generate_button_count": 1,
+    "copy_button_count": 0,
+    "command_preview_present": false,
+    "enrollment_POST_observed": false
+  },
+  "decision": "The real UI has no existing command preview or Copy button before a new enrollment POST. Because this batch explicitly forbids enrollment submission and resource creation, do not fabricate a clipboard sample or click Copy; P05A-10 remains PARTIAL pending an explicitly permitted disposable preview source or enrollment POST fixture. No conclusion about copy success/failure behavior is made.",
+  "cleanup": "Closed the Enrollment dialog; the page remains /nodes; 6 visible Node rows unchanged; no enrollment request was observed."
+}

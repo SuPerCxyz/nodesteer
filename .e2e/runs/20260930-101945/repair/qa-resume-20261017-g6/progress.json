@@ -1,0 +1,83 @@
+{
+  "batch_id": "g6",
+  "nonce": "1fdba63d",
+  "prefix": "qa-g6-1fdba63d-",
+  "phase": "deliverables-written",
+  "updated_at_utc": "2026-10-17T04:46:07Z",
+  "cases": [
+    "X18",
+    "X12",
+    "X15"
+  ],
+  "phases": [
+    {
+      "name": "phase0-guard",
+      "status": "ok",
+      "evidence": "evidence/phase0-guard.json",
+      "note": "hub sha (CR-1 fdfa667b…) + healthz/readyz 200, 4 protected native repair nodes online/synced, no owned leftovers, native-1 baseline clean, hub SQLite quick_check ok"
+    },
+    {
+      "name": "phase1-owned-children",
+      "status": "ok",
+      "evidence": "evidence/phase1-owned-children.json",
+      "note": "3 owned children on native-1 (.204): a native via the owned frame proxy, b native direct, c docker direct (online but application_deploy=false)"
+    },
+    {
+      "name": "phase2-fixtures",
+      "status": "ok",
+      "evidence": "evidence/phase2-fixtures.json",
+      "note": "2 scripts, 5 tasks, 2 static groups, physical source/blocker/self-copy files on the owned children"
+    },
+    {
+      "name": "phase3-x12",
+      "status": "ok",
+      "evidence": "evidence/phase3-x12-targets.json",
+      "note": "label retarget (2 real executions), empty target 400, overlapping groups dedupe, offline/disabled/maintenance gates + scheduled SKIPPED, capability mismatch on the docker-mode child"
+    },
+    {
+      "name": "phase4-x18-transfer",
+      "status": "ok",
+      "evidence": "evidence/phase4-x18-transfer.json",
+      "note": "warm-up + graded two-target transfer (1 SUCCESS + 1 FAILED), per-target isolation, retry keeps the successful target intact, self-transfer probe"
+    },
+    {
+      "name": "phase5-x18-application",
+      "status": "ok",
+      "evidence": "evidence/phase5-x18-application.json",
+      "note": "definition OK -> assign with stale node id fails (locatable) -> definition intact -> retry assign -> real deploy execution + agent-side deployment journal"
+    },
+    {
+      "name": "phase6-x15",
+      "status": "ok",
+      "evidence": "evidence/phase6-x15-logs-recovery.json",
+      "note": "live UI sampling without reload, 16 s websocket cut + recovery, log shards, terminal output completeness, follow/search/stream-filter/copy"
+    },
+    {
+      "name": "phase7-ui-crosspage",
+      "status": "ok",
+      "evidence": "evidence/phase7-ui-crosspage.json",
+      "note": "node-detail label cache convergence, task-detail target + executions, transfer source-change pruning with 0 POST"
+    },
+    {
+      "name": "phase8-cleanup",
+      "status": "ok",
+      "evidence": "evidence/phase8-cleanup.json",
+      "note": "children stopped+removed, owned hub objects deleted, proxy port released, retained history enumerated"
+    },
+    {
+      "name": "phase9-independent-oracle",
+      "status": "ok",
+      "evidence": "evidence/phase9-independent-cleanup-verification.json",
+      "note": "independent process: all owned GETs 404, no prefix leftovers, ports released, native-1 clean, protected nodes healthy, hub quick_check ok, retained history re-enumerated"
+    }
+  ],
+  "deviations": [
+    "First attempt: three owned children on one host collapsed into one node record (Hub enrollment falls back to node_ip); fixed by distinct self-reported node_ip per child + a node-id distinctness guard (see OBS-20261017-ENROLL-IP-DEDUP).",
+    "Harness bug: child_agent.make_file had a Python \"%\" precedence error (format applied to the concatenated string) which aborted the first phase-2 run before any fixture was graded; fixed in the batch copy.",
+    "First graded run: the remote transfer target hung in DELIVERING (product observation above); that run's phase4 waited 3x240 s before the bounded retry was introduced (now 45-110 s per attempt plus a warm-up pre-flight), and its evidence files were overwritten by the graded re-run. Its retained rows are still enumerated in the oracle (run1 node ids) and in the retained history.",
+    "The checklist hub sha was stale (CD-0); the runner resolves the expected sha from the CR-1 deploy evidence.",
+    "Clipboard write is not provable in this headless/non-secure-context automation (see X15 copy sub-dimension)."
+  ],
+  "failed": false,
+  "case_result": "case-result.json"
+}

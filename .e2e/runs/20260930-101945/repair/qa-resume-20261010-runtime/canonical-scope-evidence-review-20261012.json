@@ -1,0 +1,87 @@
+{
+  "reviewed_at_utc": "2026-10-12T12:29:12Z",
+  "scope": "Read-only mapping review; no API/browser/resource/Run activity. Canonical repair source is feature-inventory.json.",
+  "case_reviews": [
+    {
+      "case_id": "P17P18-15",
+      "canonical_status": "PARTIAL",
+      "recommended_status": "PASS_FOR_PRODUCT_CONTRACT_SCOPE",
+      "expected_text": "Task/Script Revision 在 Execution 中固定记录。",
+      "product_contract": "PRODUCT.md §29 lists Task Revision and Script Revision among the Execution's一期记录; it does not require a separate Script Revision UI label.",
+      "coverage": [
+        "A real Script Task was read back at Task revision 1 and Script revision 2 before execution.",
+        "The matching SUCCESS Execution API row records task_revision=1 and script_revision=2 with the same Task/Script IDs.",
+        "After exact Task and Script deletion, a readback still shows that same Execution SUCCESS with both revisions 1/2; Task/Script definitions were verified absent."
+      ],
+      "remaining": [
+        "Execution detail UI shows Task revision but not Script revision. This is not a missing Product §29 contract field: the API Execution stores it, while the same UI detail provides result feedback. Do not make UI display an extra acceptance requirement from the title alone."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:9741-9767",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/script-context-batch-00d2261a180d/task-readback.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/script-context-batch-00d2261a180d/run-api-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/script-context-batch-00d2261a180d/revision-readback.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/script-context-batch-00d2261a180d/cleanup-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/script-context-batch-00d2261a180d/execution-ui-evidence.json",
+        "docs/PRODUCT.md:813-829",
+        "internal/models/models.go:293-313"
+      ]
+    },
+    {
+      "case_id": "P11-05",
+      "canonical_status": "NOT_RUN",
+      "recommended_status": "PARTIAL",
+      "expected_text": "command/script/application 三类任务实际运行结果；适用用户操作、Hub/Agent实际效果与UI反馈一致。",
+      "covered": [
+        {
+          "kind": "command",
+          "status": "REAL_UI_RUN_SUCCESS",
+          "evidence": [
+            ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt06/child-task-ledger.json",
+            ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt06/case-result-attempt02.json",
+            ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt06/pending-execution-c2ce573d4aea.png",
+            ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt06/success-execution-c2ce573d4aea.png"
+          ],
+          "basis": "Owned Task ledger says type=command. The one real UI-confirmed Execution has API PENDING, then same-detail UI PENDING→RUNNING→SUCCESS and matching Execution ID/Task/Node; no second Run."
+        },
+        {
+          "kind": "script",
+          "status": "REAL_UI_RUN_SUCCESS",
+          "evidence": [
+            ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/script-context-batch-00d2261a180d/case-results.json",
+            ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/script-context-batch-00d2261a180d/run-ui-evidence.json",
+            ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/script-context-batch-00d2261a180d/run-api-evidence.json",
+            ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/script-context-batch-00d2261a180d/execution-ui-evidence.json"
+          ],
+          "basis": "One actual UI confirm produced one matching API Run and SUCCESS detail; Script Task revision 1/Script revision 2 and output/environment oracles are recorded. This covers the Script slice only."
+        },
+        {
+          "kind": "application",
+          "status": "REAL_APPLICATION_DEPLOY_RESULT_API_TRIGGERED_UI_OBSERVED",
+          "evidence": [
+            ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/app-v1-baseline-evidence.json",
+            ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/app-v1-ui-execution.png",
+            ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/app-v1-restored-ui-evidence.json",
+            ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/run_app_v1_baseline.py:253-269"
+          ],
+          "basis": "A real Application deploy Execution reached SUCCESS, physical deployment state/health was checked, and the Application UI showed SUCCESS history. The caller evidence is a helper POST to /api/applications/{id}/deploy, not a user UI Run of an app_deploy Task; it does not establish the full user-triggered Task path."
+        }
+      ],
+      "remaining": [
+        "For full P11-05 user-path coverage, a genuine app_deploy Task execution initiated from the applicable UI must be distinguished from the existing direct Application deploy endpoint path. The old four-type roundtrip evidence records app_deploy/app_operation definitions but its execution field is null; it cannot fill this gap.",
+        "Do not count TLS readonly/Go-probe Command executions as an Application Task. The saved TLS task execution snapshots are helper command runs, not an app_deploy execution."
+      ],
+      "contract_and_evidence_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:6787-6797",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-four-types-roundtrip.json",
+        "docs/PRODUCT.md:813-829",
+        "internal/models/models.go:202-210,293-313",
+        "internal/hub/api/api.go:1324-1384"
+      ]
+    }
+  ],
+  "limitations": [
+    "The P11-05 canonical record remains NOT_RUN until Root maps the verified command/script slices and decides whether the existing API-triggered Application deploy plus UI history satisfies the applicable user-action dimension; this review recommends PARTIAL because an app_deploy Task UI invocation is not evidenced.",
+    "No TLS Go probe was treated as an ApplicationTask substitute."
+  ]
+}

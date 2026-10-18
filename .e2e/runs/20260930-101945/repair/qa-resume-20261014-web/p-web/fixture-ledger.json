@@ -1,0 +1,158 @@
+{
+  "batch_id": "qa-resume-20261014-web-p-web",
+  "owner": "web (PARTIAL batch P-WEB closure)",
+  "authority": "http://192.168.100.209:18080",
+  "authority_type": "repair",
+  "primary_8080_touched": false,
+  "nonce": "d6dbf7af",
+  "naming_prefix": "qa-pweb-d6dbf7af",
+  "node_scope": "native-3 (192.168.100.222) only; owned child node records + owned plain processes; no systemd unit, no VM reboot, no protected-node state change",
+  "created_at_utc": "2026-10-15T07:05:00Z",
+  "fixtures": [
+    {
+      "kind": "owned_child_node",
+      "idx": 1,
+      "id": "103d6917-3cf8-4f59-a052-34bb9ba93b7d",
+      "agent_id": "agent-e0285461-fdb5-419b-bfc0-5f88d435edd3",
+      "name": "qa-pweb-d6dbf7af-child1",
+      "node_ip_label": "192.168.100.221",
+      "deployment_mode": "native",
+      "capabilities": {"agent_upgrade": true, "application_deploy": true, "host_filesystem": true, "local_scheduler": true, "managed_systemd": true, "offline_execution": true, "script": true},
+      "created_via": "POST /api/nodes/enrollment + owned config/process on native-3 (plain setsid process, NO systemd unit)",
+      "node_side_root": "/var/lib/nodesteer-qa-pweb-d6dbf7af-child1",
+      "purpose": "real execution target for E2E-02 / P09P11-09 / P17P18-03; capability-enabled UI sample",
+      "runs": 3,
+      "deleted_get404": true,
+      "node_side_removed": true,
+      "deleted_via": "process SIGTERM/SIGKILL + rmtree on native-3, then DELETE /api/nodes/103d6917-… (200)"
+    },
+    {
+      "kind": "owned_child_node",
+      "idx": 2,
+      "id": "39e6244d-cf9a-40f3-b611-1a924fb2b399",
+      "agent_id": "agent-b26a7644-22ec-4415-8121-5fa7b997ba7f",
+      "name": "qa-pweb-d6dbf7af-child2",
+      "node_ip_label": "192.168.100.222",
+      "deployment_mode": "docker",
+      "capabilities": {"agent_upgrade": false, "application_deploy": false, "host_filesystem": false, "local_scheduler": true, "managed_systemd": true, "offline_execution": true, "script": true},
+      "created_via": "POST /api/nodes/enrollment + owned config/process on native-3 (deployment_mode=docker)",
+      "node_side_root": "/var/lib/nodesteer-qa-pweb-d6dbf7af-child2",
+      "purpose": "P05B-04 honest disabled-capability UI sample; second execution target for E2E-02",
+      "runs": 1,
+      "deleted_get404": true,
+      "node_side_removed": true,
+      "deleted_via": "process SIGTERM/SIGKILL + rmtree on native-3, then DELETE /api/nodes/39e6244d-… (200)"
+    },
+    {
+      "kind": "script",
+      "id": "273f0ddf-6a46-4c8a-b036-7efd7ae6fd74",
+      "name": "qa-pweb-d6dbf7af-script",
+      "revision_final": 2,
+      "created_via": "real Web UI /scripts/new form + 保存 (POST /api/scripts 200)",
+      "edited_via": "real Web UI /scripts/{id} + 保存 (PUT 200, revision 1→2)",
+      "deleted_via": "real Web UI row 操作 → 删除 → confirm 删除 (DELETE 200, toast 已删除)",
+      "deleted_get404": true
+    },
+    {
+      "kind": "script",
+      "id": "e3a800d0-c6dd-4afd-9e54-3735f1d88480",
+      "name": "qa-pweb-d6dbf7af-script-huge",
+      "note": "P07_P08-11 over-long content probe (300 KiB content accepted)",
+      "deleted_via": "real Web UI confirm dialog",
+      "deleted_get404": true
+    },
+    {
+      "kind": "script",
+      "id": "8f074874-9191-47df-ae8c-154649bd09fe",
+      "name": "qa-pweb-d6dbf7af-script-timeout0",
+      "note": "P07_P08-11 timeout=0 boundary probe (accepted)",
+      "deleted_via": "real Web UI confirm dialog",
+      "deleted_get404": true
+    },
+    {
+      "kind": "script",
+      "id": "331384f1-21ec-40c1-948d-c6f4985591c1",
+      "name": "qa-pweb-d6dbf7af-script-negtimeout",
+      "note": "P07_P08-11 negative timeout probe via API (accepted, timeout=-5)",
+      "deleted_via": "real Web UI confirm dialog",
+      "deleted_get404": true
+    },
+    {
+      "kind": "task",
+      "id": "b1dbd6ed-d028-4942-b7f3-06f177330e71",
+      "name": "qa-pweb-d6dbf7af-task-multinode",
+      "type": "command",
+      "target": "node node_ids=[child1, child2]",
+      "created_via": "real Web UI /tasks/new (名称/命令/超时30/重试1/运行用户root/离线策略 hub_online_required + 2 node checkboxes)",
+      "ran_via": "real Web UI 立即运行 + confirm alertdialog (POST /api/tasks/{id}/run 200)",
+      "runs": 1,
+      "executions": ["4077021d-2d52-459b-bd3c-3aebf4f3505a (child1, SUCCESS)", "3ad9883a-2d51-4b50-864a-3e51202ee29c (child2, SUCCESS)"],
+      "deleted_via": "DELETE /api/tasks/b1dbd6ed-… (200)",
+      "deleted_get404": true
+    },
+    {
+      "kind": "task",
+      "id": "032118b2-74e1-479d-8887-104e812969dd",
+      "name": "qa-pweb-d6dbf7af-task-slow",
+      "type": "command",
+      "command": "sleep 25; echo qa-pweb-d6dbf7af-slow-done",
+      "target": "node child1",
+      "created_via": "API POST /api/tasks (fixture; the case under test is live RUNNING status in the UI)",
+      "ran_via": "real Web UI 立即运行 + confirm",
+      "executions": ["5b3c2bbc-2bb5-444c-887d-4088bbd87f4d (child1, SUCCESS, stdout qa-pweb-d6dbf7af-slow-done)"],
+      "deleted_via": "DELETE /api/tasks/032118b2-… (200)",
+      "deleted_get404": true
+    },
+    {
+      "kind": "schedule",
+      "id": "6cdde78a-9c3c-4523-b29b-f10d22cb6939",
+      "task_id": "b1dbd6ed-d028-4942-b7f3-06f177330e71",
+      "type": "interval",
+      "interval_sec": 3600,
+      "created_via": "API POST /api/schedules (fixture for P12P13-02 list-link/detail/delete-confirm)",
+      "deleted_via": "real Web UI row 操作 → 删除 → cancel (no-op) → 删除 confirm (DELETE 200, toast 已删除)",
+      "deleted_get404": true
+    },
+    {
+      "kind": "node_side_markers",
+      "paths": ["/tmp/qa-pweb-d6dbf7af-marker-1.txt", "/tmp/qa-pweb-d6dbf7af-marker-2.txt"],
+      "on_node": "native-3",
+      "purpose": "owned marker files written during the run probes",
+      "removed": true
+    }
+  ],
+  "counts": {
+    "baseline_20261015T07:05Z": {"nodes": 6, "applications": 1, "tasks": 0, "schedules": 0, "scripts": 2, "artifacts": 1, "transfers": 38, "users": 8},
+    "created": {"nodes": 2, "scripts": 4, "tasks": 2, "schedules": 1, "artifacts": 0, "applications": 0},
+    "deleted": {"nodes": 2, "scripts": 4, "tasks": 2, "schedules": 1},
+    "after_20261015T08:05Z": {"nodes": 6, "applications": 1, "tasks": 0, "schedules": 0, "scripts": 2, "artifacts": 1, "transfers": 38, "users": 8}
+  },
+  "budget_deviations": [
+    {
+      "item": "enrollment create attempts",
+      "budget": "1 owned child",
+      "actual": "5 enrollment POSTs (2 failed/aborted early attempts that were cleaned before this run, 2 final children, 1 attempt that reused an existing node by node_ip)",
+      "reason": "first two attempts used the same node_ip (192.168.100.222) and enrolment deduplicates by hostname OR node_ip, so the second POST returned the first node's identity; all three early attempts were fully cleaned (node record deleted, node-side roots removed) before the final two children were created.",
+      "impact": "no leftovers; 2 owned children (1 native + 1 docker) were the only ones used for evidence"
+    },
+    {
+      "item": "owned script extra probes",
+      "budget": "1 owned script",
+      "actual": "4 scripts created (1 lifecycle subject + 3 boundary probes) and all 4 deleted",
+      "reason": "P07_P08-11 requires duplicate-name / over-long-content / timeout-boundary probes; the boundary probes each create a script object.",
+      "impact": "none; all 4 verified GET404"
+    }
+  ],
+  "not_deletable_retained": {
+    "owned_executions": [
+      {"id": "5b3c2bbc-2bb5-444c-887d-4088bbd87f4d", "task_id": "032118b2-74e1-479d-8887-104e812969dd", "node_id": "103d6917-3cf8-4f59-a052-34bb9ba93b7d", "status": "SUCCESS", "trigger_type": "manual", "stdout": "qa-pweb-d6dbf7af-slow-done"},
+      {"id": "3ad9883a-2d51-4b50-864a-3e51202ee29c", "task_id": "b1dbd6ed-d028-4942-b7f3-06f177330e71", "node_id": "39e6244d-cf9a-40f3-b611-1a924fb2b399", "status": "SUCCESS", "trigger_type": "manual", "stdout": "qa-pweb-d6dbf7af-multi-ok"},
+      {"id": "4077021d-2d52-459b-bd3c-3aebf4f3505a", "task_id": "b1dbd6ed-d028-4942-b7f3-06f177330e71", "node_id": "103d6917-3cf8-4f59-a052-34bb9ba93b7d", "status": "SUCCESS", "trigger_type": "manual", "stdout": "qa-pweb-d6dbf7af-multi-ok"}
+    ],
+    "deletion_http": 200,
+    "note": "Hub keeps execution history after the task definition is deleted (by design); no execution-delete API exists. Their task_ids now point at deleted definitions, which is why they render as 未知任务.",
+    "audit_rows": "DELETE/audit rows written for the owned objects are append-only history and were not counted individually."
+  },
+  "status": "CLEANED",
+  "cleanup_verified_at_utc": "2026-10-15T08:10:00Z"
+}

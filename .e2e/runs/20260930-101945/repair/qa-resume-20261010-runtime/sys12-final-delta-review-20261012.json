@@ -1,0 +1,31 @@
+{
+  "reviewed_at_utc": "2026-10-12T13:20:47Z",
+  "mode": "readonly_delta_review",
+  "runtime_actions": false,
+  "prior_review": "sys12-harness-final-readonly-review-20261012.json remains valid for all previously reviewed controller/API/reconciliation/budget/cleanup findings; superseded only by the two checked source deltas below.",
+  "sources": {
+    "lifecycle_source_proposal.py": {
+      "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/lifecycle_source_proposal.py",
+      "sha256": "6be51c872462fee3428c11df3d3cd567f42a4d6d471354cc5bbac2c8f8b2ffad"
+    },
+    "sys12_outer_controller.py": {
+      "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/sys12_outer_controller.py",
+      "sha256": "ce3e88e79036e78e0b6e647f5cb962f74d720fc189de7430f4794ab14d18b799"
+    }
+  },
+  "deltas": [
+    {
+      "id": "stopped_container_ip_validation",
+      "status": "PASS_STATIC",
+      "evidence": "lifecycle_source_proposal.py:371-436",
+      "finding": "Exact immutable container, owner label, image, mount, privilege, network-mode and exact network membership checks remain. Running must have a parseable IP; stopped may have null/empty IP, while any nonempty IP must parse. This resolves the prior unconditional empty-IP hold without relaxing network membership or other owner/policy guards."
+    },
+    {
+      "id": "business_skipped_terminal",
+      "status": "PASS_STATIC",
+      "evidence": "sys12_outer_controller.py:24-28,686-701",
+      "finding": "The controller now uses the shared TERMINAL_EXECUTION_STATES set for the business Script Execution poll; it includes SKIPPED. A SKIPPED execution is recognized promptly as terminal and then fails the expected-SUCCESS assertion, rather than waiting 75 seconds."
+    }
+  ],
+  "overall": "PASS_STATIC_FOR_TWO_DELTAS; prior review conclusions remain valid. No controller execution, Docker/API/Task/Run or runtime action was performed."
+}

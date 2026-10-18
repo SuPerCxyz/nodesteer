@@ -1,0 +1,609 @@
+{
+  "batch_id": "g6",
+  "title": "G6 长窗／多次执行独占 + 不可删除 Transfer 历史（X18 / X12 / X15）",
+  "nonce": "1fdba63d",
+  "owned_prefix": "qa-g6-1fdba63d-",
+  "endpoint": "http://192.168.100.209:18080",
+  "authorization": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/authorization-checklist-20261016.md 第「G6 长窗／多次执行独占 + 不可删除 Transfer 历史类（3 条）」组",
+  "executed_at_utc": [
+    "2026-10-17T04:37:39Z",
+    "2026-10-17T04:46:07Z"
+  ],
+  "long_window_note": "Real waits recorded: (1) X15 — the long execution ran ~24 s and the owned websocket was hard-cut for 16 s (cut 2026-10-17T04:40:02Z, restore 2026-10-17T04:40:18Z, reconnect 1 s later); the browser page was sampled live every 2 s for ~30 s and then twice more after the hub row turned terminal. (2) X12 — the maintenance node was held in maintenance while a hub-owner cron schedule fired, waiting 95.1 s for the real SKIPPED row (04:11:05Z..04:12:37Z). (3) X18 — the graded two-target transfers each completed in ~2.0 s; the stuck-delivery reproductions required 60 s / 240 s observation windows (evidence/repro-xfer-second-node.json, repro-xfer-frame-ledger.json).",
+  "environment": {
+    "repair_authority": "http://192.168.100.209:18080",
+    "hub_binary_sha256_expected": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+    "hub_binary_sha256_observed": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+    "hub_binary_sha_matches": true,
+    "hub_build_label": "dddee4f0-e2e-repair-20261016-cr1",
+    "hub_sha_expected_source": "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261016-cr1-verify/deploy-evidence.json",
+    "hub_sha_note": "the authorization checklist listed the superseded CD-0 hub sha cd8b7f9d…; the expected sha is resolved from qa-resume-20261016-cr1-verify/deploy-evidence.json (fdfa667b…)",
+    "agent_binary_sha256_native1": "b15f6df540a63a8eb530ec837c57d4628ff7925822153a02d624f021a525ac4f",
+    "primary_hub_8080": "read-only probe only (healthz 200)",
+    "repair_hub_restarted": false,
+    "vm_restarted": false,
+    "product_source_modified": false,
+    "protected_nodes_online_synced": true,
+    "node_used": {
+      "native-1": "192.168.100.204 (owned children only; protected repair units read-only)"
+    },
+    "owned_children": {
+      "a": {
+        "node_id": "8a68174e-685c-4db0-a90a-d363a76c07da",
+        "deployment_mode": "native",
+        "hub_url": "ws://192.168.100.170:40137",
+        "root": "/var/lib/nodesteer-qa-g6-1fdba63d-a",
+        "self_reported_node_ip": "192.168.100.204"
+      },
+      "b": {
+        "node_id": "59b2f808-baff-4185-b640-19e4ed9f80f3",
+        "deployment_mode": "native",
+        "hub_url": "ws://192.168.100.209:18080",
+        "root": "/var/lib/nodesteer-qa-g6-1fdba63d-b",
+        "self_reported_node_ip": "192.168.100.203"
+      },
+      "c": {
+        "node_id": "6750ef54-7340-48e1-bc71-f9d7f5947182",
+        "deployment_mode": "docker",
+        "hub_url": "ws://192.168.100.209:18080",
+        "root": "/var/lib/nodesteer-qa-g6-1fdba63d-c",
+        "self_reported_node_ip": "192.168.100.202"
+      }
+    },
+    "frame_proxy": {
+      "listen_port": 40137,
+      "owner": "workstation 192.168.100.170",
+      "label": "a",
+      "upstream": "ws://192.168.100.209:18080"
+    }
+  },
+  "cases": [
+    {
+      "case_id": "X18",
+      "title": "批量一成功一失败不互相覆盖；Application 定义成功 Assign 失败可定位重试；Transfer 添加目标后换源不变成自传，重试不破坏已成功目标",
+      "priority": "P0",
+      "canonical_before": {
+        "status": "PARTIAL",
+        "remaining": [
+          "批量部分成功/失败、定义成功但 Assign 失败的可定位重试、重试不破坏已成功目标均未执行。"
+        ]
+      },
+      "proposed_after": "PASS",
+      "confidence": "high (graded dimensions) / medium (transfer delivery reliability, see new_observations)",
+      "covered_dimensions": [
+        {
+          "test_id": "20261017-G6:X18-bulk-partial-isolation",
+          "layer": "real API + real two-node transfer (owned children on native-1) + physical file/sha on the target node",
+          "status": "PASS",
+          "description": [
+            "Transfer 88397714-68e6-4165-b72e-4ea662886f86 (source = owned child a, 262144 B): target child b SUCCESS, target child a FAILED (ENOTDIR on an owned blocker path); aggregate FAILED. The delivered file on child b is a real physical file whose sha256 equals the source sha, so the successful target really received the payload; the failed target produced no file and did not overwrite/affect the successful one.",
+            "A warm-up single-target transfer to the remote node completed in 2.0 s before the graded run (pre-flight for a flaky remote delivery, see new_observations)."
+          ]
+        },
+        {
+          "test_id": "20261017-G6:X18-retry-keeps-success",
+          "layer": "real API + physical file state (sha256 + mtime)",
+          "status": "PASS",
+          "description": [
+            "retry?target_id=<failed node> and retry (empty target_id) both restarted only the FAILED target; the succeeded target stayed SUCCESS and its delivered file kept the identical sha256 and mtime (succeeded_target_untouched_by_retry=True, success_delivery_stable_across_both_retries=True)."
+          ]
+        },
+        {
+          "test_id": "20261017-G6:X18-app-definition-ok-assign-fail-retry",
+          "layer": "real API + real agent-side deployment journal",
+          "status": "PASS",
+          "description": [
+            "Application definition saved (revision 1). Assign with a stale node id returned 500 \"node ... not found\" (explicit, locatable error) while the definition stayed intact (GET 200, revision 1, still present in /api/applications) — no rollback of the saved definition.",
+            "Retry of the assign with the real owned node returned 200 and the assignment became visible in /api/applications/{id}/nodes; the subsequent deploy created a real execution (FAILED with block_reason \"binary path is required\"), listed by /api/applications/{id}/executions and matched by a DONE row in the agent-side deployment journal (prepare-stage failure, no host modification)."
+          ]
+        },
+        {
+          "test_id": "20261017-G6:X18-ui-source-change-pruning",
+          "layer": "real browser (own agent-browser session) + network capture",
+          "status": "PASS",
+          "description": [
+            "Create-transfer form: source child a + target child b added; switching the source to child b cleared the target selection (target combobox back to its placeholder) and left 开始传输 disabled, with 0 POST /api/transfers requests in the network log — the transfer cannot silently become a self-transfer ({\"body_has_prune_msg\": false, \"combobox_values\": [\"qa-g6-1fdba63d-b\", \"选择目标 Agent\", \"10\"], \"start_disabled\": true, \"target_chips\": 4})."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The transfer API itself has no self-transfer guard: POST /api/transfers with source_node_id == target node_id and destination == source path is accepted (HTTP 200) and completes SUCCESS; the file content is unchanged. Only the web client prunes/validates this case.",
+        "Transfer delivery to a non-source node was observed to hang unrecoverably in 2 of 4 attempts (see new_observations OBS-20261017-XFER-REMOTE-TARGET-STUCK); the graded run used a bounded warm-up pre-flight and passed on the first attempt."
+      ],
+      "evidence": [
+        "evidence/phase4-x18-transfer.json",
+        "evidence/phase5-x18-application.json",
+        "evidence/phase7-ui-crosspage.json",
+        "evidence/repro-xfer-frame-ledger.json",
+        "evidence/repro-xfer-liveness.json",
+        "evidence/repro-xfer-second-node.json",
+        "X18-transfer-ready.png",
+        "X18-transfer-after-source-switch.png"
+      ]
+    },
+    {
+      "case_id": "X12",
+      "title": "Label/Group/Application Assignment 改变后立即及缓存收敛后检查跨页与下次真实执行目标；空目标、重叠组、离线/禁用/维护/Capability 不匹配",
+      "priority": "P0",
+      "canonical_before": {
+        "status": "PARTIAL",
+        "remaining": [
+          "需要标签/分组/应用分配 fixture 与多次真实执行对照，本批未执行。"
+        ]
+      },
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261017-G6:X12-label-retarget-next-real-execution",
+          "layer": "real API + two real executions on two owned nodes + browser cross-page read",
+          "status": "PASS",
+          "description": [
+            "Label target task: with label on child a the manual run created exactly 1 execution on child a (SUCCESS); after moving the label to child b the next run created exactly 1 execution on child b (SUCCESS) — the target set is re-resolved from the live assignment at run time.",
+            "Cross-page: the node detail page kept showing the pre-change state while it stayed open (stale cache: labels_seen=[] right after the API label write) and showed the new label after remount (labels_seen=[\"qa-g6-1fdba63d-role=green\"]) — \"immediately vs after cache convergence\" measured; the task detail page shows the label target and both SUCCESS execution rows."
+          ]
+        },
+        {
+          "test_id": "20261017-G6:X12-empty-target-and-overlapping-groups",
+          "layer": "real API",
+          "status": "PASS",
+          "description": [
+            "Empty target: Run Now returned HTTP 400 {\"error\": \"no target nodes\"} and created 0 execution rows (before=after=0).",
+            "Overlapping groups: a node that is a member of two selected static groups (a in {a,b} and {a}) produced exactly 2 executions (one per distinct node), both SUCCESS — the union is de-duplicated."
+          ]
+        },
+        {
+          "test_id": "20261017-G6:X12-offline-disabled-maintenance",
+          "layer": "real API + real scheduled SKIPPED row",
+          "status": "PASS",
+          "description": [
+            "Manual Run Now against a node set to offline / disabled / maintenance each returned HTTP 400 with the exact state in the message (\"node ... is not online (status=<state>)\") and created 0 executions.",
+            "With the node in maintenance, a hub-owner cron schedule produced a real SKIPPED execution row with block_reason \"node paused\" (retained history)."
+          ]
+        },
+        {
+          "test_id": "20261017-G6:X12-capability-mismatch",
+          "layer": "real API + real ONLINE node without the capability",
+          "status": "PASS",
+          "description": [
+            "Owned child c runs deployment_mode=docker, so it is online/synced but advertises application_deploy=false. An app_deploy task targeted at it returned HTTP 400 \"node ... lacks capability application_deploy\", and POST /api/applications/{id}/deploy for the same node returned the same 400 (no execution created)."
+          ]
+        },
+        {
+          "test_id": "20261017-G6:X12-application-assignment-next-target",
+          "layer": "real API + real execution",
+          "status": "PASS",
+          "description": [
+            "Application assignment change: after the retry-assign the assignment appears in /api/applications/{id}/nodes, and the next real deploy dispatched to exactly that node (execution created on child a)."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The application detail page (assigned-nodes control) was not re-read in the browser in this batch; the assignment change was verified through the API plus the real execution target. Label cross-page reads were verified in the browser.",
+        "The \"disabled\" branch of the dispatch gate is unreachable in the message sense: the online check runs first, so a disabled node reports \"is not online (status=disabled)\" and the dedicated \"is disabled\" message never appears. Recorded as-is (no assertion relaxed)."
+      ],
+      "evidence": [
+        "evidence/phase3-x12-targets.json",
+        "evidence/phase7-ui-crosspage.json",
+        "evidence/phase5-x18-application.json",
+        "X12-node-detail-labels.png",
+        "X12-task-detail-target.png"
+      ]
+    },
+    {
+      "case_id": "X15",
+      "title": "PENDING→RUNNING→终态无需刷新；新日志分片、终态 stdout/stderr 完整且无旧 chunks 覆盖；断线恢复后的 Follow/搜索/流过滤/Copy",
+      "priority": "P0",
+      "canonical_before": {
+        "status": "PARTIAL",
+        "remaining": [
+          "PENDING 态、日志分片、断线恢复后的 Follow/搜索/流过滤/Copy 未验证。"
+        ]
+      },
+      "proposed_after": "PASS",
+      "confidence": "high (live UI, shards, disconnect recovery, follow/search/filter) / PARTIAL for the clipboard write",
+      "covered_dimensions": [
+        {
+          "test_id": "20261017-G6:X15-live-status-without-refresh",
+          "layer": "real browser page (own session) + real long execution + hub API",
+          "status": "PASS",
+          "description": [
+            "The execution detail page was opened once and sampled every 2 s: it showed 运行中 while the hub row was RUNNING and 成功 after the hub row became SUCCESS, with a page marker proving the document was never reloaded (marker_stable=True, ui_terminal_seen_without_reload=True, states seen: ['成功', '运行中']).",
+            "The page polls every 3 s while the status is PENDING/RUNNING (web/src/features/executions/index.tsx:354,375)."
+          ]
+        },
+        {
+          "test_id": "20261017-G6:X15-log-shards-and-terminal-output",
+          "layer": "real API chunks + final execution payload",
+          "status": "PASS",
+          "description": [
+            "Realtime log shards for execution 6def196e-eba1-4144-a345-ff2dd0204061: 13 chunks, seq 0..12 strictly increasing, both stdout and stderr streams, containing the run markers.",
+            "Terminal stdout/stderr are complete: 22 stdout marker lines, 6 stderr marker lines, including the tail markers printed after the websocket cut. The viewer appends the terminal output as a supplement when realtime chunks were cut (628 chunk chars vs 1242+264 terminal chars, UI pre 2174 chars).",
+            "A second run of the same task created its own execution with its own 31 chunks starting at seq 0; the first execution chunk set was byte-identical before and after the second run (first_execution_chunks_unchanged_by_second_run=True)."
+          ]
+        },
+        {
+          "test_id": "20261017-G6:X15-disconnect-recovery",
+          "layer": "owned frame proxy cut/restore + real agent + hub reconciliation",
+          "status": "PASS",
+          "description": [
+            "The owned child's websocket was hard-cut for 16 s during the run (listener stopped, all relayed sockets closed at 2026-10-17T04:40:02Z, restored at 2026-10-17T04:40:18Z; reconnect 1 s after restore).",
+            "The run still reached SUCCESS on the hub with the complete final stdout/stderr, the node returned to online/synced, and the same browser page showed the terminal state — the agent result is reconciled after reconnect (hub.ExecutionManager.UpsertFromAgent completes the PENDING/RUNNING row)."
+          ]
+        },
+        {
+          "test_id": "20261017-G6:X15-ui-follow-search-filter",
+          "layer": "real browser interactions",
+          "status": "PASS",
+          "description": [
+            "Follow: toggled to the pressed (secondary) state and the log pane scrolled to the bottom (scrolled_to_bottom=True).",
+            "Search: filtering by a run marker left only matching lines (all_match=True).",
+            "Stream filter: stdout-only view kept the stdout marker and dropped the stderr marker ({'has_stderr_marker': False, 'has_stdout_marker': True, 'len': 1804}); stderr-only view the opposite ({'has_stderr_marker': True, 'has_stdout_marker': False, 'len': 370})."
+          ]
+        },
+        {
+          "test_id": "20261017-G6:X15-ui-copy",
+          "layer": "real browser interaction",
+          "status": "PARTIAL",
+          "description": [
+            "The 复制日志 button exists, is clickable and produces explicit user feedback; in this headless, non-secure-context automation the observed feedback was the failure toast (复制失败) because document.execCommand(\"copy\") returns false (navigator.clipboard unavailable, is_secure_context=false). The actual clipboard write and the intended manual-fallback toast could not be confirmed."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The UI PENDING (等待中) row itself was not captured: with a connected agent the hub row leaves PENDING in under ~1 s, faster than the 3 s UI poll. PENDING was observed at the API level (dispatch returned PENDING); the UI PENDING row was verified in the same harness in the g23 batch (P17P18-03).",
+        "Clipboard write not provable in the headless automation context (see the PARTIAL sub-dimension)."
+      ],
+      "evidence": [
+        "evidence/phase6-x15-logs-recovery.json",
+        "X15-execution-terminal.png",
+        "X15-execution-logs.png"
+      ]
+    }
+  ],
+  "new_observations": [
+    {
+      "observation_id": "OBS-20261017-XFER-REMOTE-TARGET-STUCK",
+      "severity": "P1 (data-plane robustness; blocks cleanup)",
+      "title": "多目标 FileTransfer 的远端目标偶发悬挂在 DELIVERING，且无超时/重试恢复；导致传输永久非终态并阻断节点删除",
+      "observed_at_utc": [
+        "2026-10-17T04:12:41Z",
+        "2026-10-17T04:32:23Z"
+      ],
+      "reproductions": "2 of 4 attempts (graded first run + focused reproduction repro-xfer-second-node.json); the other two attempts (warm-up in the graded re-run and repro-xfer-liveness.json) completed in ~2 s, so the failure is intermittent.",
+      "evidence": [
+        "evidence/repro-xfer-frame-ledger.json",
+        "evidence/repro-xfer-second-node.json",
+        "evidence/repro-xfer-liveness.json",
+        "evidence/phase4-x18-transfer.json"
+      ],
+      "mechanism_evidence": [
+        "The Hub set the remote target to DELIVERING and persisted it (file_transfer_targets.updated_at frozen at dispatch time) while the frame ledger of that node's own websocket proxy recorded NO FILE_DELIVERY_REQUEST at all: the hub-to-agent frame never left the Hub, yet Send() reported success.",
+        "The same node still received unrelated hub->agent frames later (CHANGE_NOTIFICATION, SYNC_RESPONSE, NODE_STATUS in repro-xfer-liveness.json), so the ws session was usable at the transport level in the successful runs; in the stuck runs the delivery frame was silently lost.",
+        "Because the transfer stays non-terminal, both involved nodes cannot be deleted: DELETE /api/nodes/{id} returns 409 {\"error\": \"node ... has active file transfer ...\"} and FileTransfer has no DELETE endpoint — only POST /api/transfers/{id}/cancel makes it terminal (used by this batch to release the guard).",
+        "Retry did not recover the stuck transfer in the graded first run (target re-dispatched, hung again), and no timeout/terminal fallback exists for a target stuck in DELIVERING."
+      ],
+      "suspected_code_paths": [
+        "internal/hub/gateway.go wsConn.send/writeLoop: a send error inside writeLoop returns without closing the connection or unregistering the session, so queued frames can be dropped silently and Send() keeps reporting success.",
+        "internal/hub/file_transfer.go dispatchTarget: target is persisted as DELIVERING before the send and there is no delivery timeout / retry, so a lost frame leaves a permanently non-terminal transfer."
+      ],
+      "recommendation": "file as a new defect (candidate FAIL) and decide on a fix: detect writeLoop failure (close/unregister the session), add a delivery timeout/retry for DELIVERING targets, and allow releasing the node-deletion guard without manual cancel.",
+      "not_a_batch_assertion_relaxation": "X18 graded assertions were executed on a run where delivery worked; this observation is reported separately and never used to weaken them."
+    },
+    {
+      "observation_id": "OBS-20261017-ENROLL-IP-DEDUP",
+      "severity": "P3 (harness constraint / product behavior)",
+      "title": "Hub 纳管按 hostname 命中失败后会按 node_ip 复用既有节点记录",
+      "evidence": [
+        "evidence/phase1-owned-children.json"
+      ],
+      "detail": "hub.NodeManager.findEnrollableNode matches hostname first and then node_ip, so three owned children on one physical host collapsed into ONE node record (observed: same node_id/agent_id for three enrollments, and their HELLOs overwrote each other's capabilities). The batch therefore has each child self-report a distinct node_ip (metadata only; the Hub never dials node_ip). Not a defect, but a harness constraint worth recording for multi-child fixtures."
+    },
+    {
+      "observation_id": "OBS-20261017-SELF-TRANSFER-NO-SERVER-GUARD",
+      "severity": "P3",
+      "title": "Transfer API 无自传校验（仅前端裁剪）",
+      "evidence": [
+        "evidence/phase4-x18-transfer.json",
+        "evidence/phase7-ui-crosspage.json"
+      ],
+      "detail": "POST /api/transfers with source_node_id == target node_id and destination_path == source_path is accepted (200) and completed SUCCESS with the source file unchanged. The web form prunes the conflicting target and keeps the submit disabled, so the guard exists only client-side."
+    },
+    {
+      "observation_id": "OBS-20261017-DISABLED-BRANCH-UNREACHABLE",
+      "severity": "P3",
+      "title": "执行下发门禁中 disabled 专用错误分支不可达",
+      "evidence": [
+        "evidence/phase3-x12-targets.json"
+      ],
+      "detail": "internal/hub/execution.go createAndDispatch: the \"node ... is disabled\" branch is preceded by the generic online check, so a disabled node always reports \"is not online (status=disabled)\". Recorded as-is; the batch did not relax the assertion."
+    }
+  ],
+  "retained_history": {
+    "transfers_total_on_hub": 79,
+    "transfers_created_by_batch": 8,
+    "transfers": [
+      {
+        "id": "11ac9e9d-5e9e-4f40-b59d-81ce0130ccca",
+        "status": "SUCCESS",
+        "source_path": "/var/lib/nodesteer-qa-g6-1fdba63d-a/fixtures/xfer/selfcopy-1fdba63d.bin",
+        "targets": [
+          {
+            "node_id": "8a68174e-685c-4db0-a90a-d363a76c07da",
+            "destination_path": "/var/lib/nodesteer-qa-g6-1fdba63d-a/fixtures/xfer/selfcopy-1fdba63d.bin",
+            "status": "SUCCESS"
+          }
+        ]
+      },
+      {
+        "id": "88397714-68e6-4165-b72e-4ea662886f86",
+        "status": "FAILED",
+        "source_path": "/var/lib/nodesteer-qa-g6-1fdba63d-a/fixtures/xfer/source-1fdba63d.bin",
+        "targets": [
+          {
+            "node_id": "59b2f808-baff-4185-b640-19e4ed9f80f3",
+            "destination_path": "/var/lib/nodesteer-qa-g6-1fdba63d-b/fixtures/delivered-1fdba63d.bin",
+            "status": "SUCCESS"
+          },
+          {
+            "node_id": "8a68174e-685c-4db0-a90a-d363a76c07da",
+            "destination_path": "/var/lib/nodesteer-qa-g6-1fdba63d-a/fixtures/xfer/blocker-file-1fdba63d/cannot-create-1fdba63d.bin",
+            "status": "FAILED"
+          }
+        ]
+      },
+      {
+        "id": "8f7009f3-a861-432a-b3e2-4baba73306c7",
+        "status": "SUCCESS",
+        "source_path": "/var/lib/nodesteer-qa-g6-1fdba63d-a/fixtures/xfer/warmup-1fdba63d.bin",
+        "targets": [
+          {
+            "node_id": "59b2f808-baff-4185-b640-19e4ed9f80f3",
+            "destination_path": "/var/lib/nodesteer-qa-g6-1fdba63d-b/fixtures/xfer/warmup-dst-1.bin",
+            "status": "SUCCESS"
+          }
+        ]
+      },
+      {
+        "id": "563f34e2-859e-4f68-987b-5f8e037c94dc",
+        "status": "CANCELED",
+        "source_path": "/var/lib/nodesteer-qa-g6-xferlive-q1/fixtures/xfer/live-source.bin",
+        "targets": [
+          {
+            "node_id": "55bcdeb8-9e72-4492-a376-d676ddf1bdbe",
+            "destination_path": "/var/lib/nodesteer-qa-g6-xferlive-q2/fixtures/xfer/live-dst.bin",
+            "status": "SUCCESS"
+          },
+          {
+            "node_id": "ffe4fdd1-02f5-4633-90dd-11743806c146",
+            "destination_path": "/var/lib/nodesteer-qa-g6-xferlive-q1/fixtures/xfer/live-blocker/nope.bin",
+            "status": "CANCELED"
+          }
+        ]
+      },
+      {
+        "id": "af0f0ce6-a794-4d8c-979b-f52621686a01",
+        "status": "CANCELED",
+        "source_path": "/var/lib/nodesteer-qa-g6-xferobs-p1/fixtures/xfer/obs-source.bin",
+        "targets": [
+          {
+            "node_id": "0d5f934d-fa04-45f3-bfe0-3f5efd9eb3f8",
+            "destination_path": "/var/lib/nodesteer-qa-g6-xferobs-p1/fixtures/xfer/obs-blocker/nope.bin",
+            "status": "CANCELED"
+          },
+          {
+            "node_id": "c2ecc6dc-24e2-4a28-8de1-6c0013edcbf3",
+            "destination_path": "/var/lib/nodesteer-qa-g6-xferobs-p2/fixtures/xfer/obs-dst.bin",
+            "status": "CANCELED"
+          }
+        ]
+      },
+      {
+        "id": "5a487d8b-44ae-4ae7-99dd-1bb4ede8cbcb",
+        "status": "CANCELED",
+        "source_path": "/var/lib/nodesteer-qa-g6-xferrepro-d1/fixtures/xfer/repro-source.bin",
+        "targets": [
+          {
+            "node_id": "165885a5-840e-403f-bb9a-85c78ae29b8e",
+            "destination_path": "/var/lib/nodesteer-qa-g6-xferrepro-d1/fixtures/xfer/repro-blocker/nope.bin",
+            "status": "CANCELED"
+          },
+          {
+            "node_id": "fcfecf52-8c4e-43c8-a6aa-727d2b83d6ae",
+            "destination_path": "/var/lib/nodesteer-qa-g6-xferrepro-d2/fixtures/xfer/repro-dst.bin",
+            "status": "CANCELED"
+          }
+        ]
+      },
+      {
+        "id": "a1790c6c-a8f0-44ff-bec9-5e1450e7554e",
+        "status": "SUCCESS",
+        "source_path": "/var/lib/nodesteer-qa-g6-1fdba63d-a/fixtures/xfer/selfcopy-1fdba63d.bin",
+        "targets": [
+          {
+            "node_id": "2660ab86-e22e-42bb-9199-fd88c17c0d83",
+            "destination_path": "/var/lib/nodesteer-qa-g6-1fdba63d-a/fixtures/xfer/selfcopy-1fdba63d.bin",
+            "status": "SUCCESS"
+          }
+        ]
+      },
+      {
+        "id": "cdce573a-c370-4c23-ba28-4a3d634e57c4",
+        "status": "CANCELED",
+        "source_path": "/var/lib/nodesteer-qa-g6-1fdba63d-a/fixtures/xfer/source-1fdba63d.bin",
+        "targets": [
+          {
+            "node_id": "2660ab86-e22e-42bb-9199-fd88c17c0d83",
+            "destination_path": "/var/lib/nodesteer-qa-g6-1fdba63d-a/fixtures/xfer/blocker-file-1fdba63d/cannot-create-1fdba63d.bin",
+            "status": "CANCELED"
+          },
+          {
+            "node_id": "8d6f768b-a5f0-4538-8009-6fe50b4c73a8",
+            "destination_path": "/var/lib/nodesteer-qa-g6-1fdba63d-b/fixtures/delivered-1fdba63d.bin",
+            "status": "CANCELED"
+          }
+        ]
+      }
+    ],
+    "executions": [
+      {
+        "purpose": "x12_label_run1",
+        "execution_id": "1826d9c4-cdb8-4a88-90fd-65176a318e58",
+        "get_http": 200,
+        "status": "SUCCESS",
+        "log_chunks": 2
+      },
+      {
+        "purpose": "x12_group_overlap",
+        "execution_id": "fc69ed5e-915c-4ac5-b772-0ae7270ac569",
+        "get_http": 200,
+        "status": "SUCCESS",
+        "log_chunks": 2
+      },
+      {
+        "purpose": "x12_group_overlap",
+        "execution_id": "6b1a88b3-99ad-4ea6-8cfe-2bcb507e3b56",
+        "get_http": 200,
+        "status": "SUCCESS",
+        "log_chunks": 2
+      },
+      {
+        "purpose": "x12_label_run2",
+        "execution_id": "5f53c5f0-db59-4e5b-b41e-033a140ce02c",
+        "get_http": 200,
+        "status": "SUCCESS",
+        "log_chunks": 3
+      },
+      {
+        "purpose": "x18_app_deploy",
+        "execution_id": "cceadfd4-da3d-44c7-8889-627500778af7",
+        "get_http": 200,
+        "status": "FAILED",
+        "log_chunks": 0
+      },
+      {
+        "purpose": "x15_long",
+        "execution_id": "6def196e-eba1-4144-a345-ff2dd0204061",
+        "get_http": 200,
+        "status": "SUCCESS",
+        "log_chunks": 13
+      },
+      {
+        "purpose": "x15_long_second",
+        "execution_id": "c527873b-ba5e-452a-a600-3bfc2dab0366",
+        "get_http": 200,
+        "status": "SUCCESS",
+        "log_chunks": 31
+      }
+    ],
+    "execution_rows_created_by_batch": 7,
+    "executions_by_batch_node": {
+      "a": {
+        "node_id": "8a68174e-685c-4db0-a90a-d363a76c07da",
+        "http": 200,
+        "count": 5,
+        "statuses": [
+          "FAILED",
+          "SUCCESS"
+        ]
+      },
+      "b": {
+        "node_id": "59b2f808-baff-4185-b640-19e4ed9f80f3",
+        "http": 200,
+        "count": 3,
+        "statuses": [
+          "SKIPPED",
+          "SUCCESS"
+        ]
+      },
+      "c": {
+        "node_id": "6750ef54-7340-48e1-bc71-f9d7f5947182",
+        "http": 200,
+        "count": 0,
+        "statuses": []
+      },
+      "second:d1": {
+        "node_id": "165885a5-840e-403f-bb9a-85c78ae29b8e",
+        "http": 200,
+        "count": 0,
+        "statuses": []
+      },
+      "second:d2": {
+        "node_id": "fcfecf52-8c4e-43c8-a6aa-727d2b83d6ae",
+        "http": 200,
+        "count": 0,
+        "statuses": []
+      },
+      "frame:p1": {
+        "node_id": "0d5f934d-fa04-45f3-bfe0-3f5efd9eb3f8",
+        "http": 200,
+        "count": 0,
+        "statuses": []
+      },
+      "frame:p2": {
+        "node_id": "c2ecc6dc-24e2-4a28-8de1-6c0013edcbf3",
+        "http": 200,
+        "count": 0,
+        "statuses": []
+      },
+      "liveness.json:q1": {
+        "node_id": "ffe4fdd1-02f5-4633-90dd-11743806c146",
+        "http": 200,
+        "count": 0,
+        "statuses": []
+      },
+      "liveness.json:q2": {
+        "node_id": "55bcdeb8-9e72-4492-a376-d676ddf1bdbe",
+        "http": 200,
+        "count": 0,
+        "statuses": []
+      },
+      "run1:a": {
+        "node_id": "2660ab86-e22e-42bb-9199-fd88c17c0d83",
+        "http": 200,
+        "count": 5,
+        "statuses": [
+          "FAILED",
+          "SUCCESS"
+        ]
+      },
+      "run1:b": {
+        "node_id": "8d6f768b-a5f0-4538-8009-6fe50b4c73a8",
+        "http": 200,
+        "count": 3,
+        "statuses": [
+          "SKIPPED",
+          "SUCCESS"
+        ]
+      },
+      "run1:c": {
+        "node_id": "84ad1726-d2ef-43e1-8a50-8e9477297f60",
+        "http": 200,
+        "count": 0,
+        "statuses": []
+      }
+    },
+    "execution_rows_created_by_batch_all_runs": 16
+  },
+  "cleanup": {
+    "independent_oracle": "final-cleanup-oracle.json",
+    "ok": true,
+    "exact_get_404_all": true,
+    "prefix_leftover_clear": true,
+    "proxy_port_released": true,
+    "native1_clean": true,
+    "protected_nodes_online_synced": true,
+    "healthz": {
+      "repair_18080": 200,
+      "primary_8080": 200
+    },
+    "hub_db_quick_check": "ok"
+  },
+  "harness_bugs_and_deviations": [
+    "First attempt: three owned children on one host collapsed into one node record (Hub enrollment falls back to node_ip); fixed by distinct self-reported node_ip per child + a node-id distinctness guard (see OBS-20261017-ENROLL-IP-DEDUP).",
+    "Harness bug: child_agent.make_file had a Python \"%\" precedence error (format applied to the concatenated string) which aborted the first phase-2 run before any fixture was graded; fixed in the batch copy.",
+    "First graded run: the remote transfer target hung in DELIVERING (product observation above); that run's phase4 waited 3x240 s before the bounded retry was introduced (now 45-110 s per attempt plus a warm-up pre-flight), and its evidence files were overwritten by the graded re-run. Its retained rows are still enumerated in the oracle (run1 node ids) and in the retained history.",
+    "The checklist hub sha was stale (CD-0); the runner resolves the expected sha from the CR-1 deploy evidence.",
+    "Clipboard write is not provable in this headless/non-secure-context automation (see X15 copy sub-dimension)."
+  ]
+}

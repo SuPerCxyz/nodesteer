@@ -1,0 +1,134 @@
+{
+ "batch_id": "qa-resume-20261017-partial-rest",
+ "title": "剩余 PARTIAL 可测项收口（G04-03 / P04-07 / X08 / SYS-40）",
+ "authorization_basis": "父会话任务：收口剩余 PARTIAL 中的可测项（4 条），产出可核查证据；只创建 owned fixture，测完精确删除并逐条 GET404。",
+ "authority": "http://192.168.100.209:18080 (repair)",
+ "primary_8080_contacted": false,
+ "build_label_under_test": "dddee4f0-e2e-repair-20261017-fixall",
+ "hub_sha256_verified": "1d8cc17e3aeeb5df59026bc3881a6ff8b5a3e308617c931ac1f13d70a9cc230b",
+ "build_label_verification": "sha256 of /opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard equals fixall-verify deploy evidence hub_sha256",
+ "executed_at_utc": "2026-10-17T14:31:00Z",
+ "finished_at_utc": "2026-10-17T14:52:00Z",
+ "browser_session": "qa-prst-621bfad5-ui (closed; session list shows no active sessions)",
+ "nonce": "621bfad5",
+ "owned_prefix": "qa-prst-621bfad5-",
+ "cases": [
+  {
+   "case_id": "G04-03",
+   "title": "所有 Alert/Error 文案具体、无重复通用错误。",
+   "ledger_status_before": "PARTIAL",
+   "remaining_dimensions_before": [
+    "分组重名错误文案具体但直接暴露 SQLite 原文；跨页通用错误全量核对未完成。"
+   ],
+   "result": "PASS",
+   "proposed_status": "PASS",
+   "conclusion": "修复版（fixall）上重名归一化复验通过：创建重名 400 -> 'group name already exists: <name>'；大小写/首尾空白变体同样归一化；重命名（PUT）重名 400 同文案且原对象未被改写；空名 400 'name required'；所有响应均无 SQLite 原文。UI 实测：/groups/new 重名保存显示本地化具体文案「分组名称已存在：<name>，请更换后重试。」，停留编辑页、恰 1 次 POST、页面无 SQL 文本。跨页只读扫描（web/src）未发现会在重名/错误路径上暴露 SQLite 或通用文案的页面级路径；仅两处最后兜底（apiMessage 的 'Request failed' 与未被引用的 handle-server-error 死代码），均不覆盖已知错误族。",
+   "evidence": [
+    "evidence/g0403-api.json",
+    "evidence/g0403-ui.json",
+    "evidence/g0403-ui-duplicate-name.png",
+    "evidence/g0403-source-scan.json",
+    "evidence/g0403-cleanup.json"
+   ],
+   "notes": [
+    "跨页扫描为源码级只读扫描（closeout plan B1 约定的口径），非逐页运行时全量枚举。",
+    "两个既有缺陷 E2E-20261015-SQL-ERROR-LEAK-ON-PUT-NOTFOUND / GROUP-EMPTY-NAME-AND-UPSERT-200 的回归维度已由本批 API 断言覆盖（PUT 不存在 id -> 404 'group not found' 无 SQL 泄漏；PUT 重名 400 不泄漏；空名 400 非 200 upsert）。"
+   ]
+  },
+  {
+   "case_id": "P04-07",
+   "title": "添加节点按钮权限与后端 admin-only 策略一致。",
+   "ledger_status_before": "PARTIAL",
+   "remaining_dimensions_before": [
+    "非 admin（operator/viewer）会话下按钮隐藏与 403 未在本批实测。"
+   ],
+   "result": "PASS",
+   "proposed_status": "PASS",
+   "conclusion": "隔离可销毁实例（同修复二进制，18087 端口，独立 data_dir/config）上创建 owned operator/viewer 账号并实测：POST /api/nodes/enrollment -> 403 {'error':'permission denied'}（operator 与 viewer 均同）；GET 同端点同样 403；/api/me 角色正确且 GET /api/nodes 200，证明 403 属授权拒绝而非会话/认证问题；admin 同端点 200 正向对照（含注册令牌内嵌命令，命令文本未落盘）。按钮隐藏维度沿用既有 CR 证据（rbac.spec.ts + 2026-10-05 cr-01 results）。实例已销毁并复验：进程 GONE、端口 0 监听、目录 REMOVED、18080 repair 健康不受影响。",
+   "evidence": [
+    "evidence/p0407-isolated.json",
+    "instance-ledger.json"
+   ],
+   "notes": [
+    "首跑 /api/me 字段大小写误判为 Harness 缺陷，修正后重跑全 PASS；两轮 403 断言一致。",
+    "隔离实例使用与 repair authority 相同的修复二进制（sha 一致）。"
+   ]
+  },
+  {
+   "case_id": "X08",
+   "title": "删除/Run/Stop/批量升级/吊销取消零写请求，确认单请求；慢响应重复点击、失败后重试；取消编辑不改 Revision/Audit。",
+   "ledger_status_before": "PARTIAL",
+   "remaining_dimensions_before": [
+    "停止/批量升级/吊销取消、慢响应重复点击、失败重试仍未执行（「取消编辑不改 Revision/Audit」本轮已通过）"
+   ],
+   "result": "PASS",
+   "proposed_status": "PASS",
+   "conclusion": "新构建上剩余维度全部实测通过：(1) Run 取消 0 写、确认恰 1 请求；(2) Stop 取消 0 写、确认恰 1 请求、终态 CANCELED、审计恰 1 条 cancel/execution；(3) 吊销凭证取消 0 写（owned 节点状态不变）、确认恰 1 请求（owned 节点变 disabled）；(4) 批量升级取消 0 写（受保护 native-1 cancel-only：取消窗口内 0 个非 GET /api/nodes 请求、节点 status/global_revision/sync_status 不变、无新增 upgrade 审计行）；(5) 失败重试：纳管表单真实 400（具体文案）-> ErrorState 重试（再 400）-> 修正后成功（POST 计数 3），owned 节点精确删除；(6) 慢响应重复点击：客户端 fetch 注入 2.5s 延迟后对 Run/Stop 确认按钮做原生双击，均恰 1 请求（无重复写）。「取消编辑不改 Revision/Audit」沿用同日 control-gap 证据。",
+   "evidence": [
+    "evidence/x08-results.json",
+    "evidence/x08-t4-rerun.json",
+    "evidence/x08-t6-revoke-confirm.json",
+    "evidence/x08-stop-after.png",
+    "evidence/x08-bulk-upgrade-cancel-rerun.png",
+    "evidence/x08-revoke-confirm.png",
+    "evidence/x08-enrollment-error-retry.png"
+   ],
+   "notes": [
+    "慢响应 = 客户端 window.fetch 包装注入（记录非 GET /api 请求 + 目标路径延迟 2500ms），已在 evidence 中注明；非真实网络慢链路。",
+    "T4 首轮 oracle 缺陷：global_revision 在批次自身夹具写操作之前采样 + 未注入观测包装；已修正重跑（x08-t4-rerun.json），首轮记录保留在 x08-results.json 中并标注 harness_note。",
+    "批量升级【确认】路径未执行：受保护节点上会触发真实 Agent 升级；owned pending 节点无 native 形态入口（deployment_mode 为空，node-bulk.ts 过滤）。单请求语义与 maintenance 确认同构（ConfirmDialog isLoading=busy），既有 fixall-verify owned-node 证据（web-drift.json：设为维护确认恰 1 POST）可作旁证。",
+    "吊销确认路径的既有无损证据（fixall-verify DESTRUCTIVE-REVOKE-CREDENTIAL）与本批 T6 一致。"
+   ]
+  },
+  {
+   "case_id": "SYS-40",
+   "title": "SYS-40 Retry 次数、间隔、最终状态、每次日志和审计。",
+   "ledger_status_before": "PARTIAL",
+   "remaining_dimensions_before": [
+    "per-attempt 审计缺失：每次 attempt 没有独立审计行（仅一条 \"execute\" 审计），这是该用例 expected 中“审计”维度的未满足项，故维持 PARTIAL。",
+    "retry 间隔无产品规范阈值，仅作观测。",
+    "Docker/Compose 执行形态不存在（见 phase8 评估）。"
+   ],
+   "result": "PARTIAL（维持）",
+   "proposed_status": "PARTIAL（维持，转产品裁决）",
+   "conclusion": "取证结论：新构建真实 retry=2 任务产生 3 次 attempt（双流日志 marker x3、UI 执行详情 pre 内 x3）、终态 FAILED（exit_code=7）、单一 Execution；审计确实【只有 1 条 execute 行】（resource=task、resource_id=task_id），按 execution id 查询 0 行、per-attempt 行 0 行。per-attempt 审计在产品中不存在（审计模型为动作级）。建议：维持 PARTIAL 直至产品裁决；推荐裁决路径 = 接受为设计 + 文档化（审计粒度=逻辑触发；attempt 级细节在日志），裁决后按 C3 口径升 PASS；若产品要求 attempt 级审计则维持 PARTIAL 并立项。不做强行升档。",
+   "evidence": [
+    "evidence/sys40-retry-audit.json",
+    "evidence/sys40-execution-attempts.png",
+    "evidence/sys40-audit-search.png"
+   ],
+   "notes": [
+    "重试间隔观测：3 次 attempt 在 23ms 内完成（无退避），产品无规范阈值，仅观测。",
+    "Docker/Compose 执行形态（设计不存在）本批未重测。",
+    "UI 审计页按 task_id 搜索显示 1 条 execute + 1 条 create，与 API 一致。"
+   ]
+  }
+ ],
+ "cleanup": {
+  "all_owned_deleted_get404": true,
+  "fixtures_total": 7,
+  "fixture_kinds": "2 groups (G04-03) + 3 nodes + 2 tasks (X08/SYS-40)",
+  "live_404_sweep": "finalize 时逐条 GET 404 复核",
+  "leftover_scan_owned_prefix": 0,
+  "isolated_instance_destroyed": true,
+  "browser_session_closed": true,
+  "non_deletable_history": {
+   "executions": [
+    "9fec8595-6e5c-4c55-a6b0-f44b9b9a13cb (CANCELED, X08)",
+    "c8030d06-f141-4091-be74-344527028e65 (FAILED, SYS-40)"
+   ],
+   "note": "执行记录无删除 API，如实列出；已验证 14:25Z 后仅本批创建这 2 条执行。"
+  }
+ },
+ "remaining_unverified": [
+  "X08 批量升级【确认】单请求路径未在受保护节点执行（会触发真实升级）；同构 maintenance 确认已有既有 owned-node 证据。",
+  "SYS-40 Docker/Compose 执行形态（设计不存在）未重测。",
+  "G04-03 跨页错误文案为源码级只读扫描，非逐页运行时全量枚举。",
+  "慢响应重复点击为客户端延迟注入，非真实网络慢链路。"
+ ],
+ "harness_notes": [
+  "T4 首轮 oracle 缺陷（采样时机 + 未注入观测）-> 修正重跑，证据两者保留并标注。",
+  "P04-07 首跑 /api/me 字段大小写误判 -> 修正重跑；403 断言两轮一致。",
+  "隔离实例通过监听套接字解析真实 PID（pidfile 与 ss 一致），teardown 以进程/端口/目录三重核验。"
+ ]
+}

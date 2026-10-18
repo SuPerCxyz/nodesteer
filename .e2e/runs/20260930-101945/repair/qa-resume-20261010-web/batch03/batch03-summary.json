@@ -1,0 +1,452 @@
+{
+  "captured_at_utc": "2026-10-10T02:22:02+00:00",
+  "batch_id": "web-20261010-03-resume",
+  "executor": "gpt-6-luna",
+  "canonical_cases_planned": 12,
+  "results": [
+    {
+      "canonical_id": "P04-08",
+      "status": "PASS",
+      "details": {
+        "previously_verified_dimensions": "P04 search/no-match feedback and reset+refresh were verified in the same repair deployment; see referenced batch02 case evidence.",
+        "pagination_checks": {
+          "api_http_200_count_11": true,
+          "page1_exactly_10": true,
+          "next_enabled": true,
+          "page2_exactly_1": true,
+          "previous_enabled": true,
+          "previous_restores_page1": true,
+          "page_size20_shows_all_11": true,
+          "next_disabled_at20": true,
+          "reset10_shows10": true,
+          "two_page_ids_equal_api_dataset": true,
+          "all_owned_nodes_in_rendered_pages": true,
+          "same_route": true
+        },
+        "live_api_count": 11,
+        "page_size10_page1_rows": 10,
+        "next_page_rows": 1,
+        "previous_restored_exact_page1": true,
+        "page_size20_rows": 11,
+        "all_ui_page_ids_equal_api_dataset": true,
+        "combined_canonical_status_note": "PASS combines earlier verified search/no-match/reset-refresh evidence with this real 11-node pagination UI/API run.",
+        "no_new_fixtures_after_cleanup": true
+      },
+      "evidence": [
+        "../../qa-resume-20261009-web/batch02/case-p04-08-verified.json",
+        "pagination-final/p04-08-pagination-oracle.json",
+        "pagination-final/p04-08-page1.png",
+        "pagination-final/p04-08-page2.png"
+      ]
+    },
+    {
+      "canonical_id": "P05A-01",
+      "status": "PASS",
+      "details": {
+        "close_x": {
+          "closed": true,
+          "post_count": 0
+        },
+        "escape": {
+          "closed": true,
+          "post_count": 0
+        },
+        "backdrop": {
+          "point": {
+            "dialogVisible": true,
+            "targetSlot": "dialog-overlay",
+            "viewport": [
+              1440,
+              900
+            ]
+          },
+          "closed_after_750ms": true
+        },
+        "all_draft_close_paths_no_enrollment_post": true,
+        "node_count_before_after": [
+          7,
+          7
+        ],
+        "reopen_input_lengths": [
+          0,
+          0,
+          28
+        ]
+      },
+      "evidence": [
+        "p05a01-backdrop-close.json"
+      ]
+    },
+    {
+      "canonical_id": "P05A-02",
+      "status": "PASS",
+      "details": {
+        "UI_required_validation": "all-empty, missing-name, missing-address, and missing-Hub branches recorded with native validity and zero UI POSTs; missing-Hub UI only because Hub is API-optional.",
+        "API_negative": "all-empty, missing-name, missing-IP returned HTTP400; node count unchanged.",
+        "unexpected_fixture_cleanup": "separate cleanup record only; not treated as required-validation proof."
+      },
+      "evidence": [
+        "case-p05a-02.json",
+        "p05a02-controlled-empty-rerun.py",
+        "unintended-fixture-cleanup.json",
+        "../../qa-resume-20261009-web/batch02/case-p05a-02-result.json",
+        "../../qa-resume-20261009-web/batch02/p05a-required-validation.png"
+      ]
+    },
+    {
+      "canonical_id": "P05A-03",
+      "status": "PASS",
+      "details": {
+        "invalid_ui_submissions": [
+          {
+            "branch": "illegal_char",
+            "name_length": 19,
+            "post_count": 1,
+            "http_statuses": [
+              400
+            ],
+            "candidate_node_count": 0,
+            "rejected_without_node": true
+          },
+          {
+            "branch": "over_128",
+            "name_length": 136,
+            "post_count": 1,
+            "http_statuses": [
+              400
+            ],
+            "candidate_node_count": 0,
+            "rejected_without_node": true
+          }
+        ],
+        "128_char_valid_acceptance": "will be exercised via first fixture in enrollment phase.",
+        "valid_128_char_acceptance": {
+          "length": 128,
+          "http": 200,
+          "node_id": "9cc7bd9f-3a30-4094-ba34-550d42eebd90",
+          "cleanup_delete_http": 200,
+          "postdelete_get_http": 404
+        }
+      },
+      "evidence": [
+        "case-p05a-06.json",
+        "resource-intents.json"
+      ]
+    },
+    {
+      "canonical_id": "P05A-04",
+      "status": "PASS",
+      "details": {
+        "valid_address_families": [
+          {
+            "family": "IPv4",
+            "get_http": 200,
+            "same_node_id": true,
+            "status": "pending",
+            "sync_status": "pending"
+          },
+          {
+            "family": "IPv6",
+            "get_http": 200,
+            "same_node_id": true,
+            "status": "pending",
+            "sync_status": "pending"
+          },
+          {
+            "family": "DNS",
+            "get_http": 200,
+            "same_node_id": true,
+            "status": "pending",
+            "sync_status": "pending"
+          }
+        ],
+        "invalid_address_ui_rejected_without_node": true,
+        "unique_owned_fixture_count": 6
+      },
+      "evidence": [
+        "resource-intents.json",
+        "fixture-final-verification.json"
+      ]
+    },
+    {
+      "canonical_id": "P05A-05",
+      "status": "PASS",
+      "details": {
+        "valid_https_enrollment": {
+          "http": 200,
+          "fixture_id": "9cc7bd9f-3a30-4094-ba34-550d42eebd90",
+          "cleanup_delete_http": 200,
+          "postdelete_get_http": 404
+        },
+        "unsupported_scheme": {
+          "post_count": 1,
+          "http_statuses": [
+            400
+          ],
+          "node_created": false,
+          "rejected_without_node": true
+        },
+        "missing_host_ui": {
+          "native_url_valid": false,
+          "post_count": 0,
+          "prevented_by_native_validation": true
+        },
+        "missing_host_api": {
+          "http_status": 400,
+          "no_node_created": true
+        },
+        "all_invalid_hub_paths_rejected_before_node_creation": true
+      },
+      "evidence": [
+        "case-p05a-05.json",
+        "case-p05a-06.json",
+        "resource-intents.json"
+      ]
+    },
+    {
+      "canonical_id": "P05A-06",
+      "status": "PASS",
+      "details": {
+        "one_real_click": true,
+        "post_count": 1,
+        "post_http": 200,
+        "node_found_by_exact_name_and_ip": true,
+        "node_id": "9cc7bd9f-3a30-4094-ba34-550d42eebd90",
+        "agent_id": "agent-393bdd78-0bfe-4062-af3d-07fb55cd8c56",
+        "status": "pending",
+        "sync_status": "pending"
+      },
+      "evidence": [
+        "case-p05a-06.json",
+        "resource-intents.json",
+        "fixture-final-verification.json"
+      ]
+    },
+    {
+      "canonical_id": "P05A-07",
+      "status": "PARTIAL",
+      "details": {
+        "real_post_pending_sample": {
+          "dialogVisible": true,
+          "disabled": true,
+          "skeleton": true
+        },
+        "mock_or_route_delay_used": false,
+        "limitation": "If the real Hub response completed before this observation, loading state was not captured in this live run.",
+        "evidence_limit": "The case file contains one sampled real-post UI-state tuple (dialog visible/button disabled/skeleton; no route delay), but no separate browser screenshot or request-ID/timing oracle establishes the pending interval; PASS is not claimed.",
+        "prior_canonical_P05A07_PASS": "Retained in repair feature inventory from RESUME-20261004 held-real-request evidence; this batch sample itself is PARTIAL and does not invalidate the prior PASS."
+      },
+      "evidence": [
+        "case-p05a-07.json"
+      ]
+    },
+    {
+      "canonical_id": "P05A-08",
+      "status": "PASS",
+      "details": {
+        "tab_labels_seen": [
+          "Native",
+          "docker run",
+          "docker compose"
+        ],
+        "tab_samples": [
+          {
+            "tab": "Native",
+            "selected": true,
+            "metrics": {
+              "text_length_bytes": 1950,
+              "sha256": "7cdfaf1b5cdf8cd94b78aaa977e8173317254072ee5ca8a0f604e6c824329340",
+              "field_checks": {
+                "hub_url": true,
+                "registration_token": true,
+                "node_name": true,
+                "node_ip": true,
+                "agent_id": true,
+                "native_installer": true
+              },
+              "all_checks": true
+            }
+          },
+          {
+            "tab": "docker run",
+            "selected": true,
+            "metrics": {
+              "text_length_bytes": 616,
+              "sha256": "3e1052a7b729fe1829a2b00a79f1a5dd8381b466f8c845299252a505d1f71d9e",
+              "field_checks": {
+                "hub_url": true,
+                "registration_token": true,
+                "node_name": true,
+                "node_ip": true,
+                "agent_id": true,
+                "docker_mode": true,
+                "image": true
+              },
+              "all_checks": true
+            }
+          },
+          {
+            "tab": "docker compose",
+            "selected": true,
+            "metrics": {
+              "text_length_bytes": 666,
+              "sha256": "73dacb7231469b58329e1e0d709e8594f4b4294246ef262f7bd3578022f0512e",
+              "field_checks": {
+                "hub_url": true,
+                "registration_token": true,
+                "node_name": true,
+                "node_ip": true,
+                "agent_id": true,
+                "docker_mode": true,
+                "image": true
+              },
+              "all_checks": true
+            }
+          }
+        ],
+        "plaintext_saved": false,
+        "screenshots_taken_while_command_visible": false
+      },
+      "evidence": [
+        "case-p05a-08.json",
+        "resource-intents.json",
+        "fixture-final-verification.json"
+      ]
+    },
+    {
+      "canonical_id": "P05A-09",
+      "status": "PASS",
+      "details": {
+        "all_three_command_field_checks": {
+          "Native": {
+            "hub_url": true,
+            "registration_token": true,
+            "node_name": true,
+            "node_ip": true,
+            "agent_id": true,
+            "native_installer": true
+          },
+          "docker run": {
+            "hub_url": true,
+            "registration_token": true,
+            "node_name": true,
+            "node_ip": true,
+            "agent_id": true,
+            "docker_mode": true,
+            "image": true
+          },
+          "docker compose": {
+            "hub_url": true,
+            "registration_token": true,
+            "node_name": true,
+            "node_ip": true,
+            "agent_id": true,
+            "docker_mode": true,
+            "image": true
+          }
+        },
+        "all_required_fields_present": true,
+        "registration_token_compared_in_memory": true,
+        "plaintext_or_token_saved": false
+      },
+      "evidence": [
+        "case-p05a-09.json",
+        "resource-intents.json",
+        "fixture-final-verification.json"
+      ]
+    },
+    {
+      "canonical_id": "P05A-12",
+      "status": "PARTIAL",
+      "details": {
+        "prior_primary_node_pending_observation_preserved": true,
+        "this_final_round_five_real_UI_enrollment_posts_http200_with_node_id_and_agent_id": true,
+        "direct_GET_per_fixture_pending_status": true,
+        "agent_hello_identity_reuse_online_synced": "NOT_RUN: no Agent was started, per authorized scope.",
+        "canonical_status_reason": "PARTIAL remains because HELLO -> same IDs -> online/synced was not exercised."
+      },
+      "evidence": [
+        "case-p05a-06.json",
+        "pagination-final/pending-node-details.json",
+        "pagination-final/resource-intents.json",
+        "pagination-final/pagination-final-verification.json"
+      ]
+    },
+    {
+      "canonical_id": "P05A-13",
+      "status": "PASS",
+      "details": {
+        "closed_after_generated_response": true,
+        "reopened_state": {
+          "commandVisible": false,
+          "errorVisible": false,
+          "hubDefaultLength": 28,
+          "inputs": [
+            {
+              "length": 0,
+              "required": true
+            },
+            {
+              "length": 0,
+              "required": true
+            },
+            {
+              "length": 28,
+              "required": true
+            }
+          ],
+          "visible": true
+        },
+        "extra_enrollment_post": false,
+        "hub_default_is_restored": true
+      },
+      "evidence": [
+        "case-p05a-13.json",
+        "../../qa-resume-20261009-web/batch02/case-p05a-13-result.json",
+        "../../qa-resume-20261009-web/batch02/p05a-dialog-reopened-reset.png"
+      ]
+    }
+  ],
+  "owned_nodes_created_count": 6,
+  "owned_nodes_deleted_count": 6,
+  "owned_cleanup_verified": true,
+  "final_node_count": 6,
+  "baseline_node_ids_present": true,
+  "baseline_health_by_class": {
+    "repair_native": {
+      "total": 4,
+      "online": 4,
+      "synced": 4
+    },
+    "child": {
+      "total": 2,
+      "online": 2,
+      "synced": 2
+    }
+  },
+  "unexpected_external_nodes_not_touched": 0,
+  "private_values_saved": false,
+  "next_actions": [
+    "P05A-12 remains PARTIAL until a separately authorized real Agent HELLO verifies same Node ID/Agent ID and online/synced."
+  ],
+  "canonical_cases_recorded": 12,
+  "pagination_actual_action_reached": true,
+  "runner_harness_error": "A previous pagination runner failed before reaching UI actions due a harness aggregation error; this was corrected and the final real UI pagination pass completed.",
+  "pagination_supplemental_fixture_count": 8,
+  "pagination_supplemental_cumulative_count": 8,
+  "pagination_supplemental_cleanup_verified": true,
+  "owned_nodes_created_count_total_in_batch03": 15,
+  "owned_nodes_deleted_count_total_in_batch03": 15,
+  "final_original_baseline_ids_present": true,
+  "supplemental_cumulative_fixture_count": 8,
+  "supplemental_cleanup_verified": true,
+  "all_created_nodes_cleanup_verified": true,
+  "security_event_file": "security-event.json",
+  "pagination_final_action_reached": true,
+  "awaiting_root_decision": "Final pagination-only round completed; no further fixture creation is scheduled.",
+  "pagination_final_fixture_count": 5,
+  "pagination_final_cleanup_verified": true,
+  "pagination_final_api_count": 6,
+  "pagination_final_baseline_ids_present": true,
+  "updated_at_utc": "2026-10-10T02:39:40+00:00"
+}

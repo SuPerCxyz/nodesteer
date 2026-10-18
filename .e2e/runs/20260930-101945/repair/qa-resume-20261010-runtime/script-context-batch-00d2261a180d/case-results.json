@@ -1,0 +1,54 @@
+{
+  "updated_at_utc": "2026-10-10T15:55:21+00:00",
+  "scope": "One ScriptTask fixture and one UI-confirmed Run, plus one readonly owner-probe Task/Run; no other business resources.",
+  "cases": {
+    "P11-03": {
+      "status": "PARTIAL",
+      "evidence": "run-ui-evidence.json",
+      "observed": "One confirm click; confirm-dialog button became disabled at t=577.2ms. Main Run button disabled/loading was not captured before navigation; no second Run."
+    },
+    "P11-05 Script slice": {
+      "status": "PASS",
+      "evidence": "run-api-evidence.json",
+      "observed": "Real Script Task reached SUCCESS; API and logs matched allowed outputs."
+    },
+    "P11-06": {
+      "status": "PASS",
+      "evidence": "run-api-evidence.json",
+      "observed": "Real Script environment marker, supplied Task parameter, /tmp working directory, and UID65534 were present in Agent output."
+    },
+    "P17P18-02": {
+      "status": "PASS",
+      "evidence": "qsearch-evidence.json",
+      "observed": "Task name, Task ID, Node ID, Execution ID searches returned matching API/UI IDs."
+    },
+    "P17P18-06": {
+      "status": "PASS",
+      "evidence": "ui-link-evidence.json",
+      "observed": "Task→Script and Execution history, Task→Execution, Execution→Node, Node→same Execution links were clicked and resolved."
+    },
+    "P17P18-07": {
+      "status": "FAIL",
+      "evidence": "revision-readback.json; execution-ui-evidence.json",
+      "observed": "Task/script/Node/trigger/offline/synced/status/duration are populated; exit_code is omitted from Execution API and UI displays “-” despite SUCCESS and process exit 0. Keep expected exit-zero defect; no source change."
+    },
+    "P17P18-15": {
+      "status": "PARTIAL",
+      "evidence": "revision-readback.json; execution-ui-evidence.json",
+      "observed": "API pin matches Task revision1 and Script revision2; Execution UI shows Task revision only and no Script revision."
+    }
+  },
+  "fixture": {
+    "script_id": "87a78c3c-b9be-4beb-aac2-04fca7572d3e",
+    "script_revision": 2,
+    "task_id": "e512145f-3e1d-4f57-9046-5ced49368202",
+    "task_revision": 1,
+    "execution_id": "3d8259b9-cea4-46e6-bde6-06318e0c29d6",
+    "execution_status": "SUCCESS",
+    "run_post_count": 1,
+    "retry": 0,
+    "schedule_created": false
+  },
+  "known_harness_incident": "Initial Script save omitted QA_MARKER because an agent-browser semantic click failed to reach the Add button; actual unsaved UI row was verified and Root authorized exactly one edit PUT, producing Script revision2. No product code changed.",
+  "cleanup_status": "PENDING_EXACT_TASK_THEN_SCRIPT_DELETE"
+}

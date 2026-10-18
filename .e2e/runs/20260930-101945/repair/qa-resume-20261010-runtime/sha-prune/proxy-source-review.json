@@ -1,0 +1,40 @@
+{
+  "captured_at": "2026-10-10T01:52:13Z",
+  "case_id": "BE-SCRIPT-SHA-002",
+  "source": "sha-prune/ws-frame-proxy/main.go",
+  "source_sha256": "a4fba037729524358e92f0aed881aec655c9b58f4691d7b4639aeb9b1c503db7",
+  "binary": "sha-prune/ws-frame-proxy/ws-frame-proxy",
+  "binary_sha256": "1747180e6e89a66ced1ae3b850329753e4868f3113484b761961188dd909805d",
+  "build_command": "GOCACHE=<new sha-prune/build-cache> GOPROXY=off GOSUMDB=off CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o ws-frame-proxy main.go",
+  "dependency": "github.com/coder/websocket v1.8.15 already pinned/cached; no download/install",
+  "guards": {
+    "upstream": "ws://192.168.100.209:18080/",
+    "accepted_agent_id": "agent-426aa507-af4c-4005-858f-ce497d2fc67d",
+    "target_app_id": "2e4fecee-afc8-43a8-9d93-dd36cfc10bf9",
+    "exact_script_ids_and_revisions": [
+      {
+        "role": "good",
+        "id": "fc6fbcc6-39ce-49f4-9368-265a5a42d174",
+        "revision": 2
+      },
+      {
+        "role": "bad",
+        "id": "616a9db6-a87f-4d79-a4de-7d1b016e2986",
+        "revision": 1
+      }
+    ],
+    "match": "SYNC_RESPONSE Snapshot=true, App absent, both exact Script ID+revision present in same frame",
+    "mutation": "only bad Script data.content appended deterministic comment; declared SHA and other JSON values unchanged",
+    "hold": "after fault, hold next exact valid matching Snapshot until a negative SYNC_ACK has been observed and controls.release_good_snapshot=true",
+    "logs": "no raw frame, HELLO credential, Script content, or other object IDs; selected target digests and frame flags only"
+  },
+  "local_build": "SUCCESS",
+  "remote_setup": "NOT_STARTED",
+  "child_config_modified": false,
+  "fault_armed": false,
+  "fault_injected": false,
+  "root_review": "PENDING",
+  "deployment_binary": "sha-prune/ws-frame-proxy/ws-frame-proxy-stripped",
+  "deployment_binary_sha256": "6937afa1ba697c4b91a7baafe3b15e1fc99c1b481fba328d24c479fd4467c70e",
+  "deployment_build_command": "GOCACHE=<new sha-prune/build-cache> GOPROXY=off GOSUMDB=off CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o ws-frame-proxy main.go -ldflags=\"-s -w\""
+}

@@ -1,0 +1,77 @@
+{
+  "captured_at_utc": "2026-10-12T13:28:48Z",
+  "grant_id": "ROOT-SYS12-OWNED-LIFECYCLE-20261012-02",
+  "nonce": "d19e0c4f3e69",
+  "owner": "qa-resume-20261012-sys12-d19e0c4f3e69",
+  "status": "PARTIAL_HARNESS_ENVIRONMENT_BLOCK_CLEANUP_CONFIRMED",
+  "authority_port": 18080,
+  "source_pins": {
+    "lifecycle_source_proposal.py": "6be51c872462fee3428c11df3d3cd567f42a4d6d471354cc5bbac2c8f8b2ffad",
+    "sys12_outer_controller.py": "0e213c45180eab1701dfc87aabc9b353d7025f909429f764bc1028b083e353a7"
+  },
+  "business_path": {
+    "new_node_id": "a6e78527-6808-4809-9041-60238ede1129",
+    "agent_id": "agent-c570fdbd-324a-4d33-b22c-756fc2ff4ee6",
+    "script_id": "529a551d-b812-428e-9edf-c5aa4f4c59f5",
+    "script_task_id": "9f02bef8-9140-405f-a486-9fd692021de0",
+    "business_execution_id": "263d23bb-3690-4e79-866d-f3a45f61fef7",
+    "business_run_count": 1,
+    "execution_api_status": "SUCCESS",
+    "api_success_exit_code_omitted_known_defect": true,
+    "stdout_marker_oracle": "PASS_exact_marker",
+    "script_sqlite_cache": {
+      "status": "PASS_ON_CONTAINER_A_ONLY",
+      "quick_check": "ok",
+      "db_dev": 65025,
+      "db_inode": 56333,
+      "script_revision": 1,
+      "content_bytes": 33,
+      "content_sha256": "0750b14d48ed34975199c58dded13012f50950bbb428a9f8c17653c593917993",
+      "execution_journal_status": "SUCCESS",
+      "execution_journal_exit_code": 0,
+      "execution_script_revision": 1
+    },
+    "disabled_schedule_id": "cc0458fe-116a-4aac-b74c-5201b66a4625",
+    "b_recreate_and_persistence": "NOT_TESTED",
+    "recreate_helper_safe_stop": "container_a_absence_readback_failed",
+    "recreate_failure_diagnostic": {
+      "source_condition": "After docker rm returns rc=0, helper runs docker container inspect <exact A ID>; it raises this SAFE_STOP when inspect rc==0 OR when inspect stderr lacks the exact lowercase substring 'no such object: <exact A ID>'.",
+      "deduced_from_control_flow": "docker rm returned rc=0 because the SAFE_STOP is after its explicit nonzero-rc branch.",
+      "actual_inspect_rc": "not persisted",
+      "actual_inspect_stderr": "not captured in helper stdout/result or owner ledger",
+      "actual_stderr_sha256": "unavailable; no actual stderr bytes were persisted",
+      "inference": "cannot distinguish inspect-success/still-present from inspect-error with a different Docker diagnostic; no actual error text is asserted"
+    },
+    "classification": "harness/environment readback failure after exact A removal; not a product defect verdict"
+  },
+  "cleanup": {
+    "helper_calls": {"total": 5, "normal": 3, "recovery": 2},
+    "all_helper_executions_terminal": true,
+    "all_helper_tasks_deleted_and_get404": true,
+    "removed_container_ids": ["88a04edab1fa3f2ed05b885e05056981d499bdd8496b69f2961363b3ead2dd53"],
+    "removed_network_id": "5fcc323b477f67cdd12cdcce46a705a611a4a12f80f60e9287edef6d72c240a9",
+    "owned_root": {"removed": true, "dev": 65025, "inode": 8703438, "hub_objects_deleted_guard": true},
+    "api_objects": [
+      {"type": "schedule", "id": "cc0458fe-116a-4aac-b74c-5201b66a4625", "delete_http": 200, "get_after_delete_http": 404},
+      {"type": "task", "id": "9f02bef8-9140-405f-a486-9fd692021de0", "delete_http": 200, "get_after_delete_http": 404},
+      {"type": "script", "id": "529a551d-b812-428e-9edf-c5aa4f4c59f5", "delete_http": 200, "get_after_delete_http": 404},
+      {"type": "node", "id": "a6e78527-6808-4809-9041-60238ede1129", "delete_http": 200, "get_after_delete_http": 404}
+    ],
+    "execution_and_audit_history": "retained; no cleanup endpoint targeted executions or audits"
+  },
+  "protected_original_nodes": [
+    {"id": "91f44866-8a28-435e-bbda-2f2367126c00", "http": 200, "status": "online", "sync_status": "synced"},
+    {"id": "611c02a5-1859-4465-878b-d543b7f6fdec", "http": 200, "status": "online", "sync_status": "synced"},
+    {"id": "37989297-3bc8-4c0c-b302-7c6efbdba630", "http": 200, "status": "online", "sync_status": "synced"},
+    {"id": "03cb50cc-eab6-4afd-bbe0-f73c4e326773", "http": 200, "status": "online", "sync_status": "synced"}
+  ],
+  "coverage_limits": {
+    "container_a_script_database_cache": "PASS",
+    "a_to_b_persistence": "NOT_TESTED",
+    "artifact_cache": "NOT_TESTED",
+    "api_exit_code_field": "known omission recorded; not claimed as passed",
+    "canonical_sys12": "PARTIAL"
+  },
+  "controller_result_note": "The controller result.json retains status RUNNING_CLEANUP-ROOT despite its ledger proving cleanup-root SUCCESS; this derived summary records terminal cleanup from the ledger without altering the original result or source.",
+  "repeat_policy": "Do not rerun prepare or business Run. Any next action requires Root review and exact-ledger recovery authorization; current ledger proves all owned resources removed."
+}

@@ -1,0 +1,112 @@
+{
+  "batch_id": "qa-resume-20261010-web-batch07-route-node-table",
+  "created_at_utc": "2026-10-10T11:45:28.842063+00:00",
+  "status": "WAITING_ROOT_APPROVAL",
+  "executor": "gpt-6-luna",
+  "scope": "Ten read-only route and Nodes table canonical cases. Reuse existing dedicated browser session and loopback forward; retain the two exact batch05-owned Scripts. No new fixture, deletion, Task, Run, User, Group, Node, or Agent writes; no source/global inventory edits.",
+  "cases": [
+    {
+      "id": "ROUTE-02",
+      "route": "/",
+      "module": "web/src/routes/_authenticated/index.tsx",
+      "actions": "Direct-open, refresh, then browser back/forward from a known owned Script detail and return to dashboard.",
+      "oracles": "GET /api/me and actual dashboard data GET method/path/status/count; main ready/loading/error classification and metrics/cards visible agree with returned data. No refresh internals or forced query calls."
+    },
+    {
+      "id": "ROUTE-03",
+      "route": "/agents",
+      "module": "web/src/routes/_authenticated/agents/index.tsx + catalog list",
+      "actions": "Direct-open, refresh, use actual visible row detail link if present, then back/forward.",
+      "oracles": "GET /api/agents status/count and any actual associated safe GETs; table/empty/error state, visible rows and detail hrefs match real dataset. IDs may be retained in evidence only if needed for route binding."
+    },
+    {
+      "id": "ROUTE-04",
+      "route": "/nodes",
+      "module": "web/src/routes/_authenticated/nodes/index.tsx + catalog list",
+      "actions": "Direct-open, refresh, use an actual row detail link, back/forward.",
+      "oracles": "GET /api/nodes status/count; ready/table state, rows, fields and href behavior; safe identity match booleans against preflight snapshot. No node writes."
+    },
+    {
+      "id": "ROUTE-05",
+      "route": "/agents/{actual visible own agent ID}",
+      "module": "web/src/routes/_authenticated/agents/$agentId.tsx -> AgentDetail",
+      "actions": "Open only the real agent href discovered from current agents/nodes UI, refresh, back/forward.",
+      "oracles": "Actual detail GET(s), returned status/identity match boolean, detail readiness/error state and actual UI values consistent; no guessed or fabricated IDs."
+    },
+    {
+      "id": "ROUTE-06",
+      "route": "/nodes/{actual visible own node ID}",
+      "module": "web/src/routes/_authenticated/nodes/$nodeId.tsx -> AgentDetail",
+      "actions": "Open only an actual node link from the current table, refresh, back/forward.",
+      "oracles": "Actual detail GET(s), identity match boolean, detail readiness/error state and link/route consistency; no edits or status actions."
+    },
+    {
+      "id": "ROUTE-14",
+      "route": "/tasks/new",
+      "module": "web/src/routes/_authenticated/tasks/new.tsx -> TaskEditor",
+      "actions": "Direct-open, refresh, then back/forward. Do not submit or create a Task.",
+      "oracles": "Actual GETs and zero POST/PUT/PATCH/DELETE; new-task title, defaults, required field and form ready/error classification."
+    },
+    {
+      "id": "TABLE-NODES-SEARCH",
+      "route": "/nodes",
+      "module": "web/src/features/shared/data-table.tsx + catalog Nodes table",
+      "actions": "Search using a safe term derived from an actual visible row, search a guaranteed non-match, then click actual Reset/clear.",
+      "oracles": "GET /api/nodes count unchanged; visible-hit count, no-results UI and Reset restoration; zero writes; avoid persisting raw full row."
+    },
+    {
+      "id": "TABLE-NODES-SORT",
+      "route": "/nodes",
+      "module": "web/src/features/shared/data-table.tsx + column-header.tsx",
+      "actions": "Click actual Hostname/Name header through fresh refs to exercise asc/desc/clear where supported.",
+      "oracles": "Capture only row identity tokens in a stable nonsecret form and visible order for each state; GET remains unchanged; zero writes. Mark unsupported cycle PARTIAL."
+    },
+    {
+      "id": "TABLE-NODES-COLUMNS",
+      "route": "/nodes",
+      "module": "web/src/components/data-table/view-options.tsx + web/src/lib/table-view.ts",
+      "actions": "Hide one safe visible column, refresh and confirm persistence, restore it and refresh.",
+      "oracles": "Menu checkbox, header/cells absent/present, rows stable; only read/write the current browser local preference, no server mutation. Restore original preference in finally."
+    },
+    {
+      "id": "TABLE-NODES-PAGE",
+      "route": "/nodes",
+      "module": "web/src/components/data-table/pagination.tsx",
+      "actions": "Choose actual page size 20 and refresh; exercise next/prev only if live total is greater than the current page size without adding fixtures.",
+      "oracles": "GET /api/nodes count, selected page size persistence, row count and enabled/disabled page buttons; page transition remains PARTIAL if actual dataset does not span pages."
+    }
+  ],
+  "fixture_budget": {
+    "new_resources": 0,
+    "concurrent_new_resources": 0,
+    "task_run_user_group_node_agent_writes": 0,
+    "script_mutations": 0
+  },
+  "session": {
+    "name": "qawebsecure20261010-script-b05-38181",
+    "origin": "http://127.0.0.1:38181",
+    "repair_target": "192.168.100.209:18080",
+    "reuse_only_if_current_exact_listener_and_session_guards_still_pass": true
+  },
+  "safety_and_evidence": {
+    "network": "Filter locally to same-origin method/path/status/count only; never save raw request/response, headers, tokens, page bodies, or unrelated row values.",
+    "mutations": "Route browsing and local table preferences only. Restore the original table preference in finally. Stop if any unexpected write request or owned resource status changes.",
+    "validation": "Each case records actual user action, request oracle, resulting business data/state, and visible UI feedback. Loading/error/empty are classified from live DOM and actual requests. Page 2 is never inferred from a page-size control."
+  },
+  "source_refs": [
+    ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+    "web/src/routes/_authenticated/index.tsx",
+    "web/src/routes/_authenticated/agents/index.tsx",
+    "web/src/routes/_authenticated/agents/$agentId.tsx",
+    "web/src/routes/_authenticated/nodes/index.tsx",
+    "web/src/routes/_authenticated/nodes/$nodeId.tsx",
+    "web/src/routes/_authenticated/tasks/new.tsx",
+    "web/src/features/catalog/index.tsx",
+    "web/src/features/shared/data-table.tsx",
+    "web/src/components/data-table/view-options.tsx",
+    "web/src/components/data-table/column-header.tsx",
+    "web/src/components/data-table/pagination.tsx",
+    "web/src/lib/table-view.ts"
+  ],
+  "execution_started": false
+}

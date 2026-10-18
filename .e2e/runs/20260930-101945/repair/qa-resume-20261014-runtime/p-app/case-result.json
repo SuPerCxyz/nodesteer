@@ -1,0 +1,1950 @@
+{
+  "batch_id": "p-app",
+  "title": "应用部署/升级/回滚/备份/Unit 注册/健康检查/文件负载 收口",
+  "nonce": "f7821a1dbfb5",
+  "owned_prefix": "qa-papp-f7821a1dbfb5-",
+  "endpoint": "http://192.168.100.209:18080",
+  "native_host": "192.168.100.247",
+  "generated_at_utc": "2026-10-15T09:23:48Z",
+  "run": {
+    "started_at_utc": "2026-10-15T09:18:01Z",
+    "finished_at_utc": "2026-10-15T09:22:46Z",
+    "failed_phases": [],
+    "budget": {
+      "api_mutations": 87,
+      "artifact_uploads": 4,
+      "artifact_deletes": 4,
+      "app_creates": 2,
+      "app_updates": 26,
+      "app_deletes": 2,
+      "app_assigns": 2,
+      "deploys": 32,
+      "transfers": 3,
+      "transfer_retries": 1,
+      "transfer_cancels": 1,
+      "node_enroll_posts": 3,
+      "node_deletes": 3,
+      "child_process_starts": 10,
+      "child_process_stops": 3,
+      "child_process_kills": 0,
+      "host_seam_actions": 26,
+      "systemd_unit_writes": 1
+    },
+    "oracle_clean": true
+  },
+  "known_defects_hit": [
+    "E2E-20261014-ROLLBACK-FAILED-STALE-BACKUP-RESTORE"
+  ],
+  "defects": [
+    {
+      "id": "E2E-20261014-ROLLBACK-FAILED-STALE-BACKUP-RESTORE",
+      "severity": "P0 (pre-filed)",
+      "statement": "a deployment whose rollback fails (or whose rollback health re-check fails) leaves the deployment journal in ROLLING_BACK; GetActiveDeployments() selects every row whose phase is not DONE, so the next Agent start replays that stale rollback and writes the old backup over whatever version is currently installed",
+      "triggers_observed_here": [
+        "AR-32/case SYS-53 permission seam: AtomicReplace fails with EPERM (chattr +i), rollback fails the same way and reports \"rollback failed\"; after the child restart the stale backup overwrote the successfully deployed version (Desired != Actual)",
+        "SYS-48 non-systemd negative health branches (tcp/http/command): rollback() restores the files and then re-runs the health check of the FAILED version, which can never pass, so the journal stays ROLLING_BACK; the next start rewrote the binary path with the newest stale backup (mtime changed) and closed the rows to DONE"
+      ],
+      "code_pointers": [
+        "internal/agent/application.go:395-407 (failed(): ROLLING_BACK only closes to DONE when rollback succeeds)",
+        "internal/agent/application.go:673-678 (rollback() finishes with checkHealth(hc) using the failed version health definition)",
+        "internal/agent/store.go:711 (GetActiveDeployments: WHERE phase NOT IN (DONE))",
+        "internal/agent/application.go:729-739 (RecoverDeployments re-runs rollback for every non-PREPARING row)"
+      ],
+      "evidence": [
+        "evidence/phase13-permission-denied.json",
+        "evidence/phase15-poison-restart.json",
+        "evidence/phase11-health-types.json"
+      ],
+      "affected_cases": [
+        "AR-32",
+        "SYS-48",
+        "AR-26",
+        "INV-11"
+      ]
+    }
+  ],
+  "cases": {
+    "SYS-44": {
+      "title": "Prefetch 成功、失败、重复 Prefetch",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "prefetch_success": {
+          "evidence": [
+            "evidence/phase04-install-v1.json"
+          ],
+          "cache_file": {
+            "exists": true,
+            "lexists": true,
+            "is_symlink": false,
+            "mode": "0o644",
+            "size": 4194911,
+            "mtime": 1792055901.0102465,
+            "uid": 0,
+            "gid": 0,
+            "sha256": "bde00aa2d166763fad79763dc11be3d18cb433ef8f24f0a4966c12f0ca635c55"
+          },
+          "agent_artifact_row": [
+            {
+              "sha256": "bde00aa2d166763fad79763dc11be3d18cb433ef8f24f0a4966c12f0ca635c55",
+              "path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/artifacts/bde00aa2d166763fad79763dc11be3d18cb433ef8f24f0a4966c12f0ca635c55",
+              "downloaded_at": "2026-10-15T09:18:21.032026283Z"
+            }
+          ],
+          "artifact_url_from_hub": "http://192.168.100.209:18080/api/artifacts/5ab74dc8-a9e8-482d-8e4b-2492f1691cf9/download",
+          "sha_matches_local_upload": true
+        },
+        "prefetch_repeat_cache_hit": {
+          "evidence": [
+            "evidence/phase05-prefetch-repeat-idempotent.json"
+          ],
+          "cache_mtime_unchanged": true,
+          "second_deploy_execution": "SUCCESS",
+          "binary_sha_unchanged": true
+        },
+        "prefetch_failure": {
+          "evidence": [
+            "evidence/phase07-prefetch-failure.json"
+          ],
+          "seam": "chattr +i on the owned artifact cache dir (real EPERM on the .tmp write)",
+          "block_reason": "artifact download failed: open /var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/artifacts/049861a96e8d1d1662b681ab282996c26e1627b12f72d0f478de538e04480770.tmp: operation not permitted",
+          "journal_row_phase": "DONE",
+          "no_host_mutation": true,
+          "explicit": true
+        },
+        "prefetch_failure_recovery": {
+          "execution": "SUCCESS",
+          "recovery_ok": true
+        }
+      },
+      "observations": [
+        "concurrent duplicate prefetch of the same sha is possible (hub ARTIFACT_PREFETCH push + the deploy path); one of them then fails its rename with ENOENT and is logged as a warning (see evidence/phase04-install-v1.json agent_log_artifact_lines)"
+      ]
+    },
+    "SYS-45": {
+      "title": "Application 初次部署：Resolve → Download → Verify → Install → Unit → Start → Health",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "stage_order": [
+          "PREPARING",
+          "STOPPED",
+          "REPLACED",
+          "STARTED",
+          "VERIFYING",
+          "DONE"
+        ],
+        "stage_order_ok": true,
+        "cold_cache_note": "the owned artifact cache file was removed to force a real Download/Verify inside PREPARING, and a 4 MiB owned config fixture pre-existed so the PREPARING backup step is observable; the binary/unit paths had no pre-existing state (backup_path/backup_unit_path = absent:)",
+        "backup_markers": {
+          "binary_backup_absent": true,
+          "config_backup_recorded": true,
+          "unit_backup_absent": true,
+          "config_backup_matches_pre_existing": true
+        },
+        "artifact_verified_before_install": true,
+        "binary_sha_matches_artifact": true,
+        "unit_installed_and_enabled": true,
+        "unit_active": "active",
+        "unit_registry": [
+          {
+            "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+            "unit_name": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+            "registered_at": "2026-10-15T09:18:22.437128016Z"
+          }
+        ],
+        "health": "healthy",
+        "native_modes": {
+          "binary_mode": "0o755",
+          "binary_uid_gid": [
+            0,
+            0
+          ],
+          "config_mode": "0o644",
+          "config_uid_gid": [
+            0,
+            0
+          ],
+          "unit_file_mode": "0o644",
+          "binary_dir_mode": "0o755",
+          "binary_dir_entries": [
+            "app"
+          ],
+          "agent_uid": 0,
+          "note": "the owned child Agent runs as root, so the product writes root:root files"
+        },
+        "atomic_replace_no_tmp": {
+          "binary_dir_entries_after": [
+            "app"
+          ],
+          "tmp_leftovers": [],
+          "no_tmp_leftover": true
+        },
+        "evidence": [
+          "evidence/phase04-install-v1.json"
+        ]
+      }
+    },
+    "SYS-47": {
+      "title": "systemd Unit Registry：未登记 Unit 拒绝操作，已登记 Unit 可操作",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "unregistered_application_rejected": {
+          "app_id": "afacb0cf-54ae-45c2-939d-1413ca0a6186",
+          "unit_name": "nodesteer-qa-papp-f7821a1dbfb5-unreg.service",
+          "execution": {
+            "id": "a8d9acc0-6dca-4d04-80cd-963e5c5a5dc6",
+            "task_id": "afacb0cf-54ae-45c2-939d-1413ca0a6186",
+            "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+            "status": "FAILED",
+            "trigger_type": "manual",
+            "start_time": "2026-10-15T09:18:51.253130544Z",
+            "end_time": "2026-10-15T17:18:51.413779377+08:00",
+            "block_reason": "unit not registered: nodesteer-qa-papp-f7821a1dbfb5-unreg.service (deploy first)",
+            "exit_code": null
+          },
+          "diagnostic_text": "unit not registered: nodesteer-qa-papp-f7821a1dbfb5-unreg.service (deploy first) | ",
+          "expected_message": "unit not registered",
+          "message_matched": true,
+          "status_failed": true,
+          "unit_file_before": false,
+          "unit_file_after": false,
+          "unit_state_after": {
+            "MainPID": "0",
+            "Id": "nodesteer-qa-papp-f7821a1dbfb5-unreg.service",
+            "LoadState": "not-found",
+            "ActiveState": "inactive",
+            "SubState": "dead",
+            "FragmentPath": "",
+            "UnitFileState": ""
+          },
+          "node_state_before": [
+            {
+              "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+              "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+              "version": "1.0",
+              "operation": "upgrade",
+              "health": "healthy",
+              "updated_at": "2026-10-15T09:18:50.081910507Z"
+            }
+          ],
+          "host_unit_untouched": true
+        },
+        "unowned_live_unit_rejected": {
+          "foreign_unit": "nodesteer-qa-papp-f7821a1dbfb5-foreign.service",
+          "setup": {
+            "written": true,
+            "start": {
+              "rc": 0,
+              "err": ""
+            },
+            "state": {
+              "MainPID": "154939",
+              "ActiveState": "active"
+            }
+          },
+          "execution": {
+            "id": "94b9e907-b1a5-4eff-8175-c437dfcf93fe",
+            "task_id": "afacb0cf-54ae-45c2-939d-1413ca0a6186",
+            "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+            "status": "FAILED",
+            "trigger_type": "manual",
+            "start_time": "2026-10-15T09:18:57.785949669Z",
+            "end_time": "2026-10-15T17:18:57.944954145+08:00",
+            "block_reason": "unit not registered: nodesteer-qa-papp-f7821a1dbfb5-foreign.service (deploy first)",
+            "exit_code": null
+          },
+          "diagnostic_text": "unit not registered: nodesteer-qa-papp-f7821a1dbfb5-foreign.service (deploy first) | ",
+          "message_matched": true,
+          "status_failed": true,
+          "foreign_unit_after": {
+            "MainPID": "154939",
+            "Id": "nodesteer-qa-papp-f7821a1dbfb5-foreign.service",
+            "ActiveState": "active"
+          },
+          "foreign_unit_still_active": true,
+          "foreign_main_pid_unchanged": true
+        },
+        "registered_managed_unit_operable": {
+          "stop_execution": {
+            "id": "312eac37-b64f-41df-8324-8e1736f0d0df",
+            "task_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+            "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+            "status": "SUCCESS",
+            "trigger_type": "manual",
+            "start_time": "2026-10-15T09:18:59.337275012Z",
+            "end_time": "2026-10-15T17:18:59.523450245+08:00",
+            "block_reason": null,
+            "exit_code": null
+          },
+          "start_execution": {
+            "id": "cce1e1db-19bf-490e-8b0f-5447d41c2c23",
+            "task_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+            "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+            "status": "SUCCESS",
+            "trigger_type": "manual",
+            "start_time": "2026-10-15T09:19:01.01253572Z",
+            "end_time": "2026-10-15T17:19:01.195757753+08:00",
+            "block_reason": null,
+            "exit_code": null
+          },
+          "unit_state_after_stop": {
+            "MainPID": "0",
+            "Id": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+            "LoadState": "loaded",
+            "ActiveState": "inactive",
+            "SubState": "dead",
+            "FragmentPath": "/etc/systemd/system/nodesteer-qa-papp-f7821a1dbfb5-app.service",
+            "UnitFileState": "enabled"
+          },
+          "unit_state_after_start": {
+            "MainPID": "155530",
+            "Id": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+            "LoadState": "loaded",
+            "ActiveState": "active",
+            "SubState": "running",
+            "FragmentPath": "/etc/systemd/system/nodesteer-qa-papp-f7821a1dbfb5-app.service",
+            "UnitFileState": "enabled"
+          },
+          "node_state_after_stop": [
+            {
+              "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+              "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+              "version": "1.0",
+              "operation": "stop",
+              "health": "stopped",
+              "updated_at": "2026-10-15T09:18:59.51779601Z"
+            }
+          ],
+          "node_state_after_start": [
+            {
+              "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+              "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+              "version": "1.0",
+              "operation": "start",
+              "health": "healthy",
+              "updated_at": "2026-10-15T09:19:01.190420538Z"
+            }
+          ],
+          "stop_ok": true,
+          "start_ok": true
+        },
+        "evidence": [
+          "evidence/phase08-unit-registry.json"
+        ]
+      }
+    },
+    "SYS-48": {
+      "title": "Health Check systemd/TCP/HTTP/COMMAND",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "positive_branches": {
+          "systemd_positive": {
+            "ok": true,
+            "target": "",
+            "binary_after": "bde00aa2d166"
+          },
+          "tcp_positive": {
+            "ok": true,
+            "target": "127.0.0.1:53593",
+            "binary_after": "ce835a17a36f"
+          },
+          "tcp_negative": {
+            "ok": true,
+            "target": "127.0.0.1:58563",
+            "binary_after": "ce835a17a36f"
+          },
+          "http_positive": {
+            "ok": true,
+            "target": "http://127.0.0.1:44373/",
+            "binary_after": "bde00aa2d166"
+          },
+          "http_negative": {
+            "ok": true,
+            "target": "http://127.0.0.1:36139/",
+            "binary_after": "bde00aa2d166"
+          },
+          "command_positive": {
+            "ok": true,
+            "target": "test -f /opt/qa-papp-f7821a1dbfb5/ready.flag",
+            "binary_after": "ce835a17a36f"
+          },
+          "command_negative": {
+            "ok": true,
+            "target": "false",
+            "binary_after": "ce835a17a36f"
+          },
+          "systemd_negative": {
+            "ok": true,
+            "target": "",
+            "binary_after": "ce835a17a36f"
+          }
+        },
+        "negative_branches": {
+          "tcp_negative": {
+            "explicit_failure": "FAILED",
+            "reason": "health check failed; rollback failed",
+            "previous_binary_restored": true,
+            "rollback_journal_finalised": false
+          },
+          "http_negative": {
+            "explicit_failure": "FAILED",
+            "reason": "health check failed; rollback failed",
+            "previous_binary_restored": true,
+            "rollback_journal_finalised": false
+          },
+          "command_negative": {
+            "explicit_failure": "FAILED",
+            "reason": "health check failed; rollback failed",
+            "previous_binary_restored": true,
+            "rollback_journal_finalised": false
+          },
+          "systemd_negative": {
+            "explicit_failure": "FAILED",
+            "reason": "health check failed",
+            "previous_binary_restored": true,
+            "rollback_journal_finalised": true
+          }
+        },
+        "host_probes": {
+          "systemd_positive": {},
+          "tcp_positive": {
+            "listener_open_probe": true
+          },
+          "tcp_negative": {
+            "nothing_listening": true
+          },
+          "http_positive": {
+            "http_probe_from_host": "200"
+          },
+          "http_negative": {
+            "nothing_listening": true
+          },
+          "command_positive": {
+            "flag_exists": true
+          },
+          "command_negative": {},
+          "systemd_negative": {}
+        },
+        "evidence": [
+          "evidence/phase11-health-types.json"
+        ]
+      },
+      "defect_hit": true,
+      "defect_id": "E2E-20261014-ROLLBACK-FAILED-STALE-BACKUP-RESTORE",
+      "defect_detail": "product defect E2E-20261014-ROLLBACK-FAILED-STALE-BACKUP-RESTORE: after a failed deploy the rollback re-runs the health check with the FAILED version health definition, so a non-systemd or permanently-unhealthy check makes rollback report \"rollback failed\" and leaves the deployment journal in ROLLING_BACK instead of closing it to DONE",
+      "not_finalised_scenarios": [
+        "tcp_negative",
+        "http_negative",
+        "command_negative"
+      ],
+      "poison_rows": 9,
+      "defect_restart_consequence": {
+        "poison_rows_replayed_on_restart": 3,
+        "binary_rewritten_by_recovery": true,
+        "binary_mtime_before": 1792056103.996014,
+        "binary_mtime_after": 1792056114.236053,
+        "written_content_matches_a_stale_backup": true,
+        "user_visible_version_change": false,
+        "rows_finalised_to_done": true,
+        "desired_vs_actual_consistent_after_restart": false,
+        "evidence": [
+          "evidence/phase15-poison-restart.json"
+        ]
+      }
+    },
+    "SYS-49": {
+      "title": "Upgrade：Backup → Stop → Atomic Replace → Config/Unit → Start → Health",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "stage_order": [
+          "PREPARING",
+          "STOPPED",
+          "REPLACED",
+          "STARTED",
+          "VERIFYING",
+          "DONE"
+        ],
+        "unit_inactive_at_replace": [
+          "inactive"
+        ],
+        "stop_before_replace": true,
+        "previous_version_backup": {
+          "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-0edb3423-a205-48de-ae01-a0d51b11bec9.binary",
+          "backup_binary_sha256": "bde00aa2d166763fad79763dc11be3d18cb433ef8f24f0a4966c12f0ca635c55",
+          "equals_previous_binary": true
+        },
+        "binary_never_partial": true,
+        "no_tmp_leftover": true,
+        "unit_file_has_v2": {
+          "len": 406,
+          "has_v1": false,
+          "has_v2": true
+        },
+        "unit_active": "active",
+        "journal_row": {
+          "id": "0bc2d7dd-02f3-4de2-961f-8712a86f774c",
+          "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+          "from_version": "2.0",
+          "to_version": "2.0",
+          "phase": "DONE",
+          "backup_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-0edb3423-a205-48de-ae01-a0d51b11bec9.binary",
+          "backup_config_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-0edb3423-a205-48de-ae01-a0d51b11bec9.conf",
+          "backup_unit_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications/backup-0edb3423-a205-48de-ae01-a0d51b11bec9.unit",
+          "started_at": "2026-10-15T09:19:04.960294436Z",
+          "updated_at": "2026-10-15T09:19:06.332854156Z"
+        },
+        "stage_watcher_phase_sequence": [
+          "PREPARING",
+          "STOPPED",
+          "REPLACED",
+          "STARTED",
+          "VERIFYING",
+          "DONE"
+        ],
+        "evidence": [
+          "evidence/phase09-upgrade-v2.json"
+        ]
+      }
+    },
+    "SYS-51": {
+      "title": "升级每个阶段崩溃后的 Deployment Journal 恢复",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "kill_hit_exact_stage": true,
+        "cycles": {
+          "STOPPED": {
+            "phase_at_kill": "STOPPED",
+            "journal_row_at_kill": "REPLACED",
+            "child_dead_after_kill": {
+              "pids": []
+            },
+            "recovery_phase_sequence": [
+              "REPLACED",
+              "ROLLING_BACK",
+              "DONE"
+            ],
+            "journal_row_after_recovery": "DONE",
+            "previous_version_restored": true,
+            "unit_active_after_recovery": "active",
+            "no_poison_row": true,
+            "post_recovery_restore_ok": true
+          },
+          "REPLACED": {
+            "phase_at_kill": "REPLACED",
+            "journal_row_at_kill": "REPLACED",
+            "child_dead_after_kill": {
+              "pids": []
+            },
+            "recovery_phase_sequence": [
+              "REPLACED",
+              "ROLLING_BACK",
+              "DONE"
+            ],
+            "journal_row_after_recovery": "DONE",
+            "previous_version_restored": true,
+            "unit_active_after_recovery": "active",
+            "no_poison_row": true,
+            "post_recovery_restore_ok": true
+          },
+          "STARTED": {
+            "phase_at_kill": "STARTED",
+            "journal_row_at_kill": "VERIFYING",
+            "child_dead_after_kill": {
+              "pids": []
+            },
+            "recovery_phase_sequence": [
+              "VERIFYING",
+              "ROLLING_BACK",
+              "DONE"
+            ],
+            "journal_row_after_recovery": "DONE",
+            "previous_version_restored": true,
+            "unit_active_after_recovery": "active",
+            "no_poison_row": true,
+            "post_recovery_restore_ok": true
+          },
+          "VERIFYING": {
+            "phase_at_kill": "VERIFYING",
+            "journal_row_at_kill": "VERIFYING",
+            "child_dead_after_kill": {
+              "pids": []
+            },
+            "recovery_phase_sequence": [
+              "VERIFYING",
+              "ROLLING_BACK",
+              "DONE"
+            ],
+            "journal_row_after_recovery": "DONE",
+            "previous_version_restored": true,
+            "unit_active_after_recovery": "active",
+            "no_poison_row": true,
+            "post_recovery_restore_ok": true
+          }
+        },
+        "evidence": [
+          "evidence/phase12-crash-recovery.json",
+          "evidence/phase12-crash-stopped.json",
+          "evidence/phase12-crash-replaced.json",
+          "evidence/phase12-crash-started.json",
+          "evidence/phase12-crash-verifying.json"
+        ]
+      }
+    },
+    "SYS-53": {
+      "title": "NativeHostAdapter 路径、权限、文件模式、用户组",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "hub_layer_path_rejections": {
+          "binary_path_traversal": {
+            "http": 400,
+            "body": {
+              "error": "binary_path: invalid application path"
+            }
+          },
+          "binary_path_relative": {
+            "http": 400,
+            "body": {
+              "error": "binary_path: invalid application path"
+            }
+          },
+          "config_path_traversal": {
+            "http": 400,
+            "body": {
+              "error": "config_path: invalid application path"
+            }
+          },
+          "unit_name_invalid": {
+            "http": 400,
+            "body": {
+              "error": "invalid unit_name"
+            }
+          }
+        },
+        "agent_layer_validate_path": {
+          "layer": "agent NativeHostAdapter.ValidatePath",
+          "definition_binary_path": "/opt/qa-papp-f7821a1dbfb5/app/bin//app",
+          "execution": {
+            "id": "9b30d38a-d3b3-4805-a249-0f3b74e6cd33",
+            "task_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+            "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+            "status": "FAILED",
+            "trigger_type": "manual",
+            "start_time": "2026-10-15T09:20:39.110620451Z",
+            "end_time": "2026-10-15T17:20:39.296122105+08:00",
+            "block_reason": "invalid deployment path: invalid absolute path: /opt/qa-papp-f7821a1dbfb5/app/bin//app",
+            "exit_code": null
+          },
+          "block_reason_raw": "invalid deployment path: invalid absolute path: /opt/qa-papp-f7821a1dbfb5/app/bin//app",
+          "journal_row_phase": "DONE",
+          "journal_phase_sequence": [
+            {
+              "at_utc": "2026-10-15T09:20:39Z",
+              "phase": "DONE",
+              "journal_id": "67c78f76-ef6f-4a4c-943f-083749f99f13",
+              "binary_sha256": "bde00aa2d166763fad79763dc11be3d18cb433ef8f24f0a4966c12f0ca635c55",
+              "unit_active": "active"
+            }
+          ],
+          "binary_sha_unchanged": true,
+          "unit_active": "active",
+          "rejected": true,
+          "unit_files_before": [
+            "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+            "nodesteer-qa-papp-f7821a1dbfb5-foreign.service"
+          ],
+          "unit_files": [
+            "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+            "nodesteer-qa-papp-f7821a1dbfb5-foreign.service"
+          ],
+          "no_extra_unit_file": true
+        },
+        "file_modes_and_ownership": {
+          "binary_mode": "0o755",
+          "binary_uid_gid": [
+            0,
+            0
+          ],
+          "config_mode": "0o644",
+          "config_uid_gid": [
+            0,
+            0
+          ],
+          "unit_file_mode": "0o644",
+          "binary_dir_mode": "0o755",
+          "binary_dir_entries": [
+            "app"
+          ],
+          "agent_uid": 0,
+          "note": "the owned child Agent runs as root, so the product writes root:root files"
+        },
+        "chown_not_reachable_via_api": {
+          "host_root": "/",
+          "map_path": "identity",
+          "chown_reachable_via_api": false,
+          "note": "NativeHostAdapter.Chown exists in the interface but no deployment-path caller invokes it, so user/group mapping is not reachable through the Hub API; the observed ownership is the Agent process uid/gid (root)"
+        },
+        "permission_negative_seam": "see AR-32 (chattr +i on the owned binary dir -> real EPERM)",
+        "evidence": [
+          "evidence/phase14-native-adapter-path-guards.json"
+        ]
+      }
+    },
+    "SYS-62": {
+      "title": "目标文件 .tmp 下载、校验、原子替换",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "dir_samples": 12,
+        "entry_sequence": [
+          {
+            "t": 1.954,
+            "name": ".nodesteer-transfer-2674722908",
+            "size": 626407
+          },
+          {
+            "t": 1.964,
+            "name": ".nodesteer-transfer-2674722908",
+            "size": 2136016
+          },
+          {
+            "t": 1.975,
+            "name": ".nodesteer-transfer-2674722908",
+            "size": 4069328
+          },
+          {
+            "t": 1.985,
+            "name": ".nodesteer-transfer-2674722908",
+            "size": 6199248
+          },
+          {
+            "t": 1.995,
+            "name": ".nodesteer-transfer-2674722908",
+            "size": 8198096
+          },
+          {
+            "t": 2.006,
+            "name": ".nodesteer-transfer-2674722908",
+            "size": 10196944
+          },
+          {
+            "t": 2.016,
+            "name": ".nodesteer-transfer-2674722908",
+            "size": 12031952
+          },
+          {
+            "t": 2.027,
+            "name": ".nodesteer-transfer-2674722908",
+            "size": 13864960
+          },
+          {
+            "t": 2.038,
+            "name": ".nodesteer-transfer-2674722908",
+            "size": 15865808
+          },
+          {
+            "t": 2.048,
+            "name": ".nodesteer-transfer-2674722908",
+            "size": 16777216
+          },
+          {
+            "t": 2.1,
+            "name": "out.bin",
+            "size": 16777216
+          }
+        ],
+        "final_files": [
+          "out.bin"
+        ],
+        "temp_left_at_end": [],
+        "no_temp_left_at_end": true,
+        "temp_naming": ".nodesteer-transfer-* (NativeHostAdapter.AtomicReplaceReader)",
+        "sha_verified_before_rename": "target sha equals source sha, mismatched sha is rejected",
+        "temp_observed": true,
+        "temp_names_observed": [
+          ".nodesteer-transfer-2674722908"
+        ],
+        "partial_final_never_observed": true,
+        "ok": true
+      },
+      "evidence": [
+        "evidence/phase16-file-transfer.json"
+      ]
+    },
+    "SYS-63": {
+      "title": "多目标同时成功，整体 SUCCESS",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "transfer_id": "8ae56a22-63c9-488e-a9d7-292edc6a6a8a",
+        "create_http": 200,
+        "source": {
+          "path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/src/payload.bin",
+          "size": 16777216,
+          "sha256": "fd098231bb0b91119dee0eb9be7b21d2c50c795f5653437922970775b29c652e",
+          "mode": "0o640"
+        },
+        "final": {
+          "id": "8ae56a22-63c9-488e-a9d7-292edc6a6a8a",
+          "source_node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+          "source_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/src/payload.bin",
+          "source_mode": 416,
+          "size": 16777216,
+          "sha256": "fd098231bb0b91119dee0eb9be7b21d2c50c795f5653437922970775b29c652e",
+          "status": "SUCCESS",
+          "created_at": "2026-10-15T09:22:09.890547715Z",
+          "updated_at": "2026-10-15T09:22:10.299045774Z",
+          "targets": [
+            {
+              "transfer_id": "8ae56a22-63c9-488e-a9d7-292edc6a6a8a",
+              "node_id": "25a00e9c-1aaa-45e6-a8f9-6ffda348da33",
+              "destination_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/dst-multi/out.bin",
+              "mode": 416,
+              "status": "SUCCESS",
+              "updated_at": "2026-10-15T09:22:10.225553291Z"
+            },
+            {
+              "transfer_id": "8ae56a22-63c9-488e-a9d7-292edc6a6a8a",
+              "node_id": "c9ab8755-8966-412c-9fd1-7d7a0ad9b827",
+              "destination_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-multi/out.bin",
+              "mode": 416,
+              "status": "SUCCESS",
+              "updated_at": "2026-10-15T09:22:10.293817217Z"
+            }
+          ]
+        },
+        "target_files": {
+          "b": {
+            "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/dst-multi/out.bin": {
+              "exists": true,
+              "sha256": "fd098231bb0b91119dee0eb9be7b21d2c50c795f5653437922970775b29c652e",
+              "size": 16777216
+            }
+          },
+          "c": {
+            "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-multi/out.bin": {
+              "exists": true,
+              "sha256": "fd098231bb0b91119dee0eb9be7b21d2c50c795f5653437922970775b29c652e",
+              "size": 16777216
+            }
+          }
+        },
+        "target_sha_matches_source": true,
+        "target_modes": {
+          "b": "0o640",
+          "c": "0o640"
+        },
+        "target_mode_0640": true,
+        "temp_file_observed_in_destination_dir": [
+          ".nodesteer-transfer-2674722908"
+        ],
+        "temp_cleanup_after_success": false,
+        "net_proof_inv18_source_upload": {
+          "sample_rows": 83,
+          "payload_size": 16777216,
+          "filtered_to_agent_pid": 164294,
+          "sockets": [
+            {
+              "local": "192.168.100.247:54356",
+              "pid": "164294",
+              "samples": 68,
+              "recv_delta": null,
+              "sent_delta": 11300880,
+              "last_recv": 225,
+              "last_sent": 16826873,
+              "payload_evidence_bytes": 16826873
+            },
+            {
+              "local": "192.168.100.247:43066",
+              "pid": "164294",
+              "samples": 83,
+              "recv_delta": 398,
+              "sent_delta": 201,
+              "last_recv": 7247,
+              "last_sent": 3716,
+              "payload_evidence_bytes": 7247
+            }
+          ],
+          "distinct_agent_sockets": 2,
+          "control_ws_socket": {
+            "local": "192.168.100.247:43066",
+            "samples": 83,
+            "recv_delta": 398,
+            "sent_delta": 201,
+            "payload_evidence_bytes": 7247
+          },
+          "payload_data_socket": {
+            "local": "192.168.100.247:54356",
+            "samples": 68,
+            "recv_delta": null,
+            "sent_delta": 11300880,
+            "payload_evidence_bytes": 16826873
+          },
+          "payload_on_separate_socket_from_control": true,
+          "sockets_with_payload_bytes": [
+            {
+              "local": "192.168.100.247:54356",
+              "pid": "164294",
+              "samples": 68,
+              "recv_delta": null,
+              "sent_delta": 11300880,
+              "last_recv": 225,
+              "last_sent": 16826873,
+              "payload_evidence_bytes": 16826873
+            }
+          ],
+          "http_data_socket_detected": true,
+          "note": "the control WebSocket is a single long-lived socket; a separate socket whose transferred bytes cover the payload proves the payload itself does not travel over the control long connection"
+        },
+        "net_proof_inv18_target_download": {
+          "sample_rows": 75,
+          "payload_size": 16777216,
+          "filtered_to_agent_pid": 150741,
+          "sockets": [
+            {
+              "local": "192.168.100.247:54362",
+              "pid": "150741",
+              "samples": 73,
+              "recv_delta": 15626032,
+              "sent_delta": 0,
+              "last_recv": 16777497,
+              "last_sent": 297,
+              "payload_evidence_bytes": 16777497
+            },
+            {
+              "local": "192.168.100.247:55596",
+              "pid": "150741",
+              "samples": 75,
+              "recv_delta": 482,
+              "sent_delta": 204,
+              "last_recv": 14809,
+              "last_sent": 12255,
+              "payload_evidence_bytes": 14809
+            }
+          ],
+          "distinct_agent_sockets": 2,
+          "control_ws_socket": {
+            "local": "192.168.100.247:55596",
+            "samples": 75,
+            "recv_delta": 482,
+            "sent_delta": 204,
+            "payload_evidence_bytes": 14809
+          },
+          "payload_data_socket": {
+            "local": "192.168.100.247:54362",
+            "samples": 73,
+            "recv_delta": 15626032,
+            "sent_delta": 0,
+            "payload_evidence_bytes": 16777497
+          },
+          "payload_on_separate_socket_from_control": true,
+          "sockets_with_payload_bytes": [
+            {
+              "local": "192.168.100.247:54362",
+              "pid": "150741",
+              "samples": 73,
+              "recv_delta": 15626032,
+              "sent_delta": 0,
+              "last_recv": 16777497,
+              "last_sent": 297,
+              "payload_evidence_bytes": 16777497
+            }
+          ],
+          "http_data_socket_detected": true,
+          "note": "the control WebSocket is a single long-lived socket; a separate socket whose transferred bytes cover the payload proves the payload itself does not travel over the control long connection"
+        },
+        "ok": true
+      },
+      "evidence": [
+        "evidence/phase16-file-transfer.json"
+      ]
+    },
+    "SYS-64": {
+      "title": "多目标并发回执一成功一失败，状态不可互相覆盖",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "transfer_id": "6043c4d6-aea8-49dd-a333-4e172466a085",
+        "seam": {
+          "action": "chattr_plus_i",
+          "path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-blocked",
+          "result": {
+            "rc": 0,
+            "out": "",
+            "err": ""
+          },
+          "after": {
+            "lexists": true,
+            "is_dir": true,
+            "is_symlink": false,
+            "mode": "0o755",
+            "uid": 0,
+            "gid": 0,
+            "target": null,
+            "size": 6
+          },
+          "mounts": [],
+          "lsattr": "----i----------------- /var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-blocked"
+        },
+        "final": {
+          "id": "6043c4d6-aea8-49dd-a333-4e172466a085",
+          "source_node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+          "source_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/src/payload.bin",
+          "source_mode": 416,
+          "size": 16777216,
+          "sha256": "fd098231bb0b91119dee0eb9be7b21d2c50c795f5653437922970775b29c652e",
+          "status": "FAILED",
+          "created_at": "2026-10-15T09:22:15.932803158Z",
+          "updated_at": "2026-10-15T09:22:16.260869346Z",
+          "targets": [
+            {
+              "transfer_id": "6043c4d6-aea8-49dd-a333-4e172466a085",
+              "node_id": "25a00e9c-1aaa-45e6-a8f9-6ffda348da33",
+              "destination_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/dst-partial/out.bin",
+              "mode": 420,
+              "status": "SUCCESS",
+              "updated_at": "2026-10-15T09:22:16.255957013Z"
+            },
+            {
+              "transfer_id": "6043c4d6-aea8-49dd-a333-4e172466a085",
+              "node_id": "c9ab8755-8966-412c-9fd1-7d7a0ad9b827",
+              "destination_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-blocked/out.bin",
+              "mode": 420,
+              "status": "FAILED",
+              "error": "open /var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-blocked/.nodesteer-transfer-3348098476: operation not permitted",
+              "updated_at": "2026-10-15T09:22:16.191273488Z"
+            }
+          ]
+        },
+        "per_target_final": {
+          "25a00e9c-1aaa-45e6-a8f9-6ffda348da33": {
+            "status": "SUCCESS",
+            "error": null,
+            "destination_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/dst-partial/out.bin"
+          },
+          "c9ab8755-8966-412c-9fd1-7d7a0ad9b827": {
+            "status": "FAILED",
+            "error": "open /var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-blocked/.nodesteer-transfer-3348098476: operation not permitted",
+            "destination_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-blocked/out.bin"
+          }
+        },
+        "b_outcome": {
+          "status": "SUCCESS",
+          "error": null,
+          "destination_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/dst-partial/out.bin"
+        },
+        "c_outcome": {
+          "status": "FAILED",
+          "error": "open /var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-blocked/.nodesteer-transfer-3348098476: operation not permitted",
+          "destination_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-blocked/out.bin"
+        },
+        "b_file": {
+          "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/dst-partial/out.bin": {
+            "exists": true,
+            "sha256": "fd098231bb0b91119dee0eb9be7b21d2c50c795f5653437922970775b29c652e",
+            "size": 16777216
+          }
+        },
+        "c_file": {
+          "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-blocked/out.bin": {
+            "exists": false,
+            "sha256": null,
+            "size": null
+          }
+        },
+        "independent_states": true,
+        "success_target_not_overwritten": true,
+        "failed_target_no_file": true,
+        "ok": true
+      },
+      "evidence": [
+        "evidence/phase16-file-transfer.json"
+      ]
+    },
+    "SYS-65": {
+      "title": "单目标失败重试和整体取消",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "retry_http": 200,
+        "retry_transfer": {
+          "id": "6043c4d6-aea8-49dd-a333-4e172466a085",
+          "source_node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+          "source_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/src/payload.bin",
+          "source_mode": 416,
+          "size": 16777216,
+          "sha256": "fd098231bb0b91119dee0eb9be7b21d2c50c795f5653437922970775b29c652e",
+          "status": "SUCCESS",
+          "created_at": "2026-10-15T09:22:15.932803158Z",
+          "updated_at": "2026-10-15T09:22:18.706061464Z",
+          "targets": [
+            {
+              "transfer_id": "6043c4d6-aea8-49dd-a333-4e172466a085",
+              "node_id": "25a00e9c-1aaa-45e6-a8f9-6ffda348da33",
+              "destination_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/dst-partial/out.bin",
+              "mode": 420,
+              "status": "SUCCESS",
+              "updated_at": "2026-10-15T09:22:16.255957013Z"
+            },
+            {
+              "transfer_id": "6043c4d6-aea8-49dd-a333-4e172466a085",
+              "node_id": "c9ab8755-8966-412c-9fd1-7d7a0ad9b827",
+              "destination_path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-blocked/out.bin",
+              "mode": 420,
+              "status": "SUCCESS",
+              "updated_at": "2026-10-15T09:22:18.701302302Z"
+            }
+          ]
+        },
+        "retried_target_file": {
+          "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-blocked/out.bin": {
+            "exists": true,
+            "sha256": "fd098231bb0b91119dee0eb9be7b21d2c50c795f5653437922970775b29c652e",
+            "size": 16777216
+          }
+        },
+        "retry_ok": true,
+        "cancel_large_source": {
+          "path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/src/payload-large.bin",
+          "size": 134217728,
+          "sha256": "c3dc676f272b48c07752746a72e4d4cc92d45e9fcaa68eb6cb37247ab5823286",
+          "mode": "0o640"
+        },
+        "state_before_cancel": {
+          "status": "UPLOADING",
+          "targets": [
+            [
+              "c9ab8755-8966-412c-9fd1-7d7a0ad9b827",
+              "PENDING"
+            ]
+          ]
+        },
+        "cancel_http": 200,
+        "cancel_response_status": "CANCELED",
+        "state_after_cancel": {
+          "status": "CANCELED",
+          "error": null,
+          "targets": [
+            [
+              "c9ab8755-8966-412c-9fd1-7d7a0ad9b827",
+              "CANCELED"
+            ]
+          ]
+        },
+        "canceled_destination_file": {
+          "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-cancel/out.bin": {
+            "exists": false,
+            "sha256": null,
+            "size": null
+          }
+        },
+        "no_partial_destination_after_cancel": true,
+        "in_flight_before_cancel": true,
+        "cancel_target_statuses": [
+          {
+            "node_id": "c9ab8755-8966-412c-9fd1-7d7a0ad9b827",
+            "status": "CANCELED",
+            "error": null
+          }
+        ],
+        "cancel_ok": true,
+        "cancel_after_completion": false,
+        "ok": true
+      },
+      "evidence": [
+        "evidence/phase16-file-transfer.json"
+      ]
+    },
+    "E2E-12": {
+      "title": "Application Upgrade/Rollback → 成功升级；失败恢复旧版本",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "successful_upgrade": {
+          "upgrade_ok": true,
+          "stages": [
+            "PREPARING",
+            "STOPPED",
+            "REPLACED",
+            "STARTED",
+            "VERIFYING",
+            "DONE"
+          ]
+        },
+        "failed_upgrade_restores_old_version": {
+          "failure_reported": true,
+          "rollback_checks": {
+            "journal_saw_rolling_back": true,
+            "journal_ends_done": true,
+            "restored_binary_to_v2": true,
+            "v3_binary_not_installed": true,
+            "restored_config": true,
+            "restored_unit": true,
+            "unit_active_after": true,
+            "registry_intact": [
+              {
+                "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+                "unit_name": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+                "registered_at": "2026-10-15T09:19:06.326794292Z"
+              }
+            ]
+          },
+          "actual_state_after_rollback": {
+            "label": "v2",
+            "binary_path": "/opt/qa-papp-f7821a1dbfb5/app/bin/app",
+            "binary_exists": true,
+            "binary_sha256": "ce835a17a36f9278473860966263eecbcb72838b36f50611a62eab4abfb500aa",
+            "binary_sha_matches_artifact": true,
+            "binary_mode": "0o755",
+            "config_sha256": "1878bd898dd1edc23b462c9dd613c4097e5a1c92f07d838b707d24643fa6614f",
+            "config_mode": "0o644",
+            "unit_file_lexists": true,
+            "unit_file_sha256": "d534e1caf4f33cb2ba8ee82bd50b93a8516dd7ad1eb22fad135e4a59fa381315",
+            "unit_file_content_flags": {
+              "len": 406,
+              "has_v1": false,
+              "has_v2": true
+            },
+            "enable_symlink": true,
+            "unit_active": "active",
+            "unit_sub_state": "running",
+            "unit_main_pid": "157110",
+            "unit_state": {
+              "MainPID": "157110",
+              "NRestarts": "0",
+              "ExecMainStatus": "0",
+              "Id": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+              "LoadState": "loaded",
+              "ActiveState": "active",
+              "SubState": "running",
+              "FragmentPath": "/etc/systemd/system/nodesteer-qa-papp-f7821a1dbfb5-app.service",
+              "UnitFileState": "enabled"
+            },
+            "unit_registry": [
+              {
+                "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+                "unit_name": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+                "registered_at": "2026-10-15T09:19:06.326794292Z"
+              }
+            ],
+            "main_process": {
+              "exe": "/usr/bin/sleep",
+              "argv": [
+                "sleep",
+                "1000000",
+                ""
+              ]
+            },
+            "backup_entries": [
+              "backup-0edb3423-a205-48de-ae01-a0d51b11bec9.binary",
+              "backup-0edb3423-a205-48de-ae01-a0d51b11bec9.conf",
+              "backup-0edb3423-a205-48de-ae01-a0d51b11bec9.unit",
+              "backup-5dafa865-ea4d-4ec1-b671-e2238dfd3460.conf",
+              "backup-6613a0cb-5741-4b67-a68f-1a14963627be.binary",
+              "backup-6613a0cb-5741-4b67-a68f-1a14963627be.conf",
+              "backup-6613a0cb-5741-4b67-a68f-1a14963627be.unit",
+              "backup-8bf4cd0b-654d-4a53-a146-6063f547735b.binary",
+              "backup-8bf4cd0b-654d-4a53-a146-6063f547735b.conf",
+              "backup-8bf4cd0b-654d-4a53-a146-6063f547735b.unit",
+              "backup-ceca25df-52eb-4478-b71f-d1b0f65daefb.binary",
+              "backup-ceca25df-52eb-4478-b71f-d1b0f65daefb.conf",
+              "backup-ceca25df-52eb-4478-b71f-d1b0f65daefb.unit"
+            ],
+            "db_quick_check": "ok",
+            "journal_rows": 6
+          },
+          "explicit_rollback_result": {
+            "execution_status": "FAILED",
+            "node_state_health": "unhealthy",
+            "node_state_version": "3.0",
+            "node_state_error": "health check failed"
+          },
+          "no_false_success": true
+        }
+      },
+      "evidence": [
+        "evidence/phase10-failed-upgrade-rollback.json",
+        "evidence/phase09-upgrade-v2.json"
+      ]
+    },
+    "E2E-13": {
+      "title": "Application Crash Recovery → 中途崩溃后由 Deployment Journal 恢复明确状态",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "crash_stages_covered": [
+          "REPLACED",
+          "STARTED",
+          "STOPPED",
+          "VERIFYING"
+        ],
+        "journal_recovery_to_defined_state": {
+          "STOPPED": {
+            "journal_row_after_recovery": "DONE",
+            "unit_active_after_recovery": "active",
+            "previous_version_restored": true
+          },
+          "REPLACED": {
+            "journal_row_after_recovery": "DONE",
+            "unit_active_after_recovery": "active",
+            "previous_version_restored": true
+          },
+          "STARTED": {
+            "journal_row_after_recovery": "DONE",
+            "unit_active_after_recovery": "active",
+            "previous_version_restored": true
+          },
+          "VERIFYING": {
+            "journal_row_after_recovery": "DONE",
+            "unit_active_after_recovery": "active",
+            "previous_version_restored": true
+          }
+        },
+        "crashed_execution_finalised_by_agent": {
+          "STOPPED": "FAILED",
+          "REPLACED": "FAILED",
+          "STARTED": "FAILED",
+          "VERIFYING": "FAILED"
+        },
+        "idempotent_after_recovery": {
+          "STOPPED": true,
+          "REPLACED": true,
+          "STARTED": true,
+          "VERIFYING": true
+        }
+      },
+      "evidence": [
+        "evidence/phase12-crash-recovery.json"
+      ]
+    },
+    "AR-04": {
+      "title": "Docker Agent Recreate；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "proposed_status": "PARTIAL",
+      "confidence": "medium",
+      "verified_dimensions": {
+        "covered_here": "the recovery-then-idempotency / persistence / Desired-vs-Actual dimensions are covered for a native owned Agent: restart persistence (phase06), crash recovery then a successful idempotent deploy at every stage (phase12), and Desired-vs-Actual reconciliation (phase06/phase10/phase15)",
+        "restart_persistence": {
+          "persistent_and_idempotent": true,
+          "desired_state_reconciled": true,
+          "registry_after": [
+            {
+              "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+              "unit_name": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+              "registered_at": "2026-10-15T09:18:29.528406162Z"
+            }
+          ]
+        },
+        "recovery_then_idempotency": {
+          "STOPPED": true,
+          "REPLACED": true,
+          "STARTED": true,
+          "VERIFYING": true
+        },
+        "desired_vs_actual_after_failed_rollback": "before the restart the desired definition already pointed at the failed version while the installed binary was the previous version (a second consequence of the failed rollback)"
+      },
+      "not_covered": [
+        "Docker deployment-mode Agent recreate (ContainerHostAdapter / /host mount) was not re-executed; SYS-54/SYS-55 (ContainerHostAdapter) are BLOCKED in the inventory and no Docker Agent fixture exists in this repair environment for an owned child",
+        "the ledger note that the previous attempt produced 0 Executions is a harness limitation of that attempt, not a product state; here the native owned Agent executed every requested deployment"
+      ],
+      "evidence": [
+        "evidence/phase06-persistence.json",
+        "evidence/phase12-crash-recovery.json",
+        "evidence/phase15-poison-restart.json"
+      ]
+    },
+    "AR-26": {
+      "title": "Application Install；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "install_idempotent": {
+          "idempotent_install": true,
+          "binary_sha_unchanged": true,
+          "single_unit": true,
+          "registry_rows": [
+            {
+              "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+              "unit_name": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+              "registered_at": "2026-10-15T09:18:29.528406162Z"
+            }
+          ],
+          "unit_file_content_stable": true
+        },
+        "restart_persistence": {
+          "persistent_and_idempotent": true,
+          "db_quick_check_after": "ok",
+          "unit_registry_after": [
+            {
+              "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+              "unit_name": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+              "registered_at": "2026-10-15T09:18:29.528406162Z"
+            }
+          ],
+          "journal_rows_after": 2
+        },
+        "desired_state_reconciled": true,
+        "health_failure_branch": {
+          "failed_upgrade": {
+            "journal_saw_rolling_back": true,
+            "journal_ends_done": true,
+            "restored_binary_to_v2": true,
+            "v3_binary_not_installed": true,
+            "restored_config": true,
+            "restored_unit": true,
+            "unit_active_after": true,
+            "registry_intact": [
+              {
+                "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+                "unit_name": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+                "registered_at": "2026-10-15T09:19:06.326794292Z"
+              }
+            ]
+          },
+          "health_negatives": [
+            "tcp_negative",
+            "http_negative",
+            "command_negative"
+          ]
+        }
+      },
+      "open_items": [
+        "failed deploy rollback leaves ROLLING_BACK for non-systemd health checks (E2E-20261014-ROLLBACK-FAILED-STALE-BACKUP-RESTORE)"
+      ],
+      "evidence": [
+        "evidence/phase05-prefetch-repeat-idempotent.json",
+        "evidence/phase06-persistence.json"
+      ]
+    },
+    "AR-30": {
+      "title": "Crash During Upgrade；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "crash_at_every_upgrade_stage": {
+          "STOPPED": {
+            "phase_at_kill": "STOPPED",
+            "new_version_on_disk_at_kill": true,
+            "recovery_phase_sequence": [
+              "REPLACED",
+              "ROLLING_BACK",
+              "DONE"
+            ],
+            "previous_version_restored": true
+          },
+          "REPLACED": {
+            "phase_at_kill": "REPLACED",
+            "new_version_on_disk_at_kill": true,
+            "recovery_phase_sequence": [
+              "REPLACED",
+              "ROLLING_BACK",
+              "DONE"
+            ],
+            "previous_version_restored": true
+          },
+          "STARTED": {
+            "phase_at_kill": "STARTED",
+            "new_version_on_disk_at_kill": true,
+            "recovery_phase_sequence": [
+              "VERIFYING",
+              "ROLLING_BACK",
+              "DONE"
+            ],
+            "previous_version_restored": true
+          },
+          "VERIFYING": {
+            "phase_at_kill": "VERIFYING",
+            "new_version_on_disk_at_kill": true,
+            "recovery_phase_sequence": [
+              "VERIFYING",
+              "ROLLING_BACK",
+              "DONE"
+            ],
+            "previous_version_restored": true
+          }
+        },
+        "idempotency_after_recovery": {
+          "STOPPED": true,
+          "REPLACED": true,
+          "STARTED": true,
+          "VERIFYING": true
+        },
+        "desired_vs_actual": {
+          "STOPPED": {
+            "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+            "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+            "version": "4.1",
+            "operation": "upgrade",
+            "health": "unhealthy",
+            "error": "agent_restarted",
+            "updated_at": "2026-10-15T09:19:23.068105046Z"
+          },
+          "REPLACED": {
+            "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+            "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+            "version": "4.2",
+            "operation": "upgrade",
+            "health": "unhealthy",
+            "error": "agent_restarted",
+            "updated_at": "2026-10-15T09:19:37.447134551Z"
+          },
+          "STARTED": {
+            "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+            "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+            "version": "4.3",
+            "operation": "upgrade",
+            "health": "unhealthy",
+            "error": "agent_restarted",
+            "updated_at": "2026-10-15T09:19:52.293665725Z"
+          },
+          "VERIFYING": {
+            "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+            "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+            "version": "4.4",
+            "operation": "upgrade",
+            "health": "unhealthy",
+            "error": "agent_restarted",
+            "updated_at": "2026-10-15T09:20:07.342490409Z"
+          }
+        }
+      },
+      "evidence": [
+        "evidence/phase12-crash-recovery.json"
+      ]
+    },
+    "AR-32": {
+      "title": "Host Adapter Permission Denied；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "proposed_status": "FAIL",
+      "confidence": "high",
+      "verified_dimensions": {
+        "seam": "the owned child Agent runs as root, so DAC mode bits cannot deny the write; the real permission seam is chattr +i on the owned binary directory (EPERM), same as sys-b11 SYS-52",
+        "seam_applied": {
+          "action": "chattr_plus_i",
+          "after": {
+            "lexists": true,
+            "is_dir": true,
+            "is_symlink": false,
+            "mode": "0o755",
+            "uid": 0,
+            "gid": 0,
+            "target": null,
+            "size": 17
+          },
+          "lsattr": "----i----------------- /opt/qa-papp-f7821a1dbfb5/app/bin"
+        },
+        "denied_deploy": {
+          "block_reason": "install binary failed: open /opt/qa-papp-f7821a1dbfb5/app/bin/.tmp-2812476608: operation not permitted; rollback failed",
+          "journal_phase": "ROLLING_BACK",
+          "host_unchanged": true,
+          "explicit_failure": true,
+          "not_silently_successful": true
+        },
+        "success_after_seam_release": true,
+        "post_restart": {
+          "binary_sha_before": "ce835a17a36f9278473860966263eecbcb72838b36f50611a62eab4abfb500aa",
+          "target_sha": "bde00aa2d166763fad79763dc11be3d18cb433ef8f24f0a4966c12f0ca635c55",
+          "binary_sha_after_restart": "ce835a17a36f9278473860966263eecbcb72838b36f50611a62eab4abfb500aa",
+          "recovery_phase_sequence": [
+            "DONE"
+          ],
+          "stale_backup_written_to_current_path": true,
+          "desired_state_vs_actual_consistent": false
+        }
+      },
+      "defect_hit": true,
+      "defect_id": "E2E-20261014-ROLLBACK-FAILED-STALE-BACKUP-RESTORE",
+      "failure_summary": "the denied deploy reports \"install binary failed ... operation not permitted; rollback failed\" and leaves the deployment journal in ROLLING_BACK; after a child restart RecoverDeployments replays that row and writes the stale backup over the currently installed (successfully deployed) version, so Desired != Actual",
+      "evidence": [
+        "evidence/phase13-permission-denied.json"
+      ]
+    },
+    "INV-11": {
+      "title": "Managed Application 必须存在恢复路径",
+      "proposed_status": "PARTIAL",
+      "confidence": "high",
+      "verified_dimensions": {
+        "install_failure_before_host_mutation": {
+          "prefetch_failure_explicit": true,
+          "journal": "DONE"
+        },
+        "failed_upgrade_rollback": {
+          "journal_saw_rolling_back": true,
+          "journal_ends_done": true,
+          "restored_binary_to_v2": true,
+          "v3_binary_not_installed": true,
+          "restored_config": true,
+          "restored_unit": true,
+          "unit_active_after": true,
+          "registry_intact": [
+            {
+              "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+              "unit_name": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+              "registered_at": "2026-10-15T09:19:06.326794292Z"
+            }
+          ]
+        },
+        "crash_recovery_every_stage": {
+          "STOPPED": true,
+          "REPLACED": true,
+          "STARTED": true,
+          "VERIFYING": true
+        },
+        "product_cleanup_path": true
+      },
+      "open_items": [
+        "recovery after a FAILED rollback is broken: the journal stays in ROLLING_BACK and is replayed at the next start, writing that row stale backup over the current version (E2E-20261014-ROLLBACK-FAILED-STALE-BACKUP-RESTORE); AR-32 shows the user-visible variant where Desired != Actual afterwards",
+        "non-systemd health-check failures also leave ROLLING_BACK rows (E2E-20261014-ROLLBACK-FAILED-STALE-BACKUP-RESTORE); on the next start the recovery rewrote the binary path (mtime changed) with the newest stale backup and closed every row to DONE - here byte-identical to the installed version, so no version change was user-visible"
+      ],
+      "evidence": [
+        "evidence/phase07-prefetch-failure.json",
+        "evidence/phase10-failed-upgrade-rollback.json",
+        "evidence/phase12-crash-recovery.json",
+        "evidence/phase13-permission-denied.json"
+      ]
+    },
+    "INV-12": {
+      "title": "systemd 只管理 NodeSteer Managed Application",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "unowned_live_unit_not_touched": {
+          "foreign_unit": "nodesteer-qa-papp-f7821a1dbfb5-foreign.service",
+          "setup": {
+            "written": true,
+            "start": {
+              "rc": 0,
+              "err": ""
+            },
+            "state": {
+              "MainPID": "154939",
+              "ActiveState": "active"
+            }
+          },
+          "execution": {
+            "id": "94b9e907-b1a5-4eff-8175-c437dfcf93fe",
+            "task_id": "afacb0cf-54ae-45c2-939d-1413ca0a6186",
+            "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+            "status": "FAILED",
+            "trigger_type": "manual",
+            "start_time": "2026-10-15T09:18:57.785949669Z",
+            "end_time": "2026-10-15T17:18:57.944954145+08:00",
+            "block_reason": "unit not registered: nodesteer-qa-papp-f7821a1dbfb5-foreign.service (deploy first)",
+            "exit_code": null
+          },
+          "diagnostic_text": "unit not registered: nodesteer-qa-papp-f7821a1dbfb5-foreign.service (deploy first) | ",
+          "message_matched": true,
+          "status_failed": true,
+          "foreign_unit_after": {
+            "MainPID": "154939",
+            "Id": "nodesteer-qa-papp-f7821a1dbfb5-foreign.service",
+            "ActiveState": "active"
+          },
+          "foreign_unit_still_active": true,
+          "foreign_main_pid_unchanged": true
+        },
+        "unregistered_managed_app_rejected": {
+          "app_id": "afacb0cf-54ae-45c2-939d-1413ca0a6186",
+          "unit_name": "nodesteer-qa-papp-f7821a1dbfb5-unreg.service",
+          "execution": {
+            "id": "a8d9acc0-6dca-4d04-80cd-963e5c5a5dc6",
+            "task_id": "afacb0cf-54ae-45c2-939d-1413ca0a6186",
+            "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+            "status": "FAILED",
+            "trigger_type": "manual",
+            "start_time": "2026-10-15T09:18:51.253130544Z",
+            "end_time": "2026-10-15T17:18:51.413779377+08:00",
+            "block_reason": "unit not registered: nodesteer-qa-papp-f7821a1dbfb5-unreg.service (deploy first)",
+            "exit_code": null
+          },
+          "diagnostic_text": "unit not registered: nodesteer-qa-papp-f7821a1dbfb5-unreg.service (deploy first) | ",
+          "expected_message": "unit not registered",
+          "message_matched": true,
+          "status_failed": true,
+          "unit_file_before": false,
+          "unit_file_after": false,
+          "unit_state_after": {
+            "MainPID": "0",
+            "Id": "nodesteer-qa-papp-f7821a1dbfb5-unreg.service",
+            "LoadState": "not-found",
+            "ActiveState": "inactive",
+            "SubState": "dead",
+            "FragmentPath": "",
+            "UnitFileState": ""
+          },
+          "node_state_before": [
+            {
+              "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+              "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+              "version": "1.0",
+              "operation": "upgrade",
+              "health": "healthy",
+              "updated_at": "2026-10-15T09:18:50.081910507Z"
+            }
+          ],
+          "host_unit_untouched": true
+        },
+        "registered_unit_operable": {
+          "stop_execution": {
+            "id": "312eac37-b64f-41df-8324-8e1736f0d0df",
+            "task_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+            "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+            "status": "SUCCESS",
+            "trigger_type": "manual",
+            "start_time": "2026-10-15T09:18:59.337275012Z",
+            "end_time": "2026-10-15T17:18:59.523450245+08:00",
+            "block_reason": null,
+            "exit_code": null
+          },
+          "start_execution": {
+            "id": "cce1e1db-19bf-490e-8b0f-5447d41c2c23",
+            "task_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+            "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+            "status": "SUCCESS",
+            "trigger_type": "manual",
+            "start_time": "2026-10-15T09:19:01.01253572Z",
+            "end_time": "2026-10-15T17:19:01.195757753+08:00",
+            "block_reason": null,
+            "exit_code": null
+          },
+          "unit_state_after_stop": {
+            "MainPID": "0",
+            "Id": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+            "LoadState": "loaded",
+            "ActiveState": "inactive",
+            "SubState": "dead",
+            "FragmentPath": "/etc/systemd/system/nodesteer-qa-papp-f7821a1dbfb5-app.service",
+            "UnitFileState": "enabled"
+          },
+          "unit_state_after_start": {
+            "MainPID": "155530",
+            "Id": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+            "LoadState": "loaded",
+            "ActiveState": "active",
+            "SubState": "running",
+            "FragmentPath": "/etc/systemd/system/nodesteer-qa-papp-f7821a1dbfb5-app.service",
+            "UnitFileState": "enabled"
+          },
+          "node_state_after_stop": [
+            {
+              "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+              "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+              "version": "1.0",
+              "operation": "stop",
+              "health": "stopped",
+              "updated_at": "2026-10-15T09:18:59.51779601Z"
+            }
+          ],
+          "node_state_after_start": [
+            {
+              "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+              "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+              "version": "1.0",
+              "operation": "start",
+              "health": "healthy",
+              "updated_at": "2026-10-15T09:19:01.190420538Z"
+            }
+          ],
+          "stop_ok": true,
+          "start_ok": true
+        },
+        "cleanup_only_for_registered_units": "CleanupApplication returns early when the unit is not registered (internal/agent/application.go:115)"
+      },
+      "evidence": [
+        "evidence/phase08-unit-registry.json"
+      ]
+    },
+    "INV-18": {
+      "title": "Artifact/File Payload 不走控制长连接",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "verified_dimensions": {
+        "artifact_payload": {
+          "sample_rows": 366,
+          "payload_size": 4194911,
+          "filtered_to_agent_pid": 150678,
+          "sockets": [
+            {
+              "local": "192.168.100.247:53962",
+              "pid": "150678",
+              "samples": 366,
+              "recv_delta": 4195432,
+              "sent_delta": 295,
+              "last_recv": 8390864,
+              "last_sent": 590,
+              "payload_evidence_bytes": 8390864
+            },
+            {
+              "local": "192.168.100.247:55584",
+              "pid": "150678",
+              "samples": 366,
+              "recv_delta": 1406,
+              "sent_delta": 421,
+              "last_recv": 6935,
+              "last_sent": 4197,
+              "payload_evidence_bytes": 6935
+            }
+          ],
+          "distinct_agent_sockets": 2,
+          "control_ws_socket": {
+            "local": "192.168.100.247:55584",
+            "samples": 366,
+            "recv_delta": 1406,
+            "sent_delta": 421,
+            "payload_evidence_bytes": 6935
+          },
+          "payload_data_socket": {
+            "local": "192.168.100.247:53962",
+            "samples": 366,
+            "recv_delta": 4195432,
+            "sent_delta": 295,
+            "payload_evidence_bytes": 8390864
+          },
+          "payload_on_separate_socket_from_control": true,
+          "sockets_with_payload_bytes": [
+            {
+              "local": "192.168.100.247:53962",
+              "pid": "150678",
+              "samples": 366,
+              "recv_delta": 4195432,
+              "sent_delta": 295,
+              "last_recv": 8390864,
+              "last_sent": 590,
+              "payload_evidence_bytes": 8390864
+            }
+          ],
+          "http_data_socket_detected": true,
+          "note": "the control WebSocket is a single long-lived socket; a separate socket whose transferred bytes cover the payload proves the payload itself does not travel over the control long connection"
+        },
+        "file_transfer_source_upload": {
+          "sample_rows": 83,
+          "payload_size": 16777216,
+          "filtered_to_agent_pid": 164294,
+          "sockets": [
+            {
+              "local": "192.168.100.247:54356",
+              "pid": "164294",
+              "samples": 68,
+              "recv_delta": null,
+              "sent_delta": 11300880,
+              "last_recv": 225,
+              "last_sent": 16826873,
+              "payload_evidence_bytes": 16826873
+            },
+            {
+              "local": "192.168.100.247:43066",
+              "pid": "164294",
+              "samples": 83,
+              "recv_delta": 398,
+              "sent_delta": 201,
+              "last_recv": 7247,
+              "last_sent": 3716,
+              "payload_evidence_bytes": 7247
+            }
+          ],
+          "distinct_agent_sockets": 2,
+          "control_ws_socket": {
+            "local": "192.168.100.247:43066",
+            "samples": 83,
+            "recv_delta": 398,
+            "sent_delta": 201,
+            "payload_evidence_bytes": 7247
+          },
+          "payload_data_socket": {
+            "local": "192.168.100.247:54356",
+            "samples": 68,
+            "recv_delta": null,
+            "sent_delta": 11300880,
+            "payload_evidence_bytes": 16826873
+          },
+          "payload_on_separate_socket_from_control": true,
+          "sockets_with_payload_bytes": [
+            {
+              "local": "192.168.100.247:54356",
+              "pid": "164294",
+              "samples": 68,
+              "recv_delta": null,
+              "sent_delta": 11300880,
+              "last_recv": 225,
+              "last_sent": 16826873,
+              "payload_evidence_bytes": 16826873
+            }
+          ],
+          "http_data_socket_detected": true,
+          "note": "the control WebSocket is a single long-lived socket; a separate socket whose transferred bytes cover the payload proves the payload itself does not travel over the control long connection"
+        },
+        "file_transfer_target_download": {
+          "sample_rows": 75,
+          "payload_size": 16777216,
+          "filtered_to_agent_pid": 150741,
+          "sockets": [
+            {
+              "local": "192.168.100.247:54362",
+              "pid": "150741",
+              "samples": 73,
+              "recv_delta": 15626032,
+              "sent_delta": 0,
+              "last_recv": 16777497,
+              "last_sent": 297,
+              "payload_evidence_bytes": 16777497
+            },
+            {
+              "local": "192.168.100.247:55596",
+              "pid": "150741",
+              "samples": 75,
+              "recv_delta": 482,
+              "sent_delta": 204,
+              "last_recv": 14809,
+              "last_sent": 12255,
+              "payload_evidence_bytes": 14809
+            }
+          ],
+          "distinct_agent_sockets": 2,
+          "control_ws_socket": {
+            "local": "192.168.100.247:55596",
+            "samples": 75,
+            "recv_delta": 482,
+            "sent_delta": 204,
+            "payload_evidence_bytes": 14809
+          },
+          "payload_data_socket": {
+            "local": "192.168.100.247:54362",
+            "samples": 73,
+            "recv_delta": 15626032,
+            "sent_delta": 0,
+            "payload_evidence_bytes": 16777497
+          },
+          "payload_on_separate_socket_from_control": true,
+          "sockets_with_payload_bytes": [
+            {
+              "local": "192.168.100.247:54362",
+              "pid": "150741",
+              "samples": 73,
+              "recv_delta": 15626032,
+              "sent_delta": 0,
+              "last_recv": 16777497,
+              "last_sent": 297,
+              "payload_evidence_bytes": 16777497
+            }
+          ],
+          "http_data_socket_detected": true,
+          "note": "the control WebSocket is a single long-lived socket; a separate socket whose transferred bytes cover the payload proves the payload itself does not travel over the control long connection"
+        },
+        "method": "per-socket TCP counters (ss -tinp) filtered to the owned Agent pid: the control WebSocket is one long-lived socket whose byte counters stay in the KB range while the payload moves on a separate short-lived socket whose counters cover the payload",
+        "static_corroboration": "the Agent fetches artifacts with ArtifactCache.Prefetch over HTTP (internal/agent/artifact.go) and file payloads with AtomicReplaceReader + an HTTP GET (internal/agent/agent.go); the control channel protocol carries only URL/SHA/size metadata"
+      },
+      "evidence": [
+        "evidence/phase16-file-transfer.json",
+        "evidence/phase04-install-v1.json"
+      ]
+    }
+  },
+  "harness_notes": [
+    "identity isolation: enrollment dedupes by node name OR ip, so every owned child uses a distinct <name>.invalid identity; an earlier attempt collapsed three children onto one node and read the journal of the wrong child process",
+    "journal stage observation: a local 1 ms poller inside the owned root records every journal phase change together with systemctl is-active, the binary sha256 and .tmp leftovers; multi-megabyte fixtures widen the PREPARING/STOPPED windows",
+    "the deployed Application lifecycle always ended through the product path (Application delete -> Agent CleanupApplication -> unit/binary/config/registry removal) and was re-verified absent"
+  ]
+}

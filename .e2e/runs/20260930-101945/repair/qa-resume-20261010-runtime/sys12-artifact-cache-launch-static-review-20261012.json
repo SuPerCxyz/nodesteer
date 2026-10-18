@@ -1,0 +1,44 @@
+{
+  "reviewed_at_utc": "2026-10-12 15:08:35 UTC",
+  "review_mode": "read-only targeted launch review",
+  "runtime_actions": false,
+  "frozen_pins": {
+    "lifecycle_helper": {
+      "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/artifact_cache_lifecycle.py",
+      "sha256": "e02c62d5875fb07b9d3e706c05c1e11bccb6a65b7a626768997866ef972f9d3a"
+    },
+    "controller": {
+      "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/artifact_cache_controller.py",
+      "sha256": "1e333baa3a99dfe7df3323ea9a7e3396e473f83a6b3ff0d8a87564f945b6fabf"
+    },
+    "resource_plan_sha256": "37d6eae4461cbd2752851d13b1e736851f38903ee664d3cd46587a174f3a9784",
+    "recovery_review": {
+      "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/review.json",
+      "sha256": "77e04ca44eeb2f3c72428ed29bb987bf92dafe82193cd12e2c74dfa8c524f196"
+    }
+  },
+  "deltas": [
+    {
+      "id": "known_container_must_be_physically_absent",
+      "status": "PASS_STATIC",
+      "evidence": [
+        "artifact_cache_lifecycle.py:683-700",
+        "artifact_cache_lifecycle.py:724-736",
+        "artifact_cache_lifecycle.py:880-886"
+      ],
+      "finding": "The formerly ignored immutable-ID lookup now goes through require_known_container_absent. A still-present, identity-valid owned container raises known_removed_container_id_still_present before it can be added to removed_container_ids. If absent, the helper verifies both ID and exact nonce name absence; cleanup-root requires every created immutable ID to be in the removal ledger. The identified false-removal path is closed."
+    },
+    {
+      "id": "current_epoch_artifact_url_authority",
+      "status": "PASS_EVIDENCE_SCOPED",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/artifact-url-preflight/attempt01/final-summary.json",
+      "finding": "A real read-only Native1 probe observed the exact owned App's persisted Artifact URL with strict repair:18080 origin, from the live repair Agent binary/Unit and local DB. This closes the URL authority precondition for that current Hub/Node epoch only; it does not establish authority for other Hubs or future epochs."
+    }
+  ],
+  "remaining_gates": [
+    "This is harness/source admission only. The SYS12 ArtifactCache fixture has not been executed; no runtime PASS is claimed.",
+    "Before any authorized execution, use the approved grant and fresh owner/process/Hub guards; preserve original Nodes and do not widen to deploy, HostIntegration, cache corruption, or other excluded claims.",
+    "If a helper execution is uncertain or active, reconcile exact Execution terminal state before deleting its Task or proceeding with resource cleanup."
+  ],
+  "overall": "PASS_STATIC_HARNESS_ADMISSION_ONLY"
+}

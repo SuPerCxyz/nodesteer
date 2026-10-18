@@ -1,0 +1,427 @@
+{
+  "batch_id": "sys-b07",
+  "title": "Agent 重启/断连/任务更新期间离线：旧 RUNNING 收尾与 Desired State 一致",
+  "nonce": "b24f3a560cf8",
+  "executed_at_utc": "2026-10-14T09:41:38Z",
+  "finished_at_utc": "2026-10-14T09:42:17Z",
+  "endpoint": "http://192.168.100.209:18080",
+  "cases": [
+    {
+      "case_id": "SYS-16",
+      "title": "SYS-16 Agent 发现旧 RUNNING 但进程不存在，按 `agent_restarted` 正确收尾。",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-16",
+          "layer": "owned-child-agent(real SIGKILL)/agent-sqlite-journal/hub-api",
+          "status": "PASS",
+          "description": [
+            "A real manual Execution reached Hub RUNNING with its task process alive (script start side effect).",
+            "The owned child Agent and the in-flight task process group were SIGKILLed (protected Agent units untouched), leaving a RUNNING journal row and no live process (no end event).",
+            "On restart the Agent finalized the stale RUNNING as FAILED with block_reason=agent_restarted, re-uploaded it (local synced=true), and the Hub readback showed FAILED/agent_restarted with exactly one Execution row (no duplicate)."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Kill used SIGKILL of the owned process; a STOPPED-phase distinction is not part of this case."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-sys16-agent-restarted.json",
+        "phase4-ar02-restart.json",
+        "phase5-ar06-disconnect.json",
+        "phase6-ar09-offline-update.json",
+        "phase7-cleanup.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb07-b24f3a560cf8-",
+        "child_node_id": "a901e57f-ae03-428d-afe3-b15982816b78",
+        "child_agent_id": "agent-840bb95b-5a02-455f-9504-7c3b216bb90f",
+        "script_id": "d8add01e-7b65-452e-a886-5e80bde53580",
+        "task_id": "8eac8861-ba70-4119-8f0b-17d29e9d2154",
+        "executions": {
+          "sys16": "f6d7214a-8e6e-44bf-b888-0123d02d2407",
+          "ar02": "54418ca3-980f-49d2-8acc-e14ea9c29c8f",
+          "ar09": "91758b5f-1e10-4623-97d8-120c751c1e2c"
+        },
+        "preserved_execution_history": [
+          "f6d7214a-8e6e-44bf-b888-0123d02d2407",
+          "54418ca3-980f-49d2-8acc-e14ea9c29c8f",
+          "91758b5f-1e10-4623-97d8-120c751c1e2c"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 11,
+        "hub_definition_creates": 2,
+        "hub_definition_updates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 3,
+        "node_enroll_posts": 1,
+        "child_process_starts": 3,
+        "child_process_stops": 2,
+        "child_process_crashes": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "8eac8861-ba70-4119-8f0b-17d29e9d2154",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "d8add01e-7b65-452e-a886-5e80bde53580",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native4_child_removal": {
+          "agent_signalled": [
+            8515
+          ],
+          "agent_remaining": [],
+          "processes_under_root_before_rmtree": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "a901e57f-ae03-428d-afe3-b15982816b78",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "AR-02",
+      "title": "AR-02 Agent Restart；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-02",
+          "layer": "owned-child-agent graceful restart/agent-sqlite/hub-api",
+          "status": "PASS",
+          "description": [
+            "The owned child Agent was gracefully restarted; identity (node_id/agent_id) and the SQLite file dev/inode were unchanged (persistence).",
+            "Terminal Execution IDs created before the restart survived; the restart itself created no new Execution (idempotent).",
+            "After restart local global_revision and the Script/Task definitions converged to the Hub (Desired State == actual state), and a fresh Run Now produced exactly one SUCCESS with the nonce marker."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Restart was performed on the owned child process, not a protected systemd unit."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-sys16-agent-restarted.json",
+        "phase4-ar02-restart.json",
+        "phase5-ar06-disconnect.json",
+        "phase6-ar09-offline-update.json",
+        "phase7-cleanup.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb07-b24f3a560cf8-",
+        "child_node_id": "a901e57f-ae03-428d-afe3-b15982816b78",
+        "child_agent_id": "agent-840bb95b-5a02-455f-9504-7c3b216bb90f",
+        "script_id": "d8add01e-7b65-452e-a886-5e80bde53580",
+        "task_id": "8eac8861-ba70-4119-8f0b-17d29e9d2154",
+        "executions": {
+          "sys16": "f6d7214a-8e6e-44bf-b888-0123d02d2407",
+          "ar02": "54418ca3-980f-49d2-8acc-e14ea9c29c8f",
+          "ar09": "91758b5f-1e10-4623-97d8-120c751c1e2c"
+        },
+        "preserved_execution_history": [
+          "f6d7214a-8e6e-44bf-b888-0123d02d2407",
+          "54418ca3-980f-49d2-8acc-e14ea9c29c8f",
+          "91758b5f-1e10-4623-97d8-120c751c1e2c"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 11,
+        "hub_definition_creates": 2,
+        "hub_definition_updates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 3,
+        "node_enroll_posts": 1,
+        "child_process_starts": 3,
+        "child_process_stops": 2,
+        "child_process_crashes": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "8eac8861-ba70-4119-8f0b-17d29e9d2154",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "d8add01e-7b65-452e-a886-5e80bde53580",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native4_child_removal": {
+          "agent_signalled": [
+            8515
+          ],
+          "agent_remaining": [],
+          "processes_under_root_before_rmtree": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "a901e57f-ae03-428d-afe3-b15982816b78",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "AR-06",
+      "title": "AR-06 Agent Disconnect；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-06",
+          "layer": "frame-proxy connection cut/restore/owned-child-agent/hub-api",
+          "status": "PASS",
+          "description": [
+            "The child->Hub websocket was cut by the harness frame proxy; the Hub marked the node offline while the owned child Agent process stayed alive (a real disconnect, not a restart).",
+            "The local Agent state stayed readable and unchanged while disconnected.",
+            "After the link was restored the node returned online/synced, identity was unchanged, the local revision converged to the Hub, and no duplicate Execution appeared."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Disconnect was produced at the harness proxy layer in front of the owned child Agent; the repair Hub and protected Agents were not stopped."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-sys16-agent-restarted.json",
+        "phase4-ar02-restart.json",
+        "phase5-ar06-disconnect.json",
+        "phase6-ar09-offline-update.json",
+        "phase7-cleanup.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb07-b24f3a560cf8-",
+        "child_node_id": "a901e57f-ae03-428d-afe3-b15982816b78",
+        "child_agent_id": "agent-840bb95b-5a02-455f-9504-7c3b216bb90f",
+        "script_id": "d8add01e-7b65-452e-a886-5e80bde53580",
+        "task_id": "8eac8861-ba70-4119-8f0b-17d29e9d2154",
+        "executions": {
+          "sys16": "f6d7214a-8e6e-44bf-b888-0123d02d2407",
+          "ar02": "54418ca3-980f-49d2-8acc-e14ea9c29c8f",
+          "ar09": "91758b5f-1e10-4623-97d8-120c751c1e2c"
+        },
+        "preserved_execution_history": [
+          "f6d7214a-8e6e-44bf-b888-0123d02d2407",
+          "54418ca3-980f-49d2-8acc-e14ea9c29c8f",
+          "91758b5f-1e10-4623-97d8-120c751c1e2c"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 11,
+        "hub_definition_creates": 2,
+        "hub_definition_updates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 3,
+        "node_enroll_posts": 1,
+        "child_process_starts": 3,
+        "child_process_stops": 2,
+        "child_process_crashes": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "8eac8861-ba70-4119-8f0b-17d29e9d2154",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "d8add01e-7b65-452e-a886-5e80bde53580",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native4_child_removal": {
+          "agent_signalled": [
+            8515
+          ],
+          "agent_remaining": [],
+          "processes_under_root_before_rmtree": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "a901e57f-ae03-428d-afe3-b15982816b78",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "AR-09",
+      "title": "AR-09 Agent Offline During Task Update；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-09",
+          "layer": "frame-proxy offline window/hub definition update/owned-child-agent sync",
+          "status": "PASS",
+          "description": [
+            "While the owned child Agent was offline, the Hub Script content and the Task definition were updated (revisions advanced on the Hub); the child still held the old v1 content locally.",
+            "On reconnect the child applied the update exactly once (local Script/Task revisions and the content SHA matched the Hub) and the sync created no Execution.",
+            "A fresh Run Now then produced exactly one SUCCESS carrying the new v2 marker and the new Script revision, proving the offline update took effect without duplication."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Offline window was created with the harness frame proxy; no Hub stop and no product source change."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-sys16-agent-restarted.json",
+        "phase4-ar02-restart.json",
+        "phase5-ar06-disconnect.json",
+        "phase6-ar09-offline-update.json",
+        "phase7-cleanup.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb07-b24f3a560cf8-",
+        "child_node_id": "a901e57f-ae03-428d-afe3-b15982816b78",
+        "child_agent_id": "agent-840bb95b-5a02-455f-9504-7c3b216bb90f",
+        "script_id": "d8add01e-7b65-452e-a886-5e80bde53580",
+        "task_id": "8eac8861-ba70-4119-8f0b-17d29e9d2154",
+        "executions": {
+          "sys16": "f6d7214a-8e6e-44bf-b888-0123d02d2407",
+          "ar02": "54418ca3-980f-49d2-8acc-e14ea9c29c8f",
+          "ar09": "91758b5f-1e10-4623-97d8-120c751c1e2c"
+        },
+        "preserved_execution_history": [
+          "f6d7214a-8e6e-44bf-b888-0123d02d2407",
+          "54418ca3-980f-49d2-8acc-e14ea9c29c8f",
+          "91758b5f-1e10-4623-97d8-120c751c1e2c"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 11,
+        "hub_definition_creates": 2,
+        "hub_definition_updates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 3,
+        "node_enroll_posts": 1,
+        "child_process_starts": 3,
+        "child_process_stops": 2,
+        "child_process_crashes": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "8eac8861-ba70-4119-8f0b-17d29e9d2154",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "d8add01e-7b65-452e-a886-5e80bde53580",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native4_child_removal": {
+          "agent_signalled": [
+            8515
+          ],
+          "agent_remaining": [],
+          "processes_under_root_before_rmtree": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "a901e57f-ae03-428d-afe3-b15982816b78",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    }
+  ],
+  "deviations": [],
+  "budget": {
+    "api_mutations": 11,
+    "hub_definition_creates": 2,
+    "hub_definition_updates": 2,
+    "hub_definition_deletes": 2,
+    "manual_run_posts": 3,
+    "node_enroll_posts": 1,
+    "child_process_starts": 3,
+    "child_process_stops": 2,
+    "child_process_crashes": 1
+  },
+  "final_cleanup_oracle_clean": true
+}

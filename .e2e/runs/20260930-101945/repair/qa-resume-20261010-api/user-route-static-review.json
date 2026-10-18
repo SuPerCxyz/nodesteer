@@ -1,0 +1,48 @@
+{
+  "reviewed_at": "2026-10-10T06:09:56.052569+00:00",
+  "source": "internal/hub/api/api.go",
+  "routes": {
+    "oidc_state": [
+      125,
+      462,
+      465
+    ],
+    "oidc_login": [
+      126,
+      469,
+      485
+    ],
+    "oidc_callback": [
+      127,
+      488,
+      500
+    ],
+    "agent_binary": [
+      137,
+      701,
+      718
+    ],
+    "users_collection": [
+      179,
+      2001,
+      2054
+    ],
+    "user_by_id": [
+      180,
+      2056,
+      2116
+    ],
+    "auth_gate": [
+      219,
+      239
+    ]
+  },
+  "contract_findings": [
+    "Health/readiness and OIDC/AgentBinary routes are registered without withAuth.",
+    "Users collection and item routes use withAuth; invalid/absent bearer exits with 401 before handler.",
+    "Admin POST validates required fields and role before password hashing/CreateUser; admin PUT validates required fields and role before store updates.",
+    "User item route supports PUT only; DELETE and GET return 405 even for administrator.",
+    "No User delete handler/store method found in targeted search; fixture cleanup via API is unavailable."
+  ],
+  "review_scope": "targeted route and handler inspection only; no source changes"
+}

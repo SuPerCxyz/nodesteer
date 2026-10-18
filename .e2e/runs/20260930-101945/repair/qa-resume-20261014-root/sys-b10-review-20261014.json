@@ -1,0 +1,106 @@
+{
+  "review_id": "ROOT-SYS-B10-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T09:00:33.001962+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "run_dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b10",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试、剩余分母全量推进",
+  "verdicts": [
+    {
+      "case_id": "SYS-41",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "真实链路：owned App(artifact A)指派到 owned child → Hub sync 下发 artifact_url/sha256 → Agent 从真实 Hub /api/artifacts/<A>/download 下载 → artifacts/<sha> 存在、size=4096 等于 Hub 声明、重算 SHA 匹配、无 .tmp、SQLite 行存在且 quick_check ok、Agent 日志 artifact cached。",
+      "limitations": [
+        "The atomicity evidence is the absence of any .tmp/partial file plus a byte-exact final SHA; a crash exactly inside the rename window was not forced.",
+        "No browser UI was exercised; the caller-side feedback is the Hub API readback (application assignment + artifact metadata) plus the download endpoint response captured with Agent identity.",
+        "The Hub download probe recorded X-Artifact-Sha256 under Go canonical casing (X-Artifact-Sha256); an initial case-sensitive lookup reported null and was corrected (harness bug, see evidence/phase2b-hub-download-header.json)."
+      ]
+    },
+    {
+      "case_id": "SYS-42",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "经 frame proxy 注入 ARTIFACT_PREFETCH（期望 SHA 为不匹配值）→ 真实 Agent 拒绝，日志 sha256 mismatch；负向证明期望 SHA 与服务 body SHA 均无缓存文件/无 DB 行/无 .tmp。",
+      "limitations": [
+        "The mismatch is produced by a harness-controlled pairing (expected SHA vs served bytes); product source was not modified and the Hub was not stopped/restarted.",
+        "An artifact-prefetch failure surfaces only in the owned Agent process log; the Hub has no artifact-prefetch status API/UI surface, so the negative-path caller feedback is that log line."
+      ]
+    },
+    {
+      "case_id": "SYS-43",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "HTTP 404 → download status 404；中断（服务端声明 8192 只发 200 后断开）传输中亲见 <sha>.tmp(200B)、失败后 unexpected EOF 且 .tmp 清理；超时（黑洞 192.0.2.1）i/o timeout ~30s。三者均无残留。",
+      "limitations": [
+        "The agent builds its HTTP client from http.DefaultClient with no response-read/idle timeout and passes the agent-lifetime context, so the \"timeout\" dimension exercised is the transport dial timeout. A supplemental bounded test (evidence/phase10-stall-observation.json) shows a server that sends headers and then withholds the body leaves a 0-byte .tmp in place for >24s: there is no read timeout. Reported as a robustness observation, not a required-dimension failure.",
+        "Prefetch failures surface only in the owned Agent log; there is no Hub-side artifact-prefetch status API/UI to observe them."
+      ]
+    },
+    {
+      "case_id": "AR-24",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "对 C 注入中断（.tmp 亲见→清理）→ 经 APP-C Desired State 真实恢复下载成功；幂等（重指派+重发同帧：mtime/downloaded_at/行数不变、无新安装日志、无 .tmp）；重启 owned child 后文件+行+SHA 仍在且 quick_check ok；Desired==Actual。",
+      "limitations": [
+        "The interruption itself is harness-injected (frame proxy + owned HTTP server); the recovery, idempotency and persistence steps use the real product path.",
+        "Concurrent prefetch of the same SHA is not de-duplicated: two sync-triggered goroutines each logged \"artifact cached\" for the same SHA within ~20ms. Final state stayed consistent (atomic rename, identical bytes), so this is an observation, not a failed dimension."
+      ]
+    },
+    {
+      "case_id": "AR-25",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "A 首次被喂错字节 → sha256 mismatch 拒绝安装；随后 APP-A 真实恢复成功；幂等/持久化/Desired==Actual 同上。",
+      "limitations": [
+        "The initial SHA failure is harness-injected (wrong bytes served by an owned HTTP server); recovery/idempotency/persistence use the real product path."
+      ]
+    },
+    {
+      "case_id": "INV-10",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "校验失败禁止安装：错误 SHA 的 ARTIFACT_PREFETCH 被拒绝，正式缓存与目标文件均未被污染（真实受保护缓存目录批前/批后逐字节一致）。",
+      "limitations": [
+        "Verification-failure injection is harness-side by design; no product source change.",
+        "The prohibition is observed from the Agent side (no cache file / no SQLite row / no .tmp) because the Hub does not expose an artifact-install status for prefetches."
+      ]
+    }
+  ],
+  "verified_independently_by_root": {
+    "live_residue_check": "Hub 侧 artifacts=1/applications=1/nodes=6，无 qa-sysb10 残留",
+    "native2_cleanup": "owned root /var/lib/nodesteer-qa-sysb10-b36cbf4e3d15 不存在；注入 server 端口 52581 空闲",
+    "oracle": "final-cleanup-oracle 前缀残留为空；4 个 protected 节点 online/synced；真实受保护缓存批前/批后逐字节一致"
+  },
+  "independence_note": "本批未复用 SYS-44 证据，全部维度以修复版真实证据独立复现（fresh repair-build evidence）；SYS-44 可作交叉印证。",
+  "harness_failures_retained": [
+    "attempt01 (evidence/attempt01-harness-bug/): local DB probe issued \"SELECT id,name,revision FROM applications\" but the agent applications table stores definition_json (no name column); the resulting KeyError aborted phase7 after phases 0-6 had already produced real evidence, and cleanup still removed every fixture (attempt01 oracle clean=true). Fixed in phase-2 run by parsing the name from definition_json.",
+    "phase2 Hub download probe looked up the header with exact casing X-Artifact-SHA256 while Go emits X-Artifact-Sha256, so the first reading was null; corrected in evidence/phase2b-hub-download-header.json."
+  ],
+  "new_observations": [
+    "OBS-20261014-ARTIFACT-DOWNLOAD-NO-READ-TIMEOUT",
+    "OBS-20261014-ARTIFACT-CONCURRENT-PREFETCH-NO-DEDUP"
+  ],
+  "counts_before": {
+    "PASS": 232,
+    "FAIL": 5,
+    "PARTIAL": 163,
+    "NOT_RUN": 95,
+    "BLOCKED": 9
+  },
+  "counts_after": {
+    "PASS": 238,
+    "FAIL": 5,
+    "PARTIAL": 163,
+    "NOT_RUN": 89,
+    "BLOCKED": 9
+  },
+  "not_claimed": "未执行产品修复、Git 交付或 Archive"
+}

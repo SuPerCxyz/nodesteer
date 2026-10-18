@@ -1,0 +1,122 @@
+{
+ "batch_id": "qa-resume-20261016-g1",
+ "nonce": "g1202610163692428a",
+ "phase": "COMPLETE_PENDING_ROOT_REVIEW",
+ "updated_at_utc": "2026-10-16T09:50:01Z",
+ "authority": "http://192.168.100.209:18085 (isolated disposable instance)",
+ "steps": [
+  {
+   "name": "实例创建（transient，独立 data_dir/config/log/端口）",
+   "status": "done",
+   "result": "PASS"
+  },
+  {
+   "name": "版本平行核对（二进制 SHA + index.html SHA == repair）",
+   "status": "done",
+   "result": "PASS"
+  },
+  {
+   "name": "P03-09 真空空态（API+UI）",
+   "status": "done",
+   "result": "PASS"
+  },
+  {
+   "name": "受限账号 operator/viewer + owned child Agent + 自有夹具",
+   "status": "done",
+   "result": "PASS"
+  },
+  {
+   "name": "A 批：P04-06 / P21-08 / P20-04",
+   "status": "done",
+   "result": "PASS"
+  },
+  {
+   "name": "B 批：P14P15-12 / P19-03 / X13",
+   "status": "done",
+   "result": "PASS"
+  },
+  {
+   "name": "G9：X14 多页选择漂移与跨页保持",
+   "status": "done",
+   "result": "PASS"
+  },
+  {
+   "name": "收尾：销毁实例 + 零残留核验 + 凭据清理",
+   "status": "done",
+   "result": "ISOLATED_INSTANCE_DESTROYED_AND_VERIFIED"
+  }
+ ],
+ "case_status": {
+  "P03-09": {
+   "before": "PARTIAL",
+   "proposed_after": "PASS",
+   "confidence": "high"
+  },
+  "P04-06": {
+   "before": "PARTIAL",
+   "proposed_after": "PASS",
+   "confidence": "high"
+  },
+  "P21-08": {
+   "before": "PARTIAL",
+   "proposed_after": "PASS",
+   "confidence": "high"
+  },
+  "P20-04": {
+   "before": "PARTIAL",
+   "proposed_after": "PASS",
+   "confidence": "high"
+  },
+  "P14P15-12": {
+   "before": "PARTIAL",
+   "proposed_after": "PASS",
+   "confidence": "high"
+  },
+  "P19-03": {
+   "before": "PARTIAL",
+   "proposed_after": "PASS",
+   "confidence": "high"
+  },
+  "X13": {
+   "before": "PARTIAL",
+   "proposed_after": "PASS",
+   "confidence": "medium-high"
+  },
+  "X14": {
+   "before": "PARTIAL",
+   "proposed_after": "PASS",
+   "confidence": "high"
+  }
+ },
+ "findings_summary": [
+  "DEF-ASSIGN-MISSING-APP-500（medium）",
+  "OBS-UI-LOGOUT-NO-SERVER-REVOKE（low-medium）",
+  "OBS-USER-DUP-SQL-MESSAGE（low）",
+  "OBS-USER-INPUT-NOT-TRIMMED（low）",
+  "OBS-ENROLL-TRANSIENT-500（low，未复现）",
+  "OBS-LOCALSTORAGE-TOKEN-NOT-CROSS-TAB（info）",
+  "OBS-CROSS-SESSION-NO-PUSH（info）"
+ ],
+ "outputs": [
+  "case-result.json",
+  "progress.json",
+  "instance-ledger.json",
+  "fixture-ledger.json",
+  "final-cleanup-oracle.json",
+  "evidence/",
+  "terminal/"
+ ],
+ "teardown": {
+  "result": "ISOLATED_INSTANCE_DESTROYED_AND_VERIFIED",
+  "zero_residue": true,
+  "collateral_unaffected": true,
+  "credential_scan": "CLEAN",
+  "remote_full_scan_paths": []
+ },
+ "harness_anomalies": [
+  "执行期间客户端（OpenCode 服务端）发生一次重启，中断了 X13 的一次运行；未重复已完成步骤，受影响脚本已重跑并复核实例/夹具状态后继续。",
+  "agent-browser 的 tab 引用必须是稳定 id（t1/t2），数字下标不会切换上下文；已改用 tN 并对每个 tab 打 window 标记核对身份。",
+  "agent-browser eval 返回纯字符串（如 location.pathname）时带引号且长值可能被换行，涉及 token/路径的判定改为页面内完成（避免把 token 取到进程外）。",
+  "首次 teardown 后发现真实应用部署遗留 systemd 单元，已在收尾脚本中加入 stop/disable/删除并重跑 oracle。"
+ ]
+}

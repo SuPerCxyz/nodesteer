@@ -1,0 +1,112 @@
+{
+  "created_at_utc": "2026-10-10T11:38:00Z",
+  "status": "WAITING_ROOT_APPROVAL",
+  "executor": "gpt-6-luna",
+  "scope": "Ten read-only ROUTE/TABLE canonical cases using the current dedicated browser session and the two exact owned Scripts from batch05 as rows/details. No data creation, deletion, edit, clone, Task, Run, User, Group, Node, or Agent action in this batch.",
+  "session_reuse": {
+    "session_name": "qawebsecure20261010-script-b05-38181",
+    "origin": "http://127.0.0.1:38181",
+    "repair_target": "192.168.100.209:18080",
+    "browser_session_and_exact_owned_forward_are_currently_open": true,
+    "fixture_source": "batch05/owned-ledger.json; original Script and Clone remain unchanged during this batch"
+  },
+  "cases": [
+    {
+      "id": "ROUTE-01",
+      "module": "web/src/routes/(auth)/sign-in.tsx -> web/src/features/auth/sign-in/index.tsx",
+      "actions": "Direct-open /sign-in, refresh once, then exercise browser back/forward against the actual post-session route.",
+      "request_oracle": "Real GET /api/me status; do not print auth headers/body. Observe any actual OIDC/config request separately if emitted.",
+      "ui_oracle": "Observe whether authenticated /sign-in redirects to / per safeRedirect, record final route, main ready/error/empty state, and history behavior. No login/logout and no invalid-credential writes."
+    },
+    {
+      "id": "ROUTE-07",
+      "module": "web/src/routes/_authenticated/groups/index.tsx -> web/src/features/catalog/index.tsx Groups/ListLayout",
+      "actions": "Direct-open /groups, refresh, navigate via actual sidebar link away and back, then back/forward.",
+      "request_oracle": "GET /api/groups and /api/nodes status/count, filtered to safe counts only.",
+      "ui_oracle": "Ready, EmptyState/table, search-toolbar presence, and route/history state must agree with actual returned count. Do not expect a table/search toolbar for a truly empty list."
+    },
+    {
+      "id": "ROUTE-10",
+      "module": "web/src/routes/_authenticated/scripts/index.tsx -> web/src/features/catalog/index.tsx Scripts",
+      "actions": "Direct-open /scripts, refresh, follow the actual owned Script detail link, then browser back/forward.",
+      "request_oracle": "GET /api/scripts 200 with two owned rows; store only count and owned-ID match booleans.",
+      "ui_oracle": "List header, two rows, fields, loading/ready/error/empty classification, and back/forward route consistency."
+    },
+    {
+      "id": "ROUTE-11",
+      "module": "web/src/routes/_authenticated/scripts/new.tsx -> web/src/features/editors/index.tsx ScriptEditor",
+      "actions": "Direct-open /scripts/new, refresh, follow sidebar/list back to /scripts, and browser back/forward. Do not save or cancel with writes.",
+      "request_oracle": "Record actual same-origin GETs, if any; confirm zero POST/PUT/PATCH/DELETE.",
+      "ui_oracle": "New Script title, default fields, required name, form ready state, and route/history behavior."
+    },
+    {
+      "id": "ROUTE-12",
+      "module": "web/src/routes/_authenticated/scripts/$scriptId.tsx -> web/src/features/editors/index.tsx ScriptEditor",
+      "actions": "Direct-open each existing owned Script ID from the batch05 ledger, refresh each, follow actual list/detail links, then browser back/forward.",
+      "request_oracle": "GET /api/scripts/:owned and /api/scripts/:owned/revisions statuses; verify the returned IDs match only the ledgered IDs and record revision counts/hashes, never content bodies.",
+      "ui_oracle": "Editor ready fields, Revision History presence/content sections, Error/Not Found handling only if naturally returned; zero mutations."
+    },
+    {
+      "id": "ROUTE-13",
+      "module": "web/src/routes/_authenticated/tasks/index.tsx -> web/src/features/tasks/index.tsx",
+      "actions": "Direct-open /tasks, refresh, use actual sidebar navigation away/back, then browser back/forward.",
+      "request_oracle": "GET /api/tasks status/count; do not create or edit a Task.",
+      "ui_oracle": "Observe actual table/EmptyState/ErrorState and route/history; do not infer Task functionality from form presence."
+    },
+    {
+      "id": "TABLE-SCRIPTS-SEARCH",
+      "module": "Scripts ListLayout/DataTable and web/src/features/shared/data-table.tsx",
+      "actions": "Search the original and copy names separately, search a guaranteed non-match, then use actual Reset/clear.",
+      "request_oracle": "Real GET /api/scripts count remains two; filtering should remain client-side and emit no mutation.",
+      "ui_oracle": "Each exact owned row hit, zero-result UI, Reset restores both rows, and no-write request count."
+    },
+    {
+      "id": "TABLE-SCRIPTS-SORT",
+      "module": "Scripts ListLayout/DataTable and column-header.tsx",
+      "actions": "Click the Name header through fresh snapshot refs to exercise ascending, descending, and clear-sort behavior.",
+      "request_oracle": "No write requests; list GET remains unchanged.",
+      "ui_oracle": "Compare visible two-row order after each click; if the table does not expose a clear-sort state, mark that subdimension PARTIAL."
+    },
+    {
+      "id": "TABLE-SCRIPTS-COLUMNS",
+      "module": "data-table/view-options.tsx and web/src/lib/table-view.ts",
+      "actions": "Hide Interpreter, reload and verify hidden state/column, then restore it and reload once more.",
+      "request_oracle": "No server writes; inspect only the `nodesteer.table.scripts` visibility boolean.",
+      "ui_oracle": "Column header/cell disappears, remains hidden after reload, then reappears after restore; verify both rows remain."
+    },
+    {
+      "id": "TABLE-SCRIPTS-PAGE",
+      "module": "web/src/components/data-table/pagination.tsx and shared DataTable",
+      "actions": "Change pageSize from 10 to 20 using the actual control, reload, and verify the selected size and rows.",
+      "request_oracle": "GET /api/scripts count remains two; no mutations.",
+      "ui_oracle": "Verify persisted pageSize and row count. Next/previous/first/last behavior remains PARTIAL because only two owned rows exist and no extra records may be created."
+    }
+  ],
+  "shared_evidence": {
+    "each_route": "Fresh agent-browser snapshot/ref actions; capture same-origin method/path/status, URL, main ready/error/empty classification and row/count oracle after each navigation/refresh/back/forward.",
+    "each_table_case": "Fresh snapshot refs for controls, actual visible row/header order, relevant API count, and zero mutation assertion.",
+    "secrets": "Never save raw requests, headers, token, Script content or secret defaults; allowlisted status/count/ID-match booleans/hash only.",
+    "resources": "Retain exactly two owned Scripts for this read-only batch. No API write fallback, cleanup, or status change until next approved stage."
+  },
+  "source_refs": [
+    "web/src/routes/(auth)/sign-in.tsx",
+    "web/src/features/auth/sign-in/index.tsx",
+    "web/src/lib/navigation.ts:18-31",
+    "web/src/routes/_authenticated/groups/index.tsx",
+    "web/src/routes/_authenticated/scripts/index.tsx",
+    "web/src/routes/_authenticated/scripts/new.tsx",
+    "web/src/routes/_authenticated/scripts/$scriptId.tsx",
+    "web/src/routes/_authenticated/tasks/index.tsx",
+    "web/src/routes/_authenticated/tasks/new.tsx",
+    "web/src/features/catalog/index.tsx:1203-1384",
+    "web/src/features/editors/index.tsx:382-754",
+    "web/src/features/shared/data-table.tsx:133-155",
+    "web/src/components/data-table/view-options.tsx:23-57",
+    "web/src/components/data-table/column-header.tsx",
+    "web/src/components/data-table/pagination.tsx",
+    "web/src/lib/table-view.ts"
+  ],
+  "execution_started": false,
+  "new_resources_created": 0,
+  "task_run_user_group_node_writes": 0
+}

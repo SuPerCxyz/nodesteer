@@ -1,0 +1,141 @@
+{
+ "batch_id": "qa-resume-20261017-g9 (+G8 共享)",
+ "instance_id": "nodesteer-qa-g89202610178970c813",
+ "nonce": "g89202610178970c813",
+ "shared_by": [
+  "qa-resume-20261017-g8",
+  "qa-resume-20261017-g9"
+ ],
+ "purpose": "G8 授权（遮蔽矩阵只在隔离实例构造敏感标记值）+ G9 授权（多页数据集必须在隔离实例），两批共用同一可整体销毁实例；用完销毁并核对零残留。",
+ "authorization_basis": "authorization-checklist-20261016.md G8“仅标记值；证据不留真实凭据” + G9“推荐在隔离实例内做”",
+ "host": "192.168.100.209",
+ "port": 18086,
+ "tunnel_local_port": 38286,
+ "binary": {
+  "path": "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard",
+  "sha256_expected": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+  "note": "与当前 repair :18080 同一 CR-1 构建（2026-10-16 部署）"
+ },
+ "owned_child_agent_binary": {
+  "local_source": "/tmp/opencode/nodesteer-build-20261016-cr1/nodesteer-agent-static",
+  "sha256_expected": "b15f6df540a63a8eb530ec837c57d4628ff7925822153a02d624f021a525ac4f",
+  "note": "当前 repair 四个 native 节点实际运行的 Agent 构建（同名二进制同 sha）；CR-1 新增 internal/agent/redact.go 流式遮蔽器，旧构建 d55dc5cd 不具代表性"
+ },
+ "config": {
+  "path": "/etc/nodesteer/qa-g89202610178970c813.yaml",
+  "mode_requested": "0640 root:nodesteer",
+  "fields": [
+   "web_addr",
+   "gateway_addr",
+   "base_url",
+   "registration_token",
+   "data_dir",
+   "artifact_dir",
+   "admin_username",
+   "admin_password",
+   "session_ttl=24h"
+  ]
+ },
+ "data_dir": {
+  "path": "/var/lib/nodesteer-qa-g89202610178970c813",
+  "mode_requested": "0750 nodesteer:nodesteer"
+ },
+ "log": "/var/log/nodesteer-qa-g89202610178970c813.log",
+ "child_root": "/var/lib/nodesteer-qa-g89202610178970c813-child",
+ "launch": {
+  "method": "transient: runuser -u nodesteer -- setsid nohup <binary> --config <cfg>",
+  "systemd": "none"
+ },
+ "baseline_before_start": {
+  "REPAIR_18080_LISTEN": "1",
+  "PRIMARY_8080_LISTEN": "1",
+  "INSTANCE_18086_LISTEN": "0",
+  "REPAIR_PID": "168213",
+  "PRIMARY_PID": "1251",
+  "REPAIR_PID_CMDLINE": "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard --config /etc/nodesteer/hub-repair-20260930-101945.yaml",
+  "REPAIR_EXE_SHA": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+  "ETC_FILES": "hub-repair-20260930-101945.yaml,hub-repair-20260930-101945.yaml.pre-ttl-test,hub.yaml,nodesteer-hub-repair-20260930-101945-ttl-ui.yaml,",
+  "VARLIB_DIRS": "/var/lib/nodesteer-hub,/var/lib/nodesteer-hub-repair-20260930-101945,/var/lib/nodesteer-hub-repair-20260930-101945-ttl-ui,",
+  "VARTMP_G89": "",
+  "AGENT_PROCS": "0",
+  "REPAIR_AGENT_UNITS": "0",
+  "UNIT_NEW": "0"
+ },
+ "created_at_utc": "2026-10-17T03:58:48Z",
+ "pids_at_start": [
+  "212052 runuser -u nodesteer -- setsid nohup /opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard --config /etc/nodesteer/qa-g89202610178970c813.yaml",
+  "212054 /opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard --config /etc/nodesteer/qa-g89202610178970c813.yaml"
+ ],
+ "healthz_ok": true,
+ "root_status": "200",
+ "listeners": [
+  "LISTEN 0      4096               *:18086            *:*"
+ ],
+ "index_html_sha256": "612c23ba1efed95fb7d773c625d68f61adad16f21d30232e2102aa118b920449",
+ "repair_index_html_sha256": "612c23ba1efed95fb7d773c625d68f61adad16f21d30232e2102aa118b920449",
+ "sha256_verified": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+ "config_mode_actual": "640 root:nodesteer",
+ "data_dir_mode_actual": "750 nodesteer:nodesteer",
+ "binary_match_expected_sha": true,
+ "index_html_identical_to_repair": true,
+ "owned_child_agent_sha256": "b15f6df540a63a8eb530ec837c57d4628ff7925822153a02d624f021a525ac4f",
+ "owned_child_agent_match_expected_sha": true,
+ "tunnel": {
+  "local_port": 38286,
+  "healthz_status": "200"
+ },
+ "admin_login": {
+  "http": 200,
+  "role": null
+ },
+ "data_created_during_batch": {
+  "users": 1,
+  "nodes_final": 28,
+  "nodes_deleted_during_probes": 5,
+  "tasks": 9,
+  "scripts": 1,
+  "executions": 11,
+  "audit_rows": 121,
+  "note": "全部对象仅在隔离实例 data_dir 内，随实例整体销毁；repair :18080 无任何持久写入。"
+ },
+ "teardown": {
+  "oracle": "final-cleanup-oracle.json",
+  "verified_at_utc": "2026-10-17T04:47:00Z",
+  "steps": [
+   "pkill -TERM/-KILL -f qa-<nonce>（hub + owned child + runuser 父进程）",
+   "rm -rf /var/lib/nodesteer-qa-g89202610178970c813（4.7M，含 hub.db）",
+   "rm -rf /var/lib/nodesteer-qa-g89202610178970c813-child",
+   "rm -f /etc/nodesteer/qa-g89202610178970c813.yaml /var/log/nodesteer-qa-g89202610178970c813.log",
+   "关闭本地隧道 -L 38286:127.0.0.1:18086",
+   "删除本地 0600 凭据文件 /tmp/opencode/g89-creds-g89202610178970c813.json",
+   "关闭自有 agent-browser session 16 个（qa-g89-<nonce>-*；含二次 close 的 probe session）"
+  ],
+  "verification": {
+   "processes": "0",
+   "listening_port_18086": "0",
+   "data_dir_exists": "no",
+   "child_root_exists": "no",
+   "config_exists": "no",
+   "log_exists": "no",
+   "etc_leftovers": "0",
+   "var_lib_leftovers": "0",
+   "var_log_leftovers": "0",
+   "tmp_leftovers": "0",
+   "own_sessions_left": "0",
+   "credential_file_left": false
+  },
+  "collateral_check": {
+   "repair_18080_listening": true,
+   "primary_8080_listening": true,
+   "repair_pid_before_after": "168213 / 168213",
+   "primary_pid_before_after": "1251 / 1251",
+   "repair_config_md5_unchanged": true,
+   "nodesteer_agent_service": "inactive",
+   "repair_agent_units_on_hub_host": "0",
+   "systemd_units_matching_nonce": "0",
+   "repair_writes_by_this_batch": "none（只读 GET/SHA 比对）",
+   "primary_8080_writes_by_this_batch": "none"
+  },
+  "result": "ISOLATED_INSTANCE_DESTROYED_AND_VERIFIED"
+ }
+}

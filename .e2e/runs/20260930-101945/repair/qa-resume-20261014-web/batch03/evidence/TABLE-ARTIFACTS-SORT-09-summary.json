@@ -1,0 +1,22 @@
+{
+  "case_id": "TABLE-ARTIFACTS-SORT",
+  "captured_at_utc": "2026-10-14T08:37:00Z",
+  "route": "/artifacts",
+  "row_total": 12,
+  "sortable_header_buttons": ["名称", "版本", "架构", "文件名", "大小", "SHA256", "使用情况"],
+  "non_sortable_header": "操作 (header '' -> not a sort control)",
+  "string_column_name": {
+    "unsorted": {"aria_sort": null, "first3": ["art-11", "art-10", "art-09"], "evidence": "evidence/TABLE-ARTIFACTS-SORT-01-unsorted.json"},
+    "click1_asc": {"aria_sort": "ascending", "first3": ["qa-repair-20260930-101945-app-async-deploy-v1", "art-01", "art-02"], "evidence": "evidence/TABLE-ARTIFACTS-SORT-03-name-asc.json", "screenshot": "evidence/TABLE-ARTIFACTS-SORT-03a-name-asc.png"},
+    "click2_desc": {"aria_sort": "descending", "first3": ["art-11", "art-10", "art-09"], "evidence": "evidence/TABLE-ARTIFACTS-SORT-04-name-desc.json"},
+    "click3_cleared": {"aria_sort": null, "first3": ["art-11", "art-10", "art-09"], "evidence": "evidence/TABLE-ARTIFACTS-SORT-05-name-cleared.json"}
+  },
+  "numeric_column_size": {
+    "note": "TanStack auto-detects numeric columns and sorts DESCENDING on first click (sortDescFirst auto). Observed and expected library behaviour, not a defect.",
+    "click1_desc": {"aria_sort": "descending", "first_sizes": ["1564 KB", "0 KB", "0 KB"], "evidence": "evidence/TABLE-ARTIFACTS-SORT-06-size-asc.json"},
+    "click2_asc": {"aria_sort": "ascending", "first_sizes": ["0 KB", "0 KB", "0 KB"], "evidence": "evidence/TABLE-ARTIFACTS-SORT-07-size-desc.json"},
+    "click3_cleared": {"aria_sort": null, "evidence": "evidence/TABLE-ARTIFACTS-SORT-08-size-cleared.json"}
+  },
+  "conclusion": "All allowed columns expose asc/desc/clear via the header button (aria-label 'X: 升序/降序/清除排序' and aria-sort on th); verified on one string column and one numeric column.",
+  "harness_note": "agent-browser click on the header button returned a false 'covered by h1' guard error while document.elementFromPoint returned the button itself; clicks were then issued as real mouse move/down/up at the button centre. Harness guard false-positive, not a product issue."
+}

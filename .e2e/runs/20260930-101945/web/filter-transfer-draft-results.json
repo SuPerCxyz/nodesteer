@@ -1,0 +1,147 @@
+{
+  "config": {
+    "argv": [
+      "/usr/bin/node",
+      "/home/superc/code/nodesteer/web/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "e2e/playwright.config.ts",
+      "--reporter=json",
+      "--grep",
+      "SAFE-18"
+    ],
+    "configFile": "/home/superc/code/nodesteer/web/e2e/playwright.config.ts",
+    "rootDir": "/home/superc/code/nodesteer/web/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/superc/code/nodesteer/web/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "safe-ui.spec.ts",
+      "file": "safe-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "SAFE-18 Execution状态触发筛选URL/清空与Transfer目标草稿反向操作",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1466,
+                  "error": {
+                    "message": "TypeError: nodes.find is not a function",
+                    "stack": "TypeError: nodes.find is not a function\n    at /home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts:579:22",
+                    "location": {
+                      "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                      "column": 22,
+                      "line": 579
+                    },
+                    "snippet": "  577 |   await page.getByRole('textbox',{name:/搜索/}).fill('');await expect(page).not.toHaveURL(/[?&](q|trigger|status)=/)\n  578 |   await page.goto('/transfers');const nodes=(await apiRequest(page,'/api/nodes')).body as {id:string;hostname:string}[]\n> 579 |   const source=nodes.find(n=>n.id===(process.env.NODESTEER_E2E_NODE_IDS||'').split(',')[0])!,target=nodes.find(n=>n.id===process.env.NODESTEER_E2E_LABEL_NODE_ID)!\n      |                      ^\n  580 |   const combos=page.getByRole('combobox'),add=page.getByRole('button',{name:/^添加目标$/}),start=page.getByRole('button',{name:/^开始传输$/})\n  581 |   await expect(add).toBeDisabled();await expect(start).toBeDisabled();await combos.nth(0).click();await page.getByRole('option',{name:source.hostname,exact:true}).click()\n  582 |   await combos.nth(1).click();await expect(page.getByRole('option',{name:source.hostname,exact:true})).toHaveCount(0);await page.getByRole('option',{name:target.hostname,exact:true}).click()"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                        "column": 22,
+                        "line": 579
+                      },
+                      "message": "TypeError: nodes.find is not a function\n\n  577 |   await page.getByRole('textbox',{name:/搜索/}).fill('');await expect(page).not.toHaveURL(/[?&](q|trigger|status)=/)\n  578 |   await page.goto('/transfers');const nodes=(await apiRequest(page,'/api/nodes')).body as {id:string;hostname:string}[]\n> 579 |   const source=nodes.find(n=>n.id===(process.env.NODESTEER_E2E_NODE_IDS||'').split(',')[0])!,target=nodes.find(n=>n.id===process.env.NODESTEER_E2E_LABEL_NODE_ID)!\n      |                      ^\n  580 |   const combos=page.getByRole('combobox'),add=page.getByRole('button',{name:/^添加目标$/}),start=page.getByRole('button',{name:/^开始传输$/})\n  581 |   await expect(add).toBeDisabled();await expect(start).toBeDisabled();await combos.nth(0).click();await page.getByRole('option',{name:source.hostname,exact:true}).click()\n  582 |   await combos.nth(1).click();await expect(page.getByRole('option',{name:source.hostname,exact:true})).toHaveCount(0);await page.getByRole('option',{name:target.hostname,exact:true}).click()\n    at /home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts:579:22"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-01T04:47:36.920Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts/safe-ui-SAFE-18-Execution状态触发筛选URL-清空与Transfer目标草稿反向操作-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                    "column": 22,
+                    "line": 579
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "ddd7e7cf69376006a28d-f60f0a99023a6105d64b",
+          "file": "safe-ui.spec.ts",
+          "line": 566,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-01T04:47:36.323Z",
+    "duration": 2178.143,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

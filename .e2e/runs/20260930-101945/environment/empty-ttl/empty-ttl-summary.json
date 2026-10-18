@@ -1,0 +1,676 @@
+{
+  "run_id": "20260930-101945",
+  "classification": "REAL_ISOLATED_HUB_UI",
+  "status": "completed",
+  "run_tag": "6a56409affff",
+  "remote_primary_mutations": 0,
+  "primary_credentials_used": false,
+  "primary_config_or_database_read": false,
+  "agent_registration_attempted": false,
+  "phases": [
+    {
+      "session_ttl": "60s",
+      "process": {
+        "timeout_pid": 970842,
+        "hub_pid": 970845,
+        "local_pgid": 8,
+        "binary_sha256": "4bef0278bd941e369ff06bfb4b43cfc1f76c666c9d3f3f3ddb38a1f7776a771b"
+      },
+      "tunnel": {
+        "pid": 10,
+        "local_pgid": 10,
+        "local_port": 44271,
+        "target": "Hub VM localhost:18996"
+      },
+      "readyz": 200,
+      "guest_listeners": [
+        "LISTEN 0      4096   127.0.0.1:18995 0.0.0.0:* users:((\"nodesteer-hub\",pid=970845,fd=10))",
+        "LISTEN 0      4096   127.0.0.1:18996 0.0.0.0:* users:((\"nodesteer-hub\",pid=970845,fd=9)) "
+      ],
+      "browser_session": "r6089f5ee",
+      "database_before_ttl_restart": [
+        {
+          "device": 35,
+          "inode": 4446,
+          "path": "hub.db",
+          "size": 258048
+        }
+      ],
+      "own_session_logout": {
+        "http": 200,
+        "token_present": true
+      },
+      "browser_closed": true,
+      "own_hub_stop": {
+        "hub_pid": 970845,
+        "timeout_pid": 970842,
+        "term_sent_to": "owned-hub",
+        "wrapper_exit": 0
+      },
+      "tunnel_stop": {
+        "stopped": true,
+        "local_forward_port_closed": true
+      },
+      "ports_closed": true
+    },
+    {
+      "session_ttl": "3s",
+      "process": {
+        "timeout_pid": 971148,
+        "hub_pid": 971150,
+        "local_pgid": 260,
+        "binary_sha256": "4bef0278bd941e369ff06bfb4b43cfc1f76c666c9d3f3f3ddb38a1f7776a771b"
+      },
+      "same_data_dir": true,
+      "tunnel": {
+        "pid": 262,
+        "local_pgid": 262,
+        "local_port": 41187,
+        "target": "Hub VM localhost:18996"
+      },
+      "guest_listeners": [
+        "LISTEN 0      4096   127.0.0.1:18995 0.0.0.0:* users:((\"nodesteer-hub\",pid=971150,fd=10))",
+        "LISTEN 0      4096   127.0.0.1:18996 0.0.0.0:* users:((\"nodesteer-hub\",pid=971150,fd=9)) "
+      ],
+      "readyz": 200,
+      "database_after_restart": [
+        {
+          "device": 35,
+          "inode": 4446,
+          "path": "hub.db",
+          "size": 258048
+        }
+      ],
+      "same_database_identity": true,
+      "wait_after_login_seconds": 5.512,
+      "internal_return_target": {
+        "requested_path": "/executions",
+        "signin_redirect": "/executions",
+        "safe_same_origin": true,
+        "final_path": "/executions",
+        "me_http": 200,
+        "path_matches": true
+      },
+      "final_own_session_logout": {
+        "http": 200,
+        "token_present": true
+      },
+      "browser_closed": true,
+      "own_hub_stop": {
+        "hub_pid": 971150,
+        "timeout_pid": 971148,
+        "term_sent_to": "owned-hub",
+        "wrapper_exit": 0
+      },
+      "tunnel_stop": {
+        "stopped": true,
+        "local_forward_port_closed": true
+      },
+      "ports_closed": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "P03-09",
+      "status": "PASS",
+      "classification": "REAL_ISOLATED_HUB_UI",
+      "covered": [
+        "Fresh isolated admin login and /api/me=200 administrator",
+        "Dashboard used real empty arrays for nodes, executions, applications, schedules and tasks",
+        "Dashboard displayed zero running/failure counts, no-running/no-app/no-schedule empty states and an empty recent-execution body",
+        "No Agent registration or business-resource creation"
+      ],
+      "observed_notes": [
+        "Dashboard reports zero recent failures in its metric card; this UI does not provide a separate explanatory no-failure message or failure list."
+      ],
+      "remaining": [],
+      "me": {
+        "expires": "2026-10-03T15:32:28.412008419+08:00",
+        "http": 200,
+        "role": "administrator",
+        "token_length": 36,
+        "token_present": true,
+        "username": "qa-ttl-admin"
+      },
+      "api_empty_results": [
+        {
+          "count": 0,
+          "path": "/api/nodes",
+          "status": 200
+        },
+        {
+          "count": 0,
+          "path": "/api/executions?limit=50",
+          "status": 200
+        },
+        {
+          "count": 0,
+          "path": "/api/applications",
+          "status": 200
+        },
+        {
+          "count": 0,
+          "path": "/api/schedules",
+          "status": 200
+        },
+        {
+          "count": 0,
+          "path": "/api/tasks",
+          "status": 200
+        }
+      ],
+      "ui": {
+        "cards": [
+          "节点总数 0 0 在线",
+          "运行中 0 正在执行的任务",
+          "执行失败 0 最近 50 次执行",
+          "成功率 - 0 次已完成执行"
+        ],
+        "heading": "仪表盘",
+        "messages": {
+          "no_apps": true,
+          "no_executions": false,
+          "no_failures": false,
+          "no_running": true,
+          "no_schedules": true
+        },
+        "path": "/",
+        "recent_execution_rows": 0
+      },
+      "actual_ui_network": [
+        {
+          "path": "/api/oidc/state",
+          "method": "GET",
+          "http": 200
+        },
+        {
+          "path": "/api/login",
+          "method": "POST",
+          "http": 200
+        },
+        {
+          "path": "/api/me",
+          "method": "GET",
+          "http": 200
+        },
+        {
+          "path": "/healthz",
+          "method": "GET",
+          "http": 200
+        },
+        {
+          "path": "/api/nodes",
+          "method": "GET",
+          "http": 200
+        },
+        {
+          "path": "/api/executions",
+          "method": "GET",
+          "http": 200
+        },
+        {
+          "path": "/api/applications",
+          "method": "GET",
+          "http": 200
+        },
+        {
+          "path": "/api/schedules",
+          "method": "GET",
+          "http": 200
+        },
+        {
+          "path": "/api/tasks",
+          "method": "GET",
+          "http": 200
+        },
+        {
+          "path": "/api/me",
+          "method": "GET",
+          "http": 200
+        },
+        {
+          "path": "/api/nodes",
+          "method": "GET",
+          "http": 200
+        },
+        {
+          "path": "/api/executions",
+          "method": "GET",
+          "http": 200
+        },
+        {
+          "path": "/api/applications",
+          "method": "GET",
+          "http": 200
+        },
+        {
+          "path": "/api/schedules",
+          "method": "GET",
+          "http": 200
+        },
+        {
+          "path": "/api/tasks",
+          "method": "GET",
+          "http": 200
+        }
+      ],
+      "evidence": [
+        "environment/empty-ttl/dashboard-empty-isolated-initial.png",
+        "environment/empty-ttl/dashboard-empty-isolated.png",
+        "environment/empty-ttl/empty-ttl-summary.json"
+      ]
+    },
+    {
+      "case_id": "FL-14",
+      "status": "FAIL",
+      "classification": "REAL_ISOLATED_HUB_UI",
+      "related_failure": "E2E-20260930-101945-P1-001",
+      "covered": [
+        "Fresh TTL=3s login, /api/me=200 administrator, server Expires recorded",
+        "Waited more than five seconds without changing any clock",
+        "Dashboard issued real API request(s) and received HTTP 401 after expiry",
+        "Captured post-401 URL, login form and localStorage token state",
+        "A protected same-origin /executions request retained its internal target through a fresh UI login"
+      ],
+      "remaining": [
+        "Automatic redirect from the expired Dashboard to /sign-in was not observed; correlate this reproduction with the existing session-expiry defect."
+      ],
+      "login_me": {
+        "expires": "2026-10-03T15:31:34.959581424+08:00",
+        "http": 200,
+        "role": "administrator",
+        "token_length": 36,
+        "token_present": true,
+        "username": "qa-ttl-admin"
+      },
+      "wait_after_login_seconds": 5.512,
+      "expired_ui_state": {
+        "auth_error": true,
+        "has_retry": true,
+        "has_token": false,
+        "heading": "仪表盘",
+        "path": "/",
+        "redirect": null,
+        "search": "",
+        "sign_in_form": false,
+        "ttl_proof": {
+          "errors": [],
+          "responses": [
+            {
+              "http": 401,
+              "method": "GET",
+              "path": "/api/applications"
+            },
+            {
+              "http": 401,
+              "method": "GET",
+              "path": "/api/nodes"
+            },
+            {
+              "http": 401,
+              "method": "GET",
+              "path": "/api/executions"
+            },
+            {
+              "http": 401,
+              "method": "GET",
+              "path": "/api/tasks"
+            },
+            {
+              "http": 401,
+              "method": "GET",
+              "path": "/api/schedules"
+            }
+          ]
+        }
+      },
+      "api_401": [
+        {
+          "path": "/api/nodes",
+          "method": "GET",
+          "http": 401
+        },
+        {
+          "path": "/api/executions",
+          "method": "GET",
+          "http": 401
+        },
+        {
+          "path": "/api/applications",
+          "method": "GET",
+          "http": 401
+        },
+        {
+          "path": "/api/schedules",
+          "method": "GET",
+          "http": 401
+        },
+        {
+          "path": "/api/tasks",
+          "method": "GET",
+          "http": 401
+        }
+      ],
+      "automatic_sign_in_redirect": false,
+      "evidence": [
+        "environment/empty-ttl/dashboard-ttl-expired.png",
+        "environment/empty-ttl/empty-ttl-summary.json"
+      ],
+      "failure_evidence": ".e2e/runs/20260930-101945/failures.json#E2E-20260930-101945-P1-001",
+      "internal_return_target": {
+        "requested_path": "/executions",
+        "signin_redirect": "/executions",
+        "safe_same_origin": true,
+        "final_path": "/executions",
+        "me_http": 200,
+        "path_matches": true
+      }
+    }
+  ],
+  "local_private": {
+    "directory_mode": "0700",
+    "credentials_mode": "0600",
+    "path": "/tmp/nodesteer-empty-ttl-6a56409affff-la174mzu",
+    "socket_root": "/tmp/e6a56409affff",
+    "path_retained_for_root_secret_scan": true
+  },
+  "temporary_hub": {
+    "service": "own timeout-wrapped process",
+    "binary": "/usr/local/bin/nodesteer-hub",
+    "data_dir": "/tmp/qa-20260930-101945-luna-empty-ttl-6a56409affff/data",
+    "artifact_dir": "/tmp/qa-20260930-101945-luna-empty-ttl-6a56409affff/artifacts",
+    "config": "/tmp/qa-20260930-101945-luna-empty-ttl-6a56409affff/hub.yaml"
+  },
+  "evidence": [
+    "environment/empty-ttl/empty-ttl-summary.json",
+    "environment/empty-ttl/dashboard-empty-isolated.png",
+    "environment/empty-ttl/dashboard-ttl-expired.png"
+  ],
+  "resume_existing_own_database": true,
+  "local_private_path": "/tmp/nodesteer-empty-ttl-6a56409affff-la174mzu",
+  "prior_harness_attempt": {
+    "classification": "HARNESS_FAILURE",
+    "status": "interrupted",
+    "error": {
+      "type": "RuntimeError",
+      "stage": "stop own TTL=60s Hub and tunnel",
+      "message": "task-owned Hub guest step failed"
+    },
+    "temporary_hub_process": {
+      "timeout_pid": 965871,
+      "hub_pid": 965873,
+      "local_pgid": 8,
+      "binary_sha256": "4bef0278bd941e369ff06bfb4b43cfc1f76c666c9d3f3f3ddb38a1f7776a771b"
+    },
+    "private_backup": {
+      "backup_path": "/root/nodesteer-e2e-20260930-101945/backup/empty-ttl/empty-ttl-6a56409affff.db",
+      "verified_present_mode": "0600"
+    },
+    "cleanup_errors": [
+      "RuntimeError"
+    ],
+    "own_temp_dir_retained": true,
+    "business_resource_counts": {
+      "users": 1,
+      "audit_logs": 0,
+      "nodes": 0,
+      "tasks": 0,
+      "schedules": 0,
+      "executions": 0,
+      "applications": 0
+    }
+  },
+  "harness_history": [
+    {
+      "classification": "HARNESS_FAILURE",
+      "status": "interrupted",
+      "error": {
+        "type": "RuntimeError",
+        "stage": "stop own TTL=60s Hub and tunnel",
+        "message": "task-owned Hub guest step failed"
+      },
+      "no_new_Hub_started_in_that_attempt": true
+    }
+  ],
+  "preserved_prior_empty_state_probe": {
+    "case_id": "P03-09",
+    "status": "PASS",
+    "classification": "REAL_ISOLATED_HUB_UI",
+    "evidence": "environment/empty-ttl/dashboard-empty-isolated-initial.png",
+    "me": {
+      "http": 200,
+      "role": "administrator",
+      "username": "qa-ttl-admin"
+    },
+    "api_empty_results": [
+      {
+        "path": "/api/nodes",
+        "status": 200,
+        "count": 0
+      },
+      {
+        "path": "/api/executions?limit=50",
+        "status": 200,
+        "count": 0
+      },
+      {
+        "path": "/api/applications",
+        "status": 200,
+        "count": 0
+      },
+      {
+        "path": "/api/schedules",
+        "status": 200,
+        "count": 0
+      },
+      {
+        "path": "/api/tasks",
+        "status": 200,
+        "count": 0
+      }
+    ],
+    "ui": {
+      "heading": "仪表盘",
+      "metric_cards": [
+        "节点总数 0 0 在线",
+        "运行中 0 正在执行的任务",
+        "执行失败 0 最近 50 次执行",
+        "成功率 - 0 次已完成执行"
+      ],
+      "no_running": true,
+      "no_apps": true,
+      "no_schedules": true,
+      "recent_execution_rows": 0,
+      "no_dedicated_failure_or_recent_execution_explanation": true
+    },
+    "own_session_logout_http": 200,
+    "note": "真实零失败数据和Failed=0卡片适用；页面没有独立失败列表/解释文本，已如实记录。"
+  },
+  "stage": "isolated browser login: t3",
+  "recorded_at": "2026-10-03T07:31:50.308691+00:00",
+  "baseline": {
+    "original_hub": {
+      "active": "active",
+      "pid": 412437,
+      "exe": "/usr/local/bin/nodesteer-hub",
+      "sha": "4bef0278bd941e369ff06bfb4b43cfc1f76c666c9d3f3f3ddb38a1f7776a771b",
+      "ports": "",
+      "timeout": "/usr/bin/timeout",
+      "python3": "/usr/bin/python3",
+      "sqlite3": "available"
+    },
+    "primary_api": {
+      "/healthz": 200,
+      "/readyz": 200,
+      "nodes_http": 200,
+      "native_nodes": [
+        {
+          "id": "56765828-4896-492b-b562-64afdc0fb8d6",
+          "agent_id": "agent-b1b8b170-c9e4-4869-bb3b-6a895d621e60",
+          "status": "online",
+          "sync_status": "synced",
+          "agent_version": "dddee4f0"
+        },
+        {
+          "id": "d77e2440-919f-4431-a488-733817dcd809",
+          "agent_id": "agent-1fbe0fa7-501a-49d6-8af8-6cdb6ec777f5",
+          "status": "online",
+          "sync_status": "synced",
+          "agent_version": "dddee4f0"
+        },
+        {
+          "id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+          "agent_id": "agent-a5a3aca2-097a-4de1-b870-13e2c76d9612",
+          "status": "online",
+          "sync_status": "synced",
+          "agent_version": "dddee4f0"
+        },
+        {
+          "id": "1c59cf12-97ef-412f-9a06-aea04e6423c1",
+          "agent_id": "agent-f088585f-676a-4e7b-9c64-441e22a3e85d",
+          "status": "online",
+          "sync_status": "synced",
+          "agent_version": "dddee4f0"
+        }
+      ],
+      "four_native_unchanged": true
+    },
+    "old_backup_metadata": [
+      "/root/nodesteer-e2e-20260930-101945|directory|700|4096|1790735060",
+      "/root/nodesteer-e2e-20260930-101945/backup|directory|700|4096|1791010708",
+      "/root/nodesteer-e2e-20260930-101945/backup/hub|directory|700|4096|1790735067",
+      "/root/nodesteer-e2e-20260930-101945/backup/isolated-core|directory|700|4096|1790830384"
+    ]
+  },
+  "browser_binary": {
+    "path": "/home/superc/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome",
+    "version": "Google Chrome for Testing 149.0.7827.55",
+    "independent_about_blank_open": true,
+    "open_exit": 0
+  },
+  "directory_setup": {
+    "own_dir_mode": "0700",
+    "config_mode": "0600",
+    "previous_backup_mode": "0600",
+    "new_backup_absent": true,
+    "previous_backup_path": "/root/nodesteer-e2e-20260930-101945/backup/empty-ttl/empty-ttl-6a56409affff.db"
+  },
+  "configs": [
+    {
+      "session_ttl": "60s",
+      "sha256": "7f5f86ef95373c6524d3aa17f155c81c7290fd6aea3e3d56193062e69ec97092",
+      "mode": "0600",
+      "own_paths_only": true,
+      "secrets_private": true
+    },
+    {
+      "session_ttl": "3s",
+      "sha256": "de72a35bd82b7439ae93d2a983439aac53d57b534340bff74d50bec1a607817f",
+      "mode": "0600",
+      "own_paths_only": true,
+      "secrets_private": true
+    }
+  ],
+  "cleanup": {
+    "own_tunnel_stop": {
+      "stopped": true,
+      "local_forward_port_closed": true
+    },
+    "private_database_backup": {
+      "source_db": "hub.db",
+      "db_count": 1,
+      "integrity_check": "ok",
+      "tables": [
+        "agent_sync_state",
+        "application_assignments",
+        "application_node_state",
+        "application_revisions",
+        "applications",
+        "artifacts",
+        "audit_logs",
+        "executions",
+        "file_transfer_targets",
+        "file_transfers",
+        "log_chunks",
+        "node_group_members",
+        "node_groups",
+        "nodes",
+        "remote_state",
+        "revision_changes",
+        "revision_sequence",
+        "schedules",
+        "schema_migrations",
+        "script_revisions",
+        "scripts",
+        "settings",
+        "sqlite_sequence",
+        "task_revisions",
+        "tasks",
+        "tombstones",
+        "users"
+      ],
+      "business_counts": {
+        "executions": 0,
+        "schedules": 0,
+        "tasks": 0
+      },
+      "mode": "0o600",
+      "size": 258048,
+      "sha256": "2e79f4eb271a4eaa00e0b7d65d29a918cefeb75bbe52dcc2a1620a312002160a",
+      "own_tmp_dir_removed": true,
+      "backup_path": "/root/nodesteer-e2e-20260930-101945/backup/empty-ttl/empty-ttl-6a56409affff-final-afffb8fb.db"
+    },
+    "original_hub_after": {
+      "active": "active",
+      "pid": 412437,
+      "exe": "/usr/local/bin/nodesteer-hub",
+      "sha": "4bef0278bd941e369ff06bfb4b43cfc1f76c666c9d3f3f3ddb38a1f7776a771b",
+      "ports": "",
+      "timeout": "/usr/bin/timeout",
+      "python3": "/usr/bin/python3",
+      "sqlite3": "available"
+    },
+    "primary_api_after": {
+      "/healthz": 200,
+      "/readyz": 200,
+      "nodes_http": 200,
+      "native_nodes": [
+        {
+          "id": "56765828-4896-492b-b562-64afdc0fb8d6",
+          "agent_id": "agent-b1b8b170-c9e4-4869-bb3b-6a895d621e60",
+          "status": "online",
+          "sync_status": "synced",
+          "agent_version": "dddee4f0"
+        },
+        {
+          "id": "d77e2440-919f-4431-a488-733817dcd809",
+          "agent_id": "agent-1fbe0fa7-501a-49d6-8af8-6cdb6ec777f5",
+          "status": "online",
+          "sync_status": "synced",
+          "agent_version": "dddee4f0"
+        },
+        {
+          "id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+          "agent_id": "agent-a5a3aca2-097a-4de1-b870-13e2c76d9612",
+          "status": "online",
+          "sync_status": "synced",
+          "agent_version": "dddee4f0"
+        },
+        {
+          "id": "1c59cf12-97ef-412f-9a06-aea04e6423c1",
+          "agent_id": "agent-f088585f-676a-4e7b-9c64-441e22a3e85d",
+          "status": "online",
+          "sync_status": "synced",
+          "agent_version": "dddee4f0"
+        }
+      ],
+      "four_native_unchanged": true
+    },
+    "old_backup_metadata_after": [
+      "/root/nodesteer-e2e-20260930-101945|directory|700|4096|1790735060",
+      "/root/nodesteer-e2e-20260930-101945/backup|directory|700|4096|1791010708",
+      "/root/nodesteer-e2e-20260930-101945/backup/hub|directory|700|4096|1790735067",
+      "/root/nodesteer-e2e-20260930-101945/backup/isolated-core|directory|700|4096|1790830384"
+    ]
+  }
+}

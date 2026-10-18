@@ -1,0 +1,114 @@
+{
+  "batch_id": "qa-resume-20261010-web-batch22-owned-readonly-nodedetail-settings",
+  "status": "COMPLETE_FOR_ROOT_REVIEW",
+  "phase": "BATCH22_READONLY_CASES_COMPLETE",
+  "updated_at_utc": "2026-10-12T14:21:00.345760+00:00",
+  "session": "qawebsecure20261010-b18-clean38181",
+  "origin": "http://127.0.0.1:38181",
+  "business_writes": 0,
+  "runs": 0,
+  "new_resources": 0,
+  "cases": [
+    {
+      "case_id": "P04-09",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P04-09-reuse.json",
+        "../batch19/evidence/TABLE-NODES-ERROR-failure.json",
+        "../batch19/evidence/TABLE-NODES-ERROR-retry-action.json"
+      ],
+      "actual": "Existing batch19 real Node GET failure/Retry evidence is available for Root mapping; this batch did not duplicate the failure.",
+      "remaining_dimensions": [],
+      "disposition": "Root may map existing canonical-equivalent evidence.",
+      "stage": "mapped_existing_batch19_live_fault_retry"
+    },
+    {
+      "case_id": "P05B-03",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P05B-03-inventory.json"
+      ],
+      "actual": "The whitelist probe was attempted on the protected Node detail page, but fresh GET /api/nodes/{id} returned 401. Inventory detail DOM may be stale cached UI and was not treated as API-correlated.",
+      "remaining_dimensions": [],
+      "stage": "inventory_api_ui_hashes_match"
+    },
+    {
+      "case_id": "P05B-04",
+      "status": "PARTIAL",
+      "evidence": [
+        "evidence/P05B-04-node3.json",
+        "evidence/P05B-04-capability-scan.json"
+      ],
+      "actual": "Capability/API comparison could not be trusted after the protected Node GET returned 401.",
+      "remaining_dimensions": [
+        "No false capability existed in the five currently online Native Nodes; all visible API booleans were true. The Enabled UI states matched all API entries, but no honest disabled sample was available. No fixture or Agent capability was altered."
+      ],
+      "stage": "all_five_allowed_native_online_scanned_no_disabled_sample"
+    },
+    {
+      "case_id": "P05B-09",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P05B-09.json"
+      ],
+      "actual": "Actual Managed Applications link on the Native3 detail was clicked and reached its matching existing application detail route; browser request log contained the detail GET 200. This evidence was captured before the later /api/me 401 was discovered; Root should review the event ordering before integration.",
+      "remaining_dimensions": []
+    },
+    {
+      "case_id": "P05B-10",
+      "status": "PARTIAL",
+      "evidence": [
+        "evidence/P05B-10.json"
+      ],
+      "actual": "Stopped after the authenticated profile began returning 401; no Task or Execution link action was taken.",
+      "remaining_dimensions": [
+        "No live Task-name link existed to click; do not create a Task under the zero-resource budget. Actual Execution-detail links were clicked and API-validated."
+      ],
+      "stage": "execution_click_proven_live_task_link_unavailable"
+    },
+    {
+      "case_id": "P05B-11",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P05B-11.json"
+      ],
+      "actual": "Stopped after the authenticated profile began returning 401; no Back action was taken.",
+      "remaining_dimensions": [],
+      "stage": "back_anchor_to_agents_complete"
+    },
+    {
+      "case_id": "P21-01",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P21-01.json"
+      ],
+      "actual": "Stopped because protected page requests returned 401.",
+      "remaining_dimensions": [],
+      "stage": "runtime_appearance_navigation_complete"
+    },
+    {
+      "case_id": "P21-02",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P21-02.json"
+      ],
+      "actual": "Stopped because /api/me and Node detail GET returned 401; no Settings API or field data was read.",
+      "remaining_dimensions": [],
+      "stage": "settings_get_and_ui_input_match"
+    }
+  ],
+  "next": "Root review and canonical integration. Preserve the shared 38181 forward and current owned profile for later approved work; no logout or tunnel shutdown in this batch.",
+  "counts": {
+    "PASS": 6,
+    "PARTIAL": 2,
+    "FAIL": 0,
+    "NOT_RUN": 0
+  },
+  "scan_progress": {
+    "checked": 5,
+    "total": 5,
+    "latest_node_id_sha256": "d0432d08099a1799bca517ee27549d8669c8f7ef8ad71dea2c433fdaeeadc413",
+    "latest_api_status": 200,
+    "latest_disabled_count": 0
+  }
+}

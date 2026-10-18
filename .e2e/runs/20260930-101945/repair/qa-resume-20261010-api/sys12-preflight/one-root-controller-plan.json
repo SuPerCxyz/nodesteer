@@ -1,0 +1,85 @@
+{
+  "status": "EXECUTABLE_CONTROLLER_SOURCE_READY_ROOT_REVIEW_REQUIRED_NO_RESOURCE_ACTION",
+  "case_id": "SYS-12",
+  "scope": "Executable outer controller and Native2 lifecycle source are prepared locally; no Docker/Hub/Task/fixture action was run. Resource creation remains gated on Root grant.",
+  "single_shared_root": {
+    "path_pattern": "/opt/qa-resume-20261012-sys12-<fresh-12-hex-nonce>",
+    "ownership": "root root0700; owner.json/resource-ledger.json root root0600; private/ and data/ UID/GID65534 mode0700; config UID/GID65534 mode0600",
+    "lifetime": "The same root/config/data/network is shared by container A and B. B replaces A; no new root or Docker volume is made.",
+    "recorded_resources": "Record owner root dev/inode, actual network ID, immutable container A/B IDs, names, IDs, NodeName and safe stage results before proceeding after each create/stop/remove. Never store registration token, AgentCredential or Admin bearer in ledger.",
+      "recovery": "On retry/cleanup only, use nonce-derived exact names. A found resource is ledgered only if exact name, owner label, pinned image, full container policy and exact config/data mounts match. Mismatch is preserved for Root review; no broad Docker list, duplicate create, or automatic product mutation. The cumulative helper ledger allows 6 normal lifecycle calls plus at most 4 recovery calls (10 total)."
+  },
+  "controller_security": {
+    "location": "One local outer controller script; reads repair connection from existing private0600 file into memory.",
+    "admin_api": "Port 18080 only; Admin bearer is sent only in HTTP Authorization headers and never serialized to Task/Task params/stdout/evidence.",
+    "helper_tasks": "Temporary helper Task command contains lifecycle source + nonce/phase/IDs only. It reads registration_token from the existing Native2 private config at runtime and writes only the new 65534:65534 0600 config. No credential is embedded or printed.",
+    "node_creation": "Fresh unique NodeName confirmed unused by Admin GET. The Agent config has that name and omits agent_id; valid RegistrationKey first HELLO creates Node/Agent identity, and HELLO_ACK credential persists to the new DataDir. No Admin enrollment POST.",
+    "node_name_preflight": "The outer controller records baseline original Node IDs/health and repeats Admin GET for the fresh nonce NodeName immediately before POST /run for the verified prepare helper Task/start A. It confirms the unique NodeID/AgentID after HELLO and rechecks the original four Nodes after cleanup.",
+      "failed_phase_recovery": "A per-run private-mode ledger records source hashes, resource names/IDs, helper Task/Execution IDs and safe outcomes. Recovery requires the same lifecycle/controller source SHAs and Root grant ID; before cleanup it reconciles every helper Run against its exact Task/Execution and proves terminal. A timeout requests cancel only for that exact execution and waits for terminal. If terminal/inactive cannot be proven, status becomes OWNED_ACTIVE_HELPER_BLOCKED, the helper Task/resources are preserved, and all remote mutations stop. Recovery uses :18080 only, never repeats the business Run or prepare, and preserves execution/audit history. The cumulative budget is 6 normal calls plus up to 4 recovery calls, maximum 10."
+  },
+  "sequential_phases": [
+    {
+      "phase": "prepare",
+      "helper": "Helper 1/6. After outer controller repeats fresh NodeName-unused GET immediately before helper Run, source guards original private config/image/archive/exact names and creates root/private/data, owned bridge and A."
+    },
+    {
+      "phase": "hello_business",
+      "outer_controller": "Wait for exact unique NodeName HELLO, verify new NodeID/AgentID/mode/HostIntegration/online/synced. Create one owned Script, one Script Task, run once and verify Hub Execution SUCCESS plus exact marker. Create and GET one disabled cron Schedule."
+    },
+    {
+      "phase": "inspect_a",
+      "helper": "Helper 2/6. Require quick_check=ok, exact Hub identity/SQLite Script cache/Schedule/Execution rows and Agent PID/UID/exe SHA/cgroup/open fd→same DB dev+inode proof. Persist A snapshot."
+    },
+    {
+      "phase": "recreate_b",
+      "helper": "Helper 3/6. Stop/remove A; snapshot same DataDir after A removal and before B; start B directly on same owner bridge and prove exact new process has the same DB open."
+    },
+    {
+      "phase": "inspect_b_and_stop",
+      "helper": "Helper 4/6. Wait Node online/synced and sample its latest global_revision. Recheck DB identity, Script/Schedule/Journal and process proof; require local revision monotonic/current; stop exact B and verify stopped/PID zero."
+    },
+    {
+      "phase": "api_cleanup",
+      "outer_controller": "DELETE exact Schedule→Task→Script→Node via repair :18080 and GET404 each; preserve Execution/Audit. No extra helper."
+    },
+    {
+      "phase": "cleanup_runtime",
+      "helper": "Helper 5/6. Remove exact stopped container IDs and exact empty owner bridge. For an interruption between daemon create and ledger commit, recover only exact nonce names after full owner-label/image/security/mount verification; persist immutable IDs before delete."
+    },
+    {
+      "phase": "cleanup_root",
+      "helper": "Helper 6/6, only after controller verifies all exact API 404s. Recheck root inode/UID/mode/type allowlist and empty owned data directories; preserve unexpected content."
+    }
+  ],
+  "budget": {
+    "Nodes": 1,
+    "business_Tasks": 1,
+    "disabled_Schedules": 1,
+    "business_Executions": 1,
+    "normal_helper_Tasks_and_Runs": 6,
+    "recovery_helper_Tasks_and_Runs_max": 4,
+    "cumulative_helper_Tasks_and_Runs_max": 10,
+    "business_Runs_max": 1,
+    "sequential_container_ids": 2,
+    "concurrent_containers": 1,
+    "owned_bridges": 1,
+    "Docker_volumes": 0,
+    "Users": 0,
+    "Applications_Artifacts_Transfers": 0,
+    "Scripts": 1
+  },
+  "source_and_preflight_refs": {
+    "lifecycle_source": "lifecycle_source_proposal.py",
+    "read_only_archive_network_result": "archive-network-probe-result.json",
+    "actual_shell_sha256": "a6f559e00b69a4aa4d8cb607be18d9386c5aee55c509e2c075549dcf00e00fc7",
+    "old_expected_shell_sha256_typo": "a6f559e00b69a4aa9d8cb607be18d9386c5aee55c509e2c075549dcf00e00fc7",
+    "network_preflight": "Candidate exact name was absent in read-only probe; redo exact inspect immediately before future create.",
+    "script_cache_source": "internal/agent/agent.go:808-824,1053-1065; internal/agent/store.go:35-52,89-102,317-376. Script is persisted in SQLite; the scripts/ directory has no source materialization path.",
+    "controller_source": "sys12_outer_controller.py",
+    "controller": "sys12_outer_controller.py; executable source but never run in this preparation"
+  },
+  "coverage_limit": "Only Script SQLite cache is verified by the proposed case; ArtifactCache remains untested. Controller and helper sources are unexecuted; Root source review and separate resource grant are required. Any ambiguous/nonterminal helper Execution blocks cleanup until its exact terminal state is proven.",
+  "controller_source": "sys12_outer_controller.py",
+  "controller_cli": "python3 sys12_outer_controller.py --connection-file <root-owned-private-0600 repair connection> --protected-node-ids <exact-original-four-comma-separated> --grant-id <Root resource grant> --execute",
+  "failed_phase_recovery": "python3 sys12_outer_controller.py --connection-file <root-owned-private-0600 repair connection> --grant-id <Root resource grant> --recover-ledger <exact sys12-<nonce>-ledger.json> --execute. Recovery first reconciles each helper Task/Execution; exact terminal is required before deleting Tasks or any cleanup mutation. A timed-out exact Execution may be canceled once and must then reach terminal. If inactive cannot be established, record OWNED_ACTIVE_HELPER_BLOCKED and stop all remote mutations. Recovery does not rerun the business Script Task/Run/Schedule, is capped at 4 calls after the 6 normal calls (10 cumulative), and retains Execution/Audit history."
+}

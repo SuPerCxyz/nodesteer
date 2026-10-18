@@ -1,0 +1,90 @@
+{
+  "review_id": "ROOT-WEB-BATCH01-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T07:53:54.903046+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "batch": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch01",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试、剩余分母全量推进；504 场景既有授权",
+  "verdicts": [
+    {
+      "case_id": "FL-01",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "真实表单登录 POST /api/login 200 → 跳转 /；仪表盘统计节点6/在线5/离线1/成功率100%/同步6；点击「查看全部」→ /agents；UI 6 行 5 在线 1 离线与 GET /api/nodes 行数、状态计数、顺序一致。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch01/evidence/FL-01-consistency.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch01/evidence/FL-01-api-nodes.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch01/evidence/FL-01-02-dashboard.png",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch01/evidence/FL-01-03-agents.png"
+      ]
+    },
+    {
+      "case_id": "P14P15-01",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "应用列表入口齐备并逐一点开：新建 /applications/new、详情（行名链接）、编辑与删除（行操作菜单）；全页「部署」字样仅 1 次且属副标题文案，列表无部署按钮，符合「不把列表不存在的部署按钮列入测试」。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch01/evidence/P14P15-01-list-controls-scan.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch01/evidence/P14P15-01-01-applications-list.png",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch01/evidence/P14P15-01-04-new-entry.png",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch01/evidence/P14P15-01-05-row-actions-menu.png"
+      ],
+      "limitations": [
+        "删除动作仅观察入口未执行（只读范围）"
+      ]
+    },
+    {
+      "case_id": "P09P11-01",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PARTIAL",
+      "confidence": "high-for-covered",
+      "reason": "列表真实 GET、空态、搜索无结果+重置、分页控件 disabled、Error/Retry（真实 abort 5 次 → Failed to fetch → 重试恢复 200）均已证；正向搜索命中、多页翻页/pageSize、行详情导航因需要 ≥1 个 owned Task 未覆盖。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch01/evidence/P09P11-01-consistency.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch01/evidence/P09P11-01-list-controls-scan.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch01/evidence/P09P11-01-04-tasks-retry-recovered.png"
+      ]
+    },
+    {
+      "case_id": "P12P13-01",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PARTIAL",
+      "confidence": "high-for-covered",
+      "reason": "调度列表页与空态「暂无数据」、Error/Retry 恢复已证；搜索、分页与 7 个元数据列取值无法验证——repair 基线 schedules=0，且 ListLayout 在 0 行时不渲染表格/搜索/分页。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch01/evidence/P12P13-01-consistency.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch01/evidence/P12P13-01-empty-state-scan.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch01/evidence/P12P13-01-03-schedules-recovered.png"
+      ]
+    }
+  ],
+  "safety": {
+    "credential_leak_scan": "CLEAN",
+    "server_resource_writes": 0,
+    "primary_8080_management_writes": 0,
+    "leftovers": 0,
+    "final_counts_match_baseline": true,
+    "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch01/evidence/final-cleanup-guard.json"
+  },
+  "counts_before": {
+    "PASS": 213,
+    "FAIL": 4,
+    "PARTIAL": 157,
+    "NOT_RUN": 130,
+    "BLOCKED": 0
+  },
+  "counts_after": {
+    "PASS": 215,
+    "FAIL": 4,
+    "PARTIAL": 159,
+    "NOT_RUN": 126,
+    "BLOCKED": 0
+  },
+  "followups": [
+    "P09P11-01 / P12P13-01 剩余维度需要一次性、自清理的 owned Task/Schedule fixture（同既往 batch26 做法）"
+  ],
+  "not_claimed": "未执行产品修复、Git 交付或 Archive"
+}

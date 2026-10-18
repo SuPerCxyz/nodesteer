@@ -1,0 +1,109 @@
+{
+  "batch_id": "qa-resume-20261010-web-batch08-routes-executions",
+  "created_at_utc": "2026-10-10T11:56:40.732899+00:00",
+  "status": "WAITING_ROOT_APPROVAL",
+  "executor": "gpt-6-luna",
+  "scope": "Ten read-only routes and Execution table cases; reuse exact batch05 dedicated session and retained two Script fixtures. No new objects, resource edits/deletes, Task/Run/User/Group/Node/Agent/Script mutations.",
+  "cases": [
+    {
+      "id": "ROUTE-18",
+      "route": "/schedules",
+      "module": "web/src/routes/_authenticated/schedules/index.tsx -> catalog Schedules",
+      "actions": "Direct-open, refresh, use a visible safe sidebar link away/back, then browser back/forward.",
+      "oracles": "GET /api/schedules status/count; actual ready/empty/error state and row count, no row content stored."
+    },
+    {
+      "id": "ROUTE-20",
+      "route": "/schedules/new",
+      "module": "web/src/routes/_authenticated/schedules/new.tsx -> ScheduleEditor",
+      "actions": "Direct-open with no task_id, refresh, back/forward; do not choose a Task or save.",
+      "oracles": "Actual GETs, rendered title/default controls/required controls, zero POST/PUT/PATCH/DELETE."
+    },
+    {
+      "id": "ROUTE-23",
+      "route": "/applications",
+      "module": "web/src/routes/_authenticated/applications/index.tsx -> catalog Applications",
+      "actions": "Direct-open, refresh, sidebar away/back and browser back/forward.",
+      "oracles": "GET /api/applications and actual related state GET status/count; ready/empty/error UI and visible row count. Store only safe counts/statuses, not application data."
+    },
+    {
+      "id": "ROUTE-27",
+      "route": "/artifacts",
+      "module": "web/src/routes/_authenticated/artifacts/index.tsx -> catalog Artifacts",
+      "actions": "Direct-open, refresh, sidebar away/back and browser back/forward.",
+      "oracles": "GET /api/artifacts status/count; ready/empty/error UI agrees with response; do not open or download artifact bodies."
+    },
+    {
+      "id": "ROUTE-29",
+      "route": "/executions",
+      "module": "web/src/routes/_authenticated/executions/index.tsx -> features/executions",
+      "actions": "Direct-open, refresh, use actual existing row link only if present, then browser back/forward.",
+      "oracles": "GET /api/executions status/count; table/empty/error and visible row count. Filter captured DOM to headings, controls and aggregate counts only; no task labels/output."
+    },
+    {
+      "id": "ROUTE-30",
+      "route": "/executions/e3555a68-d70c-4c6a-9589-6ec2568fd669",
+      "module": "web/src/routes/_authenticated/executions/$executionId.tsx -> ExecutionDetail",
+      "actions": "Direct-open the retained known owned Execution, refresh, back/forward to /executions.",
+      "oracles": "GET /api/executions/:owned status and visible state/status/log line counts only; no log text, command, token or Task detail body saved."
+    },
+    {
+      "id": "ROUTE-31",
+      "route": "/audit",
+      "module": "web/src/routes/_authenticated/audit/index.tsx -> catalog Audit",
+      "actions": "Direct-open, refresh, sidebar away/back and browser back/forward.",
+      "oracles": "GET /api/audit status/count; ready/empty/error and table row count. Never save audit row text, usernames, credential-related values or raw response."
+    },
+    {
+      "id": "ROUTE-35",
+      "route": "/invalid-e2e-route",
+      "module": "TanStack authenticated route fallback / not-found UI",
+      "actions": "Direct-open exact canonical invalid route, refresh, browser back/forward.",
+      "oracles": "Actual route URL, shell/not-found/redirect state, any GET status; no navigation beyond repair origin and no writes."
+    },
+    {
+      "id": "TABLE-EXECUTIONS-SEARCH",
+      "route": "/executions",
+      "module": "features/executions list filter and shared DataTable",
+      "actions": "Use safe term derived from an actually visible status, guaranteed nonmatch, then actual Reset/clear.",
+      "oracles": "GET /api/executions count unchanged; matched count, no-result feedback, Reset restores dataset; never persist row text or outputs."
+    },
+    {
+      "id": "TABLE-EXECUTIONS-SORT",
+      "route": "/executions",
+      "module": "features/executions list and shared column-header",
+      "actions": "Use actual sortable status/time header and three fresh-ref clicks through asc/desc/clear.",
+      "oracles": "Capture order only as row IDs hashed to short stable aliases plus observed display-state class; compare against actual comparator and record header as next action. Zero writes."
+    }
+  ],
+  "fixture_budget": {
+    "new_resources": 0,
+    "concurrent_new_resources": 0,
+    "writes": 0
+  },
+  "session": {
+    "name": "qawebsecure20261010-script-b05-38181",
+    "origin": "http://127.0.0.1:38181",
+    "repair_target": "192.168.100.209:18080",
+    "reuse_only_after_exact_session_and_forward_preflight": true
+  },
+  "sensitive_data_handling": {
+    "executions": "Do not save command/log text, Task labels, or output bodies; store only path/method/status/count/status enums/hash aliases.",
+    "audit_and_apps": "Do not save user/audit row text or app data; store count/state booleans only.",
+    "network": "Local whitelist of same-origin method/path/status/count only; never persist raw headers/body/token."
+  },
+  "source_refs": [
+    ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+    "web/src/routes/_authenticated/schedules/index.tsx",
+    "web/src/routes/_authenticated/schedules/new.tsx",
+    "web/src/routes/_authenticated/applications/index.tsx",
+    "web/src/routes/_authenticated/artifacts/index.tsx",
+    "web/src/routes/_authenticated/executions/index.tsx",
+    "web/src/routes/_authenticated/executions/$executionId.tsx",
+    "web/src/routes/_authenticated/audit/index.tsx",
+    "web/src/features/executions",
+    "web/src/features/shared/data-table.tsx",
+    "web/src/components/data-table/column-header.tsx"
+  ],
+  "execution_started": false
+}

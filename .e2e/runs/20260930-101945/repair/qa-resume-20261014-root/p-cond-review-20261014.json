@@ -1,0 +1,100 @@
+{
+  "review_id": "ROOT-P-COND-REVIEW-20261014",
+  "reviewed_at": "2026-10-15T07:24:59.058061+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "run_dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-cond",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 要求 5 路并行跑完全部测试",
+  "verdicts": [
+    {
+      "case_id": "SYS-25",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "8 metric × 6 合法 operator 全矩阵 + false/unknown + AND 单层/嵌套，66/66 全 PASS。",
+      "remaining": [
+        "仅 AND+Remote 组合受 SYS-27 缺陷阻塞（其余 8 metric × 6 operator 全矩阵 + false/unknown + AND 单层/嵌套 66/66 全通过）。"
+      ]
+    },
+    {
+      "case_id": "SYS-30",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "34 次不满足路径全部 SKIPPED、无 marker/stdout，UI 显示阻塞原因。",
+      "remaining": [
+        "Remote「不满足」路径被 SYS-27 阻塞（观测为 BLOCKED 而非 SKIPPED）。"
+      ]
+    },
+    {
+      "case_id": "E2E-09",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "满足→真实执行（marker 时间戳落在执行窗口内）、不满足→SKIPPED、未知→BLOCKED（exit 3/exit 127/statfs 三类独立成因）、2 层嵌套、UI 完整反馈；台账 3 项缺项全部补齐。",
+      "remaining": []
+    },
+    {
+      "case_id": "E2E-10",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PARTIAL",
+      "confidence": "high",
+      "reason": "13 条 Remote 条件全 BLOCKED 且零副作用；正向路径受 SYS-27 阻塞。",
+      "remaining": [
+        "Remote 正向「满足」路径受 SYS-27 阻塞（13/13 全 BLOCKED、零副作用）。",
+        "「恢复」维度需重启/重连窗口，本批禁止重启 VM/Agent。"
+      ]
+    },
+    {
+      "case_id": "SYS-28",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PARTIAL",
+      "confidence": "high",
+      "reason": "真实 SUCCESS/FAILED 历史控制组已建立、「不存在」fail-closed 通过。",
+      "remaining": [
+        "成功/失败/false 比较与 online 属性受 SYS-27 阻塞。"
+      ]
+    },
+    {
+      "case_id": "SYS-29",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PARTIAL",
+      "confidence": "high",
+      "reason": "「未观察」与真实断连 fail-closed 通过。",
+      "remaining": [
+        "「TTL 过期」真实产品路径不可构造（无 Agent 侧发送 MsgRemoteState 的代码路径，resolveRemoteState 恒走实时分支）。"
+      ]
+    },
+    {
+      "case_id": "INV-09",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "未知远程状态→BLOCKED 且无业务效果（2 条独立证据）。",
+      "remaining": [
+        "区分度受 SYS-27 削弱（所有 Remote 查询恒为未知），fail-closed 有 2 条独立正证据。"
+      ]
+    }
+  ],
+  "sys27_reinforcement": "本批独立复现：repair Hub 时钟领先 native-1 +0.1464s（12 组交叉采样），13 条 Remote 条件全 BLOCKED，其中 11 条本应可判定（含状态确定为 offline 的 online==offline 本应 SUCCESS）→ 确认失败点是时间戳新鲜度门禁而非数据缺失。未改产品、未放宽断言、未调时钟。",
+  "new_observations": [
+    "OBS-20261014-REMOTE-TTL-PATH-UNREACHABLE"
+  ],
+  "cleanup": "13/13 owned task DELETE 200 → GET404（独立二次复查）；host 侧 owned root 已 rm；Hub 无前缀残留；118 条 execution 按设计保留",
+  "counts_before": {
+    "PASS": 291,
+    "FAIL": 5,
+    "PARTIAL": 165,
+    "NOT_RUN": 34,
+    "BLOCKED": 9
+  },
+  "not_claimed": "未执行产品修复、Git 交付或 Archive",
+  "counts_after": {
+    "PASS": 295,
+    "FAIL": 5,
+    "PARTIAL": 161,
+    "NOT_RUN": 34,
+    "BLOCKED": 9
+  }
+}

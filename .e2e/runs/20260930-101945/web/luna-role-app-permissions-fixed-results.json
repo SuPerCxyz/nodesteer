@@ -1,0 +1,164 @@
+{
+  "config": {
+    "argv": [
+      "/usr/bin/node",
+      "/home/superc/code/nodesteer/web/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "e2e/playwright.config.ts",
+      "--reporter=json",
+      "--grep",
+      "ROLE-02"
+    ],
+    "configFile": "/home/superc/code/nodesteer/web/e2e/playwright.config.ts",
+    "rootDir": "/home/superc/code/nodesteer/web/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/superc/code/nodesteer/web/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "full-feature-ui.spec.ts",
+      "file": "full-feature-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "FULL 当前页面真实业务补测",
+          "file": "full-feature-ui.spec.ts",
+          "line": 112,
+          "column": 6,
+          "specs": [
+            {
+              "title": "ROLE-02 Operator真实部署自有应用但定义只读；Viewer部署与定义写入被拒",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 8798,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected substring: \u001b[32m\"deploy\"\u001b[39m\nReceived string:    \u001b[31m\"健康检查·\u001b[39m\n\u001b[31m暂无节点健康状态\"\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected substring: \u001b[32m\"deploy\"\u001b[39m\nReceived string:    \u001b[31m\"健康检查·\u001b[39m\n\u001b[31m暂无节点健康状态\"\u001b[39m\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:716:47",
+                        "location": {
+                          "file": "/home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts",
+                          "column": 47,
+                          "line": 716
+                        },
+                        "snippet": "  714 |       const historyCard = operator.page.locator('[data-slot=card]').filter({ has: operator.page.locator('[data-slot=card-title]').filter({ hasText: /^执行历史$/ }) })\n  715 |       const operatorAppFeedback = { health: await healthCard.innerText(), successRows: await historyCard.getByText('SUCCESS', { exact: true }).count() }\n> 716 |       expect.soft(operatorAppFeedback.health).toContain('deploy')\n      |                                               ^\n  717 |       expect.soft(operatorAppFeedback.successRows).toBeGreaterThan(0)\n  718 |\n  719 |       const auditRows = (await apiRequest(operator.page, `/api/audit?user_id=${QA_ROLE_USER_ID}&limit=100`)).body as { id: string; user_id: string; username: string; resource: string; resource_id: string; action: string }[]"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts",
+                            "column": 47,
+                            "line": 716
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected substring: \u001b[32m\"deploy\"\u001b[39m\nReceived string:    \u001b[31m\"健康检查·\u001b[39m\n\u001b[31m暂无节点健康状态\"\u001b[39m\n\n  714 |       const historyCard = operator.page.locator('[data-slot=card]').filter({ has: operator.page.locator('[data-slot=card-title]').filter({ hasText: /^执行历史$/ }) })\n  715 |       const operatorAppFeedback = { health: await healthCard.innerText(), successRows: await historyCard.getByText('SUCCESS', { exact: true }).count() }\n> 716 |       expect.soft(operatorAppFeedback.health).toContain('deploy')\n      |                                               ^\n  717 |       expect.soft(operatorAppFeedback.successRows).toBeGreaterThan(0)\n  718 |\n  719 |       const auditRows = (await apiRequest(operator.page, `/api/audit?user_id=${QA_ROLE_USER_ID}&limit=100`)).body as { id: string; user_id: string; username: string; resource: string; resource_id: string; action: string }[]\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:716:47"
+                        },
+                        {
+                          "location": {
+                            "file": "/home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts",
+                            "column": 52,
+                            "line": 717
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n\n  715 |       const operatorAppFeedback = { health: await healthCard.innerText(), successRows: await historyCard.getByText('SUCCESS', { exact: true }).count() }\n  716 |       expect.soft(operatorAppFeedback.health).toContain('deploy')\n> 717 |       expect.soft(operatorAppFeedback.successRows).toBeGreaterThan(0)\n      |                                                    ^\n  718 |\n  719 |       const auditRows = (await apiRequest(operator.page, `/api/audit?user_id=${QA_ROLE_USER_ID}&limit=100`)).body as { id: string; user_id: string; username: string; resource: string; resource_id: string; action: string }[]\n  720 |       const deployAudit = auditRows.find(item => item.resource === 'application' && item.resource_id === appId && item.action === 'deploy' && item.user_id === QA_ROLE_USER_ID)\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:717:52"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-03T07:20:06.439Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts/full-feature-ui-FULL-当前页面真-ff8e4-部署自有应用但定义只读；Viewer部署与定义写入被拒-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts",
+                        "column": 47,
+                        "line": 716
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "8c9e5df742ecbf3e9423-de535e630a667e422968",
+              "file": "full-feature-ui.spec.ts",
+              "line": 619,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-03T07:20:05.863Z",
+    "duration": 9475.274,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

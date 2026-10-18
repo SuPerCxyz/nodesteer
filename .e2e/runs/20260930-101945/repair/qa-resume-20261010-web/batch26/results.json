@@ -1,0 +1,144 @@
+{
+  "batch_id": "qa-resume-20261010-web-batch26-list-metadata",
+  "grant_id": "ROOT-WEB-LIST-METADATA-20261012-02",
+  "superseded_grant_id": "ROOT-WEB-LIST-METADATA-20261012-01",
+  "updated_at_utc": "2026-10-12T15:46:11Z",
+  "cases": [
+    {
+      "case_id": "P09P11-01",
+      "title": "列表、搜索、分页、View、空态、Error/Retry。",
+      "status": "PASS",
+      "covered_dimensions": [
+        "real /tasks list GET with owned row",
+        "positive search, no-result, keyboard reset",
+        "11-row pagination (10+1) and exact API ID map, first/last and page size",
+        "true empty list state on actual GET200",
+        "real GET failure → Error/Retry click → actual GET200 recovery",
+        "user clicked populated Task row name link and same ID rendered Task detail with exact GET200 and field oracle"
+      ],
+      "remaining_dimensions": [],
+      "evidence": [
+        "../batch18/evidence/tasks-search.json",
+        "../batch18/evidence/tasks-pagination.json",
+        "../batch18/evidence/tasks-page-size.json",
+        "../batch18/evidence/resume20261012/tasks-page1-before-delete.json",
+        "../batch18/evidence/resume20261012/tasks-page2-before-delete.json",
+        "../batch18/evidence/resume20261012/tasks-last-page-delete-fallback.json",
+        "../batch18/evidence/resume20261012/table-tasks-error-final.json",
+        "../batch18/evidence/resume20261012/route-15-detail.json",
+        "../batch18/evidence/resume20261012/route-15-history.json",
+        "../batch15/evidence/table-tasks-empty-state.json",
+        "evidence/task-create-response.json",
+        "evidence/task-row-view-readback.json",
+        "evidence/task-cleanup.json"
+      ],
+      "actual": {
+        "ui_create_post": 200,
+        "task_id": "083e4012-20fd-417a-8257-59495ab87020",
+        "task_row_name_click": true,
+        "detail_route_id_matches": true,
+        "exact_get_http": 200,
+        "disabled": true,
+        "retry": 0,
+        "timeout": 15,
+        "target": "unmatched label; node_ids=0",
+        "run_clicked": false,
+        "cleanup_delete_http": 200,
+        "cleanup_get_http": 404,
+        "execution_count": 0
+      },
+      "scope_note": "Shared TABLE-TASKS-ERROR evidence separately records no distinct loading feedback while pending; P09P11-01 title requires empty and Error/Retry, both are evidenced. No loading claim is made for this canonical."
+    },
+    {
+      "case_id": "P12P13-01",
+      "title": "列表、搜索、分页、类型/表达式/时区/Owner/Offline/Misfire/Enabled。",
+      "status": "PASS",
+      "covered_dimensions": [
+        "real list, search/reset, true empty",
+        "11-row pagination 10+1 with first/last/page-size, exact IDs and post-delete legal page recovery",
+        "real Loading skeleton, Error/Retry → actual GET200 recovery",
+        "all seven schedule metadata columns rendered on owned row and compared with exact same-ID GET",
+        "schedule disabled with zero executions"
+      ],
+      "remaining_dimensions": [],
+      "evidence": [
+        "../batch16/evidence/schedules-empty-state.json",
+        "../batch18/evidence/schedules-search.json",
+        "../batch18/evidence/schedules-pagination.json",
+        "../batch18/evidence/schedules-page-size.json",
+        "../batch18/evidence/schedules-columns.json",
+        "../batch18/evidence/schedules-no-run-oracle.json",
+        "../batch18/evidence/resume20261012/schedules-page1-before-delete.json",
+        "../batch18/evidence/resume20261012/schedules-page2-before-delete.json",
+        "../batch18/evidence/resume20261012/schedules-last-page-delete-fallback.json",
+        "../batch18/evidence/resume20261012/table-schedules-loading-skeleton.json",
+        "../batch18/evidence/resume20261012/table-schedules-error-final.json",
+        "evidence/task-create-response.json",
+        "evidence/schedule-form-precheck.json",
+        "evidence/schedule-create-response.json",
+        "evidence/schedule-row-oracle.json",
+        "evidence/schedule-cleanup.json",
+        "evidence/task-cleanup.json"
+      ],
+      "actual": {
+        "schedule_create_post": 200,
+        "schedule_id": "fcd09037-83ab-453f-ad71-8910dba7666f",
+        "exact_schedule_get_http": 200,
+        "same_id_and_task_id": true,
+        "type": {
+          "api": "interval",
+          "ui": "间隔"
+        },
+        "expression": {
+          "api_expression": "",
+          "api_interval_sec": 60,
+          "ui_display": "每 60 秒",
+          "mapping": "The interval row renders interval_sec when expression is empty, per catalog schedule table; this is the correct interval-specific display."
+        },
+        "timezone": {
+          "api": "Asia/Shanghai",
+          "ui": "Asia/Shanghai"
+        },
+        "execution_owner": {
+          "api": "hub",
+          "ui": "Hub"
+        },
+        "offline_policy": {
+          "api": "hub_online_required",
+          "ui": "需 Hub 在线"
+        },
+        "misfire_policy": {
+          "api": "skip",
+          "ui": "跳过"
+        },
+        "enabled": {
+          "api": false,
+          "ui": "已禁用"
+        },
+        "task_execution_count": 0,
+        "cleanup_schedule_delete_http": 200,
+        "cleanup_schedule_get_http": 404,
+        "cleanup_task_delete_http": 200,
+        "cleanup_task_get_http": 404
+      },
+      "source_mapping": "web/src/features/catalog/index.tsx:1071-1142 defines the actual seven columns; :1088-1093 renders interval schedule expression from interval_sec when expression is empty.",
+      "schema_note": "Schedule model contains no name field. The grant name was retained only as a local fixture alias; ownership is proven by ID, linked Task ID, and exact field GET."
+    }
+  ],
+  "fixture_budget_used": {
+    "task_create_posts": 1,
+    "schedule_create_posts": 1,
+    "exact_deletes": 2,
+    "runs": 0,
+    "node_group_user_app_artifact_mutations": 0,
+    "task_enables": 0,
+    "schedule_enables": 0
+  },
+  "cleanup_order": [
+    "schedule",
+    "task"
+  ],
+  "final_cleanup_guard": "evidence/final-guard.json",
+  "secret_content_saved": false,
+  "status": "COMPLETE"
+}

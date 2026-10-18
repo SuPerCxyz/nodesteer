@@ -1,0 +1,93 @@
+{
+  "reviewed_at_utc": "2026-10-12T14:31:27Z",
+  "status": "HOLD_STATIC",
+  "scope": "Read-only review of the frozen SYS12 ArtifactCache helper/controller and directly relevant Agent/Hub contracts. No API, Docker, Task, Run, or service action was performed.",
+  "pinned_sources": {
+    "helper_path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/artifact_cache_lifecycle.py",
+    "helper_sha256": "94af4c90ee7ed6da25abc189008af9e66b294e54b667bac9a2a47f166c320ec5",
+    "controller_path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/artifact_cache_controller.py",
+    "controller_sha256": "603d21ae572d676647a4e5763b03d7f9fd0ce2acdd7d5fb3fa2ae74a015a5a2b",
+    "resource_plan_sha256": "37d6eae4461cbd2752851d13b1e736851f38903ee664d3cd46587a174f3a9784",
+    "outer_controller_sha256_pin": "0e213c45180eab1701dfc87aabc9b353d7025f909429f764bc1028b083e353a7",
+    "hashes_match": "PASS"
+  },
+  "pass_static": [
+    {
+      "area": "default_no_action_and_source_pins",
+      "evidence": "artifact_cache_controller.py:202-230,216-225 checks --execute, nonempty grant id, approved helper/controller SHA; helper:784-806 also requires --execute and pinned shell SHA."
+    },
+    {
+      "area": "private_authority",
+      "evidence": "sys12_outer_controller.py:97-128 checks euid-owned 0600 regular connection, parent 0700, O_NOFOLLOW, stable inode and exact http://192.168.100.209:18080; requests disable redirects and proxy at 131-169. UploadOpener independently disables redirects/proxy at artifact_cache_controller.py:45-74."
+    },
+    {
+      "area": "protected_nodes_and_fixture_identity",
+      "evidence": "artifact_cache_controller.py:18-24,258-275 pins Native2 and original four, checks all online/synced, rejects pre-existing generated hostname, rechecks it immediately before prepare, and rejects reused Node ID. Helper:110-127 uses nonce names and exact-absence Docker errors; helper:149-175 pins nonce owner marker and root dev/inode."
+    },
+    {
+      "area": "container_boundary",
+      "evidence": "helper:130-140 requires exact pinned image ID and expected owner label; helper:256-309 verifies exact image/name/owner label, UID 65534, no privilege, read-only root, no CapAdd, CapDrop ALL, private/default PID mode, default seccomp, no-new-privileges, exact bridge, no ports/devices, and only owned RO config/RW data plus constrained /tmp tmpfs."
+    },
+    {
+      "area": "secret_handling",
+      "evidence": "helper:77-107 reads only the expected root-owned 0600 config and validates the Agent hub URL at repair:18080; helper:183-219 writes a separate 65534-owned 0600 config. The token is not a task parameter or command literal; safe output omits it. Outer API evidence records response status/length/hash, not bodies (131-169)."
+    },
+    {
+      "area": "actual_cache_schema_and_oracles",
+      "evidence": "LocalStore schema internal/agent/store.go:78-90,118-137, artifacts fields sha256/path/downloaded_at; RegisterArtifact internal/agent/store.go:537-545. Helper:396-497 opens state.db O_RDONLY/mode=ro with query_only and quick_check, checks identity/sync_state/applications/artifacts/executions rows, exact content path, file SHA/size 32/UID/GID/dev/inode, and Agent PID/startticks/UID/cgroup/exe SHA/open DB FD."
+    },
+    {
+      "area": "assignment_prefetch_without_deploy",
+      "evidence": "Hub assignment is a desired-state revision (internal/hub/application.go:153-190); Sync includes assigned Apps and derives ArtifactURL (internal/hub/sync.go:153-197); Agent persists sync before async prefetch (internal/agent/agent.go:912-943); Prefetch verifies SHA, atomic-renames file, then registers SQLite row (internal/agent/artifact.go:64-125). Controller creates exactly one 32-byte Artifact and un-deployed App, assigns only the new Node, never calls /deploy, checks API App executions empty, and helper also requires local App execution count zero and exact Unit file absent."
+    },
+    {
+      "area": "A_to_B_continuity",
+      "evidence": "helper:620-670 stops/removes exact A before B, snapshots persisted DB/cache before B, reuses the same owned DataDir/config/bridge, compares DB and cache dev/inode/ownership/SHA, app/identity, and non-regressing revisions; live process proof is tied to B container ID and open state.db FD. Controller compares A/pre-B/B snapshots at :319-340."
+    },
+    {
+      "area": "budget_and_helper_lifecycle",
+      "evidence": "sys12_outer_controller.py:24-26 sets 6 normal+4 recovery, and :357-374 validates counts against ledger. :377-505 creates only a retry0/timeout90 command Task targeting exact Native2, records the exact Task/Execution, waits for a terminal status, sends cancel only after timeout and then polls the actual Execution to terminal, and finally DELETEs helper Task plus GET404. Product Cancel only sends a message (internal/hub/execution.go:604-620; api.go:1816-1838), and the helper correctly waits for actual terminal status."
+    },
+    {
+      "area": "ordered_cleanup",
+      "evidence": "Normal controller :343-361 unassigns, checks empty assignment, deletes App then Artifact then Node with per-object exact GET/DELETE/GET404, checks protected Nodes, then removes only exact owned containers/network and finally root. Helper :673-781 gates root cleanup on Hub 404, checks exact allowed names and SHA-32 cache file, blocks unknown paths/symlinks, preserves audit/execution history."
+    }
+  ],
+  "holds": [
+    {
+      "id": "HOLD-ARTIFACT-URL-AUTHORITY",
+      "severity": "high",
+      "lines": [
+        "internal/hub/sync.go:186-197",
+        "cmd/hub/main.go:37-40,48-64",
+        "internal/agent/artifact.go:83-90",
+        "artifact_cache_controller.py:202-230,276-318"
+      ],
+      "finding": "Management API and the new Agent hub_url are pinned to repair:18080, but the actual ArtifactURL sent in DesiredState is built from Hub SyncManager.baseURL. The harness neither verifies the effective Hub base_url nor inspects the synced ArtifactURL host/port. The code default is localhost:8080 and YAML can override it. Agent Prefetch sends X-NodeSteer-Agent-Token to that URL. Therefore the strict repair-only artifact-download authority is not proven; a misconfigured base_url could target a different endpoint.",
+      "required_before_execution": "Provide a read-only preflight proving effective ArtifactURL scheme/host/port is exactly repair:18080, or add a safe guard that validates the synced URL host/port before any prefetch test. Do not run while this is unresolved."
+    },
+    {
+      "id": "HOLD-RECOVERY-API-DELETE-IDEMPOTENCE",
+      "severity": "high",
+      "lines": [
+        "artifact_cache_controller.py:107-109,162-186",
+        "sys12_outer_controller.py:518-534"
+      ],
+      "finding": "Recovery does not tolerate an already-completed API deletion. The wrapper drops outer.delete_exact’s allow_missing option; recover() first requires GET 200 for each known App/Artifact/Node ID. If DELETE succeeded but the controller lost the response or stopped before saving the ledger, the next recovery sees GET 404 and aborts instead of recognizing exact absence and continuing the remaining cleanup. This leaves partial cleanup unrecoverable through the provided recovery path.",
+      "required_before_execution": "Make recovery reconcile exact GET 404 as already deleted for the ledger-pinned ID, then still verify final GET404 and collection/name absence; keep normal delete guards strict."
+    },
+    {
+      "id": "HOLD-RECOVERY-RUNTIME-AND-ROOT-CRASH-WINDOWS",
+      "severity": "high",
+      "lines": [
+        "artifact_cache_lifecycle.py:700-740",
+        "artifact_cache_lifecycle.py:744-781"
+      ],
+      "finding": "Cleanup mutates Docker/filesystem before the owner ledger records each removal. If interrupted after `docker rm`/`network rm` but before `atomic_owner`, retry inspects the stale recorded ID and stops rather than reconciling exact absence. Root cleanup also unlinks state/owner ledger files before removing the root; interruption after resource-ledger or owner.json removal makes load_state fail, so the recovery helper cannot resume. These are narrow but real crash windows in the recovery path.",
+      "required_before_execution": "Make cleanup phases restartable from exact nonce path/immutable IDs and preserve sufficient owner proof until root removal is complete; prove already-absent owned resources are reconciled without touching unowned objects."
+    }
+  ],
+  "overall_assessment": "The prefetch/SQLite A-to-B test design and runtime identity checks are otherwise well-scoped and real (no Mock), with six normal and four recovery helper slots. Static admission remains HOLD until the three high-priority authority/recovery gaps are resolved and the resulting source hashes are reviewed.",
+  "runtime_actions_performed": 0,
+  "secrets_read_or_recorded": false
+}

@@ -1,0 +1,96 @@
+{
+  "batch_id": "idempotent-manual",
+  "nonce": "f7549c600f26",
+  "title": "IDEMPOTENT-MANUAL：Manual Run 新 UUID 与相同 Execution ID 重复投递/上传幂等",
+  "executed_at_utc": "2026-10-15T13:16:37Z",
+  "finished_at_utc": "2026-10-15T13:22:26Z",
+  "endpoint": "http://192.168.100.209:18080",
+  "cases": [
+    {
+      "case_id": "IDEMPOTENT-MANUAL",
+      "title": "每次Manual Run新UUID为新意图；相同Execution ID/Key重复投递/上传保持幂等",
+      "canonical_before": "NOT_RUN",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "dimensions": {
+        "m1_success_and_marker": "PASS",
+        "duplicate_delivery_kept_one_hub_row": "PASS",
+        "duplicate_delivery_acked_twice": "PASS",
+        "m2_new_distinct_uuid": "PASS",
+        "m2_success": "PASS",
+        "ack_withheld_left_local_row_unsynced": "PASS",
+        "reupload_same_execution_id_observed": "PASS",
+        "reupload_kept_one_hub_row_and_identical_content": "PASS"
+      },
+      "all_dimensions_pass": true,
+      "owned_child_and_fixtures": {
+        "node_id": "f4794065-27fd-4048-8419-00bde6eb0425",
+        "agent_id": "agent-f30cf01a-9c79-4462-9463-541b95e6771d",
+        "host": "192.168.100.247",
+        "owned_root": "/var/lib/nodesteer-qa-b09-settings-f7549c600f26",
+        "proxy_port": 39457
+      },
+      "evidence": [
+        "phase3-idempotent-manual.json",
+        "case-evidence.json",
+        "../../qa-resume-20261014-web/batch09-settings/evidence/independent-verification.json"
+      ],
+      "cross_batch_note": "shares the batch09-settings owned child Agent + frame proxy; a single serial batch, so the api deliverable records its own evidence files while the web batch owns the fixture ledger"
+    }
+  ],
+  "deviations": [],
+  "budget": {
+    "api_mutations": 20,
+    "settings_puts": 10,
+    "node_enroll_posts": 1,
+    "hub_definition_creates": 0,
+    "hub_definition_deletes": 2,
+    "manual_run_posts": 4,
+    "child_process_starts": 1,
+    "child_process_removals": 1,
+    "ui_sessions": 1,
+    "ui_saves": 9,
+    "hub_restarts": 0,
+    "vms_restarted": 0,
+    "product_source_changes": 0,
+    "git_operations": 0
+  },
+  "shared_context": {
+    "owned_child": {
+      "node_id": "f4794065-27fd-4048-8419-00bde6eb0425",
+      "agent_id": "agent-f30cf01a-9c79-4462-9463-541b95e6771d",
+      "host": "192.168.100.247",
+      "owned_root": "/var/lib/nodesteer-qa-b09-settings-f7549c600f26",
+      "proxy_port": 39457
+    },
+    "owned_web_batch": "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch09-settings",
+    "note": "the owned child Agent, its proxies and its Hub fixtures are declared and removed by the batch09-settings ledger; this deliverable carries its own evidence and verifies the product idempotency behaviour"
+  },
+  "independent_verification": {
+    "file": "evidence/independent-verification.json",
+    "at_utc": "2026-10-15T13:25:40Z",
+    "passed": true,
+    "checks": {
+      "endpoint_is_repair_18080": true,
+      "api_settings_equals_after": true,
+      "api_settings_equals_before": true,
+      "before_equals_after": true,
+      "hub_db_managed_equals_api": true,
+      "hub_db_key_set_equals_before_run": true,
+      "hub_config_file_sha256_unchanged": true,
+      "primary_hub_MainPID_unchanged": true,
+      "no_owned_fixture_left": true,
+      "owned_child_root_removed": true,
+      "owned_child_process_gone": true,
+      "owned_child_agent_binary_sha_is_repair_build": true,
+      "protected_nodes_online_synced": true,
+      "protected_units_pid_unchanged_vs_preflight_baseline": true,
+      "hub_healthz_readyz_200": true,
+      "web_case_verdicts_all_pass": true,
+      "api_case_verdicts_all_pass": true,
+      "web_result_settings_restored": true,
+      "web_result_cleanup_oracle_clean": true,
+      "web_result_no_deviations_only_harness_attempts": true
+    }
+  }
+}

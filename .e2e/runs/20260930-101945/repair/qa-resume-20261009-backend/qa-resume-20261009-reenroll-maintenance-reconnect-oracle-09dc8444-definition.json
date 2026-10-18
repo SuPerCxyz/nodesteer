@@ -1,0 +1,22 @@
+{
+  "method": "POST",
+  "path": "/api/tasks",
+  "payload": {
+    "name": "qa-resume-20261009-reenroll-maintenance-reconnect-oracle-09dc8444",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport hashlib,json,os,stat\nfrom pathlib import Path\nC=json.loads('{\"node_id\":\"15961ef7-81b4-43f3-80c8-1b6977ca2aea\",\"agent_id\":\"agent-ab15a133-73cd-4025-8c97-f2ff37e000f5\",\"owner_dir\":\"/tmp/qa-resume-20261008-child-ciivjupc\",\"owner_manifest_sha256\":\"7c9102d7c19c53e1dae471cfebc43e3ea56c8472cdfd6052ec4ef4513c064e11\",\"directory\":{\"dev\":33,\"ino\":135,\"uid\":65534,\"mode\":\"0o700\"},\"child\":{\"pid\":47002,\"starttime\":130080822,\"uid\":65534,\"uid_matches\":true,\"exe_path\":\"/tmp/qa-resume-20261008-child-ciivjupc/nodesteer-agent\",\"exe_sha256\":\"d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add\",\"exe_sha_matches\":true,\"starttime_matches\":true,\"argv_owner_path_matches\":true},\"supervisor\":{\"pid\":44932,\"starttime\":123677922,\"uid\":65534,\"uid_matches\":true,\"exe_path\":\"/usr/bin/python3.13\",\"exe_sha256\":\"078fc5e8711442c8051d8c515a3f57bc1d22dcdb90e9b384af0c50916125b531\",\"exe_sha_matches\":true,\"starttime_matches\":true,\"argv_owner_path_matches\":true},\"proxy\":{\"ip\":\"127.69.212.143\",\"port\":35095,\"listening\":true,\"owned_by_supervisor\":true}}'); D=Path(C[\"owner_dir\"]); M=D/\"owner-manifest.json\"\ndef sha(p):\n h=hashlib.sha256()\n with open(p,\"rb\") as f:\n  for b in iter(lambda:f.read(1048576),b\"\"): h.update(b)\n return h.hexdigest()\ndef verify_proc(p):\n pid=p[\"pid\"]; raw=Path(\"/proc\",str(pid),\"stat\").read_text(); start=int(raw[raw.rfind(\")\")+2:].split()[19])\n status=Path(\"/proc\",str(pid),\"status\").read_text().splitlines(); uid=tuple(map(int,next(x for x in status if x.startswith(\"Uid:\")).split()[1:3]))\n exe=os.readlink(\"/proc/\"+str(pid)+\"/exe\"); argv=[x.decode(errors=\"replace\") for x in Path(\"/proc\",str(pid),\"cmdline\").read_bytes().split(b\"\\0\") if x]\n if start!=p[\"starttime\"] or uid!=(p[\"uid\"],p[\"uid\"]) or sha(exe)!=p[\"exe_sha256\"] or not any(x==str(D) or x.startswith(str(D)+os.sep) for x in argv): raise RuntimeError(\"owned_process_identity_failed\")\nst=D.lstat(); raw=M.read_bytes(); m=json.loads(raw)\nif stat.S_ISLNK(st.st_mode) or D.resolve()!=D or (st.st_dev,st.st_ino,st.st_uid,stat.S_IMODE(st.st_mode))!=(C[\"directory\"][\"dev\"],C[\"directory\"][\"ino\"],C[\"directory\"][\"uid\"],int(C[\"directory\"][\"mode\"],8)): raise RuntimeError(\"owner_directory_identity_failed\")\nif hashlib.sha256(raw).hexdigest()!=C[\"owner_manifest_sha256\"] or m.get(\"node_id\")!=C[\"node_id\"] or m.get(\"agent_id\")!=C[\"agent_id\"]: raise RuntimeError(\"owner_manifest_identity_failed\")\nverify_proc(C[\"child\"]); verify_proc(C[\"supervisor\"])\n\nimport sqlite3,re\nlog=D/\"agent.log\"; raw=log.read_bytes(); text=raw.decode(errors=\"replace\").lower()\nconn=sqlite3.connect(\"file:\"+str(D/\"data\"/\"state.db\")+\"?mode=ro\",uri=True,timeout=3)\ntry: ident=dict(conn.execute(\"SELECT key,value FROM identity WHERE key IN ('node_id','agent_id','credential')\").fetchall())\nfinally: conn.close()\nprint(json.dumps({\"status\":\"PASS\",\"log_sha256\":hashlib.sha256(raw).hexdigest(),\"event_counts\":{\"hello_rejected\":len(re.findall(r\"hello rejected\",text)),\"invalid_credential\":len(re.findall(r\"invalid credential\",text)),\"agent_connected\":len(re.findall(r\"agent connected\",text))},\"credential_sha256\":hashlib.sha256(ident.get(\"credential\",\"\").encode()).hexdigest(),\"node_id\":ident.get(\"node_id\"),\"agent_id\":ident.get(\"agent_id\")},separators=(\",\",\":\")))\nPY",
+    "timeout": 45,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "9d1654c3a0f2066ada32fac8293f19fd3db882720a5a1de90d29a43bcb22c0b8"
+}

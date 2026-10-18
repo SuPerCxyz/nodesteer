@@ -1,0 +1,77 @@
+{
+  "review_id": "ROOT-WEB-BATCH07-REVIEW-20261014",
+  "reviewed_at": "2026-10-15T07:02:27.286354+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "batch": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch07",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试、剩余分母全量推进",
+  "verdicts": [
+    {
+      "case_id": "P22-10",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PARTIAL",
+      "confidence": "中",
+      "reason": "两次 2 目标真实传输：native-3 目标 SUCCESS（size/sha256/mode 精确匹配），host001（非白名单路径）目标 12+ 分钟/90s 始终 DELIVERING 且从未上报结果；isolate「其他目标仍成功」成立；FAILED 侧未达成（host001 只接包不回报、Hub 无投递超时）。"
+    },
+    {
+      "case_id": "P22-11",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "高",
+      "reason": "整体重试：源侧 FAILED → 补文件 → retry → SUCCESS；target_id 单目标重试：目标 FAILED(no space left) → retry?target_id= → SUCCESS 且 dst sha256 精确匹配；无 FAILED 目标时 retry 不重投 SUCCESS 目标。"
+    },
+    {
+      "case_id": "P22-13",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "高",
+      "reason": "相对源/目标 400、path traversal 拒绝（源+2 种目标逃逸）、空/重复目标、未知源节点 400；Agent 通道 401 四种；>10GiB 源 1.0s 终态 FAILED invalid file size；Hub 无 .part/.blob、节点无目标文件。"
+    },
+    {
+      "case_id": "P22-14",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "高",
+      "reason": "dst sha256==源、size 精确、mode 640；192MiB 稀疏旧文件被精确替换为 160MiB（无残留尾）；失败投递后旧目标逐字节不变；真实 ENOSPC 半写（错误点名临时文件）→ 无残留、目标未动 → retry?target_id= SUCCESS。"
+    },
+    {
+      "case_id": "P16-09",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "高",
+      "reason": "客体内 2ms 采样抓到 .tmp 全生命周期（创建 0B → 2125ms rename，峰值 268435456，966 样本）+ 终态文件 sha/size/mode + SQLite 行 + artifact cached 日志；blob 篡改后 sha256 mismatch → 不安装、.tmp 清、基线缓存项逐字节未变。"
+    },
+    {
+      "case_id": "P16-10",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "高",
+      "reason": "404 → .tmp 创建后 30.7ms 删除；真实中途中断（blob 截到 4096B，.tmp 已 72MB，半文件 143075656B）→ 828.9ms 后删除、unexpected EOF；两次恢复 blob 后重试成功且缓存 sha 与制品一致。"
+    }
+  ],
+  "harness_incidents": [
+    "本批在 native-3 的 /tmp(tmpfs 979MiB) 放 483MiB 文件制造 ENOSPC，而该 VM 气球内存仅 1GiB → 客人内存压力、sshd 无响应、repair Agent 18:09:47Z offline；批内用 virsh setmem … 2097152 --live + 删填充文件恢复。",
+    "恢复时误执行 virsh reboot nodesteer-agent-3 —— 而该域实为 .204 = repair native-1（native-3 对应域为 nodesteer-agent-2）：导致 native-1 被重启一次，且其 repair 单元为 disabled 不会自动拉起（Root 随后手工 systemctl start 恢复）。"
+  ],
+  "observations": [
+    "OBS-B07-02：对 API 创建的 Application，编辑器「保存」(enabled,type=submit) 3 次均未发出任何请求、revision 不变、无 toast（同会话 transfers 表单可正常发请求）——疑 UI 缺陷候选，需二次复核。"
+  ],
+  "undeletable": {
+    "transfers": 6
+  },
+  "counts_before": {
+    "PASS": 274,
+    "FAIL": 5,
+    "PARTIAL": 164,
+    "NOT_RUN": 52,
+    "BLOCKED": 9
+  },
+  "counts_after": {
+    "PASS": 287,
+    "FAIL": 5,
+    "PARTIAL": 165,
+    "NOT_RUN": 38,
+    "BLOCKED": 9
+  }
+}

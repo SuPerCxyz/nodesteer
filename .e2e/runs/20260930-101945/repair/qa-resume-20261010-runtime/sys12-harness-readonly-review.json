@@ -1,0 +1,65 @@
+{
+  "reviewed_at_utc": "2026-10-10T16:04:56Z",
+  "review_scope": {
+    "source": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/lifecycle_source_proposal.py",
+    "source_sha256_verified": "9b52f7e684a9124308348046b8ae40c70b79adba87dfb8503654c7ade3a6aeb5",
+    "plans": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/one-root-controller-plan.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/resource-plan.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/lifecycle-script-cache-review.json"
+    ],
+    "schema_source": "internal/agent/store.go"
+  },
+  "decision": "HOLD_FOR_SOURCE_AND_CONTROLLER_PLAN_CORRECTIONS",
+  "summary": "Isolation boundaries and the six-helper resource budget are mostly coherent, but the approved plan has a pre-enrollment ordering conflict and the helper can accept an unverified/corrupt or not-yet-opened B database. Abrupt interruption at Docker-create commit boundaries is not reliably recoverable.",
+  "phase_assessment": [
+    {"phase": "prepare", "result": "GUARDED_WITH_ORDERING_GAP", "evidence": "Source 252-329 pins the original root/config/archive and creates an owner-labelled bridge; source 408-439 records container identity. Source 549-560 starts A immediately. The controller plan 18-25 places the NodeName-unused check in the later hello phase, while resource plan 23-25 requires that check before startup."},
+    {"phase": "A hello and business setup", "result": "PLAN_DEPENDENT", "evidence": "The plan limits creation to one fresh Node, one Script Task/Execution and one disabled Schedule. Source emits no token/config contents. The controller must perform the unique NodeName API check before invoking prepare, then independently match local identity values to the created Hub Node/Agent IDs."},
+    {"phase": "inspect A / stop A", "result": "PARTIAL_ORACLE", "evidence": "Source 460-510 opens state.db read-only and sets query_only; SQL fields match internal/agent/store.go:78-115, 130-145, 317-330, 425-431 and 580-585. It returns quick_check and DB dev/inode but does not require quick_check == 'ok' or compare DB dev/inode across snapshots."},
+    {"phase": "B first open on network=none", "result": "NOT_PROVEN", "evidence": "Source 664-675 starts B, checks Docker running state, then reads the existing shared DB and compares selected values. It does not establish that the B Agent process opened that DB or completed startup before the read; a still-existing A database can satisfy the read."},
+    {"phase": "connect B / post-connect sync", "result": "PLAN_DEPENDENT", "evidence": "Source 677-688 verifies container/network membership after connect, but Hub online/synced and desired-revision sampling are controller/API responsibilities. The later inspect phase supports a sampled desired revision (source 574-600); the plan must run that only after bridge connectivity and Hub readback."},
+    {"phase": "cleanup", "result": "STRICT_ALLOWLIST_BUT_RECOVERY_GAP", "evidence": "Source 690-779 deletes only marker-referenced containers/network and restricts root deletion to an allowlist after API deletions. The boolean --hub-objects-deleted gate is caller asserted (source 737-739); more importantly, uncommitted Docker creates can be absent from the marker and evade cleanup discovery."}
+  ],
+  "major_findings": [
+    {
+      "severity": "HIGH",
+      "location": "one-root-controller-plan.json:18-25; lifecycle_source_proposal.py:549-560",
+      "fact": "The proposed hello phase says to confirm NodeName is unused before startup, but prepare already creates and starts container A. Resource plan separately requires the uniqueness GET before startup. Following the listed phase order can let a collision reach first HELLO before the check.",
+      "recommendation": "Make the outer controller perform and record the exact NodeName-unused GET before invoking prepare, or split preparation from container start. Keep the fresh-name check immediately adjacent to startup."
+    },
+    {
+      "severity": "HIGH",
+      "location": "lifecycle_source_proposal.py:473-476, 504-510, 574-576, 519-523",
+      "fact": "PRAGMA quick_check is returned but never required to equal 'ok'; inspect accepts status='ok' without inspecting quick_check. The persistence comparator also omits the captured DB device/inode, so it does not prove the same state.db file survived A→B.",
+      "recommendation": "Fail closed unless quick_check is exactly 'ok'; capture and compare the DB device/inode across A-stop, B-network-none, and post-connect reads, and revalidate the opened path identity around the read."
+    },
+    {
+      "severity": "HIGH",
+      "location": "lifecycle_source_proposal.py:664-675; one-root-controller-plan.json:44-49",
+      "fact": "The network-none oracle only checks that Docker reports B running, then reads the pre-existing shared DB. It has no bounded readiness signal proving the new Agent process has opened the DataDir before the comparison. It can therefore pass using A's still-present DB without exercising B startup persistence.",
+      "recommendation": "Add a bounded, non-network-dependent B readiness/open proof tied to the exact container ID/PID and DB path, and only then take the network-none snapshot. If readiness cannot be observed, report a safe partial result rather than treating the old DB read as B's open."
+    },
+    {
+      "severity": "HIGH",
+      "location": "lifecycle_source_proposal.py:300-316, 408-439, 649-675, 781-788",
+      "fact": "The ledger is persisted before Docker create and after the returned ID, but a process interruption between daemon creation and the post-create atomic_owner leaves a real network/container absent from owner.json. cleanup-runtime operates only on recorded IDs, and rerunning prepare collides with the existing root/name. The top-level exception handler reports partial STATE but does not reconcile by exact name/owner label or provide a resumable phase.",
+      "recommendation": "Make each create phase restart-safe: on resume inspect the exact nonce-derived name, validate immutable ID/image/owner label/full policy, persist its ID, then continue or offer guarded cleanup. Do this for both network and containers before relying on the ledger."
+    }
+  ],
+  "guard_and_scope_review": {
+    "owner_guards": "Root dev/inode/UID/mode are pinned in owner.json; container IDs/names/image/owner labels, network ID/name/owner label, mounts, UID, cap-drop, read-only rootfs and network membership are checked. Original Host config/archive are opened with no-follow and device/inode checks. No source path operates on the original Host container, image tag, systemd, original four Nodes, or primary :8080.",
+    "hub_and_credentials": "Source pins the derived Agent URL to 192.168.100.209:18080 and keeps the registration token in memory plus the new 0600 private config; it is not included in helper output/ledger or Docker argv. The controller plan limits Admin bearer use to Authorization headers and excludes it from Task source/params/stdout. No credential-bearing enrollment POST is planned.",
+    "root_cleanup": "Root deletion checks the pinned root inode, private/data ownership and mode, symlinks, path allowlist, and empty cache directories. It retains unknown paths. The API-deletion prerequisite is represented only by a freely supplied boolean CLI flag, so the controller must bind its exact DELETE/GET404 evidence to this same owner/nonce before passing it.",
+    "remaining_cleanup_edge": "The allowlist rejects symlinks and unknown names, but it does not reject special file types at allowlisted file paths; consider requiring regular files for owner/config/SQLite entries before rmtree."
+  },
+  "sqlite_schema_and_readonly_review": {
+    "schema_match": "The queried tables/columns exist in the current LocalStore schema: identity, sync_state.global_revision, scripts(id/name/content/revision/sha256/enabled), schedules(id/revision/enabled/definition_json), and executions(id/task_id/status/exit_code/script_id/script_revision).",
+    "readonly": "SQLite is opened with mode=ro and PRAGMA query_only=ON; SELECT/PRAGMA statements only. Current source initializes DataDir/scripts as a directory; it does not materialize a per-Script file, so the plan correctly limits this to Script SQLite cache and does not claim ArtifactCache coverage.",
+    "oracle_gaps": "quick_check is not enforced; DB dev/inode is reported but not compared; identity values are returned but not matched in helper to expected Hub NodeID/AgentID; connection opens by pathname after lstat, without a post-open pathname identity check. Controller/API may supply the identity comparison, but it must be explicit in evidence."
+  },
+  "budget_review": {
+    "planned": {"parent_helper_tasks": 6, "parent_helper_runs": 6, "script_tasks": 1, "business_runs": 1, "scripts": 1, "disabled_schedules": 1, "nodes": 1, "sequential_containers": 2, "concurrent_containers": 1, "networks": 1},
+    "assessment": "The count closes if the six helper calls are exactly prepare, inspect-A, recreate-B, inspect-B-and-stop, cleanup-runtime, cleanup-root; hello/API checks, business Script Task/Run/Schedule CRUD, and their API cleanup are controller operations, not extra helpers. Any retry/reconciliation helper exceeds the stated six and requires a revised reviewed budget."
+  },
+  "review_limitations": ["Static review only; no script execution, Docker/API call, helper Task, business Run, or runtime behavior was tested."]
+}

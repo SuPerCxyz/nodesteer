@@ -1,0 +1,85 @@
+{
+  "review_id": "ROOT-WEB-BATCH05-USERS-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T09:26:15.018858+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "隔离可销毁 authority http://192.168.100.209:18081（同 repair 二进制 SHA 164ea4ac…）",
+  "batch": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch05-users",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 明确授权创建一批可删除的 owned 账号；产品无 DeleteUser 路径，故按可整体销毁的隔离 authority 实现",
+  "verdicts": [
+    {
+      "case_id": "TABLE-USERS-PAGE",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "高（P19-02 中高）",
+      "reason": "隔离实例上 14 用户/2 页：首页/末页导航禁用态正确；下一页→2 页 3 行、上一页/跳末页/首页行数 10/3/10；pageSize 10→20→reload 保持（localStorage）；末页数据 3→4 行（UI 新建用户）。",
+      "remaining": []
+    },
+    {
+      "case_id": "P20-07",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "高（P19-02 中高）",
+      "reason": "Operator/Viewer 登录后 /users 仅显示「只有管理员可以管理用户。」，无新建按钮/表格/角色下拉；API GET/POST/PUT/DELETE 全 403；admin GET/POST/PUT 200、DELETE 405。",
+      "remaining": []
+    },
+    {
+      "case_id": "P19-05",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "高（P19-02 中高）",
+      "reason": "store 无 Update/DeleteAudit；operator/viewer 写尝试后目标记录逐字节不变、无记录丢失；UI 行无编辑/删除控件。",
+      "remaining": []
+    },
+    {
+      "case_id": "P19-02",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "高（P19-02 中高）",
+      "reason": "三角色 UI 登录；admin 经真实 UI 对 5 类资源 create+delete，Script/Task/Schedule/Application modify（r1→r2）；operator/viewer 读全 200、增改删全 403；run 区分 operator(400 no target nodes) 与 viewer(403)；UI 写控件消失；5 集合写尝试前后 byte-identical。",
+      "remaining": [
+        "隔离实例无 Agent，run 未产生真实执行（终止于 no target nodes / 403）。",
+        "Artifact 无 update 端点，modify 不适用。"
+      ]
+    }
+  ],
+  "verified_independently_by_root": {
+    "instance_teardown": "hub VM 上 18081 不再监听、/var/lib 与 /etc 下 qa-users1410-* 均不存在、外部 18081 连接失败（000）",
+    "repair_unaffected": "repair :18080 healthz 仍 200，未启用任何 systemd 单元",
+    "credential_scan": "CLEAN（repair 管理员凭据未落入证据；实例凭据随实例删除）",
+    "version_parity": "隔离实例二进制 SHA 与 repair 相同（164ea4ac…），index.html SHA 两端口一致（612c23ba…）"
+  },
+  "new_defect": {
+    "id": "E2E-20261014-AUDIT-METHOD-FALLBACK-200",
+    "priority": "P3",
+    "title": "审计端点无方法分支：POST/PUT/DELETE /api/audit 返回 200 + 审计列表而非 405",
+    "status": "CONFIRMED_TEST_FAILURE_REPAIR_SCOPE_REVIEW_PENDING",
+    "source_change_authorized": false,
+    "source": [
+      "internal/hub/api/api.go:1865"
+    ],
+    "actual": "handleAudit 无方法分支，非 GET 方法返回 200 与审计列表；无任何写副作用，故 P19-05 不可变性断言仍成立，但方法语义具误导性。",
+    "affected_cases": [],
+    "evidence": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch05-users/results.json"
+    ]
+  },
+  "new_observations": [
+    "OBS-20261014-NAV-ROLE-UNFILTERED"
+  ],
+  "counts_before": {
+    "PASS": 241,
+    "FAIL": 5,
+    "PARTIAL": 164,
+    "NOT_RUN": 85,
+    "BLOCKED": 9
+  },
+  "not_claimed": "未执行产品修复、Git 交付或 Archive",
+  "counts_after": {
+    "PASS": 245,
+    "FAIL": 5,
+    "PARTIAL": 163,
+    "NOT_RUN": 82,
+    "BLOCKED": 9
+  }
+}

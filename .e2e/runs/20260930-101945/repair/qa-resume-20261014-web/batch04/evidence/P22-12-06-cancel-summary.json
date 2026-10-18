@@ -1,0 +1,246 @@
+{
+ "captured_at_utc": "2026-10-14T09:17:59.813693+00:00",
+ "note": "cancel was issued from the real UI row 操作 menu (取消传输). No confirmation dialog exists in the current design (dialogs_present_after_click=0 for every cancel).",
+ "cancels": [
+  {
+   "transfer_id": "b5ecb82a-7603-43a6-b243-a7af8a80ad3b",
+   "state_at_cancel": "PENDING",
+   "ui_row_text_at_cancel": ".../pending-src.bin 等待中 - native-3 等待中",
+   "server_timeline": [
+    {
+     "t": "2026-10-14T09:06:55.464543+00:00",
+     "elapsed_s": 0.002,
+     "status": "PENDING",
+     "sha256_present": false,
+     "size": 0,
+     "targets": [
+      {
+       "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+       "status": "PENDING",
+       "error": null
+      }
+     ]
+    },
+    {
+     "t": "2026-10-14T09:06:55.777024+00:00",
+     "elapsed_s": 0.315,
+     "status": "CANCELED",
+     "sha256_present": false,
+     "size": 0,
+     "targets": [
+      {
+       "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+       "status": "CANCELED",
+       "error": null
+      }
+     ]
+    }
+   ],
+   "post_cancel_status": "CANCELED",
+   "post_cancel_targets": "CANCELED",
+   "ui_row_after": ".../pending-src.bin 已取消 - native-3 已取消",
+   "confirmation_dialog": false,
+   "http": "POST /api/transfers/{id}/cancel -> 200",
+   "staging_cleanup": "hub file-transfers dir empty"
+  },
+  {
+   "transfer_id": "6bb56f76-f725-4158-9609-f2589fb8045d",
+   "state_at_cancel": "UPLOADING",
+   "ui_row_text_at_cancel": ".../src-big.bin UPLOADING - native-3 等待中",
+   "server_timeline": [
+    {
+     "t": "2026-10-14T09:08:45.217475+00:00",
+     "elapsed_s": 0.293,
+     "status": "UPLOADING",
+     "sha256_present": false,
+     "size": 0,
+     "targets": [
+      {
+       "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+       "status": "PENDING",
+       "error": null
+      }
+     ]
+    },
+    {
+     "t": "2026-10-14T09:08:47.635240+00:00",
+     "elapsed_s": 2.711,
+     "status": "DELIVERING",
+     "sha256_present": true,
+     "size": 314572800,
+     "targets": [
+      {
+       "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+       "status": "PENDING",
+       "error": null
+      }
+     ]
+    },
+    {
+     "t": "2026-10-14T09:08:47.657812+00:00",
+     "elapsed_s": 2.734,
+     "status": "CANCELED",
+     "sha256_present": true,
+     "size": 314572800,
+     "targets": [
+      {
+       "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+       "status": "CANCELED",
+       "error": null
+      }
+     ]
+    }
+   ],
+   "post_cancel_status": "CANCELED",
+   "post_cancel_targets": "CANCELED",
+   "ui_row_after": ".../src-big.bin 已取消 - native-3 已取消",
+   "confirmation_dialog": false,
+   "http": "POST /api/transfers/{id}/cancel -> 200",
+   "cancel_request_issued_at": "t+385ms after POST /api/transfers; the last UPLOADING sample is at t+0.293s and DELIVERING only appears at t+2.711s",
+   "serialization_note": "FileTransferManager.Cancel takes m.mu, which handleUpload holds for the whole upload, so the cancel is applied right after the staged upload finishes (CANCELED at t+2.734s); the transfer still never delivers and the staged blob is removed",
+   "delivery_side_effect": "none: native-3 has no big-dst.bin and the hub staging dir is empty",
+   "staging_cleanup": "hub file-transfers dir empty"
+  },
+  {
+   "transfer_id": "ec3772f9-606d-493f-bdef-762861b6e93e",
+   "state_at_cancel": "DELIVERING",
+   "ui_row_text_at_cancel": ".../src-small.bin DELIVERING - offline 等待中 native-3 成功 host001 失败",
+   "server_timeline": [
+    {
+     "t": "2026-10-14T09:11:16.267292+00:00",
+     "elapsed_s": 0.271,
+     "status": "PENDING",
+     "sha256_present": false,
+     "size": 0,
+     "targets": [
+      {
+       "node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+       "status": "PENDING",
+       "error": null
+      },
+      {
+       "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+       "status": "PENDING",
+       "error": null
+      },
+      {
+       "node_id": "f6a79d23-2410-450c-ac39-64dd70c9daa1",
+       "status": "PENDING",
+       "error": null
+      }
+     ]
+    },
+    {
+     "t": "2026-10-14T09:11:16.289834+00:00",
+     "elapsed_s": 0.294,
+     "status": "UPLOADING",
+     "sha256_present": false,
+     "size": 0,
+     "targets": [
+      {
+       "node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+       "status": "PENDING",
+       "error": null
+      },
+      {
+       "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+       "status": "PENDING",
+       "error": null
+      },
+      {
+       "node_id": "f6a79d23-2410-450c-ac39-64dd70c9daa1",
+       "status": "PENDING",
+       "error": null
+      }
+     ]
+    },
+    {
+     "t": "2026-10-14T09:11:16.312336+00:00",
+     "elapsed_s": 0.316,
+     "status": "DELIVERING",
+     "sha256_present": true,
+     "size": 1048576,
+     "targets": [
+      {
+       "node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+       "status": "PENDING",
+       "error": null
+      },
+      {
+       "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+       "status": "DELIVERING",
+       "error": null
+      },
+      {
+       "node_id": "f6a79d23-2410-450c-ac39-64dd70c9daa1",
+       "status": "FAILED",
+       "error": "destination path: path is outside host allowlist: /tmp/qa-w1410b04-89fe789d/c-host001.bin"
+      }
+     ]
+    },
+    {
+     "t": "2026-10-14T09:11:16.334907+00:00",
+     "elapsed_s": 0.339,
+     "status": "DELIVERING",
+     "sha256_present": true,
+     "size": 1048576,
+     "targets": [
+      {
+       "node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+       "status": "PENDING",
+       "error": null
+      },
+      {
+       "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+       "status": "SUCCESS",
+       "error": null
+      },
+      {
+       "node_id": "f6a79d23-2410-450c-ac39-64dd70c9daa1",
+       "status": "FAILED",
+       "error": "destination path: path is outside host allowlist: /tmp/qa-w1410b04-89fe789d/c-host001.bin"
+      }
+     ]
+    },
+    {
+     "t": "2026-10-14T09:11:28.370922+00:00",
+     "elapsed_s": 12.375,
+     "status": "CANCELED",
+     "sha256_present": true,
+     "size": 1048576,
+     "targets": [
+      {
+       "node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+       "status": "CANCELED",
+       "error": null
+      },
+      {
+       "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+       "status": "SUCCESS",
+       "error": null
+      },
+      {
+       "node_id": "f6a79d23-2410-450c-ac39-64dd70c9daa1",
+       "status": "CANCELED",
+       "error": "destination path: path is outside host allowlist: /tmp/qa-w1410b04-89fe789d/c-host001.bin"
+      }
+     ]
+    }
+   ],
+   "post_cancel_status": "CANCELED",
+   "post_cancel_targets": "offline CANCELED; native-3 SUCCESS preserved; host001 FAILED -> CANCELED",
+   "confirmation_dialog": false,
+   "http": "POST /api/transfers/{id}/cancel -> 200",
+   "staging_cleanup": "hub file-transfers dir empty"
+  }
+ ],
+ "three_states_covered": [
+  "PENDING",
+  "UPLOADING",
+  "DELIVERING"
+ ],
+ "terminal_rows_have_no_empty_action_menu": {
+  "checked": "DOM scan of the owned terminal rows (已取消/成功) at evidence/P22-12b and P22-08-03-terminal-row.json",
+  "result": "action cell contains 0 buttons on CANCELED and SUCCESS rows"
+ }
+}

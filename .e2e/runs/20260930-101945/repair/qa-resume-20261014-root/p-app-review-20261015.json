@@ -1,0 +1,64 @@
+{
+  "review_id": "ROOT-P-APP-REVIEW-20261015",
+  "reviewed_at": "2026-10-15T09:25:24.208048+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "run_dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-app",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 要求 5 路并行跑完全部测试",
+  "summary": {
+    "pass": 17,
+    "partial": 2,
+    "fail": 1
+  },
+  "pass_cases": [
+    "AR-26",
+    "AR-30",
+    "E2E-12",
+    "E2E-13",
+    "INV-12",
+    "INV-18",
+    "SYS-44",
+    "SYS-45",
+    "SYS-47",
+    "SYS-48",
+    "SYS-49",
+    "SYS-51",
+    "SYS-53",
+    "SYS-62",
+    "SYS-63",
+    "SYS-64",
+    "SYS-65"
+  ],
+  "fail_cases": [
+    "AR-32"
+  ],
+  "partial_cases": [
+    "AR-04",
+    "INV-11"
+  ],
+  "p0_defect_reinforced": {
+    "id": "E2E-20261014-ROLLBACK-FAILED-STALE-BACKUP-RESTORE",
+    "detail": "机制（p-app 补充）：rollback() 结尾用**失败版本自己的 health 定义**再跑一次 checkHealth（application.go:673-678），而 failed() 仅在 rollback 返回 true 时才把 journal 收到 DONE（:395-407）；GetActiveDeployments 取 phase NOT IN ('DONE')（store.go:711），重启时 RecoverDeployments 对每条非 PREPARING 行重放 rollback（:729-739）。两条触发链：①AR-32 用户可见——EPERM→rollback 失败→毒行→释放 seam 后成功部署 v5.0→重启时陈旧 backup 覆盖 v5.0，Desired(A1/5.0)≠Actual；②SYS-48 非 systemd 负分支——文件其实已回滚，但 health 复检用失败版本定义永远不过→报 rollback failed 并留 3 条 ROLLING_BACK，重启后二进制 mtime 被改写、毒行被收到 DONE。",
+    "new_trigger": "SYS-48 非 systemd（tcp/http/command）负分支也会留下 3 条 ROLLING_BACK 毒行"
+  },
+  "verified_independently_by_root": {
+    "oracle": "clean=true：hub_leftover_clear、counts_returned_to_baseline(artifacts1/apps1/nodes6)、native4_clean、agent_binary_sha_unchanged、protected_units_active、etc_systemd_count_unchanged(17)",
+    "no_vm_restart": true
+  },
+  "counts_before": {
+    "PASS": 363,
+    "FAIL": 5,
+    "PARTIAL": 93,
+    "NOT_RUN": 34,
+    "BLOCKED": 9
+  },
+  "not_claimed": "未执行产品修复、Git 交付或 Archive",
+  "counts_after": {
+    "PASS": 380,
+    "FAIL": 6,
+    "PARTIAL": 75,
+    "NOT_RUN": 34,
+    "BLOCKED": 9
+  }
+}

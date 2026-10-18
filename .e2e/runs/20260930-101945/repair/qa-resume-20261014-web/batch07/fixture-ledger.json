@@ -1,0 +1,195 @@
+{
+ "batch_id": "qa-resume-20261014-web-batch07",
+ "authority": "http://192.168.100.209:18080",
+ "authority_type": "repair",
+ "primary_8080_touched": false,
+ "nonce": "30fb54d4",
+ "prefix": "qa-w1410b07-30fb54d4",
+ "fixture_caps": {
+  "transfers": 6,
+  "artifacts": 3,
+  "applications": 1
+ },
+ "fixture_used": {
+  "transfers": 6,
+  "artifacts": 1,
+  "applications": 1
+ },
+ "created": {
+  "applications": [
+   {
+    "name": "qa-w1410b07-30fb54d4-app-A",
+    "id": "82e8ee0a-9e32-4fab-8f92-43ff0d20edee",
+    "purpose": "drive agent artifact prefetch (assign only, no deploy)",
+    "created_via": "POST /api/applications (API)",
+    "used_for": "P16-09/P16-10 agent artifact prefetch; assigned to native-3 with POST /api/applications/{id}/assign (the same endpoint the UI editor calls)",
+    "deleted": true,
+    "deleted_via": "UI /applications row 操作 -> 删除 -> alertdialog \"删除: qa-w1410b07-30fb54d4-app-A\" -> 删除 (DELETE /api/applications/{id})",
+    "post_delete_verification": {
+     "GET /api/applications/82e8ee0a-9e32-4fab-8f92-43ff0d20edee": 404,
+     "evidence": "evidence/UI-09-app-delete.json"
+    }
+   }
+  ],
+  "artifacts": [
+   {
+    "name": "qa-w1410b07-30fb54d4-art-A",
+    "id": "51735863-f1e3-4291-bdf4-91ebb735e1be",
+    "sha256": "952ecc974fb739448eae6e7cdea79f8ac57130659d619ba3fe5bf0520f17f8b0",
+    "size": 268435456,
+    "created_via": "POST /api/artifacts (multipart, 256 MiB)",
+    "used_for": "P16-09/P16-10 agent cache download/verify/.tmp tests",
+    "deleted": true,
+    "deleted_via": "DELETE /api/artifacts/{id} -> 200",
+    "post_delete_verification": {
+     "GET /api/artifacts/51735863-f1e3-4291-bdf4-91ebb735e1be": 404,
+     "hub_blob_removed": "grep for the sha in the Hub artifact_dir returned none",
+     "evidence": "evidence/final-cleanup-node-and-fixtures.json"
+    }
+   }
+  ],
+  "transfers": [
+   {
+    "id": "3f91190c-0fb0-42e2-8c48-c56d501ae34d",
+    "case": "P22-10",
+    "source": "/tmp/qa-w1410b07-30fb54d4/src-2m.bin",
+    "src_sha256": "14d4c49597086853a1d0a0f57e6ec8bede461b0fe9fe620042f1d81eae95583f",
+    "targets": {
+     "host001": "/tmp/qa-w1410b07-30fb54d4/iso-host001.bin",
+     "native-3": "/tmp/qa-w1410b07-30fb54d4/iso-native3.bin"
+    },
+    "final_status": "CANCELED",
+    "retained_as_history": true,
+    "retention_reason": "no DELETE endpoint for transfers (handleTransferByID: GET + POST retry/cancel only)"
+   },
+   {
+    "id": "4184507e-cf4d-4e0c-9ab1-157082d704d0",
+    "case": "P22-10 isolation (attempt2)",
+    "source": "/tmp/qa-w1410b07-30fb54d4/src-2m.bin",
+    "src_sha256": "14d4c49597086853a1d0a0f57e6ec8bede461b0fe9fe620042f1d81eae95583f",
+    "targets": {
+     "host001": "/var/tmp/qa-w1410b07-30fb54d4/x-host001.bin",
+     "native-3": "/tmp/qa-w1410b07-30fb54d4/iso-native3.bin"
+    },
+    "final_status": "CANCELED",
+    "retained_as_history": true,
+    "retention_reason": "no DELETE endpoint for transfers (handleTransferByID: GET + POST retry/cancel only)"
+   },
+   {
+    "id": "4aff7bd2-b018-426e-a53a-c7871a367c04",
+    "case": "P22-11 target_id retry",
+    "source": "/tmp/qa-w1410b07-30fb54d4/src-1m.bin",
+    "src_sha256": "d2dd78fe484481df1a33e341365d2a59072ed7d33815cfdf7591e977ea121945",
+    "targets": {
+     "native-3": "/tmp/qa-w1410b07-30fb54d4/retry-symlink.bin"
+    },
+    "final_status": "SUCCESS",
+    "retained_as_history": true,
+    "retention_reason": "no DELETE endpoint for transfers (handleTransferByID: GET + POST retry/cancel only)"
+   },
+   {
+    "id": "c8f2cb42-4d81-4b3d-b454-36f90bd1d006",
+    "case": "P22-11 whole retry (source side)",
+    "source": "/tmp/qa-w1410b07-30fb54d4/src-late.bin",
+    "src_sha256": null,
+    "targets": {
+     "native-3": "/tmp/qa-w1410b07-30fb54d4/retry-whole.bin"
+    },
+    "final_status": "SUCCESS",
+    "retained_as_history": true,
+    "retention_reason": "no DELETE endpoint for transfers (handleTransferByID: GET + POST retry/cancel only)"
+   },
+   {
+    "id": "f926be58-68db-4181-854f-dba803340500",
+    "case": "P22-13 file over limit",
+    "source": "/tmp/qa-w1410b07-30fb54d4/src-overlimit.bin",
+    "src_sha256": null,
+    "targets": {
+     "native-3": "/tmp/qa-w1410b07-30fb54d4/dst-overlimit.bin"
+    },
+    "final_status": "SUCCESS",
+    "retained_as_history": true,
+    "retention_reason": "no DELETE endpoint for transfers (handleTransferByID: GET + POST retry/cancel only)"
+   },
+   {
+    "id": "0892e422-7079-41aa-9640-4482bdbce8c3",
+    "case": "P22-14 half-file cleanup + target_id retry",
+    "source": "/tmp/qa-w1410b07-30fb54d4/src-big.bin",
+    "src_sha256": "29526af988eb29a7d3c55ac9f95203e8025ef8e3e24c5e834390af947d4441dc",
+    "targets": {
+     "native-3": "/tmp/qa-w1410b07-30fb54d4/dst-interrupt.bin"
+    },
+    "final_status": "SUCCESS",
+    "retained_as_history": true,
+    "retention_reason": "no DELETE endpoint for transfers (handleTransferByID: GET + POST retry/cancel only)"
+   }
+  ]
+ },
+ "node_side_files": [
+  {
+   "node": "native-3 192.168.100.222",
+   "path": "/tmp/qa-w1410b07-30fb54d4/",
+   "contents": [
+    "src-1m/2m/8m/1m-late.bin, src-big.bin (160 MiB), src-overlimit.bin (10 GiB sparse then 256 MiB), dst-*.bin, dst-symlink.bin symlink, .enospc-filler.bin (483 MiB), watch_tmp.py, tmp-watch.jsonl"
+   ],
+   "removed": true,
+   "post_remove_verification": "ls -d /tmp/qa-w1410b07-* -> No such file or directory; /tmp back to 0% (979 MiB free); no watch_tmp.py process"
+  },
+  {
+   "node": "hub 192.168.100.209",
+   "paths": [
+    "/var/lib/nodesteer-hub-repair-20260930-101945/artifacts/<sha> (owned artifact blob)",
+    "/var/lib/nodesteer-hub-repair-20260930-101945/file-transfers/<id>.blob|.part"
+   ],
+   "final_state": "owned artifact blob removed with the artifact; no b07 staging/blob leftovers (grep for b07 and for the owned sha returned none); the 4096 B stray blob from the first (missed) interruption attempt was removed manually"
+  },
+  {
+   "node": "native-1 192.168.100.204, native-2 192.168.100.206, native-4 192.168.100.247",
+   "touched": false,
+   "note": "no transfer target, source file or process was created on native-2/4; native-1 was hit only by the accidental wrong-domain reboot described in evidence/incident-report.json"
+  }
+ ],
+ "undeletable_history": [
+  {
+   "kind": "file_transfer",
+   "count": 6,
+   "ids": [
+    "3f91190c-0fb0-42e2-8c48-c56d501ae34d",
+    "4184507e-cf4d-4e0c-9ab1-157082d704d0",
+    "4aff7bd2-b018-426e-a53a-c7871a367c04",
+    "c8f2cb42-4d81-4b3d-b454-36f90bd1d006",
+    "f926be58-68db-4181-854f-dba803340500",
+    "0892e422-7079-41aa-9640-4482bdbce8c3"
+   ],
+   "note": "terminal transfer history retained; no DELETE endpoint exists"
+  }
+ ],
+ "server_writes_total": {
+  "artifact:delete": 1,
+  "application:delete": 1,
+  "application:assign": 12,
+  "application:update": 1,
+  "application:create": 1,
+  "artifact:upload": 1,
+  "file_transfer:retry": 6,
+  "file_transfer:create": 6,
+  "file_transfer:cancel": 2
+ },
+ "forbidden_and_untouched": {
+  "users_created_or_deleted": 0,
+  "nodes_created_or_deleted": 0,
+  "groups_created_or_deleted": 0,
+  "scripts_created_or_deleted": 0,
+  "tasks_created_or_deleted": 0,
+  "node_state_changes": 0,
+  "writes_to_non_owned_objects": 0,
+  "real_deploys": 0,
+  "hub_processes_stopped": 0,
+  "protected_agent_services_stopped_by_hand": 0,
+  "product_source_changes": 0,
+  "git_or_archive_actions": 0,
+  "host001_write_tests": 0,
+  "vm_balloon_change": "native-3 (KVM domain nodesteer-agent-2) balloon raised 1 GiB -> 2 GiB for incident recovery at 18:23Z and restored to 1 GiB at 18:50Z after all node fixtures were removed (verified: services active, node online)",
+  "wrong_domain_reboot": "nodesteer-agent-3 (.204 = repair native-1) was rebooted once by mistake during the incident; it recovered automatically (see incident-report.json)"
+ }
+}

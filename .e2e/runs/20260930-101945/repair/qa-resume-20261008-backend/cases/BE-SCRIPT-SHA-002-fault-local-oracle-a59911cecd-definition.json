@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "BE-SCRIPT-SHA-002-fault-local-oracle-a59911cecd",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport hashlib,json,sqlite3,stat\nfrom pathlib import Path\nroot=Path(\"/tmp/qa-resume-20261008-child-ciivjupc/data/qa-be-script-sha-8a4084bf69\")\ndb=Path(\"/tmp/qa-resume-20261008-child-ciivjupc/data/state.db\")\nc=sqlite3.connect(\"file:\"+str(db)+\"?mode=ro\",uri=True);c.row_factory=sqlite3.Row\nrows=[dict(x) for x in c.execute(\"SELECT id,name,content,revision,sha256 FROM scripts WHERE id IN (?,?) ORDER BY id\",(\"6d3f43cb-cdf1-4729-b3f1-53a3d69ab0b1\",\"92c0e242-0f67-4553-92e0-f7b8ffe675e4\")).fetchall()]\nrevision=c.execute(\"SELECT global_revision FROM sync_state WHERE id=1\").fetchone()[0];c.close()\ndef file_info(name):\n p=root/name\n if not p.is_file():return {\"exists\":False}\n raw=p.read_bytes();return {\"exists\":True,\"sha256\":hashlib.sha256(raw).hexdigest(),\"bytes\":len(raw),\"content\":raw.decode(errors=\"replace\")}\nprint(json.dumps({\"db_open_mode\":\"ro\",\"global_revision\":revision,\"scripts\":rows,\"files\":{\"good\":file_info(\"good.txt\"),\"bad\":file_info(\"bad.txt\"),\"injected_marker\":file_info(\"injected.txt\")}},separators=(\",\",\":\")))\nPY",
+    "timeout": 30,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "a09c452587e1a0c71476fdf3f2e821fbd934058f148e0db326e01cbedfaa4f65",
+  "source_contains_connection_token": false
+}

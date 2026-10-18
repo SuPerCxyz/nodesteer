@@ -1,0 +1,96 @@
+{
+  "review_id": "ROOT-P-SYSMISC-REVIEW-20261015",
+  "reviewed_at": "2026-10-15T09:13:38.749311+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "run_dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 要求 5 路并行跑完全部测试",
+  "verdicts": [
+    {
+      "case_id": "E2E-16",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "高",
+      "reason": "enrollment 后 Hub status=pending/pending；帧代理实录 HELLO→HELLO_ACK(accepted)→SYNC_*→HEARTBEAT/ACK→REVISION_CHECK/ACK；Web UI 显示「等待中→在线」有截图。"
+    },
+    {
+      "case_id": "SYS-01",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "高",
+      "reason": "无效 token→invalid registration token 且保持 pending；同名重纳管 Node/Agent ID 不变、无重复行；revoke-credential→disabled+invalid credential 且回退 token 仍被拒；重纳管清除 revoked 后恢复 online/synced。"
+    },
+    {
+      "case_id": "SYS-02",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "高",
+      "reason": "同身份重启；72s 帧计数 HELLO=1/HELLO_ACK=1/HEARTBEAT=3/HEARTBEAT_ACK=3/REVISION_CHECK=2/ACK=2，ID 不变、online/synced。"
+    },
+    {
+      "case_id": "SYS-11",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "高",
+      "reason": "实机 journal_mode=wal、-wal/-shm 存在、quick_check=ok、identity 行齐全；重启后身份/ revision 不回退/ script·task·schedule 行（id,rev,sha）一致。"
+    },
+    {
+      "case_id": "INV-02",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "高",
+      "reason": "/proc/<pid>/fd→/proc/net/tcp：唯一 ESTABLISHED 出站到代理端口，LISTEN socket = 0（无反向监听）。"
+    },
+    {
+      "case_id": "INV-05",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PARTIAL",
+      "remaining": [
+        "CommitSync 失败路径不可优雅收尾：任何 CommitSync 错误都会让 Agent panic（见 E2E-20261015-COMMITSYNC-FAILURE-DOUBLE-UNLOCK-PANIC）；REVISION 事务不落盘成立，但「优雅失败/可报告 ACK」不成立。"
+      ]
+    },
+    {
+      "case_id": "E2E-18",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PARTIAL",
+      "remaining": [
+        "显式采纳同案 attempt02 的 Journal 证据（execution_journal_status=SUCCESS、exit_code=0、rows_unchanged_across_a_b=true）；Compose 形态重建与 B 恢复后 UI 读回仍缺，需独占批次。"
+      ]
+    }
+  ],
+  "new_defect": {
+    "id": "E2E-20261015-COMMITSYNC-FAILURE-DOUBLE-UNLOCK-PANIC",
+    "priority": "P1",
+    "title": "CommitSync 出错时事务被双重解锁：Agent 在任何 CommitSync 错误上 panic（unlock of unlocked mutex）",
+    "source": [
+      "internal/agent/store.go:244-265（CommitSync 出错已 Unlock 并置 tx=nil）",
+      "internal/agent/agent.go:794-802（defer 再调 RollbackSync → tx==nil 时再次 Unlock）",
+      "internal/agent/agent.go:917-919"
+    ],
+    "actual": "注入真实非 BUSY 失败（限容 tmpfs + 超大同步负载 → SQLITE_FULL）命中 CommitSync 错误分支后 Agent fatal panic（sync: unlock of unlocked mutex，store.go:258 ← defer RollbackSync agent.go:800）；失败事务未落盘、对象未落地；腾空间重启后同步成功、revision 前进。",
+    "status": "CONFIRMED_TEST_FAILURE_REPAIR_SCOPE_REVIEW_PENDING",
+    "source_change_authorized": false,
+    "affected_cases": [
+      "INV-05"
+    ],
+    "evidence": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/case-result.json"
+    ]
+  },
+  "cleanup": "独立 verify_cleanup ok=true：exact_all_404、前缀残留清空、native-1 无进程/根/挂载、代理端口释放、4 节点 online/synced、Hub quick_check=ok；前两次尝试的 harness 残留已手工清除",
+  "counts_before": {
+    "PASS": 358,
+    "FAIL": 5,
+    "PARTIAL": 98,
+    "NOT_RUN": 34,
+    "BLOCKED": 9
+  },
+  "counts_after": {
+    "PASS": 363,
+    "FAIL": 5,
+    "PARTIAL": 93,
+    "NOT_RUN": 34,
+    "BLOCKED": 9
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "captured_at_utc": "2026-10-10T11:55:34.052769+00:00",
+  "canonical": "TABLE-SCRIPTS-SORT",
+  "supplement": "Actual comparator order review; clarifies batch06 status labels without rewriting its historical artifact.",
+  "source_refs": [
+    "web/src/features/catalog/index.tsx:1248-1250",
+    "web/src/components/data-table/column-header.tsx:27-33"
+  ],
+  "actual_rows": {
+    "original_name": "qa-web-b05-original-20261010-1115",
+    "original_description": "QA batch05 edited description",
+    "clone_name": "qa-web-b05-original-20261010-1115 (copy)",
+    "clone_description": "QA batch05 clone copy edit"
+  },
+  "sort_accessor": "`${row.name} ${row.description || ''} ${row.id}`",
+  "sort_reason": "After the shared base name and space, clone accessor has ( while original description starts Q; ( sorts before Q. Ascending on the actual accessor is clone then original. Header aria-label/title communicates the next action, not current state.",
+  "observed_cycle": [
+    {
+      "click": 1,
+      "header_next_action": "descending",
+      "actual_state": "ascending",
+      "row_order": [
+        "clone",
+        "original"
+      ]
+    },
+    {
+      "click": 2,
+      "header_next_action": "clear sorting",
+      "actual_state": "descending",
+      "row_order": [
+        "original",
+        "clone"
+      ]
+    },
+    {
+      "click": 3,
+      "header_next_action": "ascending",
+      "actual_state": "unsorted",
+      "row_order": [
+        "original",
+        "clone"
+      ]
+    }
+  ],
+  "api_requests": [
+    {
+      "method": "GET",
+      "path": "/api/scripts",
+      "status": 200,
+      "count": 2
+    }
+  ],
+  "write_request_count": 0,
+  "raw_script_bodies_saved": false
+}

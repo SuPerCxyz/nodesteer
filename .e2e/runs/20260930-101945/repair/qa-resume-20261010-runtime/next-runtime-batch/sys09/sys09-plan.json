@@ -1,0 +1,165 @@
+{
+  "created_at_utc": "2026-10-12T16:05:42Z",
+  "status": "PROPOSAL_SOURCE_ONLY_NO_EXTERNAL_ACTIONS",
+  "canonical_case": {
+    "case_id": "SYS-09",
+    "current_repair_status": "PARTIAL",
+    "remaining": [
+      "Connected Native3 Agent has not been shown consuming exact Script/Task/Schedule tombstones.",
+      "Agent-owned future interval slot suppression after tombstone consumption has not been observed."
+    ],
+    "existing_application_slice": {
+      "application_id": "aa4d4ad8-ad06-491b-8b62-ba556a703dbc",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/application-ui-run-b3ca14953c14/helper-cleanup-result.json",
+      "covered_only": "Prior exact Application deletion showed empty local applications/unit_registry rows, Unit and binary absent, and retained Execution; this is not a new App run and does not cover Script/Task/Schedule or future slots."
+    }
+  },
+  "target": {
+    "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+    "agent_id": "agent-bb005487-7d84-418c-b598-f93d8b0c86a0",
+    "agent_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "agent_unit": "nodesteer-agent-repair-20260930-101945-native-3.service",
+    "scope": "Native3 only; fresh IDs/status/sync/owner/proc+disk SHA/UID/Unit/cgroup guards required at execution; never reuse old PID"
+  },
+  "fixture_design": {
+    "prefix": "qa-sys09-native3-20261012-2709acec1825",
+    "script": {
+      "count": 1,
+      "interpreter": "shell",
+      "content": "The Task will create the Script from these exact bytes; script emits the nonce marker only.",
+      "side_effects": "stdout marker only; no file, environment, network, or host effects",
+      "source_path": "business_script.sh",
+      "source_sha256": "f54330cc2b46c6e476ab43cce24042ed582f2a9cd8580d28bc1963745e2fda60",
+      "source_bytes": 55
+    },
+    "script_task": {
+      "count": 1,
+      "type": "script",
+      "target": "exact Native3 node_id",
+      "retry": 0,
+      "timeout_seconds": 15,
+      "enabled": true,
+      "schedule_field": null
+    },
+    "schedule": {
+      "count": 1,
+      "type": "interval",
+      "interval_seconds": 15,
+      "execution_owner": "agent",
+      "offline_policy": "hub_online_required",
+      "misfire_policy": "skip",
+      "timezone": "UTC",
+      "enabled": true,
+      "relation": "exact ScriptTask ID"
+    },
+    "readonly_probe_task": {
+      "count": 1,
+      "type": "command",
+      "target": "exact Native3 node_id",
+      "retry": 0,
+      "timeout_seconds": 30,
+      "schedule": null,
+      "runs": 2,
+      "purpose": "preflight owner/DB/fixture-absence; post-tombstone local row/revision/Execution/history readback",
+      "parameters": [
+        {
+          "name": "phase",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "script_id",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "task_id",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "schedule_id",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "execution_id",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "expected_scheduled_time",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "expected_hub_revision",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "command_source": "readonly_probe.py embedded by command_builder.py; the builder emits only source/command hashes and never calls the network.",
+      "physical_readback": [
+        "Exact Native3 Agent ancestry/UID/proc+disk SHA/unit/config-path-only guard",
+        "Unique open state.db FD from the exact Agent process; same regular-file dev/inode; read-only SQLite URI and query_only=1",
+        "Expected identity rows and global_revision; exact fixture Script/Task/Schedule ID rows absent; exact scheduled Execution ID remains SUCCESS/trigger=schedule"
+      ]
+    }
+  },
+  "resource_and_run_budget": {
+    "script_definitions": 1,
+    "script_tasks": 1,
+    "agent_owned_schedules": 1,
+    "readonly_probe_tasks": 1,
+    "readonly_probe_run_posts": 2,
+    "manual_business_run_posts": 0,
+    "expected_scheduled_execution_max": 1,
+    "unexpected_additional_scheduled_execution_budget": 0,
+    "total_definition_deletes": 4,
+    "expected_host_app_user_node_changes": 0,
+    "ui_actions": 0,
+    "max_wait_after_delete_seconds": 60,
+    "poll_interval_seconds": 2,
+    "total_task_definitions": 2,
+    "total_created_definitions": 4
+  },
+  "sequence": [
+    "Read-only fresh API guard: exact Node/Agent online+synced, 5 protected Nodes online+synced, unique fixture names, no schedules for the fixture, Native3 repair Unit/PID/hash fresh guard; do not use stale PID from historical evidence.",
+    "Create exactly one readonly Command probe Task, read it back exactly, run preflight once with current Node global_revision. Require allowlisted READONLY_PREFLIGHT_PASS, Agent UID0/proc+disk SHA d55, exact active Unit/MainPID/cgroup/config-path-only, exact state.db FD identity, quick_check=ok, expected identity rows, the probe Task row present exactly once, and both future Script/Task fixture names absent before creating business resources.",
+    "Create the Script from business_script.sh exact bytes, one enabled Script Task (retry0/timeout15), and one enabled interval Schedule (15s, owner=agent, hub_online_required, misfire=skip); read back every field/target and wait until Node is online+synced at or beyond latest revision.",
+    "Record the exact Schedule CreatedAt and derive first expected scheduled_time=CreatedAt+15s truncated to UTC seconds; API returns only the created Agent-owned Schedule Execution (no manual Run), and its trigger_type must be schedule with one matching Task/Script/Node identity. Any additional automatic Execution is recorded as budget deviation, not retried.",
+    "Immediately after the first terminal scheduled SUCCESS, DELETE exact Schedule, then Task, then Script; each requires DELETE success and exact GET404. Do not stop or restart Native3 or alter any Unit/cgroup.",
+    "In interruptible 2s steps for at most 60s after DELETE, wait for Native3 online+synced and applied Node revision >= last Hub revision after the three deletes. Then observe one full 15s interval plus 2s scheduler-tick margin for zero new scheduled Executions; both convergence and observation must fit the same 60s bound.",
+    "In interruptible 2s steps for at most 60s, wait for Native3 online+synced and applied Node revision >= last Hub revision captured after the three deletes. Start a 15s suppression observation window only after that convergence; query exact Task execution list throughout and require no new scheduled execution during one full interval plus scheduler tick margin, remaining within the 60s total.",
+    "Run the single postcheck on the existing readonly Command Task once. It must read local Agent SQLite with mode=ro/query_only, quick_check=ok, exact Script/Task/Schedule rows absent, local revision >= Hub post-delete revision, and the first scheduled Execution row still SUCCESS with exact ID/trigger/script revision. Compare API execution history remains GET200 after all definitions are deleted.",
+    "Exact cleanup: delete the readonly probe Task last and GET404; preserve scheduled and helper Execution/Audit history. Final GET exact 404 for all four definitions; target Native3 and protected Nodes remain healthy/synced; no shared Unit/process action."
+  ],
+  "source_contract_facts": {
+    "agent_scheduler_tick_seconds": 1,
+    "agent_schedule_tombstone_path": "OnSyncResponse deletes local schedule row, calls Scheduler.RemoveSchedule, then persists sync_state revision and commits before reloadSchedulerSchedules.",
+    "agent_script_task_tombstone_path": "OnSyncResponse deletes exact local Script and Task rows.",
+    "hub_delete_tombstones": "ScheduleManager.Delete, TaskManager.Delete and ScriptManager.Delete each record a revisioned tombstone and notify sync.",
+    "history_retention": "Agent LocalStore execution table is separate from Script/Task/Schedule definition tables; postprobe will prove exact Execution remains rather than infer from source.",
+    "interval_semantics": "Agent-owned Schedule is ticked by Native3 scheduler; interval=15s uses schedule CreatedAt until first fire, then lastFire anchor; exact observed first and next due times must be recorded, not inferred from configured interval alone."
+  },
+  "risks_and_stop_conditions": [
+    "Probe helper must discover exactly one regular state.db through the target Agent's /proc/PID/fd and verify same dev/inode before/after; ambiguity or absent FD is a safe stop.",
+    "Do not inspect or emit config contents, complete argv/env, credentials, raw Task definitions or full logs; output only IDs, hashes, row booleans/counts, revision, process fingerprint, Unit and DB identity metadata.",
+    "If Agent does not sync deletions within the 60s bound, record PARTIAL/BLOCKED; do not claim API GET404 equals tombstone consumption.",
+    "If an extra scheduled Execution occurs before tombstone convergence, report actual count and keep history; no extra fixture/retry."
+  ],
+  "excluded": [
+    "No Application creation/deletion in this batch; cite the existing Application slice only as prior evidence.",
+    "No Agent restart, signal, unit/cgroup changes, Node/User changes, Manual business Run, or user credential fixture.",
+    "No claims about content-addressed Script cache deletion; the canonical SYS-09 assertion is definition tombstone and future scheduling, not physical binary/cache eviction."
+  ],
+  "external_actions_so_far": {
+    "api_calls": 0,
+    "api_mutations": 0,
+    "docker": 0,
+    "task_create": 0,
+    "run_post": 0,
+    "schedule_create": 0
+  },
+  "updated_at_utc": "2026-10-12T16:12:32Z"
+}

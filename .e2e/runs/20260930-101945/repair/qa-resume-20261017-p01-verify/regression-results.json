@@ -1,0 +1,168 @@
+{
+ "batch": "qa-resume-20261017-p01-verify",
+ "authority": "http://192.168.100.209:18080",
+ "build_label": "dddee4f0-e2e-repair-20261017-p01",
+ "hub_sha256": "029f3f4e5cdfe863a917557171c2672548d1b5773e516bf50eab56e1629e20ee",
+ "agent_sha256": "449af1d571daccce4264bda11e10d644f30c0db300f084c1f40a320b6bb2d256",
+ "updated_at_utc": "2026-10-17T11:18:18Z",
+ "nonce": "f78b3979",
+ "cases": [
+  {
+   "case_id": "SYS-27",
+   "phase": "remote",
+   "at_utc": "2026-10-17T11:17:52Z",
+   "new_status": "PASS",
+   "new_conclusion": "原 FAIL（20261014：remote online 满足/不满足均 BLOCKED，跨主机时钟偏移门禁）→ 20261016 修复版 PASS；本次 P0-1 简化版 PASS：满足路径 SUCCESS 且真实执行（marker 存在）、不满足 SKIPPED 且无 marker；判定仅读 Hub 下发的 ttl_remaining_sec，不再做跨时钟比较",
+   "evidence": [
+    "evidence/remote-cases.json",
+    "evidence/probe-p01.json"
+   ],
+   "extra": {
+    "on01": "SUCCESS",
+    "on02": "SUCCESS",
+    "on03": "SKIPPED",
+    "marker_on01": true,
+    "marker_on03": false,
+    "clock_delta_hub_minus_node": {
+     "native-1": -0.05430245399475098,
+     "native-2": -0.26468849182128906,
+     "native-3": -0.2672426700592041,
+     "native-4": -0.5035538673400879
+    }
+   }
+  },
+  {
+   "case_id": "SYS-28",
+   "phase": "remote",
+   "at_utc": "2026-10-17T11:17:52Z",
+   "new_status": "PASS",
+   "new_conclusion": "原 PARTIAL（成功/失败/不存在受 BLOCKED 阻塞）→ 20261016 修复版 PASS；本次 P0-1 简化版 PASS：last_execution==SUCCESS 历史 → SUCCESS 真实执行；==FAILED → SKIPPED；未观察 → UNKNOWN → BLOCKED fail-closed",
+   "evidence": [
+    "evidence/remote-cases.json"
+   ],
+   "extra": {
+    "lx01": "SUCCESS",
+    "lx03": "SKIPPED",
+    "lx05": "BLOCKED",
+    "lx05_block_reason": "condition unknown: <nil>"
+   }
+  },
+  {
+   "case_id": "SYS-29",
+   "phase": "remote",
+   "at_utc": "2026-10-17T11:17:52Z",
+   "new_status": "PASS_WITH_NOTES",
+   "new_conclusion": "原 PARTIAL → 20261016 PASS_WITH_NOTES；本次 P0-1 简化版 PASS_WITH_NOTES：「未过期」路径全程在新鲜窗口内完成（所有满足路径 SUCCESS）；「未观察」仍 fail-closed；「TTL 过期」经产品路径不可构造（缓存分支无写入方，Hub 每次实时计算正剩余），由受控探针用真实新二进制验证 ttl_remaining_sec=0/负 → BLOCKED、缺失（旧 Hub 报文）→ BLOCKED，并由单测 TestRemoteStateValidity/TestRemoteStatePayloadJSON 覆盖",
+   "evidence": [
+    "evidence/remote-cases.json",
+    "evidence/probe-p01.json"
+   ],
+   "extra": {
+    "probe_expired0": "BLOCKED",
+    "probe_negative": "BLOCKED",
+    "probe_missing": "BLOCKED"
+   }
+  },
+  {
+   "case_id": "SYS-30",
+   "phase": "remote",
+   "at_utc": "2026-10-17T11:17:52Z",
+   "new_status": "PASS",
+   "new_conclusion": "原 PARTIAL（Remote「不满足」被 SYS-27 阻塞）→ 20261016 修复版 PASS；本次 P0-1 简化版 PASS：remote 不满足（online==offline、AND 中 remote 不满足）真实 SKIPPED、无 marker/副作用",
+   "evidence": [
+    "evidence/remote-cases.json"
+   ],
+   "extra": {
+    "on03": "SKIPPED",
+    "and08": "SKIPPED",
+    "on03_block_reason": "condition not satisfied"
+   }
+  },
+  {
+   "case_id": "E2E-10",
+   "phase": "remote",
+   "at_utc": "2026-10-17T11:17:52Z",
+   "new_status": "PASS_WITH_NOTES",
+   "new_conclusion": "原 PARTIAL（20261014：13/13 Remote BLOCKED）→ 20261016 PASS_WITH_NOTES；本次 P0-1 简化版 PASS_WITH_NOTES：满足/不满足/确定性 offline/未观察 fail-closed 全部可判定；TTL 过期维度经产品路径仍不可构造，由受控探针覆盖（过期/缺失 → BLOCKED）",
+   "evidence": [
+    "evidence/remote-cases.json",
+    "evidence/probe-p01.json"
+   ],
+   "extra": {
+    "off05": "SUCCESS",
+    "off06": "SKIPPED",
+    "lx05": "BLOCKED"
+   }
+  },
+  {
+   "case_id": "INV-09",
+   "phase": "remote",
+   "at_utc": "2026-10-17T11:17:52Z",
+   "new_status": "PASS",
+   "new_conclusion": "原 PASS_WITH_NOTES（确定性状态也被判未知）→ 20261016 修复版 PASS；本次 P0-1 简化版 PASS：未观察 last_execution（UNKNOWN）→ BLOCKED 无业务效果；UNKNOWN/空值即使带正 ttl_remaining_sec 也 BLOCKED（受控探针），与可判定状态明确区分",
+   "evidence": [
+    "evidence/remote-cases.json",
+    "evidence/probe-p01.json"
+   ],
+   "extra": {
+    "lx05": "BLOCKED",
+    "probe_unknown": "BLOCKED",
+    "probe_empty": "BLOCKED"
+   }
+  },
+  {
+   "case_id": "SYS-26",
+   "phase": "remote",
+   "at_utc": "2026-10-17T11:17:52Z",
+   "new_status": "PASS",
+   "new_conclusion": "原 PASS（AND(remote,local) 受 SYS-27 阻塞为 BLOCKED）→ 20261016 修复版 PASS；本次 P0-1 简化版 PASS：AND 满足 → SUCCESS；AND 中 remote 不满足 → SKIPPED；AND 中 remote 未知 → 整体保持未知 → BLOCKED（不被当成 SKIPPED 绕过）",
+   "evidence": [
+    "evidence/remote-cases.json"
+   ],
+   "extra": {
+    "and07": "SUCCESS",
+    "and08": "SKIPPED",
+    "and09": "BLOCKED"
+   }
+  },
+  {
+   "case_id": "P0-1-CLOCK-INDEPENDENCE",
+   "phase": "probe",
+   "at_utc": "2026-10-17T11:17:52Z",
+   "new_status": "PASS",
+   "new_conclusion": "时钟无关性观测：真实路径上重复满足路径（含首次共 4 次）全部 SUCCESS；受控探针中 observed_at 偏 ±1h / epoch0 但 ttl_remaining_sec>0 → SUCCESS，说明判定不读任何时钟；ttl_remaining_sec 缺失/<=0 与 UNKNOWN/空值 → BLOCKED fail-closed",
+   "evidence": [
+    "evidence/remote-cases.json",
+    "evidence/probe-p01.json"
+   ],
+   "extra": {
+    "probe_all_expected": true,
+    "probe_case_count": 9,
+    "clock_repeat": [
+     {
+      "case_id": "CLOCK-ON01-r2",
+      "status": "SUCCESS",
+      "verdict": "PASS"
+     },
+     {
+      "case_id": "CLOCK-ON01-r3",
+      "status": "SUCCESS",
+      "verdict": "PASS"
+     },
+     {
+      "case_id": "CLOCK-ON01-r4",
+      "status": "SUCCESS",
+      "verdict": "PASS"
+     }
+    ],
+    "probe_agent_sha": "449af1d571daccce4264bda11e10d644f30c0db300f084c1f40a320b6bb2d256",
+    "clock_delta_hub_minus_node": {
+     "native-1": -0.05430245399475098,
+     "native-2": -0.26468849182128906,
+     "native-3": -0.2672426700592041,
+     "native-4": -0.5035538673400879
+    }
+   }
+  }
+ ]
+}

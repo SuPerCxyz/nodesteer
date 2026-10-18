@@ -1,0 +1,105 @@
+{
+  "instance_id": "nodesteer-qa-ptable-20261015ptable754f90f1",
+  "nonce": "20261015ptable754f90f1",
+  "purpose": "可整体销毁的隔离 Hub：在真空态验证表格 Loading/Empty/Error/Retry 与真实分页/排序/边界",
+  "host": "192.168.100.209",
+  "port": 18082,
+  "tunnel_local_port": 38282,
+  "binary": {
+    "path": "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard",
+    "sha256_expected": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+  },
+  "config": {
+    "path": "/etc/nodesteer/qa-ptable-20261015ptable754f90f1.yaml",
+    "mode": "0640 root:nodesteer"
+  },
+  "data_dir": {
+    "path": "/var/lib/nodesteer-qa-ptable-20261015ptable754f90f1",
+    "mode": "0750 nodesteer:nodesteer"
+  },
+  "log": "/var/log/nodesteer-qa-ptable-20261015ptable754f90f1.log",
+  "launch": {
+    "method": "transient: runuser -u nodesteer -- setsid nohup <binary> --config <cfg>",
+    "systemd": "none"
+  },
+  "created_at_utc": "2026-10-15T07:12:51Z",
+  "sha256_verified": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+  "pids_at_start": [
+    "79772 runuser -u nodesteer -- setsid nohup /opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard --config /etc/nodesteer/qa-ptable-20261015ptable754f90f1.yaml",
+    "79778 /opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard --config /etc/nodesteer/qa-ptable-20261015ptable754f90f1.yaml"
+  ],
+  "healthz_ok": true,
+  "root_status": "200",
+  "listeners": [
+    "LISTEN 0      4096               *:18082            *:*"
+  ],
+  "index_html_sha256": "612c23ba1efed95fb7d773c625d68f61adad16f21d30232e2102aa118b920449",
+  "config_mode_actual": "640 root:nodesteer",
+  "data_dir_mode_actual": "750 nodesteer:nodesteer",
+  "repair_binary_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+  "repair_index_html_sha256": "612c23ba1efed95fb7d773c625d68f61adad16f21d30232e2102aa118b920449",
+  "binary_match": true,
+  "index_html_identical_to_repair": true,
+  "tunnel": {
+    "local_port": 38282,
+    "healthz_status": "200",
+    "tunnel_pgrep": ""
+  },
+  "local_credential_file": "/tmp/opencode/ptable-creds-20261015ptable754f90f1.json (0600)",
+  "teardown": {
+    "steps": [
+      "pkill -TERM/-KILL -f qa-ptable-20261015ptable754f90f1（含 runuser 父进程与 hub 子进程）",
+      "rm -rf /var/lib/nodesteer-qa-ptable-20261015ptable754f90f1",
+      "rm -f /etc/nodesteer/qa-ptable-20261015ptable754f90f1.yaml /var/log/nodesteer-qa-ptable-20261015ptable754f90f1.log",
+      "本地隧道进程终止：pkill -f '-L 38282:127.0.0.1' 因参数以 '-' 开头被 pkill 当作选项（rc=2，未生效）；改用 pkill -f 'ssh .*38282:127.0.0.1:18082' 成功后按 PID 复核",
+      "agent-browser --session qaweb-ptable-20261015 close（未使用 --all）",
+      "agent-browser auth delete ptable-20261015ptable754f90f1",
+      "删除本地 0600 凭据文件 /tmp/opencode/ptable-creds-20261015ptable754f90f1.json"
+    ],
+    "remote_checks": {
+      "PGREP_AFTER": "0",
+      "PORT_LISTEN": "0",
+      "DATA_DIR_EXISTS": "no",
+      "CONFIG_EXISTS": "no",
+      "LOG_EXISTS": "no",
+      "ETC_LEFTOVER": "0",
+      "VARLIB_LEFTOVER": "0",
+      "PORT_LISTEN_AFTER": "0",
+      "REPAIR_18080": "1",
+      "PRIMARY_8080": "1",
+      "REPAIR_PID_ALIVE": "5952",
+      "AGENT_UNIT": "inactive",
+      "UNIT_FILES_CHANGED": "0"
+    },
+    "local": {
+      "tunnel_process_after": "none",
+      "tunnel_pkill_rc": "2 (首次，未生效) / 0 (修正后)",
+      "browser_close_rc": 0,
+      "auth_delete_rc": 0,
+      "credential_file_exists_after": false,
+      "tunnel_kill_note": "首轮 pkill 参数解析失败（rc=2）导致隧道残留；已改用 ssh .*38282:127.0.0.1:18082 模式终止并复核无残留",
+      "tunnel_process_after_final": "none"
+    },
+    "verification": {
+      "processes_after": "0",
+      "port_listening_after": "0",
+      "data_dir_exists_after": "no",
+      "config_exists_after": "no",
+      "log_exists_after": "no",
+      "etc_leftovers": "0",
+      "var_lib_leftovers": "0",
+      "local_tunnel_left": "none",
+      "credential_file_left": false,
+      "local_tunnel_left_checked_after_fix": true,
+      "tunnel_recheck_cmd": "pgrep -af '38282:127.0.0.1' | grep -v pgrep | wc -l == 0"
+    },
+    "collateral_check": {
+      "repair_18080_listening": "1",
+      "primary_8080_listening": "1",
+      "repair_pid_alive_pid": "5952",
+      "nodesteer_agent_service": "inactive",
+      "systemd_unit_files_modified_recently": "0"
+    },
+    "result": "ISOLATED_INSTANCE_DESTROYED_AND_VERIFIED"
+  }
+}

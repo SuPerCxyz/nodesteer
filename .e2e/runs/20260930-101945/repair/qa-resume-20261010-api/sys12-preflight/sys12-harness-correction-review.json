@@ -1,0 +1,67 @@
+{
+  "reviewed_at_utc": "2026-10-12T13:26:11Z",
+  "status": "DRAFT_NO_ACTION_ROOT_REVIEW_REQUIRED",
+  "case_id": "SYS-12",
+  "source_sha256": {
+    "lifecycle_source_proposal.py": "6be51c872462fee3428c11df3d3cd567f42a4d6d471354cc5bbac2c8f8b2ffad",
+    "sys12_outer_controller.py": "0e213c45180eab1701dfc87aabc9b353d7025f909429f764bc1028b083e353a7",
+    "resource-plan.json": "4ab25c6373b34633adff79b6b7cf1bc807fb6d9a1fb99be22cead9011453db91",
+    "one-root-controller-plan.json": "7b89c616799ad381735be9aaebfdcc50cc8fcdc75894d13643ac05d58547282f"
+  },
+  "review_finding_changes": [
+    {
+      "finding": "prepare network inspect used undefined nrow",
+      "status": "FIXED_LOCALLY",
+      "evidence": "lifecycle_source_proposal.py:166-181 and :341-356 now parse one JSON row and validate immutable ID, exact Name, bridge Driver, local Scope, Internal=false, Attachable=false and owner label before recording NETWORK_CREATED."
+    },
+    {
+      "finding": "helper Task deletion after ambiguous/nonterminal Run",
+      "status": "FIXED_LOCALLY",
+      "evidence": "sys12_outer_controller.py:282-353 binds a unique Execution to the exact Task, verifies TaskID on each GET, recognizes the product's terminal states including SKIPPED (internal/hub/execution.go:575-584), and on deadline requests POST /api/executions/{id}/cancel then polls the same Execution for up to 30 seconds. The route contract was checked in internal/hub/api/api.go:1816-1843; cancellation only sends a message, so no terminal readback means OWNED_ACTIVE_HELPER_BLOCKED. :44-60 persists the block, and :863-871 skips all automatic remote cleanup. :493-504 gates helper Task deletion on terminal_proven."
+    },
+    {
+      "finding": "recovery did not prove previous helpers inactive before cleanup",
+      "status": "FIXED_LOCALLY",
+      "evidence": "sys12_outer_controller.py:1032-1098 reconciles exact Execution state before helper Task deletion; :1091-1101 and :1203-1208 perform a full helper inactivity preflight before recovery cleanup mutations. Missing/ambiguous Execution or failed terminal readback stops recovery and preserves resources."
+    },
+    {
+      "finding": "six-call budget had no recovery reserve",
+      "status": "FIXED_LOCALLY",
+      "evidence": "sys12_outer_controller.py:24-26 and :352-391 enforce ledger-backed counters for 6 normal, 4 recovery and 10 cumulative helper calls. Recovery cleanup calls are tagged recovery; business Run/prepare are not replayed. Updated budgets and stop conditions are in resource-plan.json and one-root-controller-plan.json."
+    },
+    {
+      "finding": "business Execution poll omitted SKIPPED terminal",
+      "status": "FIXED_LOCALLY",
+      "evidence": "sys12_outer_controller.py:28 defines the shared terminal set including SKIPPED, matching internal/hub/execution.go:575-584; the business poll at :693 now uses that same set."
+    },
+    {
+      "finding": "stopped container may report empty dynamic IP",
+      "status": "FIXED_LOCALLY",
+      "evidence": "lifecycle_source_proposal.py:371-436 preserves immutable container, policy, mount, owner and exact-network membership checks. It requires a valid IP while Running=true; when stopped, None/empty is accepted, and any nonempty value still must parse as an IP. No Docker runtime value was read."
+    },
+    {
+      "finding": "local private connection owner assumption did not match authorized environment",
+      "status": "FIXED_LOCALLY",
+      "evidence": "sys12_outer_controller.py:97-116 compares the lstat/fstat file owner and private parent directory owner to os.geteuid(), while retaining regular-file/no-symlink, resolved path, 0600/0700 modes, O_NOFOLLOW, dev/inode stability and strict repair :18080 URL checks. Lifecycle/container UID remains 65534."
+    },
+    {
+      "finding": "Hub API successful execution may omit exit_code",
+      "status": "FIXED_IN_HARNESS_WITH_SCOPE_LIMIT",
+      "evidence": "sys12_outer_controller.py:700-710 accepts SUCCESS with strict identity/revision and marker checks; if exit_code is present, only exact int 0 (excluding bool, null, string and nonzero) is accepted. Missing field sets api_success_exit_code_omitted_known_defect=true. SQLite journal validation remains strict exit_code==0 at :927. The API exit-code dimension is not claimed PASS."
+    }
+  ],
+  "local_validation": {
+    "ruff_f821": "PASS: /home/superc/.local/bin/ruff check --select F821 lifecycle_source_proposal.py sys12_outer_controller.py; All checks passed.",
+    "pyflakes": "PASS: /home/superc/.local/bin/pyflakes lifecycle_source_proposal.py sys12_outer_controller.py; no output.",
+    "python_compile": "PASS: compile(source, filename, 'exec') for both Python sources; no pycache write.",
+    "json_parse": "PASS: resource-plan.json, one-root-controller-plan.json and this review parse.",
+    "no_action_smoke": "PASS: controller without --execute and lifecycle inspect without --execute both returned DRAFT_NO_ACTION; no API/Docker/resource operation."
+  },
+  "authorization_boundary": {
+    "remote_actions": "NONE",
+    "resource_grant": "NOT_GRANTED",
+    "default": "DRAFT_NO_ACTION",
+    "writes": "Only qa-resume-20261010-api/sys12-preflight source, controller, plans and this review. No Root/global/Runtime files, product source, Git, API, Task, Docker, container, network, Node, Unit or service actions."
+  },
+  "remaining_review": "Root must update launch-review pins and reauthorize after this source revision. Static checks do not establish runtime behavior; SYS-12 remains unexecuted and the API exit_code field remains a known coverage limitation unless supplied; the SQLite journal exit_code==0 remains a required business oracle."
+}

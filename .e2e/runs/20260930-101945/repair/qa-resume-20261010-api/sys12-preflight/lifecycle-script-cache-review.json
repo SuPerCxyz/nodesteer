@@ -1,0 +1,30 @@
+{
+  "status": "SOURCE_AND_EXECUTABLE_CONTROLLER_READY_ROOT_REVIEW_REQUIRED_NO_RESOURCE_ACTION",
+  "created_at_utc": "2026-10-12T12:45:56Z",
+  "files": {
+    "lifecycle_source_proposal.py": "b76588c5ca4d4e0e9eb8caf90a537e6d51ecad27d17d82d437b35012cb0cf773",
+    "sys12_outer_controller.py": "c2a16bc9ef9a1c8ab2a3e2e34072a45bd51cf1627a603ec87cb563d70993a07a",
+    "resource-plan.json": "a45ea0e109b40ec35856c81845648d1d325ca190aa442a7c0a3ac04ce5734417",
+    "one-root-controller-plan.json": "a1b86243861987759dd63e190a580b919b45ac327b94b7e9f942f8caec5db66d"
+  },
+  "local_validation": {
+    "python_compile": "lifecycle_source_proposal.py and sys12_outer_controller.py passed compile(source, filename, exec); no pycache writes",
+    "json_parse": "resource-plan.json and one-root-controller-plan.json parsed successfully",
+    "helper_dry_run": "lifecycle source --phase inspect returned DRAFT_NO_ACTION",
+    "controller_dry_run": "outer controller without --execute returned DRAFT_NO_ACTION",
+    "remote_actions": "none; no API, Task, Docker, Node, Network, file-root or product source changes executed"
+  },
+  "review_findings_addressed": {
+    "node_name_order": "Exact Admin GET for fresh NodeName runs after helper Task GET/readback and immediately before the prepare helper Run that starts container A; baseline four Node IDs must remain the same.",
+    "sqlite_integrity": "Read-only SQLite requires PRAGMA quick_check exactly ok. Opens a guarded O_NOFOLLOW FD, compares fstat/path lstat before and after query, returns db_dev/db_inode; persistence comparisons require the same DB identity across A, post-A pre-B, B, and post-reconnect.",
+    "b_process_open_proof": "B is directly started on the same owned bridge. Before SQLite query, bounded state.db file identity is used to verify exact immutable container ID and State.Pid, /proc state/startticks, UID65534, cgroup contains full container ID, executable SHA matches pinned Agent binary, container-root state.db inode matches, and an open /proc/PID/fd has the same dev+inode. Process/container identity is sampled again after SQLite reads. No argv/environment/credential is read.",
+    "daemon_commit_recovery": "cleanup-runtime recovers only the nonce-derived exact container/network names; it validates owner label, pinned full image ID, complete policy/mount and network properties before writing immutable IDs to owner/resource ledgers. It does not broadly list resources or recreate. Idempotent cleanup confirms exact absence if a prior delete completed before its ledger write.",
+    "failed_phase_entrypoint": "sys12_outer_controller.py has --recover-ledger; it pins both reviewed source hashes, cleans only IDs/exact random names from the private ledger, preserves Execution/Audit, and never reruns business Script Task/Run/Schedule. Root grant and explicit --execute are required."
+  },
+  "business_scope": {
+    "fixtures": "one fresh Node, one Script with `printf` marker, one Script Task, one successful manual Execution, one disabled Schedule, two sequential containers, one bridge/shared DataDir; 6 helper Task/Run max",
+    "script_cache": "SQLite scripts row ID/revision/content_bytes/content SHA/stored SHA and execution ScriptID/ScriptRevision; same exact rows across B; no physical Script file is fabricated or expected.",
+    "excluded": "ArtifactCache, Applications, Transfers, Host integration, AppUnit/Host policy, original four Node mutation, primary:8080, source changes, Git operations."
+  },
+  "controller": "outer controller defaults to DRAFT_NO_ACTION. It requires --execute, --grant-id, reviewed lifecycle/controller SHA arguments, current private repair connection, and exact four protected Node IDs. Repair authority is constrained to 192.168.100.209:18080; credentials stay in memory/header only."
+}

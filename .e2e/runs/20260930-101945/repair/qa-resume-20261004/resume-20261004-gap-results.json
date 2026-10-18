@@ -1,0 +1,216 @@
+{
+  "config": {
+    "argv": [
+      "/usr/bin/node",
+      "/home/superc/code/nodesteer/web/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "e2e/playwright.config.ts",
+      "--reporter=json",
+      "--grep",
+      "GAP-(02|07|12)\\b",
+      "e2e/tests/gap-ui.spec.ts"
+    ],
+    "configFile": "/home/superc/code/nodesteer/web/e2e/playwright.config.ts",
+    "rootDir": "/home/superc/code/nodesteer/web/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/nodesteer-e2e-resume-20261004-juco1frr/playwright/resume-20261004-gap/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/superc/code/nodesteer/web/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "gap-ui.spec.ts",
+      "file": "gap-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "GAP-02 Task真实PUT pending重复提交与secret摘要",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1625,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T15:39:53.086Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e7bf0fd7afce34bc30c5-954992e583bfff4c431f",
+          "file": "gap-ui.spec.ts",
+          "line": 90,
+          "column": 1
+        },
+        {
+          "title": "GAP-07 Audit真实服务端分页与跨页搜索",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 768,
+                  "error": {
+                    "message": "Error: No unique cross-page audit resource ID available; fixture precondition not met",
+                    "stack": "Error: No unique cross-page audit resource ID available; fixture precondition not met\n    at /home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts:296:22",
+                    "location": {
+                      "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                      "column": 22,
+                      "line": 296
+                    },
+                    "snippet": "  294 |   const firstPage = (await apiRequest(page, '/api/audit?limit=10&offset=0')).body as typeof rows\n  295 |   const marker = rows.find(r => r.resource_id && !firstPage.some(p => p.resource_id === r.resource_id))\n> 296 |   if (!marker) throw new Error('No unique cross-page audit resource ID available; fixture precondition not met')\n      |                      ^\n  297 |   const search = page.getByRole('textbox', { name: /搜索/ })\n  298 |   await search.fill(marker.resource_id); await expect(page.locator('tbody')).toContainText(marker.resource_id)\n  299 |   await search.fill(''); await first.click(); await expect(previous).toBeDisabled()"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                        "column": 22,
+                        "line": 296
+                      },
+                      "message": "Error: No unique cross-page audit resource ID available; fixture precondition not met\n\n  294 |   const firstPage = (await apiRequest(page, '/api/audit?limit=10&offset=0')).body as typeof rows\n  295 |   const marker = rows.find(r => r.resource_id && !firstPage.some(p => p.resource_id === r.resource_id))\n> 296 |   if (!marker) throw new Error('No unique cross-page audit resource ID available; fixture precondition not met')\n      |                      ^\n  297 |   const search = page.getByRole('textbox', { name: /搜索/ })\n  298 |   await search.fill(marker.resource_id); await expect(page.locator('tbody')).toContainText(marker.resource_id)\n  299 |   await search.fill(''); await first.click(); await expect(previous).toBeDisabled()\n    at /home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts:296:22"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T15:39:54.772Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/nodesteer-e2e-resume-20261004-juco1frr/playwright/resume-20261004-gap/artifacts/gap-ui-GAP-07-Audit真实服务端分页与跨页搜索-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                    "column": 22,
+                    "line": 296
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e7bf0fd7afce34bc30c5-7d5f2ecac957b91b7c33",
+          "file": "gap-ui.spec.ts",
+          "line": 285,
+          "column": 1
+        },
+        {
+          "title": "GAP-12 自有offline节点明确错误和Node1条件BLOCKED反馈",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 100000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3286,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-04T15:39:55.874Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e7bf0fd7afce34bc30c5-12c01eed6718470512e0",
+          "file": "gap-ui.spec.ts",
+          "line": 431,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-04T15:39:52.515Z",
+    "duration": 6729.3859999999995,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

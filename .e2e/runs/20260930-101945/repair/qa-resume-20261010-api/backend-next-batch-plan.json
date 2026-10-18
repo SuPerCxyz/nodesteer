@@ -1,0 +1,167 @@
+{
+  "planned_at_utc": "2026-10-10T14:12:42Z",
+  "status": "READ_ONLY_PLAN_ROOT_REVIEW_REQUIRED",
+  "basis": {
+    "clock_tool": "available; returned 2026-10-10T14:12:42Z",
+    "latest_combined_helper": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/owner-inspection-final-relay/result.json",
+    "canonical_inventory": ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+    "current_statuses": {
+      "SYS-12": "NOT_RUN",
+      "SYS-54": "NOT_RUN",
+      "SYS-55": "NOT_RUN",
+      "SYS-56": "NOT_RUN",
+      "SYS-57": "NOT_RUN",
+      "SYS-58": "NOT_RUN",
+      "SYS-59": "NOT_RUN",
+      "SYS-60": "NOT_RUN",
+      "SYS-61": "NOT_RUN",
+      "SYS-66": "NOT_RUN",
+      "AUTH-RELAY": "PARTIAL"
+    },
+    "relay_evidence": "Wrong-target valid-child GET403 is now recorded in auth-relay-final-crossmap.json; it does not establish positive transfer.",
+    "pinned_image": {
+      "id": "sha256:ecd4dd9f8300067ba2cba22e8c5a701f1984f054fa4476354ed4d58af544cd44",
+      "tag": "nodesteer-qa/agent-host:f174890c3846",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host-image-import-verified.json"
+    },
+    "container_caution": "Existing owner-labeled host001 container is a Host-integration fixture and remains outside this plan. Do not stop/recreate/change it, its mounts, capabilities, bridge, volume, or Unit. The proposed SYS-12 container uses the exact existing pinned image digest with no host integration.",
+    "authorization": "Planning only. No API, Docker, filesystem remote resource, Task, Node, User, Artifact, Transfer or process actions in this turn."
+  },
+  "candidates": [
+    {
+      "case_id": "SYS-12",
+      "priority": "P0_RECOMMENDED",
+      "title": "Non-Host Docker Agent restart/recreate retains identity, revision, schedule, journal and cache",
+      "reason": "A safe noHost container can exercise the original Docker persistence case without requiring the Host PID namespace, /host mapping, host systemd access or additional Linux capabilities. The existing imported image is pinned and inspect-verified; no image rebuild/pull is needed.",
+      "resource_budget": {
+        "new_node": 1,
+        "agent_container_ids_sequential": 2,
+        "running_agent_containers_at_once": 1,
+        "owned_local_volume": 1,
+        "owned_bridge_network": 1,
+        "app_definition": 1,
+        "task": 1,
+        "schedule": 1,
+        "manual_execution_history_rows": 1,
+        "new_artifacts": 0,
+        "new_users": 0,
+        "new_transfers": 0
+      },
+      "fixed_candidate_names": {
+        "node_name": "qa-sys12-docker-nonhost-20261010-01",
+        "container_a": "qa-resume-20261010-sys12-nonhost-a",
+        "container_b": "qa-resume-20261010-sys12-nonhost-b",
+        "network": "nodesteer-qa-sys12-20261010",
+        "volume": "nodesteer-qa-sys12-20261010-data",
+        "owned_root": "/opt/qa-resume-20261010-sys12-nonhost",
+        "config": "/opt/qa-resume-20261010-sys12-nonhost/private/agent.yaml",
+        "volume_source": "/opt/qa-resume-20261010-sys12-nonhost/data"
+      },
+      "image_and_container_policy": {
+        "image_id": "sha256:ecd4dd9f8300067ba2cba22e8c5a701f1984f054fa4476354ed4d58af544cd44",
+        "image_mutation": "none; do not retag/delete/rebuild/pull",
+        "run_as": "65534:65534",
+        "cap_drop": [
+          "ALL"
+        ],
+        "cap_add": [],
+        "privileged": false,
+        "pid_mode": "private/default",
+        "read_only_rootfs": true,
+        "no_new_privileges": true,
+        "seccomp": "Docker default; omit seccomp override",
+        "host_mounts": [],
+        "devices": [],
+        "ports_published": [],
+        "network": "new unique owner-labeled bridge; no host networking",
+        "mounts": [
+          {
+            "source": "private/agent.yaml",
+            "target": "/run/nodesteer/agent.yaml",
+            "read_only": true,
+            "owner": "65534:65534",
+            "mode": "0600"
+          },
+          {
+            "source": "owned agent data directory/local volume",
+            "target": "/var/lib/nodesteer",
+            "read_only": false,
+            "owner": "65534:65534",
+            "mode": "0700"
+          }
+        ]
+      },
+      "planned_flow": [
+        "Preflight repair Hub :18080 Admin and original four Nodes; inspect existing image by exact ID/owner label and new resource names for collisions; inspect Docker subnet and choose one free IP from a new isolated bridge. Confirm python3+sqlite3 read-only evidence tooling exists on Native2 before fixture creation.",
+        "Create unique owner-labeled root, private Agent config and a bind-backed local Docker volume whose sole host source is the exact owned data directory. Root directory/volume is UID65534 mode0700; config is UID65534 mode0600. No /host, /proc, /sys, /systemd, Host unit or broad host path mounts.",
+        "Create one dedicated Hub Node through the approved enrollment flow and start container A from the pinned image, nonroot with all capabilities dropped, private PID namespace, read-only rootfs and default seccomp. Wait for Agent HELLO, Hub online and synced; confirm deployment_mode=docker without HostIntegration.",
+        "Create one harmless unique Command Task targeted only to this Node and run once; require real SUCCESS and Hub Execution readback. Create one valid disabled or far-future one_time Schedule attached to this Task so it is synchronized but cannot fire during the test.",
+        "Create one unique Application definition referencing existing Artifact 7b8929ed-c880-46f1-90e6-a5e9c0dab096 and assign it only to this Node. Do not call deploy. Agent desired-state sync supplies ArtifactURL/SHA and triggers Prefetch; wait for the SHA-named cache file and local artifacts row.",
+        "Use a remote read-only SQLite query against the exact owned volume to record NodeID/AgentID (never credential), sync global_revision, schedule ID/revision/enabled, the exact local Execution Journal row/status/synced and Artifact row/path. Independently hash the cache file and check size/SHA against Hub metadata.",
+        "Stop and remove only container A by immutable ID/owner labels; preserve the owned volume, Hub Node, Task, Schedule and Application. Start container B with the same image, exact same volume/config/network/IP and unchanged nonroot/default-seccomp flags. Wait for the same Node/Agent identity to return online/synced.",
+        "Repeat the exact read-only SQLite and cache file oracle. Require NodeID/AgentID, revision, schedule, journal identity/status and cache SHA/size to remain equal. Verify Hub still reports the same terminal Execution and app definition. Do not claim no HTTP cache GET unless a direct request counter is independently available; file+DB continuity proves persistence."
+      ],
+      "physical_and_business_oracles": {
+        "hub": "GET Node online/synced before and after recreate; same NodeID/AgentID; same Task Execution SUCCESS; application assignment remains exact.",
+        "local_database": "Read-only SQLite URI/query_only; no DB dump. Identity IDs only (credential never selected or output), sync_state revision, schedule id/revision/enabled, exact execution journal id/status/synced and artifact sha/path.",
+        "cache_file": "under owned DataDir artifacts/<pinned artifact SHA>; regular file, UID65534, expected size and SHA match existing Hub Artifact; same bytes after recreate.",
+        "runtime": "container A and B have exact pinned image ID, UID65534, no Host mounts/devices/caps, default seccomp and owner labels; process/cgroup ID and network IP are refreshed for each container."
+      },
+      "cleanup_and_retention": {
+        "sequence": [
+          "stop/remove exact container B by immutable ID and owner-label guard",
+          "unassign and delete only this Application",
+          "delete only this Schedule and Task by exact IDs",
+          "delete only this temporary Node via supported Hub endpoint and GET404; record resulting tombstone/audit history",
+          "remove only exact new Docker volume/network and owned private root after owner/dev/inode/hash guards"
+        ],
+        "preserve": [
+          "the existing pinned image and existing Host001 container/network/volume/unit",
+          "one manual Execution/Audit history row and deletion audit history",
+          "shared Artifact 7b8929ed-c880-46f1-90e6-a5e9c0dab096"
+        ],
+        "fallback": "Any unexpected HostIntegration, required capability, AppUnit mutation, nonroot volume failure, profile denial or owner mismatch stops this case. No privileged/unconfined profile, no policy changes and no fallback to existing Host container."
+      },
+      "canonical_coverage_limit": "One concrete SYS-12 persistence flow. It does not cover SYS-54..58 Host adapter, mount escape, atomic replace or capability gating, and must not be used to mark those PASS.",
+      "source_refs": [
+        "cmd/agent/main.go:30-45,85-95",
+        "internal/agent/detect.go:13-37",
+        "internal/agent/agent.go:928-945,951-980",
+        "internal/agent/artifact.go:36-97",
+        "internal/agent/store.go:50-55,100-130,425-451",
+        "internal/hub/sync.go:134-181,186-198",
+        "internal/hub/api/api.go:1237-1280,1395-1455,1569-1650"
+      ],
+      "execution_this_turn": false
+    },
+    {
+      "case_id": "AUTH-RELAY / SYS-59..61",
+      "priority": "P1_READONLY_PREFLIGHT_ONLY",
+      "title": "Inspect owned-child relay source/destination path eligibility without creating a Transfer",
+      "reason": "The final relay negative proves a valid child credential is rejected for a non-target Transfer. A future positive flow needs safe owned child paths, while the Hub has no Transfer DELETE; identify allowed paths before asking to retain a Transfer row.",
+      "read_only_preflight": [
+        "Using a fresh exact owner/root/manifest/process/Unit guard, read child HostPathAllowlist from its config only in the remote helper memory and return only allowlist count, whether the empty list means unrestricted per current validateFileTransferPath source, and membership booleans for two unique intended paths beneath the exact owned child data root.",
+        "Check canonical path, absolute path, regular-file/parent owner modes and that unique source/destination sentinel paths are absent; do not mkdir, write, create a Task beyond a separately reviewed disposable read-only helper, or send relay GET/POST.",
+        "Confirm from current API contract that existing Transfer DELETE is unavailable; no Transfer creation, retry, cancel, upload or download."
+      ],
+      "business_oracle": "A safe preflight PASS only means the proposed exact paths meet source allowlist/path guards; it is not file transfer, source authorization, target authorization, or byte/SHA verification.",
+      "known_source_refs": [
+        "internal/agent/agent.go:1220-1246,1306-1330,1431-1446",
+        "internal/agent/host/native.go:20-26,120-143",
+        "internal/hub/file_transfer.go:233-289,390-418"
+      ],
+      "future_positive_transfer_gate": "One successful Transfer row is durable and no DELETE API exists. Do not create it until Root completes the review/authorization for that retained history row; keep final AUTH-RELAY PARTIAL and SYS-59/60/61 NOT_RUN until then.",
+      "execution_this_turn": false
+    }
+  ],
+  "explicit_exclusions": [
+    "No new User or credential reset; earlier non-deletable User review/confirmation remains pending.",
+    "No API/Task/Container/Volume/Network/Node calls in this turn.",
+    "Do not modify/delete/stop existing Host001 container, its Host mounts, capability profile, systemd tree, unit, original four Nodes, image or artifact.",
+    "No Host security policy change or HostIntegration claim.",
+    "No Transfer create/retry/cancel/upload/download."
+  ],
+  "write_only": [
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/backend-next-batch-plan.json"
+  ]
+}

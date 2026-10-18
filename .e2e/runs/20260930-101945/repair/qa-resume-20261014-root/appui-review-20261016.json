@@ -1,0 +1,170 @@
+{
+  "review_id": "ROOT-APP-UI-REVIEW-20261016",
+  "reviewed_at": "2026-10-16T08:12:36.655528+00:00",
+  "reviewer": "main-agent(root)",
+  "status": "INTEGRATED",
+  "dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261016-appui",
+  "verified_build": "dddee4f0-e2e-repair-20261016",
+  "authorization_basis": "用户要求全力推进；C1 批次",
+  "verdicts": [
+    {
+      "case_id": "P14P15-06",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "UI 保存→POST /api/applications+assign；revision=1、/revisions=[r1]；发布包页「使用情况」出现该应用；分配后子 Agent 收到定义"
+    },
+    {
+      "case_id": "P14P15-07",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "revision 1→2 且抓到 PUT；UI 版本历史 r2/r1 内容分别含 1.1/1.0；Agent 定义同步到 1.1"
+    },
+    {
+      "case_id": "P14P15-08",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "勾选第 2 个自有节点→/nodes=[a,b] 且 b 侧收到定义；取消勾选→[a] 且 a 保留；四个受保护节点与两他批节点全程未勾选"
+    },
+    {
+      "case_id": "P14P15-14",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "无状态=state[]+「暂无节点健康状态」；UNKNOWN=仪表盘对未部署应用渲染「未知」；healthy/unhealthy/stopped 与 API/宿主机 unit 一致"
+    },
+    {
+      "case_id": "P14P15-15",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "四类健康检查由 UI 改配置后部署执行 + 宿主机探测（systemd active/tcp ok/http 200/command rc=0）全 SUCCESS；负向 tcp ConnectionRefused→FAILED"
+    },
+    {
+      "case_id": "P14P15-16",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "取消：对话框关闭、GET 200、Assignment/State/Revision 全不变；确认：DELETE、GET 404、UI 行消失、产品路径清理（unit/binary/config/registry 全消失）、子资源全 404"
+    },
+    {
+      "case_id": "FL-10",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "徽标「健康」↔API healthy↔unit active↔二进制 sha==artifact sha↔version 1.1↔execution SUCCESS↔error 空，全链一致，journal DONE"
+    },
+    {
+      "case_id": "FL-11",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "升 v2.0 SUCCESS（sha==A2、备份三件套落盘、registry 有行、journal DONE）；升坏件 FAILED→回滚把 v2 二进制与配置还原、unit active、UI 显示不健康+错误"
+    }
+  ],
+  "partials_kept": {
+    "P14P15-13": "state 卡片未渲染 version/updated_at（已新立低危观察）",
+    "P14P15-18": "Journal 未全部恢复：负向健康检查残留 1 条非终态 ROLLBACK_FAILED 行（对应新缺陷 APPUI-20261016-ROLLBACK-FALSE-FAILURE）"
+  },
+  "p0_2_fix_confirmed_on_new_build": "重启自有子 Agent 后日志 `deployment superseded by a later successful deployment; journal retained, no rollback replayed`，二进制 sha 重启前后一致、无陈旧覆盖",
+  "new_defects": [
+    {
+      "id": "APPUI-20261016-ENVFILE-QUOTED-DASH",
+      "priority": "P1",
+      "title": "生成 unit 时 EnvironmentFile 被整体加引号（\"<-绝对路径>\"），systemd 判为 path is not absolute 并忽略 → 应用「配置内容」运行期完全不生效",
+      "actual": "实证：unit 行、systemctl show Environment、/proc/<pid>/environ 都只有 Environment= 项，没有配置文件的 APP_MODE/APP_VERSION；配置内容只落盘、只被备份/回滚搬运。指向 internal/agent/application.go:549。",
+      "source": [
+        "internal/agent/application.go:549"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-appui/case-result.json"
+      ],
+      "affected_cases": [
+        "P14P15-15",
+        "FL-10"
+      ]
+    },
+    {
+      "id": "APPUI-20261016-ROLLBACK-FALSE-FAILURE",
+      "priority": "P2",
+      "title": "非 systemd 负向健康检查时回滚被误报失败并落 ROLLBACK_FAILED：文件已成功还原，却用「失败版本」健康定义重查（必然再失败）",
+      "actual": "应用「配置内容」只落盘、不生效场景下，回滚实际已还原文件，但 rollback() 用失败版本健康定义复检→必然失败→报 health check failed; rollback failed 并落非终态行，误报 + 污染 journal。指向 application.go:694-697 / 408-418。",
+      "source": [
+        "internal/agent/application.go:694-697",
+        "internal/agent/application.go:408-418"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-appui/case-result.json"
+      ],
+      "affected_cases": [
+        "P14P15-18"
+      ]
+    }
+  ],
+  "new_observations": [
+    {
+      "id": "APPUI-20261016-JOURNAL-FROM-VERSION",
+      "title": "deployments.from_version 取当前应用定义版本而非节点实际安装版本",
+      "status": "OBSERVED_LOW",
+      "actual": "编辑后再升级得到 2.0->2.0、1.1->1.1 无信息量的 journal 行。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-appui/case-result.json"
+      ]
+    },
+    {
+      "id": "APPUI-20261016-STATE-CARD-MISSING-FIELDS",
+      "title": "应用详情 state 卡片未渲染 version 与 updated_at（代码确认）",
+      "status": "OBSERVED_LOW",
+      "actual": "API 五字段齐全且与 UI 一致，但卡片只渲染 节点+health+error|operation；代码 web/src/features/editors/index.tsx:1694-1708 确认未渲染。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-appui/case-result.json"
+      ]
+    }
+  ],
+  "cleanup": "oracle clean=true：Hub 自有残留 0、计数回基线(apps1/artifacts1/nodes6)、两台宿主机无自有 unit/目录/进程/挂载、/etc/systemd/system 条目数不变、agent 二进制 sha 未变、4 受保护节点 online/synced",
+  "counts_before": {
+    "PASS": 435,
+    "FAIL": 6,
+    "PARTIAL": 53,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "counts_after": {
+    "PASS": 442,
+    "FAIL": 6,
+    "PARTIAL": 46,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "status_changes": [
+    [
+      "P14P15-06",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P14P15-07",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P14P15-08",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P14P15-14",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P14P15-15",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "FL-10",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "FL-11",
+      "PARTIAL",
+      "PASS"
+    ]
+  ]
+}

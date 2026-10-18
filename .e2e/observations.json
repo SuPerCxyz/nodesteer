@@ -1,670 +1,909 @@
 {
- "schema_version": 1,
- "generated_at": "2026-09-23T14:35:06+08:00",
- "observations": [
-  {
-   "id": "OBS-FIX-011",
-   "recorded_at": "2026-09-22T19:11:34+08:00",
-   "unit": "fix-round-3",
-   "note": "低优先级缺陷收尾完成：审计资源 ID 列、脚本/任务名称唯一性与参数去重、剩余英文文案 i18n（登录页密码按钮、404/错误页、侧边栏/导航/批量操作）。E2E 全量 65 通过 0 失败 0 跳过；缺陷台账 0 开放。"
-  },
-  {
-   "id": "OBS-FIX-007",
-   "recorded_at": "2026-09-22T15:09:10+08:00",
-   "unit": "fix-round-2",
-   "note": "服务端分页落地：后端新增 CountExecutions/CountAudit 与 X-Total-Count 响应头（并补齐此前缺失的 offset 解析）；前端 DataTable 支持 manualPagination 与 storageKey。线上实测执行列表 1011 条/共 102 页、翻页无重叠、排序与视图持久化通过。"
-  },
-  {
-   "id": "OBS-FIX-008",
-   "recorded_at": "2026-09-22T15:09:10+08:00",
-   "unit": "fix-round-2",
-   "note": "登录页语言入口上线：与顶栏共用 LanguageSwitch；语言切换同步 html lang 并持久化；P01-04 用例由 fixme 转为真实通过。"
-  },
-  {
-   "id": "OBS-FIX-009",
-   "recorded_at": "2026-09-22T15:09:10+08:00",
-   "unit": "fix-round-2",
-   "note": "环境遗留调度已清理：删除 test-date-1node 的每分钟调度 * * * * *（用户确认），调度列表现为空，执行/审计历史不再持续增长。"
-  },
-  {
-   "id": "OBS-FIX-010",
-   "recorded_at": "2026-09-22T15:09:10+08:00",
-   "unit": "fix-round-2",
-   "note": "E2E 全量 65 通过 / 0 失败 / 0 跳过；测试数据零新增残留（用例自带清理钩子）。"
-  },
-  {
-   "id": "OBS-FIX-005",
-   "recorded_at": "2026-09-22T14:15:10+08:00",
-   "unit": "fix-round",
-   "note": "E2E 用例数据卫生修复：p12-schedules（P13-01 创建调度后清理）、e2e-flows（E2E-01 清理脚本/任务）、p07-scripts（P08-01 清理脚本）新增清理钩子；复跑全量后无新增残留。"
-  },
-  {
-   "id": "OBS-FIX-006",
-   "recorded_at": "2026-09-22T14:15:10+08:00",
-   "unit": "fix-round",
-   "note": "环境遗留：任务 test-date-1node 的每分钟调度 * * * * * 非本轮创建，仍在持续产生执行记录，建议由管理员决定清理。"
-  },
-  {
-   "id": "OBS-FIX-001",
-   "recorded_at": "2026-09-22T14:07:29+08:00",
-   "unit": "fix-round",
-   "note": "缺陷修复轮：11 项修复经线上 API 验证通过（DELETE 幂等/负数超时/重纳管复用/禁用脚本拦截/失效目标自愈/传输终态/取消审计/设置审计/降权立即生效），E2E 全量 64 通过 1 跳过 0 失败。"
-  },
-  {
-   "id": "OBS-FIX-002",
-   "recorded_at": "2026-09-22T14:07:29+08:00",
-   "unit": "fix-round",
-   "note": "服务端分页仍未实现（执行/审计列表上限 500），更早记录在 UI 不可达，建议后续实现 limit/offset 分页。"
-  },
-  {
-   "id": "OBS-FIX-003",
-   "recorded_at": "2026-09-22T14:07:29+08:00",
-   "unit": "fix-round",
-   "note": "internal/hubserver TestGatewayCredentialReconnectAndRevoke 偶发 TempDir 清理失败（directory not empty），重跑通过，属既有 flaky。"
-  },
-  {
-   "id": "OBS-FIX-004",
-   "recorded_at": "2026-09-22T14:07:29+08:00",
-   "unit": "fix-round",
-   "note": "RBAC-08 用例原先在数据加载中取 count 导致偶发假失败，已改为等待式断言。"
-  },
-  {
-   "note": "任务详情为单页分区（概览/定义/目标/执行/调度），不再是标签页；/executions/:id 为单页分区（元数据/输出摘要/日志）。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "/schedules 已重定向到 /tasks?view=schedules（beforeLoad throw redirect），/schedules/new 与 /schedules/:id 仍独立存在，调度列表内「新建调度」链接指向 /schedules/new。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "任务详情「调度」分区只显示调度类型与表达式，不显示状态/时区/执行方，禁用状态无法从任务侧看出。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "任务/schedule 删除确认框已不暴露裸 UUID（显示任务名、脚本名、任务名+表达式），历史 FAIL-001 保持修复状态。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "复制日志在 HTTP 部署下必然提示「复制失败，请手动复制。」（src/lib/clipboard.ts 对非安全上下文显式返回 false），属既有设计，但会让用户误认为功能损坏。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "文件传输「重试」「取消」成功后没有 toast，仅静默刷新列表；创建传输有「文件传输已创建」。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "执行列表「触发方式」筛选项由当前已加载数据动态生成，若某触发方式不在当前数据中则无法选择（例如按 status 过滤后选项收窄）。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "执行详情「打开日志」按钮实际只是滚动定位到日志区，并非打开独立日志视图，标签与行为不一致。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "「换行」「跟随」按钮无可编程读取的按下状态（无 aria-pressed），自动化无法断言其开关状态。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "一次性调度触发后仍显示「已启用」（enabled 保持 true），缺少「已执行/已完成」状态；观察 70s 未出现重复触发。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "任务参数在运行页可覆盖默认值并经 CADENTRA_PARAM_<name> 注入执行环境（实测通过），脚本/任务参数类型支持 string/secret 等。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "传输表单「目标文件路径」的 placeholder 与源路径相同（/var/lib/app/config.yaml），且添加一次目标后输入被清空，连续添加多目标需重复填写。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "调度「执行方」可选项为 Agent/Hub；本轮仅验证 Agent 执行方（Hub 执行方会产生持续后台调度，按安全规则未创建长期调度）。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "任务列表按列头可排序、支持分页（15 个任务 = 2 页）；脚本/传输/执行/审计列表均已验证搜索、视图列开关与分页。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "「托管应用部署」任务在当前环境无法端到端验证：环境内无任何托管应用，应用下拉为空，保存返回 400 invalid task: application task requires application_id。代码上该类型仍默认 app_operation=start（tasks/index.tsx:557），且 UI 仅在「托管应用操作」时提供操作选择，因此历史 FAIL-G-001 的代码路径仍存在，但本轮无应用可复现。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "目标节点列表包含其他单元遗留的离线/pending 节点，节点复选框按接口返回顺序渲染且无常量排序；任务目标选择需按名称精确定位（本轮曾误选离线节点并已修正）。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "执行耗时由 start_time/end_time 计算，UI 可正确显示（超时 17s、取消 34s）。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "脚本 /scripts/:id 与调度 /schedules/:id 都是编辑页而非只读详情页；脚本页含可展开的版本历史（details），无 diff/回滚入口。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "空内容脚本可保存成功；脚本参数与环境变量均支持逐项移除。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "预置的 test-date-1node「* * * * *」调度（非本单元数据）仍在启用状态，每分钟产生一条执行记录，会持续稀释执行列表与审计数据（建议由数据治理单元确认）。",
-   "unit": "agent-a",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "/agents 页面没有状态过滤控件（仅搜索 + 视图），与任务描述及 continuity-map v3「状态过滤」记载不一致；分页/视图可用。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "侧边栏共 11 个导航项 + 品牌链接（合计 12 个可点击链接），5 个分组标签（概览/运行/节点/资源/系统）；「调度」已从侧边栏移除，改由 /tasks 页「任务|调度」切换器进入（/tasks?view=schedules）。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "节点详情已取消 Tab，改为单页分区：概览/标签/清单/能力/执行/任务/调度/托管应用（共 8 个卡片）。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "视口高度 690px（≤700px）时侧边栏 5 个分组标签全部隐藏，导航项仍完整可见；900px 时恢复，符合预期。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "pending 节点（纳管未连接）在列表中以红色「离线」徽标展示，Agent 版本/架构/部署模式列为 \"-\"，同步状态 pending。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "节点标签只增不删：UI 无删除/编辑入口；POST /nodes/:id {labels:{}} 可清空（用于测试后还原），但 UI 无此能力（沿用 OBS-001）。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "标签值可留空（仅 key 非空即可提交），产生 key=\"\" 形式的标签；key 仅空格时按钮保持禁用。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "「撤销凭证」使用浏览器原生 window.confirm（文案：\"确定撤销该节点凭证吗？Agent 需要重新纳管。\"），确认后节点记录保留但状态被置为 disabled/pending。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "节点删除确认框文案：\"删除节点 确定删除该节点记录吗？请先解除所有引用。\"；被分组引用时接口 409 阻断。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "「禁用」与「维护」对任务运行的影响一致（均 400 not online），后端 internal/hub/execution.go:150 的 disabled 分支因前一行 status!=online 判断而不可达（死代码）。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "维护状态不会被心跳（UpdateHeartbeat 仅更新 last_seen）覆盖；但 internal/hub/node.go:104 RegisterOrUpdate 在 Agent 重连注册时无条件置为 online，理论上 Agent 重连会清除维护状态（本轮未重启 Agent，未做运行时验证）。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "RBAC：侧边栏不按角色过滤，viewer/operator 仍看到「用户/设置」入口（页面内容有守卫）；GET /audit 对 viewer/operator 放行。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "分组列表「成员数」对标签分组按当前节点标签动态计算（标签值变化后 1→0 实时反映），符合设计。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "标签分组编辑页正确回填 标签键/标签值；静态分组编辑页成员勾选状态正确回填（data-state=checked）。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "节点详情「任务/调度」分区由前端按 taskTargetsNode（node/group/label 三种目标）计算，标签变化后实时增删，无需刷新。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "主题切换在顶栏为下拉菜单（浅色/深色/系统），非单键切换；选择后 <html> class 变化并刷新保持。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "语言切换入口在顶栏（中文/English），通过 localStorage cadentra_lang 持久化，刷新后保持；中文侧边栏为「节点」，英文为 \"Nodes\"/页面标题 \"Agents\"（术语不一致）。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "用户菜单为「设置/退出登录」两项；退出登录有确认对话框（\"退出登录 确定退出当前会话吗？退出后需要重新登录。\"），退出后跳转 /sign-in?redirect=<原路径>，token 被清除。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "未登录访问受保护路由会重定向到 /sign-in?redirect=<原路径>，登录后正确回到原页面。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "用户管理无删除入口（UI 与后端均无 DELETE /users/:id），本轮测试用户无法回收（见 test_data）。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "既有用户无密码重置 UI 入口，但 PUT /users/:id {password} 可用且立即生效（旧密码失效）。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "审计分页可用（10 页），但分页按钮未设置 aria-current，无法从可访问性树识别当前页。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "节点纳管命令使用 Cadentra 品牌路径（/etc/cadentra、cadentra-agent、ghcr.io/supercxyz/cadentra-agent），与页面 NodeSteer 品牌不一致。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "节点列表搜索为全局过滤（匹配 主机名 + 节点 ID 拼接字段），按节点 ID 前 8 位可命中。",
-   "unit": "agent-b",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "OBS-C-001（low/UX）：应用详情的「执行历史」为纯文本列表，不可点击、不显示执行 ID，无法跳转到执行详情，只能到 /executions 按时间/节点辨认。",
-   "unit": "agent-c",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "OBS-C-002（low/UX）：应用操作产生的执行在 /executions 列表与详情均显示「未知任务」，元数据无应用名与操作类型（deploy/stop/upgrade 无法区分），按应用名搜索执行无结果；审计中可见 deploy/assign/update 记录。",
-   "unit": "agent-c",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "OBS-C-003（low/UX）：应用编辑器的发布包下拉对同 name+version 的重复制品显示完全相同标签（无文件名/SHA/上传时间），无法区分。",
-   "unit": "agent-c",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "OBS-C-004（low/i18n）：中文界面下空表单提交由浏览器原生校验提示英文「Please fill out this field.」。",
-   "unit": "agent-c",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "OBS-C-005（low/i18n）：中文界面上传制品未选文件时 toast 为英文「Please select a file.」。",
-   "unit": "agent-c",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "OBS-C-006（low/a11y）：语言切换为 English 后 document.documentElement.lang 仍为 zh-CN。",
-   "unit": "agent-c",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "OBS-C-007（low/UX）：应用操作下拉切换到 stop/start/restart/upgrade 后，执行按钮文案固定为「部署」，不随所选操作变化。",
-   "unit": "agent-c",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "OBS-C-008（low）：应用操作执行详情 stdout/stderr 恒为 0 字符，操作结果信息缺失（与 OBS-C-002 相关）。",
-   "unit": "agent-c",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "OBS-C-009（low/数据）：制品允许 0 字节文件与同名同版本重复上传（无唯一性约束），UI 无提示；是否符合产品预期待确认。",
-   "unit": "agent-c",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "note": "OBS-C-010（medium/数据，不可复现制作）：上一轮中断遗留的制品 e2e-c-20260922-k2p9-svc/1.0.0（id=7bb90e28，139B，01:24 上传）在列表中但下载 404（artifact not found）；DELETE 该记录返回 200（可清理）。应用删除后制品文件不受影响（本轮 5 个制品在应用删除后均可正常下载），Hub 未对 blob 缺失做校验/提示；疑似中断导致，无法复现，记为观察。",
-   "unit": "agent-c",
-   "recorded_at": "2026-09-22T09:34:49+08:00"
-  },
-  {
-   "id": "OBS-001",
-   "type": "possible_gap",
-   "description": "复核确认（2026-09-19）：节点标签只能新增，无删除/编辑入口，清理需 API。",
-   "related_features": [
-    "agent.detail",
-    "agent.status"
-   ],
-   "follow_up_required": true,
-   "resolved": false
-  },
-  {
-   "id": "OBS-002",
-   "type": "environmental",
-   "description": "The transfer negative path correctly retained FAILED state and exposed retry, but the intentionally selected source path was absent on the source Agent; no destructive cleanup action is available for the failed transfer.",
-   "related_features": [
-    "transfer.create",
-    "transfer.retry"
-   ],
-   "follow_up_required": false,
-   "resolved": true
-  },
-  {
-   "id": "OBS-003",
-   "type": "possible_gap",
-   "description": "After deleting a task, its execution remains in history and is displayed as localized 未知任务; the execution ID remains available as secondary technical metadata and the node is shown by hostname.",
-   "related_features": [
-    "task.delete",
-    "execution.list",
-    "execution.detail"
-   ],
-   "follow_up_required": false,
-   "resolved": true
-  },
-  {
-   "id": "OBS-A-001",
-   "type": "ux",
-   "description": "非管理员用户（operator/viewer）侧边栏仍显示‘用户/设置’入口，页面内部再做管理员校验与只读禁用；导航未按角色过滤。",
-   "related_features": [
-    "rbac.permission_matrix",
-    "user.list"
-   ],
-   "follow_up_required": false,
-   "resolved": false,
-   "source_agent": "a"
-  },
-  {
-   "id": "OBS-A-002",
-   "type": "possible_gap",
-   "description": "discovery.json 为 /agents 列出 agent.filter（状态过滤），但实际页面只有自由文本搜索与列可见性切换，没有状态/部署模式过滤控件。",
-   "related_features": [
-    "agent.search"
-   ],
-   "follow_up_required": true,
-   "resolved": false,
-   "source_agent": "a"
-  },
-  {
-   "id": "OBS-A-003",
-   "type": "environmental",
-   "description": "复制按钮在 HTTP（非安全上下文）下无法写入系统剪贴板，组件按设计回退为选中文本并提示‘复制失败，请手动复制。’；headless 环境无法验证真实剪贴板写入。",
-   "related_features": [
-    "agent.enroll"
-   ],
-   "follow_up_required": false,
-   "resolved": false,
-   "source_agent": "a"
-  },
-  {
-   "id": "OBS-A-004",
-   "type": "possible_gap",
-   "description": "OBS-001 复核：节点标签仍是仅新增（key/value + 添加标签），标签值渲染为普通 span，无删除/编辑入口，清理只能调用 /api/nodes/{id} 覆盖 labels。",
-   "related_features": [
-    "agent.detail"
-   ],
-   "follow_up_required": true,
-   "resolved": false,
-   "source_agent": "a"
-  },
-  {
-   "id": "OBS-A-005",
-   "type": "ux",
-   "description": "用户角色变更（下拉选择）没有成功提示，也没有失败回滚提示；列表刷新是唯一反馈。",
-   "related_features": [
-    "user.change_role"
-   ],
-   "follow_up_required": false,
-   "resolved": false,
-   "source_agent": "a"
-  },
-  {
-   "id": "OBS-B-001",
-   "type": "possible_gap",
-   "description": "脚本内容无任何校验：可保存 content 为空的脚本（实测创建成功，content=\"\"），执行时将运行空脚本；表单也无内联提示",
-   "related_features": [
-    "script.create"
-   ],
-   "follow_up_required": true,
-   "resolved": false,
-   "source_agent": "b"
-  },
-  {
-   "id": "OBS-B-002",
-   "type": "possible_gap",
-   "description": "节点标签只有添加入口，没有移除/编辑入口（复核 OBS-001 仍存在），本轮测试标签清理不得不使用已认证 API 调用",
-   "related_features": [
-    "agent.detail",
-    "task.create"
-   ],
-   "follow_up_required": true,
-   "resolved": false,
-   "source_agent": "b"
-  },
-  {
-   "id": "OBS-B-003",
-   "type": "possible_gap",
-   "description": "编辑被任务引用的脚本不会改变任务 revision（实测脚本 r1→r5，任务仍 r1）；执行时按 dispatch 版本记录 script_revision，属设计选择，但与“脚本 revision 更新 → 任务 revision 变化”的预期链路不一致，需确认产品语义",
-   "related_features": [
-    "script.edit",
-    "task.edit"
-   ],
-   "follow_up_required": true,
-   "resolved": false,
-   "source_agent": "b"
-  },
-  {
-   "id": "OBS-B-004",
-   "type": "ux",
-   "description": "执行/任务详情在 ID 不存在时，react-query 默认重试 4 次（约 5 秒）期间只显示 spinner，之后才出现“execution not found/task not found + Retry”错误态",
-   "related_features": [
-    "execution.detail"
-   ],
-   "follow_up_required": false,
-   "resolved": true,
-   "source_agent": "b"
-  },
-  {
-   "id": "OBS-B-005",
-   "type": "possible_gap",
-   "description": "OBS-003 复核结论：删除任务后执行历史保留、任务显示“未知任务”、节点显示主机名而非 UUID，行为符合预期",
-   "related_features": [
-    "task.delete",
-    "execution.list",
-    "execution.detail"
-   ],
-   "follow_up_required": false,
-   "resolved": true,
-   "source_agent": "b"
-  },
-  {
-   "id": "OBS-B-006",
-   "type": "environmental",
-   "description": "本会话浏览器由共享 runtime 承载，期间因外部 close --all 发生过两次会话重置（localStorage 清空需重新登录）与一次 about:blank 状态；不影响测试结论，但已丢弃的临时上下文均已重新加载",
-   "related_features": [],
-   "follow_up_required": false,
-   "resolved": true,
-   "source_agent": "b"
-  },
-  {
-   "id": "OBS-C-001",
-   "type": "possible_gap",
-   "description": "节点详情没有托管应用健康视图：托管应用只列在「任务」标签（名称+版本，无健康/操作），健康状态只能在应用页看到",
-   "related_features": [
-    "application.health",
-    "application.list"
-   ],
-   "follow_up_required": true,
-   "resolved": false,
-   "source_agent": "c"
-  },
-  {
-   "id": "OBS-C-002",
-   "type": "possible_gap",
-   "description": "升级部署时 agent-4 journal 出现 WARN 'application artifact prefetch failed ... rename ...tmp ...: no such file or directory'，疑似并发 prefetch 竞争；本次部署仍成功",
-   "related_features": [
-    "application.upgrade"
-   ],
-   "follow_up_required": true,
-   "resolved": false,
-   "source_agent": "c"
-  },
-  {
-   "id": "OBS-C-003",
-   "type": "possible_gap",
-   "description": "文件传输没有删除入口/API，FAILED 与 CANCELED 记录永久保留（历史 test-data 亦有同记录）",
-   "related_features": [
-    "transfer.cancel"
-   ],
-   "follow_up_required": true,
-   "resolved": false,
-   "source_agent": "c"
-  },
-  {
-   "id": "OBS-C-004",
-   "type": "ux",
-   "description": "目标 Agent 下拉会排除已选源 Agent，无法通过正常顺序选择同节点自传输；仅在先选目标后选源时可加自身，属交互不一致",
-   "related_features": [
-    "transfer.create"
-   ],
-   "follow_up_required": true,
-   "resolved": false,
-   "source_agent": "c"
-  },
-  {
-   "id": "OBS-C-005",
-   "type": "possible_gap",
-   "description": "部署操作无手动回滚入口（仅 deploy/start/stop/restart/upgrade）；回滚仅在健康失败时自动触发",
-   "related_features": [
-    "application.rollback"
-   ],
-   "follow_up_required": true,
-   "resolved": false,
-   "source_agent": "c"
-  },
-  {
-   "id": "OBS-M-001",
-   "type": "possible_gap",
-   "description": "file_transfer 的 DELIVERING 目标无超时/看门狗，仅重连触发 ResumeNode；Retry 只接受 FAILED 目标，DELIVERING 无恢复路径。",
-   "related_features": [
-    "transfer.create",
-    "transfer.retry"
-   ],
-   "follow_up_required": true,
-   "resolved": false,
-   "source_agent": "main"
-  },
-  {
-   "id": "OBS-M-002",
-   "type": "possible_gap",
-   "description": "agent-4 日志出现同一 artifact 并发缓存竞态：rename .tmp → 正式文件失败 (no such file or directory)，Prefetch 与部署同时下载时触发。",
-   "related_features": [
-    "artifact.upload",
-    "application.deploy"
-   ],
-   "follow_up_required": true,
-   "resolved": false,
-   "source_agent": "main"
-  },
-  {
-   "id": "OBS-M-003",
-   "type": "environmental",
-   "description": "Agent C 报告的跨节点传输永久 DELIVERING（FAIL-C-001）在隔离环境两次复现均成功（含维护状态），判定为不可复现；保留其无看门狗的产品缺口结论。",
-   "related_features": [
-    "transfer.create"
-   ],
-   "follow_up_required": false,
-   "resolved": true,
-   "source_agent": "main"
-  },
-  {
-   "id": "OBS-M-004",
-   "type": "possible_gap",
-   "description": "发布包导航入口被移除是产品决策（资源=脚本+应用），/artifacts 仅可从应用页或 URL 进入；如后续需要全局资产视图需重新评估。",
-   "related_features": [
-    "artifact.list"
-   ],
-   "follow_up_required": false,
-   "resolved": true,
-   "source_agent": "main"
-  },
-  {
-   "id": "OBS-G-001",
-   "type": "possible_gap",
-   "source_agent": "main",
-   "description": "Hub 重启后所有用户会话失效（内存态），用户需重新登录；文档未说明。",
-   "related_features": [
-    "auth.login"
-   ],
-   "follow_up_required": false,
-   "resolved": true
-  },
-  {
-   "id": "OBS-G-002",
-   "type": "environmental",
-   "source_agent": "main",
-   "description": "应用删除会清理 systemd unit、二进制与配置（实测三个应用）；/opt 下空子目录保留；非托管文件（测试自建）需手工清理。",
-   "related_features": [
-    "application.delete"
-   ],
-   "follow_up_required": false,
-   "resolved": true
-  },
-  {
-   "id": "OBS-G-003",
-   "type": "positive",
-   "source_agent": "main",
-   "description": "被任务引用的应用删除提示已本地化：\"删除被阻止：该托管应用仍被任务引用。请先删除或修改相关任务，然后重试。\"",
-   "related_features": [
-    "application.delete"
-   ],
-   "follow_up_required": false,
-   "resolved": true
-  },
-  {
-   "id": "OBS-G-004",
-   "type": "positive",
-   "source_agent": "main",
-   "description": "Allow Offline 不变量实测通过：Hub 不可达 2 分钟内 Agent 本地调度器按时执行 3 次（20:32:28/20:33:29/20:34:30），Hub 恢复后回传 4 条 offline=true 的 schedule 执行。",
-   "related_features": [
-    "schedule.create",
-    "execution.list"
-   ],
-   "follow_up_required": false,
-   "resolved": true
-  },
-  {
-   "id": "OBS-G-005",
-   "type": "environmental",
-   "source_agent": "main",
-   "description": "前端「架构」为原生 select，headless 点击会弹出系统级下拉遮挡后续点击（需用 agent-browser select 或表单提交）；属测试工具行为，非产品缺陷。",
-   "related_features": [
-    "artifact.upload"
-   ],
-   "follow_up_required": false,
-   "resolved": true
-  },
-  {
-   "id": "OBS-FIX-012",
-   "note": "文件传输残留窗口（范围外，本轮未修）：Agent 断连时 sendFileUploadResult 静默丢弃失败回执（internal/agent/agent.go:1190-1193），源 Agent 若不重连，ResumeNode 不触发，传输停留 UPLOADING/PENDING；当前逃生路径为 UI 手动取消（入口已可用），watchdog/超时终态化为后续候选增强。",
-   "recorded_at": "2026-09-23T14:35:06+08:00",
-   "unit": "oidc-mutex-and-high-fixes"
-  },
-  {
-   "id": "OBS-FIX-013",
-   "note": "store.ListFileTransfers 在 OpenInMemory 下因 :memory: 按连接隔离、嵌套查询落到新连接空库且错误被 t.Targets 赋值处吞掉 → targets 恒空，使内存库测试中目标级删除检查恒不生效；本轮新测试改用 OpenSQLite 绕开并真实验证双检查。生产文件库不受影响；internal/store 不在本轮允许写入范围，未修，待后续处理。",
-   "recorded_at": "2026-09-23T14:35:06+08:00",
-   "unit": "oidc-mutex-and-high-fixes"
-  }
- ]
+  "schema_version": 1,
+  "run_id": "20260930-101945",
+  "status": "running",
+  "observations": [
+    {
+      "id": "OBS-ARM-RUNTIME",
+      "status": "BLOCKED",
+      "actual": "当前环境没有ARM运行目标；arm64构建/ELF/SHA/HTTP可验证，不能代替ARM执行。",
+      "evidence": "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/arm64-binary-endpoint.json"
+    },
+    {
+      "id": "OBS-PHASE-STOPPED",
+      "status": "BLOCKED",
+      "actual": "当前部署状态机没有实际写入STOPPED，不能伪造该checkpoint崩溃验证；实际stop阶段PREPARING已测试并确认P0。",
+      "evidence": "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/native-results.json"
+    },
+    {
+      "id": "OBS-HARNESS-IDENTITY-POLLUTION",
+      "status": "private_backup_retained",
+      "actual": "早期隔离实例同IP身份复用造成Hub RUNNING与原卷无Journal的不一致；精确取消仍RUNNING、相关定义已可删除。隔离authority整体撤除前已私密一致性备份，不直接改数据库掩盖。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/pollution-cancel-result.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/final-cleanup-phase2.json"
+      ]
+    },
+    {
+      "id": "OBS-SECRET-HISTORY",
+      "status": "historical_material",
+      "actual": "初始只读检索曾回显旧TEST_ENV认证行；未复制到本轮环境证据，最终扫描针对新增交付内容。不得声称整个会话从未有过回显。"
+    },
+    {
+      "id": "REPAIR-UNIT-REGISTRY-ROLLBACK-20261004",
+      "status": "PENDING_RUNTIME_VERIFICATION",
+      "actual": "只读代码审查：首次安装RegisterUnit后DONE写入失败可能回滚删除新Binary/Config/Unit但不删除unit_registry登记；真实首次安装失败/恢复场景需同时检查登记，不用静态审查直接增加22缺陷分母。",
+      "evidence": [
+        "internal/agent/application.go:463",
+        "internal/agent/application.go:467",
+        "internal/agent/application.go:660"
+      ],
+      "origin": "本轮只读Code Review",
+      "risk": "P2状态一致性；待核对已有登记保留语义与真实错误路径",
+      "runtime_executed": false
+    },
+    {
+      "observation_id": "OBS-20261008-EXECUTION-ZERO-EXIT-CODE",
+      "classification": "CONFIRMED_INDEPENDENT_PRODUCT_BUG_CANDIDATE_FOR_ROOT_REVIEW",
+      "suggested_priority": "P2",
+      "old_defect_denominator_change": false,
+      "source_change_authorized_or_executed": false,
+      "conclusion": "本条真实SUCCESS的已知正常退出码0在API序列化被omitempty丢失，UI显示未知“-”；不是本SUCCESS的正确未知值。",
+      "confirmed_runtime_facts": [
+        "Execution337898e9-4037-48d7-bc48-d3015d6db180 statusSUCCESS且真实脚本/进程stdout正常；API读取Object.hasOwn(exit_code)=false。",
+        "对应Execution截图SUCCESS且退出码“-”，为可感知错误。"
+      ],
+      "code_backed_inference": [
+        "source链runner正常成功设置0→protocol不省0→Hub及Store保留int0→模型JSON omitempty隐藏0→UI缺省“-”；本次未直接读取Hub/AgentDB对应row，因此该条row值0属于有证据的源码推导，不描述为已运行DB核验。",
+        "相同model用于List/Detail，所有值0的字段都有相同序列化问题；本次直接运行观测是Detail，不伪称新增List复测。"
+      ],
+      "requirements": [
+        "docs/PRODUCT.md:826 Execution一期记录ExitCode。",
+        "docs/PRODUCT.md:1268 Execution Web UI包含ExitCode。"
+      ],
+      "impact": [
+        "成功执行的退出码0丢失，用户和API调用方无法区分合法0与缺失/未知；影响ExecutionList/Detail共享响应。",
+        "不影响该E2E03进程cwd/uid/参数/environment实际消费的验收。"
+      ],
+      "undecided_or_unverified": [
+        "未执行非0成功/失败、PENDING/RUNNING、SKIPPED/BLOCKED的新增运行矩阵，不能自动统一这些状态的unknown语义。",
+        "schema当前int default0不能独立区分未执行/unknown和合法0；只取消omitempty并全状态输出0可能把未知状态伪装成已知成功退出。",
+        "若拟扩展为所有状态可空exitCode/shared type/schema，需要单独明确更大contract/迁移范围，不属本次建议最小修复。"
+      ],
+      "minimal_proposed_scope_for_requirement_review": {
+        "goal": "已完成真实执行的合法0在Execution API List/Detail可表达、UI显示0；未执行/无结果仍显示未知。",
+        "proposed_behavior": [
+          "修复已确认SUCCESS且存有0的API序列化：exit_code应为数字0，非0结果保持原值。",
+          "API/UI保留未执行/未知状态的“-”语义，避免直接在所有状态默认补0或仅在UI由SUCCESS猜0。",
+          "不改历史记录、不迁移schema、不新增依赖；优先限定现有Execution序列化规则及必要未完成状态渲染。"
+        ],
+        "exclusions": [
+          "全状态exitCode可空模型重设计",
+          "历史数据回写",
+          "其他Execution metadata/时间字段问题",
+          "与22原缺陷矩阵混算"
+        ],
+        "material_risk": "Execution公共响应在合法0时新增已有可选字段，属于contract行为修正；需Root Requirement Review明确确认后实施。",
+        "validation": [
+          "有意义的API序列化/真实store回归：SUCCESS0明确出现、非0保留、未执行unknown不伪0。",
+          "已授权测试环境重新部署修复版本后Luna真实UI Run→API exit_code0→Execution列表/详情显示0，至少一条非0失败对照。",
+          "不以当前readonly源码trace当修复验证。"
+        ]
+      },
+      "source_trace": [
+        {
+          "stage": "Runner",
+          "finding": "正常cmd.Wait无错误时Result.ExitCode=0、StatusSUCCESS。",
+          "source_refs": [
+            "internal/agent/execution/runner.go:165"
+          ]
+        },
+        {
+          "stage": "Agent persistence/report",
+          "finding": "finishExecution赋值ex.ExitCode并在ExecutionFinishedPayload保留；Script RunUser fallback和WorkingDir也实际传runner。",
+          "source_refs": [
+            "internal/agent/agent.go:1141",
+            "internal/agent/agent.go:1152",
+            "internal/agent/agent.go:1187",
+            "internal/agent/agent.go:1596",
+            "internal/agent/execution/runner.go:194",
+            "internal/agent/execution/runner.go:203"
+          ]
+        },
+        {
+          "stage": "Protocol",
+          "finding": "ExecutionFinishedPayload ExitCode字段没有omitempty，0会进入Agent→Hub协议。",
+          "source_refs": [
+            "internal/protocol/protocol.go:208"
+          ]
+        },
+        {
+          "stage": "Hub/store",
+          "finding": "MarkFinished赋p.ExitCode并UpdateExecution；SQL写e.ExitCode、scan读&e.ExitCode，schema是NOT NULL int default0。",
+          "source_refs": [
+            "internal/hub/gateway.go:531",
+            "internal/hub/execution.go:413",
+            "internal/hub/execution.go:439",
+            "internal/store/sqlite_executions.go:35",
+            "internal/store/sqlite_executions.go:60",
+            "internal/store/migrate.go:228"
+          ]
+        },
+        {
+          "stage": "API serialization",
+          "finding": "List/Detail直接writeJSON(models.Execution)；json.ExitCode tag omitempty会在int0时移除字段，是确认的序列化根因。",
+          "source_refs": [
+            "internal/models/models.go:306",
+            "internal/hub/api/api.go:292",
+            "internal/hub/api/api.go:1791",
+            "internal/hub/api/api.go:1848"
+          ]
+        },
+        {
+          "stage": "UI",
+          "finding": "List row.exit_code??dash、Detail exec.exit_code??dash；缺失0被展示为未知dash。该真实SUCCESS截图exitcard为dash。",
+          "source_refs": [
+            "web/src/features/executions/index.tsx:240",
+            "web/src/features/executions/index.tsx:420",
+            "web/src/features/executions/index.tsx:508"
+          ]
+        }
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/api-execution-oracle.json:38",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/final.json:48"
+      ],
+      "visual_evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/execution-logs-ui.png",
+      "related_canonical_cases": [
+        "P17P18-07",
+        "API-CONTRACT"
+      ],
+      "metadata_full_pass_blocked": true,
+      "reporting_instruction": "先保留为独立新增观察供Root确认scope；不得修改源码或自动把22旧缺陷分母改为23。",
+      "id": "OBS-20261008-EXECUTION-ZERO-EXIT-CODE",
+      "status": "CONFIRMED_REPAIR_AFTER_TESTS",
+      "root_reviewed_at": "2026-10-08T08:24:17.303456+00:00",
+      "root_requested_confirmation": true,
+      "implementation_authorized": false,
+      "source_change_authorized": true,
+      "repair_execution_gate": "先完成可执行测试并汇总环境限制，再统一产品修复",
+      "confirmed_scope_review": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/additional-defect-review.json"
+    },
+    {
+      "id": "OBS-20261010-UI-LOGOUT-NOT-REVOKED",
+      "priority": "P2",
+      "title": "UI退出只清本地状态，旧服务端session令牌仍可访问/api/me",
+      "status": "CONFIRMED_REPAIR_AFTER_TESTS",
+      "source_change_authorized": true,
+      "original_22_denominator_unchanged": true,
+      "affected_cases": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-web/batch02/g01-06-isolated-contract-results.json"
+      ],
+      "source": [
+        "web/src/components/sign-out-dialog.tsx:19",
+        "web/src/stores/auth-store.ts:51",
+        "internal/hub/api/api.go:436"
+      ],
+      "actual": {
+        "dedicated_session": true,
+        "ui_logout_local_token_cleared": true,
+        "ui_logout_api_requests": 0,
+        "old_token_me_after_ui_logout": 200,
+        "direct_api_logout": 200,
+        "old_token_me_after_api_logout": 401
+      },
+      "contract_scope": "G-01-06仅/api/me与/api/logout API contract，已PASS；新增UI交互问题独立记录，不新增canonical分母。",
+      "reviewed_at": "2026-10-10T02:34:40.713677+00:00",
+      "repair_execution_gate": "先完成可执行测试并汇总环境限制，再统一产品修复",
+      "confirmed_scope_review": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/additional-defect-review.json"
+    },
+    {
+      "id": "OBS-20261010-HOST-PROC-ROOT-PERMISSION",
+      "status": "ENVIRONMENT_BLOCKED_ROOT_CAUSE_UNCONFIRMED",
+      "actual": "独占DockerHost容器内/proc/1/root Permission denied，nsenter无法操作；3caps、默认seccomp/NoNewPrivs、mount samefile实证正确，AppArmor enforce但无DENIED证据，根因未独立确定。没有App/Artifact/HostUnit写入；需要可信匹配Server GitCommit6a43e3d的policy/准确环境方案，另Review授权才改变安全配置。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host001-environment-blocker.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host-apparmor-source-unavailable.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host-docker-server-owner-recheck.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/quota-host001-stop-evidence.json"
+      ]
+    },
+    {
+      "id": "OBS-20261010-DASHBOARD-FAULT-ORACLE",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "Dashboard未出现ErrorState/Retry；没有CDP loadingFailed/fetch catch/initiator，未知status/zero-byte timing不证明请求拒绝。P03-10仍NOT_RUN。断开46.50秒超45秒1.50秒；forward/session/browser已清理。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/batch04/dashboard-tunnel-fault/oracle-review.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "root_decision_note": "运行时仍复现（0/2 无 Error/Retry）；修复在源码但不在部署构建（overview 22:40 > 构建 21:50）→ 下一构建复验",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261010-QA-LOGIN-SESSION-UNREVOKED",
+      "status": "QA_CLEANUP_LIMITATION",
+      "title": "测试器aboutblank注入失败后1枚专属API登录token丢失，无法精确撤销",
+      "product_defect": false,
+      "source": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/readonly-execution-auth/auth-session-creation-anomaly.json",
+      "action": "未用于业务/未落盘/未输出；不撤销其他会话。保留未清理项并继续独立测试；下次登录token先保存private0600再浏览器操作。",
+      "configured_ttl_record": "恢复privateHub配置为24h；实际运行override未独立验证，不声称已过期。"
+    },
+    {
+      "id": "OBS-20261012-TASKS-INITIAL-LOADING-FEEDBACK",
+      "title": "Tasks初始请求未完成却显示没有结果，没有Loading反馈",
+      "case_id": "TABLE-TASKS-ERROR",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/batch18/evidence/resume20261012/table-tasks-loading-observation.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "source": [
+        "web/src/features/tasks/index.tsx:273",
+        "web/src/features/shared/data-table.tsx:302"
+      ],
+      "status": "CLOSED_FIXED_VERIFIED",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "reviewed_at": "2026-10-12T14:48:34.578022+00:00",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261012-DASHBOARD-APP-STATE-ERROR-SUPPRESSED",
+      "title": "应用状态请求失败被空数组吞掉，Dashboard无Error/Retry且健康比错误下降",
+      "case_id": "P03-10",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/batch21/evidence/P03-10-app-state-fault.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "source": [
+        "web/src/features/overview/index.tsx:63",
+        "web/src/features/overview/index.tsx:75"
+      ],
+      "status": "CLOSED_FIXED_VERIFIED",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "reviewed_at": "2026-10-12T14:48:34.578022+00:00",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261012-ARTCACHE-QA-PARTIAL-ROOT-CLEANUP",
+      "title": "ArtifactCache QA恢复脚本忽略cleanup-root SAFE_STOP；真实owned目录尚未清理",
+      "status": "EXACT_FIXTURE_CLEANUP_CLOSED_CACHE_RUNTIME_VERIFIED",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/artifact-cache-ad9bf531b28a-final-summary.json",
+      "remaining": "attempt03/04 已完成 ArtifactCache 真实上传/预取/A→B 与精确清理，SYS-12 运行时维度已汇入 PASS",
+      "updated_at": "2026-10-14T06:28:05.205009+00:00",
+      "cleanup_review": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/web24-25-and-artcache-cleanup-review-20261012.json"
+    },
+    {
+      "id": "OBS-20261012-BATCH29-CAPABILITY-WINDOW-OBSERVATION",
+      "title": "P05B-04 batch29 取得 4 组 false/Disabled 一致样本，但观测晚于授权只读窗口 31s",
+      "status": "OBSERVED_OUTSIDE_AUTHORIZED_WINDOW_NOT_PROMOTED",
+      "actual": "4 个 false API 能力值与 4 个 Disabled 徽章键哈希一一对应，实质覆盖原缺口；观测 16:05:55.979Z 晚于名义截止 16:05:25Z。",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/batch29/evidence/false-capability-ui-api.json",
+      "remaining": "窗口内可用样本仍缺；如需升级 PASS 需 Root 追认该迟到只读观测",
+      "updated_at": "2026-10-14T06:28:05.205009+00:00"
+    },
+    {
+      "id": "OBS-20261012-APP-NODES-NULL-SHAPE",
+      "title": "GET /api/applications/{id}/nodes 在无绑定节点时返回 JSON null 而非空数组",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "SYS-12 attempt04 正常路径因读回 JSON null（非 []）触发 app_unassign_readback_mismatch 中止，被记为 harness gap；未单独立案，未确认是否影响真实调用方。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/artifact-cache-ad9bf531b28a-ledger.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "需独立只读复现确认返回形状与调用方处理，再决定是否立项",
+      "updated_at": "2026-10-14T06:28:05.205009+00:00",
+      "root_decision_note": "实测返回原始 null；nil slice 根因（sqlite_artifacts_apps.go:247-261）；T2 修复中",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261012-EVIDENCE-FILE-POST-EDIT",
+      "title": "web batch28/29 的 results.json/progress.json 存在事后手改，时间戳与自身判定不一致",
+      "status": "EVIDENCE_INTEGRITY_WARNING",
+      "actual": "updated_at 早于证据 captured_at 与文件 mtime；batch28 progress.phase 与其 .mjs 判定分支不符；batch29 remaining_dimensions 误写 batch28 时间戳。不影响已复核结论，但降低文件自证力。",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/batch28/progress.json",
+      "remaining": "后续批次应避免事后手改证据文件；如需修正应另建修正记录",
+      "updated_at": "2026-10-14T06:28:05.205009+00:00"
+    },
+    {
+      "id": "OBS-20261012-EXECUTION-SCRIPT-BACKLINK-GAP",
+      "title": "Execution 详情页不显示 Script ID/revision 回链",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "FL-05 实测详情页 Task/Node 回链可见，Script 回链缺失（script_id_or_revision_visible=false）；API 侧 Script revision 可由独立读回验证。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/business-ui-detail-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "不属于 FL-05 的 Task/Execution/Agent 回链要求；如需补齐另立范围 Review",
+      "updated_at": "2026-10-14T06:28:05.205009+00:00",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261014-AR26-ROLLBACK-UNCLOSED",
+      "title": "SYS-44/AR-26 原生 App 首次安装失败后 ROLLING_BACK 未闭合，证据原文为 rollback failed",
+      "status": "CLOSED_NOT_DEFECT_FIXED_BY_ROLLBACK_FIX",
+      "actual": "tls-final-summary.json 自述首次失败为 harness 只读限制，但证据中回滚文本为 failed、ROLLING_BACK 未闭合；不能确定为产品回滚缺口，也不能断言回滚已闭环。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/tls-final-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "需独立只读复核该场景的回滚终态（是否残留半安装、Unit/Binary 状态）后再定性",
+      "updated_at": "2026-10-14T08:08:31.783723+00:00",
+      "root_decision_note": "owned child 真首次安装失败：journal DONE/rolled_back、仅 health check failed、无残留；修复已在该构建内",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261014-OIDC-ENV-BLOCKED",
+      "title": "OIDC/SSO 类用例在本轮环境下不可执行（部署未启用 OIDC、无可用 IdP）",
+      "status": "ENVIRONMENT_BLOCKED_DOCUMENTED",
+      "actual": "hub-repair 配置无 OIDC 项，本地登录模式；OIDC 客户端仅在 SSO-only 模式注入。P01-08/P01-09/P01-10/X17 记为 BLOCKED；其中 X17 的停留页 401 子维度已由缺陷 E2E-20260930-101945-P1-001 覆盖并通过。",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/oidc-cases-blocked-review-20261014.json",
+      "remaining": "复测需启用 OIDC 配置 + 可达测试 IdP，二者需单独授权",
+      "updated_at": "2026-10-14T08:15:43.504388+00:00"
+    },
+    {
+      "id": "OBS-20261014-PAGESIZE-PERSISTED-OUT-OF-RANGE-BLANK",
+      "title": "持久化 pageSize 超出 PAGE_SIZE_OPTIONS(10..50) 时，pageSize 下拉触发器显示空白",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "读路径接受任意正整数并据此分页；写路径仅允许 10..50。当持久化值超范围时下拉触发器空白，疑似边界处理不一致；本轮由 harness 补充步骤（pageSize=1）观测到。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch02/",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "需只读复现确认是否影响真实用户路径（例如旧版本残留的持久化值），再决定是否立项",
+      "updated_at": "2026-10-14T08:17:16.925748+00:00",
+      "root_decision_note": "注入 pageSize=999 触发器空 span；readTableView 未按白名单校验（table-view.ts:32-41）；T3 修复中",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261014-TRANSFER-STATUS-BADGE-NOT-LOCALIZED",
+      "title": "/transfers 状态徽标对 DELIVERING/UPLOADING 未本地化，显示原始枚举",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "PENDING/SUCCESS/CANCELED/FAILED 本地化正常；DELIVERING/UPLOADING 显示原始英文枚举。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch03/evidence/",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "同上：仅本地化文案缺失，不影响状态语义",
+      "updated_at": "2026-10-14T08:45:22.987026+00:00",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "SEC-20261014-REGTOKEN-TERMINAL-ECHO",
+      "title": "repair registration token 在侦察期被打印到终端（未落盘）",
+      "status": "SECURITY_HYGIENE_RECOMMEND_ROTATION",
+      "actual": "在 native 节点 cat agent 配置时令牌回显到终端；证据目录全量扫描（含令牌）CLEAN，仓库内无泄漏。",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/web-batch03-review-20261014.json",
+      "remaining": "建议按需轮换 repair Hub 注册令牌（需配置变更 + 服务重启，待用户授权）",
+      "updated_at": "2026-10-14T08:45:22.987026+00:00"
+    },
+    {
+      "id": "OBS-20261014-REMOTE-CONDITION-CLOCK-SKEW",
+      "title": "Remote 条件因跨主机亚秒级时钟偏移恒 Fail Closed（SYS-27）",
+      "status": "CONFIRMED_PRODUCT_FAILURE_PENDING_REPAIR_SCOPE_REVIEW",
+      "actual": "4 个 repair native 节点对 remote online 条件均返回 BLOCKED/condition unknown: <nil>；受控实验隔离出机制（时间戳新鲜度门禁）；本环境 Hub 领先 Agent 约 0.14s。",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/sys-b09-review-20261014.json",
+      "remaining": "需修复范围 Review 后统一处理；本轮仅测试不改产品",
+      "updated_at": "2026-10-14T08:58:20.802723+00:00"
+    },
+    {
+      "id": "OBS-20261014-ARTIFACT-DOWNLOAD-NO-READ-TIMEOUT",
+      "title": "Agent artifact 下载使用 http.DefaultClient（无读/idle 超时），服务端发头后不给 body 时 .tmp(0B) 持续 >24s 不被清理",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "SYS-43 超时维度使用的是连接级超时（黑洞地址 i/o timeout ~30s）；读侧无超时的场景下 .tmp(0B) 长时间残留。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b10/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "属健壮性观测，非 SYS-43 必测项失败；如需立项需独立复核",
+      "updated_at": "2026-10-14T09:00:33.001962+00:00",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261014-ARTIFACT-CONCURRENT-PREFETCH-NO-DEDUP",
+      "title": "同一 SHA 被两个 sync goroutine 并发预取时各写一次 artifact cached（约 20ms 内）",
+      "status": "OBSERVED_NOT_DEFECT_FINAL_STATE_CONSISTENT",
+      "actual": "最终状态一致（原子改名、字节相同、无重复安装副作用）；仅产生重复日志与重复下载。",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b10/case-result.json",
+      "remaining": "观测项；如需优化需独立范围 Review",
+      "updated_at": "2026-10-14T09:00:33.001962+00:00"
+    },
+    {
+      "id": "OBS-20261014-BROWSER-SESSION-RESIDUE",
+      "title": "agent-browser 会话列表存在多个历史残留会话（2026-09-30/10-09/10-10 等）",
+      "status": "HOUSEKEEPING_ITEM",
+      "actual": "batch04 会话已按 --session 关闭；列表中仍有历史会话与约 185 个 chromium 相关进程，属当轮既有状态。",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch04/progress.json",
+      "remaining": "建议在无并行批次时统一清理，避免误杀在跑批次的浏览器",
+      "updated_at": "2026-10-14T09:23:39.051043+00:00"
+    },
+    {
+      "id": "OBS-20261014-NAV-ROLE-UNFILTERED",
+      "title": "侧边栏对 operator/viewer 仍渲染「用户」入口，仅页面正文受限",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "P20-07 验证：operator/viewer 可导航到 /users，但正文显示「只有管理员可以管理用户。」且无任何写控件/API 全 403。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch05-users/results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "属导航可见性体验问题，不影响权限正确性",
+      "updated_at": "2026-10-14T09:26:15.018858+00:00",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261014-AUDIT-YEAR-METHOD-200",
+      "title": "审计端点非 GET 方法返回 200 + 审计列表（应 405）",
+      "status": "CONFIRMED_LOW_DEFECT_RECORDED",
+      "actual": "见 failures.json 新增项 E2E-20261014-AUDIT-METHOD-FALLBACK-200；无写副作用。",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/web-batch05-users-review-20261014.json",
+      "remaining": "待修复范围 Review",
+      "updated_at": "2026-10-14T09:26:15.018858+00:00"
+    },
+    {
+      "id": "OBS-20261014-PREFETCH-BEFORE-CAPABILITY-GATE",
+      "title": "Artifact prefetch 先于 Capability 门禁下发",
+      "status": "OBSERVED_NOT_DEFECT_DIMENSION",
+      "actual": "prefetch 在能力门禁前分发，child 缓存行可在重启后存活（但无 Host Operation）",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/sys-b12-review-20261014.json",
+      "remaining": "如需处理需单独范围 Review",
+      "updated_at": "2026-10-14T10:24:39.935273+00:00"
+    },
+    {
+      "id": "OBS-20261014-BLOCKED-AS-HTTP-400",
+      "title": "\"BLOCKED\" 实现为 HTTP 400 拒绝，不产生 BLOCKED 状态 Execution",
+      "status": "OBSERVED_NOT_DEFECT_DIMENSION",
+      "actual": "能力/路径拒绝以 HTTP 400 表达，不落 BLOCKED 执行态",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/sys-b12-review-20261014.json",
+      "remaining": "如需处理需单独范围 Review",
+      "updated_at": "2026-10-14T10:24:39.935273+00:00"
+    },
+    {
+      "id": "OBS-20261014-FILE-DELIVERY-BYPASSES-HOST-FS-GATE",
+      "title": "文件交付路径不受 host_filesystem 门禁",
+      "status": "OBSERVED_NOT_DEFECT_DIMENSION",
+      "actual": "docker 形态落在容器内，属边界记录",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/sys-b12-review-20261014.json",
+      "remaining": "如需处理需单独范围 Review",
+      "updated_at": "2026-10-14T10:24:39.935273+00:00"
+    },
+    {
+      "id": "OBS-20261014-MIXED-BATCH-CAPABILITY-NON-ATOMIC",
+      "title": "混合能力批次逐节点语义非原子",
+      "status": "OBSERVED_NOT_DEFECT_DIMENSION",
+      "actual": "[capable, non-capable] 返回 400 但能力节点已被派发",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/sys-b12-review-20261014.json",
+      "remaining": "如需处理需单独范围 Review",
+      "updated_at": "2026-10-14T10:24:39.935273+00:00"
+    },
+    {
+      "id": "OBS-20261014-OFFLINE-NODE-MANUAL-ONLINE-NO-SWEEP",
+      "title": "offline 节点手工设为在线后无会话仍长期显示在线，无自动回落",
+      "status": "CLOSED_DOCUMENTED",
+      "actual": "MarkOffline 仅由网关断开回调触发，无周期清扫；batch06 P04-05 观测。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/web-batch06-review-20261014.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "需产品确认是否预期",
+      "updated_at": "2026-10-14T10:24:39.935273+00:00",
+      "root_decision_note": "手工在线后无会话仍 online（心跳只遍历已注册会话）；派发为明确报错 400 agent offline + 执行 FAILED，非静默挂起 → 文档化",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261014-STATUSBADGE-MAINTENANCE-DISABLED-NO-ZH",
+      "title": "中文界面下 maintenance/disabled 徽标显示英文原文",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "StatusBadge 缺 zh 文案（batch06 OBS-B06-01；与 batch03/04 的 UPLOADING/DELIVERING 同类）",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/web-batch06-review-20261014.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "本地化补全属 UI 小项",
+      "updated_at": "2026-10-14T10:24:39.935273+00:00",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "ENV-20261014-PARALLEL-LOAD-NODE-OFFLINE",
+      "title": "5 路并行下 protected 节点 native-1/native-3 一度 offline（native-3 宿主 VM 资源竞争）",
+      "status": "ENVIRONMENT_INCIDENT_RESOLVED",
+      "actual": "native-1 与 native-3 两个 protected repair 节点一度 offline；native-3 宿主 VM(.222) 一度 SSH banner 超时、QGA 无响应、load 13–21、kswapd 活跃 已由 Root 恢复 native-1 单元，4 节点恢复 online/synced；sys-b02 因此中止（无结果）。",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/environment-incident-20261014.json",
+      "remaining": "后续批次降低并发并加节点健康门禁",
+      "updated_at": "2026-10-14T10:24:39.935273+00:00"
+    },
+    {
+      "id": "OBS-20261014-APP-EDITOR-SAVE-NO-REQUEST",
+      "title": "对 API 创建的 Application，编辑器「保存」不发出任何请求",
+      "status": "CLOSED_NOT_DEFECT_HARNESS",
+      "actual": "batch07 观测：submit 按钮 enabled，3 次点击均无请求、revision 不变、无 toast；同会话 transfers 表单正常发请求。FL-09 的 UI 创建路径在 batch04 为 PASS。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/web-batch07-review-20261014.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json"
+      ],
+      "remaining": "需独立二次复核（可能为表单校验状态/脏数据判定），确认后再决定是否立项",
+      "updated_at": "2026-10-15T07:02:27.286354+00:00",
+      "root_decision_note": "唯一提前返回是名称为空内联校验；已有回归测试 application-save-request.test.tsx 锁定；原观察为口径问题",
+      "verified_at": "2026-10-17T15:51:18.123585+00:00"
+    },
+    {
+      "id": "ENV-20261014-LIBVIRT-DOMAIN-NAME-MISMATCH",
+      "title": "libvirt 域名 nodesteer-agent-N 与 repair native-N 不是同一映射，易导致误重启",
+      "status": "OPERATIONAL_LESSON_RECORDED",
+      "actual": "nodesteer-agent-3 = .204 = repair native-1；repair 单元 enabled=disabled，VM 重启后不会自动拉起。",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/environment-incident-20261014.json",
+      "remaining": "后续批次按 MAC/实际 IP 核实目标域，并在重启后显式恢复 4 节点",
+      "updated_at": "2026-10-15T07:02:27.286354+00:00"
+    },
+    {
+      "id": "OBS-20261014-REMOTE-TTL-PATH-UNREACHABLE",
+      "title": "Remote State 的 TTL/过期分支疑不可达：仓库无 Agent 侧发送 MsgRemoteState 的代码路径",
+      "status": "CLOSED_DOCUMENTED_DEAD_CODE",
+      "actual": "SetRemoteState 唯一调用点是 gateway.handleRemoteState（处理 Agent 上报），但全仓无 Agent 侧发送 MsgRemoteState 的路径 → resolveRemoteState 恒走实时分支，SYS-29 的「TTL 过期」维度不可构造。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/p-cond-review-20261014.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "需产品确认该分支是否为预留/未来路径；本轮不主张为缺陷",
+      "updated_at": "2026-10-15T07:24:59.058061+00:00",
+      "root_decision_note": "全仓唯一 REMOTE_STATE 发送方是 Hub 自身应答；Agent 只发 REMOTE_STATE_REQ → 不可达分支保留+文档化，测试计划移除 SYS-29 TTL 维度",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261014-SCHEDULE-INTERVAL-ZERO-SAVE-ENABLED",
+      "title": "调度间隔 0/-1 仅提示文案，保存按钮仍可用",
+      "status": "CLOSED_UX_IMPROVED_VERIFIED",
+      "actual": "P12P13-04 观测：提示「间隔必须 ≥ 1 秒，无法预览。」但保存未禁用（本轮未点击保存、无写入）。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/p-web-review-20261014.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "需确认保存是否被服务端拒绝；若被接受则为边界缺陷",
+      "updated_at": "2026-10-15T07:58:39.022612+00:00",
+      "root_decision_note": "按钮未禁用但不发请求 + 内联错误「间隔必须大于 0 秒」+ 服务端 400；双层拦截，T3 做 UX 改进",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261014-INVALID-TASK-DEEPLINK-NO-ERROR",
+      "title": "无效 task_id 深链缺明确「任务不存在」错误",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "X05：/schedules/new?task_id=<invalid> 仅显示「任务已锁定」，无不存在错误提示。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/p-web-review-20261014.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "属文案/校验反馈小项",
+      "updated_at": "2026-10-15T07:58:39.022612+00:00",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261014-PAST-ONETIME-SAVE-ENABLED",
+      "title": "过去时间的 One-Time 运行时间无内联错误、保存仍可用",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "P12P13-05：过去时间未给内联错误（未提交）。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/p-web-review-20261014.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "需确认服务端是否拒绝",
+      "updated_at": "2026-10-15T07:58:39.022612+00:00",
+      "root_decision_note": "无内联错误、保存可用、服务端 200 接受过去时间（validation.go:187 只校验非零）；两端修复中（T2+T3）",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261014-SUBAGENT-DEPTH-LIMIT-1",
+      "title": "本平台子 Agent 深度上限为 1，批次内不能再派并行子任务",
+      "status": "OPERATIONAL_LIMITATION_RECORDED",
+      "actual": "p-web 被 Subagent depth limit reached (1) 拦截，只能串行执行，导致其 60 个 PARTIAL 的跨页/夹具链维度覆盖不足。",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/p-web-review-20261014.json",
+      "remaining": "后续批次由 Root 直接铺平（不走嵌套委派），或在批次内自行串行安排优先级",
+      "updated_at": "2026-10-15T07:58:39.022612+00:00"
+    },
+    {
+      "id": "OBS-20261014-EDITOR-SAVE-PENDING-NOT-DISABLED",
+      "title": "部分编辑器保存按钮在 pending 期间未禁用，重复点击产生第 2 次 POST",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "G04-01 实测 Editor 保存 pending 未禁用 → 第 2 次 POST（唯一名约束避免重复创建）。已知缺陷 WEB-TASK-PENDING-SAVE 在 22 缺陷清单中为 PASS，疑仅覆盖 Task 编辑器。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/p-table-review-20261014.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json"
+      ],
+      "remaining": "需逐编辑器复核重复提交是否有实际副作用（唯一名约束已兜住创建）",
+      "updated_at": "2026-10-15T07:59:19.850001+00:00",
+      "root_decision_note": "覆盖 6/6 编辑器（含 Artifact），4 个已实机复验",
+      "verified_at": "2026-10-17T15:51:18.123585+00:00"
+    },
+    {
+      "id": "OBS-20261014-GROUP-DUPLICATE-ERROR-RAW-SQLITE",
+      "title": "分组重名错误文案直接暴露 SQLite 原文",
+      "status": "CONFIRMED_UX_AND_INFO_HYGIENE_GAP",
+      "actual": "G04-03：错误文案具体但包含 SQLite 原始错误文本。",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/p-table-review-20261014.json",
+      "remaining": "属文案/信息卫生小项（未观察到敏感数据泄漏）",
+      "updated_at": "2026-10-15T07:59:19.850001+00:00"
+    },
+    {
+      "id": "OBS-20261015-API-CONTRACT-DEVIATIONS-LOW",
+      "title": "API 契约低危偏差 8 条（方法开关/幂等/键名/头一致性）",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "/api/audit、/api/me、/metrics 无方法开关（任意方法 200）；/api/logout GET 也注销；/api/transfers/{id} 非 POST → 403 而非 405；不存在 id 的 DELETE 幂等 200；/api/me 与 login.user 键名首字母大写（Session 缺 json tag）；X-Total-Count 仅 executions/audit 返回；DELETE /api/nodes/{不存在id} 对 operator/viewer 先返回 404（存在性 oracle，未授权可枚举 node id）。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/p-api-review-20261015.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "均与源码一致、非本批引入；需产品决定是否纳入修复范围",
+      "updated_at": "2026-10-15T09:01:28.001735+00:00",
+      "root_decision_note": "①方法开关 405 ✅ ②logout GET 405 ✅；③transfers 非 POST 403→405 ④DELETE 缺 id 行为不一 ⑤/api/me 键名 ⑥X-Total-Count ⑦CORS ⑧存在性 oracle 均 T2 修复中",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261015-REGTOKEN-NO-TTL",
+      "title": "注册 token/凭证无 TTL（token “过期”在产品中不存在）",
+      "status": "OBSERVED_BY_DESIGN_NOTE",
+      "actual": "gateway.go:351、node.go:154 显示凭证无 TTL，SYS-01 的“过期 token”维度按 N/A 说明而非未测。",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/p-sysmisc-review-20261015.json",
+      "remaining": "如产品有意为之，建议在文档中明确",
+      "updated_at": "2026-10-15T09:13:38.749311+00:00"
+    },
+    {
+      "id": "OBS-20261015-CONCURRENT-DUPLICATE-PREFETCH-ENOENT",
+      "title": "同一 sha 并发重复 Prefetch（Hub 推送 + deploy 自身）导致输方 rename ENOENT 并记 WARN",
+      "status": "OBSERVED_NOT_DEFECT_THIS_RUN",
+      "actual": "p-app phase04 日志：并发预取同一 sha，输的一方 rename 报 ENOENT 并记 WARN，本次 deploy 未受影响。与 p-table/sys-b10 的并发预取观察同源。",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/p-app-review-20261015.json",
+      "remaining": "如需优化需单独范围 Review",
+      "updated_at": "2026-10-15T09:25:24.208048+00:00"
+    },
+    {
+      "id": "OBS-20261015-HUB-RESTART-FIRST-CALL-401",
+      "title": "repair Hub 重启后首个 API 调用返回 401（会话驻留内存），需重新登录",
+      "status": "CONFIRMED_BEHAVIOR_NOT_DEFECT",
+      "actual": "sys-b01 观测：Hub 重启后管理会话丢失，首个 API 返回 401 invalid or expired session；harness 自动重认证。与既有的「UI 退出只清本地 token」缺陷（OBS-20261010-UI-LOGOUT-NOT-REVOKED）方向相反，属会话存储设计。",
+      "evidence": "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-root/sys-b01-review-20261015.json",
+      "remaining": "需产品确认是否接受内存会话（重启即失效）；若持久化会话则与 logout 撤销语义一并设计",
+      "updated_at": "2026-10-15T10:34:18.538484+00:00"
+    },
+    {
+      "id": "SEC-20261015-MGMT-SESSION-TOKEN-PRINTED",
+      "title": "管理会话令牌曾在只读勘察中被打印到工具记录（未落盘）",
+      "status": "SECURITY_HYGIENE_INVESTIGATED",
+      "actual": "sys-b14 批自行披露：repair-connection.json 的 token 字段被打印；该 token 为内存态管理会话令牌，未写入任何证据文件（已扫描确认）。",
+      "evidence": "runs/20260930-101945/repair/qa-resume-20261014-root/sys-b14-review-20261015.json",
+      "remaining": "Root 已验证：repair Hub 期间被重启 5 次，内存态会话已随重启失效；按用户先前决定不轮换注册令牌",
+      "updated_at": "2026-10-15T12:05:11.653057+00:00"
+    },
+    {
+      "id": "OBS-20261016-P17P18-04-SYSTEM-TRIGGER-NO-SOURCE",
+      "title": "P17P18-04：UI 暴露 system 触发筛选枚举，但系统无法产出该类型样本",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "manual/schedule 均有真实样本一致；system 无任何样本，UI 暴露了模型无法产出的枚举值（不能直接套 design-unreachable 先例）。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/status-upgrade-verification-20261016.md",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "待产品裁决",
+      "updated_at": "2026-10-16T07:35:23.929142+00:00",
+      "root_decision_note": "Go 只有 manual/schedule 常量、全仓无 system 赋值、PRODUCT.md 无该枚举；T3 删 UI 筛选行",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "APPUI-20261016-JOURNAL-FROM-VERSION",
+      "title": "deployments.from_version 取当前应用定义版本而非节点实际安装版本",
+      "status": "OBSERVED_LOW",
+      "actual": "编辑后再升级得到 2.0->2.0、1.1->1.1 无信息量的 journal 行。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-appui/case-result.json"
+      ],
+      "remaining": "待产品裁决",
+      "updated_at": "2026-10-16T08:12:36.655528+00:00"
+    },
+    {
+      "id": "APPUI-20261016-STATE-CARD-MISSING-FIELDS",
+      "title": "应用详情 state 卡片未渲染 version 与 updated_at（代码确认）",
+      "status": "OBSERVED_LOW",
+      "actual": "API 五字段齐全且与 UI 一致，但卡片只渲染 节点+health+error|operation；代码 web/src/features/editors/index.tsx:1694-1708 确认未渲染。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-appui/case-result.json"
+      ],
+      "remaining": "待产品裁决",
+      "updated_at": "2026-10-16T08:12:36.655528+00:00"
+    },
+    {
+      "id": "OBS-20261016-G5-STALE-PAYLOAD-FIELDS-CARRIED",
+      "title": "任务 PUT payload 仍携带与应用/组/标签相关的旧字段（惰性，不影响调度）",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "P09P11-12 实测：app_operation 已剔除，但 application_id/script_id/group_ids/label_* 仍提交；X09 证明这类残留字段不影响真实执行（只投 node 目标、只跑脚本、无部署副作用）。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g5/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "低危观察，待产品裁决",
+      "updated_at": "2026-10-16T09:20:58.291623+00:00",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261016-G5-AND-CONDITION-NO-SUMMARY-NO-CLEAR",
+      "title": "UI 无 AND 条件摘要与清除入口",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "P09P11-17 实测：AND 勾选+两条件可落库并真实执行，但界面无 AND 摘要/清除入口，AND 降级分支 UI 不可达（仅代码阅读判断）。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g5/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "低危观察，待产品裁决",
+      "updated_at": "2026-10-16T09:20:58.291623+00:00",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261016-G23-RECONNECT-WINDOW",
+      "title": "Agent 在 WS 握手成功但 HELLO/HELLO_ACK 完成前即置 IsConnected=true，形成毫秒级放行窗口",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "用\"accept 后立即 close\"做断连模拟时，agent IsConnected() 在握手后、HELLO/HELLO_ACK 前即为真（internal/agent/connection/manager.go:249），造成 hub_online_required 毫秒级放行：同秒既有 1013 拒绝、又有一条执行（该行 offline=1）。改用止停监听端口（dial ECONNREFUSED）后象限 4 为干净复测；真实网络分区不受影响。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g23/evidence/",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "INFO 级，待与产品侧一并裁决",
+      "updated_at": "2026-10-16T09:44:39.475426+00:00",
+      "root_decision_note": "connected 在 Dial 成功后/HELLO 前置真（manager.go:249），窗口可达秒级；T2 改握手标志",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261016-G1-USER-DUP-SQL-MESSAGE",
+      "title": "重复用户名的错误响应仍回显数据库层信息（与已归一化的 groups 不一致）",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "重复用户名的错误响应仍回显数据库层信息（与已归一化的 groups 不一致）",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g1/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "待产品裁决",
+      "updated_at": "2026-10-16T09:52:02.456749+00:00",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261016-G1-USER-INPUT-NOT-TRIMMED",
+      "title": "纯空白用户名可创建且可登录；密码无最小长度校验",
+      "status": "OBSERVED_LOW",
+      "actual": "纯空白用户名可创建且可登录；密码无最小长度校验",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g1/case-result.json"
+      ],
+      "remaining": "待产品裁决",
+      "updated_at": "2026-10-16T09:52:02.456749+00:00"
+    },
+    {
+      "id": "OBS-20261016-G1-ENROLL-TRANSIENT-500",
+      "title": "快速连发 enrollment 时 3/12 返回 500，同参数立即重试成功（未复现，可能为竞态）",
+      "status": "CONFIRMED_DEFECT_P2_IN_REPAIR",
+      "actual": "快速连发 enrollment 时 3/12 返回 500，同参数立即重试成功（未复现，可能为竞态）",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g1/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json"
+      ],
+      "remaining": "待产品裁决",
+      "updated_at": "2026-10-16T09:52:02.456749+00:00",
+      "root_decision_note": "并发 12 次 500×10~11（SQLITE_BUSY）；根因 WithTx deferred BeginTx（sqlite.go:44-55）不受 busy_timeout 保护；次生：存储原文外泄 + Hub 零日志；T2 修复中",
+      "verified_at": "2026-10-17T15:51:18.123585+00:00"
+    },
+    {
+      "id": "OBS-20261016-G1-APP-DEPLOY-UNIT-SIDE-EFFECT",
+      "title": "P14P15-12 的真实部署在 owned child 上留下 enabled/activating 的单元残留，已 stop/disable/reset-failed/删除并复核 not-found；建议后续同类用例收尾显式处理",
+      "status": "OBSERVED_INFO",
+      "actual": "P14P15-12 的真实部署在 owned child 上留下 enabled/activating 的单元残留，已 stop/disable/reset-failed/删除并复核 not-found；建议后续同类用例收尾显式处理",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g1/case-result.json"
+      ],
+      "remaining": "待产品裁决",
+      "updated_at": "2026-10-16T09:52:02.456749+00:00"
+    },
+    {
+      "id": "OBS-20261016-G1-X13-CONVERGENCE-SEMANTICS",
+      "title": "跨标签登出：localStorage 清空但保护页 15s 内不跳转、内存会话仍 200，仅标签自身刷新才收敛；是否要求\"退出即撤销服务端会话\"需产品裁决（与既有 OBS-20261010-UI-LOGOUT-NOT-REVOKED 同源）",
+      "status": "OBSERVED_LOW_MEDIUM",
+      "actual": "跨标签登出：localStorage 清空但保护页 15s 内不跳转、内存会话仍 200，仅标签自身刷新才收敛；是否要求\"退出即撤销服务端会话\"需产品裁决（与既有 OBS-20261010-UI-LOGOUT-NOT-REVOKED 同源）",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g1/case-result.json"
+      ],
+      "remaining": "待产品裁决",
+      "updated_at": "2026-10-16T09:52:02.456749+00:00"
+    },
+    {
+      "id": "OBS-20261017-SCRIPT-PUT-TYPE-UNVALIDATED",
+      "title": "script PUT 未校验参数类型（type=not-a-type 返回 200）",
+      "status": "OBSERVED_LOW",
+      "actual": "G9 附带观察，未计缺陷。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-g9/case-result.json"
+      ],
+      "remaining": "待产品裁决",
+      "updated_at": "2026-10-17T04:40:42.836350+00:00"
+    },
+    {
+      "id": "OBS-20261017-ENROLL-INTERMITTENT-500-AGAIN",
+      "title": "enrollment 连续探针间歇 500（再次观测）",
+      "status": "MERGED_INTO_CONFIRMED_DEFECT_P2",
+      "actual": "G8/G9 期间再次出现同请求体此前/此后均 200 的间歇 500，与 G1 的 OBS-20261016-G1-ENROLL-TRANSIENT-500 同源。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-g8/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json"
+      ],
+      "remaining": "疑竞态，建议独立复核",
+      "updated_at": "2026-10-17T04:40:42.836350+00:00",
+      "root_decision_note": "与 G1-ENROLL-TRANSIENT-500 同根因合并",
+      "verified_at": "2026-10-17T15:51:18.123585+00:00"
+    },
+    {
+      "id": "OBS-20261017-XFER-API-NO-SELF-TRANSFER-CHECK",
+      "title": "Transfer API 无自传校验（仅前端裁剪）",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "G6 附带观察。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-g6/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "待产品裁决",
+      "updated_at": "2026-10-17T04:47:30.552640+00:00",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261017-EXEC-DISABLED-BRANCH-UNREACHABLE",
+      "title": "execution.go 的 is disabled 专用错误分支不可达（先被 online 检查拦截）",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "G6 如实记录，未放宽断言。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-g6/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "待产品裁决",
+      "updated_at": "2026-10-17T04:47:30.552640+00:00",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261017-CROSSPAGE-LINK-GAPS",
+      "title": "跨页联动确认缺失 5 处：审计资源 ID 不可跳转、传输/用户/发布包无详情路由、节点详情无任务/调度/应用回链",
+      "status": "CLOSED_FIXED_VERIFIED",
+      "actual": "控件审计（40 页/410 控件）跨页联动 23 项中 5 项确认缺失：①审计列表的资源 ID 不可点击跳详情 ②/transfers、/users、/artifacts 无详情路由 ③节点详情页未渲染\"任务/调度/应用\"分区回链。另 2 项需夹具（任务详情→编辑/新建调度）。其余 16 项已实测通过。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-control-audit/control-coverage-audit.md",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+      ],
+      "remaining": "需产品确认是否属设计（例如 transfers/users 本就无详情页）",
+      "updated_at": "2026-10-17T11:37:30.390926+00:00",
+      "verified_at": "2026-10-18T05:44:05.909151+00:00"
+    },
+    {
+      "id": "OBS-20261017-DATATABLE-DRIFT-SCOPE",
+      "title": "选择漂移缺陷结构性存在于共享 DataTable，但当前仅 /agents 启用行选择",
+      "status": "SCOPE_CONFIRMED_BY_AUDIT",
+      "actual": "审计逐页 DOM 校验：tasks/executions/transfers/scripts/applications/artifacts/audit/users/groups/schedules 共 10 张复用表 0 个选择控件；enableRowSelection 仅 catalog/index.tsx:301（节点表）一处传参。结论：当前构建下漂移只可能出现在节点表，但任何表一旦开启该开关会同样复现 → 属共享组件层待修问题。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-control-audit/control-coverage-audit.md"
+      ],
+      "remaining": "修复应落在 data-table.tsx（补 getRowId）而非仅节点页",
+      "updated_at": "2026-10-17T11:37:30.390926+00:00"
+    },
+    {
+      "id": "SYS-40-PER-ATTEMPT-AUDIT-DECISION",
+      "status": "CLOSED_DOCUMENTED_PRODUCT_DECISION",
+      "title": "SYS-40 per-attempt 审计粒度裁决：接受为设计（审计粒度=逻辑触发）",
+      "root_decision_note": "【Root 裁决 2026-10-17】接受为设计 + 文档化 → 按 C3 口径升 PASS。审计粒度=逻辑触发（1 条 execute 行，resource=task）；重试 attempt 细节只在双流日志（真实 retry=2 产生 3 次 attempt 各 3 个 marker，审计仍 1 条）。观测：3 次 attempt <50ms 无退避（不构成缺陷）。已同步：docs/PRODUCT.md §45 Audit、docs/TEST_PLAN.md SYS-40 措辞。要求 attempt 级审计属新能力，不在一期范围。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-partial-rest/case-result.json"
+      ],
+      "recorded_at": "2026-10-17T16:03:06.696930+00:00"
+    }
+  ],
+  "updated_at": "2026-10-18T05:44:05.909151+00:00"
 }

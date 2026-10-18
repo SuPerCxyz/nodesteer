@@ -1,0 +1,288 @@
+{
+  "schema_version": 1,
+  "status": "READY_FOR_ROOT_REVIEW",
+  "review_scope": "Read-only supplementary actual SAFE21/theme/external-role evidence; no repo/runtime mutation by reviewer; old131 review unchanged.",
+  "canonical_denominator": 504,
+  "defect_denominator": 22,
+  "case_recommendations": [
+    {
+      "case_id": "P20-01",
+      "title": "Admin 列表、搜索、分页、角色下拉。",
+      "status": "PARTIAL",
+      "covered_description": "Real Admin lists/searches exact newly created QA user and uses role dropdown; all three roles save/reload.",
+      "remaining_dimensions": [
+        "User pagination and complete list fields/empty/no-results cases are not covered by SAFE21."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-results.json:137",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe01_21/user-lifecycle-ui.json:4",
+        "web/e2e/tests/safe-ui.spec.ts:621",
+        "web/e2e/tests/fixtures.ts:97"
+      ],
+      "test_id": "SAFE-21",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P20-02",
+      "title": "新建用户按钮打开/关闭表单，取消恢复原状态。",
+      "status": "PARTIAL",
+      "covered_description": "Real New User form opens for create and duplicate attempt; cancellation closes the duplicate-error form.",
+      "remaining_dimensions": [
+        "Cancel-before-create zero POST and blank/default reset state need explicit assertions."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-results.json:137",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe01_21/user-lifecycle-ui.json:4",
+        "web/e2e/tests/safe-ui.spec.ts:621",
+        "web/e2e/tests/fixtures.ts:97"
+      ],
+      "test_id": "SAFE-21",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P20-03",
+      "title": "用户名/密码必填，角色 administrator/operator/viewer。",
+      "status": "PARTIAL",
+      "covered_description": "Real username/password creation and administrator/operator/viewer role selection/save/login/role readback.",
+      "remaining_dimensions": [
+        "Blank username/password frontend required and invalid server inputs are separate paths; this suite filled valid values."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-results.json:137",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe01_21/user-lifecycle-ui.json:4",
+        "web/e2e/tests/safe-ui.spec.ts:621",
+        "web/e2e/tests/fixtures.ts:97"
+      ],
+      "test_id": "SAFE-21",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P20-04",
+      "title": "创建成功、重复用户名、错误输入。",
+      "status": "PARTIAL",
+      "covered_description": "Real UI creates unique user and list shows it; duplicate username actual POST returns400; earlier login-helper failure superseded for full role lifecycle.",
+      "remaining_dimensions": [
+        "Other malformed input/client-server error feedback branches not tested by this create/duplicate flow."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-results.json:137",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe01_21/user-lifecycle-ui.json:4",
+        "web/e2e/tests/safe-ui.spec.ts:621",
+        "web/e2e/tests/fixtures.ts:97"
+      ],
+      "test_id": "SAFE-21",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P20-05",
+      "title": "修改角色即时保存，刷新后保持。",
+      "status": "PASS",
+      "covered_description": "Same real QA user moves operator->administrator->viewer via UI; each persisted dropdown label survives reload, new actual login/me returns corresponding role.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-results.json:137",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe01_21/user-lifecycle-ui.json:4",
+        "web/e2e/tests/safe-ui.spec.ts:621",
+        "web/e2e/tests/fixtures.ts:97",
+        "web/e2e/tests/safe-ui.spec.ts:636",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe01_21/user-lifecycle-ui.json:5"
+      ],
+      "test_id": "SAFE-21",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P20-08",
+      "title": "后端 `/api/users/{id}` 密码修改、新旧密码生效范围。",
+      "status": "PASS",
+      "covered_description": "Actual PUT password change200; old password login401 and new password login200; new session is logged out, own user retained Viewer.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-results.json:137",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe01_21/user-lifecycle-ui.json:4",
+        "web/e2e/tests/safe-ui.spec.ts:621",
+        "web/e2e/tests/fixtures.ts:97",
+        "web/e2e/tests/safe-ui.spec.ts:648",
+        "web/e2e/tests/safe-ui.spec.ts:651",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe01_21/user-lifecycle-ui.json:25"
+      ],
+      "test_id": "SAFE-21",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P20-09",
+      "title": "当前无删除用户能力，必须明确记录为产品边界，不伪造删除通过。",
+      "status": "PARTIAL",
+      "covered_description": "Own user explicitly retained as Viewer with privately stored random changed password; no fictional user deletion claimed.",
+      "remaining_dimensions": [
+        "This suite did not independently query absence of Delete user controls/API; use separate current boundary evidence if upgrading."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-results.json:137",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe01_21/user-lifecycle-ui.json:4",
+        "web/e2e/tests/safe-ui.spec.ts:621",
+        "web/e2e/tests/fixtures.ts:97",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe01_21/user-lifecycle-ui.json:28",
+        "web/e2e/tests/safe-ui.spec.ts:655"
+      ],
+      "test_id": "SAFE-21",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "E2E-15",
+      "title": "User Lifecycle → 创建、登录、改角色、新会话权限正确",
+      "status": "PARTIAL",
+      "covered_description": "One actual QA lifecycle now has UI create/duplicate, three UI role changes/reloads and three fresh login/me roles, password reset old/new; separate external Admin downgrade proves existing operator token immediately sees viewer and loses cancel permission400->403.",
+      "remaining_dimensions": [
+        "Actual allowed/denied operations after each fresh role login are not all checked; /me role alone does not replace full new-session authorization assertions."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-results.json:137",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe01_21/user-lifecycle-ui.json:4",
+        "web/e2e/tests/safe-ui.spec.ts:621",
+        "web/e2e/tests/fixtures.ts:97",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/user-role-downgrade-live.json:11",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/user-role-downgrade-live.json:16"
+      ],
+      "test_id": "SAFE-21,USER-ROLE-DOWNGRADE-LIVE",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "FL-15",
+      "title": "Admin Role Change → New Login → 新会话权限生效，旧会话行为明确",
+      "status": "PARTIAL",
+      "covered_description": "UI role changes followed by fresh logins produce accurate role; external Admin downgrade updates old operator session server permissions/me immediately.",
+      "remaining_dimensions": [
+        "Complete fresh-role allowed/denied operation probes, and unchanged-page UI behavior/convergence timing for role change, remain. Hard reopening UI cannot prove same-page cache convergence."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-results.json:137",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe01_21/user-lifecycle-ui.json:4",
+        "web/e2e/tests/safe-ui.spec.ts:621",
+        "web/e2e/tests/fixtures.ts:97",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/user-role-downgrade-live.json:11",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/user-role-downgrade-live.json:16"
+      ],
+      "test_id": "SAFE-21,USER-ROLE-DOWNGRADE-LIVE",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "X13",
+      "title": "跨页缓存和两会话编辑、旧会话改角色后 API 权限、另一标签退出或替换 Token 后保护页面；记录实际收敛时间。",
+      "status": "PARTIAL",
+      "covered_description": "Same QA role persistence and fresh sessions verified; external Admin changes existing operator session so same token now gets403 while me remains200/viewer; hard reopened header reflects Viewer.",
+      "remaining_dimensions": [
+        "Unchanged-page role-control convergence, two concurrent editors, another-tab logout/token replacement protection and convergence duration remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-results.json:137",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe01_21-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe01_21/user-lifecycle-ui.json:4",
+        "web/e2e/tests/safe-ui.spec.ts:621",
+        "web/e2e/tests/fixtures.ts:97",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/user-role-downgrade-live.json:11",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/user-role-downgrade-live.json:16"
+      ],
+      "test_id": "SAFE-21,USER-ROLE-DOWNGRADE-LIVE",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "G02-02",
+      "title": "Theme 菜单验证 `light/dark/system`，刷新后保持，`theme-color` 正确。",
+      "status": "PASS",
+      "covered_description": "Actual light/dark/system browser theme selections, system media live change, manual modes ignore opposite media; all three survive reload; dark/light classes and actual theme-color match each resolved theme in nine steps.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/theme-media-roundtrip.json:8",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/theme-media-roundtrip.json:30",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/theme-media-roundtrip.json:51",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/theme-media-roundtrip.json:72",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/theme-media-roundtrip.json:114",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/theme-media-roundtrip.json:135",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/theme-media-roundtrip.json:177",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/theme-media-roundtrip.json:199"
+      ],
+      "test_id": "THEME-MEDIA-ROUNDTRIP",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P02-02",
+      "title": "Header 语言、主题、Profile、退出及确认框。",
+      "status": "PARTIAL",
+      "covered_description": "Header theme component now independently passes actual modes/media/reload/theme-color; prior accepted logout confirm/cancel exists.",
+      "remaining_dimensions": [
+        "Header language controls/refresh persistence and Profile Settings navigation are not completed by this theme test."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/theme-media-roundtrip.json:8",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/theme-media-roundtrip.json:199"
+      ],
+      "test_id": "THEME-MEDIA-ROUNDTRIP",
+      "review_recommendation_only": true
+    }
+  ],
+  "defect_recommendations": [
+    {
+      "defect_id": "FAIL-ENV-UI-THEME-001",
+      "status": "PASS",
+      "covered_description": "Real system dark-media update and reload both show dark class plus #020817 theme-color; nine manual/system light/dark/media/persistence observations all match.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/theme-media-roundtrip.json:30",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/theme-media-roundtrip.json:51",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/theme-media-roundtrip.json:199"
+      ],
+      "test_id": "THEME-MEDIA-ROUNDTRIP"
+    },
+    {
+      "defect_id": "WEB-ROLE-LIVE-STATE",
+      "action": "DO_NOT_CHANGE_STATUS_FROM_THIS_EVIDENCE",
+      "covered_description": "External Admin downgrades Operator to Viewer; existing-token API changes and UI hard reload only.",
+      "remaining_dimensions": [
+        "Own QA Administrator must downgrade itself to Viewer with unchanged open page; verify controls converge without reload; root separately assigned this real test."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/user-role-downgrade-live.json:16",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/user-role-downgrade-live.json:20"
+      ],
+      "test_id": "USER-ROLE-DOWNGRADE-LIVE"
+    }
+  ],
+  "limitations": [
+    "SAFE01_21 whole runner exit1 because SAFE01 failed; only SAFE21 actual passed spec is accepted. SAFE01 statuses are not upgraded by SAFE21 success.",
+    "Sanitizer replaces password-named HTTP status keys with [REDACTED]; exact200/401/200 outcomes are supported by actual SAFE21 passed result plus hard assertions at safe-ui.spec.ts:649-651, not invented from redacted values.",
+    "User fixtures cannot be deleted by current documented boundary; SAFE21 and external downgrade restore same own QA user Viewer and logout created sessions. No primary admin role or password changed.",
+    "Theme original preference cookie absent; teardown equality initially false must stay in history. Later readonly recheck shows absent cookie/default system resolved dark and meta #020817 matching current dark media; final restore_verified=true. Do not erase or call initial teardown check passed.",
+    "Role external downgrade uses missing/invalid cancel intent400 as proof permission admitted operator request and403 after downgrade; no actual customer execution cancelled. It does not prove same-page self-Admin controls changed.",
+    "Disk-version snapshot remains prior versions.json; these records are same repair authority and do not newly prove running-process SHA or complete environment cleanup."
+  ],
+  "cleanup_evidence": [
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe01_21/user-lifecycle-ui.json:28",
+    "web/e2e/tests/safe-ui.spec.ts:655",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261004/user-role-downgrade-live.json:21",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261004/user-role-downgrade-live.json:25",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261004/theme-media-roundtrip.json:199",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261004/theme-media-roundtrip.json:206"
+  ],
+  "source_snapshot_sha256": {
+    "web/e2e/tests/safe-ui.spec.ts": "8095fecf5a5dc3617362745169963c0af99cb593c1455546ff9e1c35ea9cf9a3",
+    "web/e2e/tests/fixtures.ts": "cc04436cdfde6b89fb596aa91bc3b0a7236b87ca93d7f75bf6bc7db02799fec0"
+  },
+  "no_global_count_update": true,
+  "root_merged_at": "2026-10-04T17:04:26.445290+00:00",
+  "final_feature_counts": {
+    "PASS": 60,
+    "FAIL": 0,
+    "PARTIAL": 130,
+    "NOT_RUN": 314,
+    "BLOCKED": 0
+  }
+}

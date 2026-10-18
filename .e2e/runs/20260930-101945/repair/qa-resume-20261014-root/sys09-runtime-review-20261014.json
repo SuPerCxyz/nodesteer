@@ -1,0 +1,56 @@
+{
+  "review_id": "ROOT-SYS09-RUNTIME-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T07:56:08.799580+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "run_dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys09",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试；504 场景既有授权；Root 准入上一轮已准备的 sys09 计划",
+  "verdict": {
+    "case_id": "SYS-09",
+    "canonical_before": "PARTIAL",
+    "canonical_after": "PASS",
+    "confidence": "high",
+    "reason": "两条原待补项均由真实连接态 Agent 证据覆盖：①tombstone 消费——删除 Script/Task/Schedule 定义后（Agent 保持连接），节点 global_revision 1653→1656 收敛为 synced，Agent 本地 scripts/tasks/schedules 精确行均为 0、local_revision=1656、quick_check ok（独立 SSH 只读 DB 复核 + 任务内只读探针 postcheck 一致）；②future interval slot 抑制——在覆盖完整 15s 周期的 20s 窗口内仅有删除前那 1 条调度 Execution，无新增；③历史 Execution 保留——删除定义后 GET /api/executions/{id} 仍 200/SUCCESS。",
+    "evidence": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys09/phase4-deletion-get404.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys09/phase5-convergence-suppression.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys09/phase6a-agent-db-readback.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys09/phase6c-probe-post.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys09/phase6b-agent-scheduler-log.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys09/final-cleanup-oracle.json"
+    ]
+  },
+  "verified_independently_by_root": {
+    "live_leftover_check": "API 实时检查 scripts=2(基线)/tasks=0/schedules=0，无 qa-sys09 残留",
+    "node_health_after": "native-1..4 online/synced；offline 遗留节点与 host 节点状态符合基线"
+  },
+  "safety": {
+    "server_writes": "4 个 owned 定义创建并全部 DELETE200→GET404；探针 Task 亦删除",
+    "protected_nodes_touched": false,
+    "primary_8080_management_writes": 0,
+    "agent_unit_restarted": false,
+    "agent_mainpid_unchanged": 4030,
+    "harness_errors_recorded": "run#1 清理复核阶段 harness URL/JSON 解析 bug，崩溃前 fixtures 已删除且复核无残留；已修复后重跑"
+  },
+  "counts_before": {
+    "PASS": 215,
+    "FAIL": 4,
+    "PARTIAL": 159,
+    "NOT_RUN": 126,
+    "BLOCKED": 0
+  },
+  "counts_after": {
+    "PASS": 216,
+    "FAIL": 4,
+    "PARTIAL": 158,
+    "NOT_RUN": 126,
+    "BLOCKED": 0
+  },
+  "limitations": [
+    "单节点（native-3）范围，非跨节点、非 Hub 重启场景",
+    "未主张 Script 内容寻址缓存/物理二进制被清除，仅证明定义 tombstone 与未来调度抑制",
+    "本批未新建/删除 Application，沿用既有 Application 切片证据"
+  ],
+  "not_claimed": "未执行产品修复、Git 交付或 Archive"
+}

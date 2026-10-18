@@ -1,0 +1,138 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch08",
+  "authority": "http://192.168.100.209:18080",
+  "authority_type": "repair",
+  "primary_8080_touched": false,
+  "nonce": "4a7fd1c2",
+  "naming_prefix": "qa-w1410b08-4a7fd1c2",
+  "node_scope": "native-4 only (node id 03cb50cc-eab6-4afd-bbe0-f73c4e326773 / 192.168.100.247)",
+  "created_at_utc": "2026-10-14T10:16:00Z",
+  "fixtures": [
+    {
+      "kind": "owned_child_node",
+      "id": "9610a99e-b1b9-4fa0-a811-09c1c8d17097",
+      "agent_id": "agent-10ed12a2-ee12-44ac-8d24-6a2a957247bb",
+      "name": "qa-w1410b08-4a7fd1c2-child",
+      "on_node": "native-4 (192.168.100.247)",
+      "modes_used": ["docker (capability-missing target)", "native (agent-unreachable target)"],
+      "created_via": "POST /api/nodes/enrollment + owned config/process on native-4 (plain process, no systemd unit)",
+      "node_side_root": "/var/lib/nodesteer-qa-w1410b08-4a7fd1c2",
+      "deleted_get404": true,
+      "node_side_removed": true,
+      "deleted_via": "UI 节点行操作 -> 删除 -> 确认框 -> 删除 (DELETE /api/nodes/9610a99e-… 200)"
+    },
+    {
+      "kind": "script",
+      "id": "ad218436-df59-4acf-b1f0-3dc524e653ff",
+      "name": "qa-w1410b08-4a7fd1c2-script",
+      "revision": 1,
+      "sha256": "8ed206246321ea19194c671ee5cc0d153bfb4f62f231b017b2602f1c9fb45688",
+      "created_via": "real Web UI 新建脚本 form + 保存",
+      "purpose": "P07_P08-10 delete-confirm / tombstone / history-retention subject",
+      "runs": 1,
+      "deleted_get404": true,
+      "deleted_via": "UI 脚本行操作 -> 删除 -> 确认框 -> 删除 (DELETE 200)"
+    },
+    {
+      "kind": "task",
+      "id": "d5d24025-bb52-460e-897f-a69a9de46e71",
+      "name": "qa-w1410b08-4a7fd1c2-task",
+      "revision": 1,
+      "type": "script",
+      "target": "node native-4",
+      "created_via": "API POST /api/tasks (fixture only; the case under test is the delete flow)",
+      "deleted_get404": true,
+      "deleted_via": "UI 任务行操作 -> 删除 -> 确认框 -> 取消 (no-op) -> 确认框 -> 删除 (DELETE 200)"
+    },
+    {
+      "kind": "artifact",
+      "id": "cd2f8fc5-d357-4752-9f42-851220a10c36",
+      "name": "qa-w1410b08-4a7fd1c2-artifact",
+      "version": "v1",
+      "sha256": "618698e66e191814ec56174d618a2db652999996be31d2d5f591ca7df8c7559f",
+      "size": 37,
+      "created_via": "API POST /api/artifacts (multipart upload; local sha256 == hub sha256)",
+      "purpose": "P14P15-17 artifact-missing dimension + application binding",
+      "first_delete_attempt": "blocked 409 (referenced by owned application) - correct product guard",
+      "deleted_get404": true,
+      "deleted_via": "UI 发布包行操作 -> 删除 -> 确认框 -> 删除 (DELETE 200, after the app reference was made dangling)"
+    },
+    {
+      "kind": "application",
+      "id": "d5dc31b2-baf7-45da-804b-2cb317af9f9a",
+      "name": "qa-w1410b08-4a7fd1c2-app",
+      "revision_final": 2,
+      "created_via": "API POST /api/applications",
+      "purpose": "P14P15-17 deploy failure dimensions (offline / capability / agent-unreachable / artifact-missing)",
+      "assignments_created": 0,
+      "deploy_attempts": 4,
+      "deploy_attempt_results": ["400 lacks capability application_deploy", "400 node not online (status=offline)", "400 agent offline", "400 artifact … not found"],
+      "deleted_get404": true,
+      "deleted_via": "UI 应用行操作 -> 删除 -> 确认框 -> 删除 (DELETE 200)"
+    },
+    {
+      "kind": "probe_script",
+      "id": "bc0dc280-804c-483a-acb5-e0256ff3b77c",
+      "name": "qa-w1410b08-4a7fd1c2-probe",
+      "interpreter": "python",
+      "purpose": "read-only agent state.db oracle for P07_P08-10 (runs on native-4 as a real NodeSteer Script task)",
+      "deleted_get404": true,
+      "deleted_via": "UI 脚本行操作 -> 删除 -> 确认框 -> 删除 (DELETE 200)"
+    },
+    {
+      "kind": "probe_task",
+      "id": "transient (created+deleted per probe run: 44fc08b7-8f5f-4f7d-9a4d-eac3ce29260b, 9fb3029b-e36e-4aa1-817e-9f43e04d00dc)",
+      "name": "qa-w1410b08-4a7fd1c2-probe-pre / -probe-post",
+      "created_via": "API POST /api/tasks (transient harness fixture)",
+      "deleted_get404": true,
+      "note": "这两个瞬时 probe Task 使 Task 创建总数超过批次给出的 <=2 owned Task 预算（实际 3 次创建：业务 Task 1 次、probe Task 2 次）。已在 results.json 的 budget_deviations 中如实记录。"
+    },
+    {
+      "kind": "node_side_marker",
+      "path": "/tmp/qa-w1410b08-4a7fd1c2-marker.txt",
+      "on_node": "native-4",
+      "purpose": "physical proof that the UI-triggered execution really ran on native-4",
+      "removed": true
+    }
+  ],
+  "counts": {
+    "baseline_20261014T10:16Z": {"nodes": 7, "artifacts": 1, "applications": 1, "tasks": 3, "scripts": 5, "schedules": 0, "executions": 762},
+    "created": {"nodes": 1, "artifacts": 1, "applications": 1, "scripts": 2, "tasks": 3, "executions": 4},
+    "deleted": {"nodes": 1, "artifacts": 1, "applications": 1, "scripts": 2, "tasks": 3}
+  },
+  "not_deletable_retained": {
+    "business_execution": {
+      "id": "4fa1aef7-c92e-45ac-9897-153c028a46c6",
+      "task_id": "d5d24025-bb52-460e-897f-a69a9de46e71",
+      "script_id": "ad218436-df59-4acf-b1f0-3dc524e653ff",
+      "node_id": "03cb50cc-eab6-4afd-bbe0-f73c4e326773",
+      "status": "SUCCESS",
+      "stdout": "qa-w1410b08-4a7fd1c2-ok",
+      "http_after_delete": 200,
+      "purpose": "P07_P08-10 history retention"
+    },
+    "probe_executions": [
+      "74423f5e-cdc8-4018-a722-f52dc82c4ebf",
+      "5f6ced96-eaa0-4bab-adb4-01459e3e704b"
+    ],
+    "hub_tombstones": [
+      {"object_type": "task", "object_id": "d5d24025-bb52-460e-897f-a69a9de46e71", "global_revision": 1963, "deleted_at": "2026-10-14T10:23:51.327353453Z"},
+      {"object_type": "script", "object_id": "ad218436-df59-4acf-b1f0-3dc524e653ff", "global_revision": 1964, "deleted_at": "2026-10-14T10:24:36.022701432Z"},
+      {"object_type": "application", "object_id": "d5dc31b2-baf7-45da-804b-2cb317af9f9a", "global_revision": 2033, "deleted_at": "2026-10-14T10:33:17.237009464Z"},
+      {"object_type": "script", "object_id": "bc0dc280-804c-483a-acb5-e0256ff3b77c", "global_revision": 2034, "deleted_at": "2026-10-14T10:33:53.12802086Z"}
+    ],
+    "tombstone_absence_explained": "artifact 与 node 删除不写 tombstone —— 二者不是参与 Agent desired-state 同步的对象（internal/hub/artifact.go Delete 只校验引用+删行+删文件；internal/hub/node.go Delete 只删节点行/凭证并回收会话）。这与本批仅在 tombstones 表看到 task/script/application 行一致。",
+    "audit_rows": "由 DELETE/audit 写入，属不可删历史，未逐条拉取（重复对象 id 已在上表列出）。"
+  },
+  "budget_deviations": [
+    {
+      "item": "owned Task 创建次数",
+      "budget": "<=2",
+      "actual": 3,
+      "reason": "只读 probe 需要在 native-4 上以真实 Task 执行两次（pre/post）；probe Task 每次创建后立即删除，未遗留。",
+      "impact": "无遗留对象；仅超出创建次数计数。"
+    }
+  ],
+  "status": "CLEANED",
+  "cleanup_verified_at_utc": "2026-10-14T10:35:10Z"
+}

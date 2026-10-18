@@ -1,0 +1,24 @@
+{
+  "reviewed_at": "2026-10-10T02:41:40.533446+00:00",
+  "status": "APPROVED_WITH_SPECIFIC_CORRECTIONS",
+  "proposal": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/Root-review-notes.json",
+  "scope": "WEB-LIVE-LOG原22已确认spec复制/跟随/真实pending及两流；X15其它维度保持明确状态",
+  "owned_local_port": 38181,
+  "ssh_destination": "kvm2",
+  "forward": "127.0.0.1:38181 -> 192.168.100.209:18080",
+  "browser_session": "qawebsecure20261010-live-log-38181",
+  "approved": [
+    "仅独占Popen SSH隧道，本机loopback绑定，无远端command或SSH配置修改",
+    "专属AgentBrowser新安全上下文/精确origin的CDP permissions grant/deny/reset；不改全局browser flags",
+    "1 owned Task/1 UI Run/retry0/native3；synthetic双流足量行产生真实scrollHeight>clientHeight、bounded sleep再exit23",
+    "Task/浏览器permission/session/token/tunnel finally精确清理，Execution/audit history保留"
+  ],
+  "corrections": [
+    "移除ClearAllForwardings=yes：该选项会清除命令行-L；运行前本地ssh -G kvm2仅过滤forward配置确认无额外forward，配置若有额外转发停止并报告，不输出完整SSH配置",
+    "带ControlMaster=no、ControlPath=none、不复用现有连接，原任务PID/startticks/argv guard后才能停止；先探端口无主再创建、绑定后确认onlyloopback并freshPID",
+    "复制expected来自实际显示filtered日志与API marker/stream顺序，真实navigator.clipboard读取仅SHA/bytes/exactEqual，不打印内容",
+    "source clipboard.ts权限拒绝可fallback并返回false→manual info toast；拒绝分支接受真实manual fallback反馈或actualerror，不要求固定toast/error，不mock execCommand",
+    "PENDING UI若实际未捕获继续PARTIAL；原defect通过不能以控件存在或API PENDING替代UI链路。retry attempt元数据无新实现授权"
+  ],
+  "product_source_write_authorized": false
+}

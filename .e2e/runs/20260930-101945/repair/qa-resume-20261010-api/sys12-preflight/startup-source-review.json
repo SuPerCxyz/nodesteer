@@ -1,0 +1,36 @@
+{
+  "status": "SUPERSEDED_BY_LIFECYCLE_SOURCE_PROPOSAL",
+  "scope": "Historical start-only draft; it now refuses --launch and must not be used. Full draft with inspect/recreate/cleanup is lifecycle_source_proposal.py.",
+  "source": "startup_source_proposal.py",
+  "planned_mechanism": {
+    "enrollment": "Use already-existing Host config registration token read only under exact ROOT/private/config guards; derive config with fresh unique node_name, omit agent_id/node_ip. Valid first HELLO with RegistrationKey and empty AgentID creates a Node with new generated AgentID/credential; HELLO_ACK returns it and Agent persists all identity fields in the new DataDir.",
+    "secret_transport": "Registration token is read in memory from original root-owned 0600 config, copied only into a new 65534:65534 0600 config beneath a 65534:65534 0700 private directory, mounted RO. It is never in source literal, Task parameter, shell env, stdout, evidence, or Hub Admin response. No Admin enrollment POST is used.",
+    "host_objects": "One new owned bind root with private/data subdirectories, one bridge network, one container A. No separate Docker volume or initializer container. No edits to original Host root/config, image, Unit or policy.",
+    "network": "Use new bridge with dynamic Docker-assigned IP and report only the selected address.",
+    "container": "Pinned image, UID/GID65534, cap-drop ALL, read-only rootfs, no-new-privileges, default seccomp, private PID/network, only config RO + DataDir RW binds, optional 16MiB private tmpfs /tmp; no host mounts/devices/ports.",
+    "gating": "The source requires a 64-hex shell SHA argument and verifies it against the exact guarded tar before any root/resource creation. Measured member SHA is a6f559e00b69a4aa4d8cb607be18d9386c5aee55c509e2c075549dcf00e00fc7; old proposal pin a6f559e00b69a4aa9d8cb607be18d9386c5aee55c509e2c075549dcf00e00fc7 differs by one nibble. The exact proposed bridge was absent in the reviewed read-only probe; recheck immediately before create. Root must review the measured hash and confirm unique NodeName via Admin GET."
+  },
+  "readonly_probe_evidence": {
+    "result": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/archive-network-probe-result.json",
+    "helper_task_cleanup": "DELETE 200 / GET 404; Execution/Audit retained",
+    "image_and_archive_pins_verified": true,
+    "shell_member": {
+      "path": "bin/sh",
+      "regular": true,
+      "executable_mode": "0755",
+      "size": 129736,
+      "measured_sha256": "a6f559e00b69a4aa4d8cb607be18d9386c5aee55c509e2c075549dcf00e00fc7"
+    },
+    "candidate_network_absent": true
+  },
+  "source_refs": [
+    "internal/agent/agent.go:191-208,380-400",
+    "internal/agent/connection/manager.go:252-261",
+    "internal/hub/gateway.go:343-405",
+    "internal/hub/node.go:163-201"
+  ],
+  "no_secrets_in_source": true,
+  "creation_enabled_only_with_explicit_flag": "--launch; not invoked locally",
+  "compile": "Python compile() and bash -n passed locally; superseded source SHA256 3c4a982adb2371f200dda7d497e180388d98bda125837730796f2058b5df400a; all --launch requests SafeStop; do not use for execution.",
+  "approval_requested": "Review lifecycle_source_proposal.py and one-root-controller-plan.json only; startup resources remain unauthorized until a separate explicit Root review."
+}

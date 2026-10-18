@@ -1,0 +1,283 @@
+{
+  "batch_id": "qa-resume-20261010-web-batch04",
+  "created_at_utc": "2026-10-10T06:53:53+00:00",
+  "executor": "gpt-6-luna",
+  "mode": "PLAN_ONLY_AWAIT_ROOT_APPROVAL",
+  "test_count": 10,
+  "read_sources": [
+    ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+    ".e2e/runs/20260930-101945/repair/defect-regression-matrix.json",
+    "web/e2e/tests/safe-ui.spec.ts",
+    "web/e2e/tests/full-feature-ui.spec.ts",
+    "web/e2e/tests/p02-layout.spec.ts",
+    "web/e2e/tests/p03-dashboard.spec.ts",
+    "web/e2e/tests/p06-groups.spec.ts",
+    "web/e2e/tests/fixtures.ts",
+    "web/src/lib/navigation.ts",
+    "web/src/features/auth/sign-in/index.tsx",
+    "web/src/components/layout/nodesteer-header.tsx",
+    "web/src/components/layout/data/sidebar-data.ts",
+    "web/src/components/layout/language-switch.tsx",
+    "web/src/components/profile-dropdown.tsx",
+    "web/src/features/overview/index.tsx",
+    "web/src/features/catalog/index.tsx",
+    "web/src/features/editors/index.tsx",
+    "web/src/features/shared/data-table.tsx",
+    "web/src/components/data-table/pagination.tsx"
+  ],
+  "scenarios": [
+    {
+      "canonical_id": "G-01-04",
+      "inventory_status": "PARTIAL",
+      "title": "redirect 为外部 URL、`/sign-in` 或非法值 → 不发生开放重定向",
+      "remaining_dimensions": "/sign-in redirect, protocol-relative URL and malformed value branches remain.",
+      "planned_coverage": "仅测尚缺的 /sign-in redirect、protocol-relative URL、malformed URL 三分支；external absolute 已有PASS。",
+      "source_refs": [
+        "web/src/features/auth/sign-in/index.tsx:50-67",
+        "web/src/lib/navigation.ts:1-29",
+        "web/e2e/tests/safe-ui.spec.ts:155-178"
+      ],
+      "journey": [
+        {
+          "user_action": "fresh sign-in页面分别以 redirect=/sign-in、//invalid.example.test/path、无法解析的URL值输入有效凭据并提交真实表单",
+          "request": "每分支一次真实 POST /api/login；只保存方法/path/status，不保存payload或token",
+          "state": "真实login success后由safeRedirect决定目标；记录最终URL origin/path与对外origin请求计数",
+          "effect": "三个分支均留在repair origin并回到本地根页，不发生开放重定向",
+          "ui_feedback": "dashboard可见；最终地址在repair origin，外站请求数为0"
+        }
+      ],
+      "fixtures": "无持久对象；使用独立fresh sign-in上下文/每分支清理本地session。"
+    },
+    {
+      "canonical_id": "P02-01",
+      "inventory_status": "PARTIAL",
+      "title": "当前12个Sidebar入口与Artifacts间接入口逐个打开对应页面",
+      "remaining_dimensions": [
+        "All12 route entry clicks/Artifacts indirect entry must be completed."
+      ],
+      "planned_coverage": "补齐12个实际sidebar route click与Application editor进入Artifacts的间接入口。",
+      "source_refs": [
+        "web/src/components/layout/data/sidebar-data.ts:18-65",
+        "web/src/components/layout/nav-group.tsx:48-68",
+        "web/src/features/editors/index.tsx:1234-1248",
+        "web/e2e/tests/p02-layout.spec.ts:5-25"
+      ],
+      "journey": [
+        {
+          "user_action": "从真实sidebar逐个点击Dashboard、Tasks、Schedules、Executions、Transfers、Agents、Groups、Scripts、Applications、Audit、Users、Settings，并从/Applications/new点击Manage artifacts",
+          "request": "只观察相应页面GET；不提交Application或Artifact",
+          "state": "每次确认URL、唯一page heading、当前sidebar active项；Artifacts间接链接返回/artifacts",
+          "effect": "12入口逐项到各自route，Artifacts通过产品实际入口可达",
+          "ui_feedback": "页面标题与导航active态对应；无console crash，无写请求"
+        }
+      ],
+      "fixtures": "无；纯读导航。"
+    },
+    {
+      "canonical_id": "P02-02",
+      "inventory_status": "PARTIAL",
+      "title": "Header 语言、主题、Profile、退出及确认框。",
+      "remaining_dimensions": "Header language controls/refresh persistence and Profile Settings navigation are not completed by this theme test.",
+      "planned_coverage": "补齐Header语言控制与刷新持久性、Profile->Settings；主题与退出确认已有证据不重测。",
+      "source_refs": [
+        "web/src/components/layout/nodesteer-header.tsx:52-68",
+        "web/src/components/language-switch.tsx:1-31",
+        "web/src/components/profile-dropdown.tsx:17-73"
+      ],
+      "journey": [
+        {
+          "user_action": "切换English/中文，刷新后核对选择保持；打开Profile并进入Settings",
+          "request": "语言切换只用前端/i18n storage；Settings只读GET /api/settings",
+          "state": "当前locale与reload后locale一致；Profile菜单route为/settings",
+          "effect": "设置页面用对应语言展示实际字段，未提交任何设置",
+          "ui_feedback": "Header、菜单、设置标题随语言变化；Settings控件数量/字段与API schema一致"
+        }
+      ],
+      "fixtures": "无服务端写入；fresh isolated browser storage。"
+    },
+    {
+      "canonical_id": "P02-05",
+      "inventory_status": "NOT_RUN",
+      "title": "Hub unavailable 状态点和文案变化。",
+      "remaining_dimensions": "修复版全部适用维度待执行；旧版证据不能计入新版通过。",
+      "planned_coverage": "真实/healthz健康与不可用状态、点样式、恢复文案。",
+      "source_refs": [
+        "web/src/components/layout/nodesteer-header.tsx:19-65",
+        "web/src/locales/zh.ts:170-172",
+        "web/src/locales/en.ts:172-174"
+      ],
+      "journey": [
+        {
+          "user_action": "桌面宽度打开受保护页面；记录在线基线后只将当前独占browser session设offline，再恢复online",
+          "request": "周期性真实GET /healthz；记录HTTP success或浏览器network failure分类，禁用route/mock",
+          "state": "hubOnline从connected转false再回true；offline只影响当前browser session",
+          "effect": "恢复在线后/healthz再次HTTP成功",
+          "ui_feedback": "Hub已连接→Hub不可用+destructive点→Hub已连接，最长按15秒poll interval等待；离开时恢复online"
+        }
+      ],
+      "fixtures": "无；per-session network only，绝不改Hub/Agent真实状态。"
+    },
+    {
+      "canonical_id": "P03-04",
+      "inventory_status": "PARTIAL",
+      "title": "Application Status 的 View All 和每个应用链接。",
+      "remaining_dimensions": "Every relevant Application card record link remains.",
+      "planned_coverage": "Dashboard View All及每个现有Application状态卡片的真实detail链接。",
+      "source_refs": [
+        "web/src/features/overview/index.tsx:298-338",
+        "web/src/routes/_authenticated/applications/$applicationId.tsx"
+      ],
+      "journey": [
+        {
+          "user_action": "读取Dashboard真实API应用集合，点击View All，再逐个点击所有可见Application卡片",
+          "request": "GET /api/applications、每个/api/applications/{id}/state与detail GET",
+          "state": "卡片ID/健康状态对照API；route末段匹配所点Application ID",
+          "effect": "detail实际加载该应用数据且返回列表可用",
+          "ui_feedback": "卡片计数与API一致；如集合为空则记录适用边界，不创建Application"
+        }
+      ],
+      "fixtures": "只读现有Application。"
+    },
+    {
+      "canonical_id": "P03-06",
+      "inventory_status": "PARTIAL",
+      "title": "Recent Executions 的 View All、任务名/执行详情链接。",
+      "remaining_dimensions": "Recent record Task and Execution link checks remain.",
+      "planned_coverage": "Recent Executions的task label和Execution detail逐行核对；View All已有PASS。",
+      "source_refs": [
+        "web/src/features/overview/index.tsx:370-430",
+        "web/src/routes/_authenticated/executions/$executionId.tsx"
+      ],
+      "journey": [
+        {
+          "user_action": "读取Dashboard最近执行列表，逐行核对Task名称和Execution href；选task仍存在的真实记录点击",
+          "request": "Dashboard使用GET /api/executions?limit=50与GET /api/tasks；detail GET /api/executions/{id}",
+          "state": "每个href的execution ID来自对应API record；Task label与GET /api/tasks/{task_id}一致；只选择GET 200的Task做跳转",
+          "effect": "浏览器显示选中的历史Execution detail，不启动新Execution",
+          "ui_feedback": "task label、状态、详情route与API oracle一致；若无存活Task关联记录则PARTIAL，不造Task/Run"
+        }
+      ],
+      "fixtures": "只读已有Task/Execution；保留的failed Execution可作为兜底但删除Task的label不计PASS。"
+    },
+    {
+      "canonical_id": "P03-10",
+      "inventory_status": "NOT_RUN",
+      "title": "Dashboard API 任一请求失败时 Error/Retry，不显示假数据。",
+      "remaining_dimensions": "修复版全部适用维度待执行；旧版证据不能计入新版通过。",
+      "planned_coverage": "真实browser offline造成Dashboard请求失败，Error/Retry恢复，不注入mock响应。",
+      "source_refs": [
+        "web/src/features/overview/index.tsx:50-112",
+        "web/src/features/overview/index.tsx:151-166",
+        "web/src/features/shared/ui.tsx:156-176"
+      ],
+      "journey": [
+        {
+          "user_action": "在线先完成Dashboard加载；将当前独占session offline，切走再点击Dashboard触发fresh refetch",
+          "request": "真实Dashboard GET /nodes、/executions、/applications、/schedules、/tasks的失败request；不记录header/body",
+          "state": "Dashboard query进入error，无旧metrics伪装为当前成功；offline retry仍失败",
+          "effect": "offline off后点击Retry，真实API请求恢复200，metrics与同一时点API数组一致",
+          "ui_feedback": "ErrorState/Retry出现；离线Retry保持错误，恢复后按钮退出error并显示数据；finally确保online"
+        }
+      ],
+      "fixtures": "无；每session offline设置，Network条件恢复，不修改Hub/Agent。"
+    },
+    {
+      "canonical_id": "P06-01",
+      "inventory_status": "NOT_RUN",
+      "title": "列表、搜索、分页、空态、Error/Retry。",
+      "remaining_dimensions": "修复版全部适用维度待执行；旧版证据不能计入新版通过。",
+      "planned_coverage": "Groups列表真实API一致、搜索命中/无结果、当前数据支持时分页、offline Error/Retry；分页需总数据>10，否则保留PARTIAL，不额外造多组。",
+      "source_refs": [
+        "web/src/features/catalog/index.tsx:1389-1494",
+        "web/src/features/catalog/index.tsx:2277-2364",
+        "web/src/features/shared/data-table.tsx:83-158",
+        "web/src/components/data-table/pagination.tsx:20-105"
+      ],
+      "journey": [
+        {
+          "user_action": "打开Groups列表，读取API基线；搜索一个唯一真实组，再搜索不存在值；如总量>10，测试下一页/上一页/page size与数据成员",
+          "request": "GET /api/groups、GET /api/nodes；列表为client search/page，不额外写API",
+          "state": "当前行名/类型/成员数及页数与API集合一致；offline route navigation触发GET failure，online Retry恢复GET 200",
+          "effect": "过滤仅影响可见表格，返回All可还原集合；无匹配显示EmptyState；Retry恢复表格",
+          "ui_feedback": "表格empty/error/loading提示与请求状态一致；数据不足10条时分页维度明确PARTIAL"
+        }
+      ],
+      "fixtures": "复用下方唯一owned empty Group以验证search/list；不创建额外Groups强行造分页。"
+    },
+    {
+      "canonical_id": "P06-05",
+      "inventory_status": "PARTIAL",
+      "title": "类型切换后旧字段不产生错误残留。",
+      "remaining_dimensions": "Real next Task execution must demonstrate irrelevant stale label fields cannot alter static-target business.",
+      "planned_coverage": "只做真实Group UI/API的Static↔Label字段切换与无节点成员；剩余Task execution业务效应因本批禁止Run必须保留PARTIAL。",
+      "source_refs": [
+        "web/src/features/editors/index.tsx:756-886",
+        "web/src/features/catalog/index.tsx:1389-1494",
+        "web/e2e/tests/safe-ui.spec.ts:359-410",
+        "web/e2e/tests/full-feature-ui.spec.ts:113-170"
+      ],
+      "journey": [
+        {
+          "user_action": "用唯一空Static Group进入详情；切Label填写不匹配键值并保存；再次编辑切回Static并保存",
+          "request": "一个真实POST /api/groups、两次PUT /api/groups/{owned_id}和只读GET verify",
+          "state": "切换时不残留可见错误/旧控件；API读取type、members及label字段变化，节点列表保持未变",
+          "effect": "list/detail反映本组修改、成员数保持0，确认仅本组id发生写入",
+          "ui_feedback": "每次保存回Groups并可重新打开本组；旧label字段是否仍存按原样记录，不据此推断Task效果"
+        }
+      ],
+      "fixtures": "只复用唯一owned empty Group，不写Node、Task、Agent；因剩余维度明确要求下一Task真实执行，本Canonical保持PARTIAL。"
+    },
+    {
+      "canonical_id": "P06-09",
+      "inventory_status": "PARTIAL",
+      "title": "取消新建不发送请求。",
+      "remaining_dimensions": [
+        "Cancel zero POST not explicitly counted; A ledger0 successful creates does not prove zero failed write requests."
+      ],
+      "planned_coverage": "取消New Group时观察POST为0；随后同批唯一owned Group完整create→modify→list/detail→delete。",
+      "source_refs": [
+        "web/src/features/editors/index.tsx:756-822",
+        "web/src/features/catalog/index.tsx:1389-1494",
+        "web/e2e/tests/p06-groups.spec.ts:25-36",
+        "web/e2e/tests/fixtures.ts:18-80"
+      ],
+      "journey": [
+        {
+          "user_action": "打开/groups/new可输入但点Cancel；监听POST /api/groups计数为0并回到列表；再用唯一名创建空Static Group，捕获POST response ID后立即ledger，查看GET、列表搜索、详情、修改，再通过UI确认删除",
+          "request": "Cancel分支POST=0；owned create POST 200/201、修改PUT、删除单次DELETE",
+          "state": "创建后GET返回唯一id/name/static/成员空；修改后GET/list/detail一致；delete后精确GET /api/groups/{id}=404",
+          "effect": "只有本轮own Group写入并被删除，history不涉及Node/Task/Execution",
+          "ui_feedback": "Cancel回列表无Toast错误；创建/修改列表行可搜索打开；删除成功Toast后行消失"
+        }
+      ],
+      "fixtures": "预算最多同时1个owned Group，名前缀qa-web-b04-<nonce>，无Node关联；捕获ID立刻记本地ledger；finally按精确ID清理并GET404；不按名称扫描/删除。"
+    }
+  ],
+  "tool_entry": {
+    "browser": "agent-browser CLI, isolated unique session, --allowed-domains 127.0.0.1",
+    "origin": "http://127.0.0.1:38181",
+    "transport": "exact owned SSH loopback forward to repair :18080 after filtered ssh -G and port/PID/startticks guards",
+    "auth": "private repair login in wrapper memory; no token/payload in artifact",
+    "network_faults": "agent-browser per-session set offline on/off only; no route fulfillment or mock response"
+  },
+  "fixture_budget": {
+    "max_concurrent_owned_groups": 1,
+    "max_owned_groups_created": 1,
+    "max_user_create": 0,
+    "max_task_create": 0,
+    "max_execution_run": 0,
+    "max_node_write": 0,
+    "max_agent_write": 0,
+    "foreign_resource_mutations": 0,
+    "original_native4_child_or_any_original_node": "read only"
+  },
+  "cleanup": "Capture response status and exact group ID immediately on POST; in finally DELETE only that owned ID via Group UI or precise DELETE fallback, then GET exact ID must be 404. Restore this browser session online, clear network records, API logout and verify old /me 401, close browser, PID/startticks/argv guarded SSH stop and listener count zero.",
+  "evidence_contract": "For every item save canonical ID, actual origin/path, user action, filtered request method/path/status or network failure class, API state/count/hash/IDs, rendered UI assertions, cleanup ledger, and runtime timestamp. Never save login payload/token, arbitrary headers, API body, raw task/log content, or screenshots containing credentials.",
+  "excluded": [
+    "P03-02 Running Execution links require an owned RUNNING execution and thus a Task/Run fixture; this batch explicitly creates/runs none.",
+    "P06-05 real Task execution residual remains PARTIAL; no test execution is claimed.",
+    "Any existing Task/Group/Node other than the single newly captured Group is read-only.",
+    "No changes to canonical inventory/matrix, product source, or global progress."
+  ],
+  "approval_gate": "Do not start browser, SSH, offline emulation, or create the Group until Root approves this plan."
+}

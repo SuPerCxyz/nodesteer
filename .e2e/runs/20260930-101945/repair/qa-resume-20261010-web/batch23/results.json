@@ -1,0 +1,67 @@
+{
+  "batch_id": "qa-resume-20261010-web-batch23-p05a10-real-clipboard",
+  "grant_id": "ROOT-P05A-10-CLIPBOARD-PENDING-NODE-20261012-01",
+  "updated_at_utc": "2026-10-12T15:27:27.955Z",
+  "cases": [
+    {
+      "case_id": "P05A-10",
+      "title": "Copy 成功显示 Copied；剪贴板失败显示 copy failed。",
+      "status": "PASS",
+      "covered_dimensions": [
+        "real generated Native command preview present in secure context",
+        "user clicked actual Copy control and navigator.clipboard.readText exactly matched displayed command bytes/hash",
+        "fresh copied button feedback observed",
+        "write permission denied on owned origin/context; sentinel remained unchanged after actual Copy click",
+        "fresh manual-fallback instruction observed, indicating copy did not occur",
+        "permission restored; actual Copy again matched preview exactly",
+        "clipboard cleared to zero bytes; baseline permission state restored",
+        "owned pending Node UI deleted; exact GET404, absent from list, protected five remained online/synced"
+      ],
+      "remaining_dimensions": [],
+      "evidence": [
+        "evidence/pre-post-guard.json",
+        "evidence/enrollment-post-response.json",
+        "evidence/pending-node-readback.json",
+        "evidence/clipboard-permission-baseline.json",
+        "evidence/clipboard-flow.json",
+        "evidence/ui-delete-and-get404.json",
+        "evidence/final-node-guard.json"
+      ],
+      "actual": {
+        "secure_context": true,
+        "origin": "http://127.0.0.1:38181",
+        "preview_utf8_bytes": 1836,
+        "preview_sha256": "50463d98d6c5a297fca836e509e4c2f2ca636a175cab2a51c44c02406244f530",
+        "normal_copy_exact": true,
+        "normal_feedback": "copied",
+        "deny_write_state": "denied",
+        "denied_copy_sentinel_unchanged": true,
+        "denied_copy_feedback": "manual_fallback; UI provided manual-copy instructions",
+        "recovered_copy_exact": true,
+        "clipboard_cleared": true,
+        "permission_reset": {
+          "clipboard-read": "prompt",
+          "clipboard-write": "granted"
+        },
+        "ui_delete_request_count": 1,
+        "delete_http": "unknown due response-event correlation gap",
+        "exact_node_get_http": 404,
+        "node_absent_from_list": true,
+        "fixture_name_ip_absent": true,
+        "protected_five_online_synced": true,
+        "agent_install_hello_run": 0,
+        "other_resource_writes": 0
+      },
+      "limitation": "UI DELETE response status was not captured because the listener grouped two responses for the same path without correlating requestId; no retry was made. Deletion effect is proven by exact GET404 and list absence."
+    }
+  ],
+  "fixture_budget": {
+    "ui_enrollment_posts": 1,
+    "new_pending_nodes": 1,
+    "exact_delete_requests": 1,
+    "runs": 0,
+    "agent_install_hello": 0,
+    "other_resource_writes": 0
+  },
+  "raw_secrets_or_command_saved": false
+}

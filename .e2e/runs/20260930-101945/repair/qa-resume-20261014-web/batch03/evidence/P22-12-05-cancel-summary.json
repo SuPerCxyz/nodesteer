@@ -1,0 +1,61 @@
+{
+  "case_id": "P22-12",
+  "captured_at_utc": "2026-10-14T08:33:00Z",
+  "authority": "http://192.168.100.209:18080",
+  "nonce": "69bdbd0f",
+  "ui_path": "/transfers",
+  "design_under_test": "transfer cancel is offered from the row action menu (MoreMenu) and fires immediately; no confirmation dialog exists in the current product design (web/src/features/transfers/index.tsx:212-218 onSelect -> cancelTransfer(id); web/src/locales/zh.ts transfers.cancel='取消传输')",
+  "observed_non_terminal_states": {
+    "UPLOADING": {
+      "observed": true,
+      "where": "status timeline right after create for both owned transfers (source Agent session active)",
+      "cancel_executed": false,
+      "reason": "state is sub-second on LAN (24 MiB uploaded in ~150 ms); the owned-transfer budget (<=2) was reserved for a deterministic DELIVERING cancel and for FL-13"
+    },
+    "DELIVERING": {
+      "observed": true,
+      "where": "transfer 08dc8196-4f7e-4fc3-a6f2-6e678523da0f (staged, one target FAILED, one target PENDING) and transiently during normal completion",
+      "cancel_executed": true,
+      "cancel_result": "CANCELED"
+    },
+    "PENDING": {
+      "observed_on_target_only": true,
+      "where": "offline target node 15961ef7 stayed PENDING while its transfer was DELIVERING",
+      "aggregate_observed": false,
+      "cancel_executed": false,
+      "reason": "an aggregate PENDING transfer requires an offline source Agent; the offline-source variant consumed the second transfer slot, which was assigned to FL-13"
+    }
+  },
+  "cancel_ui_evidence": {
+    "menu_opened": "row 操作 (MoreMenu) -> menuitem '取消传输' (evidence/P22-12-01-transfer-row-menu.png)",
+    "confirmation_dialog": {
+      "alertdialog_or_dialog_count": 0,
+      "body_matches_confirm_words": false,
+      "conclusion": "current product design has NO confirmation step; cancel is immediate (documented, not a defect for this case which asks to verify against current design)"
+    },
+    "network": "POST /api/transfers/08dc8196-4f7e-4fc3-a6f2-6e678523da0f/cancel -> 200",
+    "after_cancel_ui_status": "已取消",
+    "after_cancel_api": {
+      "transfer_status": "CANCELED",
+      "targets": [
+        {"node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea", "status": "CANCELED"},
+        {"node_id": "f6a79d23-2410-450c-ac39-64dd70c9daa1", "status": "CANCELED", "note": "was FAILED; cancel normalizes non-SUCCESS targets"}
+      ]
+    },
+    "staging_cleanup_after_cancel": "hub file-transfers dir empty -> /var/lib/nodesteer-hub-repair-20260930-101945/file-transfers/ (blob removed)",
+    "terminal_row_action_menu": "removed (no empty MoreMenu) - confirms FAIL-A-012 fix"
+  },
+  "evidence": [
+    "evidence/P22-12-01-transfer-row-menu.png",
+    "evidence/P22-12-02-after-cancel-click.png",
+    "evidence/P22-12-03-after-cancel-api.json",
+    "evidence/P22-12-04-canceled-ui.png",
+    "evidence/FL13-02-status-timeline.json",
+    "evidence/FL13-04-status-timeline.json"
+  ],
+  "remaining": [
+    "cancel from aggregate PENDING not executed",
+    "cancel from UPLOADING not executed"
+  ],
+  "harness_note": "cancel confirmation verified as absent by DOM probe immediately after the menu click; no product defect claimed."
+}

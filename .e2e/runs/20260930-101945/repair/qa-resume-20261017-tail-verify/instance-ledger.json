@@ -1,0 +1,78 @@
+{
+ "batch": "qa-resume-20261017-tail-verify",
+ "at_utc": "2026-10-17T15:50:00Z",
+ "instances": [
+  {
+   "name": "nodesteer-qa-tail202610177588afab",
+   "purpose": "第 7 条（enrollment 并发 500 复现）+ 第 8 条（手工在线无清扫/派发语义）",
+   "host": "192.168.100.209",
+   "port": 18088,
+   "base_url": "http://192.168.100.209:18088",
+   "binary": "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard",
+   "binary_sha256": "1d8cc17e3aeeb5df59026bc3881a6ff8b5a3e308617c931ac1f13d70a9cc230b",
+   "data_dir": "/var/lib/nodesteer-qa-tail202610177588afab",
+   "config": "/etc/nodesteer/qa-tail202610177588afab.yaml",
+   "log": "/var/log/nodesteer-qa-tail202610177588afab.log",
+   "log_sha256": "595b54c6b0ec011577d051374b5289f08ead7ea174595d47c78675d46f5c09c1",
+   "start_mode": "setsid nohup（无 systemd 单元）",
+   "credentials": "仅落 /tmp/opencode/tail-creds-tail202610177588afab.json（0600），未写入证据；收尾已删除",
+   "created_utc": "2026-10-17T15:05:00Z",
+   "destroyed_utc": "2026-10-17T15:10:51Z",
+   "destroy_verification": {
+    "process": "PID 245155 已 kill（先 TERM 后 KILL），PROC 状态 GONE",
+    "port_18088": 0,
+    "port_18086": 0,
+    "data_dir_left": 0,
+    "config_left": 0,
+    "log_left": 0,
+    "tmp_creds_left": 0,
+    "note": "首轮销毁脚本用 pgrep 模式 'nodesteer-qa-tail' 未匹配到 cmdline（实际为 '...login-guard --config /etc/nodesteer/qa-tail….yaml'），导致进程未被杀；已按 PID 精确终止并复验 PORT_18088=0，未遗留后台进程/实例/端口。"
+   }
+  }
+ ],
+ "hub_host_baseline": {
+  "repair_18080_pid_before": 239892,
+  "repair_18080_pid_after": 239892,
+  "repair_18080_exe_sha256_before": "1d8cc17e3aeeb5df59026bc3881a6ff8b5a3e308617c931ac1f13d70a9cc230b",
+  "repair_18080_exe_sha256_after": "1d8cc17e3aeeb5df59026bc3881a6ff8b5a3e308617c931ac1f13d70a9cc230b",
+  "primary_8080_pid_before": 1251,
+  "primary_8080_pid_after": 1251,
+  "primary_8080_never_touched": true,
+  "new_systemd_units_last_90min": 0,
+  "qa_systemd_units": 0
+ },
+ "agent_host_204": {
+  "protected_unit": "nodesteer-agent-repair-20260930-101945-native-1.service",
+  "protected_unit_state_before": "active",
+  "protected_unit_state_after": "active",
+  "protected_pid_after": 64185,
+  "primary_agent_service": "active",
+  "owned_children_started": [
+   {
+    "purpose": "第 3 条 AR26 首次安装失败回滚（第一次尝试，注册 token 缺失导致 HELLO 被拒，已中止）",
+    "root": "/var/lib/nodesteer-qa-fixall-7ad88d7fi3",
+    "outcome": "aborted（hello rejected: invalid registration token）",
+    "cleanup": "进程已 kill、root 已 rm、自有节点 facbb1fa-… 已 DELETE 200/GET 404"
+   },
+   {
+    "purpose": "第 3 条 AR26 首次安装失败回滚（正式运行）",
+    "root": "/var/lib/nodesteer-qa-fixall-c2b7238ai3",
+    "outcome": "成功：journal DONE/rolled_back、无 rollback failed、无半安装",
+    "cleanup": "child.stop() signalled=[67019] remaining=[]；root 已 rm（child_root_left=0）"
+   }
+  ],
+  "final_residue": {
+   "child_roots": 0,
+   "owned_units": 0,
+   "owned_bins": 0,
+   "owned_confs": 0,
+   "owned_procs": 0
+  }
+ },
+ "no_leftover": {
+  "background_processes": 0,
+  "listening_ports_added": 0,
+  "browser_sessions": 0,
+  "tunnels": 0
+ }
+}

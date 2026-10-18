@@ -1,0 +1,75 @@
+{
+  "at": "2026-10-12T15:42:51.615356+00:00",
+  "status": "APPROVED_ONE_NATIVE3_RETRY_MULTISTREAM_UI_RUN_AND_TWO_READONLY_VERIFIER_RUNS",
+  "grant_id": "ROOT-SYS34-40-PARAM-UI-20261012-01",
+  "executor": "/root/luna_runtime_cases",
+  "model": "gpt-6-luna",
+  "authority": "repair18080 via own38181 transport",
+  "write_scope": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40",
+  "source_pins": {
+    "retry_multistream.py": "a6aedafdcbd87e1e79223bc3a086a8cb52a6aa99d54c97a321cc452a0de2931c",
+    "readonly_verifier.py": "b02e3d54b447b0d17aaa26e0d8a22821925c759bb361b03906db09efac371a66"
+  },
+  "canonical_cases": [
+    "SYS-34",
+    "SYS-40",
+    "FL-05"
+  ],
+  "scope": "真实ScriptTask一次UI Run，retry2内部3attempt，双流largechunk全内容/seq/tail、monotonic真实retry时间、单qa_value参数→AgentenvSHAmatch、状态/Logs/backlink/audit；依据实际结果判断完整或PARTIAL/FAIL",
+  "budget": {
+    "new_python_scripts": 1,
+    "new_script_tasks": 1,
+    "new_readonly_verifier_tasks": 1,
+    "business_ui_run_posts": 1,
+    "readonly_verifier_runs": 2,
+    "internal_attempts_max": 3,
+    "schedule_app_artifact_node_user_group_changes": 0,
+    "exact_fixture_deletes": 3,
+    "fallback_marker_cleanup_runs_granted": 0
+  },
+  "target": {
+    "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+    "agent_id": "agent-bb005487-7d84-418c-b598-f93d8b0c86a0",
+    "manifest_agent_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1e57db96373add"
+  },
+  "fixtures": {
+    "nonce": "b7e13d4c9a21",
+    "marker_path": "/tmp/nodesteer-qa-sys34-40-b7e13d4c9a21.state",
+    "name_prefix": "qa-sys34-40-b7e13d4c9a21",
+    "script_engine": "按仓库已支持Python engine实际schema",
+    "task_retry": 2,
+    "task_timeout_seconds": 30,
+    "task_parameters": [
+      {
+        "name": "qa_value",
+        "type": "string",
+        "required": true,
+        "secret": false
+      }
+    ],
+    "ui_run_params": {
+      "qa_value": "b7e13d4c9a21"
+    },
+    "verifier_retry": 0,
+    "verifier_timeout_seconds": 30
+  },
+  "Root_actual_source_review": [
+    "marker固定noncepath非env覆盖；只exclusive/noFollow创建，regular/UIDGID/mode0600/nlink1/contentnonce/inode守卫续写与移除",
+    "只读取专用NODESTEER_PARAM_qa_value，输出len/SHA匹配；不读完整env/auth/config",
+    "每attempt真实monotonic_ns，stdout/stderr各71680B带BEGIN/END，fail23/fail23/success0，自移除marker",
+    "readonlyverifier精确Native3祖先proc/disksha/UID0/UnitMainPID/cgroup/configargvpath，配置内容不读，无信号，python3presence/markerabsence",
+    "源SHAs和memorycompile已核，offline_checks仅local不视E2E；实际管理API编排必须依已有真实schema/readback逻辑，异常不重试业务Run"
+  ],
+  "sequence": [
+    "privateownAdminsession登录最多1次，token先私有0600落盘→到ownedorigin→inject；所有agentbrowser指定同session/profile，endpoint检查；不得退出sharedsession",
+    "freshNode身份/status/sync+保护5Node；uniqueTask/Script namesabsence；createverifier→onceRunpreflight真实返回READONLY_PREFLIGHT_OR_POSTCHECK_PASS与markerabsent才createScript+businessTask",
+    "ScriptAPIreadbackcontentSHA+TaskreadbackexactscriptID/parameters/targetNodeID/retry2/timeout30/enabled；参数格式按实际models/现有成功样本",
+    "真实Taskdetail RunUI输入qa_value、clickconfirm唯一POST→exactExecutionID同Node/Task/ScriptRev；记录UI状态、logsfeed/crosslinks/API最终与Audit一致",
+    "每stream按真实logs seq排序后验证attempt1/2/3BEGIN/END/fullbytes/fillcount/uniquechunks+stream；禁止只凭markerfile判断logs完整，UI实际Logs检索3attempt及尾部",
+    "terminal后同verifier第2Run核statefileabsent；如果业务FAIL还留文件，该verifier如实SAFE_STOP，单独Root审cleanup，不擅自删除或追加Run",
+    "全部Executionsterminal→DELETEbusinessTask→Script→verifierTask，exactGET404；保留Execution/Audit，专属logout200/sameToken401/关闭ownbrowser，sharedforward保持"
+  ],
+  "failure_rules": "0业务reRun；未知Exec ID按ownedTaskAPIreconcile而非重复POST；exactcancel最多1次仅原Exec且需terminal再cleanup，cancel不能当业务PASS；marker有残留报告后Root另审，不删陌生文件；未测维度如实留Partial",
+  "protected": "原Units/cgroups/PIDs/config/DB业务数据不改/不重启；NoHost新增0，原部署和备份保护；无source产品/Git/Archive/Userrole写",
+  "handoff": "每阶段 ledger+progress保存 IDs/Execterminal/预算，在自有scope，不写全局；secret/bodyheader/raw长log不可输出，derivedmetadata/hashes足够"
+}

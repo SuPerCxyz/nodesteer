@@ -1,0 +1,147 @@
+{
+  "config": {
+    "argv": [
+      "/usr/bin/node",
+      "/home/superc/code/nodesteer/web/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "e2e/playwright.config.ts",
+      "--reporter=json",
+      "--grep",
+      "GAP-15"
+    ],
+    "configFile": "/home/superc/code/nodesteer/web/e2e/playwright.config.ts",
+    "rootDir": "/home/superc/code/nodesteer/web/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/superc/code/nodesteer/web/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "gap-ui.spec.ts",
+      "file": "gap-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "GAP-15 Root控制Node2物理offline窗口的真实UI Run",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 140000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 110053,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 110000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 110000ms exceeded while waiting on the predicate\n    at /home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts:549:53",
+                    "location": {
+                      "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                      "column": 53,
+                      "line": 549
+                    },
+                    "snippet": "  547 |       try { const data = JSON.parse(await readFile(flag, 'utf8')); return data.node_id === nodeId && data.phase === 'offline-ready' }\n  548 |       catch { return false }\n> 549 |     }, { timeout: 110_000, intervals: [250, 500] }).toBe(true)\n      |                                                     ^\n  550 |     const before = (await apiRequest(page, '/api/nodes/' + nodeId)).body as { status: string }; expect(before.status).toBe('offline')\n  551 |     const response = page.waitForResponse(r => new URL(r.url()).pathname === `/api/tasks/${task.id}/run`), started = Date.now()\n  552 |     await page.getByRole('alertdialog').getByRole('button', { name: /^立即运行$/ }).click()"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                        "column": 53,
+                        "line": 549
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 110000ms exceeded while waiting on the predicate\n\n  547 |       try { const data = JSON.parse(await readFile(flag, 'utf8')); return data.node_id === nodeId && data.phase === 'offline-ready' }\n  548 |       catch { return false }\n> 549 |     }, { timeout: 110_000, intervals: [250, 500] }).toBe(true)\n      |                                                     ^\n  550 |     const before = (await apiRequest(page, '/api/nodes/' + nodeId)).body as { status: string }; expect(before.status).toBe('offline')\n  551 |     const response = page.waitForResponse(r => new URL(r.url()).pathname === `/api/tasks/${task.id}/run`), started = Date.now()\n  552 |     await page.getByRole('alertdialog').getByRole('button', { name: /^立即运行$/ }).click()\n    at /home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts:549:53"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-03T01:15:21.631Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts/gap-ui-GAP-15-Root控制Node2物理offline窗口的真实UI-Run-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                    "column": 53,
+                    "line": 549
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e7bf0fd7afce34bc30c5-9d82bbc9d4910dfeece2",
+          "file": "gap-ui.spec.ts",
+          "line": 536,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-03T01:15:21.042Z",
+    "duration": 110742.334,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

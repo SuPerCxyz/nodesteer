@@ -1,0 +1,66 @@
+{
+  "created_at_utc": "2026-10-10T10:50:09.411495+00:00",
+  "status": "READ_ONLY_PROPOSAL_AWAITING_ROOT_APPROVAL",
+  "canonical": "P03-10",
+  "scope": "One isolated browser session and one exact owned loopback SSH forward; no fixture/resource writes, no source changes, no Hub/Agent outage, no mock routes.",
+  "source_findings": [
+    {
+      "fact": "Dashboard query requests nodes, executions, applications, schedules and tasks via Promise.all.",
+      "ref": "web/src/features/overview/index.tsx:53-61"
+    },
+    {
+      "fact": "Dashboard query auto-refetches every 15 seconds.",
+      "ref": "web/src/features/overview/index.tsx:95-101"
+    },
+    {
+      "fact": "A query error or missing data renders ErrorState; Retry calls query.refetch().",
+      "ref": "web/src/features/overview/index.tsx:151-157"
+    },
+    {
+      "fact": "ErrorState exposes role=alert and Retry button.",
+      "ref": "web/src/features/shared/ui.tsx:156-175"
+    },
+    {
+      "fact": "Sidebar Dashboard route is TanStack Link to `/`; this is not a plain anchor implementation.",
+      "refs": [
+        "web/src/components/layout/data/sidebar-data.ts:26-30",
+        "web/src/components/layout/nav-group.tsx:65-79"
+      ]
+    },
+    {
+      "fact": "Router defaultPreload is intent.",
+      "ref": "web/src/main.tsx:86-91"
+    },
+    {
+      "fact": "QueryClient sets staleTime=10s and production refetchOnWindowFocus; no source reference to explicit networkMode or onlineManager configuration.",
+      "ref": "web/src/main.tsx:32-50"
+    }
+  ],
+  "proposed_steps": [
+    "Open Dashboard normally in the dedicated authenticated session; wait for Dashboard content and record successful GETs for the five query endpoints. Do not test cold navigation again.",
+    "Verify browser remains on same Dashboard route and online; record navigator.onLine true and baseline UI/query data.",
+    "Capture exact owned SSH PID, startticks, argv digest and listener ownership. Confirm SSH -G has no extra forwards and port 38181 is owned only by this session.",
+    "Terminate only that exact owned SSH forward with a process identity guard; leave browser online and keep Dashboard mounted. Confirm only loopback listener disappeared.",
+    "Wait at most one 15-second query interval plus a bounded margin. Capture actual same-origin Dashboard API failures and ErrorState/Retry. If no failure or no alert appears, stop and report PARTIAL.",
+    "Reconfirm 38181 is free and no shared listeners exist, start one exact owned forward, then click the actual Retry button from a fresh agent-browser snapshot ref.",
+    "Capture real GET 200 responses for the five Dashboard query endpoints, restored Dashboard content and no route reload; then logout dedicated token, close session, stop exact forward and verify listener count zero."
+  ],
+  "success_oracle": [
+    "navigator.onLine stayed true throughout the injected tunnel-only fault",
+    "Dashboard remained mounted and URL did not change",
+    "one or more actual Dashboard API GETs failed while tunnel listener was absent",
+    "ErrorState role=alert and Retry action were visible",
+    "after restoring only the owned forward, user Retry produced real successful GETs and Dashboard content"
+  ],
+  "stop_conditions": [
+    "Any PID/startticks/argv or listener ownership mismatch",
+    "Any non-loopback or shared listener appears",
+    "Browser navigates away from Dashboard or session loses authentication",
+    "No actual Dashboard data request fails; no ErrorState after bounded interval",
+    "Cleanup cannot prove exact process ownership"
+  ],
+  "limits": "This tests repair-origin loopback transport failure while navigator.onLine remains true. It does not claim browser offline behavior, global network loss, or a product defect.",
+  "execution_started": false,
+  "new_resources": 0,
+  "browser_or_tunnel_started": false
+}

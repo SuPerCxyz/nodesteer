@@ -1,0 +1,223 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch01",
+  "updated_at_utc": "2026-10-14T08:00:00Z",
+  "status": "COMPLETE_FOR_ROOT_REVIEW",
+  "environment": {
+    "authority": "http://192.168.100.209:18080",
+    "revision": "dddee4f0",
+    "build_label": "dddee4f0-e2e-repair-20261004",
+    "authority_type": "repair",
+    "primary_8080_touched": false,
+    "browser": "agent-browser 0.32.4 (session qaweb1410b01, --allowed-domains 192.168.100.209)"
+  },
+  "server_writes": {
+    "resource_mutations": 0,
+    "node_state_changes": 0,
+    "created_persistent_resources": 0,
+    "deleted_persistent_resources": 0,
+    "auth_audit_rows": "login/auth/local only (inherent to authentication; no resource create/update/delete)"
+  },
+  "cases": [
+    {
+      "case_id": "FL-01",
+      "canonical_before": {
+        "status": "NOT_RUN",
+        "baseline_status": "PASS",
+        "priority": "P0"
+      },
+      "proposed_after": "PASS",
+      "covered_dimensions": [
+        "login (real sign-in form fill + submit)",
+        "dashboard statistics",
+        "nodes View All navigation",
+        "node status consistency UI vs API"
+      ],
+      "remaining_or_limitations": [],
+      "evidence": [
+        "evidence/FL-01-01-signin.png",
+        "evidence/FL-01-02-dashboard.png",
+        "evidence/FL-01-03-agents.png",
+        "evidence/FL-01-agents-table-raw.json",
+        "evidence/FL-01-agents-network.txt",
+        "evidence/FL-01-api-nodes.json",
+        "evidence/FL-01-consistency.json"
+      ],
+      "actual": {
+        "signin_form": "username + password filled via real input events; submitted with the 登录 button",
+        "login_post_http": 200,
+        "redirect_after_login": "/",
+        "dashboard_stats_ui": {
+          "nodes_total": 6,
+          "nodes_online": 5,
+          "nodes_offline": 1,
+          "running": 0,
+          "recent_50_failed": 0,
+          "success_rate": "100%",
+          "health_online": 5,
+          "health_offline": 1,
+          "health_degraded": 0,
+          "sync_synced": 6,
+          "sync_outdated": 0,
+          "sync_error": 0,
+          "applications_health": "1/1",
+          "upcoming_schedules": "暂无调度"
+        },
+        "view_all_clicked": "Agent 健康状态 查看全部 -> /agents",
+        "agents_page": {
+          "route": "/agents",
+          "ui_rows": 6,
+          "ui_status_counts": {"在线": 5, "离线": 1},
+          "api_count": 6,
+          "api_status_counts": {"online": 5, "offline": 1},
+          "hostnames_match": true,
+          "network": "GET /api/nodes 200"
+        },
+        "failure_path": "no side effects; all dashboard/agents traffic is GET; no state changed"
+      }
+    },
+    {
+      "case_id": "P14P15-01",
+      "canonical_before": {
+        "status": "NOT_RUN",
+        "baseline_status": "PASS",
+        "priority": "P0"
+      },
+      "proposed_after": "PASS",
+      "covered_dimensions": [
+        "application LIST create entry (新建)",
+        "application LIST detail entry (row name link)",
+        "application LIST edit entry (row 操作 menu)",
+        "application LIST delete entry (row 操作 menu)",
+        "no deploy button in the application LIST"
+      ],
+      "remaining_or_limitations": [
+        "删除 menu item was observed but intentionally NOT clicked under the zero-write scope (no delete verification)."
+      ],
+      "evidence": [
+        "evidence/P14P15-01-01-applications-list.png",
+        "evidence/P14P15-01-02-application-detail.png",
+        "evidence/P14P15-01-03-edit-entry.png",
+        "evidence/P14P15-01-04-new-entry.png",
+        "evidence/P14P15-01-05-row-actions-menu.png",
+        "evidence/P14P15-01-list-controls-scan.json",
+        "evidence/P14P15-01-api-applications.json",
+        "evidence/P14P15-01-consistency.json"
+      ],
+      "actual": {
+        "list_route": "/applications",
+        "list_row_count": 1,
+        "create_entry": {"label": "新建托管应用", "href": "/applications/new", "clicked": true, "landed_on": "/applications/new"},
+        "detail_entry": {"label": "application name link", "href": "/applications/804e6b14-eb84-4dda-90de-8bcab9586c4c", "clicked": true, "landed_on": "detail/edit page"},
+        "edit_entry": {"label": "编辑", "clicked": true, "landed_on": "/applications/804e6b14-eb84-4dda-90de-8bcab9586c4c"},
+        "delete_entry": {"label": "删除", "present": true, "clicked": false},
+        "deploy_button_in_list": false,
+        "deploy_keyword_occurrences_in_list_dom": 1,
+        "deploy_only_context": "page subtitle '管理托管应用、节点分配和部署状态。' (descriptive text, not a control)",
+        "list_delete_not_clicked_reason": "zero-write scope"
+      }
+    },
+    {
+      "case_id": "P09P11-01",
+      "canonical_before": {
+        "status": "NOT_RUN",
+        "baseline_status": "PARTIAL",
+        "priority": "P1"
+      },
+      "proposed_after": "PARTIAL",
+      "covered_dimensions": [
+        "list render with real GET /api/tasks 200",
+        "empty state",
+        "search control (apply + reset / no-result)",
+        "pagination controls present",
+        "Error/Retry (real GET failure -> Retry -> recovery)"
+      ],
+      "remaining_or_limitations": [
+        "positive search hit requires >=1 owned Task (baseline tasks=0)",
+        "multi-page pagination traversal / page-size change requires >10 owned Tasks",
+        "View: clicking a populated Task row name -> /tasks/{id} requires >=1 owned Task; the list name is an <a> (source web/src/features/tasks/index.tsx:161) but no row exists to click",
+        "These row-dependent dimensions were NOT executed because the batch scope forbids creating persistent resources; Root decision required."
+      ],
+      "evidence": [
+        "evidence/P09P11-01-01-tasks-empty.png",
+        "evidence/P09P11-01-02-tasks-search-none.png",
+        "evidence/P09P11-01-03-tasks-error.png",
+        "evidence/P09P11-01-04-tasks-retry-recovered.png",
+        "evidence/P09P11-01-list-controls-scan.json",
+        "evidence/P09P11-01-api-tasks.json",
+        "evidence/P09P11-01-api-requests.txt",
+        "evidence/P09P11-01-consistency.json"
+      ],
+      "actual": {
+        "route": "/tasks",
+        "api_tasks_count": 0,
+        "ui_rows": 1,
+        "ui_empty_row_text": "没有结果。",
+        "ui_page": "第 1 页，共 0 页",
+        "columns": ["名称", "类型", "目标", "超时", "离线策略", "修订号", "状态"],
+        "search_placeholder": "搜索任务名称、类型或 ID",
+        "search_no_result": {"query": "no-such-task-zzz", "reset_button_appeared": true, "api_recall": false, "note": "client-side filter"},
+        "search_reset_clicked": true,
+        "pagination_buttons": {"跳转到第一页": "disabled", "上一页": "disabled", "下一页": "disabled", "跳转到最后一页": "disabled"},
+        "error_retry": {"aborted_get_failures": 5, "error_text": "Failed to fetch", "retry_button": true, "unroute_then_retry_get_http": 200, "recovered_to_empty": true}
+      }
+    },
+    {
+      "case_id": "P12P13-01",
+      "canonical_before": {
+        "status": "NOT_RUN",
+        "baseline_status": "PARTIAL",
+        "priority": "P0"
+      },
+      "proposed_after": "PARTIAL",
+      "covered_dimensions": [
+        "list page render with real GET /api/schedules 200",
+        "empty state (暂无数据)"
+      ],
+      "remaining_or_limitations": [
+        "search requires rows: with 0 Schedules the ListLayout renders only an EmptyState card and does not render any search box, table, or pagination controls (source web/src/features/catalog/index.tsx:2341-2370)",
+        "pagination requires >10 owned Schedules",
+        "metadata columns 类型/表达式/时区/Owner/Offline/Misfire/Enabled require >=1 owned Schedule; only column definitions exist in source (web/src/features/catalog/index.tsx:1017-1200)",
+        "Not executed because the batch scope forbids creating persistent resources; Root decision required."
+      ],
+      "evidence": [
+        "evidence/P12P13-01-01-schedules-empty.png",
+        "evidence/P12P13-01-02-schedules-error.png",
+        "evidence/P12P13-01-03-schedules-recovered.png",
+        "evidence/P12P13-01-empty-state-scan.json",
+        "evidence/P12P13-01-api-schedules.json",
+        "evidence/P12P13-01-api-audit.json",
+        "evidence/P12P13-01-consistency.json"
+      ],
+      "actual": {
+        "route": "/schedules",
+        "api_schedules_count": 0,
+        "ui_empty_state_text": "暂无数据",
+        "search_inputs_in_empty_state": 0,
+        "tables_in_empty_state": 0,
+        "pagination_buttons_in_empty_state": 0,
+        "error_retry": {"aborted_get_failures": 5, "error_text": "Failed to fetch", "retry_button": true, "unroute_then_retry_get_http": 200, "recovered_to_empty": true}
+      }
+    }
+  ],
+  "counts": {
+    "PASS": 2,
+    "PARTIAL": 2,
+    "FAIL": 0,
+    "NOT_RUN": 0
+  },
+  "final_cleanup_guard": {
+    "evidence": "evidence/final-cleanup-guard.json",
+    "no_leftovers": true,
+    "counts_after_batch": {"nodes": 6, "applications": 1, "tasks": 0, "schedules": 0}
+  },
+  "credential_handling": {
+    "password_or_token_in_evidence": false,
+    "username_in_evidence_files": false,
+    "screenshots": "Screenshots show the app's own admin display name in the UI chrome (profile button); no password or token is present in any screenshot or file.",
+    "signin_technique": "sign-in fields filled via real input events from a piped script so the credentials never entered argv, stdout, or evidence"
+  },
+  "harness_notes": [
+    "agent-browser screenshot with a single path argument is interpreted as a CSS selector; the first attempt wrote to the default temp dir instead of evidence/ (tool-usage error, re-taken correctly, not a product defect).",
+    "No agent-browser/harness failure affected any product conclusion."
+  ]
+}

@@ -1,0 +1,325 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch02",
+  "updated_at_utc": "2026-10-14T08:20:00Z",
+  "status": "COMPLETE_FOR_ROOT_REVIEW",
+  "environment": {
+    "authority": "http://192.168.100.209:18080",
+    "authority_type": "repair",
+    "revision": "dddee4f0",
+    "primary_8080_touched": false,
+    "primary_8080_management_writes": 0,
+    "browser": "agent-browser 0.32.4 (session qaweb1410b02, --allowed-domains 192.168.100.209)",
+    "nonce": "646114",
+    "fixture_prefix": "qa-w1410b02-646114"
+  },
+  "baseline": {
+    "nodes": 6,
+    "applications": 1,
+    "tasks": 0,
+    "schedules": 0,
+    "artifacts": 1,
+    "scripts": 2,
+    "groups": 0,
+    "evidence": "evidence/baseline-snapshot.json"
+  },
+  "server_writes": {
+    "resource_mutations_by_this_batch": 33,
+    "created": { "task": 11, "schedule": 2, "application": 10, "artifact": 10 },
+    "created_caps": { "task_cap": 12, "schedule_cap": 2, "note": "no cap stated for application/artifact" },
+    "deleted": 33,
+    "delete_get404_verified": true,
+    "node_state_changes": 0,
+    "runs_or_executions_triggered": 0,
+    "auth_audit_rows": "login rows only",
+    "audit_evidence": "evidence/audit-my-fixtures.json",
+    "cleanup_evidence": "evidence/cleanup-get404-verification.json",
+    "guard": "final-cleanup-guard.json"
+  },
+  "real_ui_operations": {
+    "logins": 1,
+    "navigations_and_nav_clicks": 12,
+    "form_fills_and_search": 8,
+    "pagination_page_and_pagesize_clicks": 34,
+    "sort_header_clicks": 8,
+    "view_and_row_menu_clicks": 6,
+    "reloads": 6,
+    "harness_request_interceptions": { "route_abort": 1, "unroute": 1 },
+    "notes": "counts are the real browser interactions performed for the six cases; fixture creation/deletion was API-only and is not counted as case operation"
+  },
+  "cases": [
+    {
+      "case_id": "P09P11-01",
+      "title": "列表、搜索、分页、View、空态、Error/Retry。",
+      "canonical_before": { "status": "PARTIAL", "baseline_status": "PARTIAL", "priority": "P1", "remaining_dimensions": ["正向搜索命中（需 ≥1 个 owned Task）。", "多页翻页与 pageSize 切换。", "点击任务行进入 /tasks/{id} 行详情。"] },
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        "正向搜索命中：搜索唯一任务名 → 表格过滤为 1 行（客户端过滤，无新增 /api/tasks 请求）",
+        "搜索重置：重置后恢复 11 行 / 2 页",
+        "多页翻页：11 行 + pageSize 10 → 2 页；下一页/最后一页/第一页/上一页与页码按钮真实切换，末页行数变化（1 行 vs 10 行）",
+        "pageSize 切换与持久化：UI 选择 20 → 11 行 / 1 页；localStorage nodesteer.table.tasks={\"pageSize\":20}；硬刷新后仍为 20；再切回 10 恢复 2 页",
+        "View：点击任务名链接进入 /tasks/{id}，URL 与 GET /api/tasks/{id} 200 及详情内容一致"
+      ],
+      "remaining_or_limitations": [],
+      "evidence": [
+        "evidence/P09P11-01-01-tasks-list-scan.json",
+        "evidence/P09P11-01-02-tasks-page1.png",
+        "evidence/P09P11-01-03-tasks-page1-pagination.json",
+        "evidence/P09P11-01-04-tasks-search-hit.json",
+        "evidence/P09P11-01-05-tasks-search-hit.png",
+        "evidence/P09P11-01-06-search-hit-network.txt",
+        "evidence/P09P11-01-07-tasks-search-reset.json",
+        "evidence/P09P11-01-08-tasks-page2-pagination.json",
+        "evidence/P09P11-01-09-tasks-page2-rows.json",
+        "evidence/P09P11-01-10-tasks-page2.png",
+        "evidence/P09P11-01-11-tasks-first-page.json",
+        "evidence/P09P11-01-12-tasks-last-page.json",
+        "evidence/P09P11-01-13-tasks-pagesize20.json",
+        "evidence/P09P11-01-14-tasks-pagesize-reload.json",
+        "evidence/P09P11-01-15-tasks-pagesize-back10.json",
+        "evidence/P09P11-01-16-task-detail.json",
+        "evidence/P09P11-01-17-task-detail.png",
+        "evidence/P09P11-01-18-api-tasks.json"
+      ],
+      "actual": {
+        "route": "/tasks",
+        "list_rows_total": 11,
+        "columns": ["名称", "类型", "目标", "超时", "离线策略", "修订号", "状态", "操作"],
+        "search": { "placeholder": "搜索任务名称、类型或 ID", "query": "qa-w1410b02-646114-task-07", "rows_after": 1, "server_request_added": false, "reset_button": true, "rows_after_reset": 11 },
+        "pagination": {
+          "page1": { "page_of": "第 1 页，共 2 页", "rows": 10, "first_disabled": true, "prev_disabled": true, "next_disabled": false, "last_disabled": false },
+          "page2": { "page_of": "第 2 页，共 2 页", "rows": 1, "rows_sample": ["qa-w1410b02-646114-task-11"], "first_disabled": false, "prev_disabled": false, "next_disabled": true, "last_disabled": true },
+          "first_button": "跳转到第一页", "last_button": "跳转到最后一页", "page_buttons": ["跳转到第 1 页", "跳转到第 2 页"]
+        },
+        "page_size": { "options": [10, 20, 30, 40, 50], "selected_20": { "rows": 11, "page_of": "第 1 页，共 1 页", "storage": "{\"columnVisibility\":{},\"pageSize\":20}" }, "after_reload": { "rows": 11, "page_of": "第 1 页，共 1 页", "storage_kept": 20 }, "restored": 10 },
+        "view_row_click": { "href": "/tasks/9d929e63-52f9-40d4-8a05-23975bcfdb62", "landed_route": "/tasks/9d929e63-52f9-40d4-8a05-23975bcfdb62", "detail_get": { "path": "/api/tasks/9d929e63-52f9-40d4-8a05-23975bcfdb62", "http": 200 }, "detail_sections": ["概览", "定义", "目标", "执行", "调度"] }
+      }
+    },
+    {
+      "case_id": "P12P13-01",
+      "title": "列表、搜索、分页、类型/表达式/时区/Owner/Offline/Misfire/Enabled。",
+      "canonical_before": { "status": "PARTIAL", "baseline_status": "PARTIAL", "priority": "P0", "remaining_dimensions": ["搜索、分页与 7 个元数据列（类型/表达式/时区/Owner/Offline/Misfire/Enabled）取值需 ≥1 个 owned Schedule；当前 schedules=0 且 ListLayout 零行时不渲染表格与搜索。"] },
+      "proposed_after": "PASS",
+      "confidence": "high for search/columns/pageSize-persistence; medium for multi-page traversal (see limitation)",
+      "covered_dimensions": [
+        "7 个元数据列取值，UI 与 GET /api/schedules 一致：类型 Cron/间隔、表达式 0 3 * * * / 每 3600 秒、时区 Asia/Shanghai/UTC、执行方 Hub/Agent、离线 允许离线/需 Hub 在线、漏触发策略 补跑一次/跳过、状态 已启用/已禁用",
+        "搜索正向命中：搜索 Asia/Shanghai → 1 行；搜索无结果 → 「没有结果。」；重置恢复 2 行",
+        "分页控件：第 1 页/共 1 页，第一页/上一页/下一页/最后一页 全部 disabled（单页）",
+        "pageSize 切换与持久化：UI 选择 20 → localStorage nodesteer.table.schedules={\"pageSize\":20}，硬刷新后保持",
+        "多页翻页（补充证据，见限制）：以持久化 pageSize=1 得到 2 页，真实点击下一页/第一页/最后一页，末页数据变化（Cron 行 ↔ 间隔 行）"
+      ],
+      "remaining_or_limitations": [
+        "本批 Schedule 上限 2 个，而 UI 可选最小 pageSize 为 10：无法用 UI 可达的 pageSize 产生 ≥2 页（需 ≥11 个 Schedule）。多页翻页因此使用「应用自身持久化读取路径」的 pageSize=1 完成（真实按钮点击、真实翻页），该值不可通过 UI 下拉选择，属补充证据，非用户可达配置。",
+        "附带观察（非本用例失败项）：当持久化 pageSize 不在 PAGE_SIZE_OPTIONS 内时，pageSize 下拉触发器显示为空（读路径接受任意正整数，写路径仅 10..50）。"
+      ],
+      "evidence": [
+        "evidence/P12P13-01-01-schedules-scan.json",
+        "evidence/P12P13-01-02-schedules-table.png",
+        "evidence/P12P13-01-03-schedules-search-hit.json",
+        "evidence/P12P13-01-04-schedules-search-none.json",
+        "evidence/P12P13-01-05-schedules-pagination.json",
+        "evidence/P12P13-01-06-schedules-pagesize20.json",
+        "evidence/P12P13-01-07-schedules-pagesize-reload.json",
+        "evidence/P12P13-01-08-schedules-supp-pageSize1-p1.json",
+        "evidence/P12P13-01-09-schedules-supp-page1-rows.json",
+        "evidence/P12P13-01-10-schedules-supp-page2-rows.json",
+        "evidence/P12P13-01-11-schedules-supp-page2-nav.json",
+        "evidence/P12P13-01-12-schedules-supp-first.json",
+        "evidence/P12P13-01-13-schedules-supp-last.json",
+        "evidence/P12P13-01-14-api-schedules.json"
+      ],
+      "actual": {
+        "route": "/schedules",
+        "search_placeholder": "搜索任务、Cron 表达式或时区",
+        "ui_rows": 2,
+        "ui_table": [
+          ["qa-w1410b02-646114-task-01", "Cron", "0 3 * * *", "Asia/Shanghai", "Hub", "允许离线", "补跑一次", "已启用"],
+          ["qa-w1410b02-646114-task-01", "间隔", "每 3600 秒", "UTC", "Agent", "需 Hub 在线", "跳过", "已禁用"]
+        ],
+        "api_records": [
+          { "id": "749cfdfc-0f5b-4976-b268-58095ffb41a8", "type": "cron", "expression": "0 3 * * *", "timezone": "Asia/Shanghai", "execution_owner": "hub", "offline_policy": "allow_offline", "misfire_policy": "run_once", "enabled": true },
+          { "id": "e7f265c1-610b-4dfc-8f7f-d693e4f52629", "type": "interval", "interval_sec": 3600, "timezone": "UTC", "execution_owner": "agent", "offline_policy": "hub_online_required", "misfire_policy": "skip", "enabled": false }
+        ],
+        "search": { "hit_query": "Asia/Shanghai", "hit_rows": 1, "miss_query": "zzz-no-such-schedule", "miss_state": "没有结果。", "reset": true },
+        "pagination_single_page": { "page_of": "第 1 页，共 1 页", "first": "disabled", "prev": "disabled", "next": "disabled", "last": "disabled" },
+        "pagesize": { "selected_20": { "storage": "{\"columnVisibility\":{},\"pageSize\":20}" }, "after_reload": { "pageSize": "20" } },
+        "supplementary_multipage": { "page_size_used": 1, "page1_rows": 1, "page1_row": "Cron/0 3 * * *", "page2_rows": 1, "page2_row": "间隔/每 3600 秒", "first_last_working": true }
+      }
+    },
+    {
+      "case_id": "P09P11-11",
+      "title": "Target label：key/value、匹配节点变化。",
+      "canonical_before": { "status": "NOT_RUN", "baseline_status": "NOT_RUN", "priority": "P1", "remaining_dimensions": "修复版全部适用维度待执行；旧版证据不能计入新版通过。" },
+      "proposed_after": "PARTIAL",
+      "confidence": "high for key/value; high confidence that '匹配节点变化' is blocked by scope (see limitation)",
+      "covered_dimensions": [
+        "key/value：标签目标任务保存后，任务列表「目标」列显示 qa-w1410b02-646114-label=alpha，任务详情「目标」区显示 目标类型=标签 / 标签键 / 标签值",
+        "匹配节点语义（负向，真实）：在全部 6 个节点详情页检查「任务」区块，标签目标任务均不出现（匹配数 0）；对照 node 目标任务 01-09 出现在目标节点 native-1 的「任务」区块 → 标签匹配与 node/group 匹配的判定确实生效"
+      ],
+      "remaining_or_limitations": [
+        "「匹配节点变化」的正向变化未覆盖：基线 6 个节点的 labels 全为空对象（evidence/baseline-snapshot.json），标签目标任务的匹配集恒为 0；要产生正向匹配并观察变化，需要给节点写入 label（POST /nodes/{id}），属本批「节点只读、不得改节点状态」范围之外，需 Root 决定。",
+        "未执行的动作：未改节点状态、未写节点标签，未触发任何运行。"
+      ],
+      "evidence": [
+        "evidence/P09P11-11-01-task10-label-detail.json",
+        "evidence/P09P11-11-02-node-native1-tasks.json",
+        "evidence/P09P11-11-03-node-match-matrix.json",
+        "evidence/P09P11-11-04-native1-structure.json"
+      ],
+      "actual": {
+        "label_task_visible": { "name": "qa-w1410b02-646114-task-10", "target_column": "qa-w1410b02-646114-label=alpha", "detail": { "target_type": "标签", "label_key": "qa-w1410b02-646114-label", "label_value": "alpha" } },
+        "second_label_task": { "name": "qa-w1410b02-646114-task-11", "target_column": "qa-w1410b02-646114-label=beta" },
+        "node_match_matrix": [
+          { "node": "native-1", "owned_task_links": 11, "label_target_matches": 0 },
+          { "node": "native-2", "owned_task_links": 0, "label_target_matches": 0 },
+          { "node": "native-3", "owned_task_links": 0, "label_target_matches": 0 },
+          { "node": "native-4", "owned_task_links": 0, "label_target_matches": 0 },
+          { "node": "offline-child", "owned_task_links": 0, "label_target_matches": 0 },
+          { "node": "host", "owned_task_links": 0, "label_target_matches": 0 }
+        ],
+        "node_labels_baseline": "all 6 nodes have labels={} (evidence/baseline-snapshot.json)"
+      }
+    },
+    {
+      "case_id": "TABLE-APPLICATIONS-PAGE",
+      "title": "applications 首末/前后页/pageSize持久化/末页数据变化",
+      "canonical_before": { "status": "NOT_RUN", "baseline_status": "NOT_RUN", "priority": "P1", "remaining_dimensions": "修复版全部适用维度待执行；旧版证据不能计入新版通过。" },
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        "首/末/前/后页：11 行 + pageSize 10 → 2 页；第一页/上一页 disabled，下一页/最后一页可用；翻到第 2 页后方向反转；第一页/最后一页按钮与页码按钮真实跳转",
+        "末页数据变化：第 1 页 10 行（末行 app-09），第 2 页 1 行（app-10），内容确实不同",
+        "pageSize 持久化：UI 选择 20 → 11 行 / 1 页；localStorage nodesteer.table.applications={\"pageSize\":20}；硬刷新后仍为 20；再切回 10 恢复 2 页"
+      ],
+      "remaining_or_limitations": [],
+      "evidence": [
+        "evidence/TABLE-APPLICATIONS-PAGE-01-list-scan.json",
+        "evidence/TABLE-APPLICATIONS-PAGE-02-page1.png",
+        "evidence/TABLE-APPLICATIONS-PAGE-03-page1-nav.json",
+        "evidence/TABLE-APPLICATIONS-PAGE-04-page2-rows.json",
+        "evidence/TABLE-APPLICATIONS-PAGE-05-page2-nav.json",
+        "evidence/TABLE-APPLICATIONS-PAGE-06-page2.png",
+        "evidence/TABLE-APPLICATIONS-PAGE-07-after-first.json",
+        "evidence/TABLE-APPLICATIONS-PAGE-08-after-last.json",
+        "evidence/TABLE-APPLICATIONS-PAGE-09-pagesize20.json",
+        "evidence/TABLE-APPLICATIONS-PAGE-10-pagesize-reload.json",
+        "evidence/TABLE-APPLICATIONS-PAGE-11-pagesize-back10.json",
+        "evidence/TABLE-APPLICATIONS-PAGE-12-api-applications.json"
+      ],
+      "actual": {
+        "route": "/applications",
+        "columns": ["名称", "版本", "二进制", "Unit", "修订号", "操作"],
+        "total_rows": 11,
+        "page1": { "page_of": "第 1 页，共 2 页", "rows": 10, "first_disabled": true, "prev_disabled": true, "next_disabled": false, "last_disabled": false, "last_row": "qa-w1410b02-646114-app-09" },
+        "page2": { "page_of": "第 2 页，共 2 页", "rows": 1, "row": "qa-w1410b02-646114-app-10", "next_disabled": true, "last_disabled": true, "prev_disabled": false, "first_disabled": false },
+        "first_last": { "after_first": { "page_of": "第 1 页，共 2 页", "rows": 10 }, "after_last": { "page_of": "第 2 页，共 2 页", "rows": 1 } },
+        "page_size": { "selected_20": { "rows": 11, "page_of": "第 1 页，共 1 页", "storage": "{\"columnVisibility\":{},\"pageSize\":20}" }, "after_reload": { "rows": 11, "storage_kept": 20 }, "restored": 10 }
+      }
+    },
+    {
+      "case_id": "TABLE-APPLICATIONS-SORT",
+      "title": "applications 允许列升序/降序/清排序",
+      "canonical_before": { "status": "NOT_RUN", "baseline_status": "NOT_RUN", "priority": "P1", "remaining_dimensions": "修复版全部适用维度待执行；旧版证据不算新版通过。" },
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        "版本列：升序（v1,v01..v10）→ aria-sort=ascending；降序（v10..v01,v1）→ aria-sort=descending；再次点击清除排序 → aria-sort 移除并回到原始顺序",
+        "名称列：升序 → aria-sort=ascending；降序（app-10 在前）→ aria-sort=descending；清除排序 → aria-sort 移除、恢复默认顺序",
+        "排序为真实数据重排（比较点击前后完整行序数组），并非仅图标变化",
+        "可排序列覆盖：名称/版本/二进制/Unit/修订号 表头均为可排序按钮（aria-label 形如「列名: 升序/降序/清除排序」）"
+      ],
+      "remaining_or_limitations": [],
+      "evidence": [
+        "evidence/TABLE-APPLICATIONS-SORT-01-unsorted.json",
+        "evidence/TABLE-APPLICATIONS-SORT-02-version-asc.json",
+        "evidence/TABLE-APPLICATIONS-SORT-03-version-desc.json",
+        "evidence/TABLE-APPLICATIONS-SORT-04-version-cleared.json",
+        "evidence/TABLE-APPLICATIONS-SORT-05-name-asc.json",
+        "evidence/TABLE-APPLICATIONS-SORT-06-name-desc.json",
+        "evidence/TABLE-APPLICATIONS-SORT-07-name-cleared.json",
+        "evidence/TABLE-APPLICATIONS-SORT-08-version-asc.png",
+        "evidence/TABLE-APPLICATIONS-SORT-09-state-check.json",
+        "evidence/TABLE-APPLICATIONS-SORT-10-cleared-final.json",
+        "evidence/TABLE-APPLICATIONS-SORT-11-cleared.png",
+        "evidence/TABLE-APPLICATIONS-SORT-12-cleared-final.json"
+      ],
+      "actual": {
+        "version_asc": { "aria_sort": "ascending", "order": ["v1", "v01", "v02", "v03", "v04", "v05", "v06", "v07", "v08", "v09", "v10"], "next_action": "版本: 降序" },
+        "version_desc": { "aria_sort": "descending", "order": ["v10", "v09", "v08", "v07", "v06", "v05", "v04", "v03", "v02", "v1", "v01"], "next_action": "版本: 清除排序" },
+        "version_cleared": { "aria_sort": null, "order": ["v1", "v10", "v09", "v08", "v07", "v06", "v05", "v04", "v03", "v02", "v01"] },
+        "name_asc": { "aria_sort": "ascending", "first_three": ["qa-repair-20260930-101945-app-async-live-6a32f", "qa-w1410b02-646114-app-01", "qa-w1410b02-646114-app-02"] },
+        "name_desc": { "aria_sort": "descending", "first_three": ["qa-w1410b02-646114-app-10", "qa-w1410b02-646114-app-09", "qa-w1410b02-646114-app-08"] },
+        "name_cleared": { "aria_sort": null, "first_three": ["qa-repair-20260930-101945-app-async-live-6a32f", "qa-w1410b02-646114-app-01", "qa-w1410b02-646114-app-02"] }
+      }
+    },
+    {
+      "case_id": "P16-01",
+      "title": "列表、搜索、分页、View、空态、Error/Retry。",
+      "canonical_before": { "status": "NOT_RUN", "baseline_status": "NOT_RUN", "priority": "P1", "remaining_dimensions": "修复版全部适用维度待执行；旧版证据不能计入新版通过。" },
+      "proposed_after": "PASS",
+      "confidence": "high for list/search/pagination/View/Error-Retry; medium for the true-empty ListLayout state (see limitation)",
+      "covered_dimensions": [
+        "列表：/artifacts 真实 GET /api/artifacts 200 渲染 8 列表格（名称/版本/架构/文件名/大小/SHA256/使用情况/操作），11 行分 2 页",
+        "搜索：正向命中（唯一制品名 → 1 行）；无结果 → 「没有结果。」；重置恢复 11 行",
+        "分页：第 1 页共 2 页、末页 1 行（基线制品），first/last/prev/next 与页码按钮真实可用并可逆；pageSize 20 → 1 页且 localStorage 持久化、硬刷新保持、再切回 10",
+        "View：行「操作」菜单提供 下载 / 创建应用 / 删除；工具栏「视图」可切换列可见性（取消 SHA256 → 表头消失并写入 nodesteer.table.artifacts.columnVisibility，重新勾选恢复）",
+        "空态（可达形态）：搜索无结果时的空行「没有结果。」",
+        "Error/Retry：真实中断 GET /api/artifacts → 错误态「Failed to fetch」+ 重试按钮；恢复请求后点击重试 → 11 行表格恢复"
+      ],
+      "remaining_or_limitations": [
+        "ListLayout 的真实空列表态（data.length=0 的「暂无数据」卡片）没有覆盖：需要 /api/artifacts 返回空数组，而基线存在 1 个非本批所有的制品（禁止删除），本批无法在不越界的前提下构造该状态。可核查的空态仅覆盖到搜索无结果行。",
+        "「View」在制品列表没有详情路由（名称是纯文本，无 /artifacts/{id} 链接），故按工具栏列可见性与行操作菜单两个真实入口验证。"
+      ],
+      "evidence": [
+        "evidence/P16-01-01-artifacts-scan.json",
+        "evidence/P16-01-02-artifacts-list.png",
+        "evidence/P16-01-03-artifacts-search-hit.json",
+        "evidence/P16-01-04-artifacts-search-none.json",
+        "evidence/P16-01-05-artifacts-pagination-p1.json",
+        "evidence/P16-01-06-artifacts-page2.json",
+        "evidence/P16-01-07-artifacts-page2-nav.json",
+        "evidence/P16-01-08-artifacts-page2.png",
+        "evidence/P16-01-09-artifacts-after-first.json",
+        "evidence/P16-01-10-artifacts-after-last.json",
+        "evidence/P16-01-11-artifacts-pagesize20.json",
+        "evidence/P16-01-12-artifacts-pagesize-reload.json",
+        "evidence/P16-01-13-artifacts-view-column-hidden.json",
+        "evidence/P16-01-14-artifacts-view-restored.json",
+        "evidence/P16-01-15-artifacts-row-actions.png",
+        "evidence/P16-01-16-artifacts-error.json",
+        "evidence/P16-01-17-artifacts-error.png",
+        "evidence/P16-01-18-artifacts-retry-recovered.json",
+        "evidence/P16-01-19-artifacts-pagesize-back10.json",
+        "evidence/P16-01-20-artifacts-final.png",
+        "evidence/P16-01-21-api-artifacts.json"
+      ],
+      "actual": {
+        "route": "/artifacts",
+        "search_placeholder": "搜索名称、版本、文件名或 SHA256",
+        "columns": ["名称", "版本", "架构", "文件名", "大小", "SHA256", "使用情况", "操作"],
+        "search": { "hit_query": "qa-w1410b02-646114-art-05", "hit_rows": 1, "miss_state": "没有结果。", "reset": true },
+        "pagination": { "page1": { "page_of": "第 1 页，共 2 页", "rows": 10, "first_disabled": true, "prev_disabled": true }, "page2": { "page_of": "第 2 页，共 2 页", "rows": 1, "row": "qa-repair-20260930-101945-app-async-deploy-v1", "next_disabled": true, "last_disabled": true }, "first_last_working": true },
+        "page_size": { "selected_20": { "rows": 11, "page_of": "第 1 页，共 1 页", "storage": "{\"columnVisibility\":{},\"pageSize\":20}" }, "after_reload": { "rows": 11, "storage_kept": 20 }, "restored": 10 },
+        "view": { "column_visibility_toggle": { "hid": "SHA256", "headers_after_hide": ["名称", "版本", "架构", "文件名", "大小", "使用情况", ""], "storage": "{\"columnVisibility\":{\"sha256\":false},\"pageSize\":20}", "restored": true }, "row_actions_menu": ["下载", "创建应用", "删除"], "row_action_buttons": 11 },
+        "error_retry": { "mechanism": "agent-browser network route **/api/artifacts --abort then reload", "aborted_fetch_attempts": 8, "error_text": "Failed to fetch", "retry_button": true, "after_unroute_retry": { "rows": 11, "headers": ["名称", "版本", "架构", "文件名", "大小", "SHA256", "使用情况", ""] } }
+      }
+    }
+  ],
+  "counts": { "PASS": 5, "PARTIAL": 1, "FAIL": 0, "NOT_RUN": 0 },
+  "observations": [
+    "非本用例失败项：当持久化 pageSize 不在 PAGE_SIZE_OPTIONS(10..50) 时，分页选择器触发器显示空白（读路径接受任意正整数）。见 evidence/P12P13-01-08-schedules-supp-pageSize1-p1.json。",
+    "任务列表搜索为客户端过滤（无新增 /api/tasks 请求）；schedules/applications/artifacts 列表均为一次性 GET 全部 + 客户端分页/搜索。"
+  ],
+  "credential_handling": {
+    "password_or_token_in_evidence": false,
+    "username_in_evidence_files": false,
+    "signin_technique": "sign-in fields filled via real input events from a piped script; credentials never entered argv/stdout/evidence",
+    "screenshots": "screenshots contain only the app's own admin display name in the UI chrome; no password or token"
+  },
+  "harness_notes": [
+    "agent-browser `screenshot <path>` treats a single argument as a CSS selector and writes to the default temp dir; two positional args (selector + path) were used for every captured screenshot (tool-usage, not a product defect).",
+    "A sticky page header (`h1`) covered the table header buttons after changing page size; `scrollintoview` + CSS selector resolved it (tool-usage, not a product defect).",
+    "One `find role option click --name \"10\"` is name-substring based; result was verified by re-scanning the rendered page size (10).",
+    "No agent-browser/harness error affected any product conclusion."
+  ]
+}

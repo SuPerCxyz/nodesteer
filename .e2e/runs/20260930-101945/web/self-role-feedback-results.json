@@ -1,0 +1,147 @@
+{
+  "config": {
+    "argv": [
+      "/usr/bin/node",
+      "/home/superc/code/nodesteer/web/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "e2e/playwright.config.ts",
+      "--reporter=json",
+      "--grep",
+      "SAFE-24"
+    ],
+    "configFile": "/home/superc/code/nodesteer/web/e2e/playwright.config.ts",
+    "rootDir": "/home/superc/code/nodesteer/web/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/superc/code/nodesteer/web/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "safe-ui.spec.ts",
+      "file": "safe-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "SAFE-24 仅新QA Admin自身UI降为Viewer与旧会话权限收敛",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 8266,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n    at /home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts:742:97",
+                    "location": {
+                      "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                      "column": 97,
+                      "line": 742
+                    },
+                    "snippet": "  740 |     const me=await apiRequest(page,'/api/me'),list=await apiRequest(page,'/api/users')\n  741 |     const write=await apiRequest(page,'/api/tasks/00000000-0000-0000-0000-000000000000',{method:'PUT',data:{}})\n> 742 |     await expect.soft.poll(()=>page.getByRole('button',{name:/^新建用户$/}).count(),{timeout:5000}).toBe(0)\n      |                                                                                                 ^\n  743 |     const residual=await page.getByRole('button',{name:/^新建用户$/}).count();let deniedCreate:number|null=null\n  744 |     if(residual) {\n  745 |       await page.getByRole('button',{name:/^新建用户$/}).click();await page.getByLabel(/^用户名$/).fill(testName('self-denied-user'))"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                        "column": 97,
+                        "line": 742
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  740 |     const me=await apiRequest(page,'/api/me'),list=await apiRequest(page,'/api/users')\n  741 |     const write=await apiRequest(page,'/api/tasks/00000000-0000-0000-0000-000000000000',{method:'PUT',data:{}})\n> 742 |     await expect.soft.poll(()=>page.getByRole('button',{name:/^新建用户$/}).count(),{timeout:5000}).toBe(0)\n      |                                                                                                 ^\n  743 |     const residual=await page.getByRole('button',{name:/^新建用户$/}).count();let deniedCreate:number|null=null\n  744 |     if(residual) {\n  745 |       await page.getByRole('button',{name:/^新建用户$/}).click();await page.getByLabel(/^用户名$/).fill(testName('self-denied-user'))\n    at /home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts:742:97"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-01T11:20:56.927Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts/safe-ui-SAFE-24-仅新QA-Admin自身UI降为Viewer与旧会话权限收敛-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                    "column": 97,
+                    "line": 742
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "ddd7e7cf69376006a28d-e191b9b3984115407409",
+          "file": "safe-ui.spec.ts",
+          "line": 723,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-01T11:20:56.298Z",
+    "duration": 9015.165,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

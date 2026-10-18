@@ -1,0 +1,39 @@
+{
+  "reviewed_at": "2026-10-10T11:24:26.402446+00:00",
+  "decision": "APPROVED_BOUNDED_REPLACEMENT_IN_EXISTING_TEST_SCOPE",
+  "reason": "Attempt03 failed before arm/UI Run because page readiness was read once; bounded async readiness now records actual route/Task GET/UI state. Physical inspector confirmed real schema/identity and empty controls.",
+  "inspection": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/owner-inspection/result.json",
+  "readiness": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/readiness-diagnosis.json",
+  "source_sha256": {
+    "arm_control.py": "1163ba2737c3dd7c434c0c44918117675509aae5338037b259e93a4d4a5bdd3c",
+    "watchdog.py": "cadfa357ce19783824825589755f398590399e99cc8667df2bff3a4793ef0480",
+    "controller.py": "203b18e6c7bdfb1573259247a31d0e0559496658cd473931d3d3828e7a80c84b",
+    "ui_driver.py": "5e3f408f9757629be2f9366bbb09b65d4635267b2cbdbc6589da4d49a8bf88c4",
+    "ui-network-observer.js": "db0d2d0bf557f13425424faade3e0a39ef20a8ab7e097748f26239ddf4483014"
+  },
+  "owner_manifest_sha256": "c8142503fc467066265b67a1db641ec3274119961f65cdadcd92f2ba26a2e2ce",
+  "budgets_total": {
+    "child_tasks_created_max": 4,
+    "child_tasks_created_used": 3,
+    "parent_arm_helpers_max": 3,
+    "parent_arm_helpers_used": 2,
+    "independent_readonly_inspector_tasks_used": 1,
+    "child_real_UI_Run_max": 1,
+    "child_real_UI_Run_used": 0
+  },
+  "hold_limit_seconds": 8,
+  "fixture_reuse": "Keep the new exactly-owned idle Task through UI preparation diagnostics; do not automatically delete/recreate on harness errors. No Run until actual UI_READY and fresh guards.",
+  "required_oracles": [
+    "exact task/schedule/inflight + owner schema/marker/process/Unit fresh guards",
+    "independent watchdog READY before hold",
+    "single actual UI Run and same execution ID PENDING/RUNNING/terminal + marker and same document",
+    "finally exact task404, dedicated logout200/same-token401/browser profile owner cleanup, controls released readback"
+  ],
+  "forbidden": [
+    "primary management writes",
+    "product source changes",
+    "original Unit/cgroup restart or signals",
+    "blind retry/extra Task/Run",
+    "remove core child root/DB/config/processes"
+  ]
+}

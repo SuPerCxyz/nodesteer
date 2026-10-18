@@ -1,0 +1,58 @@
+{
+  "case": "P19-02",
+  "assertion": "登录、创建/修改/删除 Script、Task、Schedule、Artifact、Application（按用户角色权限验证）。",
+  "authority": "http://192.168.100.209:18081 (isolated disposable instance)",
+  "roles_verified": ["administrator", "operator", "viewer"],
+  "login": "all three roles logged in through the Web UI; /api/me returned the expected Role (evidence/P1902-00-login-all-roles.json)",
+  "admin_crud": "create/delete driven through the real UI for all five resources; modify driven through the UI for Script (r1->r2), Task (r1->r2), Schedule (r1->r2) and Application (r1->r2). Artifact has no update endpoint/API (delete + re-upload only) (evidence/P1902-17-admin-crud-summary.json + evidence/P1902-18-mutation-requests.txt)",
+  "rbac_matrix": {
+    "operator": {
+      "read_all_resources": 200,
+      "script_create/update/delete": 403,
+      "task_create/update/delete": 403,
+      "schedule_create/update/delete": 403,
+      "artifact_upload/delete": 403,
+      "application_create/update/delete": 403,
+      "task_run": 400,
+      "task_run_meaning": "permission granted (canRun) -> request reached the run path and failed only with 'no target nodes' on a node-less instance; viewer gets 403"
+    },
+    "viewer": {
+      "read_all_resources": 200,
+      "script/task/schedule/artifact/application create/update/delete": 403,
+      "task_run": 403
+    }
+  },
+  "ui_controls": {
+    "operator": {
+      "scripts/tasks/schedules/artifacts/applications pages": "no create link (/new), no upload input, no edit/delete menus in rows",
+      "tasks page": "run control present (link /tasks/{id}/run); 0 row more-menus; run action reaches backend (toast 'no target nodes')"
+    },
+    "viewer": {
+      "scripts/tasks/schedules/artifacts/applications pages": "no create link, no upload input, no row action controls",
+      "tasks page": "no run control, empty actions cell"
+    }
+  },
+  "no_side_effects": {
+    "method": "snapshot GET /api/{scripts,tasks,schedules,artifacts,applications} before/after all denied operator+viewer attempts",
+    "result": "all five collections byte-identical (UNCHANGED)"
+  },
+  "limitations": [
+    "This isolated instance has no enrolled agents, so Task/Schedule creation used a label target on the real UI form; 'run' cannot produce real executions (no target nodes).",
+    "Artifact has no update API/endpoint by design, so artifact 'modify' is not applicable; create (upload) and delete were exercised.",
+    "Application 'modify' exercised via the UI edit form; there is no separate revert/archive action on this build."
+  ],
+  "evidence": [
+    "evidence/P1902-00-login-all-roles.json",
+    "evidence/P1902-14-rbac-matrix.json",
+    "evidence/P1902-17-admin-crud-summary.json",
+    "evidence/P1902-18-mutation-requests.txt",
+    "evidence/P1902-ui-{operator,viewer}-{scripts,tasks,schedules,artifacts,applications}.json",
+    "evidence/P1902-02-admin-script-created.png",
+    "evidence/P1902-03-admin-script-edited.png",
+    "evidence/P1902-04-admin-application-created.png",
+    "evidence/P1902-05-admin-artifact-uploaded.png",
+    "evidence/P1902-06-admin-task-created.png",
+    "evidence/P1902-08-admin-schedule-created.png",
+    "evidence/P1902-16-operator-run-result.png"
+  ]
+}

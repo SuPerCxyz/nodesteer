@@ -1,0 +1,179 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch08",
+  "owner": "web",
+  "updated_at_utc": "2026-10-14T10:40:00Z",
+  "status": "COMPLETE_FOR_ROOT_REVIEW",
+  "environment": {
+    "authority": "http://192.168.100.209:18080",
+    "authority_type": "repair",
+    "primary_8080_touched": false,
+    "revision": "dddee4f0",
+    "build_label": "dddee4f0-e2e-repair-20261004",
+    "node_scope": "native-4 only (03cb50cc-eab6-4afd-bbe0-f73c4e326773 / 192.168.100.247)",
+    "browser": "agent-browser 0.32.4, session qaweb1410b08, --allowed-domains 192.168.100.209",
+    "nonce": "4a7fd1c2",
+    "naming_prefix": "qa-w1410b08-4a7fd1c2"
+  },
+  "server_writes": {
+    "node_enrollments": 1,
+    "node_status_overrides": 2,
+    "node_deletes": 1,
+    "script_creates": 2,
+    "script_deletes": 2,
+    "task_creates": 3,
+    "task_deletes": 3,
+    "task_runs": 3,
+    "artifact_uploads": 1,
+    "artifact_deletes": 1,
+    "application_creates": 1,
+    "application_updates": 1,
+    "application_deletes": 1,
+    "application_deploy_attempts": 4,
+    "deploy_attempt_outcome": "all 4 rejected HTTP 400 before any Execution row was created",
+    "protected_node_state_changes": 0,
+    "hub_or_protected_agent_restarts": 0,
+    "users_groups_touched": 0,
+    "product_source_changes": 0,
+    "git_operations": 0
+  },
+  "cases": [
+    {
+      "case_id": "P07_P08-10",
+      "title": "删除确认框取消/确认、Tombstone、Agent 本地删除但历史 Execution 保留。",
+      "owner": "web",
+      "priority": "P0",
+      "canonical_before": {
+        "status": "NOT_RUN",
+        "baseline_status": "PASS",
+        "remaining_dimensions": "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+      },
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        "确认框取消（任务）：dialog role=alertdialog，点 取消 关闭且零 HTTP 请求，任务仍在列表/GET 200",
+        "确认框确认（任务）：点 删除 -> DELETE 200 + 成功 toast「任务已删除」+ 行消失 + GET 404",
+        "确认框取消（脚本）：同上，零 HTTP 请求，脚本仍在/GET 200",
+        "确认框确认（脚本）：DELETE 200 + 成功 toast「已删除」+ 行消失 + GET 404",
+        "引用守卫（反向路径）：脚本仍被任务引用时点 删除 -> DELETE 409 + 明确错误 toast，脚本状态零变化",
+        "Tombstone：Hub tombstones 表实测写入 task r1963 / script r1964",
+        "Agent 本地删除：native-4 受保护 Agent 的 state.db 中 fixture script/task 行由 1 -> 0",
+        "历史 Execution 保留：execution 4fa1aef7 GET 200，task_id/script_id 仍指向已删除定义，stdout 命中 marker；执行详情页仍可打开"
+      ],
+      "actual": {
+        "fixture": "业务脚本 qa-w1410b08-4a7fd1c2-script 通过真实 UI「新建脚本」表单创建（POST /api/scripts 200，r1）；其 Task 通过 API 创建（target=native-4），首次运行经 UI「立即运行」确认框触发",
+        "execution": "POST /api/tasks/{id}/run 200 -> execution 4fa1aef7-c92e-45ac-9897-153c028a46c6（node native-4，SUCCESS，stdout qa-w1410b08-4a7fd1c2-ok），并在 native-4 上落盘 /tmp/qa-w1410b08-4a7fd1c2-marker.txt 作为物理证据",
+        "delete_cancel": "任务与脚本各一次取消：确认框 取消 后 dialog 关闭，network requests 中 DELETE 计数 0，GET 仍 200",
+        "delete_confirm": "任务 DELETE 200、脚本 DELETE 200，均伴随成功 toast，列表行移除，GET 均 404",
+        "reference_guard": "先尝试删除仍被 Task 引用的脚本：DELETE 409，UI toast「无法删除该脚本：它仍被任务（d5d24025-…）引用，请先解除引用后重试。」，脚本无副作用",
+        "tombstone": "对 repair Hub 的 hub.db 做只读快照查询（复制到 0700 临时目录、query_only 连接、仅 SELECT 本次两个 object_id、用毕删除），实得 task rev 1963 / script rev 1964 两条 tombstones 行",
+        "agent_local_delete": "在 native-4 上以真实 NodeSteer Python Script Task 运行只读探针（fail-closed、query_only、校验 agent 祖先 PID/exe SHA/cgroup/unit MainPID）：pre 阶段 scripts=1 tasks=1；post 阶段 scripts=0 tasks=0，local_revision 1971 >= hub 1970",
+        "history_retained": "同一探针 post 阶段读到该 execution 行仍在（id/task_id/script_id/node_id 全匹配、status=SUCCESS）；Hub API GET 200；执行详情页渲染正常（任务显示「未知任务」，节点链接保留）"
+      },
+      "evidence": [
+        "evidence/ui-operations.json",
+        "evidence/ui-s01-new-script-filled.png",
+        "evidence/ui-s02-script-rowmenu.png",
+        "evidence/ui-s03-script-delete-confirm-dialog.png",
+        "evidence/ui-s04-script-after-cancel.png",
+        "evidence/ui-t01-task-delete-confirm-dialog.png",
+        "evidence/ui-x01-execution-detail-after-delete.png",
+        "evidence/phase5-first-execution.json",
+        "evidence/phase6a-script-delete-blocked.json",
+        "evidence/phase6-get404-and-history.json",
+        "evidence/phase-probe-pre.json",
+        "evidence/phase-probe-post.json",
+        "evidence/phase10b-hub-tombstones.json"
+      ],
+      "remaining_or_limitations": [
+        "业务 Task 由 API 创建（本用例考察删除确认/Tombstone/本地删除/历史保留，创建路径已由 P07_P08-07/08/09 覆盖）；业务 Script 由 UI 创建。",
+        "Agent 本地删除通过「在 native-4 上运行只读探针任务」验证（与既往 sys09 同法），未直接对受保护 Agent 的 state.db 做离线修改。",
+        "Tombstone 直读需要只读快照 repair Hub 的 hub.db（复制到节点临时目录后查询并删除）；未导出任何原始行或凭据。"
+      ]
+    },
+    {
+      "case_id": "P14P15-17",
+      "title": "Artifact 不存在、节点离线、Capability 缺失、Agent 不可达。",
+      "owner": "web",
+      "priority": "P1",
+      "canonical_before": {
+        "status": "NOT_RUN",
+        "baseline_status": "PARTIAL",
+        "remaining_dimensions": "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+      },
+      "proposed_after": "PASS",
+      "confidence": "medium-high",
+      "covered_dimensions": [
+        "节点离线：应用编辑器勾选离线目标 -> 部署 -> HTTP 400 + 页面错误「node … is not online (status=offline)」",
+        "Capability 缺失：目标节点为 docker 形态（application_deploy=false）-> 部署 -> HTTP 400 + 页面错误「node … lacks capability application_deploy」",
+        "Agent 不可达：节点记录为 online 但无活跃 Agent 会话 -> 部署 -> HTTP 400 + 页面错误「agent offline」（Hub ErrAgentOffline 分支）",
+        "Artifact 不存在：应用引用悬空发布包 -> 部署 -> HTTP 400 + 页面错误「artifact 00000000-… not found」",
+        "四类失败均未产生 Execution 行（无半成品副作用），UI 错误就地呈现于应用编辑页 ErrorState",
+        "附加反向路径：被应用引用的发布包删除被拒（409 + 明确 toast）"
+      ],
+      "actual": {
+        "target_preparation": "自建 owned child Agent 在 native-4 上以 deployment_mode=docker 纳管：capabilities 实测 application_deploy=false / host_filesystem=false / managed_systemd=false / agent_upgrade=false，用于 Capability 缺失维度",
+        "offline": "停掉自建 child 进程并等节点转 offline，勾选该节点部署 -> POST /api/applications/{id}/deploy 400，页面显示「node 9610a99e-… is not online (status=offline)」",
+        "capability": "child 在线（docker 形态）时部署 -> 400，「node 9610a99e-… lacks capability application_deploy」",
+        "agent_unreachable": "把同一 owned child 记录改回 deployment_mode=native（capability 门禁通过）后停进程，再用节点行操作「设为在线」把节点记录置为 online（无活跃会话）-> 部署 -> 400，「agent offline」",
+        "artifact_missing": "发布包删除因被应用引用而被拒（409，见 ui-operations seq 12），故改为构造悬空引用：API PUT /api/applications/{id} 将 artifact_id 置为 00000000-0000-0000-0000-000000000000（GET 复验 r2）-> 勾选 native-4 部署 -> 400，「artifact 00000000-0000-0000-0000-000000000000 not found」",
+        "no_side_effects": "4 次失败部署后 /api/executions 中不存在属于该 application 或 native-4 的新 Execution 行；应用健康状态/分配未被写入"
+      },
+      "evidence": [
+        "evidence/phase1-owned-child.json",
+        "evidence/phase2-child-stopped.json",
+        "evidence/phase3-child-forced-online.json",
+        "evidence/phase11-child-reconfigure-native.json",
+        "evidence/phase7-artifact-delete-blocked.json",
+        "evidence/phase8-app-stale-artifact.json",
+        "evidence/ui-p01-capability-missing.png",
+        "evidence/ui-p02-node-offline.png",
+        "evidence/ui-p03-node-forced-online.png",
+        "evidence/ui-p05-agent-unreachable-err.png",
+        "evidence/ui-p06-artifact-missing.png",
+        "evidence/ui-operations.json"
+      ],
+      "remaining_or_limitations": [
+        "「Artifact 不存在」不能由 UI 常规操作制造：删除被应用引用的发布包被产品守卫拒绝（409），因此该分支改用悬空 artifact_id 引用触发。若 root 要求“必须由纯 UI 流程可达”，本维度应降为 PARTIAL；服务端与 UI 对该错误的处理本身已实测正确。",
+        "「Agent 不可达」依赖管理员「设为在线」把无会话节点置为 online（这是产品既有节点行操作），以确定性进入 Hub ErrAgentOffline 分支，而非依赖断连竞态。",
+        "「Capability 缺失」使用自建 docker 形态 child 节点制造缺失能力；真实 four native 节点均具备全部能力，无法自然触发。",
+        "未做真实 deploy 到生产形态：4 次部署尝试全部在准入校验阶段被拒，未下发任何部署指令。"
+      ]
+    }
+  ],
+  "budget_deviations": [
+    {
+      "item": "owned Task 创建次数",
+      "budget": "<=2",
+      "actual": 3,
+      "detail": "开始用 Task ×1 后，只读探针需要在 native-4 上真实执行两次（pre/post），各创建并立即删除 1 个瞬时 probe Task。",
+      "residual": "0（3 个任务全部已删除并 GET404）"
+    }
+  ],
+  "harness_errors": [
+    {
+      "stage": "P14P15-17 / Agent 不可达 首次尝试",
+      "observation": "用 docker 形态 child 作为“无会话但记录 online”的目标时，部署先命中 Capability 门禁（400 lacks capability），无法到达 ErrAgentOffline。",
+      "resolution": "把同一 owned child 记录重配为 native 形态后再停进程并「设为在线」，成功命中 400 agent offline。已保留成功证据；首次失败尝试未影响状态。"
+    },
+    {
+      "stage": "P07_P08-10 证据可读性",
+      "observation": "受保护 repair Hub 宿主机无 sqlite3 CLI。",
+      "resolution": "改用宿主机 python3 的 sqlite3 模块对 hub.db 只读副本查询，查询后立即删除临时目录（tmp_removed=true）。"
+    },
+    {
+      "stage": "收尾（browser session cleanup）",
+      "observation": "`agent-browser close --session qaweb1410b08 --all` 的 `--all` 参数连带关闭了并行批次 web batch07 的会话 qaweb1410b07。",
+      "resolution": "已如实记录为 B08-HARNESS-01（medium）。批次自身证据与清理不受影响；batch07 如需继续需重开会话/重新登录。",
+      "interference_with_other_batch": true
+    }
+  ],
+  "cannot_verify": [
+    "受保护四节点被本批有意变更的状态：本批只对 native-4 发写请求，且仅针对自建对象。guard 时 native-1/native-3 为 offline、结束时 online，此变化来自并行批次/Agent 自身重连，本批未参与。",
+    "Hub 端 tombstone 的“收敛抑制”二次证明（即删除后节点不会重新创建该对象）未单独执行：本批以 tombstones 行 + Agent 本地行消失 + revision 前进作为等价证据链。"
+  ],
+  "parallel_interference": [
+    "sys-b02 清理了其 3 个 task/3 个 script 并移除了 qa-sysb02-*-child 节点；另一并行 actor 新增 1 artifact + 1 application。以上均非 batch08 的写入。",
+    "batch08 的断言全部限定在 qa-w1410b08-4a7fd1c2-* 自有对象与 native-4 上。"
+  ],
+  "reuse_notes": "runner 脚本保留在 runners/：b08.py（guard/child 生命周期/fixture/快照/探针编排）、native4_probe.py（native-4 agent state.db 只读探针，作为执行任务运行）、login_fill.py（UI 登录填充）、recon.py（只读侦察）。"
+}

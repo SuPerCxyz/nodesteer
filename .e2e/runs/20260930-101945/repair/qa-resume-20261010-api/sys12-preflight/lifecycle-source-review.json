@@ -1,0 +1,36 @@
+{
+  "status": "FULL_LIFECYCLE_SOURCE_DRAFT_ROOT_REVIEW_REQUIRED",
+  "created_at_utc": "2026-10-10T16:04:00Z",
+  "source": "lifecycle_source_proposal.py",
+  "compile": "Python compile() and bash -n passed locally; source SHA256 401ff538b237d202d13bac6b56cc7ed50abbe460f0370672560580b7041d6c92, command SHA256 04eba2f6afff3eb95181b6bbb24543a799c1b7b493a232832ba299686c8cbacd, 33540 bytes; source not executed.",
+  "execution": "Not executed. No Docker, file, Node, Task, Schedule, Network, or Volume lifecycle action occurred.",
+  "phases": [
+    "prepare",
+    "inspect",
+    "recreate",
+    "cleanup-runtime",
+    "cleanup-root"
+  ],
+  "shared_root_controller": "one-root-controller-plan.json",
+  "safety_points": {
+    "hub_url": "The source decodes the guarded original private config in memory, requires scheme http/ws, hostname 192.168.100.209, port 18080 and no user/password/query/fragment/non-root path; writes normalized ws:// repair URL only into the new 65534:65534 0600 config.",
+    "registration_secret": "Only source reads token in memory from the existing guarded config; new private config is 65534:65534 0600 in an owned 0700 directory and RO-mounted. No Task literal/params/env/stdout/evidence contains token or returned credential.",
+    "one_shared_root": "Nonce-derived root, data/config and bridge persist across sequential A/B. owner.json and resource-ledger.json are updated atomically after root, network and each container ID is obtained.",
+    "safe_output": "Only IDs, paths, owner/status, architecture, process PID, mount metadata, bounded SQLite identity/revision/schedule/execution fields and fixed error classes are emitted; no config content, DB credential, Env or raw Docker stderr.",
+    "readback": "Checks owner label, name, image ID, Running/PID, CapAdd empty, CapDrop ALL, Privileged false, read-only rootfs, default/private PID, NNP, exact bridge, no port/device, and exact config RO/DataDir RW bind Type/Source/Destination/RW plus optional /tmp tmpfs.",
+    "recreate": "Container A stop/remove targets its immutable ID after fresh inspect; verifies stopped/PID and exact inspect absence; container B uses same root/config/data/network and stores its returned immutable ID before readback.",
+    "cleanup": "Runtime cleanup revalidates each immutable ID/owner/name/image, removes only A/B and exact empty network, retains root. Root cleanup requires an explicit outer-controller flag after Node/Task/Schedule GET404, exact root dev/inode/UID/mode, no symlinks and strict allowlisted tree; unexpected state is preserved for review.",
+    "hub_objects": "Admin API lifecycle remains in one external controller with bearer only in memory. Node is created by fresh-name/empty-AgentID first HELLO; business Task and disabled Schedule are created/deleted via repair:18080. Helper Task code contains no Admin bearer or registration token."
+  },
+  "measured_shell_sha256": "a6f559e00b69a4aa4d8cb607be18d9386c5aee55c509e2c075549dcf00e00fc7",
+  "old_shell_pin": "a6f559e00b69a4aa9d8cb607be18d9386c5aee55c509e2c075549dcf00e00fc7",
+  "current_preflight_fact": "Verified archive member SHA differs from old pin by one nibble; this source requires the measured member SHA argument and verifies the exact archive before any create.",
+  "startup_source_proposal.py": "superseded historical start-only draft; --launch now safe-stops",
+  "required_prelaunch_conditions": [
+    "Root reviews this lifecycle source and one-root controller plan.",
+    "Existing artifact/system fixture shows the command interpreter image member is executable and matches measured archive content.",
+    "Admin GET proves fresh NodeName unused immediately before prepare.",
+    "An exact-name network check immediately before create is still absent.",
+    "Root separately authorizes resource creation, container A, HELLO Node and later recreate/cleanup budgets."
+  ]
+}

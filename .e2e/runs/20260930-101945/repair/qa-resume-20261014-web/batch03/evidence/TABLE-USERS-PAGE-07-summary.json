@@ -1,0 +1,18 @@
+{
+  "case_id": "TABLE-USERS-PAGE",
+  "captured_at_utc": "2026-10-14T08:39:00Z",
+  "route": "/users",
+  "users_total": 8,
+  "page_size_options": [10, 20, 30, 40, 50],
+  "verified": {
+    "single_page_render": {"rowCount": 8, "pageOf": "第 1 页，共 1 页", "evidence": "evidence/TABLE-USERS-PAGE-02-page1.json"},
+    "pagination_controls_present": {"first": "disabled", "prev": "disabled", "next": "disabled", "last": "disabled", "reason": "only 1 page", "evidence": "evidence/TABLE-USERS-PAGE-02-page1.json"},
+    "pageSize_persistence": {"set_to": 20, "combo_after_reload": "20", "localStorage_nodesteer.table.users": "{\"columnVisibility\":{},\"pageSize\":20}", "evidence": ["evidence/TABLE-USERS-PAGE-03-pagesize20.json", "evidence/TABLE-USERS-PAGE-04-pagesize20-after-reload.json", "evidence/TABLE-USERS-PAGE-05-pagesize20-reload.png"], "restored_to": 10, "restore_evidence": "evidence/TABLE-USERS-PAGE-06-pagesize-back10.json"}
+  },
+  "not_verified": {
+    "first_last_prev_next_traversal": "requires >1 page = >10 users; there are 8",
+    "last_page_data_change": "requires >=11 users so pageSize 10 yields 2 pages",
+    "reason": "creating a User is a persistent account that requires separate Root authorization; this batch is forbidden from creating users"
+  },
+  "conclusion": "PARTIAL: pagination surface renders and pageSize persistence works, but multi-page traversal and last-page change cannot be exercised with 8 users."
+}

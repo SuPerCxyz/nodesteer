@@ -1,0 +1,95 @@
+{
+  "review_id": "ROOT-SYS-B11-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T09:32:20.510674+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "run_dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b11",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试、剩余分母全量推进；并发上限 5",
+  "verdicts": [
+    {
+      "case_id": "AR-27",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "安装 v1→unit active/binary SHA=A1；重复安装幂等（SHA/单 unit/无多余 Execution）；升级 v1→v2 后 binary SHA=A2、config/args=v2、node state 2.0 healthy；备份内容 SHA == v1 artifact SHA（保留 Previous）；Agent 重启后 binary/unit/registry/journal 全存活；Desired==Actual。",
+      "limitations": [
+        "Deployment-journal from_version is written from the synced Application definition at deploy time, not from the previously installed version: the v1->v2 upgrade row shows from_version=to_version=2.0. The previously installed version is instead proven by the pre-deploy binary SHA (A1) and by the backup content SHA == A1. Recorded as a product observation, not a case failure.",
+        "An explicit re-deploy rewrites the binary byte-identically (mtime changes); idempotency was therefore measured as \"identical content SHA, single unit, no extra journal/Execution\", not as \"no write\".",
+        "No browser UI was driven for this batch; caller-side feedback is the Hub API (POST /api/applications/{id}/deploy response, GET /api/executions/{id}, GET /api/applications/{id}/state). The Applications/Executions UI for this feature is already covered by the reused SYS-44 evidence (managed-app-ui.json).",
+        "The PREPARING-phase crash recovery mentioned in the batch plan (P0-002 attempt03) was not re-executed for AR-27; crash recovery is instead exercised end-to-end in AR-29 (rollback after a crash in VERIFYING). The previously recorded PREPARING evidence remains available for Root review."
+      ]
+    },
+    {
+      "case_id": "SYS-50",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "journal 时序 VERIFYING(v3 SHA, unit inactive) → ROLLING_BACK(v2 SHA/config v2/unit v2/active) → DONE；Execution FAILED health check failed；node state unhealthy/3.0/error；无伪 healthy；v3 binary 无残留。",
+      "limitations": [
+        "The product records a successful rollback as ROLLING_BACK -> DONE in the deployment journal (PRODUCT.md §42 lists PREPARING/STOPPED/REPLACED/STARTED/VERIFYING/DONE/ROLLING_BACK). There is no distinct \"ROLLBACK_SUCCESS\" journal phase to assert; the success verdict is carried by the Execution result (FAILED + block_reason) plus the restored-and-healthy v2 state, and the Agent's deploy result sets rollback=true (visible only in the Hub process log, not exposed through the API).",
+        "ROLLING_BACK lasted ~1s and was captured by ~0.5s journal sampling; the ordering proof does not depend on catching it (the binary SHA flips from v3 to v2 between the VERIFYING and final samples).",
+        "The health failure is induced by an owned artifact whose binary exits immediately, so the unit never becomes active; TCP/HTTP/COMMAND health-check failure modes were not each exercised in this batch (only the systemd type)."
+      ]
+    },
+    {
+      "case_id": "AR-28",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "同一回滚事件 + 恢复：定义回 v2 → Execution SUCCESS，Hub revision/version/artifact == Agent 本地定义 == 磁盘 SHA == node state 2.0 healthy；恢复后重复部署幂等；重启持久化。",
+      "limitations": [
+        "Recovery required restoring the Hub Application definition (v3.0 -> v2.0): the product does not revert the Hub-side definition after a rolled-back upgrade, so Desired State (definition) and actual state only converge after the explicit definition update or a successful re-deploy. Reported as an observation; the case dimension \"after recovery Desired State == actual state\" is satisfied by the v2.0 restore.",
+        "The health check type exercised is systemd; TCP/HTTP/COMMAND failure paths are not covered in this batch."
+      ]
+    },
+    {
+      "case_id": "AR-29",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "升级 v4 在 VERIFYING 期间 SIGKILL owned child（v4 binary 已落盘、journal=VERIFYING、Hub Execution=PENDING）→ 重启后 recovering incomplete deployment phase=VERIFYING → journal ROLLING_BACK→DONE，binary 恢复 v2、unit active、registry 不变；被中断 Execution 终态 FAILED/agent_restarted（无悬挂行）；其后 2 次 v2 部署 SUCCESS 且幂等。",
+      "limitations": [
+        "The crash is a harness SIGKILL of the owned child Agent process (a real process death, no product source change); Product-internal panics are not simulated.",
+        "The recovery rollback re-runs the health check taken from the synced v4.0 definition (systemd) and the restored v2 unit satisfies it on the first attempt, so the rollback's re-verify step is real but did not need to wait.",
+        "Convergence of Desired State with actual state again required restoring the Hub definition to v2.0 (see AR-28 note); the journal DONE after recovery proves the deployment transaction is not left half-open."
+      ]
+    },
+    {
+      "case_id": "SYS-52",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "三种真实内核错误均明确失败且无半替换：备份目录不可创建 mkdir file exists；权限不足(chattr +i) operation not permitted；磁盘不足(128KiB tmpfs + 1MiB 备份) no space left on device。正向对照：目录真正缺失时产品自动创建并 SUCCESS。",
+      "limitations": [
+        "The three seams are harness-side (owned path only, released immediately after each scenario): chattr +i immutable directory for the permission-denied mode (the Agent runs as root, so mode-based denial is not applicable) and a 128 KiB tmpfs mount for the disk-full mode; both produce real kernel errors (EPERM / ENOSPC) inside the untouched product backup code path.",
+        "\"Backup 缺失\" is covered as \"backup destination present but unusable/not creatable\"; a directory that is genuinely absent is created by the product (positive control above). The product's separate \"source file absent\" semantics (backup sentinel \"absent:\") was not the target of this case.",
+        "The deployment journal records PREPARING -> DONE even for a prepare-stage failure (a verify-absent sentinel); the failure verdict is carried by the Execution (FAILED) and the Application node state (unhealthy + error). Recorded as an observation, not a case failure.",
+        "When the backup write fails mid-way a partial backup file remains in the backup directory (observed in the tmpfs scenario and removed with the tmpfs); no application host file was modified."
+      ]
+    }
+  ],
+  "verified_independently_by_root": {
+    "hub_residue": "applications=1/artifacts=1/nodes=6，无 qa-sysb11 残留；5 个 owned ID 全 404",
+    "native2_residue": "owned 目录不存在、/etc/systemd/system 与 list-units 无 qa-sysb11 单元、无相关进程",
+    "protected_untouched": "nodesteer-agent.service 与 repair agent unit 仍 active，Agent 二进制 SHA d55c5cd… 未变"
+  },
+  "cleanup_method": "卸载走产品路径（删除 Hub Application → tombstone → Agent CleanupApplication 停/禁 unit、删 unit/binary/config、清 unit_registry）",
+  "harness_failures_retained": "attempt01–03 harness 缺陷产物保留在各自 attempt0N-harness-bug/；attempt04 为 canonical（含一处 evidence 键名重标说明）",
+  "cross_batch_note": "批次结束时并行 sys-b03 的 child 节点使 Hub 节点数一度为 7，非本批残留",
+  "counts_before": {
+    "PASS": 245,
+    "FAIL": 5,
+    "PARTIAL": 163,
+    "NOT_RUN": 82,
+    "BLOCKED": 9
+  },
+  "not_claimed": "未执行产品修复、Git 交付或 Archive",
+  "counts_after": {
+    "PASS": 250,
+    "FAIL": 5,
+    "PARTIAL": 163,
+    "NOT_RUN": 77,
+    "BLOCKED": 9
+  }
+}

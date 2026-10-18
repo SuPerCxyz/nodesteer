@@ -1,1050 +1,1809 @@
 {
- "schema_version": 1,
- "generated_at": "2026-09-22T19:11:34+08:00",
- "failures": [
-  {
-   "id": "FAIL-A-004",
-   "severity": "medium",
-   "title": "取消执行不写审计日志（file_transfer 取消有审计，execution 取消没有）",
-   "steps": [
-    "运行长任务（sleep 300）",
-    "在执行详情点击「停止执行」并确认",
-    "GET /api/audit?limit=500 检索 action=cancel 与 resource=execution"
-   ],
-   "expected": "取消执行属于写操作，应产生审计记录（与文件传输 cancel 一致）",
-   "actual": "审计中只有 file_transfer 的 cancel/retry；本次取消的 execution（dfb29d29…）没有任何审计记录。代码侧 internal/hub/api/api.go 的 cancel 分支未调用 s.audit，ExecutionManager.Cancel 也未做 recordMutationAudit",
-   "evidence": [
-    ".e2e/evidence/agent-a/p2-audit-list.png",
-    ".e2e/evidence/agent-a/p2-cleanup.txt"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-a",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "已修复：取消执行写审计（含任务名 detail）。"
-  },
-  {
-   "id": "FAIL-A-005",
-   "severity": "medium",
-   "title": "执行列表与审计列表硬上限 100 条：更早记录在 UI 完全不可达",
-   "steps": [
-    "打开 /executions，读取分页信息",
-    "对比 /api/executions（无 limit）返回的真实条数",
-    "打开 /audit 同样核对"
-   ],
-   "expected": "历史记录可访问（分页/时间筛选/加载更多）",
-   "actual": "/executions 请求 limit=100，页面显示「第 1 页，共 10 页」（10×10=100 行），DB 实际 269 条；/audit 同样 limit=100 而实际 500+ 条。界面无超出前 100 条的入口，也无时间范围筛选",
-   "evidence": [
-    ".e2e/evidence/agent-a/p2-executions-list.txt",
-    ".e2e/evidence/agent-a/p2-audit-list.png"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-a",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T15:09:10+08:00",
-   "fix_note": "已修复：后端支持 limit/offset 与 X-Total-Count（含 CORS 暴露），前端执行/审计列表改为服务端分页（共 102 页实测可翻页），视图状态持久化。"
-  },
-  {
-   "id": "FAIL-A-006",
-   "severity": "medium",
-   "title": "禁用脚本不阻断已引用任务的立即运行，脚本内容照常下发执行",
-   "steps": [
-    "脚本 e2e-a-…-sh 被任务引用",
-    "在脚本列表行菜单「禁用」（enabled=false，revision+1）",
-    "对引用它的任务执行「立即运行」"
-   ],
-   "expected": "禁用脚本应阻止引用它的任务执行（后端 Validate 明确把「referenced script is disabled」视为非法，脚本删除确认文案也称「引用它的任务将无法执行」）",
-   "actual": "POST /api/tasks/:id/run 返回 200，生成 2 条 SUCCESS 执行，stdout 为脚本内容；仅任务创建/编辑时校验脚本状态，运行时不校验",
-   "evidence": [
-    ".e2e/evidence/agent-a/p2-scripts-ops.txt",
-    ".e2e/evidence/agent-a/p3-workflow-script.txt"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-a",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "已修复：运行前校验引用脚本仍启用，禁用即拦截（手动与 Hub 调度路径）。"
-  },
-  {
-   "id": "FAIL-A-007",
-   "severity": "medium",
-   "title": "调度编辑器所有错误提示都显示「暂无数据」（客户端校验与后端 400 均被吞）",
-   "steps": [
-    "打开 /schedules/new，直接点保存（未选任务）",
-    "只选任务、不填 Cron 表达式再点保存",
-    "填任务+表达式+非法时区 Mars/Olympus 再点保存"
-   ],
-   "expected": "分别提示「请选择任务 / Cron 表达式必填 / 时区非法」等可定位信息",
-   "actual": "三种情况内联错误区均为「暂无数据」。根因：src/features/shared/ui.tsx:161 的 ErrorState 仅在 `error instanceof Error` 时展示 message，而 ScheduleEditor 的 setError 传的是字符串",
-   "evidence": [
-    ".e2e/evidence/agent-a/p2-edges.txt",
-    ".e2e/evidence/agent-a/p2-schedule-error-nodata.png"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-a",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "已修复：ErrorState 支持字符串/对象错误，编辑器显示真实原因（含 FAIL-B-107）。"
-  },
-  {
-   "id": "FAIL-A-008",
-   "severity": "medium",
-   "title": "任务超时允许负数保存，界面显示 -5s 但实际按 300s 执行",
-   "steps": [
-    "在 /tasks/new 名称+命令+目标齐全，超时输入 -5（input min=0 不阻止提交）",
-    "保存 → 任务详情检查",
-    "运行该任务"
-   ],
-   "expected": "拒绝 <=0 的超时值，或给出明确提示",
-   "actual": "POST 200 创建成功，详情显示「超时（秒） -5s」；internal/hub/definitions.go 只处理 timeout==0→300；Agent 侧 timeout<=0 静默回退 300s，故执行 SUCCESS，用户看到 -5s 却按 300s 执行",
-   "evidence": [
-    ".e2e/evidence/agent-a/p2-task-form-edges.txt"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-a",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "已修复：后端拒绝负数超时（前端已有限制）。"
-  },
-  {
-   "id": "FAIL-A-009",
-   "severity": "medium",
-   "title": "目标节点被删除后任务既不能编辑/启停，运行时报原始 SQL 错误",
-   "steps": [
-    "任务目标指向某节点，随后该节点被删除（另一测试单元清理）",
-    "对该任务执行「禁用」「启用」",
-    "对该任务执行「立即运行」"
-   ],
-   "expected": "给出「目标节点不存在，请重新选择」并允许编辑修复",
-   "actual": "禁用/启用/编辑均 400 toast「invalid task: target node not found」；立即运行 400 toast「sql: no rows in result set」（SQL 内部错误直达 UI）；只有删除可用",
-   "evidence": [
-    ".e2e/evidence/agent-a/p2-tasks-list.txt",
-    ".e2e/evidence/agent-a/p2-retry-disabled.txt"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-a",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "已修复：更新任务时自动剔除已删除节点（可编辑/启停），运行失效目标返回可读错误而非 SQL 原文。"
-  },
-  {
-   "id": "FAIL-A-010",
-   "severity": "high",
-   "title": "源上传失败的传输目标永久 PENDING，UI 无取消入口（复现并定位 FAIL-M-001）",
-   "steps": [
-    "建传输：源 agent-1 /tmp/…-nonexistent.txt → agent-2",
-    "观察传输与目标状态、行菜单项",
-    "对比 POST /api/transfers/:id/cancel"
-   ],
-   "expected": "失败传输可被终止（取消/删除），目标不长期滞留 PENDING",
-   "actual": "传输 FAILED（源文件不存在），目标永久「等待中」；行菜单仅「重试」无「取消」（前端仅对 PENDING/UPLOADING/DELIVERING 提供取消）；后端 cancel 接口可用，调用后传输与目标均变 CANCELED",
-   "evidence": [
-    ".e2e/evidence/agent-a/p2-transfers-fail.txt"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-a",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "已修复：源上传失败时终结全部非终态目标；交付结果迟到、无失败目标重试两处状态机问题一并修复。线上验证 11/11。"
-  },
-  {
-   "id": "FAIL-A-011",
-   "severity": "medium",
-   "title": "文件传输失败原因在 UI 完全不可见（无详情页；列表只显示节点+状态）",
-   "steps": [
-    "制造目标失败（/proc/…）与源失败（文件不存在）",
-    "查看列表行文案与可用入口"
-   ],
-   "expected": "能看到失败原因（目标 error 字段）以便排查",
-   "actual": "行内只有「nodesteer-agent-2 失败」「等待中」，无错误原因、无详情页、无 tooltip；原因只在 API 响应中（如 open /proc/.cadentra-transfer-…: no such file or directory）",
-   "evidence": [
-    ".e2e/evidence/agent-a/p2-transfers-fail.txt",
-    ".e2e/evidence/agent-a/p2-transfers-list.png"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-a",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "已修复：传输列表新增错误原因列与目标错误展示。"
-  },
-  {
-   "id": "FAIL-A-012",
-   "severity": "low",
-   "title": "传输终态行的「操作」按钮打开空菜单",
-   "steps": [
-    "在 /transfers 点击成功/已取消传输行的「操作」"
-   ],
-   "expected": "隐藏无操作的行按钮，或显示禁用说明",
-   "actual": "弹出 role=menu 但无任何菜单项与文案",
-   "evidence": [
-    ".e2e/evidence/agent-a/p2-transfer-empty-menu.png"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-a",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fix_note": "已修复：终态传输且无可用操作时不再渲染空菜单。",
-   "fixed_at": "2026-09-22T15:09:10+08:00"
-  },
-  {
-   "id": "FAIL-A-013",
-   "severity": "low",
-   "title": "审计列表不展示资源 ID，无法定位被操作对象",
-   "steps": [
-    "打开 /audit，查看列与内容",
-    "对比 /api/audit 返回的 resource_id"
-   ],
-   "expected": "能看到被操作对象（任务/脚本/传输的 ID 或名称）",
-   "actual": "列为 时间/名称/操作/类型/描述；描述列恒空，resource_id 未展示 → 同一类型多条记录无法区分",
-   "evidence": [
-    ".e2e/evidence/agent-a/p2-audit-list.png",
-    ".e2e/evidence/agent-a/p2-misc.txt"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-a",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fix_note": "已修复：审计列表新增「资源 ID」列（等宽字体、可截断查看）。",
-   "fixed_at": "2026-09-22T19:11:34+08:00"
-  },
-  {
-   "id": "FAIL-A-014",
-   "severity": "low",
-   "title": "重名任务/脚本与重复参数可创建，实体无法区分",
-   "steps": [
-    "创建与既有任务同名的任务",
-    "创建与既有脚本同名的脚本",
-    "连续两次「添加参数」同名参数"
-   ],
-   "expected": "名称唯一性或至少给出重名提示",
-   "actual": "均创建成功；列表与调度下拉出现两条同名项，调度只能按名称辨识；重复参数行同时保留",
-   "evidence": [
-    ".e2e/evidence/agent-a/p2-task-form-edges.txt",
-    ".e2e/evidence/agent-a/p2-edges.txt"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-a",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fix_note": "已修复：脚本/任务名称唯一（忽略大小写与空白）+ 参数名非空且不重复；后端返回可读错误，前端映射为本地化提示。",
-   "fixed_at": "2026-09-22T19:11:34+08:00"
-  },
-  {
-   "id": "FAIL-A-015",
-   "severity": "low",
-   "title": "多处错误信息为后端英文原文 + 裸 UUID",
-   "steps": [
-    "运行被禁用任务",
-    "删除被引用的任务/脚本",
-    "源上传失败查看传输 error",
-    "节点被删除后运行任务"
-   ],
-   "expected": "本地化、可读、指向具体对象名称",
-   "actual": "如「task <uuid> is disabled」「task <uuid> is referenced by schedule <uuid>」「script <uuid> is referenced by task <uuid>」「sql: no rows in result set」",
-   "evidence": [
-    ".e2e/evidence/agent-a/p2-scripts-ops.txt",
-    ".e2e/evidence/agent-a/p2-tasks-list.txt"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-a",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "部分修复：常见错误（引用阻断/cron/时区/重复名/404/403）已本地化，其余保留原文。"
-  },
-  {
-   "id": "FAIL-A-016",
-   "severity": "low",
-   "title": "DELETE 不存在的任务/脚本/调度返回 200 ok:true（GET 同资源返回 404）",
-   "steps": [
-    "对随机 UUID 调用 DELETE /api/tasks|scripts|schedules",
-    "GET 同一 UUID"
-   ],
-   "expected": "删除语义与查询语义一致（404 或统一幂等语义并在文档说明）",
-   "actual": "DELETE 三种资源均返回 200 {\"ok\":\"true\"}；GET 返回 404 {\"error\":\"… not found\"}",
-   "evidence": [
-    ".e2e/evidence/agent-a/p2-edges.txt"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-a",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "不修复（设计行为）：DELETE 幂等返回 200，见 internal/hubserver/api_test.go 注释；已新增用例固定该行为。"
-  },
-  {
-   "id": "FAIL-B-101",
-   "severity": "high",
-   "title": "RBAC：角色变更（含降权）对已登录会话不生效，旧会话保留原权限",
-   "steps": [
-    "admin 创建 operator 用户并用其登录，取 token",
-    "POST /api/executions/<uuid>/cancel 探测 → 400（canRun 放行）",
-    "admin 将该用户角色改为 viewer（PUT /users/:id 200）",
-    "同一会话再次探测 → 仍 400（放行）；刷新页面后探测 → 仍 400",
-    "新会话登录后探测 → 403（新角色生效）"
-   ],
-   "expected": "降权后旧会话应立即失去 operator 权限（或至少拒绝继续执行 canRun 操作）",
-   "actual": "旧会话在降权后仍通过 canRun 鉴权；刷新页面无效，仅重新登录才生效。根因：internal/hub/api/api.go:217 的 withAuth 仅使用 auth.Authenticate(token) 返回的会话快照（Role 在登录时固化），UpdateUserRole 只改库不改会话",
-   "evidence": [
-    ".e2e/evidence/agent-b/p3-rbac-demoted-session.png",
-    ".e2e/evidence/agent-b/p3-rbac-oldsession-tasks.png"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-b",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "已修复：Authenticate 每次以数据库当前角色返回会话副本，降权立即生效；新增 HTTP 级回归测试。"
-  },
-  {
-   "id": "FAIL-B-102",
-   "severity": "medium",
-   "title": "审计记录缺少 detail 字段：描述列恒空、按资源名搜索永远无结果",
-   "steps": [
-    "GET /api/audit?limit=100",
-    "检查返回字段",
-    "/audit 页面查看\"描述\"列并搜索测试前缀用户名"
-   ],
-   "expected": "审计记录应包含可读描述（如\"创建用户 e2e-b-…\"），并支持按描述搜索",
-   "actual": "接口仅返回 id/user_id/username/action/resource/resource_id/created_at，无 detail；前端 lib/api.ts 的 AuditLog 声明了 detail 并渲染描述列 → 列恒为空；搜索 \"e2e-b-20260922-a1b2\" 返回\"没有结果。\"，只能靠 UUID 定位资源",
-   "evidence": [
-    ".e2e/evidence/agent-b/p2-audit-list.png",
-    ".e2e/evidence/agent-b/p2-audit-search.png",
-    ".e2e/evidence/agent-b/p2-audit-final.png"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-b",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "部分修复：删除/取消/设置等审计写入可读 detail；更细粒度 detail 待补。"
-  },
-  {
-   "id": "FAIL-B-103",
-   "severity": "medium",
-   "title": "引用阻断错误提示为英文 + 裸 UUID；分组删除确认框文案与实际阻断行为矛盾",
-   "steps": [
-    "创建静态分组并把 pending 节点加入成员",
-    "行菜单→删除该节点并确认",
-    "创建任务引用分组，行菜单→删除分组并确认"
-   ],
-   "expected": "提示应说明被哪个具名对象引用；确认框文案应与真实行为一致",
-   "actual": "节点：toast \"node 7a60b813-… is referenced by group c0ac39f0-…\"（英文+双裸 UUID，无法识别是哪个分组）；分组：确认框写\"引用它的任务将失去目标\"（暗示可删除），实际接口返回 409 \"group a9fe8502-… is referenced by task b2c962eb-…\" 被阻断",
-   "evidence": [
-    ".e2e/evidence/agent-b/p3-w2-delete-referenced-blocked.png",
-    ".e2e/evidence/agent-b/p2-group-delete-confirm.png"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-b",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "已修复：引用阻断等后端错误映射为本地化文案（保留原文于 rawMessage）。"
-  },
-  {
-   "id": "FAIL-B-104",
-   "severity": "medium",
-   "title": "重新纳管既有节点不复用 Node ID / Agent ID，产生重复节点记录",
-   "steps": [
-    "在添加节点对话框中填入既有主机名 nodesteer-agent-1 与既有 IP 192.168.100.217 生成命令",
-    "比对响应 node_id/agent_id 与既有记录",
-    "查看 /agents 列表记录数",
-    "对自建 pending 节点执行\"撤销凭证\"后再次同名纳管"
-   ],
-   "expected": "既有节点应复用原 Node ID/Agent ID（或明确提示已存在），不新增重复记录",
-   "actual": "POST /api/nodes/enrollment 返回全新 node_id/agent_id（PrepareEnrollment 无条件 createNode），列表出现第二条 nodesteer-agent-1（offline/pending）；撤销凭证后重新纳管同样新增记录。既有 agent-1 连接与状态未受影响（online/synced）",
-   "evidence": [
-    ".e2e/evidence/agent-b/p3-w2-reenroll-duplicate.png",
-    ".e2e/evidence/agent-b/p3-w2-pending-node.png"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-b",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "已修复：重新纳管按名称/地址复用 Node ID 与 Agent ID，清除撤销标记并轮换凭证。"
-  },
-  {
-   "id": "FAIL-B-105",
-   "severity": "medium",
-   "title": "设置保存不写入审计",
-   "steps": [
-    "/settings 修改 changelog_window 并保存（PUT /api/settings 200）",
-    "GET /api/audit?limit=100 过滤 resource/action 含 setting"
-   ],
-   "expected": "设置类写操作应产生审计记录",
-   "actual": "审计中无任何 settings 记录（连续两次保存后仍为空），与\"所有写操作 → 审计\"的联动约定不符",
-   "evidence": [
-    ".e2e/evidence/agent-b/p2-settings-saved.png",
-    ".e2e/evidence/agent-b/p2-audit-final.png"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-b",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "已修复：设置保存写审计（detail 含变更 keys）。"
-  },
-  {
-   "id": "FAIL-B-106",
-   "severity": "medium",
-   "title": "不存在资源的详情/编辑路由无错误态：节点详情空白、分组编辑显示空白新建表单",
-   "steps": [
-    "访问 /agents/does-not-exist-0001 等待 3.5s 与 15s",
-    "访问 /groups/not-a-real-group-0001"
-   ],
-   "expected": "显示\"资源不存在\"错误态并提供返回入口",
-   "actual": "节点详情：3.5s 时仅骨架屏，15s 后 main 内容整体为空（API 连续 404，无任何提示/重试入口）；分组编辑页：直接渲染空白\"新建分组\"表单（名称/描述为空、成员未勾选），无错误提示，用户可能误以为在新建",
-   "evidence": [
-    ".e2e/evidence/agent-b/p2-agent-notfound.png",
-    ".e2e/evidence/agent-b/p2-agent-notfound-15s.png",
-    ".e2e/evidence/agent-b/p2-group-notfound.png"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-b",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "已修复：不存在资源的详情/编辑路由显示错误态与返回入口（8 个页面）。"
-  },
-  {
-   "id": "FAIL-B-107",
-   "severity": "medium",
-   "title": "分组编辑器必填校验提示为\"暂无数据\"而非字段名",
-   "steps": [
-    "打开 /groups/new",
-    "名称留空点击\"保存\""
-   ],
-   "expected": "提示\"名称\"为必填",
-   "actual": "role=alert 区域显示\"暂无数据\"（ErrorState 收到字符串错误后回退到 common.noData），用户无法得知是哪个字段缺失；URL 不变、无 API 调用",
-   "evidence": [
-    ".e2e/evidence/agent-b/p2-group-empty-save-error.png",
-    ".e2e/evidence/agent-b/p2-group-empty-save.png"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-b",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "已修复：同 FAIL-A-007。"
-  },
-  {
-   "id": "FAIL-B-108",
-   "severity": "low",
-   "title": "i18n 缺口：多处界面文案在中文模式下显示英文或后端原文",
-   "steps": [
-    "登录页空表单提交 / 错误密码登录",
-    "将节点置为维护后查看列表徽标",
-    "查看列排序菜单（若存在）",
-    "设置保存非法值"
-   ],
-   "expected": "中文模式下所有提示使用中文文案",
-   "actual": "登录页 zod 校验显示 \"Invalid input\"；错误密码 toast/提示为 \"invalid credentials\"；节点状态徽标对 maintenance/disabled 显示英文原值（在线/离线为中文）；设置校验提示 \"changelog_window must be between 1 and 1000000000\"；添加节点表单必填提示为浏览器原生英文 \"Please fill out this field.\"/\"Please enter a URL.\"；列排序菜单项为 \"Asc/Desc\"",
-   "evidence": [
-    ".e2e/evidence/agent-b/p2-signin-empty-submit.png",
-    ".e2e/evidence/agent-b/p2-signin-wrong-password.png",
-    ".e2e/evidence/agent-b/p3-w3-maintenance-list.png",
-    ".e2e/evidence/agent-b/p2-settings-invalid.png",
-    ".e2e/evidence/agent-b/p2-enroll-empty-submit.png"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-b",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fix_note": "已修复：登录页显示/隐藏密码、系统 404/错误页、侧边栏与导航/批量操作 sr-only 文案全部 i18n。",
-   "fixed_at": "2026-09-22T19:11:34+08:00"
-  },
-  {
-   "id": "FAIL-B-109",
-   "severity": "low",
-   "title": "重复用户名创建暴露原始 SQLite 错误",
-   "steps": [
-    "新建用户填入已存在的用户名并创建"
-   ],
-   "expected": "提示\"用户名已存在\"",
-   "actual": "toast 显示 \"constraint failed: UNIQUE constraint failed: users.username (2067)\"",
-   "evidence": [
-    ".e2e/evidence/agent-b/p2-users-duplicate.png"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-b",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "已修复：重复用户名等 UNIQUE 错误映射为本地化文案。"
-  },
-  {
-   "id": "FAIL-B-110",
-   "severity": "low",
-   "title": "登录页无语言切换入口；语言切换不更新 <html lang>",
-   "steps": [
-    "访问 /sign-in 查找语言切换控件",
-    "切换语言为 English 后读取 document.documentElement.lang"
-   ],
-   "expected": "登录页可切换语言（continuity-map 记载存在）；html lang 随语言变化",
-   "actual": "登录页仅有用户名/密码/显示密码/登录按钮，无语言切换；切换为 English 后 html lang 仍为 zh-CN（语言选择已通过 localStorage cadentra_lang 持久化，刷新后仍为英文）",
-   "evidence": [
-    ".e2e/evidence/agent-b/p2-signin-empty-submit.png",
-    ".e2e/evidence/agent-b/p2-lang-en.png",
-    ".e2e/evidence/agent-b/p2-lang-en-reload.png"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-b",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fix_note": "已修复：登录页新增语言切换入口（顶栏与登录页共用 LanguageSwitch），语言切换同步 <html lang>（zh-CN/en）并持久化；P01-04 用例已从 fixme 恢复并通过。",
-   "fixed_at": "2026-09-22T15:09:10+08:00"
-  },
-  {
-   "id": "FAIL-B-111",
-   "severity": "low",
-   "title": "表格视图状态不持久化（列可见性/每页条数刷新即重置）",
-   "steps": [
-    "/agents 视图菜单取消勾选\"状态\"列",
-    "刷新页面 / 跨页导航返回"
-   ],
-   "expected": "用户偏好可保持或至少同一会话内保持",
-   "actual": "刷新后表头恢复全部 7 列；跨导航返回同样重置（组件内 useState，未写入 localStorage/URL）",
-   "evidence": [
-    ".e2e/evidence/agent-b/p2-agents-view-toggled.png",
-    ".e2e/evidence/agent-b/p2-agents-col-hidden.png"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-b",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fix_note": "已修复：DataTable 支持 storageKey，列可见性与每页条数持久化到 localStorage（执行/审计/节点/任务/脚本/分组/应用/制品/用户/调度列表已接入），刷新后保持。",
-   "fixed_at": "2026-09-22T15:09:10+08:00"
-  },
-  {
-   "id": "FAIL-B-112",
-   "severity": "low",
-   "title": "列表无列排序入口（DataTableColumnHeader 为死代码）",
-   "steps": [
-    "检查 /agents、/groups、/users、/audit 表头是否含排序控件",
-    "全仓库搜索 DataTableColumnHeader 使用点"
-   ],
-   "expected": "表格支持按列排序（useReactTable 已装配 getSortedRowModel）",
-   "actual": "所有表头均为纯文本（无 button、无排序菜单），DataTableColumnHeader 组件零引用；排序能力不可达",
-   "evidence": [
-    ".e2e/evidence/agent-b/p2-agents-sorted.png"
-   ],
-   "status": "resolved",
-   "source_agent": "agent-b",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fix_note": "已修复：可排序列使用 DataTableColumnHeader，点击表头切换 asc/desc/清除（服务端分页模式下排序作用于当前页）。",
-   "fixed_at": "2026-09-22T15:09:10+08:00"
-  },
-  {
-   "id": "FAIL-C-001",
-   "severity": "medium",
-   "title": "删除被引用制品的阻断提示为英文后端原文并暴露裸 UUID",
-   "steps": [
-    "/artifacts 找到被应用引用的制品（Usage 列显示应用链接）",
-    "行菜单→删除→确认"
-   ],
-   "expected": "中文可读提示，例如「制品正被应用 X 引用，无法删除」",
-   "actual": "toast: \"artifact 5b313720-2727-46fa-b0c2-e18727d9b979 is referenced by application 4c10b536-14ca-4b1f-bc6f-fa36da603d8b\"（英文 + 2 个裸 UUID）",
-   "evidence": [
-    ".e2e/evidence/agent-c/r2-p2-artifact-delete-referenced-blocked.png"
-   ],
-   "notes": "与既有 FAIL-M-003（节点删除）同类；制品删除场景首次取证",
-   "status": "resolved",
-   "source_agent": "agent-c",
-   "found_at": "2026-09-22T09:34:49+08:00",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "已修复：同 FAIL-B-103。"
-  },
-  {
-   "id": "FAIL-A-001",
-   "severity": "medium",
-   "feature_id": "audit.list",
-   "title": "运行时设置保存不会写入审计日志",
-   "preconditions": [
-    "以 admin 登录",
-    "已有其它审计记录作为对照"
-   ],
-   "steps": [
-    "打开 /settings",
-    "在心跳间隔填入非法值并保存（被拒）",
-    "恢复原值并保存（提示已保存）",
-    "查询 /api/audit?limit=500 与审计页面"
-   ],
-   "expected": "设置变更应产生一条 audit 记录（资源 settings、动作 update/save）",
-   "actual": "94 条审计记录中没有任何 settings 资源，最后一次成功保存也未留下记录；hub 源码 handleSettings 未调用 s.audit/recordMutationAudit。",
-   "reproducible": true,
-   "reproduction_count": 2,
-   "console_errors": [],
-   "network_errors": [],
-   "screenshots": [
-    ".e2e/evidence/agent-a/light-1440-audit.png"
-   ],
-   "suspected_area": [
-    "internal/hub/api/api.go:handleSettings"
-   ],
-   "notes": "任务要求核对‘设置保存’是否入审计，结论为未入审计。",
-   "source_agent": "a",
-   "status": "unverified",
-   "test_notes": "2026-09-19 记录，本轮未复测"
-  },
-  {
-   "id": "FAIL-A-002",
-   "severity": "medium",
-   "feature_id": "user.list",
-   "title": "用户无法删除：UI 无入口且 API 不支持 DELETE，测试用户无法清理",
-   "preconditions": [
-    "以 admin 登录",
-    "存在非 admin 用户"
-   ],
-   "steps": [
-    "打开 /users 观察每行操作（仅有角色下拉）",
-    "DELETE /api/users/<id>",
-    "GET /api/users 复查"
-   ],
-   "expected": "应能删除/停用测试用户，或在测试要求下可清理",
-   "actual": "用户表无操作列；DELETE /api/users/{id} 返回 405 method not allowed；用户管理仅有创建与改角色，生命周期不完整，导致本轮 operator/viewer 测试用户残留。",
-   "reproducible": true,
-   "reproduction_count": 1,
-   "console_errors": [],
-   "network_errors": [
-    "DELETE /api/users/{id} -> 405"
-   ],
-   "screenshots": [
-    ".e2e/evidence/agent-a/light-1440-users.png"
-   ],
-   "suspected_area": [
-    "internal/hub/api/api.go:handleUserByID",
-    "web/src/features/catalog/index.tsx:Users"
-   ],
-   "notes": "残留账号：e2e-a-20260919-b7k1-op（operator）、e2e-a-20260919-b7k1-vw（viewer），需在 Hub 数据库中直接删除。",
-   "source_agent": "a",
-   "status": "unverified",
-   "test_notes": "2026-09-19 记录，本轮未复测"
-  },
-  {
-   "id": "FAIL-A-003",
-   "severity": "low",
-   "feature_id": "user.create",
-   "title": "重复用户名创建时向用户暴露原始 SQLite 约束错误",
-   "preconditions": [
-    "以 admin 登录",
-    "已存在同名用户"
-   ],
-   "steps": [
-    "打开 /users -> 新建用户",
-    "用户名填已存在的 e2e-a-20260919-b7k1-op",
-    "填写密码后点击创建"
-   ],
-   "expected": "提示可读的本地化错误，例如‘用户名已存在’",
-   "actual": "toast 显示 'constraint failed: UNIQUE constraint failed: users.username (2067)'；同类问题：POST /api/executions/<不存在ID>/cancel 返回 'sql: no rows in result set'（原始内部错误）。",
-   "reproducible": true,
-   "reproduction_count": 1,
-   "console_errors": [],
-   "network_errors": [],
-   "screenshots": [
-    ".e2e/evidence/agent-a/light-1440-users.png"
-   ],
-   "suspected_area": [
-    "internal/hub/api/api.go:handleUsers(create)",
-    "internal/hub/api/api.go:cancel"
-   ],
-   "notes": "错误处理与本地化问题，用户可直接看到数据库层信息。",
-   "source_agent": "a",
-   "status": "unverified",
-   "test_notes": "2026-09-19 记录，本轮未复测"
-  },
-  {
-   "id": "FAIL-B-001",
-   "severity": "medium",
-   "feature_id": "execution.detail",
-   "title": "脚本任务的执行详情不显示脚本名称/脚本修订号",
-   "preconditions": [
-    "存在引用脚本的任务（脚本 revision R）",
-    "该任务已产生执行"
-   ],
-   "steps": [
-    "打开脚本任务运行页并运行",
-    "进入该执行详情",
-    "查看“元数据”区块"
-   ],
-   "expected": "详情展示所执行脚本及其 revision（如 脚本 e2e-b-…-shell / 脚本修订号 r5）",
-   "actual": "只显示“任务修订号 r1”；API GET /api/executions/:id 返回 script_id 与 script_revision=5，但页面不渲染；zh.ts/en.ts 中 executions.scriptRevision 键未被任何组件引用",
-   "reproducible": true,
-   "reproduction_count": 2,
-   "console_errors": [],
-   "network_errors": [],
-   "screenshots": [
-    ".e2e/evidence/agent-b/exec-detail-script-noscriptrev.png"
-   ],
-   "suspected_area": [
-    "web/src/features/executions/index.tsx"
-   ],
-   "notes": "数据链路正常（Hub 正确记录），纯展示缺失；导致无法从执行详情定位实际运行脚本版本",
-   "source_agent": "b",
-   "status": "unverified",
-   "test_notes": "2026-09-19 记录，本轮未复测"
-  },
-  {
-   "id": "FAIL-B-002",
-   "severity": "medium",
-   "feature_id": "execution.detail",
-   "title": "跳过执行的“阻塞原因”丢失且界面无处展示",
-   "preconditions": [
-    "任务配置本地条件 cpu_usage > 0",
-    "目标节点空载时 CPU 采样为 0.00"
-   ],
-   "steps": [
-    "带条件运行分组任务",
-    "其中 agent-1 执行状态为 SKIPPED",
-    "查看执行详情与 API 响应"
-   ],
-   "expected": "执行详情说明被跳过原因（如“条件不满足 / condition not satisfied”）",
-   "actual": "API 响应的 block_reason 为空；Agent 侧已设置 \"condition not satisfied\"（internal/agent/agent.go:823），但 Hub MarkFinished 对已存在执行未回写 p.BlockReason（internal/hub/execution.go），UI 也没有使用 locales 中的 executions.blockReason",
-   "reproducible": true,
-   "reproduction_count": 2,
-   "console_errors": [],
-   "network_errors": [],
-   "screenshots": [
-    ".e2e/evidence/agent-b/ui-1440-executions-list.png"
-   ],
-   "suspected_area": [
-    "internal/hub/execution.go",
-    "web/src/features/executions/index.tsx"
-   ],
-   "notes": "跳过本身是 Fail Closed 的正确行为（idle 节点 CPU 0.00 > 0 不成立），问题在于原因不可见，故障排查困难",
-   "source_agent": "b",
-   "status": "unverified",
-   "test_notes": "2026-09-19 记录，本轮未复测"
-  },
-  {
-   "id": "FAIL-B-003",
-   "severity": "medium",
-   "feature_id": "schedule.edit",
-   "title": "编辑器保存失败时显示“暂无数据”，真实错误信息被丢弃",
-   "preconditions": [
-    "打开 /schedules/:id 编辑页"
-   ],
-   "steps": [
-    "将 Cron 表达式改为 zz-invalid",
-    "点击保存（PUT /api/schedules/:id 返回 400，错误体为 invalid cron expression: expected exactly 5 fields, found 1）",
-    "观察页面错误提示"
-   ],
-   "expected": "显示服务端校验错误（如“invalid cron expression: …”）并保持表单不跳转",
-   "actual": "页面内错误条显示“暂无数据”",
-   "reproducible": true,
-   "reproduction_count": 3,
-   "console_errors": [],
-   "network_errors": [
-    "PUT /api/schedules/8c4c7355-a501-4208-bbf4-e7b69f6c5485 400"
-   ],
-   "screenshots": [
-    ".e2e/evidence/agent-b/schedule-invalid-cron.png",
-    ".e2e/evidence/agent-b/schedule-invalid-cron-toast.png"
-   ],
-   "suspected_area": [
-    "web/src/features/editors/index.tsx:152,393,724,965,979,1001",
-    "web/src/features/shared/ui.tsx:161"
-   ],
-   "notes": "根因：save() 用 setError(cause instanceof Error ? cause.message : t('common.noData')) 传入字符串，ErrorState 仅对 Error 实例渲染 message。同一模式影响 Schedule/Script/Group/Application/Artifact 五个编辑器",
-   "source_agent": "b",
-   "status": "unverified",
-   "test_notes": "2026-09-19 记录，本轮未复测"
-  },
-  {
-   "id": "FAIL-C-001",
-   "severity": "high",
-   "feature_id": "transfer.create",
-   "title": "跨节点文件传输目标永久停在 DELIVERING，文件未交付且无终止态",
-   "preconditions": [
-    "Hub 与 agent-3/agent-4 均在线",
-    "来源文件 /etc/hostname 存在"
-   ],
-   "steps": [
-    "打开 /transfers",
-    "源 Agent=agent-3、源路径=/etc/hostname",
-    "先加目标 agent-3:/tmp/e2e-c-transfer-8256-self.txt，再加目标 agent-4:/tmp/e2e-c-transfer-8256.txt",
-    "点击开始传输",
-    "等待并刷新/轮询列表（3s refetch）"
-   ],
-   "expected": "两个目标均 SUCCESS，agent-4 出现 /tmp/e2e-c-transfer-8256.txt",
-   "actual": "agent-3 目标 SUCCESS；agent-4 目标 3 分钟以上停在 DELIVERING，文件不存在；API error=context canceled，target.updated_at 一直为下发时刻；agent-4 无下载 TCP 连接、journalctl 无传输日志、无结果回包；页面无重试入口（仅取消）",
-   "reproducible": true,
-   "reproduction_count": 1,
-   "console_errors": [],
-   "network_errors": [],
-   "screenshots": [
-    ".e2e/evidence/agent-c/transfer-stuck.png"
-   ],
-   "suspected_area": [
-    "internal/hub/file_transfer.go dispatchTarget/download",
-    "internal/agent/agent.go downloadFile/OnFileDeliveryRequest",
-    "gatewayBaseURL/HTTP 数据面"
-   ],
-   "notes": "transfer-stuck-api.json 保存完整 API 记录；取消后目标状态=已取消，可复现路径保留在 /transfers 主控两次受控复现（在线/维护）均成功；保留无超时看门狗结论，见 OBS-M-001/OBS-M-003。",
-   "source_agent": "c",
-   "status": "resolved",
-   "test_notes": "2026-09-19 记录，本轮未复测",
-   "fixed_at": "2026-09-22T14:07:29+08:00",
-   "fix_note": "已修复：同 FAIL-B-103。"
-  },
-  {
-   "id": "FAIL-C-002",
-   "severity": "medium",
-   "feature_id": "application.deploy",
-   "title": "托管应用部署失败在「执行详情」不可见：日志为空、无错误、无回滚标识",
-   "preconditions": [
-    "应用配置 command/false 健康检查触发部署失败并自动回滚"
-   ],
-   "steps": [
-    "创建应用（健康检查 command target=false）",
-    "部署",
-    "打开 /executions 中 FAILED 执行",
-    "查看 概览/日志 标签"
-   ],
-   "expected": "执行详情可看到部署失败原因与回滚结果",
-   "actual": "执行详情状态=失败，但 stdout/stderr 0 字符、日志标签「（空）」、无错误文本；错误仅显示在应用页健康卡片（health check failed; rolled back）",
-   "reproducible": true,
-   "reproduction_count": 1,
-   "console_errors": [],
-   "network_errors": [],
-   "screenshots": [
-    ".e2e/evidence/agent-c/exec-failed-detail.png",
-    ".e2e/evidence/agent-c/app-fail-rollback.png"
-   ],
-   "suspected_area": [
-    "execution 记录未写入部署错误/日志",
-    "hub application deploy 结果未落 execution 输出"
-   ],
-   "notes": "",
-   "source_agent": "c",
-   "status": "unverified",
-   "test_notes": "2026-09-19 记录，本轮未复测"
-  },
-  {
-   "id": "FAIL-C-003",
-   "severity": "medium",
-   "feature_id": "application.create",
-   "title": "新建应用未填名称时校验提示显示「暂无数据」而非必填提示",
-   "preconditions": [
-    "登录",
-    "打开 /applications/new"
-   ],
-   "steps": [
-    "不填任何字段点击「保存」"
-   ],
-   "expected": "提示名称必填（如「名称」）或高亮字段",
-   "actual": "红色错误条显示「暂无数据」（ErrorState 对字符串错误回退 t('common.noData')），用户无法得知缺失字段",
-   "reproducible": true,
-   "reproduction_count": 2,
-   "console_errors": [],
-   "network_errors": [],
-   "screenshots": [
-    ".e2e/evidence/agent-c/ui-app-new-validation-top.png",
-    ".e2e/evidence/agent-c/ui-app-new-validation.png"
-   ],
-   "suspected_area": [
-    "web/src/features/editors ApplicationEditor save() 传字符串 error",
-    "features/shared/ui.tsx ErrorState 仅识别 Error 实例"
-   ],
-   "notes": "同类编辑器（脚本/任务/分组）疑似同样模式，未在本次范围验证",
-   "source_agent": "c",
-   "status": "unverified",
-   "test_notes": "2026-09-19 记录，本轮未复测"
-  },
-  {
-   "id": "FAIL-C-004",
-   "severity": "medium",
-   "feature_id": "application.deploy",
-   "title": "托管应用部署执行在 /executions 显示为「未知任务」，缺少来源上下文",
-   "preconditions": [
-    "应用部署产生执行记录"
-   ],
-   "steps": [
-    "打开 /executions",
-    "查看应用部署产生的最新执行行与详情标题"
-   ],
-   "expected": "标明来自托管应用部署（应用名/操作）",
-   "actual": "列表与详情标题均为「未知任务」，只有节点与时间可辨识；同页任务执行正常显示任务名",
-   "reproducible": true,
-   "reproduction_count": 2,
-   "console_errors": [],
-   "network_errors": [],
-   "screenshots": [
-    ".e2e/evidence/agent-c/executions-list-unknown-task.png",
-    ".e2e/evidence/agent-c/exec-failed-detail.png"
-   ],
-   "suspected_area": [
-    "execution.task_id 关联缺失",
-    "web executions 列 taskNames 回退 common.unknownTask"
-   ],
-   "notes": "",
-   "source_agent": "c",
-   "status": "unverified",
-   "test_notes": "2026-09-19 记录，本轮未复测"
-  },
-  {
-   "id": "FAIL-C-005",
-   "severity": "medium",
-   "feature_id": "transfer.retry",
-   "title": "文件传输失败原因在页面完全不可见",
-   "preconditions": [
-    "源路径不存在的失败传输"
-   ],
-   "steps": [
-    "创建失败传输",
-    "查看列表行/行菜单/重试"
-   ],
-   "expected": "展示失败原因（如源文件不存在）",
-   "actual": "列表仅显示「失败」；API error='open /tmp/e2e-c-8256-nonexistent.txt: no such file or directory' 不展示；重试后无任何提示",
-   "reproducible": true,
-   "reproduction_count": 1,
-   "console_errors": [],
-   "network_errors": [],
-   "screenshots": [
-    ".e2e/evidence/agent-c/transfer-failed-menu.png"
-   ],
-   "suspected_area": [
-    "web/src/features/transfers 未渲染 transfer.error/target.error"
-   ],
-   "notes": "transfer-failed-api.json 保存 API 原文",
-   "source_agent": "c",
-   "status": "unverified",
-   "test_notes": "2026-09-19 记录，本轮未复测"
-  },
-  {
-   "id": "FAIL-M-001",
-   "severity": "high",
-   "feature_id": "transfer.terminal_state",
-   "title": "源上传失败的传输目标永久 PENDING，阻断节点删除且 UI 无取消入口",
-   "preconditions": [
-    "一个源文件不存在的传输",
-    "节点为目标之一"
-   ],
-   "steps": [
-    "创建源文件不存在的传输",
-    "等待整体 FAILED",
-    "观察该目标仍为 等待中",
-    "在节点页删除该节点"
-   ],
-   "expected": "失败传输的目标进入失败/取消终态；节点删除不受影响；UI 可终止失败传输",
-   "actual": "目标永久 PENDING；DELETE /api/nodes/{id} 返回 409 has active file transfer；传输行菜单只有重试没有取消",
-   "reproducible": true,
-   "reproduction_count": 2,
-   "console_errors": [],
-   "network_errors": [],
-   "screenshots": [
-    ".e2e/evidence/main/node-delete-blocked-1440.png"
-   ],
-   "suspected_area": [
-    "internal/hub/file_transfer.go:completeUpload",
-    "web/src/features/catalog/index.tsx transfer actions"
-   ],
-   "notes": "经 API cancel 后节点删除成功；代码层 completeUpload 失败路径未终结 targets，Retry 对 PENDING 目标无操作",
-   "source_agent": "main",
-   "status": "resolved",
-   "test_notes": "2026-09-19 记录，本轮未复测",
-   "fix_note": "已修复（2026-09-23 互斥登录+双high修复轮）：completeUpload 失败路径新增 failTransfer——置传输 FAILED、清空 SHA256、failTargets 终结全部非终态目标，节点删除不再 409。自动化验证：Go TestFileTransferCompleteUploadFailureTerminalizesTargets 断言预条件双 409 → 422 后传输/目标全终态 → 三节点 Delete 放行 + 迟到回执幂等（PASS）；Playwright P22-02 UI 取消用例（route mock，收集通过）。诚实边界：活环境页面级复验待 beta 部署执行；Agent 断连丢回执窗口为独立残留（已记 observations，watchdog 属范围外）。",
-   "fixed_at": "2026-09-23T14:34:16+08:00"
-  },
-  {
-   "id": "FAIL-M-002",
-   "severity": "medium",
-   "feature_id": "agent.revoke.recovery",
-   "title": "撤销凭证后的重新纳管流程不闭环",
-   "preconditions": [
-    "节点已被撤销凭证",
-    "节点上 Agent 服务仍在运行"
-   ],
-   "steps": [
-    "添加节点生成安装命令",
-    "在已存在 Agent 的节点执行命令",
-    "观察服务仍在用旧凭据重试"
-   ],
-   "expected": "执行纳管命令后 Agent 重新登记上线",
-   "actual": "enable --now 不重启运行中服务；即使重启，本地 state.db 仍持有旧凭据被 Hub 以 credential revoked 拒绝；必须手工 stop + 删除 state.db + start",
-   "reproducible": true,
-   "reproduction_count": 1,
-   "console_errors": [],
-   "network_errors": [],
-   "screenshots": [],
-   "suspected_area": [
-    "纳管脚本生成（internal/hub/api/api.go:handleNodeEnrollment）",
-    "agent 凭据恢复策略"
-   ],
-   "notes": "Hub 日志明确提示 'node credential revoked; re-enrollment required'",
-   "source_agent": "main",
-   "status": "unverified",
-   "test_notes": "2026-09-19 记录，本轮未复测"
-  },
-  {
-   "id": "FAIL-M-003",
-   "severity": "low",
-   "feature_id": "ui.error_message",
-   "title": "节点删除阻断提示暴露英文后端原文与裸 UUID",
-   "preconditions": [
-    "节点存在非终态传输"
-   ],
-   "steps": [
-    "删除节点"
-   ],
-   "expected": "业务化中文提示与业务标识",
-   "actual": "toast: node 50dfad58-... has active file transfer b698781b-...",
-   "reproducible": true,
-   "reproduction_count": 1,
-   "console_errors": [],
-   "network_errors": [],
-   "screenshots": [
-    ".e2e/evidence/main/node-delete-blocked-1440.png"
-   ],
-   "suspected_area": [
-    "web/src/features/catalog/index.tsx deleteNode onError"
-   ],
-   "notes": "与 UI-A/B/C 的同类提示问题合并",
-   "source_agent": "main",
-   "status": "unverified",
-   "test_notes": "2026-09-19 记录，本轮未复测"
-  },
-  {
-   "id": "FAIL-G-001",
-   "severity": "high",
-   "status": "resolved",
-   "source_agent": "main",
-   "title": "UI 无法创建「托管应用部署」任务：默认 app_operation=start 与后端校验冲突",
-   "preconditions": [
-    "管理员登录",
-    "存在已部署的托管应用"
-   ],
-   "steps": [
-    "打开 /tasks/new",
-    "类型选择「托管应用部署」",
-    "选择应用与目标节点",
-    "点击保存"
-   ],
-   "expected": "任务创建成功（该类型应有 deploy/upgrade 操作语义）",
-   "actual": "toast: invalid task: app_deploy operation must be deploy or upgrade；表单未提供操作选择且默认值为 start（web/src/features/tasks/index.tsx:610,858）",
-   "reproducible": true,
-   "reproduction_count": 2,
-   "console_errors": [],
-   "network_errors": [],
-   "screenshots": [],
-   "suspected_area": [
-    "web/src/features/tasks/index.tsx"
-   ],
-   "notes": "API 创建同配置任务可运行且执行 SUCCESS（b8aa9a9d）；后端在字段为空时会默认 deploy（internal/hub/definitions.go:203-208）",
-   "test_notes": "2026-09-19 记录，本轮未复测",
-   "fix_note": "已修复（2026-09-23 互斥登录+双high修复轮）：前端归一化——类型切换与保存 payload 经 buildTaskPayload（app_deploy 仅 deploy|upgrade 且默认 deploy、非应用类型剔除 app_operation），并为 app_deploy 增加 deploy/upgrade 操作选择器；后端校验保持不变（PRODUCT §21 语义）。自动化验证：Go TestAppDeployOperationValidation 5 断言、vitest task-payload 4 用例、Playwright P10-02（mock POST 断言 payload，收集通过）均 PASS。诚实边界：活环境创建任务复验待 beta 部署执行（原记录 reproducible×2 场景）。",
-   "fixed_at": "2026-09-23T14:34:16+08:00"
-  },
-  {
-   "id": "FAIL-G-002",
-   "severity": "medium",
-   "status": "unverified",
-   "source_agent": "main",
-   "title": "不存在的资源详情路由无错误态：空白编辑器/永久加载中",
-   "preconditions": [
-    "管理员登录"
-   ],
-   "steps": [
-    "访问 /scripts/<uuid>、/groups/<uuid>、/schedules/<uuid>、/applications/<uuid>、/agents/<uuid>、/tasks/<uuid>（均为不存在的随机 UUID）"
-   ],
-   "expected": "显示 404/资源不存在错误态并阻止编辑保存",
-   "actual": "脚本/分组/调度/应用渲染空白默认表单；/agents/<uuid> 主区域空白；/tasks/<uuid> 永久停在「加载中...」",
-   "reproducible": true,
-   "reproduction_count": 1,
-   "console_errors": [],
-   "network_errors": [],
-   "screenshots": [
-    ".e2e/evidence/main/fake-id-task-detail-1440.png"
-   ],
-   "suspected_area": [
-    "web/src/features/*/编辑器加载错误处理"
-   ],
-   "notes": "",
-   "test_notes": "2026-09-19 记录，本轮未复测"
-  }
- ]
+  "run_id": "20260930-101945",
+  "status": "running",
+  "failures": [
+    {
+      "id": "E2E-20260930-101945-P1-001",
+      "severity": "P1",
+      "status": "OPEN",
+      "title": "停留页面的会话失效后，401清空Token但不自动跳转登录",
+      "case_ids": [
+        "X17",
+        "G-01-05",
+        "FL-14"
+      ],
+      "environment": "primary Hub dddee4f0，专用Viewer，agent-browser",
+      "precondition": "真实Viewer登录，/api/me=200，停留Dashboard；不刷新或切换路由",
+      "steps": [
+        "使该专用会话在服务端失效：POST /api/logout=200，保持当前页面",
+        "等待Dashboard周期请求/api/nodes、applications、tasks、schedules、executions均401",
+        "检查localStorage nodesteer_token清空，但URL仍/且Dashboard/角色布局仍存在"
+      ],
+      "expected": "401后清除认证状态并跳转/sign-in，保留合法回跳路径",
+      "actual": "Token已清空、请求被后端正确拒绝；当前URL仍/，保留Dashboard及侧栏，显示Invalid or expired session和重试，但不自动跳转登录。",
+      "reproduced": 2,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/session-expiry-before-3.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/session-expiry-after-3.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/session-expiry-repro-3.webm",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/session-expiry-network.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/empty-ttl/empty-ttl-summary.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/empty-ttl/dashboard-ttl-expired.png"
+      ],
+      "source_refs": [
+        "web/src/lib/api.ts:51",
+        "web/src/main.tsx:66"
+      ],
+      "impact": "用户停留在会话错误页面，需要刷新或切换路径才能触发/me检查回到登录页；本例未发现后端越权。",
+      "harness_notes": "录像工具启动会重建上下文；前两段录像起始未认证，不计复现。第三段录像启动后重新建立专用会话且已核验/me=200，无凭据进入证据。",
+      "origin": "main/failures.json",
+      "additional_reproduction": "独占真实Hub TTL=3秒，自然等待5.512秒后五API401、Token清空，但Dashboard没有自动跳登录。",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        "repair/qa/ttl-live.json",
+        "repair/qa/ttl-ui-browser-results.json",
+        "repair/qa/ttl-background-expiry.json",
+        "repair/qa/ttl-background-401-signin.png"
+      ],
+      "repair_remaining_dimensions": [],
+      "verified_repair_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+    },
+    {
+      "id": "E2E-20260930-101945-P0-002",
+      "severity": "P0",
+      "status": "OPEN",
+      "title": "升级PREPARING阶段崩溃后恢复删除旧Binary/Config/Unit，旧服务未恢复",
+      "case_ids": [
+        "MAIN-PHASE-PREPARING",
+        "AR-30",
+        "INV-11"
+      ],
+      "environment": "本轮新安装Rocky Agent3，唯一main测试应用/目录/Unit",
+      "application_id": "d1e8e28c-6dfe-4b48-a4e8-c61aa9298850",
+      "execution_id": "02048baa-871e-488a-84de-1c8a456b3693",
+      "steps": [
+        "真实部署v1并验证Binary SHA/Config v1/Unit active",
+        "更新定义v2并开始upgrade",
+        "在SQLite Journal PREPARING、三个backup路径尚空时SIGSTOP核实阶段，再SIGKILL本轮Agent3进程",
+        "恢复Agent3，等待其online/synced和Journal DONE，检查先前已存在的v1文件及服务"
+      ],
+      "expected": "崩溃后恢复旧版本或保留可恢复的旧文件，托管服务存在明确恢复路径",
+      "actual": {
+        "journal": [
+          [
+            "f151768f-fea2-41d3-8771-f55b3625e19e",
+            "DONE",
+            "",
+            "",
+            ""
+          ],
+          [
+            "42a94772-aeb8-4e4e-b9f5-8e13703af4a6",
+            "DONE",
+            "",
+            "",
+            ""
+          ]
+        ],
+        "binary_exists": false,
+        "config_exists": false,
+        "unit_exists": false,
+        "unit_state": "failed"
+      },
+      "execution_terminal": {
+        "id": "02048baa-871e-488a-84de-1c8a456b3693",
+        "status": "FAILED",
+        "block_reason": "agent_restarted"
+      },
+      "injection": {
+        "observed": true,
+        "target": "PREPARING",
+        "stopped_phase": "PREPARING",
+        "backup_present": [
+          false,
+          false,
+          false
+        ],
+        "deployment_id": "f151768f-fea2-41d3-8771-f55b3625e19e",
+        "agent_pid": 18988
+      },
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/native-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/native-second-attempt.json"
+      ],
+      "source_refs": [
+        "internal/agent/application.go:425",
+        "internal/agent/application.go:717"
+      ],
+      "impact": "真实升级若在持久化backup路径之前崩溃，启动回滚把已有部署当首次安装清理；本轮仅影响专属测试应用，随后已精确清理并恢复Agent3",
+      "reproduced": 1,
+      "origin": "main/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/p0-002-final-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/attempt03/p0-preparing-fault-attempt03-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/attempt03/post-restart-local-state-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/attempt03/restart-after-fault-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/attempt03/progress.json"
+      ],
+      "repair_remaining_dimensions": []
+    },
+    {
+      "id": "MAIN-USER-EMPTY-PASSWORD",
+      "severity": "P1",
+      "status": "OPEN",
+      "title": "创建用户服务端接受空密码，空密码可真实登录",
+      "case_ids": [
+        "API-CONTRACT"
+      ],
+      "user_id": "1ab58538-576d-4c75-8a1c-fac0eccb969c",
+      "expected": "密码必填；role仅administrator/operator/viewer；非法值原子拒绝",
+      "actual": {
+        "create_http": 200,
+        "blank_password_login_http": 200,
+        "authenticated_me_http": 200
+      },
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/user-validation-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/user-validation-harness-note.json"
+      ],
+      "source_refs": [
+        "internal/hub/api/api.go:2018",
+        "internal/hub/auth/auth.go:89"
+      ],
+      "cleanup": "仅本轮新QA账号已恢复随机非空密码/Viewer，空密码登录401；无删除User API，账号和审计保留。",
+      "origin": "main/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        "repair/qa/user-validation-live-final.json"
+      ],
+      "repair_remaining_dimensions": [],
+      "verified_repair_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+    },
+    {
+      "id": "MAIN-USER-INVALID-ROLE",
+      "severity": "P2",
+      "status": "OPEN",
+      "title": "用户Role更新接受三种有效角色之外的字符串并持久化",
+      "case_ids": [
+        "API-CONTRACT"
+      ],
+      "user_id": "1ab58538-576d-4c75-8a1c-fac0eccb969c",
+      "expected": "密码必填；role仅administrator/operator/viewer；非法值原子拒绝",
+      "actual": {
+        "update_http": 200,
+        "persisted_role": "qa_invalid_role"
+      },
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/user-validation-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/user-validation-harness-note.json"
+      ],
+      "source_refs": [
+        "internal/hub/api/api.go:2066",
+        "docs/PRODUCT.md:1281"
+      ],
+      "cleanup": "仅本轮新QA账号已恢复随机非空密码/Viewer，空密码登录401；无删除User API，账号和审计保留。",
+      "origin": "main/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        "repair/qa/user-validation-live-final.json"
+      ],
+      "repair_remaining_dimensions": [],
+      "verified_repair_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+    },
+    {
+      "id": "BE-SECRET-STREAM-001",
+      "severity": "P1",
+      "status": "confirmed",
+      "title": "secret参数跨实时日志分块后可重组为明文",
+      "case_id": "task.secret-split-stream",
+      "execution_id": "be19e5a3-7ef5-4d47-be97-08dc12f45553",
+      "task_id": "6dfd85ee-8003-43e9-9000-403fc5310aa0",
+      "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+      "expected": "实时日志与终态日志均不得暴露完整secret参数值",
+      "actual": "终态stdout已脱敏；两次分别输出secret前/后半段并flush且相隔1秒，GET /api/executions/{id}/logs的stdout两块拼接包含原始完整secret",
+      "reproduction": [
+        "创建含required secret参数password的本轮命令任务",
+        "Python将NODESTEER_PARAM_password前半段写stdout并flush，sleep 1，再写后半段并flush",
+        "运行该任务并等待SUCCESS",
+        "按seq拼接logs API stdout chunks，与输入的dummy secret比较"
+      ],
+      "source": [
+        "internal/agent/agent.go:1086",
+        "internal/agent/agent.go:1625"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/task.secret-split-stream-e0308807.json"
+      ],
+      "note": "仅使用本轮随机dummy secret，未使用真实凭据；未修改产品代码",
+      "origin": "backend/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        "repair/qa/backend-live-batch.json",
+        "repair/qa/backend-runner/latest-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/resources-created.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/resilience-created.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/live-long-created.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/boundary-created.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/partial-secret-created.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/live-ui-initial.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/retry-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/cancel-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/timeout-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/boundary-verification.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/boundary-order.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/prefix-cancel-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/prefix-timeout-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/split-streams-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/limit-mid-secret-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/partial-secret-cleanup.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/revision-recovery-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/script-revisions/154713f0-0301-4f94-a38e-87a45af5fcdd-r1.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/script-revisions/4779bd1a-c341-47f1-9353-3787cb05d3b0-r1.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/script-revisions/592cfc4b-3a6b-4f16-a790-74f66d14259e-r1.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/script-revisions/f34360e1-97d2-437a-8d47-d46bd20234fe-r1.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/script-revisions/f6eb32ef-5375-49e8-a91a-1f9ea2185d29-r1.json"
+      ],
+      "repair_remaining_dimensions": []
+    },
+    {
+      "id": "BE-SCRIPT-SHA-002",
+      "severity": "P1",
+      "status": "confirmed",
+      "case_id": "feature.sync.script-sha",
+      "title": "Agent接受控制同步中SHA256不匹配的脚本内容并前进Revision",
+      "expected": "校验失败拒绝应用，保持旧脚本与旧GlobalRevision",
+      "actual": "真实Hub脚本更新响应在透明WS代理中只替换content并保留SHA/Revision；Agent SQLite保存篡改content且GlobalRevision前进，声明SHA与实算SHA不同",
+      "observation": {
+        "content_sha256": "4ef60917e0bed00e07654d45f6b90a5ca061e5f50f6b18fda597ab979ff35b4c",
+        "declared_sha256": "9e6a139feb5b794bb999ea572a38a419d1c1acb218df2110e3e202790e99a8fc",
+        "revision": 2,
+        "agent_revision": 99,
+        "before_revision": 98
+      },
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.sync.script-sha-a7d33af9.json"
+      ],
+      "sources": [
+        "docs/PRODUCT.md:599",
+        "internal/agent/agent.go:783",
+        "internal/agent/store.go:317"
+      ],
+      "recovery": "已关闭扰动并重建仅core Agent，真实重连快照恢复canonical内容/SHA/Revision；原卷保留",
+      "note": "控制内容仅printf无敏感数据；未修改产品代码",
+      "origin": "backend/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-checkpoint.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-frame-events.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-local-oracle.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-db-task-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-file-oracle-task-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-execution-ui.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-case-cleanup.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-root/sha-case-review.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/armed-child-restart-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/negative-oracle-attempt02-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/release-good-snapshot-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/positive-prune-oracle-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/good-script-execution-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/good-v2-marker-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/good-script-execution-ui-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/combined-cleanup-plan.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/hub-fixture-cleanup-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/owned-roots-removal-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/final-cleanup-oracle-evidence.json"
+      ],
+      "repair_remaining_dimensions": [],
+      "repair_limits": [
+        "本例local Script baseline为空，旧Script/v1与GlobalRevision保存由此前普通SHA case提供证据",
+        "实际FullSnapshot而FullResync flag=false；不声称FullResync flag=true新运行",
+        "INV05 SQLite写/Commit故障未测，canonical仍PARTIAL"
+      ]
+    },
+    {
+      "id": "BE-REENROLL-STATUS-003",
+      "severity": "P2",
+      "status": "confirmed",
+      "title": "撤销后重新纳管换新凭证成功但节点仍disabled",
+      "case_id": "feature.node.revoke",
+      "actual": "旧凭证401；同Node/AgentID与原卷重新纳管，Agent新凭证accepted且synced，但Node仍disabled、任务不可执行；显式Enable后新凭证下载与任务实效成功",
+      "expected": "PrepareEnrollment进入pending并在接受HELLO后online（源码注释与纳管闭环），或界面明确额外Enable步骤",
+      "observation": {
+        "node_id": "d940ab68-9f29-434b-bfe8-5d075a519edc",
+        "agent_id": "agent-f7de242e-7e23-4ae6-8892-1bcb3f98c8d4",
+        "status_after_new_credential_accepted": "disabled",
+        "sync_status": "synced",
+        "same_volume": "qa-20260930-101945-env-agentdata"
+      },
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.node.revoke-3dfd204f.json"
+      ],
+      "recovery": "已通过节点状态API显式Enable恢复原core online/synced，未改产品/数据库",
+      "sources": [
+        "internal/hub/node.go:47",
+        "internal/store/sqlite_users_nodes.go:86",
+        "internal/store/sqlite_users_nodes.go:104"
+      ],
+      "note": "保持完整运行证据，根代理判定产品契约；不是Credential缺失或连接失败",
+      "priority": "P1",
+      "root_review": "Root已确认管理员纳管应pending，Upsert ON CONFLICT未写status/sync_status使重新授权状态转换未持久化",
+      "origin": "backend/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/e2e-resume-20261009-final-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/reenroll-revoke-cancel.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/reenroll-reconnect-oracle.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/owned-process-ledger.json"
+      ],
+      "repair_remaining_dimensions": []
+    },
+    {
+      "id": "BE-REMOTE-TTL-004",
+      "severity": "P1",
+      "priority": "P1",
+      "status": "confirmed",
+      "title": "Agent忽略Remote State ObservedAt/TTL并执行过期条件任务",
+      "case_id": "feature.condition.remote-ttl",
+      "expected": "Expired Remote State→UNKNOWN→BLOCKED且无业务效果",
+      "actual": "真实Hub last_execution成功响应经授权代理仅改observed_at=2000/ttl_sec=1，Agent仍SUCCESS并在原core卷写expired-state-executed",
+      "observation": {
+        "execution_id": "5eb6af74-8c3e-49c7-bf9f-c521886c83d9",
+        "status": "SUCCESS",
+        "marker": "expired-state-executed",
+        "property": "last_execution",
+        "observed_at": "2000-01-01T00:00:00Z",
+        "ttl_sec": 1
+      },
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.condition.remote-ttl-bf27e07e.json"
+      ],
+      "sources": [
+        "docs/PRODUCT.md:788",
+        "docs/ARCHITECTURE.md:1703",
+        "internal/agent/agent.go:1674"
+      ],
+      "recovery": "代理expire_remote控制已清空，原core身份/卷未更改",
+      "note": "真实协议故障注入与真实客户机效果，不是Mock或静态结论",
+      "origin": "backend/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/ttl-recovery-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/ttl-blocked-execution-ui.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/ttl-recovery-success-execution-ui.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/owned-process-ledger.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/preflight.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-REMOTE-TTL-004-checkpoint.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-root/ttl-case-review.json"
+      ],
+      "repair_remaining_dimensions": []
+    },
+    {
+      "id": "WEB-SECRET-DEFAULT",
+      "severity": "P1",
+      "status": "OPEN",
+      "title": "Script/Task Editor secret参数默认值摘要明文展示",
+      "steps": [
+        "打开/scripts/new",
+        "添加type=secret且非敏感默认值QA_NON_SENSITIVE_SECRET_MARKER",
+        "观察参数摘要列表"
+      ],
+      "expected": "secret值在页面摘要遮蔽",
+      "actual": "main可见完整标记",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/secret-default-repro.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/secret-default-repro.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/task-pending-secret.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/gap-core-results.json"
+      ],
+      "source": "web/src/features/editors/index.tsx:632",
+      "related_root_evidence": "../main/secret-log-independent-check.json",
+      "relation": "同类保密风险、不同位置；backend跨块日志泄露另由root维护",
+      "task_extension": "Task独立摘要直接渲染item.default；同类保密问题扩展影响，不重复计bug",
+      "origin": "web/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        "repair/qa/secret-default-live.json",
+        "repair/qa/secret-default-editor-masked.png",
+        "repair/qa/task-secret-default-live.json",
+        "repair/qa/task-secret-default-cleanup.json",
+        "repair/qa/secret-default-cleanup.json",
+        "repair/qa/full-feature-01-05-07-results.json"
+      ],
+      "repair_remaining_dimensions": [],
+      "verified_repair_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+    },
+    {
+      "id": "WEB-LIVE-LOG",
+      "severity": "P2",
+      "status": "OPEN",
+      "title": "Execution详情已有chunks后新日志及终态stdout不更新",
+      "steps": [
+        "运行echo first;sleep 6;echo second",
+        "Hub收到first日志后打开执行详情",
+        "等API SUCCESS且stdout含second"
+      ],
+      "expected": "页面日志显示first和second",
+      "actual": "8秒后pre仅first；刷新才取得全部chunks",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json"
+      ],
+      "source": "web/src/features/executions/index.tsx:369",
+      "origin": "web/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        "repair/qa/live-log-ui.json",
+        "repair/qa/live-log-detail-chunks.png",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/live-long-running-start.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/live-follow-running.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/live-ui-live-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/retry-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/cancel-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/timeout-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/boundary-order.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/boundary-verification.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/boundary-final-log-view.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/empty-verification.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna/copy-fallback-state.json",
+        "web/src/lib/execution-logs.ts",
+        "web/src/features/executions/index.tsx",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-web/batch01-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-web/offline-online-fetch.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-web/filter-clear-recovery.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-web/clipboard-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-web/cdp-context-clipboard-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-root/web-batch01-review.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/attempt05/follow-scroll-oracle.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/attempt05/execution-final-oracle.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/attempt05/pending-ui-observation.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/attempt05/clipboard-oracle.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/attempt05/cleanup-verification.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/clipboard-cold/clipboard-cold-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/restart-clipboard-not-found-review.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/clipboard-denial/clipboard-denial-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/clipboard-denial-review.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/owner-inspection-attempt06/result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/web-batch09-14-pending-ui-review.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt06/ui-evidence-c2ce573d4aea.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt06/stdout-container-final-readonly-attempt02.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/pending-ui-live-log-closure-review.json"
+      ],
+      "repair_remaining_dimensions": []
+    },
+    {
+      "id": "WEB-APP-LIVE-STATE",
+      "severity": "P2",
+      "status": "OPEN",
+      "title": "Managed Application操作成功后Health/Execution History仍旧状态",
+      "steps": [
+        "创建本轮ELF应用并分配Agent1",
+        "通过UI逐项deploy/stop/start/restart/upgrade",
+        "等待API SUCCESS并检查guest Unit/config/SHA",
+        "读取当前Health/History，再刷新"
+      ],
+      "expected": "当前详情反馈最新健康与执行终态",
+      "actual": "当前卡片仍空/旧operation/旧SUCCESS数量；刷新后正确；五种操作真实客户机效果正确",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/managed-app-complete-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/managed-app-cb765bf3-cleanup.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/managed-app-5994994a-cleanup.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/managed-app-f504bb57-cleanup.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/managed-app-4ee17830-cleanup.json"
+      ],
+      "source": "web/src/features/editors/index.tsx:942",
+      "origin": "web/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        "repair/qa-resume-20261004/app-live-state-full08.py",
+        "repair/qa-resume-20261004/app-live-state-full08.json",
+        "repair/qa-resume-20261004/app-full08-host-cycle.py",
+        "repair/qa-resume-20261004/app-full08-host-cycle-retry.json"
+      ],
+      "repair_remaining_dimensions": []
+    },
+    {
+      "id": "WEB-EXEC-SEARCH-PAGE",
+      "severity": "P2",
+      "status": "OPEN",
+      "title": "Execution/Audit搜索仅过滤当前服务端页",
+      "steps": [
+        "保证21条以上真实记录",
+        "取第21条ID",
+        "第一页输入该ID搜索"
+      ],
+      "actual": "没有结果，对象仍存在",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/safe-tables-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/execution-cross-page-search.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/audit-cross-page-search.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/gap-audit-tables-verified-results.json"
+      ],
+      "source": "web/src/features/executions/index.tsx:108",
+      "audit_extension": "同DataTable本地搜索根因；Audit已用实际offset0/10独立验证",
+      "origin": "web/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        "repair/qa-resume-20261004/resume-20261004-safe-results.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-cross-page-search.json",
+        "repair/qa-resume-20261004/resume-20261004-gap07b-results.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-gap07b/audit-cross-page-search.json"
+      ],
+      "repair_remaining_dimensions": [],
+      "verified_repair_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+    },
+    {
+      "id": "WEB-AUTH-SIGN-IN",
+      "severity": "P2",
+      "status": "OPEN",
+      "title": "已认证访问/sign-in仍显示登录表单",
+      "steps": [
+        "真实登录并/api/me200",
+        "直接访问/sign-in",
+        "等待5秒"
+      ],
+      "expected": "回到业务页",
+      "actual": "仍/sign-in并显示用户名/密码表单",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/root-gap-round2-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/authenticated-sign-in.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/authenticated-sign-in.png"
+      ],
+      "source": "web/src/features/auth/sign-in/index.tsx",
+      "origin": "web/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        "repair/qa-resume-20261004/resume-20261004-safe-results.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-safe/authenticated-sign-in.json"
+      ],
+      "repair_remaining_dimensions": [],
+      "verified_repair_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+    },
+    {
+      "id": "WEB-TASK-DELETE-CANCEL",
+      "severity": "P2",
+      "status": "OPEN",
+      "title": "Task删除取消后菜单残留并锁住页面",
+      "steps": [
+        "本轮Task列表操作→删除",
+        "确认框取消",
+        "Escape并等待3秒",
+        "再操作搜索/菜单"
+      ],
+      "expected": "取消0 DELETE并恢复页面交互",
+      "actual": "0 DELETE但body pointer-events:none，sidebar aria-hidden，open menu，AX操作0；刷新后恢复",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/group-task-cancel-state-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/delete-cancel-tasks.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/delete-cancel-tasks.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/delete-cancel-groups.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/group-task-roundtrip.json"
+      ],
+      "source": "web/src/features/tasks/index.tsx:1535",
+      "cleanup": "刷新后确认删除/404，Group同流程正常",
+      "origin": "web/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        "repair/qa-resume-20261004/resume-20261004-safe-results.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-safe/group-task-roundtrip.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-tasks.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-groups.json"
+      ],
+      "repair_remaining_dimensions": [],
+      "verified_repair_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+    },
+    {
+      "id": "WEB-TRANSFER-SOURCE-CHANGE",
+      "severity": "P2",
+      "status": "OPEN",
+      "title": "Transfer切换Source后已选目标成为自身且仍可开始",
+      "steps": [
+        "选择Source Node1/Target Agent4并添加目标",
+        "切Source为Agent4",
+        "观察目标草稿、目标下拉和Start"
+      ],
+      "expected": "维持Target不能选Source的当前UI约束，移除该草稿或禁用Start并提示",
+      "actual": "target selector已排除新Source，但旧target保留且Start enabled；API允许self不是API缺陷",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/transfer-source-change-ui-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/execution-filter-transfer-draft.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/transfer-source-change-ui.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/transfer-source-change-self.json"
+      ],
+      "source": "web/src/features/transfers/index.tsx:263",
+      "resource_effect": "仅此前缺失QA源的self请求产生FAILED历史，无客户机写文件",
+      "origin": "web/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        "repair/qa-resume-20261004/resume-20261004-safe-results.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filter-transfer-draft.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filters.json"
+      ],
+      "repair_remaining_dimensions": [],
+      "verified_repair_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+    },
+    {
+      "id": "WEB-ROLE-LIVE-STATE",
+      "severity": "P3",
+      "priority": "P2",
+      "status": "OPEN",
+      "title": "自身降权后当前页面仍显示并允许打开Admin创建表单",
+      "steps": [
+        "仅qa-web-user自有账户升Admin并UI登录",
+        "在/users将本人Role改Viewer",
+        "/me200 Roleviewer，users和write403",
+        "等5秒NewUser按钮仍1",
+        "实际点击填写并提交403；reload按钮0"
+      ],
+      "expected": "权限改变后当前页面控件反映Viewer权限",
+      "actual": "后端即刻403正确，当前UI仍保留Admin按钮5秒后可点击，提交403；刷新恢复",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/self-role-feedback-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/self-role-downgrade.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/self-role-downgrade.png"
+      ],
+      "source": "web/src/features/catalog/index.tsx:1943",
+      "scope": "only own QA account; original Admin untouched; final Viewer and all own tokens logout",
+      "severity_priority_explanation": "severity=P3描述短暂UI状态滞后（服务端即时403保护有效）；priority=P2反映容易误导有权限变化的用户，应优先修复。",
+      "origin": "web/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        "repair/qa-resume-20261004/user-role-self-demote-ui.json"
+      ],
+      "repair_remaining_dimensions": []
+    },
+    {
+      "id": "WEB-TASK-PENDING-SAVE",
+      "severity": "P2",
+      "priority": "P2",
+      "status": "OPEN",
+      "title": "Task保存pending期间按钮未禁用，重复点击发重复PUT",
+      "steps": [
+        "编辑本轮独占Task",
+        "延迟真实PUT发送但不修改请求/响应",
+        "Save点击一次仍enabled，再点一次",
+        "释放后核对Hub实际定义"
+      ],
+      "expected": "pending保存禁用，重复点击不生成第二请求",
+      "actual": "Save enabled，2次点击产生2个PUT；最终Revision2，只证明重复请求，不能证明两次服务端mutation",
+      "source": "web/src/features/tasks/index.tsx:631",
+      "case_ids": [
+        "G04-01",
+        "X08"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/task-pending-secret.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/gap-core-results.json"
+      ],
+      "origin": "web/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        "repair/qa-resume-20261004/resume-20261004-gap-results.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-gap/task-pending-secret.json"
+      ],
+      "repair_remaining_dimensions": [],
+      "verified_repair_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+    },
+    {
+      "id": "WEB-BLOCK-REASON",
+      "severity": "P2",
+      "priority": "P2",
+      "status": "OPEN",
+      "title": "真实BLOCKED执行详情未显示Hub保存的block_reason",
+      "steps": [
+        "新建Node1 neverRun Task使last_execution无历史",
+        "另一个本轮Task引用该真实remote condition",
+        "真实Run等待Agent返回BLOCKED",
+        "打开Execution详情并刷新"
+      ],
+      "expected": "BLOCKED详情显示实际block_reason，用户可理解为何没有执行",
+      "actual": "Hub记录statusBLOCKED/block_reason=condition unknown: <nil>；UI仅已阻断、stdout/stderr空，没有原因",
+      "source": "web/src/features/executions/index.tsx:511",
+      "case_ids": [
+        "P17P18-13"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/offline-node-condition-blocked.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/gap-block-reason-real-results.json"
+      ],
+      "origin": "web/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        "repair/qa-resume-20261004/resume-20261004-gap-results.json",
+        "repair/qa-resume-20261004/evidence/resume-20261004-gap/offline-node-condition-blocked.json"
+      ],
+      "repair_remaining_dimensions": [],
+      "verified_repair_hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+    },
+    {
+      "id": "FAIL-ENV-HOST-001",
+      "severity": "P1",
+      "status": "open",
+      "feature_id": "docker_host_integration.application.systemd",
+      "title": "Docker Host Integration的nsenter root参数导致托管systemd部署失败",
+      "preconditions": [
+        "SUSE test VM; explicit Host Integration",
+        "No privileged; only documented test mounts/caps/path allowlist",
+        "Assigned Node online/synced before deploy"
+      ],
+      "steps": [
+        "Upload real amd64 /bin/sh artifact",
+        "Create application with explicit owned binary/config/Unit paths",
+        "Assign Host Node",
+        "Wait online/synced",
+        "POST deploy",
+        "Wait terminal Execution and Application state"
+      ],
+      "expected": "SUCCESS, registered owned systemd Unit active",
+      "actual": {
+        "execution_id": "b009053b-3ee8-4b99-8dcf-5a60a5a322c9",
+        "execution_status": "FAILED",
+        "application_state": [
+          {
+            "application_id": "a405d85f-34d0-43c3-b704-3bc9a2de29d1",
+            "node_id": "544a2988-59fe-4efe-9bfd-538af11e632f",
+            "version": "1.0.0",
+            "operation": "deploy",
+            "health": "unhealthy",
+            "error": "install unit failed: exit status 126",
+            "updated_at": "2026-09-30T06:46:57.530803479Z"
+          }
+        ]
+      },
+      "reproducible": true,
+      "full_product_path_reproduction_count": 1,
+      "source": [
+        "internal/agent/host/container.go:239"
+      ],
+      "root_cause": "nsenter -r takes an optional attached argument; separate /proc/1/root becomes the executable. --root=/proc/1/root with unchanged caps/mounts succeeds for read-only host systemctl.",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/hostintegration-application.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/hostintegration-preflight.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/hostintegration-host-cleanup.json"
+      ],
+      "cleanup": "Owned applications/artifacts removed by API; exact host unit/binary/config absent; LocalStore desired application rows removed; historical executions retained.",
+      "origin": "environment/failures.json",
+      "repair_status": "BLOCKED",
+      "repair_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host001-environment-blocker.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host-apparmor-source-unavailable.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host-docker-server-owner-recheck.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/quota-host001-stop-evidence.json"
+      ],
+      "repair_remaining_dimensions": [
+        "独占DockerHost容器内/proc/1/root Permission denied，nsenter无法操作；3caps、默认seccomp/NoNewPrivs、mount samefile实证正确，AppArmor enforce但无DENIED证据，根因未独立确定。没有App/Artifact/HostUnit写入；需要可信匹配Server GitCommit6a43e3d的policy/准确环境方案，另Review授权才改变安全配置。"
+      ]
+    },
+    {
+      "id": "FAIL-ENV-TLS-001",
+      "severity": "P1",
+      "status": "open",
+      "feature_id": "agent.artifact_prefetch.private_ca",
+      "title": "Agent tls_ca_file未用于Artifact HTTP下载，私有CA环境预取失败",
+      "preconditions": [
+        "Explicit NODESTEER_TLS_CA_FILE, real wss connection online/synced",
+        "Same CA-verified HTTPS Hub entry for API, advertised URLs and File Relay"
+      ],
+      "steps": [
+        "Upload Artifact through HTTPS and verify download SHA",
+        "Assign application to real TLS Agent and invoke prefetch path",
+        "Observe Agent warning and actual cache/tmp files",
+        "Run real TLS File Relay to two distinct target Agents and inspect HTTPS URI access logs"
+      ],
+      "expected": "Artifact prefetch trusts configured Hub CA and creates SHA-verified cache",
+      "actual": {
+        "logs": [
+          "time=2026-10-01T01:12:23.796Z level=WARN msg=\"artifact prefetch failed\" id=8a55b698-09ca-4446-907c-209dbf4f95cb error=\"Get \\\"https://192.168.100.209:18444/api/artifacts/8a55b698-09ca-4446-907c-209dbf4f95cb/download\\\": tls: failed to verify certificate: x509: certificate signed by unknown authority\"",
+          "time=2026-10-01T01:12:23.813Z level=WARN msg=\"application artifact prefetch failed\" app=bb611c0f-51bc-46d7-ad32-8f0e28a8c52e error=\"Get \\\"https://192.168.100.209:18444/api/artifacts/8a55b698-09ca-4446-907c-209dbf4f95cb/download\\\": tls: failed to verify certificate: x509: certificate signed by unknown authority\""
+        ],
+        "cache_file_exists": false,
+        "temporary_file_exists": false,
+        "status": "failed",
+        "source": [
+          "internal/agent/artifact.go:82",
+          "internal/agent/util.go:45"
+        ],
+        "expected": "Agent tls_ca_file also permits HTTPS Artifact prefetch"
+      },
+      "contrasting_verified_behavior": {
+        "file_relay": "SUCCESS, two actual target SHA match",
+        "wss_and_https_management": "passed"
+      },
+      "source": [
+        "internal/agent/artifact.go:82",
+        "internal/agent/util.go:45"
+      ],
+      "root_cause": "ArtifactCache calls http.DefaultClient rather than the configured connection HTTPClient; no skipVerify or system CA modification used.",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/tls-full-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/tls-full-cleanup.json"
+      ],
+      "origin": "environment/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/tls-final-summary.json"
+      ],
+      "repair_remaining_dimensions": [],
+      "repair_limits": "ManagedApp部署为HTTPS预取同SHA cache hit；direct TLS deploy-fetch未测，不推广为该维度PASS。"
+    },
+    {
+      "id": "FAIL-ENV-HOST-002",
+      "severity": "P1",
+      "status": "open",
+      "feature_id": "docker_host_integration.file_relay.mount_mapping",
+      "title": "Host Integration缺失或错误挂载时FileRelay返回SUCCESS，逻辑宿主目标未写入",
+      "preconditions": [
+        "Explicit docker_host_integration receiver; reported host_filesystem=true",
+        "Allowed logical destination is the unique owned /opt test prefix",
+        "Missing directory bind, or bind points at a different owned host directory; no privileged"
+      ],
+      "steps": [
+        "Enroll independent source Docker and HostIntegration target against restore18083",
+        "Send actual payload through FileRelay to allowed logical host destination",
+        "Compare user-facing SUCCESS, container mapped file SHA and physical expected host file",
+        "Repeat with correct bind and confirm physical host SHA to exclude source/payload failure"
+      ],
+      "expected": "HostIntegration should validate required logical-to-host mapping or reject unavailable mapping; SUCCESS must mean the intended host target was written.",
+      "actual": {
+        "cases": [
+          {
+            "id": "ENV-HOSTNEG-MISSING",
+            "expected": "Reject unsafe configuration or write to real owned host path; readonly must reject",
+            "http_status": 200,
+            "transfer": {
+              "id": "c02e3655-a751-48f4-9a6e-317eeb4bbda9",
+              "source_node_id": "2ffcd581-cf30-45a2-9043-f89b6aa03c91",
+              "source_path": "/var/lib/nodesteer/host-negative-source.bin",
+              "source_mode": 420,
+              "size": 59,
+              "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d",
+              "status": "SUCCESS",
+              "created_at": "2026-10-01T04:26:20.76463743Z",
+              "updated_at": "2026-10-01T04:26:20.82053635Z",
+              "targets": [
+                {
+                  "transfer_id": "c02e3655-a751-48f4-9a6e-317eeb4bbda9",
+                  "node_id": "07db588f-28dc-44d3-bf67-7c4d154afa96",
+                  "destination_path": "/opt/qa-20260930-101945-env-hostneg/missing.bin",
+                  "status": "SUCCESS",
+                  "updated_at": "2026-10-01T04:26:20.815555583Z"
+                }
+              ]
+            },
+            "before": {
+              "host_destination": {
+                "exists": false,
+                "sha256": null
+              },
+              "host_sentinel": {
+                "exists": true,
+                "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+              },
+              "wrong_sentinel": {
+                "exists": true,
+                "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+              },
+              "unit": {
+                "exists": false,
+                "sha256": null
+              },
+              "container_mapped": {
+                "exit_code": 1,
+                "sha256": null
+              },
+              "native_agent": {
+                "active": "active",
+                "pid": "16703"
+              }
+            },
+            "after": {
+              "host_destination": {
+                "exists": false,
+                "sha256": null
+              },
+              "host_sentinel": {
+                "exists": true,
+                "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+              },
+              "wrong_sentinel": {
+                "exists": true,
+                "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+              },
+              "unit": {
+                "exists": false,
+                "sha256": null
+              },
+              "container_mapped": {
+                "exit_code": 0,
+                "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d"
+              },
+              "native_agent": {
+                "active": "active",
+                "pid": "16703"
+              }
+            },
+            "status": "FAIL",
+            "failure_id": "FAIL-ENV-HOST-002",
+            "interpretation": "HostIntegration reports FileRelay SUCCESS and host_filesystem=true although the logical host target was not written; invalid mount configuration is not detected."
+          },
+          {
+            "id": "ENV-HOSTNEG-WRONG",
+            "expected": "Reject unsafe configuration or write to real owned host path; readonly must reject",
+            "http_status": 200,
+            "transfer": {
+              "id": "8213dfb4-b64b-4e59-a4b0-e9f5fcf2783c",
+              "source_node_id": "2ffcd581-cf30-45a2-9043-f89b6aa03c91",
+              "source_path": "/var/lib/nodesteer/host-negative-source.bin",
+              "source_mode": 420,
+              "size": 59,
+              "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d",
+              "status": "SUCCESS",
+              "created_at": "2026-10-01T04:26:27.672003862Z",
+              "updated_at": "2026-10-01T04:26:27.724532624Z",
+              "targets": [
+                {
+                  "transfer_id": "8213dfb4-b64b-4e59-a4b0-e9f5fcf2783c",
+                  "node_id": "07db588f-28dc-44d3-bf67-7c4d154afa96",
+                  "destination_path": "/opt/qa-20260930-101945-env-hostneg/wrong.bin",
+                  "status": "SUCCESS",
+                  "updated_at": "2026-10-01T04:26:27.719630594Z"
+                }
+              ]
+            },
+            "before": {
+              "host_destination": {
+                "exists": false,
+                "sha256": null
+              },
+              "host_sentinel": {
+                "exists": true,
+                "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+              },
+              "wrong_sentinel": {
+                "exists": true,
+                "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+              },
+              "unit": {
+                "exists": false,
+                "sha256": null
+              },
+              "container_mapped": {
+                "exit_code": 1,
+                "sha256": null
+              },
+              "native_agent": {
+                "active": "active",
+                "pid": "16703"
+              }
+            },
+            "after": {
+              "host_destination": {
+                "exists": false,
+                "sha256": null
+              },
+              "host_sentinel": {
+                "exists": true,
+                "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+              },
+              "wrong_sentinel": {
+                "exists": true,
+                "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+              },
+              "unit": {
+                "exists": false,
+                "sha256": null
+              },
+              "container_mapped": {
+                "exit_code": 0,
+                "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d"
+              },
+              "native_agent": {
+                "active": "active",
+                "pid": "16703"
+              }
+            },
+            "status": "FAIL",
+            "failure_id": "FAIL-ENV-HOST-002",
+            "interpretation": "HostIntegration reports FileRelay SUCCESS and host_filesystem=true although the logical host target was not written; invalid mount configuration is not detected."
+          }
+        ],
+        "physical_host_final": {
+          "expected_missing": {
+            "path": "/opt/qa-20260930-101945-env-hostneg/missing.bin",
+            "exists": false,
+            "sha256": null
+          },
+          "expected_wrong": {
+            "path": "/opt/qa-20260930-101945-env-hostneg/wrong.bin",
+            "exists": false,
+            "sha256": null
+          },
+          "actual_wrong_bind_file": {
+            "path": "/opt/qa-20260930-101945-env-hostneg-wrong/wrong.bin",
+            "exists": true,
+            "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d"
+          },
+          "host_unit": {
+            "path": "/etc/systemd/system/qa-20260930-101945-env-hostneg.service",
+            "exists": false,
+            "sha256": null
+          },
+          "host_valid": {
+            "path": "/opt/qa-20260930-101945-env-hostneg/valid.bin",
+            "exists": true,
+            "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d"
+          }
+        },
+        "correct_bind_control": {
+          "id": "ENV-HOSTNEG-VALID",
+          "expected": "Reject unsafe configuration or write to real owned host path; readonly must reject",
+          "http_status": 200,
+          "transfer": {
+            "id": "aa162492-c26e-47c2-b60f-70bd99aedb91",
+            "source_node_id": "2ffcd581-cf30-45a2-9043-f89b6aa03c91",
+            "source_path": "/var/lib/nodesteer/host-negative-source.bin",
+            "source_mode": 420,
+            "size": 59,
+            "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d",
+            "status": "SUCCESS",
+            "created_at": "2026-10-01T04:26:31.076581958Z",
+            "updated_at": "2026-10-01T04:26:31.117480343Z",
+            "targets": [
+              {
+                "transfer_id": "aa162492-c26e-47c2-b60f-70bd99aedb91",
+                "node_id": "07db588f-28dc-44d3-bf67-7c4d154afa96",
+                "destination_path": "/opt/qa-20260930-101945-env-hostneg/valid.bin",
+                "status": "SUCCESS",
+                "updated_at": "2026-10-01T04:26:31.114256391Z"
+              }
+            ]
+          },
+          "before": {
+            "host_destination": {
+              "exists": false,
+              "sha256": null
+            },
+            "host_sentinel": {
+              "exists": true,
+              "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+            },
+            "wrong_sentinel": {
+              "exists": true,
+              "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+            },
+            "unit": {
+              "exists": false,
+              "sha256": null
+            },
+            "container_mapped": {
+              "exit_code": 1,
+              "sha256": null
+            },
+            "native_agent": {
+              "active": "active",
+              "pid": "16703"
+            }
+          },
+          "after": {
+            "host_destination": {
+              "exists": true,
+              "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d"
+            },
+            "host_sentinel": {
+              "exists": true,
+              "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+            },
+            "wrong_sentinel": {
+              "exists": true,
+              "sha256": "33ca46981d140009ecaa0906d9204acf446e56757af4cc427d361e7a5fede635"
+            },
+            "unit": {
+              "exists": false,
+              "sha256": null
+            },
+            "container_mapped": {
+              "exit_code": 0,
+              "sha256": "1c552e37f43faaa28fb7b6f8fd94baa217b9b6686e8349898653e010d253163d"
+            },
+            "native_agent": {
+              "active": "active",
+              "pid": "16703"
+            }
+          },
+          "status": "PASS"
+        }
+      },
+      "reproducible": true,
+      "source": [
+        "internal/agent/host/container.go:49",
+        "internal/agent/host/container.go:97",
+        "internal/agent/host/container.go:191",
+        "internal/agent/agent.go:1290",
+        "docs/PRODUCT.md:247",
+        "docs/ARCHITECTURE.md:1168"
+      ],
+      "root_cause": "ContainerHostAdapter maps to /host and validates logical allowlist/symlinks but does not verify that the destination bind is present and maps to the intended physical host path. Missing bind permits writes to container overlay; wrong bind writes the other physical host directory. Mode-derived capabilities still advertise host_filesystem=true.",
+      "configuration_boundary": "Invalid mount inputs are intentional negative cases. This is an operational success-feedback/host mapping gap, not evidence that all default HostIntegration deployments fail or that unrelated host paths were accessed.",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/host-negative-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/host-negative-cleanup.json"
+      ],
+      "origin": "environment/failures.json",
+      "repair_status": "NOT_RUN",
+      "repair_evidence": [],
+      "repair_remaining_dimensions": []
+    },
+    {
+      "id": "FAIL-ENV-UI-THEME-001",
+      "severity": "P3",
+      "status": "open",
+      "case_id": "G02-02",
+      "feature_id": "ui.theme.system.meta_color",
+      "title": "System主题遇暗色媒体时页面已暗色，theme-color仍为白色",
+      "preconditions": [
+        "Independent fresh browser/profile; real primaryHub8080 authenticated UI",
+        "Theme selected by real light/dark/system menu; no configuration/definition changes"
+      ],
+      "steps": [
+        "Verify explicit light/dark selection and reload: class, cookie and actual meta RGBA match expected palette",
+        "Select system while media prefers light and reload",
+        "Change media preference to dark: actual root class/body RGB become dark",
+        "Reload while media remains dark and inspect meta actual content/RGBA again"
+      ],
+      "expected": "System mode dark resolution updates theme-color to dark palette (#020817 / RGBA2,8,23,255), including reload",
+      "actual": {
+        "failed_steps": [
+          "system-media-dark",
+          "system-dark-reloaded"
+        ],
+        "observations": [
+          {
+            "step": "system-media-dark",
+            "theme_cookie": "system",
+            "resolved_class": "dark",
+            "media_dark": true,
+            "meta_content": "#fff",
+            "meta_rgb": [
+              255,
+              255,
+              255,
+              255
+            ],
+            "body_rgb": [
+              2,
+              6,
+              24,
+              255
+            ],
+            "expected_meta_rgb": [
+              2,
+              8,
+              23,
+              255
+            ]
+          },
+          {
+            "step": "system-dark-reloaded",
+            "theme_cookie": "system",
+            "resolved_class": "dark",
+            "media_dark": true,
+            "meta_content": "#fff",
+            "meta_rgb": [
+              255,
+              255,
+              255,
+              255
+            ],
+            "body_rgb": [
+              2,
+              6,
+              24,
+              255
+            ],
+            "expected_meta_rgb": [
+              2,
+              8,
+              23,
+              255
+            ]
+          }
+        ],
+        "explicit_dark_selection_and_reload": "PASS",
+        "other_observations_passed": 11
+      },
+      "failure_scope": "Only system-media-dark and system-dark-reloaded failed; explicit dark-selected/dark-reloaded and other light/dark persistence/media observations passed.",
+      "root_cause": "ThemeSwitch derives meta from selected theme (system is treated as light) and effect only depends on theme. ThemeProvider media handler changes root class but does not notify this meta effect; context resolvedTheme is memoized by theme.",
+      "source": [
+        "web/src/components/theme-switch.tsx:20",
+        "web/src/context/theme-provider.tsx:58",
+        "web/src/context/theme-provider.tsx:76"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/readonly-ui-continuation/summary.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/readonly-ui-continuation/theme-system-media-dark.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/readonly-ui-continuation/theme-system-dark-reloaded.png"
+      ],
+      "business_mutations": 0,
+      "product_fix_applied": false,
+      "reproducible": true,
+      "runtime_reproduction_count": 2,
+      "origin": "environment/failures.json",
+      "repair_status": "PASS",
+      "repair_evidence": [
+        "repair/qa-resume-20261004/theme-media-roundtrip.json"
+      ],
+      "repair_remaining_dimensions": []
+    }
+  ],
+  "status_scope": "原版dddee4f0基线保留；修复版验收以repair/feature-inventory.json及defect-regression-matrix.json为准",
+  "repair_feature_inventory": "runs/20260930-101945/repair/feature-inventory.json",
+  "repair_defect_matrix": "runs/20260930-101945/repair/defect-regression-matrix.json",
+  "repair_complete": false,
+  "updated_at": "2026-10-18T05:44:05.909151+00:00",
+  "repair_additional_failures": [
+    {
+      "id": "OBS-20261008-EXECUTION-ZERO-EXIT-CODE",
+      "priority": "P2",
+      "title": "SUCCESS退出码0由JSON omitempty省略，详情UI显示未知“-”",
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": true,
+      "original_22_denominator_unchanged": true,
+      "affected_cases": [
+        "P17P18-07"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/api-execution-oracle.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/final.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/execution-logs-ui.png",
+        ".e2e/runs/20260930-101945/repair/e2e03-case-review-20261008.json"
+      ],
+      "repair_execution_gate": "先完成可执行测试并汇总环境限制，再统一产品修复",
+      "confirmed_scope_review": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/additional-defect-review.json",
+      "fixed_at": "2026-10-17T14:26:08.735848+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify/regression-results.json"
+    },
+    {
+      "id": "OBS-20261010-UI-LOGOUT-NOT-REVOKED",
+      "priority": "P2",
+      "title": "UI退出只清本地状态，旧服务端session令牌仍可访问/api/me",
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": true,
+      "original_22_denominator_unchanged": true,
+      "affected_cases": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-web/batch02/g01-06-isolated-contract-results.json"
+      ],
+      "source": [
+        "web/src/components/sign-out-dialog.tsx:19",
+        "web/src/stores/auth-store.ts:51",
+        "internal/hub/api/api.go:436"
+      ],
+      "actual": {
+        "dedicated_session": true,
+        "ui_logout_local_token_cleared": true,
+        "ui_logout_api_requests": 0,
+        "old_token_me_after_ui_logout": 200,
+        "direct_api_logout": 200,
+        "old_token_me_after_api_logout": 401
+      },
+      "contract_scope": "G-01-06仅/api/me与/api/logout API contract，已PASS；新增UI交互问题独立记录，不新增canonical分母。",
+      "reviewed_at": "2026-10-10T02:34:40.713677+00:00",
+      "repair_execution_gate": "先完成可执行测试并汇总环境限制，再统一产品修复",
+      "confirmed_scope_review": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/additional-defect-review.json",
+      "fixed_at": "2026-10-17T14:26:08.735848+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify/regression-results.json"
+    },
+    {
+      "id": "E2E-20261014-REMOTE-CONDITION-CLOCK-SKEW",
+      "priority": "P0",
+      "title": "Remote 条件新鲜度门禁用 Hub 时间戳对比 Agent 本地时钟，跨主机亚秒级时钟偏移导致条件恒 Fail Closed",
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "affected_cases": [
+        "SYS-27"
+      ],
+      "source": [
+        "internal/agent/sync_validation.go:31-42",
+        "internal/agent/agent.go:1685-1725",
+        "internal/hub/gateway.go:594-617",
+        "internal/agent/agent.go:1023-1027"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase10-remote-condition-multinode.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase2d-remote-condition-mechanism.raw.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase2c-clock-offset.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/p-cond-review-20261014.json"
+      ],
+      "reviewed_at": "2026-10-14T08:58:20.802723+00:00",
+      "review_artifact": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/sys-b09-review-20261014.json",
+      "actual": "满足与不满足均 BLOCKED/condition unknown: <nil>；4 native 节点复现；受控实验证明 Agent 实现正确、门禁对时间戳新鲜度敏感（未来 0.5s→BLOCKED），实测 Hub 时钟领先 Agent ~0.14s。",
+      "reinforcement_20261014": "p-cond 独立复现：Hub 领先 native-1 +0.1464s（12 组交叉采样）；13 条 Remote 条件全 BLOCKED，其中 11 条本应可判定（含 online==offline 本应 SUCCESS）。",
+      "fixed_by": "P0-1 去兼容化简化（validRemoteState 只认 ttl_remaining_sec，跨时钟比较路径已从代码删除）",
+      "verified_at": "2026-10-17T11:20:08.001717+00:00",
+      "verification_evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-p01-verify/regression-results.json",
+      "verification_note": "受控探针 ±1h/epoch0 + ttl>0 → SUCCESS；ttl 缺失/0/-5 → BLOCKED（9/9）"
+    },
+    {
+      "id": "E2E-20261014-AUDIT-METHOD-FALLBACK-200",
+      "priority": "P3",
+      "title": "审计端点无方法分支：POST/PUT/DELETE /api/audit 返回 200 + 审计列表而非 405",
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "affected_cases": [],
+      "source": [
+        "internal/hub/api/api.go:1865"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch05-users/results.json"
+      ],
+      "reviewed_at": "2026-10-14T09:26:15.018858+00:00",
+      "review_artifact": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/web-batch05-users-review-20261014.json",
+      "actual": "handleAudit 无方法分支，非 GET 方法返回 200 与审计列表；无任何写副作用，故 P19-05 不可变性断言仍成立，但方法语义具误导性。",
+      "note": "低危；P19-05 的不可变性断言仍成立（无写副作用），仅方法语义误导。",
+      "fixed_at": "2026-10-17T14:26:08.735848+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify/regression-results.json"
+    },
+    {
+      "id": "E2E-20261014-ROLLBACK-FAILED-STALE-BACKUP-RESTORE",
+      "priority": "P0",
+      "title": "回滚失败的被拒部署遗留 ROLLING_BACK 记录，Agent 重启恢复时把陈旧备份写到应用的当前 binary/config 路径，覆盖更新的成功安装并把 unit 留在 inactive",
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "affected_cases": [
+        "AR-32",
+        "SYS-56"
+      ],
+      "recommended_owner_case": "INV-11",
+      "source": [
+        "internal/agent/application.go (failed() 仅 rollback 成功才推进 DONE)",
+        "internal/agent/application.go ApplicationManager.RecoverDeployments（用当前定义路径 + 陈旧 backup 组合回滚）"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b12/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/p-app-review-20261015.json"
+      ],
+      "reviewed_at": "2026-10-14T10:24:39.935273+00:00",
+      "review_artifact": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/sys-b12-review-20261014.json",
+      "actual": "陈旧行 22ce1540…（symlink 被拒产生）→ 重启前 SHA 60b4808f…/unit active → 重启后 SHA f601cb64…（=victim 内容）/unit inactive；再次部署即修复（一次性毒化）。symlink 目的地被 AtomicReplace 拒绝 ⇒ 其 rollback 亦必然失败 ⇒ 任何用户提交 symlink binary_path 都会留下毒行。",
+      "mechanism_detailed": "机制（p-app 补充）：rollback() 结尾用**失败版本自己的 health 定义**再跑一次 checkHealth（application.go:673-678），而 failed() 仅在 rollback 返回 true 时才把 journal 收到 DONE（:395-407）；GetActiveDeployments 取 phase NOT IN ('DONE')（store.go:711），重启时 RecoverDeployments 对每条非 PREPARING 行重放 rollback（:729-739）。两条触发链：①AR-32 用户可见——EPERM→rollback 失败→毒行→释放 seam 后成功部署 v5.0→重启时陈旧 backup 覆盖 v5.0，Desired(A1/5.0)≠Actual；②SYS-48 非 systemd 负分支——文件其实已回滚，但 health 复检用失败版本定义永远不过→报 rollback failed 并留 3 条 ROLLING_BACK，重启后二进制 mtime 被改写、毒行被收到 DONE。",
+      "additional_trigger_20261015": "SYS-48 非 systemd（tcp/http/command）健康检查负分支同样留下 ROLLING_BACK 毒行（tests 期间留 3 条）",
+      "fixed_at": "2026-10-17T14:26:08.735848+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify/regression-results.json"
+    },
+    {
+      "id": "E2E-20261014-TIMEOUT-CONTENT-VALIDATION-GAP",
+      "priority": "P1",
+      "title": "Task/Script 超时与内容边界校验缺失：负数 timeout(-5) 经 API 200 持久化、timeout=0 被接受、307200 字节脚本内容被接受",
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "affected_cases": [
+        "P07_P08-11"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/p-web/results.json"
+      ],
+      "reviewed_at": "2026-10-15T07:58:39.022612+00:00",
+      "review_artifact": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/p-web-review-20261014.json",
+      "actual": "p-web 实测：POST 携带 timeout=-5 返回 200 且持久化；timeout=0 接受；307200 字节脚本内容被接受。用例期望的「超长/超时边界拒绝」未观察到。",
+      "note": "需修复范围 Review；若产品有意允许则应在文档中明确",
+      "fixed_at": "2026-10-17T14:26:08.735848+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify/regression-results.json"
+    },
+    {
+      "id": "E2E-20261015-GROUP-EMPTY-NAME-AND-UPSERT-200",
+      "priority": "P2",
+      "title": "POST /api/groups {} 接受空名落库；PUT /api/groups/{不存在id} 返回 200 upsert（与 scripts/tasks/applications 要求 name/404 不一致）",
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "affected_cases": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-api/p-api/case-result.json"
+      ],
+      "reviewed_at": "2026-10-15T09:01:28.001735+00:00",
+      "review_artifact": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/p-api-review-20261015.json",
+      "actual": "隔离实例实测：空名 group 创建成功；不存在 id 的 PUT 静默 upsert 而非 404。",
+      "fixed_at": "2026-10-17T14:26:08.735848+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify/regression-results.json"
+    },
+    {
+      "id": "E2E-20261015-SQL-ERROR-LEAK-ON-PUT-NOTFOUND",
+      "priority": "P2",
+      "title": "PUT /api/schedules|applications/{不存在id} 返回 400 且直接外泄底层 SQL 错误文本（sql: no rows in result set）",
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "affected_cases": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-api/p-api/case-result.json"
+      ],
+      "reviewed_at": "2026-10-15T09:01:28.001735+00:00",
+      "review_artifact": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/p-api-review-20261015.json",
+      "actual": "错误体包含底层存储错误字符串，属信息外泄与契约不一致（应 404）。",
+      "fixed_at": "2026-10-17T14:26:08.735848+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify/regression-results.json"
+    },
+    {
+      "id": "E2E-20261015-COMMITSYNC-FAILURE-DOUBLE-UNLOCK-PANIC",
+      "priority": "P1",
+      "title": "CommitSync 出错时事务被双重解锁：Agent 在任何 CommitSync 错误上 panic（unlock of unlocked mutex）",
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": false,
+      "affected_cases": [
+        "INV-05"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/case-result.json"
+      ],
+      "actual": "注入真实非 BUSY 失败（限容 tmpfs + 超大同步负载 → SQLITE_FULL）命中 CommitSync 错误分支后 Agent fatal panic（sync: unlock of unlocked mutex，store.go:258 ← defer RollbackSync agent.go:800）；失败事务未落盘、对象未落地；腾空间重启后同步成功、revision 前进。",
+      "original_22_denominator_unchanged": true,
+      "source": [
+        "internal/agent/store.go:244-265（CommitSync 出错已 Unlock 并置 tx=nil）",
+        "internal/agent/agent.go:794-802（defer 再调 RollbackSync → tx==nil 时再次 Unlock）",
+        "internal/agent/agent.go:917-919"
+      ],
+      "reviewed_at": "2026-10-15T09:13:38.749311+00:00",
+      "review_artifact": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/p-sysmisc-review-20261015.json",
+      "fixed_at": "2026-10-17T14:26:08.735848+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify/regression-results.json"
+    },
+    {
+      "id": "E2E-20261016-EDITOR-PENDING-NOT-DISABLED-DUPLICATE-POST",
+      "priority": "P2",
+      "title": "编辑器在保存 pending 期间按钮未禁用，重复点击产生第 2 次 POST（Group/Script 等编辑器）",
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": false,
+      "affected_cases": [
+        "G04-01"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/p-table/evidence/G04-01-pending-submit.json"
+      ],
+      "actual": "p-table evidence/G04-01-pending-submit.json 直接反证：pending_button.disabled=false，APP_POST_EXTRA_WHILE_PENDING count=2 / post_count=2；同二进制、非 mock。既知缺陷 WEB-TASK-PENDING-SAVE 在 defect-regression-matrix 中 regression_status=PASS，属\"仅修了 Task 编辑器\"。",
+      "source": [
+        "web/src/features/catalog/…（编辑器保存按钮 pending 态）"
+      ],
+      "original_22_denominator_unchanged": true,
+      "reviewed_at": "2026-10-16T07:35:23.929142+00:00",
+      "review_artifact": "runs/20260930-101945/repair/qa-resume-20261014-root/status-upgrade-review-20261016.json",
+      "fixed_at": "2026-10-17T14:26:08.735848+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify/regression-results.json"
+    },
+    {
+      "id": "E2E-20261016-NARROW-VIEWPORT-LONG-VALUE-OVERFLOW",
+      "priority": "P2",
+      "title": "窄屏下长值导致页面级横向溢出：/schedules/{id} 长任务名 SelectTrigger 无 max-width；/scripts/{id} 含超长内容时溢出",
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": false,
+      "affected_cases": [
+        "X20"
+      ],
+      "original_22_denominator_unchanged": true,
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-webgap/evidence/X20-attribution.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-webgap/evidence/X20-attribution2.json"
+      ],
+      "actual": "/schedules/{id} 长任务名使 Radix SelectTrigger 宽 898px（w-fit+nowrap 无 max-width），760/480 出现页面级横向滚动（docScrollW 939/898；未选任务时 480 正常）；/scripts/{id} 含超长内容/长参数时 480 视口 docScrollW 676>480（空表单 448 正常）。",
+      "reviewed_at": "2026-10-16T07:49:08.585423+00:00",
+      "review_artifact": "runs/20260930-101945/repair/qa-resume-20261014-root/webgap-review-20261016.json",
+      "fixed_at": "2026-10-17T14:26:08.735848+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify/regression-results.json"
+    },
+    {
+      "id": "APPUI-20261016-ENVFILE-QUOTED-DASH",
+      "priority": "P1",
+      "title": "生成 unit 时 EnvironmentFile 被整体加引号（\"<-绝对路径>\"），systemd 判为 path is not absolute 并忽略 → 应用「配置内容」运行期完全不生效",
+      "actual": "实证：unit 行、systemctl show Environment、/proc/<pid>/environ 都只有 Environment= 项，没有配置文件的 APP_MODE/APP_VERSION；配置内容只落盘、只被备份/回滚搬运。指向 internal/agent/application.go:549。",
+      "source": [
+        "internal/agent/application.go:549"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-appui/case-result.json"
+      ],
+      "affected_cases": [
+        "P14P15-15",
+        "FL-10"
+      ],
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "reviewed_at": "2026-10-16T08:12:36.655528+00:00",
+      "review_artifact": "runs/20260930-101945/repair/qa-resume-20261014-root/appui-review-20261016.json",
+      "fixed_at": "2026-10-17T14:26:08.735848+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify/regression-results.json"
+    },
+    {
+      "id": "APPUI-20261016-ROLLBACK-FALSE-FAILURE",
+      "priority": "P2",
+      "title": "非 systemd 负向健康检查时回滚被误报失败并落 ROLLBACK_FAILED：文件已成功还原，却用「失败版本」健康定义重查（必然再失败）",
+      "actual": "应用「配置内容」只落盘、不生效场景下，回滚实际已还原文件，但 rollback() 用失败版本健康定义复检→必然失败→报 health check failed; rollback failed 并落非终态行，误报 + 污染 journal。指向 application.go:694-697 / 408-418。",
+      "source": [
+        "internal/agent/application.go:694-697",
+        "internal/agent/application.go:408-418"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-appui/case-result.json"
+      ],
+      "affected_cases": [
+        "P14P15-18"
+      ],
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "reviewed_at": "2026-10-16T08:12:36.655528+00:00",
+      "review_artifact": "runs/20260930-101945/repair/qa-resume-20261014-root/appui-review-20261016.json",
+      "fixed_at": "2026-10-17T14:26:08.735848+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify/regression-results.json"
+    },
+    {
+      "id": "E2E-20261016-ASSIGN-MISSING-APP-500-SQL-LEAK",
+      "priority": "P2",
+      "title": "POST /api/applications/{不存在id}/assign 返回 500 且回显 sql: no rows in result set；/deploy 同名错误走 400（仅这两条缺存在性前置检查）",
+      "actual": "G1 实测：GET/PUT 对不存在 id 均 404，但 assign→500 + SQL 原文、deploy→400 + 同一内部错误。与今日已修的 P2-6（四处 PUT 400→404）同类，属该修复未覆盖的子资源 POST 路径。",
+      "source": [
+        "internal/hub/api/api.go（applications 子资源 assign/deploy 分支）"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g1/case-result.json"
+      ],
+      "affected_cases": [
+        "P14P15-12"
+      ],
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "reviewed_at": "2026-10-16T09:52:02.456749+00:00",
+      "review_artifact": "runs/20260930-101945/repair/qa-resume-20261014-root/g1-review-20261016.json",
+      "fixed_at": "2026-10-17T14:26:08.735848+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify/regression-results.json"
+    },
+    {
+      "id": "E2E-20261017-SECRET-SPLIT-VALUE-RECONSTRUCT",
+      "priority": "P1",
+      "affected_cases": [
+        "X16"
+      ],
+      "title": "secret 值被拆片后仍可重组为明文（同 chunk 前缀/后缀、跨 stdout/stderr、1MiB 头尾三变体）",
+      "actual": "G8 遮蔽矩阵 7 维中 6 维 PASS；「Execution/运行日志」维 FAIL：整值路径已遮蔽（[REDACTED]），但拆片变体两片原样可见、redacted 计数 0，并集即完整标记值。**与 2026-10-08 对 BE-SECRET-STREAM-001（P1）的验证口径不一致**（当时口径为\"stdout 前缀遮蔽、terminal_fields_reconstruct=false\"，标记 repair_status=PASS）→ 疑回归或原修复覆盖不足，需 Root/产品复核。",
+      "source": [
+        "internal/agent（实时/终态日志脱敏路径）",
+        "internal/hub/api（日志读取）"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-g8/case-result.json"
+      ],
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "reviewed_at": "2026-10-17T04:40:42.836350+00:00",
+      "review_artifact": "runs/20260930-101945/repair/qa-resume-20261014-root/g8g9-review-20261017.json",
+      "fixed_at": "2026-10-18T05:44:05.909151+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+    },
+    {
+      "id": "WEB-NODE-SELECTION-DRIFT-20261017",
+      "priority": "P1",
+      "affected_cases": [
+        "X14"
+      ],
+      "title": "删除被选行之前的行后，跨页勾选按行位置漂移，真实批量请求命中非用户所选节点",
+      "actual": "最小复现（干净会话）：勾选 index 3 的 n01 → 删除 index 0 的 b4 → 勾选漂移到占据原 index 3 的 n02 →「设为维护」payload = n02（期望 n01），n02 实际 pending→maintenance。主数据集与 drift-repro A 一致复现；删除位于被选行之后/异页不漂移。根因：web/src/features/shared/data-table.tsx:124 注释称按行 id 保留，但 useReactTable（同文件 160-208）未设置 getRowId → TanStack Table 默认以行索引为 rowSelection 键。",
+      "source": [
+        "web/src/features/shared/data-table.tsx:124",
+        "web/src/features/shared/data-table.tsx:160-208"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-g9/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-g9/drift-repro.json"
+      ],
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "reviewed_at": "2026-10-17T04:40:42.836350+00:00",
+      "review_artifact": "runs/20260930-101945/repair/qa-resume-20261014-root/g8g9-review-20261017.json",
+      "fixed_at": "2026-10-17T14:26:08.735848+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify/regression-results.json"
+    },
+    {
+      "id": "E2E-20261017-XFER-REMOTE-TARGET-STUCK-DELIVERING",
+      "priority": "P1",
+      "affected_cases": [
+        "X18",
+        "X22-*"
+      ],
+      "title": "多目标 Transfer 的远端目标偶发永久停在 DELIVERING：Hub 未发出 FILE_DELIVERY_REQUEST 却标记 DELIVERING，无超时/重试恢复，并使节点删除永久 409",
+      "actual": "帧账本证明 Hub 侧从未发出 FILE_DELIVERY_REQUEST 却把目标写成 DELIVERING（Send 仍返回成功），无超时/重试恢复，重试亦不复原；非终态传输使 DELETE /api/nodes/{id} 永久 409 has active file transfer（Transfer 无 DELETE，只能 Cancel 释放）。4 次尝试 2 次复现、2 次 ~2s 正常。疑似 internal/hub/gateway.go wsConn.writeLoop 写失败静默退出 + dispatchTarget 无投递超时。",
+      "source": [
+        "internal/hub/gateway.go（wsConn.writeLoop 写失败静默退出）",
+        "internal/hub（dispatchTarget 无投递超时）"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-g6/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-g6/final-cleanup-oracle.json"
+      ],
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "reviewed_at": "2026-10-17T04:47:30.552640+00:00",
+      "review_artifact": "runs/20260930-101945/repair/qa-resume-20261014-root/g6-review-20261017.json",
+      "fixed_at": "2026-10-17T14:26:08.735848+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify/regression-results.json"
+    },
+    {
+      "id": "WEB-SKIP-TO-MAIN-DEAD-ANCHOR-20261017",
+      "priority": "P3",
+      "affected_cases": [
+        "G04-04",
+        "X19"
+      ],
+      "title": "Skip to Main 指向不存在的 #content 锚点，激活后不移动焦点/不滚动（键盘用户无法跳过导航）",
+      "actual": "首个 Tab 聚焦 ✓；Enter 后 hash=#content 但 DOM 无 id=\"content\" 元素、焦点仍停链接、scrollY=0、下一次 Tab 落到品牌链接。代码 web/src/components/skip-to-main.tsx:5，全库无锚点目标。",
+      "source": [
+        "web/src/components/skip-to-main.tsx:5"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-control-gap/evidence/b3-skip-to-main.png",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-control-gap/case-result.json"
+      ],
+      "status": "FIXED_AND_VERIFIED",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "reviewed_at": "2026-10-17T12:04:44.954857+00:00",
+      "review_artifact": "runs/20260930-101945/repair/qa-resume-20261014-root/control-gap-review-20261017.json",
+      "fixed_at": "2026-10-17T14:26:08.735848+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify/regression-results.json"
+    },
+    {
+      "id": "E2E-20261017-ENROLL-CONCURRENT-500-SQLITE-BUSY",
+      "title": "enrollment 并发请求间歇 500（SQLITE_BUSY）+ 存储原文外泄 + Hub 零日志",
+      "severity": "P2",
+      "status": "FIXED_AND_VERIFIED",
+      "detail": "并发 12 次 → 500×10~11，体 database is locked (5)/(517)；顺序 48 次全 200。根因 WithTx deferred BeginTx（internal/store/sqlite.go:44-55）WAL 读→写升级立即 BUSY 不受 busy_timeout 保护；次生：响应外泄存储原文、Hub 对存储错误零日志。修法：DSN _txlock=immediate + 归一化 + error 日志",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json"
+      ],
+      "recorded_at": "2026-10-17T15:51:31.539367+00:00",
+      "updated_at": "2026-10-17T15:51:31.539367+00:00",
+      "fixed_at": "2026-10-18T05:44:05.909151+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+    },
+    {
+      "id": "OBS-20261012-APP-NODES-NULL-SHAPE",
+      "title": "GET /api/applications/{id}/nodes 无绑定时返回 null 而非 []",
+      "severity": "P3",
+      "status": "FIXED_AND_VERIFIED",
+      "detail": "nil slice → 原始 null；严格消费者会误判",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json"
+      ],
+      "recorded_at": "2026-10-17T15:51:31.539367+00:00",
+      "updated_at": "2026-10-17T15:51:31.539367+00:00",
+      "fixed_at": "2026-10-18T05:44:05.909151+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+    },
+    {
+      "id": "OBS-20261014-PAST-ONETIME-SAVE-ENABLED",
+      "title": "One-Time 运行时间可为过去（前端无内联错误、服务端 200 接受）",
+      "severity": "P3",
+      "status": "FIXED_AND_VERIFIED",
+      "detail": "validation.go:187 只校验非零；两端补「必须晚于现在」",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json"
+      ],
+      "recorded_at": "2026-10-17T15:51:31.539367+00:00",
+      "updated_at": "2026-10-17T15:51:31.539367+00:00",
+      "fixed_at": "2026-10-18T05:44:05.909151+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+    },
+    {
+      "id": "OBS-20261016-G23-RECONNECT-WINDOW",
+      "title": "Agent connected 标志在握手完成前置真（毫秒~秒级放行窗口）",
+      "severity": "P3",
+      "status": "FIXED_AND_VERIFIED",
+      "detail": "manager.go:249 Dial 成功后即置真；窗口上限受 Hub DB 写影响",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json"
+      ],
+      "recorded_at": "2026-10-17T15:51:31.539367+00:00",
+      "updated_at": "2026-10-17T15:51:31.539367+00:00",
+      "fixed_at": "2026-10-18T05:44:05.909151+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+    },
+    {
+      "id": "OBS-20261014-PAGESIZE-PERSISTED-OUT-OF-RANGE-BLANK",
+      "title": "持久化 pageSize 越界导致下拉空白",
+      "severity": "P3",
+      "status": "FIXED_AND_VERIFIED",
+      "detail": "readTableView 未按 PAGE_SIZE_OPTIONS 白名单校验",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json"
+      ],
+      "recorded_at": "2026-10-17T15:51:31.539367+00:00",
+      "updated_at": "2026-10-17T15:51:31.539367+00:00",
+      "fixed_at": "2026-10-18T05:44:05.909151+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+    },
+    {
+      "id": "OBS-20261016-P17P18-04-SYSTEM-TRIGGER-NO-SOURCE",
+      "title": "UI 暴露 system 触发筛选但系统无产出路径",
+      "severity": "P3",
+      "status": "FIXED_AND_VERIFIED",
+      "detail": "Go 仅 manual/schedule；UI 硬编码该行",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json"
+      ],
+      "recorded_at": "2026-10-17T15:51:31.539367+00:00",
+      "updated_at": "2026-10-17T15:51:31.539367+00:00",
+      "fixed_at": "2026-10-18T05:44:05.909151+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+    },
+    {
+      "id": "OBS-20261015-API-CONTRACT-DEVIATIONS-LOW",
+      "title": "API 契约低危偏差（6 条开放）",
+      "severity": "P3",
+      "status": "FIXED_AND_VERIFIED",
+      "detail": "③405 ④DELETE 缺 id 统一 404 ⑤/api/me 键名 ⑥X-Total-Count ⑦CORS ⑧存在性 oracle",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json"
+      ],
+      "recorded_at": "2026-10-17T15:51:31.539367+00:00",
+      "updated_at": "2026-10-17T15:51:31.539367+00:00",
+      "fixed_at": "2026-10-18T05:44:05.909151+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+    },
+    {
+      "id": "OBS-20261010-DASHBOARD-FAULT-ORACLE",
+      "title": "Dashboard 应用状态失败被吞（运行时）",
+      "severity": "P2",
+      "status": "FIXED_AND_VERIFIED",
+      "detail": "修复已在源码（P03-10），部署构建滞后；下一构建复验",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261017-tail-verify/case-result.json"
+      ],
+      "recorded_at": "2026-10-17T15:51:31.539367+00:00",
+      "updated_at": "2026-10-17T15:51:31.539367+00:00",
+      "fixed_at": "2026-10-18T05:44:05.909151+00:00",
+      "fixed_verified_by": ".e2e/runs/20260930-101945/repair/qa-resume-20261018-final-verify/regression-results.json"
+    }
+  ],
+  "repair_additional_unconfirmed_failures": [
+    {
+      "id": "OBS-20261012-TASKS-INITIAL-LOADING-FEEDBACK",
+      "title": "Tasks初始请求未完成却显示没有结果，没有Loading反馈",
+      "case_id": "TABLE-TASKS-ERROR",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/batch18/evidence/resume20261012/table-tasks-loading-observation.json",
+      "source": [
+        "web/src/features/tasks/index.tsx:273",
+        "web/src/features/shared/data-table.tsx:302"
+      ],
+      "status": "CONFIRMED_TEST_FAILURE_REPAIR_SCOPE_REVIEW_PENDING",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "reviewed_at": "2026-10-12T14:48:34.578022+00:00",
+      "canonical_case_ids": [
+        "TABLE-TASKS-ERROR",
+        "G03-10"
+      ]
+    },
+    {
+      "id": "OBS-20261012-DASHBOARD-APP-STATE-ERROR-SUPPRESSED",
+      "title": "应用状态请求失败被空数组吞掉，Dashboard无Error/Retry且健康比错误下降",
+      "case_id": "P03-10",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/batch21/evidence/P03-10-app-state-fault.json",
+      "source": [
+        "web/src/features/overview/index.tsx:63",
+        "web/src/features/overview/index.tsx:75"
+      ],
+      "status": "CONFIRMED_TEST_FAILURE_REPAIR_SCOPE_REVIEW_PENDING",
+      "source_change_authorized": false,
+      "original_22_denominator_unchanged": true,
+      "reviewed_at": "2026-10-12T14:48:34.578022+00:00"
+    }
+  ],
+  "ledger_note": "2026-10-17 尾部验证批 T1 汇入：新增 P2 enrollment 并发缺陷 + 6 条 P3 确认缺陷（修复中）；7 条判定非缺陷/闭环 | 2026-10-18 最终部署验证：全部 IN_REPAIR 项转 FIXED_AND_VERIFIED；仅保留环境不可行与产品口径项。"
 }

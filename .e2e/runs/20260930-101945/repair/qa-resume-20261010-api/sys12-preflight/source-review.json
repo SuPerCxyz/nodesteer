@@ -1,0 +1,54 @@
+{
+  "status": "READ_ONLY_SOURCE_REVIEW_ROOT_REVIEW_REQUIRED",
+  "reviewed_at_utc": "2026-10-10T15:22:48Z",
+  "scope": "SYS-12 Docker Agent restart/recreate persistence; no API, Docker, process, Task, Node, User, Artifact, Transfer, or policy actions performed",
+  "canonical": {
+    "case_id": "SYS-12",
+    "priority": "P0",
+    "status": "NOT_RUN",
+    "inventory": ".e2e/runs/20260930-101945/repair/feature-inventory.json:12837"
+  },
+  "source_conclusions": {
+    "plain_docker_mode": "DetectDeploymentMode maps .dockerenv/container cgroup to docker; HostIntegrationFromMode is true only for docker_host_integration. Plain Docker therefore reports HostIntegration false.",
+    "ordinary_command": "Runner buildCmd executes Command with /bin/sh -c (internal/agent/execution/runner.go:170-175); image-rootfs proposal includes /bin/sh with SHA a6f559e00b69a4aa9d8cb607be18d9386c5aee55c509e2c075549dcf00e00fc7. The imported image evidence confirms seven source files match, but a fresh read-only TAR/image check is still required before relying on shell availability.",
+    "local_scheduler": "Agent capabilities advertise CapLocalScheduler for all modes; desired sync upserts schedules, commits revision, reloads local schedules; Hub sync includes disabled schedules for matched tasks (internal/agent/agent.go:224, 841-923; internal/hub/sync.go:143-155). NoHost is not a scheduler capability blocker.",
+    "journal_and_identity": "Run handling writes an execution journal before execution; local identity, global revision, schedule and execution state live in LocalStore under configured DataDir (internal/agent/agent.go:951-980; internal/agent/store.go:50-130). DataDir defaults to /var/lib/nodesteer (cmd/agent/main.go:30-45).",
+    "application_prefetch": "Assigned Apps are included in desired sync; post-commit sync calls prefetchApplications regardless of HostIntegration. Prefetch downloads to DataDir/artifacts, verifies SHA, atomically renames and records the local artifact row. Docker plain mode advertises ApplicationDeploy=false, so prefetch-only may be testable without deploy; this is excluded from the minimal SYS-12 flow and remains a separate unverified dimension (internal/hub/sync.go:186-198; internal/agent/agent.go:924-945; internal/agent/artifact.go:19-123)."
+  },
+  "pinned_image_evidence": {
+    "image_id": "sha256:ecd4dd9f8300067ba2cba22e8c5a701f1984f054fa4476354ed4d58af544cd44",
+    "tag": "nodesteer-qa/agent-host:f174890c3846",
+    "owner_label": "qa-resume-20261010-host-f174890c3846",
+    "entrypoint": [
+      "/opt/nodesteer/nodesteer-agent",
+      "--config",
+      "/run/nodesteer/agent.yaml"
+    ],
+    "archive_path": "/opt/qa-resume-20261010-host-f174890c3846/agent-rootfs.tar",
+    "archive_sha256": "d012a9301f242511460aa212608f8965879866ae6d64d8e2b8c40b7c0a0da490",
+    "agent_binary_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host-image-import-verified.json",
+    "known_limit": "Image config and imported source hashes are recorded. This does not prove that a nonroot container can write its mounted DataDir or that an Agent reconnects/persists state; the helper is read-only and does not create a container."
+  },
+  "readonly_helper": {
+    "source": "native2_readonly_preflight.py",
+    "purpose": "Inspect exact pinned image metadata, exact candidate-name collisions, pinned rootfs TAR members/SHA, and private original-config key presence only; never emits config values or Docker environment data.",
+    "remote_actions": "docker image inspect plus exact per-candidate docker container/volume/network inspect, lstat/read-only SHA and tar metadata; no collection listing, container create/start/stop, volume/network mutation, API, signal, or file writes.",
+    "identity_warning": "Original private config's agent_id presence is metadata only. Source supports first HELLO with the existing registration token, fresh NodeName, and omitted/empty AgentID; Hub then generates new IDs/credential and Agent persists them under its new DataDir. No Admin enrollment POST or returned secret is needed; never reuse or alter the original config/AgentID. Recheck NodeName uniqueness via Admin GET before startup. Source: internal/agent/agent.go:191-208,380-400; internal/agent/connection/manager.go:252-261; internal/hub/gateway.go:343-405; internal/hub/node.go:163-201.",
+    "compile_status": "Python compile() succeeded locally without executing helper; source SHA256 53ecdaa900297673794a64b6091c95a87507826e89357def7ba604af5e1f5fc7. Root, private directory and config path are exact pinned/no-symlink/owner/mode guarded; config opens O_NOFOLLOW and is bounded to 1MiB, values never emitted. Candidate collisions use exact per-name inspect only, and absence requires 'No such' response. TAR member reads are gated on exact archive SHA and support only explicit rootfs/ or direct-root entries. No Native2 helper/API/Docker call was made.",
+    "remote_command_sha256": "b9187e9ac47e677d43aeec04932d753fed82e94b3b7debcb4d2dc102347b2209",
+    "remote_command_bytes": 8462
+  },
+  "references": [
+    "internal/agent/detect.go:13-48",
+    "cmd/agent/main.go:24-45,85-95",
+    "internal/agent/agent.go:224-245,841-945,951-980",
+    "internal/agent/execution/runner.go:170-185",
+    "internal/agent/artifact.go:19-123",
+    "internal/agent/store.go:70-130,425-451",
+    "internal/hub/sync.go:143-198",
+    "internal/hub/api/api.go:585-644",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host-image-import-verified.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host-fixture-plan-proposal.json:rootfs"
+  ]
+}

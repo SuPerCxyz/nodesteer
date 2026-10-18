@@ -1,0 +1,83 @@
+{
+  "review_id": "ROOT-P01-SIMPLIFY-VERIFY-20261017",
+  "reviewed_at": "2026-10-17T11:20:08.001717+00:00",
+  "reviewer": "main-agent(root)",
+  "status": "INTEGRATED",
+  "dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-p01-verify",
+  "authorization_basis": "用户指示：不需要历史版本兼容 + 遇问题自行选择最优解自动推进",
+  "build_transition": {
+    "label": "dddee4f0-e2e-repair-20261017-p01",
+    "hub_sha": "029f3f4e5cdfe863…",
+    "agent_sha": "449af1d571daccce…",
+    "prev": "dddee4f0-e2e-repair-20261016-cr1",
+    "backup": "backup-20261017-p01/*.bak-20261017-p01（可回滚，未执行）"
+  },
+  "verdicts": [
+    {
+      "case_id": "SYS-27",
+      "canonical_after": "PASS",
+      "reason": "online==online / !=offline → SUCCESS 且真实 marker；==offline → SKIPPED 无 marker（此前恒 BLOCKED）",
+      "limitations": []
+    },
+    {
+      "case_id": "SYS-28",
+      "canonical_after": "PASS",
+      "reason": "成功历史 SUCCESS+执行；==FAILED SKIPPED；未观察 → BLOCKED fail-closed",
+      "limitations": []
+    },
+    {
+      "case_id": "SYS-29",
+      "canonical_after": "PASS",
+      "reason": "未过期路径可用；未观察 fail-closed；过期 TTL 产品路径不可构造（缓存无写入方），由探针+单测覆盖",
+      "limitations": [
+        "「TTL 过期」无法经产品路径构造（Hub 每次实时计算正剩余），已用受控探针与单测覆盖"
+      ]
+    },
+    {
+      "case_id": "SYS-30",
+      "canonical_after": "PASS",
+      "reason": "remote 不满足 → SKIPPED，无 marker/副作用",
+      "limitations": []
+    },
+    {
+      "case_id": "E2E-10",
+      "canonical_after": "PASS",
+      "reason": "满足/不满足/真实 offline 节点/未观察全部可判定（此前 13/13 BLOCKED）；TTL 过期同上",
+      "limitations": [
+        "「TTL 过期」同上不可构造"
+      ]
+    },
+    {
+      "case_id": "INV-09",
+      "canonical_after": "PASS",
+      "reason": "UNKNOWN/空值即使带正 ttl → BLOCKED，与可判定状态区分",
+      "limitations": []
+    },
+    {
+      "case_id": "SYS-26",
+      "canonical_after": "PASS",
+      "reason": "AND 满足 SUCCESS；AND 中不满足 SKIPPED；AND 中未知 → 整体 BLOCKED（不被当 SKIPPED 绕过）",
+      "limitations": []
+    }
+  ],
+  "clock_independence_proof": {
+    "real_path": "测试时 hub 相对各节点偏 -0.05～-0.50s，满足路径重复 4 次全 SUCCESS",
+    "controlled_probe": "真实 agent 二进制 + 本机 fake Hub（9/9）：observed_at 偏 -1h/+1h/epoch0 且 ttl_remaining_sec>0 → SUCCESS 且真实执行；ttl=0/-5/缺失 → BLOCKED；UNKNOWN/空 → BLOCKED。±1h 两方向同时通过 ⇒ 判定不读任何时钟"
+  },
+  "defect_closed": "E2E-20261014-REMOTE-CONDITION-CLOCK-SKEW 已修复（且升级为\"代码中不再存在跨时钟比较\"的更优解）",
+  "counts_before": {
+    "PASS": 473,
+    "FAIL": 8,
+    "PARTIAL": 13,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "counts_after": {
+    "PASS": 473,
+    "FAIL": 8,
+    "PARTIAL": 13,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "status_changes": []
+}

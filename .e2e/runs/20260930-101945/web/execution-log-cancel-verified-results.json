@@ -1,0 +1,147 @@
+{
+  "config": {
+    "argv": [
+      "/usr/bin/node",
+      "/home/superc/code/nodesteer/web/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "e2e/playwright.config.ts",
+      "--reporter=json",
+      "--grep",
+      "SAFE-15"
+    ],
+    "configFile": "/home/superc/code/nodesteer/web/e2e/playwright.config.ts",
+    "rootDir": "/home/superc/code/nodesteer/web/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/superc/code/nodesteer/web/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "safe-ui.spec.ts",
+      "file": "safe-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "SAFE-15 真实执行日志流/搜索/换行跟随复制与停止取消审计",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 20628,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected substring: \u001b[32m\"QA_STDOUT_ONE\"\u001b[39m\nReceived string:    \u001b[31m\"\"\u001b[39m\n\nCall Log:\n- Timeout 20000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected substring: \u001b[32m\"QA_STDOUT_ONE\"\u001b[39m\nReceived string:    \u001b[31m\"\"\u001b[39m\n\nCall Log:\n- Timeout 20000ms exceeded while waiting on the predicate\n    at /home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts:453:297",
+                    "location": {
+                      "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                      "column": 297,
+                      "line": 453
+                    },
+                    "snippet": "  451 |     await page.getByRole('button',{name:/^立即运行$/}).click();await page.getByRole('alertdialog').getByRole('button',{name:/^立即运行$/}).click()\n  452 |     await page.waitForURL(/\\/executions$/)\n> 453 |     await expect.poll(async()=>{const e=(await apiRequest(page,'/api/executions?task_id='+task.id+'&limit=10')).body as {id:string;status:string;stdout:string;stderr:string}[];const running=e.find(x=>x.status==='RUNNING');executionId=running?.id||'';return running?.stdout||''},{timeout:20_000}).toContain('QA_STDOUT_ONE')\n      |                                                                                                                                                                                                                                                                                                         ^\n  454 |     await page.goto('/executions/'+executionId);const output=page.locator('pre'),stream=page.getByRole('combobox',{name:/全部流/})\n  455 |     await expect(output).toContainText('QA_STDOUT_ONE');await expect(output).toContainText('QA_STDERR_ONE')\n  456 |     await stream.selectOption('stdout');await expect(output).toContainText('QA_STDOUT_TWO');await expect(output).not.toContainText('QA_STDERR_ONE')"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                        "column": 297,
+                        "line": 453
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected substring: \u001b[32m\"QA_STDOUT_ONE\"\u001b[39m\nReceived string:    \u001b[31m\"\"\u001b[39m\n\nCall Log:\n- Timeout 20000ms exceeded while waiting on the predicate\n\n  451 |     await page.getByRole('button',{name:/^立即运行$/}).click();await page.getByRole('alertdialog').getByRole('button',{name:/^立即运行$/}).click()\n  452 |     await page.waitForURL(/\\/executions$/)\n> 453 |     await expect.poll(async()=>{const e=(await apiRequest(page,'/api/executions?task_id='+task.id+'&limit=10')).body as {id:string;status:string;stdout:string;stderr:string}[];const running=e.find(x=>x.status==='RUNNING');executionId=running?.id||'';return running?.stdout||''},{timeout:20_000}).toContain('QA_STDOUT_ONE')\n      |                                                                                                                                                                                                                                                                                                         ^\n  454 |     await page.goto('/executions/'+executionId);const output=page.locator('pre'),stream=page.getByRole('combobox',{name:/全部流/})\n  455 |     await expect(output).toContainText('QA_STDOUT_ONE');await expect(output).toContainText('QA_STDERR_ONE')\n  456 |     await stream.selectOption('stdout');await expect(output).toContainText('QA_STDOUT_TWO');await expect(output).not.toContainText('QA_STDERR_ONE')\n    at /home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts:453:297"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-01T04:30:39.250Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts/safe-ui-SAFE-15-真实执行日志流-搜索-换行跟随复制与停止取消审计-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                    "column": 297,
+                    "line": 453
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "ddd7e7cf69376006a28d-32264209e63f71e29bff",
+          "file": "safe-ui.spec.ts",
+          "line": 442,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-01T04:30:38.676Z",
+    "duration": 21302.757,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

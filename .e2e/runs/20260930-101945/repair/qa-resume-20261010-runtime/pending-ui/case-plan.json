@@ -1,0 +1,111 @@
+{
+  "case_id": "P11-02",
+  "current_inventory_status": "NOT_RUN",
+  "purpose": "Observe real child Task PENDING UI while only the owned Native4 proxy delays RUN_EXECUTION, then observe RUNNING/SUCCESS and unique stdout marker without page reload.",
+  "scope": {
+    "hub": "repair :18080 only",
+    "child_node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+    "child_agent_id": "agent-ab15a133-73cd-4025-8c97-f2ff37e000f5",
+    "child_owned_root": "/tmp/qa-resume-20261008-child-ciivjupc",
+    "proxy_pid_startticks": "freshly guarded 44932 / 123677922",
+    "parent_unit_main_pid": "freshly guarded 32487",
+    "original_native_agents": "all four must remain online/synced; no process/service/cgroup operation"
+  },
+  "fixture": {
+    "child_task": "one type=command target exact child, retry=0, timeout=15, no params, no schedule",
+    "task_command_template": "sleep 4; printf '%s\\n' 'QA_PENDING_UI_<12-hex-hold-nonce>'",
+    "name_suffix": "same 12-hex hold nonce",
+    "schedule_count": "0 for every task targeting child",
+    "created_task": {
+      "task_id": "05b13ad2-7668-4a28-b219-a6e108169c78",
+      "task_name": "qa-resume-20261010-pending-ui-d61cf63acad2",
+      "nonce": "d61cf63acad2",
+      "marker": "QA_PENDING_UI_d61cf63acad2",
+      "command_sha256": "205bece777798338436f28a80b03ed4250697a9623aa76601299f935a8a365ff",
+      "status": "TASK_CREATED_AND_VERIFIED",
+      "schedule_count": 0
+    }
+  },
+  "fault_control": {
+    "only_control": "hold_types=[RUN_EXECUTION] plus unique qa_hold_nonce/qa_hold_task_id",
+    "hold_window_seconds": 8,
+    "control_precondition": "exact controls file mode 0600/owner UID and content {}",
+    "disabled_methods": [
+      "SIGSTOP",
+      "proxy restart/stop",
+      "Unit or cgroup operation",
+      "child process kill",
+      "child direct /run API call"
+    ]
+  },
+  "watchdog": {
+    "identity": "unique helper file under exact existing child owner root",
+    "run_uid": 65534,
+    "watchdog_independent_of": "UI driver process or Agent process",
+    "coordination": "arm locks unique O_EXCL nonce lock; watchdog writes READY and waits on same flock; arm rechecks owner/proc/DB/API, writes only owned hold and monotonic deadline while holding lock, then unlocks",
+    "deadline": "monotonic + 8 seconds from post-control arm state; if arm dies before state, exact hold is cleared immediately; if watchdog expires first, later armer cannot reuse the existing lock",
+    "release": "only exact nonce + task marker; remove RUN_EXECUTION and owned marker keys, CAS bytes, preserve all other control keys"
+  },
+  "API_guard_local_only": {
+    "connection": "local controller reads existing 0600 private repair connection and contacts only port 18080",
+    "checks": [
+      "Native1..4 plus owned child identity/status online and sync_status synced",
+      "child has exactly the unique child-targeted Task, retry0/timeout15/enabled/no parameters",
+      "no schedule references any child-targeted Task",
+      "no PENDING/RUNNING execution for child"
+    ],
+    "after_helper_task_create": "wait for revision convergence, then repeat all fresh API guards immediately before running helper"
+  },
+  "remote_parent_helper": {
+    "target_node_id": "03cb50cc-eab6-4afd-bbe0-f73c4e326773",
+    "task": "one unique timeout30/retry0/noSchedule Command Task; command embeds reviewed source and base64 watchdog only, no credentials",
+    "checks": [
+      "exact parent Unit active/MainPID and shared cgroup read-only",
+      "exact child/proxy PID/startticks/UID/exe SHA/argv config path",
+      "owned root dev/inode/UID/mode and manifest SHA/nonce/Node/Agent",
+      "config owner/mode/SHA without reading config contents",
+      "owned DB dev/inode/UID and read-only SQLite quick_check/identity/sync_state/tasks/schedules/executions using previously observed schema"
+    ],
+    "mutations": "only copy one unique watchdog file into child-owned root and arm RUN_EXECUTION control after all guards",
+    "manifest_sha_source": "read-only .e2e/test-data.json latest_owner_guard verified against its latest restart evidence result.owner_manifest_sha256_after before helper Task creation; stale input fails before external write"
+  },
+  "ui_path": [
+    "Prepare dedicated agent-browser session `nodesteer-pending-ui-20261010` with its own auto-launched Chromium process and dynamically assigned loopback CDP port; bind listener PID/startticks/UID/exe SHA/profile inode to the owned session. Use the private API login token only in memory/localStorage; actual application /api/me must report administrator through a redacted fetch observer.",
+    "Preopen exact child Task Run page and prove task, command SHA/marker, target and no schedule; keep session ready.",
+    "Local controller receives exact HOLD_ARMED proof; UI driver verifies proof freshness <=8s and preopened URL, clicks actual Run Now and confirmation buttons once.",
+    "Use the rendered Executions table link to obtain the exact Execution ID; enter detail page and record the exact status badge plus actual app-fetched Execution API ID/TaskID/NodeID.",
+    "Record timestamped PENDING -> RUNNING -> SUCCESS badge observations, unique stdout marker, same detail path/timeOrigin/history (no reload); no rerun if RUNNING is missed.",
+    "Logout using the same private-login session in-page, verify old-token /api/me returns 401, clear local/session storage and close only this browser session.",
+    "Current prepared proof is UI_PREPARED_NO_RUN with Run button visible, administrator role, exact child Task API readback, browser PID/process/profile fingerprint bound to its unique agent-browser session; run_clicked=false. Evidence path: prepared-proof.json."
+  ],
+  "cleanup": [
+    "Preserve Execution/Audit history.",
+    "Delete exact unique parent helper Task and GET404 after its Execution is terminal.",
+    "Delete exact unique child Task and GET404 only when exact child Execution is terminal; preserve Task if any PENDING/RUNNING remains.",
+    "After Root reviews actual evidence, delete exact owned-root watchdog source/ready/lock/arm-state/result/arm-evidence and verify controls {}; do not touch any unrelated root file or control."
+  ],
+  "acceptance": {
+    "full": "actual PENDING badge+ID/API identity, RUNNING badge, SUCCESS badge, marker, API SUCCESS same ID/task/node, detail page document unchanged, private session logout/revoked token, exact cleanup verified",
+    "partial": "PENDING captured but RUNNING missed; document/API/UI or cleanup evidence missing; no repeat Run",
+    "not_a_pass": "source compile, helper health, Task POST status, static/mock output, API-only status"
+  },
+  "excluded": [
+    "product/source changes",
+    "P11-02 status/global inventory changes",
+    "original Native services/Agents",
+    "shared Node/Hub configuration",
+    "Git/Archive"
+  ],
+  "source_sha256": {
+    "arm_control.py": "1163ba2737c3dd7c434c0c44918117675509aae5338037b259e93a4d4a5bdd3c",
+    "watchdog.py": "cadfa357ce19783824825589755f398590399e99cc8667df2bff3a4793ef0480",
+    "controller.py": "203b18e6c7bdfb1573259247a31d0e0559496658cd473931d3d3828e7a80c84b",
+    "ui_driver.py": "89b0bfe1a1bc98a961a815dbe92e093ba5925d1d45f75e2f1f6b17683fee7813",
+    "ui-network-observer.js": "db0d2d0bf557f13425424faade3e0a39ef20a8ab7e097748f26239ddf4483014",
+    "create_child_task.py": "cd79b99b7ffcaf69b7e712bbad16a87b0172318e11bbb1e9336df6bc47a38968"
+  },
+  "manifest_input_diagnosis": "manifest-source-diagnosis.json; attempt02 adds pre-helper equality guard against test-data latest owner pointer and linked restart evidence",
+  "attempt02_auth_refresh": "Local helper verifies stored session; on 401 logs in using only existing 0600 private credentials in memory, role administrator, then finally same-token logout + /api/me=401; no credential value is stored or embedded.",
+  "owner_manifest_schema_source": "auth-artifact/helper/agent_artifact_probe.py:127-145; actual owner-marker schema verified by successful branch probe",
+  "owner_nonce_guard": "removed; no longer part of Native4 v1 manifest schema"
+}

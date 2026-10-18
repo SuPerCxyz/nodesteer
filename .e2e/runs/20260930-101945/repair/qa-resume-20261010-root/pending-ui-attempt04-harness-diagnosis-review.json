@@ -1,0 +1,16 @@
+{
+  "reviewed_at": "2026-10-10T11:29:58.197734+00:00",
+  "status": "STATIC_ROOT_CAUSE_FOUND_PHYSICAL_CLEANUP_ORACLE_PENDING",
+  "actual_UI_runs": 0,
+  "result": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt04/case-result.json",
+  "source_refs": {
+    "signature": "arm_control.py:124 atomic_write(path, content, uid, gid, expected_before)",
+    "call": "arm_control.py:327 atomic_write(controls, before, new_bytes, uid, gid)"
+  },
+  "finding": "Caller expected_before receives GID integer; bytes!=integer triggers controls_changed_before_write. Error alone does not prove remote controls changed. Hold never written by this failed caller.",
+  "needed": [
+    "Runtime verify all similar calls and repair local harness with named args/test",
+    "Independent owned readonly inspector: actual controls and watchdog sidecars/PID final state",
+    "Fresh actual test remains required; no product failure or E2E PASS"
+  ]
+}

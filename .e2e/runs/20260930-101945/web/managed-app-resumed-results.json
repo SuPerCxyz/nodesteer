@@ -1,0 +1,163 @@
+{
+  "config": {
+    "argv": [
+      "/usr/bin/node",
+      "/home/superc/code/nodesteer/web/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "e2e/playwright.config.ts",
+      "--reporter=json",
+      "--grep",
+      "FULL-08"
+    ],
+    "configFile": "/home/superc/code/nodesteer/web/e2e/playwright.config.ts",
+    "rootDir": "/home/superc/code/nodesteer/web/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/superc/code/nodesteer/web/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "full-feature-ui.spec.ts",
+      "file": "full-feature-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "FULL 当前页面真实业务补测",
+          "file": "full-feature-ui.spec.ts",
+          "line": 37,
+          "column": 6,
+          "specs": [
+            {
+              "title": "FULL-08 真实应用UI Deploy/Stop/Start/Restart/Upgrade与Unit/config/SHA",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 240000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 6097,
+                      "error": {
+                        "message": "Error: Command failed: python3 /home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/guest-inspect.py qa-20260930-101945-web-app-9b4578e6.service /tmp/qa-20260930-101945-web/app-9b4578e6 cleanup\nTraceback (most recent call last):\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/guest-inspect.py\", line 38, in <module>\n    pid=qga(request)['pid']\n        ~~~^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/guest-inspect.py\", line 34, in qga\n    if r.returncode:raise RuntimeError(r.stderr[:200])\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Bad owner or permissions on /etc/ssh/ssh_config.d/20-systemd-ssh-proxy.conf\n\n",
+                        "stack": "Error: Command failed: python3 /home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/guest-inspect.py qa-20260930-101945-web-app-9b4578e6.service /tmp/qa-20260930-101945-web/app-9b4578e6 cleanup\nTraceback (most recent call last):\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/guest-inspect.py\", line 38, in <module>\n    pid=qga(request)['pid']\n        ~~~^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/guest-inspect.py\", line 34, in qga\n    if r.returncode:raise RuntimeError(r.stderr[:200])\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Bad owner or permissions on /etc/ssh/ssh_config.d/20-systemd-ssh-proxy.conf\n\n\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:434:32",
+                        "location": {
+                          "file": "/home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts",
+                          "column": 32,
+                          "line": 434
+                        },
+                        "snippet": "  432 |     } finally {\n  433 |       try {await cleanupByIds(page,owned)} finally {\n> 434 |       const cleanup=JSON.parse(execFileSync('python3',[inspector,unit,directory,'cleanup'],{encoding:'utf8',timeout:30_000}))\n      |                                ^\n  435 |       expect(cleanup.unit_removed).toBeTruthy()\n  436 |       expect(cleanup.directory_removed).toBeTruthy()\n  437 |       if(process.env.NODESTEER_E2E_EVIDENCE_DIR)await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR+`/managed-app-${nonce}-cleanup.json`,JSON.stringify(cleanup,null,2))"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts",
+                            "column": 32,
+                            "line": 434
+                          },
+                          "message": "Error: Command failed: python3 /home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/guest-inspect.py qa-20260930-101945-web-app-9b4578e6.service /tmp/qa-20260930-101945-web/app-9b4578e6 cleanup\nTraceback (most recent call last):\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/guest-inspect.py\", line 38, in <module>\n    pid=qga(request)['pid']\n        ~~~^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/guest-inspect.py\", line 34, in qga\n    if r.returncode:raise RuntimeError(r.stderr[:200])\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Bad owner or permissions on /etc/ssh/ssh_config.d/20-systemd-ssh-proxy.conf\n\n\n\n  432 |     } finally {\n  433 |       try {await cleanupByIds(page,owned)} finally {\n> 434 |       const cleanup=JSON.parse(execFileSync('python3',[inspector,unit,directory,'cleanup'],{encoding:'utf8',timeout:30_000}))\n      |                                ^\n  435 |       expect(cleanup.unit_removed).toBeTruthy()\n  436 |       expect(cleanup.directory_removed).toBeTruthy()\n  437 |       if(process.env.NODESTEER_E2E_EVIDENCE_DIR)await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR+`/managed-app-${nonce}-cleanup.json`,JSON.stringify(cleanup,null,2))\n    at /home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts:434:32"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [
+                        {
+                          "text": "Traceback (most recent call last):\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/guest-inspect.py\", line 38, in <module>\n    pid=qga(request)['pid']\n        ~~~^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/guest-inspect.py\", line 34, in qga\n    if r.returncode:raise RuntimeError(r.stderr[:200])\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Bad owner or permissions on /etc/ssh/ssh_config.d/20-systemd-ssh-proxy.conf\n\n"
+                        },
+                        {
+                          "text": "Traceback (most recent call last):\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/guest-inspect.py\", line 38, in <module>\n    pid=qga(request)['pid']\n        ~~~^^^^^^^^^\n  File \"/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/guest-inspect.py\", line 34, in qga\n    if r.returncode:raise RuntimeError(r.stderr[:200])\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Bad owner or permissions on /etc/ssh/ssh_config.d/20-systemd-ssh-proxy.conf\n\n"
+                        }
+                      ],
+                      "retry": 0,
+                      "startTime": "2026-10-01T00:58:42.477Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts/full-feature-ui-FULL-当前页面真-88d0c-art-Upgrade与Unit-config-SHA-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/superc/code/nodesteer/web/e2e/tests/full-feature-ui.spec.ts",
+                        "column": 32,
+                        "line": 434
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "8c9e5df742ecbf3e9423-ef5b60d47f19f70fc069",
+              "file": "full-feature-ui.spec.ts",
+              "line": 329,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-01T00:58:41.949Z",
+    "duration": 6722.281,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

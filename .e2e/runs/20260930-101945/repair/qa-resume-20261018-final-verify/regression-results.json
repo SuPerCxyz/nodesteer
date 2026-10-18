@@ -1,0 +1,469 @@
+{
+ "batch": "qa-resume-20261018-final-verify",
+ "authority": "http://192.168.100.209:18080",
+ "build_label": "dddee4f0-e2e-repair-20261018-final",
+ "hub_sha256": "00e1f375bf67a59ad04dfc6283741cb276ac6be70ce2f21e02d25094845e7a71",
+ "agent_sha256": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01",
+ "updated_at_utc": "2026-10-18T05:25:38Z",
+ "nonce": "ca99ec4c",
+ "cases": [
+  {
+   "case_id": "OBS-20261014-PAST-ONETIME-SAVE-ENABLED",
+   "phase": "api",
+   "at_utc": "2026-10-18T04:55:18Z",
+   "status": "FIXED",
+   "conclusion": "过去 run_at 创建 -> 400 run_at must be in the future；未来正常；PUT 改为过去值同样 400",
+   "evidence": [
+    "evidence/phase03-task-schedule.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261017-XFER-API-NO-SELF-TRANSFER-CHECK",
+   "phase": "api",
+   "at_utc": "2026-10-18T04:55:28Z",
+   "status": "FIXED",
+   "conclusion": "自传（目标=源节点）-> 400 self transfer is not allowed",
+   "evidence": [
+    "evidence/phase06-transfers.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261015-API-CONTRACT-ME-KEYS",
+   "phase": "api",
+   "at_utc": "2026-10-18T04:55:40Z",
+   "status": "FIXED",
+   "conclusion": "/api/me 返回 token/user_id/username/role/expires 且无 PascalCase 键",
+   "evidence": [
+    "evidence/phase02-api-contract.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261015-API-CONTRACT-TRANSFERS-405",
+   "phase": "api",
+   "at_utc": "2026-10-18T04:55:40Z",
+   "status": "FIXED",
+   "conclusion": "transfers 非 POST -> 405 + Allow（方法守卫先于存在性）",
+   "evidence": [
+    "evidence/phase02-api-contract.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261015-API-CONTRACT-DELETE-404",
+   "phase": "api",
+   "at_utc": "2026-10-18T04:55:40Z",
+   "status": "FIXED",
+   "conclusion": "删除不存在 id 统一 404 且无 SQL 原文（6 端点）",
+   "evidence": [
+    "evidence/phase02-api-contract.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261015-API-CONTRACT-NODE-ORACLE",
+   "phase": "api",
+   "at_utc": "2026-10-18T04:55:41Z",
+   "status": "FIXED",
+   "conclusion": "operator/viewer 对存在/不存在节点 DELETE 均 403；admin PUT 不存在 404 node not found 无 SQL",
+   "evidence": [
+    "evidence/phase02-api-contract.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261016-G1-USER-DUP-SQL-MESSAGE",
+   "phase": "api",
+   "at_utc": "2026-10-18T04:55:41Z",
+   "status": "FIXED",
+   "conclusion": "重复用户名 -> 400 username already exists 且无 SQLite 原文",
+   "evidence": [
+    "evidence/phase02-api-contract.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261016-G1-ENROLL-TRANSIENT-500",
+   "phase": "api",
+   "at_utc": "2026-10-18T04:55:41Z",
+   "status": "FIXED",
+   "conclusion": "12 并发 enrollment 全部 200（无 500/503、无 SQLite 原文）；顺序正常；坏请求 400 归一化",
+   "evidence": [
+    "evidence/phase02-api-contract.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261012-APP-NODES-NULL-SHAPE",
+   "phase": "api",
+   "at_utc": "2026-10-18T04:56:06Z",
+   "status": "FIXED",
+   "conclusion": "无绑定节点时 GET /applications/{id}/nodes 原始响应为 []（非 null）",
+   "evidence": [
+    "evidence/phase04-app.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261016-JOURNAL-FROM-VERSION",
+   "phase": "api",
+   "at_utc": "2026-10-18T04:56:15Z",
+   "status": "FIXED",
+   "conclusion": "部署 journal：首次 from_version 空、二次 from_version=1.0（实际安装版本）",
+   "evidence": [
+    "evidence/phase04-app.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261017-EXEC-DISABLED-BRANCH-UNREACHABLE",
+   "phase": "api",
+   "at_utc": "2026-10-18T04:57:49Z",
+   "status": "FIXED",
+   "conclusion": "禁用节点派发 -> 400 node X is disabled（不是 not online 文案）",
+   "evidence": [
+    "evidence/phase07-disabled.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "E2E-20261017-SECRET-SPLIT-VALUE-RECONSTRUCT",
+   "phase": "x16",
+   "at_utc": "2026-10-18T04:58:50Z",
+   "status": "FIXED",
+   "conclusion": "四种拆片形态（同流前后段/跨流/大输出头尾/整值）日志均出现 [REDACTED] 且无任何 ≥8 字节片段可重组",
+   "evidence": [
+    "evidence/phase05-x16.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261016-G23-RECONNECT-WINDOW",
+   "phase": "g23",
+   "at_utc": "2026-10-18T04:59:52Z",
+   "status": "FIXED",
+   "conclusion": "HELLO_ACK 前（窗口内 12s 探测）hub_online_required 调度零触发；ACK accepted 后正常触发且 offline=0",
+   "evidence": [
+    "evidence/phase08-g23.json"
+   ],
+   "extra": {
+    "at_utc": "2026-10-18T04:59:11Z",
+    "case": [
+     "OBS-20261016-G23-RECONNECT-WINDOW"
+    ],
+    "pre_stop": {
+     "signalled": [
+      69361
+     ],
+     "remaining": []
+    },
+    "inject": {
+     "tasks": 1,
+     "schedules": 1,
+     "executions_before": 0
+    },
+    "mock_setup": {
+     "ok": true
+    },
+    "mock_start": {
+     "launcher": 69495,
+     "procs": [
+      "69496"
+     ]
+    },
+    "t_start": 1792299562.3476932,
+    "window_probe": {
+     "at_offset_s": 12.2,
+     "executions": []
+    },
+    "after_ack_probe": {
+     "at_offset_s": 29.2,
+     "executions": [
+      {
+       "id": "de9e684f-a4fa-4a54-ae26-821a6a6708b1",
+       "status": "SUCCESS",
+       "offline": 0,
+       "synced": 0,
+       "scheduled_time": "2026-10-18T04:59:47Z",
+       "start_time": "2026-10-18T04:59:47.737712354Z"
+      },
+      {
+       "id": "5e300767-60f6-4e16-8d22-b0ee300a7f76",
+       "status": "SUCCESS",
+       "offline": 0,
+       "synced": 0,
+       "scheduled_time": "2026-10-18T04:59:48Z",
+       "start_time": "2026-10-18T04:59:48.736836363Z"
+      },
+      {
+       "id": "e7b0aca3-8eef-43c7-9b07-52cb2aa6f782",
+       "status": "SUCCESS",
+       "offline": 0,
+       "synced": 0,
+       "scheduled_time": "2026-10-18T04:59:49Z",
+       "start_time": "2026-10-18T04:59:50.736963765Z"
+      }
+     ]
+    },
+    "agent_trigger_lines": [
+     "time=2026-10-18T12:59:47.736+08:00 level=INFO msg=\"schedule trigger\" schedule=qa-final-ca99ec4c-g23-sched task=qa-final-ca99ec4c-g23-task at=2026-10-18T04:59:47.000Z",
+     "time=2026-10-18T12:59:48.736+08:00 level=INFO msg=\"schedule trigger\" schedule=qa-final-ca99ec4c-g23-sched task=qa-final-ca99ec4c-g23-task at=2026-10-18T12:59:48.736+08:00",
+     "time=2026-10-18T12:59:50.736+08:00 level=INFO msg=\"schedule trigger\" schedule=qa-final-ca99ec4c-g23-sched task=qa-final-ca99ec4c-g23-task at=2026-10-18T12:59:49.736+08:00"
+    ],
+    "mock_log": "1792299559.079 listening 19365\n1792299560.736 accepted ('127.0.0.1', 49948)\n1792299560.737 upgraded\n1792299560.737 msg HELLO\n1792299562.738 msg HEARTBEAT\n1792299562.738 msg REVISION_CHECK\n1792299564.737 msg HEARTBEAT\n1792299564.737 msg REVISION_CHECK\n1792299566.737 msg HEARTBEAT\n1792299567.737 msg REVISION_CHECK\n1792299568.737 msg HEARTBEAT\n1792299570.738 msg HEARTBEAT\n1792299570.738 msg REVISION_CHECK\n1792299573.737 msg HEARTBEAT\n1792299573.737 msg REVISION_CHECK\n1792299576.737 msg HEARTBEAT\n1792299576.737 msg REVISION_CHECK\n1792299579.737 msg HEARTBEAT\n1792299579.737 msg REVISION_CHECK\n1792299582.737 msg HEARTBEAT\n1792299582.737 msg REVISION_CHECK\n1792299584.737 msg HEARTBEAT\n1792299585.737 msg REVISION_CHECK\n1792299585.737 HELLO_ACK accepted sent hello_seen=True\n1792299585.738 msg SYNC_REQUEST\n1792299585.739 msg INVENTORY\n1792299587.737 msg HEARTBEAT\n1792299587.746 msg LOG_CHUNK\n1792299587.753 msg EXECUTION_FINISHED\n1792299588.737 msg REVISION_CHECK\n1792299588.745 msg LOG_CHUNK\n1792299588.751 msg EXECUTION_FINISHED\n1792299589.737 msg HEARTBEAT\n1792299590.745 msg LOG_CHUNK\n1792299590.750 msg EXECUTION_FINISHED\n1792299591.737 msg HEARTBEAT\n1792299591.737 msg REVISION_CHECK\n",
+    "verdict": {
+     "window_closed_no_trigger": true,
+     "triggered_after_ack": true,
+     "post_ack_offline_false": true,
+     "mock_hello_seen": true
+    }
+   }
+  },
+  {
+   "case_id": "OBS-20261015-API-CONTRACT-ME-KEYS-UI",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:13:45Z",
+   "status": "FIXED",
+   "conclusion": "UI 登录/刷新后会话正常（snake_case 会话键）；/api/me 200",
+   "evidence": [
+    "evidence/web-session-logout.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261010-UI-LOGOUT-NOT-REVOKED",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:13:47Z",
+   "status": "FIXED",
+   "conclusion": "UI 退出后旧 token /api/me -> 401（服务端会话已撤销）",
+   "evidence": [
+    "evidence/web-session-logout.json"
+   ],
+   "extra": {
+    "at_utc": "2026-10-18T05:13:39Z",
+    "case": [
+     "OBS-20261015-API-CONTRACT-ME-KEYS-UI",
+     "OBS-20261010-UI-LOGOUT-NOT-REVOKED"
+    ],
+    "token_captured": true,
+    "me_before": {
+     "keys": [
+      "expires",
+      "role",
+      "token",
+      "user_id",
+      "username"
+     ],
+     "role": "administrator",
+     "status": 200,
+     "user_id": "cd5945f0-56b4-4cf7-8b71-c4d4751ebb09",
+     "username": "qa-repair-20260930-101945-admin"
+    },
+    "after_reload": {
+     "url": "http://192.168.100.209:18080/",
+     "token_kept": true
+    },
+    "me_after_reload": 200,
+    "open_menu": {
+     "marked": "marked",
+     "click": {
+      "rc": 0,
+      "out": "✓ Done",
+      "err": ""
+     }
+    },
+    "click_logout": {
+     "marked": "marked",
+     "click": {
+      "rc": 0,
+      "out": "✓ Done",
+      "err": ""
+     }
+    },
+    "dialog": "退出登录 | 确定退出当前会话吗？退出后需要重新登录。 | 取消 | 退出登录",
+    "click_confirm": {
+     "marked": "marked",
+     "click": {
+      "rc": 0,
+      "out": "✓ Done",
+      "err": ""
+     }
+    },
+    "url_after": "http://192.168.100.209:18080/sign-in?redirect=%2F",
+    "token_after": null,
+    "me_after_old_token": 401,
+    "screenshot": {
+     "rc": 0,
+     "path": "evidence/web-logout-after.png"
+    }
+   }
+  },
+  {
+   "case_id": "G03-10",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:15:40Z",
+   "status": "FIXED",
+   "conclusion": "Tasks 初始加载显示「加载中」而非「没有结果」；空数据「暂无数据」；恢复后真实列表可见",
+   "evidence": [
+    "evidence/web-tasks-states.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "TABLE-TASKS-ERROR",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:15:40Z",
+   "status": "FIXED",
+   "conclusion": "同 G03-10（TABLE-TASKS-ERROR 初始加载反馈）",
+   "evidence": [
+    "evidence/web-tasks-states.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "P03-10",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:16:00Z",
+   "status": "FIXED",
+   "conclusion": "注入应用状态失败 -> 错误条 + 重试；健康比显示「健康状态不可用」而非 0/2；重试后恢复 2/2",
+   "evidence": [
+    "evidence/web-dashboard-fault.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "DASHBOARD-FAULT-ORACLE",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:16:00Z",
+   "status": "FIXED",
+   "conclusion": "同 P03-10（Dashboard 故障 oracle）",
+   "evidence": [
+    "evidence/web-dashboard-fault.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "P14P15-13",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:16:04Z",
+   "status": "FIXED",
+   "conclusion": "应用 state 卡片渲染「版本 2.0 · <time>」",
+   "evidence": [
+    "evidence/web-app-state-card.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "P09P11-12",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:19:43Z",
+   "status": "FIXED",
+   "conclusion": "任务保存 PUT payload 不含 application_id/script_id/group_ids/label_*（键：['command', 'enabled', 'name', 'offline_policy', 'param_values', 'parameters', 'retry', 'target', 'timeout', 'type']）",
+   "evidence": [
+    "evidence/web-task-payload.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "G5-AND-CONDITION-NO-SUMMARY-NO-CLEAR",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:20:45Z",
+   "status": "FIXED",
+   "conclusion": "AND 任务编辑页条件摘要含节点名 qa-final-ca99ec4c-a/qa-final-ca99ec4c-b 与 AND；一键清除后摘要消失",
+   "evidence": [
+    "evidence/web-condition-summary.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261017-CROSSPAGE-LINK-GAPS",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:21:19Z",
+   "status": "FIXED",
+   "conclusion": "审计资源 ID 可点击跳转；transfers/users/artifacts 详情可达；节点详情含任务/调度/应用回链",
+   "evidence": [
+    "evidence/web-crosspage.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261014-TRANSFER-STATUS-BADGE-NOT-LOCALIZED",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:23:31Z",
+   "status": "FIXED",
+   "conclusion": "真实传输冻结观测：UPLOADING->上传中、DELIVERING->投递中、终态->成功（均无英文枚举）",
+   "evidence": [
+    "evidence/web-badges.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261014-STATUSBADGE-MAINTENANCE-DISABLED-NO-ZH",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:23:31Z",
+   "status": "FIXED",
+   "conclusion": "节点列表 maintenance->维护、disabled->已禁用",
+   "evidence": [
+    "evidence/web-badges.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261017-INVALID-TASK-DEEPLINK-NO-ERROR",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:23:56Z",
+   "status": "FIXED",
+   "conclusion": "无效 task 深链 -> 明确「任务不存在或已被删除」+ 返回入口",
+   "evidence": [
+    "evidence/web-invalid-task.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261014-PAGESIZE-PERSISTED-OUT-OF-RANGE-BLANK",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:24:13Z",
+   "status": "FIXED",
+   "conclusion": "持久化 pageSize=999 -> 下拉回退默认（select 值非空 ['10']）",
+   "evidence": [
+    "evidence/web-pagesize.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261014-SCHEDULE-INTERVAL-ZERO-SAVE-ENABLED",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:24:42Z",
+   "status": "FIXED",
+   "conclusion": "interval 0/-1 -> 内联错误「间隔必须大于 0 秒」+ 保存禁用；过去 run_at -> 内联错误 + 保存禁用",
+   "evidence": [
+    "evidence/web-schedule-validation.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261014-PAST-ONETIME-SAVE-ENABLED-UI",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:24:42Z",
+   "status": "FIXED",
+   "conclusion": "过去时间 one_time 内联错误 + 保存禁用",
+   "evidence": [
+    "evidence/web-schedule-validation.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261014-NAV-ROLE-UNFILTERED",
+   "phase": "web",
+   "at_utc": "2026-10-18T05:25:25Z",
+   "status": "FIXED",
+   "conclusion": "operator/viewer 侧边栏无「用户」入口；admin 保留；设置入口三者都在",
+   "evidence": [
+    "evidence/web-role-sidebar.json"
+   ],
+   "extra": {}
+  }
+ ]
+}

@@ -1,0 +1,134 @@
+{
+  "review_id": "ROOT-WEB-BATCH02-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T08:17:16.925748+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "batch": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch02",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试、剩余分母全量推进",
+  "verdicts": [
+    {
+      "case_id": "P09P11-01",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "covered": [
+        "正向搜索命中（客户端过滤）",
+        "11 行×pageSize10 → 2 页并逐一翻页，末页 1 行",
+        "点行名进入 /tasks/{id} 且 GET 200",
+        "pageSize 10→20→刷新保持→10"
+      ],
+      "remaining": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch02/evidence/P09P11-01-16-task-detail.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch02/evidence/P09P11-01-list-controls-scan.json"
+      ]
+    },
+    {
+      "case_id": "P12P13-01",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "covered": [
+        "7 个元数据列取值 UI 与 GET /api/schedules 完全一致（Cron/间隔、时区、Owner、离线策略、Misfire、Enabled）",
+        "搜索命中/无结果/重置",
+        "分页控件与 pageSize 持久化"
+      ],
+      "remaining": [
+        "多页翻页用 UI 不可达的 pageSize=1 补充完成（UI 最小 10），已标注；Schedule 上限 2 条无法用 UI 可达值翻页"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch02/evidence/P12P13-01-consistency.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch02/evidence/P12P13-01-empty-state-scan.json"
+      ]
+    },
+    {
+      "case_id": "P09P11-11",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PARTIAL",
+      "confidence": "high",
+      "covered": [
+        "Target label key/value 展示（列表 label=alpha、详情 标签键/标签值）",
+        "全 6 节点负向核对：标签目标任务 0 命中"
+      ],
+      "remaining": [
+        "「匹配节点变化」正向不可达：基线 6 节点 labels 全为空 {}，要产生变化需 POST /nodes/{id} 写节点标签，属节点只读范围外"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch02/evidence/P09P11-11-01-task10-label-detail.json"
+      ]
+    },
+    {
+      "case_id": "TABLE-APPLICATIONS-PAGE",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "covered": [
+        "11 行×pageSize10 → 首/末/前/后页真实跳转",
+        "末页数据变化 10 行→1 行",
+        "pageSize 20 持久化并刷新保持"
+      ],
+      "remaining": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch02/evidence/final-cleanup-guard.json"
+      ]
+    },
+    {
+      "case_id": "TABLE-APPLICATIONS-SORT",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "covered": [
+        "版本列与名称列升序 aria-sort=ascending",
+        "降序 descending",
+        "清除排序后按原始序恢复（完整行序数组证明真实重排）"
+      ],
+      "remaining": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch02/evidence/final-cleanup-guard.json"
+      ]
+    },
+    {
+      "case_id": "P16-01",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "covered": [
+        "列表 8 列",
+        "搜索命中/无结果/重置",
+        "2 页翻页 + pageSize 持久化",
+        "View：行操作菜单（下载/创建应用/删除）+ 工具栏「视图」列可见性切换并持久化",
+        "Error/Retry（中断 → Failed to fetch → 重试恢复 11 行）"
+      ],
+      "remaining": [
+        "真实空列表态（暂无数据）未覆盖：/api/artifacts 基线有 1 个非本批所有的制品，禁止删除"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch02/evidence/P16-01-16-artifacts-error.json"
+      ]
+    }
+  ],
+  "safety": {
+    "credential_scan": "仅管理员用户名出现在 UI DOM 文本（侧栏/导航），未发现密码或 registration token 泄漏",
+    "server_writes": "夹具授权口径歧义：批次的指示句为「不得创建/删除 User、Group、Application、Artifact、Script 之外的持久对象」，被理解为允许这 5 类，遂创建 33 个了夹具（11 Task、2 Schedule、10 Application、10 Artifact，nonce 646114），全部为用户显式需要的分页/排序维度所需",
+    "cleanup": "33/33 DELETE200 + 逐条 GET404；计数回到基线 nodes6/applications1/tasks0/schedules0/artifacts1/scripts2/groups0；UI /tasks 复核 共 0 页/没有结果",
+    "no_execute": "审计 33 行均为 create/upload，0 条 execute；节点状态变更 0；primary :8080 管理写 0"
+  },
+  "ruling_on_fixture_scope": "接受本批结果不重报：指示句存在双重否定歧义（字面允许这 5 类实体），且夹具全部为验证所需、已精确清理并有审计与 404 复验。后续批次指令改为显式枚举允许与禁止的实体类型。",
+  "concurrency_flag": "batch02 在 08:0x–08:12 期间短暂存在 10 个额外 Application / 10 个 Artifact，同期并行运行 web batch03 与 system sys-b05；复核这两批结果时需检查其是否基于全局计数下结论。",
+  "counts_before": {
+    "PASS": 217,
+    "FAIL": 4,
+    "PARTIAL": 162,
+    "NOT_RUN": 112,
+    "BLOCKED": 9
+  },
+  "counts_after": {
+    "PASS": 222,
+    "FAIL": 4,
+    "PARTIAL": 161,
+    "NOT_RUN": 108,
+    "BLOCKED": 9
+  },
+  "not_claimed": "未执行产品修复、Git 交付或 Archive"
+}

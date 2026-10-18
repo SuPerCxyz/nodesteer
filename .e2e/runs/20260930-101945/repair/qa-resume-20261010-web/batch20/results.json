@@ -1,0 +1,91 @@
+{
+  "batch_id": "qa-resume-20261010-web-batch20-ui-language-nav-login-dashboard",
+  "status": "COMPLETE_FOR_ROOT_REVIEW",
+  "cases": [
+    {
+      "case_id": "G02-01",
+      "status": "PASS",
+      "evidence": [
+        "evidence/G02-01.json"
+      ],
+      "actual": "Authenticated Header language switch changed the page business text Users↔用户 and Dashboard↔仪表盘; both English and restored Chinese survived hard reload.",
+      "remaining_dimensions": []
+    },
+    {
+      "case_id": "G02-08",
+      "status": "PASS",
+      "evidence": [
+        "evidence/G02-08-sidebar-navigation.json"
+      ],
+      "actual": "All 12 current Sidebar menu links were clicked and reloaded to their actual route; every route had main UI ready, zero alert, and corresponding actual GET 200. The existing Application link route ID matched the live application list item; its detail GET returned 200 with matching response ID. Clicking its Manage Artifacts link reached /artifacts with GET 200; direct /artifacts navigation also returned 200.",
+      "remaining_dimensions": []
+    },
+    {
+      "case_id": "P01-06",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P01-06.json"
+      ],
+      "actual": "On a fresh unauthenticated sign-in page, switching to English changed username/password business labels; hard reload kept English. Restoring Chinese changed labels back; another hard reload kept Chinese, with no auth token and no API writes.",
+      "remaining_dimensions": []
+    },
+    {
+      "case_id": "P01-04",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P01-04-fake-input-metadata.json",
+        "evidence/P01-04-attempt01-no-post.json",
+        "evidence/P01-04-invalid-login.json"
+      ],
+      "actual": "One actual invalid-credentials POST was paused for 161 ms. The submit button was disabled with spinner while pending; double-click/Enter produced no second POST. The one request reached the server and returned 401; no token was stored and the button re-enabled.",
+      "remaining_dimensions": []
+    },
+    {
+      "case_id": "P03-04",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P03-04.json"
+      ],
+      "actual": "Clicked Dashboard Application Status View All and reloaded /applications with actual GET 200; clicked the real dashboard application link, whose route ID matched the API list ID and detail response ID.",
+      "remaining_dimensions": []
+    },
+    {
+      "case_id": "P03-06",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P03-06-viewall.json",
+        "evidence/P03-06.json"
+      ],
+      "actual": "Recent Executions View All works; visible Execution anchors bind to the real API. One live Task-name link resolved to matching Execution detail 200. Historical rows with deleted Tasks display the unknownTask label inside an Execution-detail anchor; their Task GET is 404 but the Execution link remains valid.",
+      "remaining_dimensions": []
+    },
+    {
+      "case_id": "P03-08",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P03-08.json"
+      ],
+      "actual": "Compared Dashboard node/execution/application-health/sync aggregates to same-time GET API-derived aggregates; see timestamped per-field comparisons.",
+      "remaining_dimensions": []
+    },
+    {
+      "case_id": "P03-10",
+      "status": "PARTIAL",
+      "evidence": [
+        "evidence/P03-10.json",
+        "../batch21/evidence/P03-10-app-state-fault.json"
+      ],
+      "actual": "A true primary GET /api/nodes failure on hard reload produced ErrorState/Retry; clicking the real Retry restored the page. Supplemental exact GET /api/applications/{id}/state failure was caught per application and rendered Unknown with no global alert/Retry; after a real reload the same path returned 200. Root review is needed for the canonical “any Dashboard API” boundary.",
+      "remaining_dimensions": [
+        "Root review whether per-application state GET is covered by canonical any-API Error/Retry requirement; it renders Unknown without global Error/Retry."
+      ]
+    }
+  ],
+  "counts": {
+    "PASS": 7,
+    "PARTIAL": 1,
+    "FAIL": 0,
+    "NOT_RUN": 0
+  },
+  "updated_at_utc": "2026-10-12T13:59:46.602342+00:00"
+}

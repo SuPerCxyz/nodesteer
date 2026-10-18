@@ -1,0 +1,29 @@
+{
+  "batch_id": "qa-resume-20261010-web-batch15-task-and-schedule-missing-state",
+  "scope": [
+    "ROUTE-15",
+    "ROUTE-16",
+    "ROUTE-17",
+    "ROUTE-21",
+    "ROUTE-22",
+    "TABLE-TASKS-SEARCH",
+    "TABLE-TASKS-COLUMNS",
+    "TABLE-TASKS-PAGE",
+    "TABLE-TASKS-ERROR"
+  ],
+  "mode": "read-only; existing Task list is empty; use fresh missing UUIDs only for negative routes; do not create Task/Schedule or submit any form/run action",
+  "actions": "Probe Task detail/edit/run with distinct fresh UUIDs and verify actual API/UI error then recover /tasks. Open blank Schedule editor without task_id and Schedule detail with fresh missing UUID, then recover /schedules. Test Tasks search no-result/reset, column hide/restore/refresh, and capture actual empty/pagination/error states.",
+  "oracles": "Route, heading/alert or no-result state, same-origin API pathname/status only, visible row/header/control counts, local preference booleans. No response bodies, task/script text, names, credentials, tokens, or raw table cells saved.",
+  "fixture_requirements": "Complete Task happy-path cases need at least one owned Task. Route22 valid detail needs an owned Schedule. This batch creates none.",
+  "budget": {
+    "new_resources": 0,
+    "server_writes": 0,
+    "task_run_user_group_node_agent_script_mutations": 0
+  },
+  "sources": {
+    "task_routes": "web/src/routes/_authenticated/tasks/$taskId.tsx and subroutes",
+    "schedule_routes": "web/src/routes/_authenticated/schedules/$scheduleId.tsx and new.tsx",
+    "lists": "web/src/features/tasks/index.tsx; web/src/features/shared/data-table.tsx"
+  },
+  "created_at_utc": "2026-10-10T15:10:13.783852+00:00"
+}

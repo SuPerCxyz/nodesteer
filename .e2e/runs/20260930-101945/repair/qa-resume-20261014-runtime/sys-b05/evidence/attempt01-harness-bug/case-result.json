@@ -1,0 +1,329 @@
+{
+  "batch_id": "sys-b05",
+  "title": "Execution/Schedule 幂等键：手动 UUID、调度 Key 与离线上传不重复",
+  "nonce": "b98b3ee95fba",
+  "executed_at_utc": "2026-10-14T08:30:19Z",
+  "finished_at_utc": "2026-10-14T08:30:38Z",
+  "endpoint": "http://192.168.100.209:18080",
+  "cases": [
+    {
+      "case_id": "SYS-31",
+      "title": "SYS-31 Manual Execution UUID 幂等",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PARTIAL",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-31",
+          "layer": "hub-api/real-owned-child-agent/frame-proxy/agent-sqlite",
+          "status": "FAIL",
+          "description": [
+            "Two manual Run Now calls each produced a distinct Hub-created Execution UUID (premise of the key).",
+            "The same manual Execution UUID was uploaded twice (duplicated EXECUTION_FINISHED frame) and the Hub kept exactly one row with unchanged terminal status.",
+            "Real Execution side effect observed: script stdout carried the nonce marker, terminal SUCCESS."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Duplicate upload was exercised via a harness frame proxy in front of the owned child Agent; no product source was modified.",
+        "The Agent-side dedup branch for a repeated RUN_EXECUTION dispatch (same UUID) was not forced; only the upload/idempotent-upsert direction was proven."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-manual-uuid.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb05-b98b3ee95fba-",
+        "child_node_id": "d8e180e6-0ced-4e44-a781-24658871084c",
+        "child_agent_id": "agent-45901cdd-2bb2-4d05-8b57-452b082836ae",
+        "script_id": "5b1edd94-67f2-48b1-95f5-74db94925515",
+        "task_id": "2378fd77-7372-4cf6-b931-b6b57ba6f302",
+        "schedules": {},
+        "executions": {
+          "manual_m1": "f6ced292-25d8-4005-9403-97196b2d3059",
+          "manual_m2": "bcc397ff-4b89-4eaf-b52e-3b122fae1c5a"
+        },
+        "preserved_execution_history": [
+          "f6ced292-25d8-4005-9403-97196b2d3059",
+          "bcc397ff-4b89-4eaf-b52e-3b122fae1c5a"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 8,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 2,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1
+      },
+      "final_cleanup": {}
+    },
+    {
+      "case_id": "SYS-32",
+      "title": "SYS-32 Scheduled Execution Key 幂等",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PARTIAL",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-32",
+          "layer": "hub-scheduler/agent-scheduler/agent-sqlite",
+          "status": "PARTIAL",
+          "description": [
+            "Hub-owned: two distinct one_time Schedules sharing Task+Node+ScheduledTime produced exactly one Execution; a third Schedule with a different ScheduledTime produced its own Execution in the same pass.",
+            "Agent-owned: a one_time Schedule fired on the connected child Agent; after a real child Agent restart (in-memory fire maps lost) the same slot was re-attempted and suppressed, leaving one Hub row and one local journal row for that slot."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The Key is (TaskID, NodeID, ScheduledTime); Task Revision is intentionally not part of the key and was held constant here.",
+        "No cron/DST-boundary variants were exercised in this batch."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-manual-uuid.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb05-b98b3ee95fba-",
+        "child_node_id": "d8e180e6-0ced-4e44-a781-24658871084c",
+        "child_agent_id": "agent-45901cdd-2bb2-4d05-8b57-452b082836ae",
+        "script_id": "5b1edd94-67f2-48b1-95f5-74db94925515",
+        "task_id": "2378fd77-7372-4cf6-b931-b6b57ba6f302",
+        "schedules": {},
+        "executions": {
+          "manual_m1": "f6ced292-25d8-4005-9403-97196b2d3059",
+          "manual_m2": "bcc397ff-4b89-4eaf-b52e-3b122fae1c5a"
+        },
+        "preserved_execution_history": [
+          "f6ced292-25d8-4005-9403-97196b2d3059",
+          "bcc397ff-4b89-4eaf-b52e-3b122fae1c5a"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 8,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 2,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1
+      },
+      "final_cleanup": {}
+    },
+    {
+      "case_id": "INV-07",
+      "title": "INV-07 Execution ID / Key 必须幂等",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PARTIAL",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:INV-07",
+          "layer": "hub+agent idempotency keys",
+          "status": "PARTIAL",
+          "description": [
+            "Manual path key = Hub-created Execution UUID; duplicate upload kept one row.",
+            "Schedule path key = TaskID+NodeID+ScheduledTime, enforced on the Hub scheduler and on the agent-owned scheduler (unique slot index + explicit slot lookup), surviving an Agent restart.",
+            "Offline path key = Execution ID on journal upload/ACK; re-upload kept one row and converged synced=true."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "INV-07 is proven for the three idempotency paths exercised here (manual UUID, scheduled slot, offline upload); other Execution-producing paths (Application deploy/operation) were out of scope."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-manual-uuid.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb05-b98b3ee95fba-",
+        "child_node_id": "d8e180e6-0ced-4e44-a781-24658871084c",
+        "child_agent_id": "agent-45901cdd-2bb2-4d05-8b57-452b082836ae",
+        "script_id": "5b1edd94-67f2-48b1-95f5-74db94925515",
+        "task_id": "2378fd77-7372-4cf6-b931-b6b57ba6f302",
+        "schedules": {},
+        "executions": {
+          "manual_m1": "f6ced292-25d8-4005-9403-97196b2d3059",
+          "manual_m2": "bcc397ff-4b89-4eaf-b52e-3b122fae1c5a"
+        },
+        "preserved_execution_history": [
+          "f6ced292-25d8-4005-9403-97196b2d3059",
+          "bcc397ff-4b89-4eaf-b52e-3b122fae1c5a"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 8,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 2,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1
+      },
+      "final_cleanup": {}
+    },
+    {
+      "case_id": "SYS-15",
+      "title": "SYS-15 离线 Execution 上传和 ACK 幂等，无重复",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PARTIAL",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-15",
+          "layer": "owned-child-agent offline journal/hub upload/ACK",
+          "status": "FAIL",
+          "description": [
+            "Child Agent kept running while its Hub link was cut; the agent-owned allow_offline one_time Schedule fired locally and the journal recorded the Execution with offline=true, synced=false.",
+            "No Hub row existed while offline. On reconnect the Execution was uploaded and created on the Hub (offline=true).",
+            "The first EXECUTION_ACK was dropped, so the journal stayed synced=false; a real child Agent restart re-uploaded the same Execution ID, the Hub kept exactly one row, and the journal then converged to synced=true."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "\"Offline\" was simulated by cutting the owned child Agent from the repair Hub through the harness frame proxy; the protected repair Agents and the Hub were never stopped."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-manual-uuid.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb05-b98b3ee95fba-",
+        "child_node_id": "d8e180e6-0ced-4e44-a781-24658871084c",
+        "child_agent_id": "agent-45901cdd-2bb2-4d05-8b57-452b082836ae",
+        "script_id": "5b1edd94-67f2-48b1-95f5-74db94925515",
+        "task_id": "2378fd77-7372-4cf6-b931-b6b57ba6f302",
+        "schedules": {},
+        "executions": {
+          "manual_m1": "f6ced292-25d8-4005-9403-97196b2d3059",
+          "manual_m2": "bcc397ff-4b89-4eaf-b52e-3b122fae1c5a"
+        },
+        "preserved_execution_history": [
+          "f6ced292-25d8-4005-9403-97196b2d3059",
+          "bcc397ff-4b89-4eaf-b52e-3b122fae1c5a"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 8,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 2,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1
+      },
+      "final_cleanup": {}
+    },
+    {
+      "case_id": "AR-20",
+      "title": "AR-20 Duplicate Execution Upload；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PARTIAL",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-20",
+          "layer": "hub execution upsert/frame-dup/offline-upload",
+          "status": "PARTIAL",
+          "description": [
+            "Duplicate EXECUTION_FINISHED for one manual Execution UUID: Hub stored one row, no state rollback.",
+            "Duplicate upload after offline recovery: same Execution ID uploaded twice, Hub stored one row, terminal status and offline flag consistent, no half-state.",
+            "Agent-side journal persistence survived a real process restart; the recovered row is the exact same Execution ID."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Duplicate upload was injected at the frame layer of the harness proxy; the underlying Hub upsert/dedup logic is the unmodified product path."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-manual-uuid.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb05-b98b3ee95fba-",
+        "child_node_id": "d8e180e6-0ced-4e44-a781-24658871084c",
+        "child_agent_id": "agent-45901cdd-2bb2-4d05-8b57-452b082836ae",
+        "script_id": "5b1edd94-67f2-48b1-95f5-74db94925515",
+        "task_id": "2378fd77-7372-4cf6-b931-b6b57ba6f302",
+        "schedules": {},
+        "executions": {
+          "manual_m1": "f6ced292-25d8-4005-9403-97196b2d3059",
+          "manual_m2": "bcc397ff-4b89-4eaf-b52e-3b122fae1c5a"
+        },
+        "preserved_execution_history": [
+          "f6ced292-25d8-4005-9403-97196b2d3059",
+          "bcc397ff-4b89-4eaf-b52e-3b122fae1c5a"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 8,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 2,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1
+      },
+      "final_cleanup": {}
+    }
+  ],
+  "deviations": [
+    "HARNESS_ERROR:phase3_manual_uuid_failed"
+  ],
+  "budget": {
+    "api_mutations": 8,
+    "hub_definition_creates": 2,
+    "hub_definition_deletes": 2,
+    "manual_run_posts": 2,
+    "node_enroll_posts": 1,
+    "child_process_starts": 1,
+    "child_process_stops": 1
+  },
+  "final_cleanup_oracle_clean": false
+}

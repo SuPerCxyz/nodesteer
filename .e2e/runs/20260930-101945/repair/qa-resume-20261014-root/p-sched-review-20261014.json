@@ -1,0 +1,133 @@
+{
+  "review_id": "ROOT-P-SCHED-REVIEW-20261014",
+  "reviewed_at": "2026-10-15T08:28:46.268019+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "run_dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 要求 5 路并行跑完全部测试",
+  "verdicts": [
+    {
+      "case_id": "AR-21",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "超时后的恢复/幂等/Desired State 一致性复合维度已补。"
+    },
+    {
+      "case_id": "AR-22",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "取消后的恢复/重试排除/幂等与其它适用模式已补。"
+    },
+    {
+      "case_id": "AR-23",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "Native 进程组清理 + 恢复复合维度已补。"
+    },
+    {
+      "case_id": "E2E-05",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "Agent-only 来源、跨多 Cron slot 无 Hub 重复触发、UI 关联反馈与重复触发幂等。"
+    },
+    {
+      "case_id": "E2E-06",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "过去时刻、Timezone 边界，以及 Agent 错过 slot 的 SKIP/RUN_ONCE 与恢复/UI 反馈。"
+    },
+    {
+      "case_id": "E2E-07",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "禁用后跨一个本会到达的 repeatable 未来 slot，确认无新 Execution/业务效果。"
+    },
+    {
+      "case_id": "E2E-08",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "取消/超时忽略 TERM 后的后代清理：Native 已真测，Docker 进程组按实况评估并如实标注。"
+    },
+    {
+      "case_id": "INV-06",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "agent-owner 触发来源独立证明 + 另一 owner 排除与重复 slot 观测。"
+    },
+    {
+      "case_id": "SYS-19",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "六种 type/owner 配置的真实 schedule 首次执行 + owner 实际触发来源断言（agent/hub owner 各自触发、另一 owner 不重复触发）。"
+    },
+    {
+      "case_id": "SYS-20",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "agent-owner Cron 同 slot/多 slot 不被 Hub 重复触发的独立观测。"
+    },
+    {
+      "case_id": "SYS-21",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "hub-owner Cron 由 Hub 触发、Agent 未本地触发的独立观测（含 Hub 恢复与 owner 排除）。"
+    },
+    {
+      "case_id": "SYS-38",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "Native ignore-TERM 父/孙 PID 消失已验；进程组清理维度已补（Docker/Compose 形态按实况评估）。"
+    },
+    {
+      "case_id": "SYS-39",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "Native cancel 父/孙 PID 消失已验（Docker/Compose 形态按实况评估）。"
+    },
+    {
+      "case_id": "SYS-40",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PARTIAL",
+      "remaining": [
+        "per-attempt 审计缺失：每次 attempt 没有独立审计行（仅一条 \"execute\" 审计），这是该用例 expected 中“审计”维度的未满足项，故维持 PARTIAL。",
+        "retry 间隔无产品规范阈值，仅作观测。",
+        "Docker/Compose 执行形态不存在（见 phase8 评估）。"
+      ]
+    }
+  ],
+  "supervision_note": "该批子 Agent 两次在启动后台运行后提前结束回合；Root 直接监控运行至完成（phase=done, deviations=[]），残留由 Root 独立核验。",
+  "verified_independently_by_root": {
+    "native2_residue": "owned 目录 0、qa-psched 进程 0",
+    "oracle": "protected_nodes_online_synced=true、hub_leftover_clear=true、native2_owned_child_orphan=false",
+    "no_vm_restart": true
+  },
+  "counts_before": {
+    "PASS": 341,
+    "FAIL": 5,
+    "PARTIAL": 115,
+    "NOT_RUN": 34,
+    "BLOCKED": 9
+  },
+  "not_claimed": "未执行产品修复、Git 交付或 Archive",
+  "counts_after": {
+    "PASS": 354,
+    "FAIL": 5,
+    "PARTIAL": 102,
+    "NOT_RUN": 34,
+    "BLOCKED": 9
+  }
+}

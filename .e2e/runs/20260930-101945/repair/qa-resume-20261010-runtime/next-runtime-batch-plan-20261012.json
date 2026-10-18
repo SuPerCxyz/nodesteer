@@ -1,0 +1,256 @@
+{
+  "created_at_utc": "2026-10-12 15:19:51 UTC",
+  "status": "PROPOSAL_ONLY_NO_EXTERNAL_ACTIONS",
+  "canonical_snapshot": {
+    "path": ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+    "counts": {
+      "PASS": 207,
+      "FAIL": 3,
+      "PARTIAL": 160,
+      "NOT_RUN": 134
+    },
+    "note": "SYS-12 ArtifactCache is currently in Recovery execution and excluded."
+  },
+  "current_action_limits": {
+    "api_mutations": 0,
+    "docker_actions": 0,
+    "tasks_created": 0,
+    "runs": 0,
+    "schedule_changes": 0,
+    "product_or_global_file_changes": 0,
+    "protected_units_or_cgroups_touched": 0
+  },
+  "primary_target": {
+    "role": "existing Native3 repair Agent; use only after fresh owner/API/process preflight",
+    "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+    "agent_id": "agent-bb005487-7d84-418c-b598-f93d8b0c86a0",
+    "historical_process_evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/ui-native3/native3-process-sha-evidence.json",
+    "guard": "Refresh PID/startticks/UID/config-path/cgroup/proc-exe+disk SHA at execution time; never reuse historical PID."
+  },
+  "candidates": [
+    {
+      "rank": 1,
+      "case_ids": [
+        "SYS-34",
+        "SYS-40",
+        "FL-05"
+      ],
+      "current_status": "PARTIAL / PARTIAL / NOT_RUN",
+      "current_gap": "SYS-34 lacks multi-chunk dual-stream ordering/tail assertions. SYS-40 lacks per-attempt logs/audit and measured timing. FL-05 repair-version Task→Run→Execution→Logs path is not yet covered.",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa/backend-runner/evidence/task.parameters-secrets-03e24c1a.json",
+        ".e2e/runs/20260930-101945/repair/qa/backend-runner/evidence/task.retry-3fa00edc.json",
+        ".e2e/runs/20260930-101945/repair/qa/backend-runner/evidence/audit.execution-actions-506ec595.json"
+      ],
+      "scenario": "One nonce-owned Script and Script Task on Native3, retry=2, no schedule. Declare one required non-secret string Task parameter qa_value; UI Run supplies the fixed QA nonce. Payload reads only NODESTEER_PARAM_qa_value, validates the expected value without printing it, and emits only its length and SHA-256 in each stream marker. A readonly verifier first checks fresh Native3 Agent owner/Unit/proc+disk SHA=d55, python3 availability, and fixed marker path absence. The immutable payload creates its marker with O_EXCL/O_NOFOLLOW and emits tagged stdout/stderr chunks containing true attempt-start monotonic_ns; attempts 1–2 fail, attempt 3 succeeds and unlinks only the same guarded inode. One actual UI Run click.",
+      "oracle": [
+        "Before fixture creation, verifier confirms exact Node/Agent API identity and health (outer API guard), Native3 agent ancestor UID/Unit/config-argv-path/proc-exe+disk SHA and marker path absent; verifier emits only IDs, PID/startticks, hashes and booleans.",
+        "UI Task Run presents the required qa_value input. Exactly one click supplies the non-secret fixed QA nonce; Agent reads only NODESTEER_PARAM_qa_value, validates exact expected value, and prints only parameter length/SHA plus a QA match marker, never the raw parameter or environment.",
+        "One UI click yields exactly one manual Execution ID and one logical execute audit action; three distinct attempt markers under that ID. Actual attempt start times come from monotonic_ns embedded in payload output.",
+        "GET Logs preserves stdout/stderr stream tags, sequence/cardinality, and each 70KiB chunk BEGIN/END markers; final Execution is SUCCESS and UI/API agree.",
+        "Marker create/update/remove guards require exact regular file, euid/egid, mode0600, nlink1, nonce-bound content, O_EXCL/O_NOFOLLOW on creation, and same dev/inode before overwrite/unlink. Any collision/symlink/foreign state is refused without mutation.",
+        "Verifier runs twice (pre/post). If postcheck reports the exact marker still present, stop and preserve it; optional exact-cleanup Task/Run is only used after separate Root review and only for nonce-bound marker identity. Do not delete an unknown path.",
+        "Record monotonic gaps; do not assert a configured retry delay unless the canonical/product contract defines one. Without such a delay contract, that timing subdimension remains PARTIAL.",
+        "FL-05 gains required-parameter input/environment evidence for this Script Task only. It remains PARTIAL unless the same Execution has verified Task/Script/Node backlinks and stdout/stderr/status UI feedback."
+      ],
+      "budget": {
+        "script": 1,
+        "script_task": 1,
+        "readonly_verifier_task": 1,
+        "business_ui_run_posts": 1,
+        "readonly_verifier_run_posts": 2,
+        "internal_process_attempts": 3,
+        "schedule": 0,
+        "app_artifact_node_user": 0,
+        "fallback_exact_cleanup_task_max": 1,
+        "fallback_exact_cleanup_run_posts_max": 1,
+        "max_helper_tasks_including_contingency": 2,
+        "max_helper_run_posts_including_contingency": 3,
+        "max_total_run_posts_including_ui_and_contingency": 4,
+        "required_task_parameters": 1,
+        "parameter_type": "string",
+        "parameter_secret": false
+      },
+      "cleanup": "After one terminal SUCCESS, verifier postcheck must prove marker absent. Exact-delete verifier Task, Script Task and Script; preserve Execution/Audit. If marker remains, halt and retain it. A single contingency exact-cleanup Task/Run is budgeted but not automatic: it requires a later Root-approved source and must refuse any path/inode/owner/mode/content mismatch; preserve unknown files."
+    },
+    {
+      "rank": 2,
+      "case_ids": [
+        "SYS-09"
+      ],
+      "current_status": "PARTIAL",
+      "current_gap": "Earlier SHA/prune cleanup stopped the QA Agent before Hub definition deletion; no connected-Agent Schedule tombstone/future-slot suppression. This minimal slice deliberately excludes Application deletion.",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/hub-fixture-cleanup-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/final-cleanup-oracle-evidence.json"
+      ],
+      "scenario": "Native3: one Script + Script Task + agent-owned 15s interval Schedule, plus one readonly probe Task. Capture exact local rows before deletion; allow one scheduled SUCCESS; delete Schedule→Task→Script while Agent remains online/synced; probe rows after deletion and wait through next interval.",
+      "oracle": [
+        "One scheduled Execution succeeds and history remains.",
+        "At synced post-delete revision, exact local Script/Task/Schedule rows are absent; no second Execution appears after the next due slot.",
+        "Poll in interruptible 2s steps, total wait ≤60s; no retry/recreation if the slot or row oracle is missed."
+      ],
+      "budget": {
+        "script": 1,
+        "script_task": 1,
+        "readonly_probe_task": 1,
+        "schedule": 1,
+        "expected_scheduled_executions": 1,
+        "probe_run_posts": 2,
+        "manual_run_posts": 0,
+        "app_artifact_node_user": 0
+      },
+      "cleanup": "Exact DELETE/GET404 for Schedule, Script Task, Script and probe Task; preserve the one historical Execution. Does not claim complete SYS-09 because no Application object is created/deleted."
+    },
+    {
+      "rank": 3,
+      "case_ids": [
+        "INV-02"
+      ],
+      "current_status": "PARTIAL",
+      "current_gap": "Proxy HELLO/connect does not include process socket-FD/listener inventory; Docker/Host topology is also still uncovered.",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/armed-child-restart-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/child-proxy-connect-evidence.json"
+      ],
+      "scenario": "One retry=0 readonly Command Task on Native3 finds only its exact Agent ancestor via PID/startticks/UID/exe SHA, correlates that PID's socket FDs to /proc net tables and reports peer/listener counts only.",
+      "oracle": [
+        "Agent PID is fresh and manifest-matching; process FD maps to the approved Hub peer and connected socket.",
+        "Listener census is scoped to that process/network namespace; raw proc entries, argv/env/config contents are not retained.",
+        "Permission denial or ambiguous correlation stops the probe and remains unverified."
+      ],
+      "budget": {
+        "readonly_command_task": 1,
+        "readonly_run_posts": 1,
+        "script_schedule_app_artifact_node_user_changes": 0
+      },
+      "cleanup": "Execution terminal, exact helper Task DELETE/GET404; preserve Agent/Node/Unit. Native-process evidence only."
+    },
+    {
+      "rank": 4,
+      "case_ids": [
+        "SYS-25",
+        "SYS-26",
+        "SYS-30"
+      ],
+      "current_status": "PARTIAL / NOT_RUN / PARTIAL",
+      "current_gap": "Existing tests have one combination per local metric and command_result false→SKIPPED; nested AND and paired false/true execution/UI evidence remain.",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa/backend-runner/evidence/condition.command_result-d6e8f3ac.json",
+        ".e2e/runs/20260930-101945/repair/qa/backend-runner/evidence/condition.false-6c75bbed.json",
+        ".e2e/runs/20260930-101945/repair/qa/backend-runner/evidence/condition.file_exists-d856cc11.json"
+      ],
+      "scenario": "One nonce-owned Command Task with nested AND of deterministic read-only command_result and file_exists leaves. Run false once, update only condition at next revision to true, run once more; task body prints a nonce marker only when dispatched.",
+      "oracle": [
+        "False → terminal SKIPPED and no task-body marker/process side effect.",
+        "True → terminal SUCCESS with marker; capture both Task revisions, Execution IDs, UI/API status and Node sync revision.",
+        "Scope only these ==/AND branches; do not claim all operators/metrics, Remote or malformed-condition coverage."
+      ],
+      "budget": {
+        "command_task": 1,
+        "task_update_puts": 1,
+        "run_posts": 2,
+        "schedule_script_app_artifact": 0
+      },
+      "cleanup": "Both Executions terminal; exact Task DELETE/GET404; no schedule; preserve history."
+    },
+    {
+      "rank": 5,
+      "case_ids": [
+        "AR-21",
+        "AR-22"
+      ],
+      "current_status": "PARTIAL / PARTIAL",
+      "current_gap": "Ordinary timeout/cancel and Native process cleanup exist, but post-failure retry exclusion/reuse and desired-state convergence remain.",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa/backend-runner/evidence/task.timeout-f12152dd.json",
+        ".e2e/runs/20260930-101945/repair/qa/backend-runner/evidence/task.cancel-f3ff14e9.json"
+      ],
+      "scenario": "One retry=0 Native3 Command Task; timeout→successful rerun, then cancel→successful rerun, changing only this owned Task's command between phases. Every failure must reach a terminal state before the next Run.",
+      "oracle": [
+        "Timeout/cancel have distinct Execution IDs, terminal states, one audit action each and zero residual child processes.",
+        "After each, same Task remains enabled at its readback revision, Node remains online/synced, and exactly one subsequent SUCCESS shows the Agent accepts fresh work.",
+        "If cancel is nonterminal, stop; issue no next Run and do not delete Task."
+      ],
+      "budget": {
+        "command_task": 1,
+        "task_update_puts": 2,
+        "run_posts": 4,
+        "schedule_script_app_artifact": 0
+      },
+      "cleanup": "All four exact Execution IDs terminal; exact Task DELETE/GET404; check no matching process group and no pending execution; no Unit/cgroup actions."
+    },
+    {
+      "rank": 6,
+      "case_ids": [
+        "FL-02"
+      ],
+      "current_status": "PARTIAL",
+      "current_gap": "Agent Detail Task list exact-target filtering and reverse target consistency remain.",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json"
+      ],
+      "scenario": "Create one disabled harmless Command Task targeted only to Native3; compare Task target API/UI readback with Native3 and Native1 Agent Detail lists.",
+      "oracle": [
+        "Task visible for exact target, absent from non-target, and reverse target IDs agree.",
+        "No Run, Schedule or other side effect."
+      ],
+      "budget": {
+        "command_task": 1,
+        "run_posts": 0,
+        "schedule_script_app_artifact_node_user": 0
+      },
+      "cleanup": "Exact Task DELETE/GET404 after UI/API readback."
+    }
+  ],
+  "deferred": {
+    "sys12": "Excluded because ArtifactCache Recovery is active.",
+    "docker_host": [
+      "AR-03",
+      "AR-04",
+      "SYS-54",
+      "SYS-55",
+      "INV-14",
+      "INV-15"
+    ],
+    "docker_host_reason": "No fresh capability admission in this batch; no Docker/Host success or restore inference.",
+    "user_fixture": [
+      "SYS-01"
+    ],
+    "user_fixture_reason": "Invalid/expired/revoked enrollment needs separate user/credential fixture scope; no persistent User or credentials are proposed.",
+    "fault_seams": [
+      "INV-05",
+      "IDEMPOTENT-MANUAL"
+    ],
+    "fault_seam_reason": "CommitSync failure and duplicate Execution-key replay need dedicated fault/protocol paths; ordinary successful Runs are not substitutes."
+  },
+  "next_preparation": {
+    "case_ids": [
+      "SYS-34",
+      "SYS-40",
+      "FL-05"
+    ],
+    "action": "Prepare frozen multi-stream/retry Script source and a local deterministic payload smoke. Driver default must be no-action; local network-blocked smoke must show zero external API calls. No real API, fixture or Run until a separate Root grant.",
+    "risk_boundary": "Existing Native3 only; never stop/change its Agent service, Node identity, Host policy or protected cgroups. Refresh all process owner guards before future execution.",
+    "pending_user_permission": "None anticipated for ephemeral existing-Node fixtures; any persistent User, protected service or Host-policy change is outside this plan.",
+    "prepared_source": {
+      "payload_path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/retry_multistream.py",
+      "payload_sha256": "PENDING_REFRESH",
+      "readonly_verifier_path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/readonly_verifier.py",
+      "readonly_verifier_sha256": "PENDING_REFRESH",
+      "smoke_path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/offline_smoke.py",
+      "offline_controller_path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/offline_controller.py",
+      "offline_controller_role": "local network-blocked static/payload smoke only; not the actual API/UI executor and not E2E"
+    }
+  },
+  "source_refs": [
+    "internal/agent/agent.go:1016-1032,1070-1126",
+    "internal/agent/condition/engine.go:128-169,171-225",
+    "internal/models/models.go:180-200,267-291",
+    "internal/hub/api/api.go:1270-1385,1395-1467",
+    "internal/hub/schedule.go:38-79,147-164",
+    "internal/agent/scheduler/scheduler.go:135-170,187-239"
+  ],
+  "updated_at_utc": "2026-10-12 15:38:13 UTC"
+}

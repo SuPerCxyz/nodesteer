@@ -1,0 +1,104 @@
+{
+  "review_id": "ROOT-SYS-B05-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T08:39:35.876757+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "run_dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b05",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试、剩余分母全量推进",
+  "verdicts": [
+    {
+      "case_id": "SYS-31",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "2 次 Run Now 各得不同 UUID（均 SUCCESS），对同一 UUID 重复上传后 Hub 仍 1 行且状态不回退；proxy 观测到重复注入被接受并回 2 个 EXECUTION_ACK，行数不变。",
+      "limitations": [
+        "Agent 侧「重复 RUN_EXECUTION 下发（同 UUID）」分支未强制；仅证明上传/幂等 upsert 方向。",
+        "重复上传经 harness frame proxy 注入，Hub 去重路径为未修改产品代码。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b05/phase3-manual-uuid.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b05/phase8-independent-cleanup-verification.json"
+      ]
+    },
+    {
+      "case_id": "SYS-32",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "2 个不同 Schedule 共享 Task+Node+ScheduledTime=08:30:57Z → 仅 1 条 Execution；同 tick 内另一 slot 08:27:57Z 正常产生 1 条（证明调度器在跑）；Agent 重启后同 slot 仍仅 1 条（Hub 与 Agent journal 各 count=1）。",
+      "limitations": [
+        "未覆盖 cron/DST 边界（DST 属 SYS-24，环境不可行）。",
+        "Agent 重启后「重复触发」仅观测到负向结果，触发发生由代码路径推断，owned root 按清理义务删除故无 Agent 日志直证。",
+        "Task Revision 恒为 1（Key 不含 Revision 为有意设计）。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b05/phase0-guard.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b05/phase8-independent-cleanup-verification.json"
+      ]
+    },
+    {
+      "case_id": "INV-07",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "三条幂等路径均给出具体键值与去重结果：手动 UUID、调度 (Task,Node,ScheduledTime)、离线上传 ID。",
+      "limitations": [
+        "仅覆盖本次三条路径；Application deploy/operation 产生的 Execution 不在本批范围。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b05/phase3-manual-uuid.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b05/phase5-offline-idempotency.json"
+      ]
+    },
+    {
+      "case_id": "SYS-15",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "断连期间 child 本地执行（offline=true/synced=false，Hub 0 行）→ 恢复上传 Hub 1 行；丢首个 ACK 后 journal 仍 synced=false；真实重启后二次上传（proxy 见 2 帧）→ Hub 仍 1 行、journal 收敛 synced=true。",
+      "limitations": [
+        "「离线」通过 harness frame proxy 切断 owned child 与 Hub 的连接实现，未停止受保护 Agent 或 Hub。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b05/phase5-offline-idempotency.json"
+      ]
+    },
+    {
+      "case_id": "AR-20",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "同一 UUID 的重复 EXECUTION_FINISHED（手动路径）与离线恢复后的重复上传均无重复行、无半状态、终态一致。",
+      "limitations": [
+        "重复注入位于 harness 帧层；底层 Hub upsert/dedup 为未修改产品路径。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b05/phase3-manual-uuid.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b05/phase5-offline-idempotency.json"
+      ]
+    }
+  ],
+  "verified_independently_by_root": {
+    "case_result": "deviations=[]，5 用例 proposed_after=PASS",
+    "live_leftover_check": "39355 不再监听、无 sysb05 harness 进程、native-4 无 qa-sysb05 进程且 owned root 已删除",
+    "oracle": "final-cleanup-oracle.clean=true；4 个 protected 节点 online/synced；Hub 侧 qa-sysb05 前缀零残留"
+  },
+  "incident": "子 Agent 首次回合提前结束但运行脚本仍在后台执行，Root 恢复同一会话续跑；第二次运行 EXIT=0。attempt01 harness 缺陷产物原样保留在 evidence/attempt01-harness-bug/。",
+  "counts_before": {
+    "PASS": 222,
+    "FAIL": 4,
+    "PARTIAL": 161,
+    "NOT_RUN": 108,
+    "BLOCKED": 9
+  },
+  "counts_after": {
+    "PASS": 227,
+    "FAIL": 4,
+    "PARTIAL": 161,
+    "NOT_RUN": 103,
+    "BLOCKED": 9
+  },
+  "not_claimed": "未执行产品修复、Git 交付或 Archive"
+}

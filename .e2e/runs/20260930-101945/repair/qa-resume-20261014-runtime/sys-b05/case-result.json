@@ -1,0 +1,730 @@
+{
+  "batch_id": "sys-b05",
+  "title": "Execution/Schedule 幂等键：手动 UUID、调度 Key 与离线上传不重复",
+  "nonce": "b98b3ee95fba",
+  "executed_at_utc": "2026-10-14T08:32:42Z",
+  "finished_at_utc": "2026-10-14T08:35:33Z",
+  "endpoint": "http://192.168.100.209:18080",
+  "cases": [
+    {
+      "case_id": "SYS-31",
+      "title": "SYS-31 Manual Execution UUID 幂等",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-31",
+          "layer": "hub-api/real-owned-child-agent/frame-proxy/agent-sqlite",
+          "status": "PASS",
+          "description": [
+            "Two manual Run Now calls each produced a distinct Hub-created Execution UUID (premise of the key).",
+            "The same manual Execution UUID was uploaded twice (duplicated EXECUTION_FINISHED frame) and the Hub kept exactly one row with unchanged terminal status.",
+            "Real Execution side effect observed: script stdout carried the nonce marker, terminal SUCCESS."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Duplicate upload was exercised via a harness frame proxy in front of the owned child Agent; no product source was modified.",
+        "The Agent-side dedup branch for a repeated RUN_EXECUTION dispatch (same UUID) was not forced; only the upload/idempotent-upsert direction was proven.",
+        "本次未强制 Agent 侧“重复 RUN_EXECUTION 下发（同 UUID）”分支；仅证明了上传/幂等 upsert 方向。"
+      ],
+      "evidence": [
+        "evidence/phase0-guard.json",
+        "evidence/phase1-owned-child.json",
+        "evidence/phase2-fixtures.json",
+        "evidence/phase3-manual-uuid.json",
+        "evidence/phase4-hub-schedule-key.json",
+        "evidence/phase5-agent-schedule-key.json",
+        "evidence/phase6-offline-upload-ack.json",
+        "evidence/phase7-cleanup.json",
+        "evidence/phase7-proxy-frames.json",
+        "evidence/phase8-independent-cleanup-verification.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json",
+        "evidence/attempt01-harness-bug/attempt01-run-stdout.log",
+        "evidence/attempt01-harness-bug/case-result.json",
+        "evidence/attempt01-harness-bug/final-cleanup-oracle.json",
+        "evidence/attempt01-harness-bug/fixture-ledger.json",
+        "evidence/attempt01-harness-bug/phase0-guard.json",
+        "evidence/attempt01-harness-bug/phase0-preflight.json",
+        "evidence/attempt01-harness-bug/phase1-owned-child.json",
+        "evidence/attempt01-harness-bug/phase2-fixtures.json",
+        "evidence/attempt01-harness-bug/phase3-manual-uuid.json",
+        "evidence/attempt01-harness-bug/progress.json",
+        "evidence/attempt01-harness-bug/run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb05-b98b3ee95fba-",
+        "child_node_id": "b72b8015-9d4f-4021-b0a2-edcc1cfd74c0",
+        "child_agent_id": "agent-13b1f9c4-4ee8-4d04-85e4-09c05d438c39",
+        "script_id": "9a7389c2-2bf8-4e2a-a3af-2749a7e573cb",
+        "task_id": "e36d8e5f-bb60-40c2-a6cf-46944be6b159",
+        "schedules": {
+          "A_slot": "e03103e6-59f8-421a-81a8-b3d4a8831b40",
+          "B_same_slot": "0581ba32-1896-42be-a13c-928a1b71ccb6",
+          "C_other_slot": "d5632431-b7ef-4dea-b4e3-19ca6a1812a6",
+          "agent_one_time": "f63d6d8d-d3d7-4369-8762-e494463b5c86",
+          "agent_offline": "9fd896bb-df11-4401-a8da-3c3397fb1ef9"
+        },
+        "executions": {
+          "manual_m1": "4b37c1d4-6f6c-4799-9e3e-e4232b2c5f59",
+          "manual_m2": "b9c075d2-ae06-41f5-b936-03e659b2ec91",
+          "hub_slot_primary": "7fec8160-69aa-41f1-9afb-8dbbe6aeeec7",
+          "agent_slot_primary": "cb9e5b66-78cf-4294-b30d-13e92212f6b2",
+          "offline": "753b0c2c-dc8d-4de7-ad7b-d4e34c300247"
+        },
+        "preserved_execution_history": [
+          "4b37c1d4-6f6c-4799-9e3e-e4232b2c5f59",
+          "b9c075d2-ae06-41f5-b936-03e659b2ec91",
+          "7fec8160-69aa-41f1-9afb-8dbbe6aeeec7",
+          "cb9e5b66-78cf-4294-b30d-13e92212f6b2",
+          "753b0c2c-dc8d-4de7-ad7b-d4e34c300247"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 18,
+        "hub_definition_creates": 7,
+        "hub_definition_deletes": 7,
+        "manual_run_posts": 2,
+        "node_enroll_posts": 1,
+        "child_process_starts": 3,
+        "child_process_stops": 3
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "schedule",
+            "id": "f63d6d8d-d3d7-4369-8762-e494463b5c86",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "schedule",
+            "id": "9fd896bb-df11-4401-a8da-3c3397fb1ef9",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "e36d8e5f-bb60-40c2-a6cf-46944be6b159",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "9a7389c2-2bf8-4e2a-a3af-2749a7e573cb",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native4_child_removal": {
+          "signalled": [
+            3637
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "b72b8015-9d4f-4021-b0a2-edcc1cfd74c0",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "SYS-32",
+      "title": "SYS-32 Scheduled Execution Key 幂等",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-32",
+          "layer": "hub-scheduler/agent-scheduler/agent-sqlite",
+          "status": "PASS",
+          "description": [
+            "Hub-owned: two distinct one_time Schedules sharing Task+Node+ScheduledTime produced exactly one Execution; a third Schedule with a different ScheduledTime produced its own Execution in the same pass.",
+            "Agent-owned: a one_time Schedule fired on the connected child Agent; after a real child Agent restart (in-memory fire maps lost) the same slot was re-attempted and suppressed, leaving one Hub row and one local journal row for that slot."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The Key is (TaskID, NodeID, ScheduledTime); Task Revision is intentionally not part of the key and was held constant here.",
+        "No cron/DST-boundary variants were exercised in this batch.",
+        "对 Agent 重启后的“重复触发”只能观测到负向结果（Hub 与 Agent journal 各仍只有 1 条）；触发确实发生是由代码路径（进程启动后内存中的 lastFire/lastRun 被清空）推断的，未保留 Agent 日志作为直接证据（owned root 已按清理义务删除）。"
+      ],
+      "evidence": [
+        "evidence/phase0-guard.json",
+        "evidence/phase1-owned-child.json",
+        "evidence/phase2-fixtures.json",
+        "evidence/phase3-manual-uuid.json",
+        "evidence/phase4-hub-schedule-key.json",
+        "evidence/phase5-agent-schedule-key.json",
+        "evidence/phase6-offline-upload-ack.json",
+        "evidence/phase7-cleanup.json",
+        "evidence/phase7-proxy-frames.json",
+        "evidence/phase8-independent-cleanup-verification.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json",
+        "evidence/attempt01-harness-bug/attempt01-run-stdout.log",
+        "evidence/attempt01-harness-bug/case-result.json",
+        "evidence/attempt01-harness-bug/final-cleanup-oracle.json",
+        "evidence/attempt01-harness-bug/fixture-ledger.json",
+        "evidence/attempt01-harness-bug/phase0-guard.json",
+        "evidence/attempt01-harness-bug/phase0-preflight.json",
+        "evidence/attempt01-harness-bug/phase1-owned-child.json",
+        "evidence/attempt01-harness-bug/phase2-fixtures.json",
+        "evidence/attempt01-harness-bug/phase3-manual-uuid.json",
+        "evidence/attempt01-harness-bug/progress.json",
+        "evidence/attempt01-harness-bug/run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb05-b98b3ee95fba-",
+        "child_node_id": "b72b8015-9d4f-4021-b0a2-edcc1cfd74c0",
+        "child_agent_id": "agent-13b1f9c4-4ee8-4d04-85e4-09c05d438c39",
+        "script_id": "9a7389c2-2bf8-4e2a-a3af-2749a7e573cb",
+        "task_id": "e36d8e5f-bb60-40c2-a6cf-46944be6b159",
+        "schedules": {
+          "A_slot": "e03103e6-59f8-421a-81a8-b3d4a8831b40",
+          "B_same_slot": "0581ba32-1896-42be-a13c-928a1b71ccb6",
+          "C_other_slot": "d5632431-b7ef-4dea-b4e3-19ca6a1812a6",
+          "agent_one_time": "f63d6d8d-d3d7-4369-8762-e494463b5c86",
+          "agent_offline": "9fd896bb-df11-4401-a8da-3c3397fb1ef9"
+        },
+        "executions": {
+          "manual_m1": "4b37c1d4-6f6c-4799-9e3e-e4232b2c5f59",
+          "manual_m2": "b9c075d2-ae06-41f5-b936-03e659b2ec91",
+          "hub_slot_primary": "7fec8160-69aa-41f1-9afb-8dbbe6aeeec7",
+          "agent_slot_primary": "cb9e5b66-78cf-4294-b30d-13e92212f6b2",
+          "offline": "753b0c2c-dc8d-4de7-ad7b-d4e34c300247"
+        },
+        "preserved_execution_history": [
+          "4b37c1d4-6f6c-4799-9e3e-e4232b2c5f59",
+          "b9c075d2-ae06-41f5-b936-03e659b2ec91",
+          "7fec8160-69aa-41f1-9afb-8dbbe6aeeec7",
+          "cb9e5b66-78cf-4294-b30d-13e92212f6b2",
+          "753b0c2c-dc8d-4de7-ad7b-d4e34c300247"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 18,
+        "hub_definition_creates": 7,
+        "hub_definition_deletes": 7,
+        "manual_run_posts": 2,
+        "node_enroll_posts": 1,
+        "child_process_starts": 3,
+        "child_process_stops": 3
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "schedule",
+            "id": "f63d6d8d-d3d7-4369-8762-e494463b5c86",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "schedule",
+            "id": "9fd896bb-df11-4401-a8da-3c3397fb1ef9",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "e36d8e5f-bb60-40c2-a6cf-46944be6b159",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "9a7389c2-2bf8-4e2a-a3af-2749a7e573cb",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native4_child_removal": {
+          "signalled": [
+            3637
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "b72b8015-9d4f-4021-b0a2-edcc1cfd74c0",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "INV-07",
+      "title": "INV-07 Execution ID / Key 必须幂等",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:INV-07",
+          "layer": "hub+agent idempotency keys",
+          "status": "PASS",
+          "description": [
+            "Manual path key = Hub-created Execution UUID; duplicate upload kept one row.",
+            "Schedule path key = TaskID+NodeID+ScheduledTime, enforced on the Hub scheduler and on the agent-owned scheduler (unique slot index + explicit slot lookup), surviving an Agent restart.",
+            "Offline path key = Execution ID on journal upload/ACK; re-upload kept one row and converged synced=true."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "INV-07 is proven for the three idempotency paths exercised here (manual UUID, scheduled slot, offline upload); other Execution-producing paths (Application deploy/operation) were out of scope."
+      ],
+      "evidence": [
+        "evidence/phase0-guard.json",
+        "evidence/phase1-owned-child.json",
+        "evidence/phase2-fixtures.json",
+        "evidence/phase3-manual-uuid.json",
+        "evidence/phase4-hub-schedule-key.json",
+        "evidence/phase5-agent-schedule-key.json",
+        "evidence/phase6-offline-upload-ack.json",
+        "evidence/phase7-cleanup.json",
+        "evidence/phase7-proxy-frames.json",
+        "evidence/phase8-independent-cleanup-verification.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json",
+        "evidence/attempt01-harness-bug/attempt01-run-stdout.log",
+        "evidence/attempt01-harness-bug/case-result.json",
+        "evidence/attempt01-harness-bug/final-cleanup-oracle.json",
+        "evidence/attempt01-harness-bug/fixture-ledger.json",
+        "evidence/attempt01-harness-bug/phase0-guard.json",
+        "evidence/attempt01-harness-bug/phase0-preflight.json",
+        "evidence/attempt01-harness-bug/phase1-owned-child.json",
+        "evidence/attempt01-harness-bug/phase2-fixtures.json",
+        "evidence/attempt01-harness-bug/phase3-manual-uuid.json",
+        "evidence/attempt01-harness-bug/progress.json",
+        "evidence/attempt01-harness-bug/run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb05-b98b3ee95fba-",
+        "child_node_id": "b72b8015-9d4f-4021-b0a2-edcc1cfd74c0",
+        "child_agent_id": "agent-13b1f9c4-4ee8-4d04-85e4-09c05d438c39",
+        "script_id": "9a7389c2-2bf8-4e2a-a3af-2749a7e573cb",
+        "task_id": "e36d8e5f-bb60-40c2-a6cf-46944be6b159",
+        "schedules": {
+          "A_slot": "e03103e6-59f8-421a-81a8-b3d4a8831b40",
+          "B_same_slot": "0581ba32-1896-42be-a13c-928a1b71ccb6",
+          "C_other_slot": "d5632431-b7ef-4dea-b4e3-19ca6a1812a6",
+          "agent_one_time": "f63d6d8d-d3d7-4369-8762-e494463b5c86",
+          "agent_offline": "9fd896bb-df11-4401-a8da-3c3397fb1ef9"
+        },
+        "executions": {
+          "manual_m1": "4b37c1d4-6f6c-4799-9e3e-e4232b2c5f59",
+          "manual_m2": "b9c075d2-ae06-41f5-b936-03e659b2ec91",
+          "hub_slot_primary": "7fec8160-69aa-41f1-9afb-8dbbe6aeeec7",
+          "agent_slot_primary": "cb9e5b66-78cf-4294-b30d-13e92212f6b2",
+          "offline": "753b0c2c-dc8d-4de7-ad7b-d4e34c300247"
+        },
+        "preserved_execution_history": [
+          "4b37c1d4-6f6c-4799-9e3e-e4232b2c5f59",
+          "b9c075d2-ae06-41f5-b936-03e659b2ec91",
+          "7fec8160-69aa-41f1-9afb-8dbbe6aeeec7",
+          "cb9e5b66-78cf-4294-b30d-13e92212f6b2",
+          "753b0c2c-dc8d-4de7-ad7b-d4e34c300247"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 18,
+        "hub_definition_creates": 7,
+        "hub_definition_deletes": 7,
+        "manual_run_posts": 2,
+        "node_enroll_posts": 1,
+        "child_process_starts": 3,
+        "child_process_stops": 3
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "schedule",
+            "id": "f63d6d8d-d3d7-4369-8762-e494463b5c86",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "schedule",
+            "id": "9fd896bb-df11-4401-a8da-3c3397fb1ef9",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "e36d8e5f-bb60-40c2-a6cf-46944be6b159",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "9a7389c2-2bf8-4e2a-a3af-2749a7e573cb",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native4_child_removal": {
+          "signalled": [
+            3637
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "b72b8015-9d4f-4021-b0a2-edcc1cfd74c0",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "SYS-15",
+      "title": "SYS-15 离线 Execution 上传和 ACK 幂等，无重复",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-15",
+          "layer": "owned-child-agent offline journal/hub upload/ACK",
+          "status": "PASS",
+          "description": [
+            "Child Agent kept running while its Hub link was cut; the agent-owned allow_offline one_time Schedule fired locally and the journal recorded the Execution with offline=true, synced=false.",
+            "No Hub row existed while offline. On reconnect the Execution was uploaded and created on the Hub (offline=true).",
+            "The first EXECUTION_ACK was dropped, so the journal stayed synced=false; a real child Agent restart re-uploaded the same Execution ID, the Hub kept exactly one row, and the journal then converged to synced=true."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "\"Offline\" was simulated by cutting the owned child Agent from the repair Hub through the harness frame proxy; the protected repair Agents and the Hub were never stopped."
+      ],
+      "evidence": [
+        "evidence/phase0-guard.json",
+        "evidence/phase1-owned-child.json",
+        "evidence/phase2-fixtures.json",
+        "evidence/phase3-manual-uuid.json",
+        "evidence/phase4-hub-schedule-key.json",
+        "evidence/phase5-agent-schedule-key.json",
+        "evidence/phase6-offline-upload-ack.json",
+        "evidence/phase7-cleanup.json",
+        "evidence/phase7-proxy-frames.json",
+        "evidence/phase8-independent-cleanup-verification.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json",
+        "evidence/attempt01-harness-bug/attempt01-run-stdout.log",
+        "evidence/attempt01-harness-bug/case-result.json",
+        "evidence/attempt01-harness-bug/final-cleanup-oracle.json",
+        "evidence/attempt01-harness-bug/fixture-ledger.json",
+        "evidence/attempt01-harness-bug/phase0-guard.json",
+        "evidence/attempt01-harness-bug/phase0-preflight.json",
+        "evidence/attempt01-harness-bug/phase1-owned-child.json",
+        "evidence/attempt01-harness-bug/phase2-fixtures.json",
+        "evidence/attempt01-harness-bug/phase3-manual-uuid.json",
+        "evidence/attempt01-harness-bug/progress.json",
+        "evidence/attempt01-harness-bug/run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb05-b98b3ee95fba-",
+        "child_node_id": "b72b8015-9d4f-4021-b0a2-edcc1cfd74c0",
+        "child_agent_id": "agent-13b1f9c4-4ee8-4d04-85e4-09c05d438c39",
+        "script_id": "9a7389c2-2bf8-4e2a-a3af-2749a7e573cb",
+        "task_id": "e36d8e5f-bb60-40c2-a6cf-46944be6b159",
+        "schedules": {
+          "A_slot": "e03103e6-59f8-421a-81a8-b3d4a8831b40",
+          "B_same_slot": "0581ba32-1896-42be-a13c-928a1b71ccb6",
+          "C_other_slot": "d5632431-b7ef-4dea-b4e3-19ca6a1812a6",
+          "agent_one_time": "f63d6d8d-d3d7-4369-8762-e494463b5c86",
+          "agent_offline": "9fd896bb-df11-4401-a8da-3c3397fb1ef9"
+        },
+        "executions": {
+          "manual_m1": "4b37c1d4-6f6c-4799-9e3e-e4232b2c5f59",
+          "manual_m2": "b9c075d2-ae06-41f5-b936-03e659b2ec91",
+          "hub_slot_primary": "7fec8160-69aa-41f1-9afb-8dbbe6aeeec7",
+          "agent_slot_primary": "cb9e5b66-78cf-4294-b30d-13e92212f6b2",
+          "offline": "753b0c2c-dc8d-4de7-ad7b-d4e34c300247"
+        },
+        "preserved_execution_history": [
+          "4b37c1d4-6f6c-4799-9e3e-e4232b2c5f59",
+          "b9c075d2-ae06-41f5-b936-03e659b2ec91",
+          "7fec8160-69aa-41f1-9afb-8dbbe6aeeec7",
+          "cb9e5b66-78cf-4294-b30d-13e92212f6b2",
+          "753b0c2c-dc8d-4de7-ad7b-d4e34c300247"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 18,
+        "hub_definition_creates": 7,
+        "hub_definition_deletes": 7,
+        "manual_run_posts": 2,
+        "node_enroll_posts": 1,
+        "child_process_starts": 3,
+        "child_process_stops": 3
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "schedule",
+            "id": "f63d6d8d-d3d7-4369-8762-e494463b5c86",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "schedule",
+            "id": "9fd896bb-df11-4401-a8da-3c3397fb1ef9",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "e36d8e5f-bb60-40c2-a6cf-46944be6b159",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "9a7389c2-2bf8-4e2a-a3af-2749a7e573cb",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native4_child_removal": {
+          "signalled": [
+            3637
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "b72b8015-9d4f-4021-b0a2-edcc1cfd74c0",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "AR-20",
+      "title": "AR-20 Duplicate Execution Upload；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-20",
+          "layer": "hub execution upsert/frame-dup/offline-upload",
+          "status": "PASS",
+          "description": [
+            "Duplicate EXECUTION_FINISHED for one manual Execution UUID: Hub stored one row, no state rollback.",
+            "Duplicate upload after offline recovery: same Execution ID uploaded twice, Hub stored one row, terminal status and offline flag consistent, no half-state.",
+            "Agent-side journal persistence survived a real process restart; the recovered row is the exact same Execution ID."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Duplicate upload was injected at the frame layer of the harness proxy; the underlying Hub upsert/dedup logic is the unmodified product path."
+      ],
+      "evidence": [
+        "evidence/phase0-guard.json",
+        "evidence/phase1-owned-child.json",
+        "evidence/phase2-fixtures.json",
+        "evidence/phase3-manual-uuid.json",
+        "evidence/phase4-hub-schedule-key.json",
+        "evidence/phase5-agent-schedule-key.json",
+        "evidence/phase6-offline-upload-ack.json",
+        "evidence/phase7-cleanup.json",
+        "evidence/phase7-proxy-frames.json",
+        "evidence/phase8-independent-cleanup-verification.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json",
+        "evidence/attempt01-harness-bug/attempt01-run-stdout.log",
+        "evidence/attempt01-harness-bug/case-result.json",
+        "evidence/attempt01-harness-bug/final-cleanup-oracle.json",
+        "evidence/attempt01-harness-bug/fixture-ledger.json",
+        "evidence/attempt01-harness-bug/phase0-guard.json",
+        "evidence/attempt01-harness-bug/phase0-preflight.json",
+        "evidence/attempt01-harness-bug/phase1-owned-child.json",
+        "evidence/attempt01-harness-bug/phase2-fixtures.json",
+        "evidence/attempt01-harness-bug/phase3-manual-uuid.json",
+        "evidence/attempt01-harness-bug/progress.json",
+        "evidence/attempt01-harness-bug/run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb05-b98b3ee95fba-",
+        "child_node_id": "b72b8015-9d4f-4021-b0a2-edcc1cfd74c0",
+        "child_agent_id": "agent-13b1f9c4-4ee8-4d04-85e4-09c05d438c39",
+        "script_id": "9a7389c2-2bf8-4e2a-a3af-2749a7e573cb",
+        "task_id": "e36d8e5f-bb60-40c2-a6cf-46944be6b159",
+        "schedules": {
+          "A_slot": "e03103e6-59f8-421a-81a8-b3d4a8831b40",
+          "B_same_slot": "0581ba32-1896-42be-a13c-928a1b71ccb6",
+          "C_other_slot": "d5632431-b7ef-4dea-b4e3-19ca6a1812a6",
+          "agent_one_time": "f63d6d8d-d3d7-4369-8762-e494463b5c86",
+          "agent_offline": "9fd896bb-df11-4401-a8da-3c3397fb1ef9"
+        },
+        "executions": {
+          "manual_m1": "4b37c1d4-6f6c-4799-9e3e-e4232b2c5f59",
+          "manual_m2": "b9c075d2-ae06-41f5-b936-03e659b2ec91",
+          "hub_slot_primary": "7fec8160-69aa-41f1-9afb-8dbbe6aeeec7",
+          "agent_slot_primary": "cb9e5b66-78cf-4294-b30d-13e92212f6b2",
+          "offline": "753b0c2c-dc8d-4de7-ad7b-d4e34c300247"
+        },
+        "preserved_execution_history": [
+          "4b37c1d4-6f6c-4799-9e3e-e4232b2c5f59",
+          "b9c075d2-ae06-41f5-b936-03e659b2ec91",
+          "7fec8160-69aa-41f1-9afb-8dbbe6aeeec7",
+          "cb9e5b66-78cf-4294-b30d-13e92212f6b2",
+          "753b0c2c-dc8d-4de7-ad7b-d4e34c300247"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 18,
+        "hub_definition_creates": 7,
+        "hub_definition_deletes": 7,
+        "manual_run_posts": 2,
+        "node_enroll_posts": 1,
+        "child_process_starts": 3,
+        "child_process_stops": 3
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "schedule",
+            "id": "f63d6d8d-d3d7-4369-8762-e494463b5c86",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "schedule",
+            "id": "9fd896bb-df11-4401-a8da-3c3397fb1ef9",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "e36d8e5f-bb60-40c2-a6cf-46944be6b159",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "9a7389c2-2bf8-4e2a-a3af-2749a7e573cb",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native4_child_removal": {
+          "signalled": [
+            3637
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "b72b8015-9d4f-4021-b0a2-edcc1cfd74c0",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    }
+  ],
+  "deviations": [],
+  "budget": {
+    "api_mutations": 18,
+    "hub_definition_creates": 7,
+    "hub_definition_deletes": 7,
+    "manual_run_posts": 2,
+    "node_enroll_posts": 1,
+    "child_process_starts": 3,
+    "child_process_stops": 3
+  },
+  "final_cleanup_oracle_clean": true,
+  "harness_seams": {
+    "authority": "management writes only to repair http://192.168.100.209:18080; primary :8080 and the 4 protected repair Agents were never written to or restarted",
+    "owned_child": "enrolled node + exact repair Agent binary (sha256 d55dc5cd...) run as a harness-owned background process on native-4 behind a harness frame proxy on the operator host 192.168.100.170; protected nodesteer-agent*.service untouched",
+    "offline_semantics": "offline produced by cutting the owned child Agent from the Hub at the frame-proxy layer (mode=cut); Hub and protected Agents were never stopped",
+    "duplicate_upload": "frame proxy duplicated EXECUTION_FINISHED frames (real Hub upsert/dedup path, Hub ACKed twice) and dropped the first EXECUTION_ACK to force a real re-upload after reconnect",
+    "schedule_key_trigger": "instead of the planned disabled/far-future one_time Schedule, past-run_at one_time Schedules were used so the real Hub scheduler actually fires and the Task+Node+ScheduledTime key is genuinely exercised",
+    "product_source_changes": 0,
+    "git_operations": 0,
+    "hub_restarts": 0
+  },
+  "independent_cleanup_verification": true,
+  "evidence": [
+    "case-result.json",
+    "final-cleanup-oracle.json",
+    "final-cleanup-oracle.json",
+    "fixture-ledger.json",
+    "phase0-guard.json",
+    "phase1-owned-child.json",
+    "phase2-fixtures.json",
+    "phase3-manual-uuid.json",
+    "phase4-hub-schedule-key.json",
+    "phase5-agent-schedule-key.json",
+    "phase6-offline-upload-ack.json",
+    "phase7-cleanup.json",
+    "phase7-proxy-frames.json",
+    "phase8-independent-cleanup-verification.json",
+    "progress.json",
+    "run-evidence.json",
+    "evidence/attempt01-harness-bug/attempt01-run-stdout.log",
+    "evidence/attempt01-harness-bug/case-result.json",
+    "evidence/attempt01-harness-bug/final-cleanup-oracle.json",
+    "evidence/attempt01-harness-bug/fixture-ledger.json",
+    "evidence/attempt01-harness-bug/phase0-guard.json",
+    "evidence/attempt01-harness-bug/phase0-preflight.json",
+    "evidence/attempt01-harness-bug/phase1-owned-child.json",
+    "evidence/attempt01-harness-bug/phase2-fixtures.json",
+    "evidence/attempt01-harness-bug/phase3-manual-uuid.json",
+    "evidence/attempt01-harness-bug/progress.json",
+    "evidence/attempt01-harness-bug/run-evidence.json"
+  ],
+  "rerun_note": "第一次harness尝试因harness自身缺陷在 phase3 判定失败（重复帧检测断言写错）并在异常路径上因路径前缀拼接错误未写出清理证据；其产物原样保留在 evidence/attempt01-harness-bug/ 未做改动，随后修正 harness 并完整重跑一次，本报告以第二次（EXIT=0）为准。"
+}

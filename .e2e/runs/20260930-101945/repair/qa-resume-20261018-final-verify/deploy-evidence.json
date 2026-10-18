@@ -1,0 +1,905 @@
+{
+ "batch": "qa-resume-20261018-final-verify",
+ "build_label": "dddee4f0-e2e-repair-20261018-final",
+ "purpose": "X16 + T2 Go 修复 + Web3/T3/主 Agent Web 修复全部重建 + repair 环境部署（可回滚）",
+ "authority": "http://192.168.100.209:18080",
+ "started_at_utc": "2026-10-18T04:40:28Z",
+ "artifacts_local": {
+  "hub_bundled": {
+   "path": "/tmp/opencode/nodesteer-build-20261018-final/nodesteer-hub-static-final",
+   "sha256": "00e1f375bf67a59ad04dfc6283741cb276ac6be70ce2f21e02d25094845e7a71",
+   "size": 55161802,
+   "previous_build_sha256": "1d8cc17e3aeeb5df59026bc3881a6ff8b5a3e308617c931ac1f13d70a9cc230b",
+   "previous_build_size": 55086747,
+   "changed_vs_previous_build": true
+  },
+  "agent_amd64": {
+   "path": "/tmp/opencode/nodesteer-build-20261018-final/nodesteer-agent-static",
+   "sha256": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01",
+   "size": 16886945,
+   "previous_build_sha256": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+   "previous_build_size": 16847621,
+   "changed_vs_previous_build": true
+  },
+  "agent_arm64": {
+   "path": "/tmp/opencode/nodesteer-build-20261018-final/nodesteer-agent-arm64",
+   "sha256": "7d987125d6df05282058b21d16cd89f0d4b8c61759f45db9a19e17c89e6c8e90",
+   "size": 16066534,
+   "previous_build_sha256": null,
+   "previous_build_size": null,
+   "changed_vs_previous_build": null
+  },
+  "hub_unbundled": {
+   "path": "/tmp/opencode/nodesteer-build-20261018-final/nodesteer-hub.unbundled",
+   "sha256": "6b2daed23bba1ca629f94cf7a2e3d0c4598ccb5eb4914d0c0fde8bebdc3f3391",
+   "size": 22208266,
+   "previous_build_sha256": null,
+   "previous_build_size": null,
+   "changed_vs_previous_build": null
+  }
+ },
+ "web_build": {
+  "command": "cd web && npm run build   # tsc -b && vite build",
+  "dist_index_sha256": "1fdfc0b9cd9e01fccc2c22a59f9068790ae1ca752990c729ba9159f586231c01",
+  "dist_files": 74,
+  "manifest_note": "web-dist-manifest.txt（74 文件全量 sha256，构建目录内）",
+  "log": "web-build.log 尾行 WEB_BUILD_EXIT=0"
+ },
+ "pre_deploy": {
+  "hub_209": {
+   "unit": "nodesteer-hub-repair-20260930-101945.service",
+   "state": {
+    "ActiveState": "active",
+    "SubState": "running",
+    "UnitFileState": "disabled",
+    "MainPID": "239892"
+   },
+   "disk_sha256": "1d8cc17e3aeeb5df59026bc3881a6ff8b5a3e308617c931ac1f13d70a9cc230b",
+   "healthz": "200",
+   "readyz": "200",
+   "node_version": "dddee4f0-e2e-repair-20261017-fixall",
+   "main_pid": "239892",
+   "proc_exe": [
+    "1d8cc17e3aeeb5df59026bc3881a6ff8b5a3e308617c931ac1f13d70a9cc230b",
+    "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard"
+   ]
+  },
+  "primary_hub_untouched": {
+   "unit": "nodesteer-hub.service",
+   "state": {
+    "ActiveState": "active",
+    "SubState": "running",
+    "UnitFileState": "enabled",
+    "MainPID": "1251"
+   }
+  },
+  "agents": {
+   "native-1": {
+    "unit": "nodesteer-agent-repair-20260930-101945-native-1.service",
+    "ip": "192.168.100.204",
+    "state": {
+     "MainPID": "64185",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "disabled"
+    },
+    "disk_sha256": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+    "proc_exe": [
+     "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+     "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent"
+    ]
+   },
+   "native-2": {
+    "unit": "nodesteer-agent-repair-20260930-101945-native-2.service",
+    "ip": "192.168.100.206",
+    "state": {
+     "MainPID": "194298",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "disabled"
+    },
+    "disk_sha256": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+    "proc_exe": [
+     "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+     "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent"
+    ]
+   },
+   "native-3": {
+    "unit": "nodesteer-agent-repair-20260930-101945-native-3.service",
+    "ip": "192.168.100.222",
+    "state": {
+     "MainPID": "189700",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "disabled"
+    },
+    "disk_sha256": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+    "proc_exe": [
+     "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+     "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent"
+    ]
+   },
+   "native-4": {
+    "unit": "nodesteer-agent-repair-20260930-101945-native-4.service",
+    "ip": "192.168.100.247",
+    "state": {
+     "MainPID": "187699",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "disabled"
+    },
+    "disk_sha256": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+    "proc_exe": [
+     "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+     "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent"
+    ]
+   }
+  },
+  "primary_agent_unit_snapshot": {
+   "note": "nodesteer-agent.service 未触碰",
+   "states": {
+    "native-1": {
+     "MainPID": "673",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "enabled"
+    },
+    "native-2": {
+     "MainPID": "731",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "enabled"
+    },
+    "native-3": {
+     "MainPID": "16919",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "enabled"
+    },
+    "native-4": {
+     "MainPID": "1002",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "enabled"
+    }
+   }
+  }
+ },
+ "backups": {
+  "hub": {
+   "path": "/opt/nodesteer-repair-20260930-101945/backup-20261018-final/nodesteer-hub-static-login-guard.bak-20261018-final",
+   "rc": 0,
+   "sha256": "1d8cc17e3aeeb5df59026bc3881a6ff8b5a3e308617c931ac1f13d70a9cc230b",
+   "err": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+  },
+  "agents": {
+   "native-1": {
+    "path": "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent.bak-20261018-final",
+    "rc": 0,
+    "sha256": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+    "err": "Warning: Permanently added '192.168.100.204' (ED25519) to the list of known hosts.\n"
+   },
+   "native-2": {
+    "path": "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent.bak-20261018-final",
+    "rc": 0,
+    "sha256": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+    "err": "Warning: Permanently added '192.168.100.206' (ED25519) to the list of known hosts.\n"
+   },
+   "native-3": {
+    "path": "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent.bak-20261018-final",
+    "rc": 0,
+    "sha256": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+    "err": "Warning: Permanently added '192.168.100.222' (ED25519) to the list of known hosts.\n"
+   },
+   "native-4": {
+    "path": "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent.bak-20261018-final",
+    "rc": 0,
+    "sha256": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+    "err": "Warning: Permanently added '192.168.100.247' (ED25519) to the list of known hosts.\n"
+   }
+  }
+ },
+ "deployment": {
+  "hub": {
+   "install_rc": 0,
+   "out": "00e1f375bf67a59ad04dfc6283741cb276ac6be70ce2f21e02d25094845e7a71  /opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard\nactive",
+   "err": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n",
+   "new_sha256": "00e1f375bf67a59ad04dfc6283741cb276ac6be70ce2f21e02d25094845e7a71",
+   "state": {
+    "ActiveState": "active",
+    "SubState": "running",
+    "UnitFileState": "disabled",
+    "MainPID": "279199"
+   },
+   "main_pid": "279199",
+   "exe_sha256_after": [
+    "00e1f375bf67a59ad04dfc6283741cb276ac6be70ce2f21e02d25094845e7a71",
+    "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard"
+   ],
+   "disk_sha256_after": "00e1f375bf67a59ad04dfc6283741cb276ac6be70ce2f21e02d25094845e7a71",
+   "healthz": "200",
+   "readyz": "200",
+   "primary_hub_pid_after": "1251"
+  },
+  "agents": {
+   "native-1": {
+    "install_rc": 0,
+    "out": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01  /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent\nactive",
+    "err": "Warning: Permanently added '192.168.100.204' (ED25519) to the list of known hosts.\n",
+    "new_sha256": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01",
+    "state": {
+     "MainPID": "69032",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "disabled"
+    },
+    "main_pid": "69032",
+    "exe_sha256_after": [
+     "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01",
+     "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent"
+    ],
+    "disk_sha256_after": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01"
+   },
+   "native-2": {
+    "install_rc": 0,
+    "out": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01  /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent\nactive",
+    "err": "Warning: Permanently added '192.168.100.206' (ED25519) to the list of known hosts.\n",
+    "new_sha256": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01",
+    "state": {
+     "MainPID": "222890",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "disabled"
+    },
+    "main_pid": "222890",
+    "exe_sha256_after": [
+     "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01",
+     "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent"
+    ],
+    "disk_sha256_after": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01"
+   },
+   "native-3": {
+    "install_rc": 0,
+    "out": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01  /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent\nactive",
+    "err": "Warning: Permanently added '192.168.100.222' (ED25519) to the list of known hosts.\n",
+    "new_sha256": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01",
+    "state": {
+     "MainPID": "219187",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "disabled"
+    },
+    "main_pid": "219187",
+    "exe_sha256_after": [
+     "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01",
+     "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent"
+    ],
+    "disk_sha256_after": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01"
+   },
+   "native-4": {
+    "install_rc": 0,
+    "out": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01  /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent\nactive",
+    "err": "Warning: Permanently added '192.168.100.247' (ED25519) to the list of known hosts.\n",
+    "new_sha256": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01",
+    "state": {
+     "MainPID": "189775",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "disabled"
+    },
+    "main_pid": "189775",
+    "exe_sha256_after": [
+     "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01",
+     "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent"
+    ],
+    "disk_sha256_after": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01"
+   }
+  }
+ },
+ "post_deploy": {
+  "at_utc": "2026-10-18T04:41:05Z",
+  "healthz": "200",
+  "readyz": "200",
+  "nodes": {
+   "qa-repair-20260930-101945-native-1": {
+    "status": "online",
+    "sync_status": "synced",
+    "agent_version": "dddee4f0-e2e-repair-20261018-final"
+   },
+   "qa-repair-20260930-101945-native-2": {
+    "status": "online",
+    "sync_status": "synced",
+    "agent_version": "dddee4f0-e2e-repair-20261018-final"
+   },
+   "qa-repair-20260930-101945-native-3": {
+    "status": "online",
+    "sync_status": "synced",
+    "agent_version": "dddee4f0-e2e-repair-20261018-final"
+   },
+   "qa-repair-20260930-101945-native-4": {
+    "status": "online",
+    "sync_status": "synced",
+    "agent_version": "dddee4f0-e2e-repair-20261018-final"
+   },
+   "qa-resume-20261008-native4-child-c5d48ea9-da08-4123-94fb-69b11abd59a7": {
+    "status": "offline",
+    "sync_status": "synced",
+    "agent_version": "dddee4f0-e2e-repair-20261004"
+   },
+   "qa-resume-20261010-host-f174890c3846-host001": {
+    "status": "online",
+    "sync_status": "synced",
+    "agent_version": "dddee4f0-e2e-repair-20261004"
+   }
+  },
+  "primary_hub_pid": "1251"
+ },
+ "ui_assets": {
+  "local_index_sha256": "1fdfc0b9cd9e01fccc2c22a59f9068790ae1ca752990c729ba9159f586231c01",
+  "served_index_sha256": "1fdfc0b9cd9e01fccc2c22a59f9068790ae1ca752990c729ba9159f586231c01",
+  "index_match": true,
+  "assets": {
+   "/assets/Match-Bp0GJMd6.js": {
+    "local": "96f9edfe14be2b3dd5a4aa044bcc8cac881c87b90302bf1b8e69d44171981af2",
+    "served": "96f9edfe14be2b3dd5a4aa044bcc8cac881c87b90302bf1b8e69d44171981af2",
+    "match": true
+   },
+   "/assets/QueryClientProvider-Yi7Sb9LQ.js": {
+    "local": "49a716a6d90c50aa55a17cf1db5de44d91f8ea995bbeb05bd14cb5d72758d50a",
+    "served": "49a716a6d90c50aa55a17cf1db5de44d91f8ea995bbeb05bd14cb5d72758d50a",
+    "match": true
+   },
+   "/assets/button-hPis7tu8.js": {
+    "local": "a5905ff22d438c6f4ece9235eacf5717cf3b3ff5bf4952d87c5b3b3c096b0889",
+    "served": "a5905ff22d438c6f4ece9235eacf5717cf3b3ff5bf4952d87c5b3b3c096b0889",
+    "match": true
+   },
+   "/assets/index-BNvysIjU.js": {
+    "local": "3df8342101c4c2067d72533c2a8fe3e0400c7e5232f5ee496d8323bf7a6ec431",
+    "served": "3df8342101c4c2067d72533c2a8fe3e0400c7e5232f5ee496d8323bf7a6ec431",
+    "match": true
+   },
+   "/assets/index-DMjRhUdx.css": {
+    "local": "8151f167fd9359dd8056671cd67c231152052f80a7007394f139ad8d1de0fba1",
+    "served": "8151f167fd9359dd8056671cd67c231152052f80a7007394f139ad8d1de0fba1",
+    "match": true
+   },
+   "/assets/matchContext-D_oNhIry.js": {
+    "local": "b589a83a0f2afcda30306f92c68d2809707c766af896b7914b5fb00d263d6394",
+    "served": "b589a83a0f2afcda30306f92c68d2809707c766af896b7914b5fb00d263d6394",
+    "match": true
+   },
+   "/assets/mutation-DITIwZXX.js": {
+    "local": "c418ae6e298ab5a91e2046b40da2de211283af639f53abc262bddd38a3f4e7ec",
+    "served": "c418ae6e298ab5a91e2046b40da2de211283af639f53abc262bddd38a3f4e7ec",
+    "match": true
+   },
+   "/assets/navigation-pDL39Jhi.js": {
+    "local": "c9ecc36424bc62ecee8aa283c0908ab089b7125f3258f4f6a96f998141dd5159",
+    "served": "c9ecc36424bc62ecee8aa283c0908ab089b7125f3258f4f6a96f998141dd5159",
+    "match": true
+   },
+   "/assets/route-DwZCsz1G.js": {
+    "local": "fc40e3dd544e772502decfec79b6d8308583a79f274d047f88f5f37a7c5ead55",
+    "served": "fc40e3dd544e772502decfec79b6d8308583a79f274d047f88f5f37a7c5ead55",
+    "match": true
+   },
+   "/assets/schemas-YL2EgIdt.js": {
+    "local": "635644e5f6de7da5b5183e2213269ba386134a9f3c8eca3d1c63c767d47f6fbb",
+    "served": "635644e5f6de7da5b5183e2213269ba386134a9f3c8eca3d1c63c767d47f6fbb",
+    "match": true
+   },
+   "/assets/shim-wAY9LwA-.js": {
+    "local": "c2bafe681826e5ccfa4734989864028c9ad8d757d612bcff2d48c2210c9cb3b2",
+    "served": "c2bafe681826e5ccfa4734989864028c9ad8d757d612bcff2d48c2210c9cb3b2",
+    "match": true
+   },
+   "/assets/theme-provider-ZkI4vPTK.js": {
+    "local": "545e8c55c94e90d92ad7aa090f631f42acbfe7e8243cf71ac8d27a56954b6352",
+    "served": "545e8c55c94e90d92ad7aa090f631f42acbfe7e8243cf71ac8d27a56954b6352",
+    "match": true
+   },
+   "/assets/useStore-GbGhe7zF.js": {
+    "local": "94248195723901d47030dc37c225a33667eeac1f82e6d86bc576de4f69c4d038",
+    "served": "94248195723901d47030dc37c225a33667eeac1f82e6d86bc576de4f69c4d038",
+    "match": true
+   }
+  },
+  "all_dist_files": {
+   "assets/Match-Bp0GJMd6.js": {
+    "local": "96f9edfe14be2b3dd5a4aa044bcc8cac881c87b90302bf1b8e69d44171981af2",
+    "served": "96f9edfe14be2b3dd5a4aa044bcc8cac881c87b90302bf1b8e69d44171981af2",
+    "match": true,
+    "url": "/assets/Match-Bp0GJMd6.js"
+   },
+   "assets/QueryClientProvider-Yi7Sb9LQ.js": {
+    "local": "49a716a6d90c50aa55a17cf1db5de44d91f8ea995bbeb05bd14cb5d72758d50a",
+    "served": "49a716a6d90c50aa55a17cf1db5de44d91f8ea995bbeb05bd14cb5d72758d50a",
+    "match": true,
+    "url": "/assets/QueryClientProvider-Yi7Sb9LQ.js"
+   },
+   "assets/_agentId-BNkdVE-Q.js": {
+    "local": "6b371e598ad89ffd090cdec3b63657bafe9853f78cc24a89f0141b628ba9ea8e",
+    "served": "6b371e598ad89ffd090cdec3b63657bafe9853f78cc24a89f0141b628ba9ea8e",
+    "match": true,
+    "url": "/assets/_agentId-BNkdVE-Q.js"
+   },
+   "assets/_applicationId-Duxh9pzu.js": {
+    "local": "a96b4c83ad22afcc56cbc8dab7bb318784715ad25850eddb71bb942366824330",
+    "served": "a96b4c83ad22afcc56cbc8dab7bb318784715ad25850eddb71bb942366824330",
+    "match": true,
+    "url": "/assets/_applicationId-Duxh9pzu.js"
+   },
+   "assets/_artifactId-Cq1KmVTc.js": {
+    "local": "b7d7c91bd0a70819b65c2b56c4f76376a31259eca86aa376b969483b6f658ead",
+    "served": "b7d7c91bd0a70819b65c2b56c4f76376a31259eca86aa376b969483b6f658ead",
+    "match": true,
+    "url": "/assets/_artifactId-Cq1KmVTc.js"
+   },
+   "assets/_authenticated-ByRKoDcA.js": {
+    "local": "a66076b2666e585f552b9ddb110cb61197154558b1d7b21ed4db17f101c58e3b",
+    "served": "a66076b2666e585f552b9ddb110cb61197154558b1d7b21ed4db17f101c58e3b",
+    "match": true,
+    "url": "/assets/_authenticated-ByRKoDcA.js"
+   },
+   "assets/_executionId-D-xdmx-f.js": {
+    "local": "4b88b3cb6b76057d3755ec2d178362ecd2285d08d787f20295d7cd3a4f1c1047",
+    "served": "4b88b3cb6b76057d3755ec2d178362ecd2285d08d787f20295d7cd3a4f1c1047",
+    "match": true,
+    "url": "/assets/_executionId-D-xdmx-f.js"
+   },
+   "assets/_groupId-EAXTKCPD.js": {
+    "local": "7902267dc9120f66b933dab7f1c18217dfd6fc2e9ea706e71d046cd65f61d432",
+    "served": "7902267dc9120f66b933dab7f1c18217dfd6fc2e9ea706e71d046cd65f61d432",
+    "match": true,
+    "url": "/assets/_groupId-EAXTKCPD.js"
+   },
+   "assets/_nodeId-C1B0NhtA.js": {
+    "local": "6b371e598ad89ffd090cdec3b63657bafe9853f78cc24a89f0141b628ba9ea8e",
+    "served": "6b371e598ad89ffd090cdec3b63657bafe9853f78cc24a89f0141b628ba9ea8e",
+    "match": true,
+    "url": "/assets/_nodeId-C1B0NhtA.js"
+   },
+   "assets/_scheduleId-CDOyVZ3b.js": {
+    "local": "23ebd937536f3ae56262be1457bb1ac00709bf12244643a5789604102f6a8a07",
+    "served": "23ebd937536f3ae56262be1457bb1ac00709bf12244643a5789604102f6a8a07",
+    "match": true,
+    "url": "/assets/_scheduleId-CDOyVZ3b.js"
+   },
+   "assets/_scriptId-CAaDGjGd.js": {
+    "local": "aca7f51af056751d686891b6ff871a59701a1f46a79c853b7dca9ba3c086bd21",
+    "served": "aca7f51af056751d686891b6ff871a59701a1f46a79c853b7dca9ba3c086bd21",
+    "match": true,
+    "url": "/assets/_scriptId-CAaDGjGd.js"
+   },
+   "assets/_taskId-BXXprtzv.js": {
+    "local": "41fba2fb40208a8cf06029e7b0c71957b5cec5aa3f777eb9a12b6adf646533ad",
+    "served": "41fba2fb40208a8cf06029e7b0c71957b5cec5aa3f777eb9a12b6adf646533ad",
+    "match": true,
+    "url": "/assets/_taskId-BXXprtzv.js"
+   },
+   "assets/_taskId-CeiTxOYU.js": {
+    "local": "521e6f20ea5ebacd39ba75eb7d118640e4825a41fccfb57a0a80751c3f887211",
+    "served": "521e6f20ea5ebacd39ba75eb7d118640e4825a41fccfb57a0a80751c3f887211",
+    "match": true,
+    "url": "/assets/_taskId-CeiTxOYU.js"
+   },
+   "assets/_transferId-B7ro37sj.js": {
+    "local": "6cd65df1becab8edcec63574e7ce57ae80a26838c667b160dcbd0b35b7c2532b",
+    "served": "6cd65df1becab8edcec63574e7ce57ae80a26838c667b160dcbd0b35b7c2532b",
+    "match": true,
+    "url": "/assets/_transferId-B7ro37sj.js"
+   },
+   "assets/_userId-BVuMLEfJ.js": {
+    "local": "e142cefa8931d952197150c39eeea9adb6eda8cbc78b8d62202193ed4322eda9",
+    "served": "e142cefa8931d952197150c39eeea9adb6eda8cbc78b8d62202193ed4322eda9",
+    "match": true,
+    "url": "/assets/_userId-BVuMLEfJ.js"
+   },
+   "assets/agents-iiMmUCgt.js": {
+    "local": "33458ed2190bc3331d2bfffac9642344b0d3e91768d65d72b3f2a6d7c626edd2",
+    "served": "33458ed2190bc3331d2bfffac9642344b0d3e91768d65d72b3f2a6d7c626edd2",
+    "match": true,
+    "url": "/assets/agents-iiMmUCgt.js"
+   },
+   "assets/applications-CoB997lI.js": {
+    "local": "3d7294b629993442a4d0f9ae28eb00582172e50fea1ae41cb17ab031f4ce2ab6",
+    "served": "3d7294b629993442a4d0f9ae28eb00582172e50fea1ae41cb17ab031f4ce2ab6",
+    "match": true,
+    "url": "/assets/applications-CoB997lI.js"
+   },
+   "assets/artifacts-BHzs_Rg6.js": {
+    "local": "d56606ecc5f237a1421b2618259ebb95c64b72194e85c3742437e76ed560ec2c",
+    "served": "d56606ecc5f237a1421b2618259ebb95c64b72194e85c3742437e76ed560ec2c",
+    "match": true,
+    "url": "/assets/artifacts-BHzs_Rg6.js"
+   },
+   "assets/audit-YAbfTwCo.js": {
+    "local": "4540ba29a22e310e7b4c82666341db7f954063e0812324efb7edc356543ed36c",
+    "served": "4540ba29a22e310e7b4c82666341db7f954063e0812324efb7edc356543ed36c",
+    "match": true,
+    "url": "/assets/audit-YAbfTwCo.js"
+   },
+   "assets/button-hPis7tu8.js": {
+    "local": "a5905ff22d438c6f4ece9235eacf5717cf3b3ff5bf4952d87c5b3b3c096b0889",
+    "served": "a5905ff22d438c6f4ece9235eacf5717cf3b3ff5bf4952d87c5b3b3c096b0889",
+    "match": true,
+    "url": "/assets/button-hPis7tu8.js"
+   },
+   "assets/catalog-BPIaBSFY.js": {
+    "local": "a01a82961506788aded3395e98de57ffe11a821abfc83d414096cb0b687d7a03",
+    "served": "a01a82961506788aded3395e98de57ffe11a821abfc83d414096cb0b687d7a03",
+    "match": true,
+    "url": "/assets/catalog-BPIaBSFY.js"
+   },
+   "assets/checkbox-BCM_DZH7.js": {
+    "local": "7e523695331a3a51fbc55d78c6c542352eafcc7b53c4ece68178f57e2bafd736",
+    "served": "7e523695331a3a51fbc55d78c6c542352eafcc7b53c4ece68178f57e2bafd736",
+    "match": true,
+    "url": "/assets/checkbox-BCM_DZH7.js"
+   },
+   "assets/data-table-C9j0q8f3.js": {
+    "local": "91ee54a71ecdc74e4de60861b2469f6111a3670566077c3c1c95e6e5a86aea77",
+    "served": "91ee54a71ecdc74e4de60861b2469f6111a3670566077c3c1c95e6e5a86aea77",
+    "match": true,
+    "url": "/assets/data-table-C9j0q8f3.js"
+   },
+   "assets/edit-Dq00lByu.js": {
+    "local": "244488c2d452606b46553416d79e5b87bf556a4b73ca2b3179040ee841ee2156",
+    "served": "244488c2d452606b46553416d79e5b87bf556a4b73ca2b3179040ee841ee2156",
+    "match": true,
+    "url": "/assets/edit-Dq00lByu.js"
+   },
+   "assets/editors-BPDARasx.js": {
+    "local": "7b6a7576946260469131dc5c800a032f72420f43fb57b1161ccef26337a22096",
+    "served": "7b6a7576946260469131dc5c800a032f72420f43fb57b1161ccef26337a22096",
+    "match": true,
+    "url": "/assets/editors-BPDARasx.js"
+   },
+   "assets/executions-C9bAn51q.js": {
+    "local": "8f522329b871de0a8b2da9404b879d7f3ddbd457e7a49e2cc1c681b4193b146b",
+    "served": "8f522329b871de0a8b2da9404b879d7f3ddbd457e7a49e2cc1c681b4193b146b",
+    "match": true,
+    "url": "/assets/executions-C9bAn51q.js"
+   },
+   "assets/executions-qvry_dW_.js": {
+    "local": "8494caa2ec48c62fa28da565e87a30c07107e4dac7b5ad485ea0e79ce6cab527",
+    "served": "8494caa2ec48c62fa28da565e87a30c07107e4dac7b5ad485ea0e79ce6cab527",
+    "match": true,
+    "url": "/assets/executions-qvry_dW_.js"
+   },
+   "assets/groups-Cej9My_F.js": {
+    "local": "802e147733686b3148a828bde22404eb110852fe9bcbe609241c26055792b8db",
+    "served": "802e147733686b3148a828bde22404eb110852fe9bcbe609241c26055792b8db",
+    "match": true,
+    "url": "/assets/groups-Cej9My_F.js"
+   },
+   "assets/index-BNvysIjU.js": {
+    "local": "3df8342101c4c2067d72533c2a8fe3e0400c7e5232f5ee496d8323bf7a6ec431",
+    "served": "3df8342101c4c2067d72533c2a8fe3e0400c7e5232f5ee496d8323bf7a6ec431",
+    "match": true,
+    "url": "/assets/index-BNvysIjU.js"
+   },
+   "assets/index-DMjRhUdx.css": {
+    "local": "8151f167fd9359dd8056671cd67c231152052f80a7007394f139ad8d1de0fba1",
+    "served": "8151f167fd9359dd8056671cd67c231152052f80a7007394f139ad8d1de0fba1",
+    "match": true,
+    "url": "/assets/index-DMjRhUdx.css"
+   },
+   "assets/label-Bz6wo93Y.js": {
+    "local": "6f14afd09926d6210932ef7bf4cdc4279cfdaa97abed1782abfba00c11083d80",
+    "served": "6f14afd09926d6210932ef7bf4cdc4279cfdaa97abed1782abfba00c11083d80",
+    "match": true,
+    "url": "/assets/label-Bz6wo93Y.js"
+   },
+   "assets/language-switch-C4WKVm5D.js": {
+    "local": "0d8520b11b197d9a5cbacc5f00c4361a37e684e2e7c865be1717df1a5751132e",
+    "served": "0d8520b11b197d9a5cbacc5f00c4361a37e684e2e7c865be1717df1a5751132e",
+    "match": true,
+    "url": "/assets/language-switch-C4WKVm5D.js"
+   },
+   "assets/matchContext-D_oNhIry.js": {
+    "local": "b589a83a0f2afcda30306f92c68d2809707c766af896b7914b5fb00d263d6394",
+    "served": "b589a83a0f2afcda30306f92c68d2809707c766af896b7914b5fb00d263d6394",
+    "match": true,
+    "url": "/assets/matchContext-D_oNhIry.js"
+   },
+   "assets/mutation-DITIwZXX.js": {
+    "local": "c418ae6e298ab5a91e2046b40da2de211283af639f53abc262bddd38a3f4e7ec",
+    "served": "c418ae6e298ab5a91e2046b40da2de211283af639f53abc262bddd38a3f4e7ec",
+    "match": true,
+    "url": "/assets/mutation-DITIwZXX.js"
+   },
+   "assets/navigation-pDL39Jhi.js": {
+    "local": "c9ecc36424bc62ecee8aa283c0908ab089b7125f3258f4f6a96f998141dd5159",
+    "served": "c9ecc36424bc62ecee8aa283c0908ab089b7125f3258f4f6a96f998141dd5159",
+    "match": true,
+    "url": "/assets/navigation-pDL39Jhi.js"
+   },
+   "assets/new-BUqi55t_.js": {
+    "local": "aca7f51af056751d686891b6ff871a59701a1f46a79c853b7dca9ba3c086bd21",
+    "served": "aca7f51af056751d686891b6ff871a59701a1f46a79c853b7dca9ba3c086bd21",
+    "match": true,
+    "url": "/assets/new-BUqi55t_.js"
+   },
+   "assets/new-BW1X3zdz.js": {
+    "local": "23ebd937536f3ae56262be1457bb1ac00709bf12244643a5789604102f6a8a07",
+    "served": "23ebd937536f3ae56262be1457bb1ac00709bf12244643a5789604102f6a8a07",
+    "match": true,
+    "url": "/assets/new-BW1X3zdz.js"
+   },
+   "assets/new-CLkR6uH6.js": {
+    "local": "d875e54cd7ae57721ae03396dfbc441630169aae8a03b5dfa4b0170adc162bab",
+    "served": "d875e54cd7ae57721ae03396dfbc441630169aae8a03b5dfa4b0170adc162bab",
+    "match": true,
+    "url": "/assets/new-CLkR6uH6.js"
+   },
+   "assets/new-CNUtj7Mo2.js": {
+    "local": "244488c2d452606b46553416d79e5b87bf556a4b73ca2b3179040ee841ee2156",
+    "served": "244488c2d452606b46553416d79e5b87bf556a4b73ca2b3179040ee841ee2156",
+    "match": true,
+    "url": "/assets/new-CNUtj7Mo2.js"
+   },
+   "assets/new-DIW2zieK.js": {
+    "local": "a96b4c83ad22afcc56cbc8dab7bb318784715ad25850eddb71bb942366824330",
+    "served": "a96b4c83ad22afcc56cbc8dab7bb318784715ad25850eddb71bb942366824330",
+    "match": true,
+    "url": "/assets/new-DIW2zieK.js"
+   },
+   "assets/new-sEoizJK2.js": {
+    "local": "7902267dc9120f66b933dab7f1c18217dfd6fc2e9ea706e71d046cd65f61d432",
+    "served": "7902267dc9120f66b933dab7f1c18217dfd6fc2e9ea706e71d046cd65f61d432",
+    "match": true,
+    "url": "/assets/new-sEoizJK2.js"
+   },
+   "assets/nodes-DGtiLzom.js": {
+    "local": "33458ed2190bc3331d2bfffac9642344b0d3e91768d65d72b3f2a6d7c626edd2",
+    "served": "33458ed2190bc3331d2bfffac9642344b0d3e91768d65d72b3f2a6d7c626edd2",
+    "match": true,
+    "url": "/assets/nodes-DGtiLzom.js"
+   },
+   "assets/plus-C9ezW15p.js": {
+    "local": "2269a0e281e51ec7bb8d974938ca4917c2e0f91e90d30f651159e89396c313ca",
+    "served": "2269a0e281e51ec7bb8d974938ca4917c2e0f91e90d30f651159e89396c313ca",
+    "match": true,
+    "url": "/assets/plus-C9ezW15p.js"
+   },
+   "assets/route-CjFQpJIN.js": {
+    "local": "0edaf80d4e0719c2b3892268100b35d7fe030caca0f93215de5e3d9d2c00e545",
+    "served": "0edaf80d4e0719c2b3892268100b35d7fe030caca0f93215de5e3d9d2c00e545",
+    "match": true,
+    "url": "/assets/route-CjFQpJIN.js"
+   },
+   "assets/route-DwZCsz1G.js": {
+    "local": "fc40e3dd544e772502decfec79b6d8308583a79f274d047f88f5f37a7c5ead55",
+    "served": "fc40e3dd544e772502decfec79b6d8308583a79f274d047f88f5f37a7c5ead55",
+    "match": true,
+    "url": "/assets/route-DwZCsz1G.js"
+   },
+   "assets/run-BKJkK0qc.js": {
+    "local": "6f8e168993e7df907b2216d865514033eef2ffe158169402f2238b0f10b957a9",
+    "served": "6f8e168993e7df907b2216d865514033eef2ffe158169402f2238b0f10b957a9",
+    "match": true,
+    "url": "/assets/run-BKJkK0qc.js"
+   },
+   "assets/schedules-BqLDRLJ4.js": {
+    "local": "bd8b6b84015d8c82b1f6f3475c0c541b998f8de7010090f66fc6b53f09e763d9",
+    "served": "bd8b6b84015d8c82b1f6f3475c0c541b998f8de7010090f66fc6b53f09e763d9",
+    "match": true,
+    "url": "/assets/schedules-BqLDRLJ4.js"
+   },
+   "assets/schemas-YL2EgIdt.js": {
+    "local": "635644e5f6de7da5b5183e2213269ba386134a9f3c8eca3d1c63c767d47f6fbb",
+    "served": "635644e5f6de7da5b5183e2213269ba386134a9f3c8eca3d1c63c767d47f6fbb",
+    "match": true,
+    "url": "/assets/schemas-YL2EgIdt.js"
+   },
+   "assets/scripts-veyb67WY.js": {
+    "local": "3587fdce8587ebe643353daa1f40d13a2c58dbb7acc6f4dfe66c20124af2217b",
+    "served": "3587fdce8587ebe643353daa1f40d13a2c58dbb7acc6f4dfe66c20124af2217b",
+    "match": true,
+    "url": "/assets/scripts-veyb67WY.js"
+   },
+   "assets/server-DCYEg_cr.js": {
+    "local": "0fe9529f707ce5d7d19d26eaa9bfc107bc64e401bfbf228f4ea1199115805a3c",
+    "served": "0fe9529f707ce5d7d19d26eaa9bfc107bc64e401bfbf228f4ea1199115805a3c",
+    "match": true,
+    "url": "/assets/server-DCYEg_cr.js"
+   },
+   "assets/settings-npN3EpgX.js": {
+    "local": "ddd10ac088b9eddd896a32740596d43fa1d6c56e5a45341c7983eb1217acfcdc",
+    "served": "ddd10ac088b9eddd896a32740596d43fa1d6c56e5a45341c7983eb1217acfcdc",
+    "match": true,
+    "url": "/assets/settings-npN3EpgX.js"
+   },
+   "assets/shim-wAY9LwA-.js": {
+    "local": "c2bafe681826e5ccfa4734989864028c9ad8d757d612bcff2d48c2210c9cb3b2",
+    "served": "c2bafe681826e5ccfa4734989864028c9ad8d757d612bcff2d48c2210c9cb3b2",
+    "match": true,
+    "url": "/assets/shim-wAY9LwA-.js"
+   },
+   "assets/sign-in-tcjQXafP.js": {
+    "local": "0137d65b3c9e0e5abf11d0ecd176c81c8ef0a22510e773067c94f6292380cbef",
+    "served": "0137d65b3c9e0e5abf11d0ecd176c81c8ef0a22510e773067c94f6292380cbef",
+    "match": true,
+    "url": "/assets/sign-in-tcjQXafP.js"
+   },
+   "assets/table-DwIf20t7.js": {
+    "local": "6ab3c3858927037a3baa9ef71f2da743b3a89a78c9f8895bbf06d854e373035a",
+    "served": "6ab3c3858927037a3baa9ef71f2da743b3a89a78c9f8895bbf06d854e373035a",
+    "match": true,
+    "url": "/assets/table-DwIf20t7.js"
+   },
+   "assets/tasks-CjrdZeK4.js": {
+    "local": "c600a8cdeb421d7e6fa50784b11013fb2770439288902905a10f3ca2054e1b8c",
+    "served": "c600a8cdeb421d7e6fa50784b11013fb2770439288902905a10f3ca2054e1b8c",
+    "match": true,
+    "url": "/assets/tasks-CjrdZeK4.js"
+   },
+   "assets/tasks-OG6r6nzj.js": {
+    "local": "0812ec97e0db6656b293636b5b1ccacbe1629bef6a4754110938d5cb05d244e5",
+    "served": "0812ec97e0db6656b293636b5b1ccacbe1629bef6a4754110938d5cb05d244e5",
+    "match": true,
+    "url": "/assets/tasks-OG6r6nzj.js"
+   },
+   "assets/textarea-KRDj2xO2.js": {
+    "local": "21afeec41a721ca91a2ca5306e3ae5e288c453e8eae388aa3e7e55ae319ee0a3",
+    "served": "21afeec41a721ca91a2ca5306e3ae5e288c453e8eae388aa3e7e55ae319ee0a3",
+    "match": true,
+    "url": "/assets/textarea-KRDj2xO2.js"
+   },
+   "assets/theme-provider-ZkI4vPTK.js": {
+    "local": "545e8c55c94e90d92ad7aa090f631f42acbfe7e8243cf71ac8d27a56954b6352",
+    "served": "545e8c55c94e90d92ad7aa090f631f42acbfe7e8243cf71ac8d27a56954b6352",
+    "match": true,
+    "url": "/assets/theme-provider-ZkI4vPTK.js"
+   },
+   "assets/transfers-COFNwCRk.js": {
+    "local": "6a9a277b8899ef5cf55d0be30305bc82099374a2e0dcf6002aa04162820bb093",
+    "served": "6a9a277b8899ef5cf55d0be30305bc82099374a2e0dcf6002aa04162820bb093",
+    "match": true,
+    "url": "/assets/transfers-COFNwCRk.js"
+   },
+   "assets/transfers-DmaEEfYb.js": {
+    "local": "5c7f4a90dd9afe2fcfb1243bcf4e5a858ec0694f9304fb7bffb3b56e9082fd53",
+    "served": "5c7f4a90dd9afe2fcfb1243bcf4e5a858ec0694f9304fb7bffb3b56e9082fd53",
+    "match": true,
+    "url": "/assets/transfers-DmaEEfYb.js"
+   },
+   "assets/ui-B-xntZfs.js": {
+    "local": "38cf9f926bf0fe3a6a02cf3e8a15df63556c4c9b443dfa8293d4e5a7a0b6659d",
+    "served": "38cf9f926bf0fe3a6a02cf3e8a15df63556c4c9b443dfa8293d4e5a7a0b6659d",
+    "match": true,
+    "url": "/assets/ui-B-xntZfs.js"
+   },
+   "assets/useQuery-BqBsj2TJ.js": {
+    "local": "68e31879cf2d187ccfb047ad98d03121bd1adfa0eb4171444900e5e67d9e9b5a",
+    "served": "68e31879cf2d187ccfb047ad98d03121bd1adfa0eb4171444900e5e67d9e9b5a",
+    "match": true,
+    "url": "/assets/useQuery-BqBsj2TJ.js"
+   },
+   "assets/useStore-GbGhe7zF.js": {
+    "local": "94248195723901d47030dc37c225a33667eeac1f82e6d86bc576de4f69c4d038",
+    "served": "94248195723901d47030dc37c225a33667eeac1f82e6d86bc576de4f69c4d038",
+    "match": true,
+    "url": "/assets/useStore-GbGhe7zF.js"
+   },
+   "assets/users-BSd8YmZU.js": {
+    "local": "a9f6cb8e2397f776ec519650812f1c48552949fdd0329c45af2eef943737454f",
+    "served": "a9f6cb8e2397f776ec519650812f1c48552949fdd0329c45af2eef943737454f",
+    "match": true,
+    "url": "/assets/users-BSd8YmZU.js"
+   },
+   "fonts/LICENSE.txt": {
+    "local": "5f2da6571c8450d67741d5f6af2bba6d978c4618050272f82b81cda6cc9b7ecf",
+    "served": "5f2da6571c8450d67741d5f6af2bba6d978c4618050272f82b81cda6cc9b7ecf",
+    "match": true,
+    "url": "/fonts/LICENSE.txt"
+   },
+   "fonts/maple-mono-nl-nf-cn-medium.woff2": {
+    "local": "71374601af16edf0a5faa274710f4d6e40f44b6e93a3289499f9384912a490a7",
+    "served": "71374601af16edf0a5faa274710f4d6e40f44b6e93a3289499f9384912a490a7",
+    "match": true,
+    "url": "/fonts/maple-mono-nl-nf-cn-medium.woff2"
+   },
+   "images/favicon.png": {
+    "local": "49bc68c1266f39e1e4db0f8862ffaf415b291a961e0b83c3fbe66880f9c4bd94",
+    "served": "49bc68c1266f39e1e4db0f8862ffaf415b291a961e0b83c3fbe66880f9c4bd94",
+    "match": true,
+    "url": "/images/favicon.png"
+   },
+   "images/favicon.svg": {
+    "local": "3ca6522b35bc466ed75cc23943e2e2a888bf3278d827cf1ae3a031ad954baca6",
+    "served": "3ca6522b35bc466ed75cc23943e2e2a888bf3278d827cf1ae3a031ad954baca6",
+    "match": true,
+    "url": "/images/favicon.svg"
+   },
+   "images/favicon_light.png": {
+    "local": "49bc68c1266f39e1e4db0f8862ffaf415b291a961e0b83c3fbe66880f9c4bd94",
+    "served": "49bc68c1266f39e1e4db0f8862ffaf415b291a961e0b83c3fbe66880f9c4bd94",
+    "match": true,
+    "url": "/images/favicon_light.png"
+   },
+   "images/favicon_light.svg": {
+    "local": "3ca6522b35bc466ed75cc23943e2e2a888bf3278d827cf1ae3a031ad954baca6",
+    "served": "3ca6522b35bc466ed75cc23943e2e2a888bf3278d827cf1ae3a031ad954baca6",
+    "match": true,
+    "url": "/images/favicon_light.svg"
+   },
+   "images/nodesteer-logo-original.png": {
+    "local": "41731c6c42443334a13935b2bbb9d0e8912865a9833e8b110928badac6203cbf",
+    "served": "41731c6c42443334a13935b2bbb9d0e8912865a9833e8b110928badac6203cbf",
+    "match": true,
+    "url": "/images/nodesteer-logo-original.png"
+   },
+   "images/nodesteer-logo-square.png": {
+    "local": "49bc68c1266f39e1e4db0f8862ffaf415b291a961e0b83c3fbe66880f9c4bd94",
+    "served": "49bc68c1266f39e1e4db0f8862ffaf415b291a961e0b83c3fbe66880f9c4bd94",
+    "match": true,
+    "url": "/images/nodesteer-logo-square.png"
+   },
+   "images/shadcn-admin.png": {
+    "local": "3612a02a666d683295df533460e6cc5c2e3343f81a8ff63748036121f9b2a60e",
+    "served": "3612a02a666d683295df533460e6cc5c2e3343f81a8ff63748036121f9b2a60e",
+    "match": true,
+    "url": "/images/shadcn-admin.png"
+   },
+   "index.html": {
+    "local": "1fdfc0b9cd9e01fccc2c22a59f9068790ae1ca752990c729ba9159f586231c01",
+    "served": "1fdfc0b9cd9e01fccc2c22a59f9068790ae1ca752990c729ba9159f586231c01",
+    "match": true,
+    "url": "/"
+   }
+  },
+  "all_assets_match": true,
+  "all_dist_files_match": true,
+  "served_string_probe": {
+   "加载中": true,
+   "健康状态不可用": true,
+   "条件摘要": true,
+   "暂无数据": true
+  },
+  "recheck_note": "index.html 经 / 提供（/index.html 301→/ 为 Go FileServer 既有行为）；全部 74 个文件逐字节一致"
+ },
+ "build_commands": [
+  "cd web && npm run build   # tsc -b && vite build",
+  "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -o /tmp/opencode/nodesteer-build-20261018-final/nodesteer-hub.unbundled ./cmd/hub",
+  "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -ldflags '-X main.version=dddee4f0-e2e-repair-20261018-final' -o /tmp/opencode/nodesteer-build-20261018-final/nodesteer-agent-static ./cmd/agent",
+  "CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -buildvcs=false -ldflags '-X main.version=dddee4f0-e2e-repair-20261018-final' -o /tmp/opencode/nodesteer-build-20261018-final/nodesteer-agent-arm64 ./cmd/agent",
+  "sh packaging/bundle-agent.sh /tmp/opencode/nodesteer-build-20261018-final/nodesteer-hub-static-final /tmp/opencode/nodesteer-build-20261018-final/nodesteer-hub.unbundled amd64 /tmp/opencode/nodesteer-build-20261018-final/nodesteer-agent-static arm64 /tmp/opencode/nodesteer-build-20261018-final/nodesteer-agent-arm64"
+ ],
+ "preflight": {
+  "ssh_hub_ok": true
+ },
+ "upload": {
+  "hub": {
+   "scp_rc": 0,
+   "err": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+  },
+  "native-1": {
+   "scp_rc": 0,
+   "err": "Warning: Permanently added '192.168.100.204' (ED25519) to the list of known hosts.\n"
+  },
+  "native-2": {
+   "scp_rc": 0,
+   "err": "Warning: Permanently added '192.168.100.206' (ED25519) to the list of known hosts.\n"
+  },
+  "native-3": {
+   "scp_rc": 0,
+   "err": "Warning: Permanently added '192.168.100.222' (ED25519) to the list of known hosts.\n"
+  },
+  "native-4": {
+   "scp_rc": 0,
+   "err": "Warning: Permanently added '192.168.100.247' (ED25519) to the list of known hosts.\n"
+  }
+ },
+ "rollback": {
+  "method": "install 备份回原路径并重启对应 repair 单元（不触碰 :8080 主 Hub 与 nodesteer-agent.service）",
+  "commands": [
+   "install -o root -g root -m 0755 /opt/nodesteer-repair-20260930-101945/backup-20261018-final/nodesteer-hub-static-login-guard.bak-20261018-final /opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard && systemctl restart nodesteer-hub-repair-20260930-101945.service",
+   "install -o root -g root -m 0755 /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent.bak-20261018-final /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent && systemctl restart <agent unit>"
+  ],
+  "not_executed": true
+ },
+ "finished_at_utc": "2026-10-18T04:41:26Z"
+}

@@ -1,0 +1,45 @@
+{
+  "captured_at_utc": "2026-10-10T06:49:02.990+00:00",
+  "read_only_source_mapping": [
+    {
+      "file": "web/src/lib/clipboard.ts",
+      "lines": "1-43",
+      "behavior": "copyText rejects empty input; in secure context it awaits navigator.clipboard.writeText and returns true on resolution; on rejection it falls back to synchronous legacyCopy using textarea+document.execCommand(\"copy\"); if legacyCopy reports true, helper returns false, otherwise throws."
+    },
+    {
+      "file": "web/src/features/executions/index.tsx",
+      "lines": "648-656",
+      "behavior": "copy passes currently filtered log text to copyText; true maps to success toast, false maps to info/manual-fallback toast, thrown error maps to error toast."
+    },
+    {
+      "file": "web/src/locales/zh.ts",
+      "lines": "78-80",
+      "behavior": "copy feedback strings: 已复制 / 复制失败，请手动复制。 / 当前页面无法自动写入剪切板，请按 Ctrl+C 复制。"
+    }
+  ],
+  "observed_ui_feedback": {
+    "text": "当前页面无法自动写入剪切板，请按 Ctrl+C 复制。",
+    "kind": "manual_fallback",
+    "sha256": "1122e105a9807bcae08e214d61809361e337ef199c32f766d3f6b511a9c16e89",
+    "text_bytes": 65,
+    "matched_known_locale_text_by_sha256": true,
+    "observer_event_after_click_ms": 65.8
+  },
+  "observed_permission_state_during_click": {
+    "clipboard_read": "denied",
+    "clipboard_write": "denied"
+  },
+  "clipboard_business_effect": {
+    "before_denied_click": "session-only random sentinel was written/read under both granted permissions",
+    "after_denied_click_read_after_regrant": "clipboard SHA/length equaled the actual displayed stdout DOM/API and differed from sentinel"
+  },
+  "interpretation": "Source maps false to manual-fallback notification and true to success notification. The fresh observer confirms the manual-fallback notification. The independent clipboard readback confirms the displayed stdout was present after the denied click. The test did not instrument navigator.clipboard.writeText rejection or execCommand return directly, so it does not attribute the resulting clipboard change to a specific internal call and does not infer async writeText succeeded.",
+  "screenshot": {
+    "path": "evidence/deny-copy-toast.png",
+    "valid_visual_evidence": false,
+    "reason": "PNG captured as all-white pixels; retained and clearly marked invalid."
+  },
+  "no_new_product_defect_assertion": true,
+  "private_values_saved": false,
+  "raw_log_content_saved": false
+}

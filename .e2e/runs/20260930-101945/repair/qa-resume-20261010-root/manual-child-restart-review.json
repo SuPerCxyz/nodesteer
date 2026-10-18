@@ -1,0 +1,28 @@
+{
+  "reviewed_at": "2026-10-10T06:28:51.189595+00:00",
+  "status": "APPROVED_EXPLICIT_CHILD_ONLY_MANUAL_RESTART",
+  "target_node": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+  "parent_node": "03cb50cc-eab6-4afd-bbe0-f73c4e326773",
+  "source_recipe": ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/restart_owned_child.py:65-99",
+  "purpose": "registered ownedchild durable revision/identity and heartbeat after normal apply; no source change",
+  "scope": [
+    "Fresh exactcurrent child/supervisor PID/startticks/UID/argv/procSHA/root owner-marker/manifest/inode/DBID guard; no child pending/running/schedule",
+    "只SIGTERM精确child，最多8s确认旧PID/startticks退出；禁止stop父Unit/cgroup/killall，禁止killproxy",
+    "同helper中明确Popen([owned binary,--config,existingcfg])、cwd=ownedroot、stdin DEVNULL、stdout/stderr仅ownedagent.log、close_fds/start_new_session、setgroups([])/setgid/setuid65534；不依赖proxy自动respawn",
+    "env仅PATH=/usr/bin:/bin、LANG=C.UTF-8，不继承parent NODESTEER env，不改HOME或globalenv；已有cfg必须data_dir显式ownedroot/registrationidentity一致，先只读确认",
+    "Config/DB/schema/remotecontrols/proxy不变；不可复用reenroll helper中的grant改写或credential删除步骤；配置SHA前后相等",
+    "metadata manifest仅child PID/ticks/UID/exe/argv-owner字段原子0600更新、owner65534；其余字段完整保留，credential值/指纹不输出",
+    "Newchild实际PID不同/同UID/procSHA/cfgPath/root；Supervisor44932原fingerprint不变，≤30s就绪，无respawn则只记录并精确启动回收处理，不向原4变更"
+  ],
+  "oracles": [
+    "record pre signal actualDBglobal revision and identity, newprocess localDB revision不退，同NodeID/AgentID、healthyDB、fixture empty、online/synced",
+    "proxy新connection/HELLO已有可观察数据，heartbeat缺实际事件则保留未证实；LastSeen之后继续更新只记录观察，需精确来源才能叫heartbeat packet",
+    "original4health/parentUnitMainPID保持、ownedhelperTask retry0/noschedule/timeout60/GET404"
+  ],
+  "limits": [
+    "不是真CommitSync失败",
+    "未确认Heartbeat capture前SYS02不整体PASS"
+  ],
+  "authorization": "此前已确认E2E独占child restart范围，明确已验证manual Popen机制替代不存在的自动supervisor；权限减少，不改变publiccontract/原服务",
+  "product_source_write_authorized": false
+}

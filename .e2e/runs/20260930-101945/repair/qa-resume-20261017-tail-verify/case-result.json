@@ -1,0 +1,237 @@
+{
+ "batch": "qa-resume-20261017-tail-verify",
+ "title": "13 条未结观察判定性验证（判定批，只读）",
+ "generated_at_utc": "2026-10-17T15:50:00Z",
+ "authority": "repair hub http://192.168.100.209:18080（只读探测 + 自有 fixture 精确清理）；隔离实例 :18088（已销毁）",
+ "build_under_test": {
+  "label": "dddee4f0-e2e-repair-20261017-fixall",
+  "hub_sha256": "1d8cc17e3aeeb5df59026bc3881a6ff8b5a3e308617c931ac1f13d70a9cc230b",
+  "agent_sha256": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+  "deployed_web_index_sha256": "0053a663ce0eb16aebf0d54d8001deb747870dfef1871c26e1d8698df3cb8ae8",
+  "git_head": "dddee4f"
+ },
+ "critical_context": {
+  "working_tree_newer_than_build": "部署构建的 web/Go 产物于 2026-10-17 21:50(+08) 构建；工作区中 web/src/features/overview/index.tsx(22:40)、web/src/features/editors/index.tsx(22:41)、web/src/features/shared/data-table.tsx(22:41)、web/src/locales/{zh,en}.ts(22:35) 的改动**晚于**构建，因此这些修复不在本批部署构建中。判定时必须区分「源码已修」与「运行构建已修」。",
+  "build_time_go_files": "internal/agent/application.go 21:43、internal/hub/api/api.go 21:17 均早于构建 21:50 → 这两处的修复在部署构建中生效（运行时探测一致）。"
+ },
+ "redlines_respected": [
+  "未修改任何源码/配置/.e2e 状态文件；本批产物只写入 qa-resume-20261017-tail-verify/",
+  "未触碰 primary :8080 与 nodesteer-agent.service；未重启 Hub/受保护 Agent/VM",
+  "隔离实例 :18088 独立 data_dir/config/setsid nohup，测后销毁并逐项复验零残留",
+  "所有 fixture 为自有 qa-tail-* 前缀，测后精确删除并逐条 GET 404",
+  "未执行任何 Git 写操作；凭据未落证据（隔离实例凭据落 /tmp/opencode 0600，已删）"
+ ],
+ "cases": [
+  {
+   "no": 1,
+   "id": "OBS-20261012-APP-NODES-NULL-SHAPE",
+   "verdict": "缺陷（P3，契约形状不一致；前端当前不崩）",
+   "current_evidence": [
+    "运行时（:18080，自有应用 qa-tail-cb205e26-appnodes，无绑定节点）：GET /api/applications/{id}/nodes → HTTP 200、Content-Type application/json、Content-Length 5、原始字节 'null\\n'（od -c 逐字节确认，非空数组）。",
+    "根因：internal/store/sqlite_artifacts_apps.go:247-261 GetApplicationNodes 用 `var out []string`（nil slice），json.Marshal(nil slice) 序列化为 null；handler internal/hub/api/api.go:1754-1761 直接 writeJSON，未做 [] 归一化。",
+    "调用方影响（逐一核对）：web/src/features/editors/index.tsx:1103 `selectedNodesDraft || assignedNodes.data || []` → null 安全；同文件 1128 `if (editing && assignedNodes.data)` → null 走 false，跳过移除分支（无绑定可移除，行为正确）；web/src/features/catalog/index.tsx:568 `nodeIds.includes(id)` 对 null 会抛 TypeError，但被 570-572 `catch { return null }` 吞掉 → 应用被排除（结果恰好正确）；Go 侧调用方 internal/hub/sync.go:160-169、internal/hub/node.go:435-443 均用 `for range` 遍历，nil 安全。"
+   ],
+   "impact": "当前无用户可见崩溃（前端有兜底）。风险在于契约形状不稳定：任何严格消费者（Array.isArray / 严格类型 / 无 try-catch 的 includes/map）会误判或抛错；本观察当初正是由 harness 的读回严格断言触发中止。",
+   "recommended_fix": "在 internal/store/sqlite_artifacts_apps.go:261 之前补 `if out == nil { out = []string{} }`（或 handler 侧统一归一化），并加一条契约测试锁定 [] 形状。1 行级改动，零风险。",
+   "repro": "evidence/（od 原始字节 + 前端调用点核对）",
+   "cleanup": "自有应用 93d8bdfc-… 已 DELETE 200 / GET 404"
+  },
+  {
+   "no": 2,
+   "id": "OBS-20261014-PAGESIZE-PERSISTED-OUT-OF-RANGE-BLANK",
+   "verdict": "缺陷（P3，确认；可自恢复）",
+   "current_evidence": [
+    "UI 实机（:18080 /nodes）：localStorage['nodesteer.table.nodes']={\"pageSize\":999} → 刷新后 pageSize 触发器 DOM 为 `<span data-slot=\"select-value\" style=\"pointer-events: none;\"></span>`，**完全空**（无文本节点）；分页条只剩「每页行数」，无数字。",
+    "展开下拉：选项 10/20/30/40/50 全部 data-state=\"unchecked\"、aria-checked=null → 无任何选项匹配当前值（Radix Select 值不匹配 → SelectValue 渲染为空）。",
+    "恢复路径存在：选择「10」后触发器显示 10，localStorage 变为 {\"columnVisibility\":{},\"pageSize\":10}。",
+    "根因：web/src/lib/table-view.ts:32-41 readTableView 只校验「正有限数」并 Math.floor，**未按 PAGE_SIZE_OPTIONS 校验**；web/src/components/data-table/pagination.tsx:20 `PAGE_SIZE_OPTIONS = [10,20,30,40,50]`，其注释自称「分页选择器与持久化校验共用」但实际未共用。读路径（分页计算）接受任意正整数，写路径（下拉）只允许 10..50 → 边界不一致。",
+    "注：本批部署构建中 web/src/features/shared/data-table.tsx 的改动（22:41，含选择键/过滤）与 pageSize 校验无关；pageSize 校验在**源码与构建中均缺失**。"
+   ],
+   "impact": "用户看到空白下拉（无数字），不知当前每页条数；触发条件为持久化值超范围（旧版本残留、手工注入、或未来改动）。不崩、可自恢复。",
+   "recommended_fix": "在 readTableView/readTablePageSize 中以 PAGE_SIZE_OPTIONS 白名单校验，非法值回退 fallback(10)；并把 pagination.tsx 的 PAGE_SIZE_OPTIONS 提为两处共用的唯一来源。",
+   "repro": "evidence/02-pagesize-before.png、02-pagesize-999-blank.png、02-pagesize-999-options.png + DOM 读取"
+  },
+  {
+   "no": 3,
+   "id": "OBS-20261014-AR26-ROLLBACK-UNCLOSED",
+   "verdict": "非缺陷（新构建已修复；首次安装失败路径同样闭合）",
+   "current_evidence": [
+    "本批在 owned child（native-1/.204，自有节点 + 自有 child Agent 进程 dddee4f0-fixall）上做**真首次安装**：安装前宿主 unit/binary/config 三者均不存在（host_before_install = {unit:false,binary:false,config:false}）。",
+    "部署（健康检查 tcp 指向关闭端口 54263）→ Execution FAILED，block_reason = 'health check failed'，**不含 'rollback failed'**。",
+    "Agent 部署 journal（child 侧 state.db deployments）：phase=DONE、completed_kind=rolled_back → **未停在 ROLLING_BACK**，已闭合。",
+    "宿主无半安装：unit_file_exists=false、binary_exists=false、config_exists=false、unit 状态 LoadState=not-found（enable symlink 亦不存在）。",
+    "代码支撑：internal/agent/application.go:438-457 failed() 在回滚成功后落 CompleteDeployment(rolled_back)、仅真回滚失败才落 PhaseRollbackFailed（29-32 行新增常量）；:340-431 prepare 阶段失败走 prepareFailed() 落 DONE/prepare_failed，不做破坏性回滚；rollback() :673-739 对 backupAbsent 走「删除而非还原」并返回 true（首次安装语义）。internal/agent/application.go mtime 21:43 < 构建 21:50 → 修复在部署构建中。",
+    "既有旁证：fixall-verify 批 phase05-rollback（升级 v1→v2 回滚）同样 DONE/rolled_back、文件还原、服务存活、无假 ROLLBACK_FAILED。"
+   ],
+   "impact": "无。首次安装失败不再残留 ROLLING_BACK、不再误报 rollback failed、无半安装残留。",
+   "recommended_fix": "无（可闭环）。建议在缺陷台账中把本条标记为「新构建已修复（首次安装路径已实测）」。",
+   "repro": "evidence/ar26-first-install-rollback.json（verdict: journal_closed=true / no_half_install=true / first_install_was_real=true）",
+   "cleanup": "应用 DELETE 200 + GET 404；节点 DELETE 200 + GET 404；artifact DELETE 200 + GET 404；child Agent 已停；.204 自有路径已删（CHILD_ROOTS=0/OWNED_UNITS=0/OWNED_BINS=0/OWNED_CONFS=0）"
+  },
+  {
+   "no": 4,
+   "id": "OBS-20261010-DASHBOARD-FAULT-ORACLE",
+   "verdict": "缺陷（运行时仍复现；修复已在工作区源码但**未进入本批部署构建**）",
+   "current_evidence": [
+    "UI 实机故障注入（agent-browser network route '**/api/applications/*/state' --abort + 刷新）：注入前 托管应用状态 = 「1/2 健康」，两个应用徽标 [健康, 未知]；注入后 = 「0/2 健康」，徽标 [未知, 未知]，**健康比下降**，且 `[role=alert]` 计数 0、无「重试」按钮。",
+    "与部署构建源码一致：git show HEAD:web/src/features/overview/index.tsx 中 `applicationStates = Promise.all(apps.map(a => api.get(...).catch(() => [])))` —— 错误被吞成空数组，无 applicationHealthAvailable/ErrorState/Retry，健康比分子 1→0。",
+    "工作区已含修复（**晚于构建**）：web/src/features/overview/index.tsx:44-110 新增 applicationHealthAvailable/applicationHealthError，失败应用记为 'unknown' 不参与健康比；:179-185 整页 ErrorState+Retry；:340-345 应用状态区 ErrorState+Retry。locales/{zh,en}.ts 新增 appsHealthUnavailable（'健康状态不可用'）。",
+    "决定性证据（证明修复未部署）：部署 index.html sha256 = 0053a663… 与 deploy-evidence.json 的 web_build.dist_index_sha256 完全一致；但线上全部 60 个 JS chunk 中均**不含** '健康状态不可用' / 'appsHealthUnavailable'；且 overview/index.tsx mtime 22:40 晚于构建 21:50。"
+   ],
+   "impact": "当前部署构建下：应用状态接口失败时健康比会错误下降（1/2→0/2）并显示未知，且无 Error/Retry，用户无法判断是故障还是真的不健康。P03-10 在部署层面仍为未修复。",
+   "recommended_fix": "无需改源码（修复已存在）；**在下一构建中重新打包 web 并部署后复验**（复验口径：注入 /state 失败 → 期望出现 '健康状态不可用' + ErrorState + 重试按钮，且健康比不显示 0/2）。",
+   "repro": "evidence/04-dashboard-before-fault.png、04-dashboard-after-fault.png + DOM 读取 + 线上 bundle 字符串扫描"
+  },
+  {
+   "no": 5,
+   "id": "OBS-20261014-SCHEDULE-INTERVAL-ZERO-SAVE-ENABLED",
+   "verdict": "非缺陷（UX 细节：按钮未禁用，但提交被双层拦截）",
+   "current_evidence": [
+    "UI 实机（/schedules/new?task_id=<自有任务>，类型=间隔）：interval 填 0 → 保存按钮 `disabled=false`、`aria-busy=false`（确认观察属实）；同时存在内联提示「间隔必须 ≥ 1 秒，无法预览。」。",
+    "点击保存 → 追加内联错误「间隔必须大于 0 秒」，**未发出任何请求**（network requests 过滤 schedules 为空），URL 仍停在 /schedules/new。",
+    "服务端双重保险（:18080 实测）：POST /api/schedules type=interval interval_sec=0 → 400 {\"error\":\"interval_sec must be positive\"}；interval_sec=-1 → 同样 400。",
+    "代码：web/src/features/editors/index.tsx:131-136 提前 return 并 setError(schedules.intervalInvalid)；internal/hub/validation.go:183-186 服务端拒绝 interval_sec<1。"
+   ],
+   "impact": "无功能缺陷：不可能落库非法间隔。仅体验问题——按钮可点但点击后无请求，用户需读内联错误。",
+   "recommended_fix": "可选 UX 改进（非必修）：interval 非法时 `disabled={saving || intervalInvalid}` 或把内联提示改为字段级错误。若不做，建议在产品口径中记为「已知 UX 细节」。",
+   "repro": "evidence/05-interval-zero-before-save.png、05-interval-zero-after-save.png + 网络请求计数"
+  },
+  {
+   "no": 6,
+   "id": "OBS-20261014-PAST-ONETIME-SAVE-ENABLED",
+   "verdict": "缺陷（P3，确认；UI 与服务端双双放行）",
+   "current_evidence": [
+    "UI 实机（/schedules/new?task_id=<自有任务>，类型=一次性）：run_at 填 2020-01-01T00:00（过去）→ `[role=alert]` 中**没有**任何 run_at 相关内联错误，保存按钮 `disabled=false`。",
+    "点击保存 → **POST /api/schedules 返回 200**，页面跳转 /schedules —— 过去时间的 One-Time 调度**被真实创建**。",
+    "服务端实测（:18080）：POST type=one_time run_at=2026-10-16T15:17:00Z（24 小时前）→ 200，记录 {run_at: 2026-10-16T15:17:00Z, enabled: true}；run_at=2020-01-01T00:00:00Z → 亦 200。对照：缺 run_at → 400 \"run_at required\"。",
+    "根因：internal/hub/validation.go:187-190 只校验 RunAt 非零，**不校验是否已过去**；web/src/features/editors/index.tsx:139-141 同样只校验 `!form.run_at`。",
+    "影响放大（调度器语义）：internal/hub/schedule.go:311-325 与 internal/agent/scheduler/scheduler.go:245-266 对「已过去且未触发过」的 one_time，若 misfire_policy=run_once（UI 默认值，editors/index.tsx:105 `misfire_policy:'run_once'`）→ 判为 **立即到期并触发**；若 misfire_policy=skip → 推进 lastFire 后永不触发，但 enabled 仍为 true（永久空转的调度）。",
+    "UI 测试期间创建的真实记录（已清理）：id b7fda079-…，type=one_time，run_at=2019-12-31T16:00:00Z（=2020-01-01T00:00 Asia/Shanghai），enabled=true，misfire_policy=run_once。"
+   ],
+   "impact": "用户填过去时间可成功保存：默认策略下会**立即补跑一次**（非预期执行）；skip 策略下留下永久启用却永不触发的调度。属边界/校验缺口，P3。",
+   "recommended_fix": "双端最小修法：① internal/hub/validation.go:187 增加 `if s.RunAt.Before(time.Now())` → 400（或明确接受并在响应中提示将按 misfire 处理）；② web/src/features/editors/index.tsx:139 增加内联校验 `run_at 必须晚于当前时间`，并把保存按钮与该条件联动。建议优先服务端拒绝（唯一可信边界）。",
+   "repro": "evidence/06-past-onetime-before-save.png、06-past-onetime-after-save.png、schedule-validation-server.json、uival-ui-created-schedule.json"
+  },
+  {
+   "no": 7,
+   "id": "OBS-20261016-G1-ENROLL-TRANSIENT-500 + OBS-20261017-ENROLL-INTERMITTENT-500-AGAIN",
+   "verdict": "缺陷（P2，已复现并定位根因：SQLite 写事务竞态）",
+   "current_evidence": [
+    "隔离实例 :18088（同 repair 二进制 1d8cc17e…，独立 data_dir/config，已销毁）快速连发 POST /api/nodes/enrollment：",
+    "A 组同参数 12 次（顺序）→ 12/12 200；A2 组同参数 12 次（顺序）→ 12/12 200；B 组不同参数 12 次（顺序）→ 12/12 200。**顺序连发不复现**。",
+    "C 组 12 次**并发** → 200×2 / 500×10；C2 组 12 次**并发同参数** → 200×1 / 500×11。",
+    "500 响应体原文（逐条抓取）：{\"error\":\"database is locked (5) (SQLITE_BUSY)\"} 与 {\"error\":\"database is locked (517)\"}（517 = SQLITE_BUSY | SQLITE_BUSY_SNAPSHOT<<8）。",
+    "根因定位：internal/store/sqlite.go:65 DSN 仅设 `journal_mode(WAL)&busy_timeout(5000)&foreign_keys(1)`；:44-55 WithTx 用 `s.db.BeginTx(ctx, nil)` → modernc.org/sqlite v1.56.0 的 `_txlock` 默认值为 **deferred**（驱动文档 driver.go:150-153 明示 default deferred）。WAL 下 deferred 事务先读后写需要升级写锁，一旦其它连接已推进快照，SQLite 立即返回 SQLITE_BUSY/BUSY_SNAPSHOT，**不受 busy_timeout 保护** → 直接 500。",
+    "调用链：internal/hub/node.go:47-96 PrepareEnrollment 在 runMutationTx 内先 findEnrollableNode（:99+ ListNodes 读）再 createNode/UpsertNode/SetSetting（写）→ 典型 deferred 读→写升级竞态；全仓 BeginTx 均为 nil（sqlite_users_nodes.go:235/326/367、sqlite_definitions.go:26/58/184/213、sqlite_file_transfers.go:20、internal/agent/store.go:256/518），故同类竞态不止 enrollment。",
+    "次生问题（两项）：① 500 的存储层原文直接回传客户端（信息外泄 + 契约不一致，应 503/重试或归一化文案）；② **服务端日志零记录** —— 隔离实例日志全文仅 4 行 INFO（启动 4 行），无任何 error/warn/busy/locked，导致 G1/G8/G9 观察者无法从日志定位根因。"
+   ],
+   "impact": "Hub 在并发写（多节点同时纳管、Agent 批量上报、调度触发叠加）下会随机返回 500 且无日志；用户看到 500 重试即成功（与观察一致）。P2：可用性 + 可观测性 + 错误外泄。",
+   "recommended_fix": "最小修法：internal/store/sqlite.go:65 DSN 增加 `&_txlock=immediate`（写事务开始即取写锁，busy_timeout 正常生效），或对 mutation 事务显式使用 BEGIN IMMEDIATE；同时把 SQLITE_BUSY 归一化为 503/可重试语义并写 error 级日志（含 node_name 与重试次数）。建议补并发纳管的回归测试（并发 12 次期望全 200）。",
+   "repro": "evidence/enroll-burst.json（含三组逐条 http/耗时/响应体与 hub 日志 sha256）"
+  },
+  {
+   "no": 8,
+   "id": "OBS-20261014-OFFLINE-NODE-MANUAL-ONLINE-NO-SWEEP",
+   "verdict": "非缺陷（既有设计；建议文档化）",
+   "current_evidence": [
+    "手工置在线的入口（产品内确有两处）：UI = web/src/features/catalog/index.tsx:267 `updateNodeStatus({node, status:'online'})`，文案 locales/zh.ts:237 `setOnline: '设为在线'`；API = PUT /api/nodes/{id} body {\"status\":\"online\"}（internal/hub/api/api.go:925-940 → NodeManager.SetNodeStatus，internal/hub/node.go:206-218 的 validNodeStatus 接受 online）。",
+    "隔离实例实测：PUT → 200；GET 状态 online；无 agent 会话下观察窗 t+20/40/70s **持续 online**，无回落。",
+    "无自动清扫的原因（代码确认）：internal/hub/session.go:88-118 StartHeartbeatChecker 只遍历 `sm.sessions`（**已注册会话**）判 LastSeen 超时，手工置在线但无会话的节点不在其中；唯一复位点是启动期 internal/hubserver/hub.go:298-315 resetOrphanOnlineNodes（进程启动时一次性）。",
+    "关键判定——派发语义为**明确报错**（非静默挂起）：补齐 capabilities 后（隔离实例内直接改库补 {script:true}，因无会话节点永不上报能力）POST /api/tasks/{id}/run → HTTP 400 {\"error\":\"agent offline\"}，耗时 0.01s；且 Execution 记录落 **FAILED + block_reason='agent offline'**（不是悬挂 PENDING）。未补能力时更早返回 400 'node … lacks capability script'。代码：internal/hub/execution.go:260-267 下发失败即标 FAILED 并返回 err；:273-276 dispatchToAgent 无会话返回 ErrAgentOffline。",
+    "旁证：PRODUCT.md:693「一期 Agent Offline 时 Manual Run 不进入长期等待队列，明确返回不可执行」——与实测一致。"
+   ],
+   "impact": "无功能缺陷。人工状态优先是设计选择；唯一副作用是 UI 会显示一个「假在线」节点（直到 Hub 重启或用户改回）。派发/部署不会静默挂起，用户能得到明确错误。",
+   "recommended_fix": "不改行为，改为**文档化**：在 PRODUCT.md/运行手册说明「手工置在线不会被自动清扫；无 Agent 会话时派发会返回 agent offline 并落 FAILED 执行」；如需更强一致性，可选加一个周期任务把「online 但无会话」复位（与 resetOrphanOnlineNodes 同语义），但这会与人工状态优先语义冲突，需产品先裁决。",
+   "repro": "evidence/manual-online-no-sweep.json、manual-online-dispatch.json"
+  },
+  {
+   "no": 9,
+   "id": "OBS-20261014-REMOTE-TTL-PATH-UNREACHABLE",
+   "verdict": "非缺陷（死代码确认；属遗留/预留分支，需文档化或清理）",
+   "current_evidence": [
+    "全仓（排除 .e2e 与 node_modules）`SetRemoteState` 唯一生产调用点：internal/hub/gateway.go:571，位于 handleRemoteState（:562-572），仅由收到入站 `REMOTE_STATE` 信封触发（gateway.go:262-263 分发）。",
+    "全仓 `REMOTE_STATE` 的**唯一发送方是 Hub 自己**：internal/hub/gateway.go:581 `reply := protocol.NewEnvelope(protocol.MsgRemoteState, …)`（handleRemoteStateReq 对 REMOTE_STATE_REQ 的应答）。除此之外无任何发送点。",
+    "Agent 侧只发请求、只收应答：internal/agent/agent.go:1704 发送 `MsgRemoteStateReq`；internal/agent/connection/manager.go:357-358 收 `MsgRemoteState` → OnRemoteState（agent.go:1728）。**Agent 从不发送 MsgRemoteState。**",
+    "remote_state 表唯一写入者 internal/store/sqlite_executions.go:187-195（SetRemoteState）→ 该表在生产路径永不被填充。",
+    "因此 internal/hub/gateway.go:598-608（resolveRemoteState 的缓存命中/未过期分支）与 TTL 过期判定不可达；resolveRemoteState 恒走 610-623 实时分支（online → 节点当前状态；last_execution → 最近执行）。仅 internal/hub/remote_state_test.go:36/53 通过直接调 store 覆盖该分支。",
+    "历史意图旁证：openspec/changes/archive/2026-09-23-complete-phase1-gaps/design.md:26-29 明确「Agent queryRemoteCondition 是 stub，从不发送 REMOTE_STATE」并改为 REQ/ACK 模型 → 写入路径是改版前的遗留。"
+   ],
+   "impact": "无功能影响（实时分支是当前正确语义）。但 SYS-29 的「TTL 过期」维度**不可构造**，不应再作为可测维度；同时 remote_state 表与 TTL 字段为死存储，易误导后续维护。",
+   "recommended_fix": "二选一：① 保留 + 文档化：在 gateway.go:562 与 protocol.go:34 注明「REMOTE_STATE 仅作 REQ 的应答类型；handleRemoteState 为兼容旧 Agent 的写入路径，当前无生产发送方」，并在测试计划中移除 SYS-29 的 TTL 过期维度；② 清理：删除 handleRemoteState/SetRemoteState/GetRemoteState 及 remote_state 表与 TTL 字段（涉及迁移，成本更高）。建议①。",
+   "repro": "代码级（本文件即证据；行号为当前工作区实际读取）"
+  },
+  {
+   "no": 10,
+   "id": "OBS-20261016-P17P18-04-SYSTEM-TRIGGER-NO-SOURCE",
+   "verdict": "缺陷（P3，UI 暴露模型不可产出的枚举）",
+   "current_evidence": [
+    "Go 侧触发类型只有两个常量：internal/models/models.go:359-363 `TriggerManual=\"manual\"` / `TriggerSchedule=\"schedule\"` —— **不存在 system 常量**。",
+    "全仓 internal/（非测试）无任何把 \"system\" 写入 TriggerType 的位置：赋值点仅有 models.TriggerManual（internal/hub/application.go:249/300、internal/hub/execution.go:124/775/803/845、internal/agent/agent.go:1464）与 models.TriggerSchedule（internal/hub/execution.go:156/515、internal/agent/agent.go:1559 附近、internal/agent/scheduler/scheduler.go）。",
+    "UI 却把它作为筛选枚举硬编码：web/src/features/executions/index.tsx:119-126 `[{trigger_type:'manual'},{trigger_type:'schedule'},{trigger_type:'system'}, ...数据中出现的值]` 去重后作为触发筛选选项；标签 web/src/locales/zh.ts:28 `system: '系统'`。",
+    "docs/PRODUCT.md 全文无 trigger_type / 触发方式 / 触发来源 的枚举定义（grep 零命中）→ 无法证明 system 属一期范围。",
+    "与 manual/schedule 的对比：两者均有真实样本（G1/P17P18 已核）；system 无任何样本，且结构上不可能产生。"
+   ],
+   "impact": "执行列表的「触发」筛选会出现一个永远筛不到任何行的选项，误导用户以为系统触发存在但未发生。低危、纯 UI。",
+   "recommended_fix": "建议「从筛选枚举移除」：删除 web/src/features/executions/index.tsx:123 的 `{trigger_type:'system'}` 一行（保留 locales 的 system 标签作为未来值的前向兼容兜底，因为表格列在未命中 labels 时会回退显示原值）。若产品确有计划实现 system 触发，则改为「保留 + 在 PRODUCT.md 明确标注为后续规划并说明产出路径」；两种口径都可闭环，但当前**无任何产出路径**，默认应移除。",
+   "repro": "代码级 + 无样本（G1/P17P18 与 fixall 构建执行列表均为 manual/schedule）"
+  },
+  {
+   "no": 11,
+   "id": "OBS-20261016-G23-RECONNECT-WINDOW",
+   "verdict": "缺陷（P3，窗口真实存在；实测边界比「毫秒级」更宽）",
+   "current_evidence": [
+    "设置时机（逐行定位）：internal/agent/connection/manager.go:236 `websocket.Dial(...)` 成功 → :245-249 `m.conn = conn; m.connected = true` → **之后**才在 :253 `hello := helloFn()` 并在 :262 `sendRaw(MsgHello)`；HELLO_ACK 的处理远在其后（:325-326 `case protocol.MsgHelloAck: m.handler.OnHelloAck(env)` → internal/agent/agent.go:359）。",
+    "即 IsConnected()（manager.go:127-132 返回 m.connected）在 **WS 握手完成瞬间即为 true**，早于 HELLO 发送、更早于 HELLO_ACK 接受。",
+    "该标志被直接用作 hub_online_required 的门禁：internal/agent/agent.go:148 `a.sch.SetOnlineFunc(a.conn.IsConnected)` → internal/agent/scheduler/scheduler.go:142 `if paused || (sch.OfflinePolicy==HubOnlineRequired && !online) { continue }`。故窗口内到期且策略为 hub_online_required 的调度**会被放行触发**。",
+    "窗口内派发的后果：TriggerSchedule（agent.go:1534+）创建 LocalExecution 时写 `Offline: !a.conn.IsConnected()`（:1560）→ 窗口内为 **false**（失实：连接尚未被 Hub 接受）；脚本在本地照常执行，但结果上传依赖 HELLO_ACK 成功，若 HELLO 被拒（凭据无效等）该执行永远无法同步 → Hub 侧视图不一致。",
+    "代码自身已承认该标志不可作为成功依据：agent.go:378-379 注释「accepted 是唯一成功准绳（传输层 connected 早于本点，不得作为依据）」，且 :383 `a.ready=false` 直到对账完成——但 scheduler 的 online 与 Offline 标志**都没有**参考 ready/accepted。",
+    "Hub 侧无此窗口：会话仅在 HELLO 被接受后注册（internal/hub/gateway.go:388 `g.sessions.Register(conn)`，位于 handleHello :303+），Hub 不会向未完成 HELLO 的连接派发。",
+    "窗口真实宽度：下限为一次 HELLO 往返（LAN 数毫秒）；上限受 Hub 端 handleHello 处理影响——其中包含节点状态/凭据的 SQLite 写入，在本批已复现的 SQLITE_BUSY 场景（见第 7 条）下可被拖延至 busy_timeout 量级（秒级），因此**不能按「毫秒级」低估**。"
+   ],
+   "impact": "重连瞬间（尤其 Hub 侧 DB 争用或凭据被拒时）hub_online_required 调度会被误放行并产生离线标记失实的执行记录；最坏情况是执行结果永不同步。真实网络分区路径不受影响（该场景下 Dial 失败，connected 保持 false）。",
+   "recommended_fix": "最小修法：让门禁使用「握手完成」而非「传输已连」——在 Manager 增加一个仅在 OnHelloAck(Accepted=true) 置真、断开/重连时清零的 handshake 标志（或复用 agent.ready），把 agent.go:148 改为 `a.sch.SetOnlineFunc(func() bool { return a.conn.HandshakeComplete() })`，并让 :1560/:1466 等 Offline 字段同源。副作用风险：若节点始终拿不到 accepted，hub_online_required 调度将永不触发——这正是策略本意；但需注意重连对账期间 ready=false 会延后触发，应由 misfire_policy 兜住补跑，建议同时补一条「重连窗口内不触发」的单测。",
+   "repro": "代码级（行号为本工作区实际读取）；G23 批次既有 accept-then-close 复现证据见 .e2e/.../qa-resume-20261016-g23/evidence/"
+  },
+  {
+   "no": 12,
+   "id": "OBS-20261015-API-CONTRACT-DEVIATIONS-LOW",
+   "verdict": "8 条中 2 条已修（本批运行时确认）、6 条仍开放；逐条给出端点/期望/实际/文件:行",
+   "current_evidence": [
+    "① /api/audit、/api/me、/metrics 无方法开关（任意方法 200）→ **已修**。运行时 POST 三者均 405（/metrics 带 Allow: GET）。代码：internal/hub/api/api.go:1940-1945（audit）、:483-488（me）、:1926-1931（metrics）。期望=非 GET 一律 405+Allow；实际=405（符合）。api.go mtime 21:17 < 构建 21:50，故部署构建已含此修复。",
+    "② /api/logout 用 GET 也注销 → **已修**。运行时 GET /api/logout → 405（Allow: POST），不再隐式注销。代码：api.go:469-475。期望=仅 POST；实际=405（符合）。",
+    "③ /api/transfers/{id} 非 POST → 403 而非 405 → **仍开放**。运行时 PUT /api/transfers/{missing} → 403、GET /api/transfers/{missing}/cancel → 403。代码：api.go:1074-1077 `if !s.canAdmin(r) || r.Method != http.MethodPost || len(parts) != 2 { writeErr(403) }` —— 方法错误与权限错误、路径错误合并为同一 403 分支。期望=方法不匹配返回 405（Allow: GET, POST）；实际=403。修法：先判方法（非 GET/POST → 405+Allow），再判 canAdmin（403），最后判路径（404）。",
+    "④ 不存在 id 的 DELETE 幂等返回 200 → **仍开放且端点间不一致**。运行时逐端点实测（admin，id=00000000-…-ff）：/api/scripts 200 {\"ok\":\"true\"}、/api/tasks 200、/api/schedules 200、/api/applications 200、/api/groups 200、/api/artifacts 200；/api/nodes **404** node not found；/api/users **405**、/api/executions **405**（无 DELETE）。期望=全端点统一（推荐 404，与 nodes 一致）；实际=三种行为并存。修法：统一 DELETE 语义（删除不存在的资源返回 404），并同步前端对删除结果的判定。",
+    "⑤ /api/me 与 login.user 键名首字母大写 → **仍开放**。运行时实测：GET /api/me 键 = ['Expires','Role','Token','UserID','Username']；POST /api/login 顶层 = ['token','user']，其中 user 键同上一组。根因：internal/hub/auth/auth.go:21-29 Session 结构体 **Token/UserID/Username/Role/Expires 均无 json tag**（仅 Avatar 有 `json:\"avatar,omitempty\"`），Go 默认导出名原样序列化。期望=小写驼峰（token/user_id/username/role/expires）；实际=首字母大写。修法：给 5 个字段补 json tag（注意需同步前端读取点与既有 API 兼容性，建议加 deprecated 双写或一次性切换 + 前端同批改）。",
+    "⑥ X-Total-Count 仅 executions/audit 返回 → **仍开放**。运行时实测（limit=1）：仅 /api/executions、/api/audit 带 X-Total-Count；/api/nodes、/api/tasks、/api/scripts、/api/applications、/api/schedules、/api/users、/api/transfers 均无。代码：写入点只有 api.go:1855-1859（executions）与 :1966-1970（audit）。期望=所有列表端点一致（或明确文档化只对分页端点提供）；实际=仅两处。修法：为其余列表端点补计数与响应头，或在 API 文档中明确该头仅用于支持 limit/offset 的端点。",
+    "⑦ CORS 预检头 → **仍开放（与观测一致，但需产品定性）**。代码 api.go:207-210：Access-Control-Allow-Origin `*`、Allow-Methods `GET, POST, PUT, DELETE, OPTIONS`、Expose-Headers `X-Total-Count`。运行时 OPTIONS /api/nodes → 204。期望=按实际部署形态收紧（若同源部署则 allow_origin 不应为 *；expose_headers 若 ⑥ 收敛则需同步）；实际=宽泛且未与 ⑥ 联动。修法：由产品裁决部署形态后收紧或明确文档化。",
+    "⑧ DELETE /api/nodes/{不存在id} 对 operator/viewer 先返回 404（存在性 oracle）→ **仍开放**。代码 api.go:902-906：`node, err := s.nodes.GetNode(...)` 在 **switch r.Method 之前**执行，不存在即 404；而 :910-913 的 DELETE 分支才做 `if !s.canAdmin(r) → 403`。因此无写权限用户对「存在 id」得 403、对「不存在 id」得 404，可据此枚举 node id。期望=先鉴权后存在性（无权限一律 403/404 不可区分）；实际=先存在性。修法：把 canAdmin 判定前移到 GetNode 之前（DELETE 分支），或对无写权限统一返回 403 且不做存在性查询。"
+   ],
+   "impact": "均为低危契约/一致性问题：③⑤ 影响客户端适配与排障；④⑥ 造成端点行为不齐；⑧ 是低危信息泄露（可枚举 node id）；⑦ 依赖部署形态。无数据损坏或权限提升。",
+   "recommended_fix": "按上表逐条修；建议纳入同一修复批，③④⑧ 为纯服务端小改动（可加契约测试锁定），⑤ 需前后端同批（键名变更），⑥⑦ 需产品先定口径。",
+   "repro": "evidence/api-contract-deviations.json、api-delete-missing-idempotency.json、api-key-shape.json"
+  },
+  {
+   "no": 13,
+   "id": "OBS-20261014-EDITOR-SAVE-PENDING-NOT-DISABLED + OBS-20261014-APP-EDITOR-SAVE-NO-REQUEST",
+   "verdict": "两者均可闭环：前者已被四编辑器 pending 修复覆盖（本批扩展核对为 6/6 编辑器）；后者判定为观测口径问题（已有回归测试锁定）",
+   "current_evidence": [
+    "A) 编辑器 pending 禁用覆盖矩阵（web/src/features/editors/index.tsx 与 tasks/index.tsx，均为 `disabled={saving} aria-busy={saving}` + `savingRef` 守卫）：Task = web/src/features/tasks/index.tsx:1368；Schedule = editors/index.tsx:379；Script = editors/index.tsx:739；Group = editors/index.tsx:948；Application = editors/index.tsx:1651；Artifact = editors/index.tsx:1937（`disabled={uploading}`，同一 pending 模式）。**6/6 覆盖**。",
+    "A) 既有实机复验（部署构建 dddee4f0-fixall，fixall-verify 批 22:14-22:15 +08）：E2E-20261016-EDITOR-PENDING-NOT-DISABLED-DUPLICATE-POST-{SCHEDULE,SCRIPT,GROUP,APPLICATION} 四条全部 FIXED（pending 期间 disabled + aria-busy，重复点击仍只发 1 次请求）；Task 编辑器由既有缺陷 WEB-TASK-PENDING-SAVE（22 缺陷清单 PASS）覆盖。",
+    "A) 唯一未被实机复验的是 Artifact 编辑器（其按钮用 uploading 状态而非 saving，且无 uploadingRef，理论上存在极短窗口内二次提交的可能）；本批为只读判定批，未补实机复验，建议在下一构建补一条 Artifact pending 用例。",
+    "B) 源码只有一个提前返回：web/src/features/editors/index.tsx:1113-1116 `if (!form.name) { setError(t('common.name')); return }` —— 名称为空则不发请求并渲染内联 ErrorState（组件用 ErrorState，不是 toast，故观察者「无 toast」属实但不能推出「不发请求是缺陷」）。",
+    "B) 存在专门的复现/回归测试 web/src/features/editors/application-save-request.test.tsx，其 describe 明确标注「OBS-20261014-APP-EDITOR-SAVE-NO-REQUEST 复核」，两条用例：①「未做任何修改直接点保存也会发 PUT（没有脏数据判定）」→ 证明不存在脏数据门禁；②「唯一提前返回条件是名称为空：不发请求并显示内联错误」→ 与 batch07 现场现象完全对应。测试夹具注释写明「与 POST /api/applications 的 API 创建路径一致的最小定义（batch07 现场）」。"
+   ],
+   "impact": "A) 无残留缺陷（除 Artifact 的极小窗口待复验）。B) 无产品缺陷；原观察是「内联校验拦截」被误读为「保存不发请求」，属 harness 观测口径问题。",
+   "recommended_fix": "A) 建议闭环，并在下一构建补 Artifact pending 实机用例（或给 Artifact 加 uploadingRef 守卫以与其它 5 个编辑器完全对齐）。B) 建议闭环为「非缺陷（观测口径）」，并保留 application-save-request.test.tsx 作为防回归证据；后续同类观察需先检查内联 ErrorState 再判定「无请求」。",
+   "repro": "代码级 + fixall-verify 批既有 web-pending.json 证据（4 编辑器）+ 本批 6/6 覆盖矩阵"
+  }
+ ],
+ "open_items_and_limitations": [
+  "第 4 条（Dashboard）的修复存在于工作区源码但不在部署构建中：本批只能给「当前构建仍复现 + 源码已修」的判定，**功能级复验必须在下一构建部署后执行**。",
+  "第 2、6 条的修复在本批**源码与构建中均不存在**（未修）。",
+  "第 11 条为代码级判定，未构造真实重连窗口实机复现（窗口宽度需 Hub 侧 DB 争用配合，属第 7 条同一根因，建议第 7 条修复后一并复验）。",
+  "第 9、10 条为代码级判定，未做运行期样本构造（第 10 条结构上不可能产出样本，第 9 条需外部 Agent 才能构造）。",
+  "第 12 条 ⑧ 的 operator/viewer 运行期矩阵未在本批重跑（会新增用户 fixture），采用「代码顺序 + 既有 2026-10-15 运行期证据」判定；如需强证据可在修复批补一条 operator 用例。",
+  "第 13 条 Artifact 编辑器的 pending 实机复验未执行（只读判定批）。"
+ ]
+}

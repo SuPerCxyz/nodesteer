@@ -1,0 +1,325 @@
+{
+  "batch_id": "sys-b10",
+  "title": "Artifact 下载：成功校验原子落盘、SHA 错误禁止安装、中断/超时/HTTP 错误清理与恢复",
+  "nonce": "b36cbf4e3d15",
+  "owned_prefix": "qa-sysb10-b36cbf4e3d15-",
+  "endpoint": "http://192.168.100.209:18080",
+  "executed_at_utc": "2026-10-14T08:52:01Z",
+  "finished_at_utc": "2026-10-14T08:54:38Z",
+  "cases": [
+    {
+      "case_id": "SYS-41",
+      "title": "SYS-41 Artifact 下载成功后 SHA256 校验和原子落盘。",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-41",
+          "layer": "hub-api+real-hub-download/real-owned-child-agent/agent-filesystem+sqlite",
+          "status": "PASS",
+          "description": [
+            "Desired State path: owned Application APP-A (artifact_id=418179e1-c6ee-48b1-a2f0-2b0479c6e7b4) assigned to the owned child node; Hub sync delivered app with derived artifact_url/artifact_sha256 and the real Agent downloaded it from the real Hub endpoint /api/artifacts/418179e1-c6ee-48b1-a2f0-2b0479c6e7b4/download.",
+            "Atomic landing (physical): <DataDir>/artifacts/125e9d12d83514202224c4311af685b49adcbd857dd36c37f50c22ff9e9cd424 present, size=4096 exactly equals the Hub artifact size, re-computed SHA256 equals the expected SHA256, and no .tmp entry exists in the cache dir.",
+            "Agent SQLite: artifacts row for the SHA present and PRAGMA quick_check=ok.",
+            "Real agent process log line: level=INFO msg=\"artifact cached\" sha=125e9d12d83514202224c4311af685b49adcbd857dd36c37f50c22ff9e9cd424.",
+            "Caller-side Hub view: GET /api/artifacts/418179e1-c6ee-48b1-a2f0-2b0479c6e7b4/download with Agent identity returned HTTP 200 and Content-Length 4096 (X-Artifact-Sha256 present; see evidence/phase2b-hub-download-header.json)."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The atomicity evidence is the absence of any .tmp/partial file plus a byte-exact final SHA; a crash exactly inside the rename window was not forced.",
+        "No browser UI was exercised; the caller-side feedback is the Hub API readback (application assignment + artifact metadata) plus the download endpoint response captured with Agent identity.",
+        "The Hub download probe recorded X-Artifact-Sha256 under Go canonical casing (X-Artifact-Sha256); an initial case-sensitive lookup reported null and was corrected (harness bug, see evidence/phase2b-hub-download-header.json)."
+      ],
+      "evidence": [
+        "evidence/phase0-guard.json",
+        "evidence/phase2-artifacts.json",
+        "evidence/phase7-recovery-success.json",
+        "evidence/phase8-idempotency.json",
+        "evidence/phase9-persistence.json",
+        "evidence/proxy-frames.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb10-b36cbf4e3d15-",
+        "child_node_id": "2d6a9d84-dcf7-4382-88f4-555efbe03cda",
+        "child_agent_id": "agent-be80df65-4453-447b-b13b-09f513f308cc",
+        "artifacts": {
+          "A": "418179e1-c6ee-48b1-a2f0-2b0479c6e7b4",
+          "B": "6c23971c-43d0-4715-b230-d7ec0b0c4189",
+          "C": "199ed1b5-373d-4b8b-b58f-060a1bc1fa24"
+        },
+        "artifact_sha256": {
+          "A": "125e9d12d83514202224c4311af685b49adcbd857dd36c37f50c22ff9e9cd424",
+          "B": "ef0b996df5ab21a398c6ebdb5be3293791a88c2a3f0ecb975ceef25a46115468",
+          "C": "2555fc3f132913b0e8c7ce50c8e12c0c10254d985042a0014da95378e6cb5781"
+        },
+        "applications": {
+          "A": "cfb9375a-3e4b-45b9-9758-dcbba0c2f1a1",
+          "C": "91a2cb8e-7cda-47fd-91cf-f0f34f817d29"
+        },
+        "desired_state_app": "cfb9375a-3e4b-45b9-9758-dcbba0c2f1a1",
+        "installed_sha": "125e9d12d83514202224c4311af685b49adcbd857dd36c37f50c22ff9e9cd424"
+      },
+      "actual_budget": {
+        "artifact_uploads": 3,
+        "app_creates": 2,
+        "note": "resource budget is shared across the batch; see run_actual_budget"
+      },
+      "final_cleanup": {
+        "app_A_get_after_delete": 404,
+        "artifact_A_get_after_delete": 404,
+        "child_node_get_after_delete": 404,
+        "owned_root_removed": true
+      }
+    },
+    {
+      "case_id": "SYS-42",
+      "title": "SYS-42 SHA256 错误禁止安装，正式缓存和目标文件不被污染。",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-42",
+          "layer": "harness-frame-proxy-injected ARTIFACT_PREFETCH/real-hub-download/real-agent-sha-check",
+          "status": "PASS",
+          "description": [
+            "A synthetic ARTIFACT_PREFETCH (Hub->Agent) was injected through the harness frame proxy with url = the real Hub download endpoint of artifact B and sha256 = a fresh expected SHA that no served body can match.",
+            "The real Agent downloaded artifact B bytes, detected the mismatch and refused: agent log WARN msg=\"artifact prefetch failed\" error=\"sha256 mismatch: expected 917caa89f61a11a552aec38be5cd10ff10e02802bd028d1e4c9123af02014cfa got ef0b996df5ab21a398c6ebdb5be3293791a88c2a3f0ecb975ceef25a46115468\".",
+            "Negative proof: neither the expected SHA nor the served body SHA produced a cache file, a SQLite artifacts row, or a .tmp entry; the artifact table count stayed 0 at that point.",
+            "Non-pollution: the pre-existing real protected-node cache on native-2 was byte-identical before and after the whole batch (final-cleanup-oracle.real_protected_cache_unpolluted=true)."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The mismatch is produced by a harness-controlled pairing (expected SHA vs served bytes); product source was not modified and the Hub was not stopped/restarted.",
+        "An artifact-prefetch failure surfaces only in the owned Agent process log; the Hub has no artifact-prefetch status API/UI surface, so the negative-path caller feedback is that log line."
+      ],
+      "evidence": [
+        "evidence/phase2-artifacts.json",
+        "evidence/phase3-sha-mismatch.json",
+        "evidence/proxy-frames.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb10-b36cbf4e3d15-",
+        "artifact_B": "6c23971c-43d0-4715-b230-d7ec0b0c4189",
+        "artifact_B_sha256": "ef0b996df5ab21a398c6ebdb5be3293791a88c2a3f0ecb975ceef25a46115468",
+        "mismatch_expected_sha256": "917caa89f61a11a552aec38be5cd10ff10e02802bd028d1e4c9123af02014cfa",
+        "child_node_id": "2d6a9d84-dcf7-4382-88f4-555efbe03cda"
+      },
+      "actual_budget": {
+        "harness_injections_mismatch": 1,
+        "note": "resource budget is shared across the batch"
+      },
+      "final_cleanup": {
+        "artifact_B_get_after_delete": 404,
+        "no_cache_or_tmp_residue": true,
+        "real_cache_unpolluted": true
+      }
+    },
+    {
+      "case_id": "SYS-43",
+      "title": "SYS-43 Artifact 下载中断、超时、HTTP 错误后 `.tmp` 清理。",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PARTIAL excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-43",
+          "layer": "harness-controlled HTTP download faults/real-agent-prefetch/agent-filesystem",
+          "status": "PASS",
+          "description": [
+            "HTTP error: injected prefetch pointed at a real Hub download of a non-existent artifact id -> agent log WARN error=\"download status 404\"; no cache file, no row, no .tmp.",
+            "Interruption: harness server declared Content-Length 8192, sent 200 bytes, held 8s and closed -> the .tmp file was observed mid-transfer (200 bytes) and, after the failure, agent log WARN error=\"unexpected EOF\" with .tmp removed and no final file/row.",
+            "Timeout: prefetch aimed at a blackholed address -> agent log WARN error=\"... dial tcp 192.0.2.1:18080: i/o timeout\" after ~30s (Go DefaultTransport dial timeout); no cache file, no row, no .tmp.",
+            "All three required modes leave the cache directory without any .tmp entry and without a partial file."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The agent builds its HTTP client from http.DefaultClient with no response-read/idle timeout and passes the agent-lifetime context, so the \"timeout\" dimension exercised is the transport dial timeout. A supplemental bounded test (evidence/phase10-stall-observation.json) shows a server that sends headers and then withholds the body leaves a 0-byte .tmp in place for >24s: there is no read timeout. Reported as a robustness observation, not a required-dimension failure.",
+        "Prefetch failures surface only in the owned Agent log; there is no Hub-side artifact-prefetch status API/UI to observe them."
+      ],
+      "evidence": [
+        "evidence/phase5-download-faults.json",
+        "evidence/proxy-frames.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb10-b36cbf4e3d15-",
+        "fault_server_port": 52581,
+        "blackhole_target": "192.0.2.1:18080",
+        "child_node_id": "2d6a9d84-dcf7-4382-88f4-555efbe03cda"
+      },
+      "actual_budget": {
+        "harness_injections_sys43": 3,
+        "note": "resource budget is shared across the batch"
+      },
+      "final_cleanup": {
+        "fault_server_removed": true,
+        "root_removed": true,
+        "no_tmp_residue": true
+      }
+    },
+    {
+      "case_id": "AR-24",
+      "title": "Artifact Download Interruption；恢复后幂等、持久化、Desired State与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-24",
+          "layer": "interruption + real desired-state recovery/idempotency/persistence",
+          "status": "PASS",
+          "description": [
+            "Interruption for artifact C: .tmp appeared mid-transfer (200 bytes) then the transfer failed (unexpected EOF); final state had no file, no row, no .tmp.",
+            "Recovery via Desired State: owned Application APP-C (artifact C) assigned to the owned child -> Hub sync -> real Agent downloaded C from the real Hub -> installed with SHA256 match and size 4096.",
+            "Idempotency: re-asserting the same assignment (real resync) plus repeating the correct prefetch produced no re-download - file mtime unchanged, SQLite downloaded_at unchanged, artifact row count stayed 2, no \"artifact cached\" log added, no .tmp.",
+            "Persistence: the owned child Agent was restarted; the cache file and the artifacts row survived with SHA match and quick_check=ok, mtime unchanged.",
+            "Desired State == actual state: APP-C assigned on the child node and its artifact present in the local cache."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The interruption itself is harness-injected (frame proxy + owned HTTP server); the recovery, idempotency and persistence steps use the real product path.",
+        "Concurrent prefetch of the same SHA is not de-duplicated: two sync-triggered goroutines each logged \"artifact cached\" for the same SHA within ~20ms. Final state stayed consistent (atomic rename, identical bytes), so this is an observation, not a failed dimension."
+      ],
+      "evidence": [
+        "evidence/phase6-ar24-interruption.json",
+        "evidence/phase7-recovery-success.json",
+        "evidence/phase8-idempotency.json",
+        "evidence/phase9-persistence.json",
+        "evidence/proxy-frames.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb10-b36cbf4e3d15-",
+        "artifact_C": "199ed1b5-373d-4b8b-b58f-060a1bc1fa24",
+        "artifact_C_sha256": "2555fc3f132913b0e8c7ce50c8e12c0c10254d985042a0014da95378e6cb5781",
+        "app_C": "91a2cb8e-7cda-47fd-91cf-f0f34f817d29",
+        "child_node_id": "2d6a9d84-dcf7-4382-88f4-555efbe03cda"
+      },
+      "actual_budget": {
+        "harness_injections_interrupt_and_idem": 1,
+        "note": "resource budget is shared across the batch"
+      },
+      "final_cleanup": {
+        "app_C_get_after_delete": 404,
+        "artifact_C_get_after_delete": 404,
+        "owned_root_removed": true
+      }
+    },
+    {
+      "case_id": "AR-25",
+      "title": "Artifact SHA Failure；恢复后幂等、持久化、Desired State与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-25",
+          "layer": "sha-failure + real desired-state recovery/idempotency/persistence",
+          "status": "PASS",
+          "description": [
+            "SHA failure for artifact A before it was ever cached: WARN error=\"sha256 mismatch: expected 125e9d12d83514202224c4311af685b49adcbd857dd36c37f50c22ff9e9cd424 got c4af5cf65c1eebb588f4d52bc127118138a843d1607d7f93c04efa5620a50a4d\" (served wrong bytes); install prohibited - no file, no row, no .tmp.",
+            "Recovery via Desired State: owned Application APP-A (artifact A) assigned -> real Hub download -> installed with SHA256 match.",
+            "Idempotency: real resync + repeated correct prefetch -> no re-download (mtime and downloaded_at unchanged, row count stable, no extra install log).",
+            "Persistence: cache file and row survived an owned child Agent restart with SHA match and quick_check=ok.",
+            "Desired State == actual state: APP-A assigned on the child node and its artifact present in the local cache."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The initial SHA failure is harness-injected (wrong bytes served by an owned HTTP server); recovery/idempotency/persistence use the real product path."
+      ],
+      "evidence": [
+        "evidence/phase4-ar25-sha-failure.json",
+        "evidence/phase7-recovery-success.json",
+        "evidence/phase8-idempotency.json",
+        "evidence/phase9-persistence.json",
+        "evidence/proxy-frames.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb10-b36cbf4e3d15-",
+        "artifact_A": "418179e1-c6ee-48b1-a2f0-2b0479c6e7b4",
+        "artifact_A_sha256": "125e9d12d83514202224c4311af685b49adcbd857dd36c37f50c22ff9e9cd424",
+        "app_A": "cfb9375a-3e4b-45b9-9758-dcbba0c2f1a1",
+        "child_node_id": "2d6a9d84-dcf7-4382-88f4-555efbe03cda"
+      },
+      "actual_budget": {
+        "harness_injections_sha_fail": 1,
+        "note": "resource budget is shared across the batch"
+      },
+      "final_cleanup": {
+        "app_A_get_after_delete": 404,
+        "artifact_A_get_after_delete": 404,
+        "owned_root_removed": true
+      }
+    },
+    {
+      "case_id": "INV-10",
+      "title": "Artifact 校验失败禁止安装。",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:INV-10",
+          "layer": "real-agent-sha-verification/negative-install-proof",
+          "status": "PASS",
+          "description": [
+            "Mismatched payload (real Hub artifact B bytes vs a fresh expected SHA) was rejected before installation: agent log \"sha256 mismatch\" and no cache file, no SQLite row, no .tmp.",
+            "The same invariant is confirmed for artifact A: wrong bytes for sha_A were rejected and sha_A stayed uncached until the correct bytes arrived (phase4 -> phase7).",
+            "Negative pollution proof: the real protected-node artifact cache on native-2 was byte-identical before/after the batch."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Verification-failure injection is harness-side by design; no product source change.",
+        "The prohibition is observed from the Agent side (no cache file / no SQLite row / no .tmp) because the Hub does not expose an artifact-install status for prefetches."
+      ],
+      "evidence": [
+        "evidence/phase2-artifacts.json",
+        "evidence/phase3-sha-mismatch.json",
+        "evidence/proxy-frames.json",
+        "evidence/phase4-ar25-sha-failure.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb10-b36cbf4e3d15-",
+        "mismatch_expected_sha256": "917caa89f61a11a552aec38be5cd10ff10e02802bd028d1e4c9123af02014cfa",
+        "artifact_B": "6c23971c-43d0-4715-b230-d7ec0b0c4189",
+        "artifact_A": "418179e1-c6ee-48b1-a2f0-2b0479c6e7b4"
+      },
+      "actual_budget": {
+        "harness_injections_mismatch": 1,
+        "note": "resource budget is shared across the batch"
+      },
+      "final_cleanup": {
+        "all_owned_artifacts_get_after_delete_404": true
+      }
+    }
+  ],
+  "run_actual_budget": {
+    "api_mutations": 16,
+    "artifact_uploads": 3,
+    "app_creates": 2,
+    "app_deletes": 2,
+    "artifact_deletes": 3,
+    "node_enroll_posts": 1,
+    "node_deletes": 1,
+    "child_process_starts": 2,
+    "child_process_stops": 2
+  },
+  "harness_failures_retained": [
+    "attempt01 (evidence/attempt01-harness-bug/): local DB probe issued \"SELECT id,name,revision FROM applications\" but the agent applications table stores definition_json (no name column); the resulting KeyError aborted phase7 after phases 0-6 had already produced real evidence, and cleanup still removed every fixture (attempt01 oracle clean=true). Fixed in phase-2 run by parsing the name from definition_json.",
+    "phase2 Hub download probe looked up the header with exact casing X-Artifact-SHA256 while Go emits X-Artifact-Sha256, so the first reading was null; corrected in evidence/phase2b-hub-download-header.json."
+  ],
+  "verdict_summary": {
+    "SYS-41": "PASS",
+    "SYS-42": "PASS",
+    "SYS-43": "PASS",
+    "AR-24": "PASS",
+    "AR-25": "PASS",
+    "INV-10": "PASS"
+  }
+}

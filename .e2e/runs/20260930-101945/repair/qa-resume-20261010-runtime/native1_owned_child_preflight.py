@@ -1,0 +1,22 @@
+import hashlib,json,os,pathlib,re,sqlite3,subprocess,time
+R=pathlib.Path('/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee');N='870358cd92ee';NODE='c77b8a84-8085-4ea8-8532-de171761854b';AGENT='agent-426aa507-af4c-4005-858f-ce497d2fc67d';CU='nodesteer-qa-e2e-20261009-p0-002-native1-870358cd92ee.service';AU='nodesteer-qa-e2e-20261009-p0-002-app-870358cd92ee.service';B='/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent';BS='d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add';APP='2e4fecee-afc8-43a8-9d93-dd36cfc10bf9';V1={'binary':'35d10e1ef6728c5b46555efac91c605c0f1eb7edfe217f3724ae25a0dffb9d1c','config':'5d24742791cf5f34c6b128ce01b7b4f5ee2516508e47731653abbf92c6190b34','unit':'6f0bb711bdeb0d88ad738824209c652928d28ada6cb104f46fe87114edcd7ffa'}
+def run(a):
+ p=subprocess.run(a,text=True,capture_output=True,timeout=8);return {'rc':p.returncode,'out':p.stdout.strip()}
+def show(u):
+ p=run(['systemctl','show',u,'-p','LoadState','-p','ActiveState','-p','SubState','-p','MainPID','-p','ControlGroup','-p','RuntimeMaxUSec','-p','ExecStart']);return dict(x.split('=',1) for x in p['out'].splitlines() if '=' in x)
+def sha(p):
+ h=hashlib.sha256()
+ with open(p,'rb') as f:
+  for z in iter(lambda:f.read(1048576),b''):h.update(z)
+ return h.hexdigest()
+def proc(pid):
+ if pid<=0:return None
+ raw=open('/proc/%s/stat'%pid).read();q=raw[raw.rfind(')')+2:].split();st=open('/proc/%s/status'%pid).read();uid=int([x.split()[1] for x in st.splitlines() if x.startswith('Uid:')][0]);cmd=open('/proc/%s/cmdline'%pid,'rb').read()
+ return {'pid':pid,'startticks':int(q[19]),'state':q[0],'uid':uid,'argv':[x.decode(errors='replace') for x in cmd.split(b'\0') if x],'argv_sha256':hashlib.sha256(cmd).hexdigest(),'exe_path':os.readlink('/proc/%s/exe'%pid),'exe_sha256':sha('/proc/%s/exe'%pid),'cgroup':open('/proc/%s/cgroup'%pid).read().strip()}
+o=json.loads((R/'owner.json').read_text());expected={'owner_nonce':N,'node_id':NODE,'agent_id':AGENT,'unit':CU,'binary_path':B,'binary_sha256':BS,'config_path':str(R/'agent.yaml'),'data_dir':str(R/'state')};owner_matches=all(o.get(k)==v for k,v in expected.items());cfg=R/'agent.yaml';cs=cfg.stat();cfg_meta={'path':str(cfg),'exists':True,'uid':cs.st_uid,'mode':oct(cs.st_mode&0o7777),'size_bytes':cs.st_size,'mtime_ns':cs.st_mtime_ns,'contents_read':False}
+cu=show(CU);cp=proc(int(cu.get('MainPID','0') or 0));au=show(AU);ap=proc(int(au.get('MainPID','0') or 0));appfiles={'binary_sha256':sha(R/'app/bin/qa-app') if (R/'app/bin/qa-app').is_file() else None,'config_sha256':sha(R/'app/config/qa-app.env') if (R/'app/config/qa-app.env').is_file() else None,'unit_sha256':sha(pathlib.Path('/etc/systemd/system')/AU) if pathlib.Path('/etc/systemd/system',AU).is_file() else None}
+db=sqlite3.connect('file:'+str(R/'state/state.db')+'?mode=ro',uri=True,timeout=5);localrev=db.execute('select global_revision from sync_state where id=1').fetchone()[0];apps=[r[0] for r in db.execute('select id from applications order by id')];scripts=[{'id':r[0],'revision':r[1],'sha256':r[2]} for r in db.execute('select id,revision,sha256 from scripts order by id')];journals=[dict(zip(['id','to_version','phase','backup_path','backup_config_path','backup_unit_path'],r)) for r in db.execute('select id,to_version,phase,backup_path,backup_config_path,backup_unit_path from deployments where application_id=? and to_version in (?,?) order by started_at',(APP,'v2-attempt2','v2-attempt3'))];db.close()
+parents={}
+for unit in ['nodesteer-agent-repair-20260930-101945-native-1.service','nodesteer-agent.service']:
+ p=show(unit);parents[unit]={'unit':p,'process':proc(int(p.get('MainPID','0') or 0))}
+print(json.dumps({'probe':'Native1 exact QA child readonly owner/unit/app/local-DB preflight','owner_marker_matches_expected':owner_matches,'owner_identity':{k:o.get(k) for k in ['owner_nonce','node_id','agent_id','unit','binary_path','binary_sha256','config_path','data_dir']},'child_config_metadata':cfg_meta,'child_agent_unit':cu,'child_agent_process':cp,'app_unit':au,'app_unit_process':ap,'app_v1_physical_hashes':appfiles,'v1_physical_sha256_by_component_matches':appfiles=={'binary_sha256':V1['binary'],'config_sha256':V1['config'],'unit_sha256':V1['unit']},'expected_v1_sha256':V1,'child_local_global_revision':localrev,'child_local_apps':apps,'child_local_scripts':scripts,'historical_attempt_journals':journals,'original_native1_units':parents,'captured_unix':int(time.time())},sort_keys=True),flush=True)

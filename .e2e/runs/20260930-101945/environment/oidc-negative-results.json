@@ -1,0 +1,184 @@
+{
+  "run_id": "20260930-101945",
+  "status": "passed",
+  "cases": [
+    {
+      "id": "ENV-OIDC-LOCAL-MODE",
+      "status": "PASS",
+      "oidc_state": {
+        "enabled": false,
+        "local_fallback": true
+      },
+      "local_login_status": 200,
+      "me_status": 200,
+      "role": "administrator",
+      "oidc_login_status": 404,
+      "oidc_callback_status": 404
+    },
+    {
+      "id": "ENV-OIDC-SSO-ONLY-RESTORED",
+      "status": "PASS",
+      "oidc_state": {
+        "enabled": true,
+        "local_fallback": false
+      },
+      "local_login_status": 403,
+      "error": "local login disabled"
+    },
+    {
+      "id": "ENV-OIDC-CALLBACK-MISSING-BOTH",
+      "method": "GET",
+      "path": "/api/oidc/callback",
+      "state_present": false,
+      "code_present": false,
+      "http_status": 302,
+      "redirect_origin": "http://192.168.100.209:18082",
+      "redirect_path": "/sign-in",
+      "same_origin": true,
+      "oidc_failure_feedback": true,
+      "sets_cookie": false,
+      "writes_auth_token_script": false,
+      "unauthenticated_me_status": 401,
+      "status": "PASS"
+    },
+    {
+      "id": "ENV-OIDC-CALLBACK-MISSING-STATE",
+      "method": "GET",
+      "path": "/api/oidc/callback",
+      "state_present": false,
+      "code_present": true,
+      "http_status": 302,
+      "redirect_origin": "http://192.168.100.209:18082",
+      "redirect_path": "/sign-in",
+      "same_origin": true,
+      "oidc_failure_feedback": true,
+      "sets_cookie": false,
+      "writes_auth_token_script": false,
+      "unauthenticated_me_status": 401,
+      "status": "PASS"
+    },
+    {
+      "id": "ENV-OIDC-CALLBACK-MISSING-CODE",
+      "method": "GET",
+      "path": "/api/oidc/callback",
+      "state_present": true,
+      "code_present": false,
+      "http_status": 302,
+      "redirect_origin": "http://192.168.100.209:18082",
+      "redirect_path": "/sign-in",
+      "same_origin": true,
+      "oidc_failure_feedback": true,
+      "sets_cookie": false,
+      "writes_auth_token_script": false,
+      "unauthenticated_me_status": 401,
+      "status": "PASS"
+    },
+    {
+      "id": "ENV-OIDC-CALLBACK-WRONG-STATE",
+      "method": "GET",
+      "path": "/api/oidc/callback",
+      "state_present": true,
+      "code_present": true,
+      "http_status": 302,
+      "redirect_origin": "http://192.168.100.209:18082",
+      "redirect_path": "/sign-in",
+      "same_origin": true,
+      "oidc_failure_feedback": true,
+      "sets_cookie": false,
+      "writes_auth_token_script": false,
+      "unauthenticated_me_status": 401,
+      "status": "PASS"
+    },
+    {
+      "id": "ENV-OIDC-CALLBACK-VALID-STATE-WRONG-CODE",
+      "method": "GET",
+      "path": "/api/oidc/callback",
+      "state_present": true,
+      "code_present": true,
+      "http_status": 302,
+      "redirect_origin": "http://192.168.100.209:18082",
+      "redirect_path": "/sign-in",
+      "same_origin": true,
+      "oidc_failure_feedback": true,
+      "sets_cookie": false,
+      "writes_auth_token_script": false,
+      "unauthenticated_me_status": 401,
+      "status": "PASS"
+    },
+    {
+      "id": "ENV-OIDC-CALLBACK-REPLAY-CONSUMED-STATE",
+      "method": "GET",
+      "path": "/api/oidc/callback",
+      "state_present": true,
+      "code_present": true,
+      "http_status": 302,
+      "redirect_origin": "http://192.168.100.209:18082",
+      "redirect_path": "/sign-in",
+      "same_origin": true,
+      "oidc_failure_feedback": true,
+      "sets_cookie": false,
+      "writes_auth_token_script": false,
+      "unauthenticated_me_status": 401,
+      "status": "PASS"
+    }
+  ],
+  "source": [
+    "internal/hub/api/api.go:308",
+    "internal/hub/api/api.go:455",
+    "internal/hub/api/api.go:487",
+    "internal/hub/auth/oidc.go:162"
+  ],
+  "initial_mode": {
+    "enabled": true,
+    "local_fallback": false
+  },
+  "configuration": {
+    "config_path": "/root/qa-20260930-101945-env/config/sso-hub.yaml",
+    "backup_path": "/root/qa-20260930-101945-env/config/sso-hub.yaml.before-oidc-negative",
+    "original_sha256": "3ea53004ac2802855db6b1f4df09f2340c26293a034a6b56eecc1c7a9ef37e9e",
+    "temporary_sha256": "e4240196b706857302e23d176f1596d3e222df7c016a3742916623ab2fa215d9",
+    "container_id": "a41ffdb0bce37a00172e9410e3090b11c2a33e445832b4297977e7088f224497",
+    "volume": "qa-20260930-101945-env-sso-hubdata"
+  },
+  "restoration": {
+    "config_restored_exactly": true,
+    "config_sha256": "3ea53004ac2802855db6b1f4df09f2340c26293a034a6b56eecc1c7a9ef37e9e",
+    "container_id": "a41ffdb0bce37a00172e9410e3090b11c2a33e445832b4297977e7088f224497",
+    "volume": "qa-20260930-101945-env-sso-hubdata",
+    "original_allow_local_login": false
+  },
+  "server_error_categories": {
+    "invalid_state_events": 2,
+    "token_exchange_events": 1,
+    "raw_log_stored_publicly": false
+  },
+  "final_mode": {
+    "enabled": true,
+    "local_fallback": false
+  },
+  "session_observation_boundary": "Invalid callbacks issue no cookie/token script; unauthenticated /me stays401. Real authorization code success and three roles were verified by root separately; this replay is a state consumed by failed code exchange.",
+  "recorded_at": "2026-10-01T04:38:45.366253+00:00",
+  "persistent_data_verification": {
+    "volume_name": "qa-20260930-101945-env-sso-hubdata",
+    "expected_sso_accounts": [
+      {
+        "expected_role": "administrator",
+        "persisted": true,
+        "role_matches": true
+      },
+      {
+        "expected_role": "operator",
+        "persisted": true,
+        "role_matches": true
+      },
+      {
+        "expected_role": "viewer",
+        "persisted": true,
+        "role_matches": true
+      }
+    ],
+    "bootstrap_administrator_persisted": true,
+    "sqlite_integrity": "ok",
+    "native_primary_hub_active": "active"
+  }
+}

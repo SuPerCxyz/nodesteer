@@ -1,0 +1,60 @@
+{
+ "at": "2026-10-14T10:26:14Z",
+ "errors_i_made": [
+  {
+   "action": "virsh reboot nodesteer-agent-3 --mode agent",
+   "disclosure": "unintended side effect on another batch node; no manual service start/stop used",
+   "effect": "native-1 (.204) rebooted (uptime 8 min at 18:24Z); its nodesteer-agent.service, nodesteer-agent-repair-...-native-1.service and managed app unit qa-20260930-101945-web-app-6a32f.service restarted automatically and are active; native-1 is online in the repair Hub again at 18:24:43Z",
+   "mistake": "wrong KVM domain: nodesteer-agent-3 is 192.168.100.204 (repair native-1), not native-3; the intended VM is 192.168.100.222 = nodesteer-agent-2"
+  }
+ ],
+ "filler_size_bytes": 483393536,
+ "guest_observations": {
+  "load_avg_15m_during_incident": 13.81,
+  "load_avg_1m_after_fix": 5.18,
+  "tmpfs_used_after_cleanup": "272M/979M",
+  "tmpfs_used_during_incident": "733M/979M"
+ },
+ "live_readback": {
+  "native1": {
+   "last_seen": "2026-10-14T18:26:12.592474868+08:00",
+   "status": "online"
+  },
+  "native3": {
+   "last_seen": "2026-10-14T18:26:07.877053287+08:00",
+   "status": "online"
+  }
+ },
+ "native3_agent_cache": {
+  "rc": 0,
+  "stderr": "Warning: Permanently added '192.168.100.222' (ED25519) to the list of known hosts.",
+  "stdout": "DATA_DIR=/var/lib/nodesteer-repair-20260930-101945/native-3\n--artifacts\ntotal 4\ndrwxr-xr-x 2 root root  78 Oct 12 21:48 .\ndrwx------ 8 root root 155 Oct  4 09:11 ..\n-rw-r--r-- 1 root root  56 Oct 12 21:48 37a674d655a6ac4111e488608d81d368364db8d8a13d4293d03e9f9eec8a7b8a\n--tmp_dir\ntotal 0\ndrwxr-xr-x 2 root root   6 Oct  4 09:01 .\ndrwx------ 8 root root 155 Oct  4 09:11 ..\n--dot_tmp_in_cache\nnone\n--cache_sha\n37a674d655a6ac4111e488608d81d368364db8d8a13d4293d03e9f9eec8a7b8a 56 37a674d655a6ac4111e488608d81d368364db8d8a13d4293d03e9f9eec8a7b8a"
+ },
+ "native3_services": {
+  "rc": 0,
+  "stderr": "Warning: Permanently added '192.168.100.222' (ED25519) to the list of known hosts.",
+  "stdout": "active\nactive\n 18:26:15 up  2:56,  2 users,  load average: 1.10, 13.10, 12.47\ntmpfs           979M  528M  451M  54% /tmp\n               total        used        free      shared  buff/cache   available\nMem:            1956         839        1112         532         669        1116"
+ },
+ "node": {
+  "id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+  "ip": "192.168.100.222",
+  "kvm_domain": "nodesteer-agent-2 (verified by MAC 52:54:00:6a:af:05)"
+ },
+ "not_done": [
+  "no repair Hub restart",
+  "no protected Agent stop/start by hand",
+  "no product source change",
+  "no other node fixture touched"
+ ],
+ "recovery": [
+  {
+   "action": "virsh setmem nodesteer-agent-2 2097152 --live (balloon 1 GiB -> 2 GiB)",
+   "effect": "sshd answered again within ~1 min; repair Agent reconnected"
+  },
+  {
+   "action": "rm -f /tmp/qa-w1410b07-<nonce>/.enospc-filler.bin",
+   "effect": "tmpfs pressure removed"
+  }
+ ],
+ "summary": "A harness fixture step that filled /tmp (tmpfs, 979 MiB) on native-3 (.222) while the VM balloon was at 1 GiB caused severe guest memory pressure: sshd stopped answering after 18:09Z, the repair Agent went offline at 2026-10-14T18:09:47Z, and my node-side SSH checks failed until the balloon was raised."
+}

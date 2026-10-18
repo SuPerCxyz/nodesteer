@@ -1,0 +1,36 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch03",
+  "authority": "http://192.168.100.209:18080",
+  "nonce": "69bdbd0f",
+  "phase": "COMPLETE_FOR_ROOT_REVIEW",
+  "updated_at_utc": "2026-10-14T08:46:00Z",
+  "steps": [
+    {"name": "recon + baseline snapshot", "status": "done"},
+    {"name": "FL-09 read-only consistency (assign card / agent detail / node detail / API)", "status": "done", "result": "PASS"},
+    {"name": "FL-13 transfer create -> deliver -> SHA/staging verification", "status": "done", "result": "PASS"},
+    {"name": "P22-12 DELIVERING -> cancel (no-confirm design) + state/cleanup checks", "status": "done", "result": "PARTIAL (PENDING/UPLOADING cancel not executed: transfer cap)"},
+    {"name": "artifacts pagination (first/last/prev/next/pageSize persistence/last-page change)", "status": "done", "result": "PASS"},
+    {"name": "artifacts sort (asc/desc/clear, string + numeric)", "status": "done", "result": "PASS"},
+    {"name": "users pagination", "status": "done", "result": "PARTIAL (8 users -> single page; user creation out of scope)"},
+    {"name": "fixture cleanup + GET404 verification + final guard", "status": "done"}
+  ],
+  "outputs": ["results.json", "progress.json", "fixture-ledger.json", "final-cleanup-guard.json", "evidence/"],
+  "open_decisions_for_root": [
+    {
+      "id": "REQ-B03-01",
+      "question": "May additional owned transfers be authorized so P22-12 can also exercise cancel from aggregate PENDING and from UPLOADING? (<=2 cap reached; 2 more would cover both states.)",
+      "impact": "P22-12 would move from PARTIAL to PASS."
+    },
+    {
+      "id": "REQ-B03-02",
+      "question": "May users be created (or >=11 existing users be accepted) to exercise TABLE-USERS-PAGE multi-page traversal and last-page change? Or accept PARTIAL?",
+      "impact": "TABLE-USERS-PAGE would move from PARTIAL to PASS."
+    },
+    {
+      "id": "REQ-B03-03",
+      "question": "Is the FL-09 assign-mutation dimension in scope? It requires modifying the pre-existing non-owned Application (or creating an owned Application).",
+      "impact": "Confirms FL-09 PASS vs PARTIAL."
+    }
+  ],
+  "parallel_batch": "concurrent sys-b05 batch detected on the same hub; global counts not used for acceptance"
+}

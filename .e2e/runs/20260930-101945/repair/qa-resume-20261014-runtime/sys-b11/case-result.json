@@ -1,0 +1,652 @@
+{
+  "batch_id": "sys-b11",
+  "title": "Application 生命周期：安装幂等、升级、Health 失败回滚、Backup 失败明确报错",
+  "nonce": "43f7a4f057f2",
+  "owned_prefix": "qa-sysb11-43f7a4f057f2-",
+  "endpoint": "http://192.168.100.209:18080",
+  "executed_at_utc": "2026-10-14T09:24:20Z",
+  "finished_at_utc": "2026-10-14T09:25:46Z",
+  "run_attempts": {
+    "attempt04_final": "complete run, all phases ok, oracle clean",
+    "attempt01_03_retained": "evidence/attempt0{1,2,3}-harness-bug/"
+  },
+  "environment": {
+    "protected_nodes": {
+      "native-1": {
+        "id": "91f44866-8a28-435e-bbda-2f2367126c00",
+        "status": "online",
+        "sync_status": "synced",
+        "global_revision": 1817,
+        "agent_version": "dddee4f0-e2e-repair-20261004",
+        "deployment_mode": "native",
+        "capabilities": {
+          "agent_upgrade": true,
+          "application_deploy": true,
+          "host_filesystem": true,
+          "local_scheduler": true,
+          "managed_systemd": true,
+          "offline_execution": true,
+          "script": true
+        }
+      },
+      "native-2": {
+        "id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+        "status": "online",
+        "sync_status": "synced",
+        "global_revision": 1817,
+        "agent_version": "dddee4f0-e2e-repair-20261004",
+        "deployment_mode": "native",
+        "capabilities": {
+          "agent_upgrade": true,
+          "application_deploy": true,
+          "host_filesystem": true,
+          "local_scheduler": true,
+          "managed_systemd": true,
+          "offline_execution": true,
+          "script": true
+        }
+      },
+      "native-3": {
+        "id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+        "status": "online",
+        "sync_status": "synced",
+        "global_revision": 1817,
+        "agent_version": "dddee4f0-e2e-repair-20261004",
+        "deployment_mode": "native",
+        "capabilities": {
+          "agent_upgrade": true,
+          "application_deploy": true,
+          "host_filesystem": true,
+          "local_scheduler": true,
+          "managed_systemd": true,
+          "offline_execution": true,
+          "script": true
+        }
+      },
+      "native-4": {
+        "id": "03cb50cc-eab6-4afd-bbe0-f73c4e326773",
+        "status": "online",
+        "sync_status": "synced",
+        "global_revision": 1817,
+        "agent_version": "dddee4f0-e2e-repair-20261004",
+        "deployment_mode": "native",
+        "capabilities": {
+          "agent_upgrade": true,
+          "application_deploy": true,
+          "host_filesystem": true,
+          "local_scheduler": true,
+          "managed_systemd": true,
+          "offline_execution": true,
+          "script": true
+        }
+      }
+    },
+    "hub_binary_sha256_expected": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+    "agent_binary_sha256_expected": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "agent_binary_sha256_observed_before_after": [
+      "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+      "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add"
+    ],
+    "node_used": "native-2 192.168.100.206 (owned child Agent process only)",
+    "counts_baseline": {
+      "artifacts": 1,
+      "applications": 1,
+      "nodes": 6
+    },
+    "counts_after": {
+      "artifacts": 1,
+      "applications": 1,
+      "nodes": 6
+    }
+  },
+  "cases": [
+    {
+      "case_id": "AR-27",
+      "title": "Upgrade；恢复后幂等、持久化、Desired State与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PARTIAL excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-27",
+          "layer": "real-hub-api-deploy/real-owned-agent/real-systemd-unit+binary+config+deploy-journal/agent-sqlite",
+          "status": "PASS",
+          "description": [
+            "Install (operation=deploy, artifact qa-sysb11-43f7a4f057f2-payload-a1, v1.0): real Hub DEPLOY_REQUEST over the owned Agent session -> owned systemd unit nodesteer-qa-sysb11-43f7a4f057f2-app.service active, /opt/qa-sysb11-43f7a4f057f2/app/bin/app byte-identical to the uploaded artifact SHA 0bc5df26d956108d90f7b03b7b5aed75be41bcaea16db87bef0376d954917132 (mode 0755), config /opt/qa-sysb11-43f7a4f057f2/app/config/app.env SHA == SHA256(\"APP_MODE=v1\\n\"), enable symlink present, unit registered in the Agent unit_registry, deployment journal DONE, Execution SUCCESS, Hub Application node state version=1.0 health=healthy.",
+            "Install idempotency: repeating the same deploy returned SUCCESS with identical binary and unit-file SHAs, exactly one owned unit file and one enable symlink, still active, no additional Execution; a Desired-State re-assertion (assign again -> resync) produced no new deployment journal row and no new Execution.",
+            "Upgrade v1.0 -> v2.0 (operation=upgrade, artifact qa-sysb11-43f7a4f057f2-payload-a2, app revision 1 -> 2): binary SHA == c92707bdc68e8a8dfb75807532d19d5c9a808a0b92dfac1e473ae2b62bc39396, config SHA == SHA256(\"APP_MODE=v2\\n\"), unit ExecStart args updated to --profile=v2, unit active, Hub node state version=2.0 health=healthy, Execution SUCCESS, journal DONE.",
+            "Backup Current (PRODUCT.md §39/§41): the deployment row backup_path content SHA 0bc5df26d956108d90f7b03b7b5aed75be41bcaea16db87bef0376d954917132 equals the previously installed v1 artifact SHA 0bc5df26d956108d90f7b03b7b5aed75be41bcaea16db87bef0376d954917132, i.e. the previous version was retained before the atomic replace.",
+            "Upgrade idempotency: repeating the v2 upgrade returned SUCCESS with unchanged binary/unit SHAs and a single owned unit.",
+            "Persistence: owned Agent restart (SIGTERM/Popen, no systemd unit involved) left the binary, unit file, enable symlink, unit_registry row and deployment journal intact; the managed unit stayed active and the node returned online/synced.",
+            "Desired State == actual state: Hub Application revision/version/artifact_id == Agent local synced definition (version/artifact_id) == on-disk binary SHA == active unit == node state healthy 2.0."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Deployment-journal from_version is written from the synced Application definition at deploy time, not from the previously installed version: the v1->v2 upgrade row shows from_version=to_version=2.0. The previously installed version is instead proven by the pre-deploy binary SHA (A1) and by the backup content SHA == A1. Recorded as a product observation, not a case failure.",
+        "An explicit re-deploy rewrites the binary byte-identically (mtime changes); idempotency was therefore measured as \"identical content SHA, single unit, no extra journal/Execution\", not as \"no write\".",
+        "No browser UI was driven for this batch; caller-side feedback is the Hub API (POST /api/applications/{id}/deploy response, GET /api/executions/{id}, GET /api/applications/{id}/state). The Applications/Executions UI for this feature is already covered by the reused SYS-44 evidence (managed-app-ui.json).",
+        "The PREPARING-phase crash recovery mentioned in the batch plan (P0-002 attempt03) was not re-executed for AR-27; crash recovery is instead exercised end-to-end in AR-29 (rollback after a crash in VERIFYING). The previously recorded PREPARING evidence remains available for Root review."
+      ],
+      "evidence": [
+        "evidence/phase0-guard.json",
+        "evidence/phase1-owned-child.json",
+        "evidence/phase3-app-create.json",
+        "evidence/phase4-install-v1.json",
+        "evidence/phase5-install-idempotent.json",
+        "evidence/phase6-upgrade-v2.json",
+        "evidence/phase7-upgrade-idempotent.json",
+        "evidence/phase8-persistence.json",
+        "evidence/phase10-ar28-recovery-v2.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb11-43f7a4f057f2-",
+        "child_node_id": "7093ad74-4bd3-4beb-98f2-36d135730749",
+        "child_agent_id": "agent-95deebf7-79b5-4521-af84-0ad1cc742f1d",
+        "application_id": "a353ea35-617a-4bb0-912e-bc595cfee2ef",
+        "unit_name": "nodesteer-qa-sysb11-43f7a4f057f2-app.service",
+        "binary_path": "/opt/qa-sysb11-43f7a4f057f2/app/bin/app",
+        "config_path": "/opt/qa-sysb11-43f7a4f057f2/app/config/app.env",
+        "artifact_v1": {
+          "id": "f15dfb8c-1bf5-4034-a01a-f93ad68f17e8",
+          "sha256": "0bc5df26d956108d90f7b03b7b5aed75be41bcaea16db87bef0376d954917132",
+          "size": 1048645,
+          "name": "qa-sysb11-43f7a4f057f2-payload-a1"
+        },
+        "artifact_v2": {
+          "id": "25609f9f-0475-42c0-b964-4d5055398367",
+          "sha256": "c92707bdc68e8a8dfb75807532d19d5c9a808a0b92dfac1e473ae2b62bc39396",
+          "size": 1048645,
+          "name": "qa-sysb11-43f7a4f057f2-payload-a2"
+        },
+        "executions": {
+          "install_v1": "a9ae431d-b576-410c-84ac-46fc45f68638",
+          "install_repeat": "8a8e471f-7ca4-43d2-8561-e80351593ba4",
+          "upgrade_v2": "20883e2e-473a-4a99-8fd5-a3d6dea3ebdf",
+          "upgrade_repeat": "27bde171-a7af-48d8-8ba9-bbeeed2ac65e",
+          "recovery_v2_after_rollback": "4e430739-2f0c-4357-bd86-18ab970512ba"
+        }
+      },
+      "actual_budget": {
+        "deploys": 4,
+        "app_creates": 1,
+        "app_updates": 1,
+        "app_assigns": 2,
+        "artifact_uploads": 4,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "note": "shared batch budget: {\"api_mutations\": 33, \"artifact_uploads\": 4, \"artifact_deletes\": 4, \"app_creates\": 1, \"app_updates\": 5, \"app_deletes\": 1, \"app_assigns\": 2, \"deploys\": 14, \"node_enroll_posts\": 1, \"node_deletes\": 1, \"child_process_starts\": 4, \"child_process_stops\": 2, \"child_process_kills\": 1, \"host_seam_actions\": 4, \"systemd_unit_writes\": 0}"
+      },
+      "final_cleanup": {
+        "application_delete_http": 200,
+        "application_get_after_delete": 404,
+        "product_uninstalled_unit_and_binary": true,
+        "artifact_deletes_get404": {
+          "A1": 404,
+          "A2": 404,
+          "A3": 404,
+          "A4": 404
+        },
+        "node_delete_get404": 404,
+        "owned_root_removed": true,
+        "owned_opt_root_removed": true,
+        "oracle_clean": true
+      }
+    },
+    {
+      "case_id": "SYS-50",
+      "title": "SYS-50 Health 失败：停止新版本、恢复 Binary/Config/Unit、Health 后记录 ROLLBACK_SUCCESS。",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-50",
+          "layer": "real-hub-api-upgrade/real-owned-agent/real-systemd-health-check/real-rollback/deploy-journal-timeline",
+          "status": "PASS",
+          "description": [
+            "Upgrade v2.0 -> v3.0 with artifact qa-sysb11-43f7a4f057f2-payload-a3 (binary exits immediately) and health_check.type=systemd served from the real Hub definition.",
+            "Ordered journal/disk timeline sampled every ~0.5s against the Agent deployment journal plus the host: VERIFYING (binary SHA 7a86dfd6b073cbc72b89addb7d65948d7aa130d84fad6775d8328cb6c02f7787 == v3 artifact, unit inactive) -> ROLLING_BACK (binary SHA c92707bdc68e8a8dfb75807532d19d5c9a808a0b92dfac1e473ae2b62bc39396 == restored v2 artifact, config SHA v2, unit file back to the v2 arguments, unit active) -> DONE. The ROLLING_BACK sample proves \"stop new version, restore previous binary, restore previous config/unit, daemon-reload, start previous, re-check health\" in one observation window.",
+            "Verdict/caller feedback: Execution FAILED with block_reason \"health check failed\"; Hub Application node state version=3.0 health=unhealthy error=\"health check failed\" (no false DONE/healthy); unit nodesteer-qa-sysb11-43f7a4f057f2-app.service active and healthy on the restored v2.",
+            "Negative proof: the v3 binary SHA never remains installed after rollback (binary SHA == v2), and the health check is re-run against the restored unit."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The product records a successful rollback as ROLLING_BACK -> DONE in the deployment journal (PRODUCT.md §42 lists PREPARING/STOPPED/REPLACED/STARTED/VERIFYING/DONE/ROLLING_BACK). There is no distinct \"ROLLBACK_SUCCESS\" journal phase to assert; the success verdict is carried by the Execution result (FAILED + block_reason) plus the restored-and-healthy v2 state, and the Agent's deploy result sets rollback=true (visible only in the Hub process log, not exposed through the API).",
+        "ROLLING_BACK lasted ~1s and was captured by ~0.5s journal sampling; the ordering proof does not depend on catching it (the binary SHA flips from v3 to v2 between the VERIFYING and final samples).",
+        "The health failure is induced by an owned artifact whose binary exits immediately, so the unit never becomes active; TCP/HTTP/COMMAND health-check failure modes were not each exercised in this batch (only the systemd type)."
+      ],
+      "evidence": [
+        "evidence/phase2-artifacts.json",
+        "evidence/phase6-upgrade-v2.json",
+        "evidence/phase9-sys50-health-rollback.json",
+        "evidence/phase1-owned-child.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb11-43f7a4f057f2-",
+        "child_node_id": "7093ad74-4bd3-4beb-98f2-36d135730749",
+        "application_id": "a353ea35-617a-4bb0-912e-bc595cfee2ef",
+        "unit_name": "nodesteer-qa-sysb11-43f7a4f057f2-app.service",
+        "binary_path": "/opt/qa-sysb11-43f7a4f057f2/app/bin/app",
+        "config_path": "/opt/qa-sysb11-43f7a4f057f2/app/config/app.env",
+        "artifact_unhealthy_v3": {
+          "id": "9ac21eaa-0ade-4099-8460-7605e1701605",
+          "sha256": "7a86dfd6b073cbc72b89addb7d65948d7aa130d84fad6775d8328cb6c02f7787",
+          "size": 1048642,
+          "name": "qa-sysb11-43f7a4f057f2-payload-a3"
+        },
+        "artifact_previous_v2": {
+          "id": "25609f9f-0475-42c0-b964-4d5055398367",
+          "sha256": "c92707bdc68e8a8dfb75807532d19d5c9a808a0b92dfac1e473ae2b62bc39396",
+          "size": 1048645,
+          "name": "qa-sysb11-43f7a4f057f2-payload-a2"
+        },
+        "execution": "877fca73-19db-44b9-a585-bb1cfd61981d",
+        "journal_row": {
+          "id": "e7822925-12f1-4510-a924-528bc5a05e95",
+          "application_id": "a353ea35-617a-4bb0-912e-bc595cfee2ef",
+          "from_version": "3.0",
+          "to_version": "3.0",
+          "phase": "DONE",
+          "backup_path": "/var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications/backup-e7e8a025-8bcd-45fd-bbae-6cf3cf4e5984.binary",
+          "backup_config_path": "/var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications/backup-e7e8a025-8bcd-45fd-bbae-6cf3cf4e5984.conf",
+          "backup_unit_path": "/var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications/backup-e7e8a025-8bcd-45fd-bbae-6cf3cf4e5984.unit",
+          "started_at": "2026-10-14T09:24:58.695270202Z",
+          "updated_at": "2026-10-14T09:25:06.883560082Z"
+        }
+      },
+      "actual_budget": {
+        "deploys": 1,
+        "app_updates": 1,
+        "artifact_uploads": 1,
+        "health_fail_rollbacks": 1,
+        "note": "shared batch budget: {\"api_mutations\": 33, \"artifact_uploads\": 4, \"artifact_deletes\": 4, \"app_creates\": 1, \"app_updates\": 5, \"app_deletes\": 1, \"app_assigns\": 2, \"deploys\": 14, \"node_enroll_posts\": 1, \"node_deletes\": 1, \"child_process_starts\": 4, \"child_process_stops\": 2, \"child_process_kills\": 1, \"host_seam_actions\": 4, \"systemd_unit_writes\": 0}"
+      },
+      "final_cleanup": {
+        "application_delete_http": 200,
+        "application_get_after_delete": 404,
+        "artifact_A3_get_after_delete": 404,
+        "unit_removed_and_inactive": {
+          "unit_file_lexists": false,
+          "enable_symlink_lexists": false,
+          "binary_lexists": false,
+          "config_lexists": false,
+          "unit_registry": [],
+          "unit_state": {
+            "MainPID": "0",
+            "NRestarts": "0",
+            "Id": "nodesteer-qa-sysb11-43f7a4f057f2-app.service",
+            "LoadState": "not-found",
+            "ActiveState": "inactive",
+            "SubState": "dead",
+            "FragmentPath": "",
+            "UnitFileState": ""
+          },
+          "backup_dir_still_present": true
+        },
+        "oracle_clean": true
+      }
+    },
+    {
+      "case_id": "AR-28",
+      "title": "Health Failure；恢复后幂等、持久化、Desired State与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-28",
+          "layer": "health-failure-with-recovery/real-desired-state/idempotency/persistence",
+          "status": "PASS",
+          "description": [
+            "Health failure and rollback: same event as SYS-50 (upgrade to qa-sysb11-43f7a4f057f2-payload-a3 fails the systemd health check, ROLLING_BACK restores the v2 binary/config/unit, unit active again, journal DONE, Execution FAILED \"health check failed\", node state unhealthy).",
+            "Recovery: restoring the Hub Application definition to v2.0 (qa-sysb11-43f7a4f057f2-payload-a2) and re-running the real upgrade produced Execution SUCCESS; Hub revision/version/artifact_id == Agent local definition == on-disk binary SHA c92707bdc68e8a8dfb75807532d19d5c9a808a0b92dfac1e473ae2b62bc39396 == active unit == node state version=2.0 health=healthy (Desired State == actual state).",
+            "Idempotency after recovery: an additional identical deploy returned SUCCESS with unchanged binary SHA and an active unit.",
+            "Persistence after mismatch: restarting the owned Agent left binary/unit/enable symlink/unit_registry/deployment journal intact (quick_check=ok) and the managed unit active."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Recovery required restoring the Hub Application definition (v3.0 -> v2.0): the product does not revert the Hub-side definition after a rolled-back upgrade, so Desired State (definition) and actual state only converge after the explicit definition update or a successful re-deploy. Reported as an observation; the case dimension \"after recovery Desired State == actual state\" is satisfied by the v2.0 restore.",
+        "The health check type exercised is systemd; TCP/HTTP/COMMAND failure paths are not covered in this batch."
+      ],
+      "evidence": [
+        "evidence/phase9-sys50-health-rollback.json",
+        "evidence/phase10-ar28-recovery-v2.json",
+        "evidence/phase11-ar28-persistence.json",
+        "evidence/phase11-ar28-persistence-idempotent.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb11-43f7a4f057f2-",
+        "child_node_id": "7093ad74-4bd3-4beb-98f2-36d135730749",
+        "application_id": "a353ea35-617a-4bb0-912e-bc595cfee2ef",
+        "unit_name": "nodesteer-qa-sysb11-43f7a4f057f2-app.service",
+        "binary_path": "/opt/qa-sysb11-43f7a4f057f2/app/bin/app",
+        "config_path": "/opt/qa-sysb11-43f7a4f057f2/app/config/app.env",
+        "executions": {
+          "failed_upgrade_v3": "877fca73-19db-44b9-a585-bb1cfd61981d",
+          "recovery_v2": "4e430739-2f0c-4357-bd86-18ab970512ba",
+          "repeat_v2": "d59f187a-e9d7-4682-8f09-ef265eb1ce88"
+        },
+        "hub_definition_after_recovery": {
+          "hub_version": "2.0",
+          "hub_revision": 4,
+          "hub_artifact_id": "25609f9f-0475-42c0-b964-4d5055398367",
+          "agent_local_version": "2.0",
+          "agent_local_artifact_id": "25609f9f-0475-42c0-b964-4d5055398367"
+        }
+      },
+      "actual_budget": {
+        "deploys": 3,
+        "app_updates": 2,
+        "child_process_starts": 1,
+        "child_process_stops": 1,
+        "health_fail_rollbacks": 1,
+        "note": "shared batch budget: {\"api_mutations\": 33, \"artifact_uploads\": 4, \"artifact_deletes\": 4, \"app_creates\": 1, \"app_updates\": 5, \"app_deletes\": 1, \"app_assigns\": 2, \"deploys\": 14, \"node_enroll_posts\": 1, \"node_deletes\": 1, \"child_process_starts\": 4, \"child_process_stops\": 2, \"child_process_kills\": 1, \"host_seam_actions\": 4, \"systemd_unit_writes\": 0}"
+      },
+      "final_cleanup": {
+        "application_delete_http": 200,
+        "application_get_after_delete": 404,
+        "artifacts_get404": {
+          "A1": 404,
+          "A2": 404,
+          "A3": 404,
+          "A4": 404
+        },
+        "node_delete_get404": 404,
+        "unit_and_binary_removed": true,
+        "oracle_clean": true
+      }
+    },
+    {
+      "case_id": "AR-29",
+      "title": "Rollback；恢复后幂等、持久化、Desired State与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-29",
+          "layer": "agent-crash-recovery-rollback/real-deploy-journal/real-systemd/real-agent-restart",
+          "status": "PASS",
+          "description": [
+            "Crash inside an in-flight upgrade: upgrade v2.0 -> v4.0 (artifact qa-sysb11-43f7a4f057f2-payload-a4, health_check systemd attempts=12 interval=6) reached journal phase VERIFYING with the v4 binary already installed on disk; the owned Agent process was then SIGKILLed (real process kill, Hub Execution still PENDING; deployment row left at VERIFYING).",
+            "Journal-driven rollback on restart: the Agent log shows \"recovering incomplete deployment id=... phase=VERIFYING\"; the deployment row went ROLLING_BACK -> DONE and the host came back to binary SHA c92707bdc68e8a8dfb75807532d19d5c9a808a0b92dfac1e473ae2b62bc39396 (v2), v2 config, unit file with --profile=v2, unit active, registry unchanged.",
+            "Interrupted Execution finalization: the crashed DEPLOY_REQUEST execution was finalized FAILED with block_reason \"agent_restarted\" (no stale RUNNING/PENDING row).",
+            "Recovery + idempotency + persistence: two subsequent real v2.0 deploys returned SUCCESS with unchanged binary SHA/active unit; the Hub definition version equals the Agent local definition and the node state is healthy 2.0 after recovery."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The crash is a harness SIGKILL of the owned child Agent process (a real process death, no product source change); Product-internal panics are not simulated.",
+        "The recovery rollback re-runs the health check taken from the synced v4.0 definition (systemd) and the restored v2 unit satisfies it on the first attempt, so the rollback's re-verify step is real but did not need to wait.",
+        "Convergence of Desired State with actual state again required restoring the Hub definition to v2.0 (see AR-28 note); the journal DONE after recovery proves the deployment transaction is not left half-open."
+      ],
+      "evidence": [
+        "evidence/phase12-ar29-crash-rollback.json",
+        "evidence/phase13-ar29-recovery.json",
+        "evidence/phase1-owned-child.json",
+        "evidence/phase8-persistence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb11-43f7a4f057f2-",
+        "child_node_id": "7093ad74-4bd3-4beb-98f2-36d135730749",
+        "application_id": "a353ea35-617a-4bb0-912e-bc595cfee2ef",
+        "unit_name": "nodesteer-qa-sysb11-43f7a4f057f2-app.service",
+        "binary_path": "/opt/qa-sysb11-43f7a4f057f2/app/bin/app",
+        "config_path": "/opt/qa-sysb11-43f7a4f057f2/app/config/app.env",
+        "artifact_v4": {
+          "id": "726a4c52-5d19-4829-989a-e49bde6aa2cf",
+          "sha256": "fa13fe0dd8b724aa0878ab6a4556fa4be631932bbb263c0d4122d4eb80ee0aff",
+          "size": 1048636,
+          "name": "qa-sysb11-43f7a4f057f2-payload-a4"
+        },
+        "artifact_previous_v2": {
+          "id": "25609f9f-0475-42c0-b964-4d5055398367",
+          "sha256": "c92707bdc68e8a8dfb75807532d19d5c9a808a0b92dfac1e473ae2b62bc39396",
+          "size": 1048645,
+          "name": "qa-sysb11-43f7a4f057f2-payload-a2"
+        },
+        "crashed_execution": "51a2dd1e-4adc-4ba4-8e65-fed3d0925ff5",
+        "crashed_execution_after_recovery": {
+          "id": "51a2dd1e-4adc-4ba4-8e65-fed3d0925ff5",
+          "task_id": "a353ea35-617a-4bb0-912e-bc595cfee2ef",
+          "node_id": "7093ad74-4bd3-4beb-98f2-36d135730749",
+          "status": "FAILED",
+          "trigger_type": "manual",
+          "start_time": "2026-10-14T09:25:23.319655722Z",
+          "end_time": "2026-10-14T09:25:26.131924813Z",
+          "block_reason": "agent_restarted",
+          "exit_code": null
+        },
+        "recovery_executions": [
+          "c349366f-3082-4e58-917b-c36e1f3e9f83",
+          "c409bf17-e67a-4fc5-a595-3a41f96eabe1"
+        ],
+        "journal_row_after_recovery": {
+          "id": "b60be163-e7bc-414c-8678-2c0e096e53b7",
+          "application_id": "a353ea35-617a-4bb0-912e-bc595cfee2ef",
+          "from_version": "4.0",
+          "to_version": "4.0",
+          "phase": "DONE",
+          "backup_path": "/var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications/backup-0bcbabef-c1dd-4db2-ada9-bb7da879ae3a.binary",
+          "backup_config_path": "/var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications/backup-0bcbabef-c1dd-4db2-ada9-bb7da879ae3a.conf",
+          "backup_unit_path": "/var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications/backup-0bcbabef-c1dd-4db2-ada9-bb7da879ae3a.unit",
+          "started_at": "2026-10-14T09:25:23.323608662Z",
+          "updated_at": "2026-10-14T09:25:27.043440165Z"
+        }
+      },
+      "actual_budget": {
+        "deploys": 3,
+        "app_updates": 2,
+        "child_process_kills": 1,
+        "child_process_starts": 2,
+        "child_process_stops": 1,
+        "note": "shared batch budget: {\"api_mutations\": 33, \"artifact_uploads\": 4, \"artifact_deletes\": 4, \"app_creates\": 1, \"app_updates\": 5, \"app_deletes\": 1, \"app_assigns\": 2, \"deploys\": 14, \"node_enroll_posts\": 1, \"node_deletes\": 1, \"child_process_starts\": 4, \"child_process_stops\": 2, \"child_process_kills\": 1, \"host_seam_actions\": 4, \"systemd_unit_writes\": 0}"
+      },
+      "final_cleanup": {
+        "application_delete_http": 200,
+        "application_get_after_delete": 404,
+        "artifact_A4_get_after_delete": 404,
+        "owned_child_processes_after": [],
+        "node_delete_get404": 404,
+        "oracle_clean": true
+      }
+    },
+    {
+      "case_id": "SYS-52",
+      "title": "SYS-52 Backup 缺失、权限不足、磁盘不足的明确失败。",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-52",
+          "layer": "real-backup-stage-faults/owned-host-seams/real-deploy-pipeline/negative-host-proof",
+          "status": "PASS",
+          "description": [
+            "Baseline: v2.0 installed and active (binary c92707bdc68e8a8dfb75807532d19d5c9a808a0b92dfac1e473ae2b62bc39396, unit active) so the pre-deploy Backup Current stage has a real previous version to copy.",
+            "Missing/unusable backup destination (dangling symlink at /var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications): Execution FAILED, block_reason \"create backup directory failed: mkdir /var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications: file exists\"; binary/unit SHAs, unit state and unit_registry unchanged (no half replacement).",
+            "Permission denied (owned backup dir made immutable with chattr +i; needed because the Agent runs as root): Execution FAILED, block_reason \"backup binary failed: open .../backup-<uuid>.binary: operation not permitted\"; no host mutation.",
+            "Disk insufficient (owned 128 KiB tmpfs mounted at the backup dir; the current v2 binary is ~1 MiB): Execution FAILED, block_reason \"backup binary failed: write .../backup-<uuid>.binary: no space left on device\"; no host mutation.",
+            "Positive control: a backup directory that is simply missing is created by the product and the deploy succeeds (Execution SUCCESS) - a missing path alone is not a silent-success error case.",
+            "All three negative modes reported a non-empty failure reason to the Hub (Execution FAILED + Application node state health=unhealthy) and left the running v2 application untouched."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The three seams are harness-side (owned path only, released immediately after each scenario): chattr +i immutable directory for the permission-denied mode (the Agent runs as root, so mode-based denial is not applicable) and a 128 KiB tmpfs mount for the disk-full mode; both produce real kernel errors (EPERM / ENOSPC) inside the untouched product backup code path.",
+        "\"Backup 缺失\" is covered as \"backup destination present but unusable/not creatable\"; a directory that is genuinely absent is created by the product (positive control above). The product's separate \"source file absent\" semantics (backup sentinel \"absent:\") was not the target of this case.",
+        "The deployment journal records PREPARING -> DONE even for a prepare-stage failure (a verify-absent sentinel); the failure verdict is carried by the Execution (FAILED) and the Application node state (unhealthy + error). Recorded as an observation, not a case failure.",
+        "When the backup write fails mid-way a partial backup file remains in the backup directory (observed in the tmpfs scenario and removed with the tmpfs); no application host file was modified."
+      ],
+      "evidence": [
+        "evidence/phase14-sys52-backup-failures.json",
+        "evidence/phase13-ar29-recovery.json",
+        "evidence/phase15-cleanup.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb11-43f7a4f057f2-",
+        "child_node_id": "7093ad74-4bd3-4beb-98f2-36d135730749",
+        "application_id": "a353ea35-617a-4bb0-912e-bc595cfee2ef",
+        "unit_name": "nodesteer-qa-sysb11-43f7a4f057f2-app.service",
+        "binary_path": "/opt/qa-sysb11-43f7a4f057f2/app/bin/app",
+        "config_path": "/opt/qa-sysb11-43f7a4f057f2/app/config/app.env",
+        "deployment_backup_dir": "/var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications",
+        "seams": {
+          "missing_backup_destination": "dangling symlink at the backup dir",
+          "backup_permission_denied": "chattr +i on the owned backup dir",
+          "backup_disk_full": "tmpfs size=128k,mode=0755 mounted at the backup dir",
+          "missing_dir_is_created": "backup dir removed"
+        },
+        "executions": {
+          "missing_backup_destination": "8464e624-e7ba-4068-af54-78cfab956513",
+          "backup_permission_denied": "ce52f4ed-dbb6-4154-ae95-fd49cb9cd29d",
+          "backup_disk_full": "3b28abf2-586d-4afd-895e-c8669ada921e",
+          "missing_dir_is_created": "bbf7a2db-41bb-4094-8ee1-c1e7ce197024"
+        },
+        "block_reasons": {
+          "missing_backup_destination": "create backup directory failed: mkdir /var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications: file exists",
+          "backup_permission_denied": "backup binary failed: open /var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications/backup-ca77e14c-d591-44da-9544-4ef638f02f34.binary: operation not permitted",
+          "backup_disk_full": "backup binary failed: write /var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications/backup-77f95234-2d1a-4e9b-bc6d-23bfb02c4fe4.binary: no space left on device",
+          "missing_dir_is_created": ""
+        }
+      },
+      "actual_budget": {
+        "deploys": 4,
+        "channel_seam_actions": 4,
+        "host_seam_applies_and_releases": 8,
+        "note": "shared batch budget: {\"api_mutations\": 33, \"artifact_uploads\": 4, \"artifact_deletes\": 4, \"app_creates\": 1, \"app_updates\": 5, \"app_deletes\": 1, \"app_assigns\": 2, \"deploys\": 14, \"node_enroll_posts\": 1, \"node_deletes\": 1, \"child_process_starts\": 4, \"child_process_stops\": 2, \"child_process_kills\": 1, \"host_seam_actions\": 4, \"systemd_unit_writes\": 0}"
+      },
+      "final_cleanup": {
+        "seams_released": {
+          "umount": {
+            "action": "umount",
+            "dir": "/var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications",
+            "result": {
+              "rc": 32,
+              "out": "",
+              "err": "umount: /var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications: not mounted."
+            },
+            "after": {
+              "lexists": true,
+              "is_dir": true,
+              "is_symlink": false,
+              "target": null,
+              "mode": "0o755"
+            },
+            "mounts": [],
+            "lsattr": {
+              "rc": 0,
+              "out": "---------------------- /var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications",
+              "err": ""
+            }
+          },
+          "chattr_minus_i": {
+            "action": "chattr_minus_i",
+            "dir": "/var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications",
+            "result": {
+              "rc": 0,
+              "out": "",
+              "err": ""
+            },
+            "after": {
+              "lexists": true,
+              "is_dir": true,
+              "is_symlink": false,
+              "target": null,
+              "mode": "0o755"
+            },
+            "mounts": [],
+            "lsattr": {
+              "rc": 0,
+              "out": "---------------------- /var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications",
+              "err": ""
+            }
+          },
+          "mkdir": {
+            "action": "mkdir",
+            "dir": "/var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications",
+            "after": {
+              "lexists": true,
+              "is_dir": true,
+              "is_symlink": false,
+              "target": null,
+              "mode": "0o755"
+            },
+            "mounts": [],
+            "lsattr": {
+              "rc": 0,
+              "out": "---------------------- /var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications",
+              "err": ""
+            }
+          },
+          "status": {
+            "action": "status",
+            "dir": "/var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications",
+            "after": {
+              "lexists": true,
+              "is_dir": true,
+              "is_symlink": false,
+              "target": null,
+              "mode": "0o755"
+            },
+            "mounts": [],
+            "lsattr": {
+              "rc": 0,
+              "out": "---------------------- /var/lib/nodesteer-qa-sysb11-43f7a4f057f2/data/applications",
+              "err": ""
+            }
+          }
+        },
+        "tmpfs_mounts_after_cleanup": [],
+        "backup_dir_immutable_flag_after_cleanup": "not set (lsattr \"----------------------\")",
+        "application_delete_http": 200,
+        "artifacts_get404": {
+          "A1": 404,
+          "A2": 404,
+          "A3": 404,
+          "A4": 404
+        },
+        "node_delete_get404": 404,
+        "owned_root_removed": true,
+        "oracle_clean": true
+      }
+    }
+  ],
+  "run_actual_budget": {
+    "api_mutations": 33,
+    "artifact_uploads": 4,
+    "artifact_deletes": 4,
+    "app_creates": 1,
+    "app_updates": 5,
+    "app_deletes": 1,
+    "app_assigns": 2,
+    "deploys": 14,
+    "node_enroll_posts": 1,
+    "node_deletes": 1,
+    "child_process_starts": 4,
+    "child_process_stops": 2,
+    "child_process_kills": 1,
+    "host_seam_actions": 4,
+    "systemd_unit_writes": 0
+  },
+  "harness_failures_retained": [
+    "attempt01: over-strict assertion (deployment-journal from_version must equal the previously installed version) aborted the batch after health_rollback; the pre-abort evidence was real (install, upgrade, systemd health-fail rollback VERIFYING->ROLLING_BACK->DONE) and is retained under evidence/attempt01-harness-bug/. Cleanup was still clean (oracle_clean=true).",
+    "attempt02: the dependency-skip logic treated a skipped phase as runnable, so follow-up phases ran with the Hub definition still pointing at the unhealthy v3 artifact; retained under evidence/attempt02-harness-bug/ (oracle clean).",
+    "attempt03: KeyError on the inventory key name (etc_systemd_owned vs etc_systemd_owned_leftovers) inside the SYS-52 helper; retained under evidence/attempt03-harness-bug/ (oracle clean).",
+    "attempt04: one mislabeled evidence key (artifact_cache_has_v3) was computed from the deployment backup directory listing rather than the Agent artifact cache; renamed in-place with a harness_key_relabel note in evidence/phase9-sys50-health-rollback.json.",
+    "Observation during attempt02/attempt04: \"systemctl list-units\" also lists the systemd-generated <data>-applications.mount unit for the tmpfs seam, so the SYS-52 host-unit check was based on the /etc/systemd/system directory listing instead."
+  ],
+  "verdict_summary": {
+    "AR-27": "PASS",
+    "SYS-50": "PASS",
+    "AR-28": "PASS",
+    "AR-29": "PASS",
+    "SYS-52": "PASS"
+  },
+  "reused_prior_evidence_note": "ar26/sys44 prior evidence was available for reuse per the batch plan; this batch still executed the dimensions end-to-end on the native node and additionally covers install idempotency, upgrade idempotency, agent-restart persistence, crash-recovery rollback and the three backup failure modes.",
+  "global_counts_note": "The owned child node was deleted (GET 404) and the global node/artifact/application counts returned to the run baseline at oracle time. A parallel batch (hostname qa-sysb03-ab0d99a2f96f-child) enrolled its own node after this batch finished, so the Hub now lists more nodes than this batch saw; that node is not owned by sys-b11 and all sys-b11 objects are gone (see fixture-ledger.json).",
+  "journal_history_note": "Hub-side Execution/Audit history is retained (Execution rows are never deleted by this batch). The Agent-local deployment journal of the owned child was removed together with the owned data dir at cleanup (inherent to retiring an owned child); its full content is preserved verbatim in the phase*.json evidence files."
+}

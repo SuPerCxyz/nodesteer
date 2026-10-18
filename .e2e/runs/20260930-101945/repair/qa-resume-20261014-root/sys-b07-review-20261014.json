@@ -1,0 +1,79 @@
+{
+  "review_id": "ROOT-SYS-B07-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T09:43:53.859642+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "run_dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b07",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试、剩余分母全量推进；并发上限 5",
+  "verdicts": [
+    {
+      "case_id": "SYS-16",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "手动执行到 Hub RUNNING 且任务进程存活 → SIGKILL owned child 后再收孤儿进程组：journal 与 Hub 均停在 RUNNING、无 end 事件、无存活进程 → 重启后收尾为 FAILED/block_reason=agent_restarted（本地 synced=1 回传），Hub 该 Execution 仅 1 行。",
+      "limitations": [
+        "Kill used SIGKILL of the owned process; a STOPPED-phase distinction is not part of this case."
+      ]
+    },
+    {
+      "case_id": "AR-02",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "优雅重启后 identity（node_id/agent_id/credential 指纹）不变、SQLite dev/inode 不变、重启前终态 Execution ID 未丢、重启不产生新 Execution；global_revision 1846 收敛、定义一致；重启后 Run Now 恰 1 条 SUCCESS 带 nonce。",
+      "limitations": [
+        "Restart was performed on the owned child process, not a protected systemd unit."
+      ]
+    },
+    {
+      "case_id": "AR-06",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "frame proxy cut 切断后 Hub 节点转 offline 而 owned Agent 进程仍存活（断连≠重启）、被拒重连 21 次；pass 恢复后 online/synced、identity 不变、revision 收敛、无重复 Execution。",
+      "limitations": [
+        "Disconnect was produced at the harness proxy layer in front of the owned child Agent; the repair Hub and protected Agents were not stopped."
+      ]
+    },
+    {
+      "case_id": "AR-09",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "离线窗口内 Hub 更新 Script(rev1→2)与 Task(rev→2)，本地仍持 v1；恢复后一次同步生效（本地 rev2、内容 SHA=v2）、同步不产生 Execution；随后 Run Now 恰 1 条 SUCCESS 且 stdout 为 V2。",
+      "limitations": [
+        "Offline window was created with the harness frame proxy; no Hub stop and no product source change."
+      ]
+    }
+  ],
+  "verified_independently_by_root": {
+    "live_residue_check": {
+      "/api/scripts": [],
+      "/api/tasks": [],
+      "/api/nodes": [],
+      "native4": [
+        "0",
+        "0"
+      ]
+    },
+    "oracle_clean": true,
+    "agent_binary_sha_unchanged": "d55dc5cd…"
+  },
+  "counts_before": {
+    "PASS": 254,
+    "FAIL": 5,
+    "PARTIAL": 163,
+    "NOT_RUN": 73,
+    "BLOCKED": 9
+  },
+  "not_claimed": "未执行产品修复、Git 交付或 Archive",
+  "counts_after": {
+    "PASS": 258,
+    "FAIL": 5,
+    "PARTIAL": 163,
+    "NOT_RUN": 69,
+    "BLOCKED": 9
+  }
+}

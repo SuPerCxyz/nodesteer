@@ -1,0 +1,1776 @@
+{
+  "schema_version": 1,
+  "status": "ROOT_REVIEWED_AND_MERGED",
+  "review_type": "历史证据补记与严格canonical映射审查",
+  "reviewed_at": "2026-10-08T07:10:53.597314+00:00",
+  "review_scope": "只读取历史C/CR 12个独立用例、App留首次Host命令定义复验及canonical expected/remaining；仅写本独占review文件。",
+  "mapping_origin": "历史证据补记",
+  "new_runtime_execution_in_this_review": false,
+  "not_runtime_evidence_for": "2026-10-08",
+  "authority_url": "http://192.168.100.209:18080",
+  "canonical_denominator": 504,
+  "defect_denominator": 22,
+  "canonical_inventory_sha256_at_review": "ec5d7e4e45a366b54a5d5aad54fc01672a9160a776ae97c77f07d08ffb3f4418",
+  "supplemental_case_count": 12,
+  "supplemental_count_is_not_canonical_denominator": true,
+  "supplemental_unique_cases": [
+    {
+      "title": "E2E-01 UI脚本任务到真实Agent执行与日志",
+      "accepted_result": "passed",
+      "selected_source": "C"
+    },
+    {
+      "title": "P23-01 列表与详情内容宽度一致，4K 下不超过 2400px",
+      "accepted_result": "passed",
+      "selected_source": "C"
+    },
+    {
+      "title": "P23-02 任务详情单页分区且字段多列",
+      "accepted_result": "passed",
+      "selected_source": "C"
+    },
+    {
+      "title": "P23-03 执行详情单页且日志区可用",
+      "accepted_result": "passed",
+      "selected_source": "C"
+    },
+    {
+      "title": "P23-04 短视口侧边栏全部可见且无需滚动",
+      "accepted_result": "passed",
+      "selected_source": "C"
+    },
+    {
+      "title": "RBAC-02 Viewer 写操作被拒",
+      "accepted_result": "passed",
+      "selected_source": "CR"
+    },
+    {
+      "title": "RBAC-02/03 Operator/Viewer 读取正常",
+      "accepted_result": "passed",
+      "selected_source": "CR"
+    },
+    {
+      "title": "RBAC-03 Operator 写操作被拒",
+      "accepted_result": "passed",
+      "selected_source": "CR"
+    },
+    {
+      "title": "RBAC-04 Operator 本轮节点状态修改被拒",
+      "accepted_result": "passed",
+      "selected_source": "CR"
+    },
+    {
+      "title": "RBAC-06 Admin 全功能",
+      "accepted_result": "passed",
+      "selected_source": "C"
+    },
+    {
+      "title": "RBAC-07 未认证请求 401",
+      "accepted_result": "passed",
+      "selected_source": "C"
+    },
+    {
+      "title": "RBAC-08 页面只展示角色允许的操作",
+      "accepted_result": "passed",
+      "selected_source": "CR"
+    }
+  ],
+  "historical_harness_findings": [
+    {
+      "batch": "C",
+      "status": "7 passed, 5 failed",
+      "reason": "五个RBAC fixture login401，尚未执行业务断言；CR以正确私密fixture重跑七RBAC均passed。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-run.json:15",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:13"
+      ]
+    }
+  ],
+  "case_recommendations": [
+    {
+      "case_id": "P14P15-11",
+      "title": "Deploy、Start、Stop、Restart、Upgrade 五种操作逐一验证。",
+      "expected": "Deploy、Start、Stop、Restart、Upgrade 五种操作逐一验证。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "status": "PASS",
+      "actual": "Deploy/Stop/Start/Restart/Upgrade五操作逐一真实成功，当前页Health/History反馈匹配，v1/v2文件、Config、Unit、PID和运行SHA一致；独占资源清理完整。",
+      "covered_description": "Deploy/Stop/Start/Restart/Upgrade五操作逐一真实成功，当前页Health/History反馈匹配，v1/v2文件、Config、Unit、PID和运行SHA一致；独占资源清理完整。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [],
+      "resolved_previous_dimensions": [
+        "Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:5995",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P14P15-07",
+      "title": "编辑保存 Revision +1、版本历史。",
+      "expected": "编辑保存 Revision +1、版本历史。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Before/after Application Revision and UI expanded history not recorded here; preserve prior accepted Revision increment dimension."
+      ],
+      "status": "PARTIAL",
+      "actual": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_description": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [
+        "Before/after Application Revision and UI expanded history not recorded here; preserve prior accepted Revision increment dimension."
+      ],
+      "resolved_previous_dimensions": [],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:5839",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P14P15-13",
+      "title": "state 页面显示 version、operation、health、error、updated_at。",
+      "expected": "state 页面显示 version、operation、health、error、updated_at。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "UI State version/updated_at independent rendering and actual failure error display remain."
+      ],
+      "status": "PARTIAL",
+      "actual": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_description": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [
+        "UI State version/updated_at independent rendering and actual failure error display remain."
+      ],
+      "resolved_previous_dimensions": [],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:6067",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P14P15-14",
+      "title": "无状态、UNKNOWN、healthy、unhealthy、stopped。",
+      "expected": "无状态、UNKNOWN、healthy、unhealthy、stopped。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "No-state/UNKNOWN/unhealthy branches remain."
+      ],
+      "status": "PARTIAL",
+      "actual": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_description": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [
+        "No-state/UNKNOWN/unhealthy branches remain."
+      ],
+      "resolved_previous_dimensions": [],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:6103",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P14P15-15",
+      "title": "systemd/TCP/HTTP/Command 健康检查实际结果。",
+      "expected": "systemd/TCP/HTTP/Command 健康检查实际结果。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Configured checker kind not embedded in reviewed records; do not assume systemd from ActiveState.；Configured systemd/TCP/HTTP/command actual success/failure probes remain.；Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "status": "PARTIAL",
+      "actual": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_description": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [
+        "Configured checker kind not embedded in reviewed records; do not assume systemd from ActiveState.",
+        "Configured systemd/TCP/HTTP/command actual success/failure probes remain."
+      ],
+      "resolved_previous_dimensions": [
+        "Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "coverage_limits": [
+        "Host ActiveState与健康反馈不替代保留具体checker类型和四种探针成功/失败证据。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:6139",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P14P15-12",
+      "title": "Admin/operator/viewer 的部署、定义修改权限。",
+      "expected": "Admin/operator/viewer 的部署、定义修改权限。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Operator/Viewer definition and deployment authorization remain."
+      ],
+      "status": "PARTIAL",
+      "actual": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。 CR两受限角色无New Application入口，未实际部署或编辑请求。",
+      "covered_description": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。",
+        "CR Operator/Viewer Applications页New Application link不存在，仅入口可见性。"
+      ],
+      "remaining_dimensions": [
+        "Operator/Viewer definition and deployment authorization remain."
+      ],
+      "resolved_previous_dimensions": [],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:81",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:115",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:149",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:183",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:217",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:251",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1",
+        "web/e2e/tests/rbac.spec.ts:9",
+        "web/e2e/tests/rbac.spec.ts:14",
+        "web/e2e/tests/rbac.spec.ts:28",
+        "web/e2e/tests/rbac.spec.ts:88"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:6031",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:81",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:115",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:149",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:183",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:217",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:251",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1",
+        "web/e2e/tests/rbac.spec.ts:9",
+        "web/e2e/tests/rbac.spec.ts:14",
+        "web/e2e/tests/rbac.spec.ts:28",
+        "web/e2e/tests/rbac.spec.ts:88"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01",
+        "RBAC-08"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P14P15-16",
+      "title": "应用删除确认框取消/确认，关联 Assignment/State/Revision 行为正确。",
+      "expected": "应用删除确认框取消/确认，关联 Assignment/State/Revision 行为正确。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Current deployed-App cancel request count and Assignment/State/Revision cleanup consistency not queried.；Old Host cleanup oracle source unverified; physical absence needs retained source/new scoped recheck."
+      ],
+      "status": "PARTIAL",
+      "actual": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_description": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [
+        "Current deployed-App cancel request count and Assignment/State/Revision cleanup consistency not queried."
+      ],
+      "resolved_previous_dimensions": [
+        "Old Host cleanup oracle source unverified; physical absence needs retained source/new scoped recheck."
+      ],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:6175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "FL-10",
+      "title": "Application Deploy → State/Execution → 部署执行、健康、版本、错误一致",
+      "expected": "Application Deploy → State/Execution → 部署执行、健康、版本、错误一致；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Actual failed deployment error consistency/recovery feedback remain.；Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "status": "PARTIAL",
+      "actual": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_description": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [
+        "Actual failed deployment error consistency/recovery feedback remain."
+      ],
+      "resolved_previous_dimensions": [
+        "Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:8556",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "E2E-11",
+      "title": "Artifact → Application → Deploy → Stop → 文件、Unit、状态和健康检查正确",
+      "expected": "Artifact → Application → Deploy → Stop → 文件、Unit、状态和健康检查正确；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required.；Reuse of existing Artifact is permitted; does not add fresh UI-upload coverage."
+      ],
+      "status": "PASS",
+      "actual": "从已授权已有V1 Artifact经真实App创建/分配到Deploy/Stop：Node的Binary/Config/Unit、/proc SHA、API State/Health与原操作页面反馈一致；删除/清理无独占活进程或文件遗留。",
+      "covered_description": "从已授权已有V1 Artifact经真实App创建/分配到Deploy/Stop：Node的Binary/Config/Unit、/proc SHA、API State/Health与原操作页面反馈一致；删除/清理无独占活进程或文件遗留。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [],
+      "resolved_previous_dimensions": [
+        "Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "coverage_limits": [
+        "Reuse of existing Artifact is permitted; does not add fresh UI-upload coverage.",
+        "该case标题/expected为Artifact→Application→Deploy→Stop，未要求新增Upload；FL-08/P16上传能力不由本次证据升级。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:9219",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "E2E-12",
+      "title": "Application Upgrade/Rollback → 成功升级；失败恢复旧版本",
+      "expected": "Application Upgrade/Rollback → 成功升级；失败恢复旧版本；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Failed upgrade must restore v1 files/Unit/Health and explicit rollback result.；Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "status": "PARTIAL",
+      "actual": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_description": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [
+        "Failed upgrade must restore v1 files/Unit/Health and explicit rollback result."
+      ],
+      "resolved_previous_dimensions": [
+        "Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:9255",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "FL-11",
+      "title": "Application Upgrade → Rollback → 版本、备份、Unit、Config、Health、Journal 一致",
+      "expected": "Application Upgrade → Rollback → 版本、备份、Unit、Config、Health、Journal 一致；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Backup/Deployment Journal phases, failed upgrade rollback and recovery remain.；Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "status": "PARTIAL",
+      "actual": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_description": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [
+        "Backup/Deployment Journal phases, failed upgrade rollback and recovery remain."
+      ],
+      "resolved_previous_dimensions": [
+        "Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:8592",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "SYS-45",
+      "title": "SYS-45 Application 初次部署：Resolve → Download → Verify → Install → Unit → Start → Health。",
+      "expected": "SYS-45 Application 初次部署：Resolve → Download → Verify → Install → Unit → Start → Health。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Repeat cycle starts with existing App/Unit; fresh initial installation preconditions not retained.；Resolve/download/cache/verify/staging/install order not observed.；Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "status": "PARTIAL",
+      "actual": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_description": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [
+        "Repeat cycle starts with existing App/Unit; fresh initial installation preconditions not retained.",
+        "Resolve/download/cache/verify/staging/install order not observed."
+      ],
+      "resolved_previous_dimensions": [
+        "Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "coverage_limits": [
+        "新App UI创建在首次本轮deploy之前，但未保留部署前宿主Unit/路径不存在采样，不能声称完整初次安装内部时序通过。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:10468",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "SYS-46",
+      "title": "SYS-46 Application 启动/停止/重启和状态反馈。",
+      "expected": "SYS-46 Application 启动/停止/重启和状态反馈。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "status": "PASS",
+      "actual": "真实Stop→inactive/PID0，Start→active，Restart→新PID；API State与当前App页Health/History分别反馈stopped/healthy。",
+      "covered_description": "真实Stop→inactive/PID0，Start→active，Restart→新PID；API State与当前App页Health/History分别反馈stopped/healthy。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [],
+      "resolved_previous_dimensions": [
+        "Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:10504",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "SYS-47",
+      "title": "SYS-47 systemd Unit Registry：未登记 Unit 拒绝操作，已登记 Unit 可操作。",
+      "expected": "SYS-47 systemd Unit Registry：未登记 Unit 拒绝操作，已登记 Unit 可操作。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Unregistered/unowned Unit rejection and actual registry records remain.；Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "status": "PARTIAL",
+      "actual": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_description": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [
+        "Unregistered/unowned Unit rejection and actual registry records remain."
+      ],
+      "resolved_previous_dimensions": [
+        "Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:10540",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "SYS-48",
+      "title": "SYS-48 Health Check systemd/TCP/HTTP/COMMAND。",
+      "expected": "SYS-48 Health Check systemd/TCP/HTTP/COMMAND。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Configured checker type and full four-checker success/failure branches remain.；Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "status": "PARTIAL",
+      "actual": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_description": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [
+        "Configured checker type and full four-checker success/failure branches remain."
+      ],
+      "resolved_previous_dimensions": [
+        "Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "coverage_limits": [
+        "Host ActiveState与健康反馈不替代保留具体checker类型和四种探针成功/失败证据。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:10576",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "SYS-49",
+      "title": "SYS-49 Upgrade：Backup → Stop → Atomic Replace → Config/Unit → Start → Health。",
+      "expected": "SYS-49 Upgrade：Backup → Stop → Atomic Replace → Config/Unit → Start → Health。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Backup, Stop-before-replace, atomic rename and Journal stage order not observed.；Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "status": "PARTIAL",
+      "actual": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_description": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [
+        "Backup, Stop-before-replace, atomic rename and Journal stage order not observed."
+      ],
+      "resolved_previous_dimensions": [
+        "Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:10612",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "SYS-53",
+      "title": "SYS-53 NativeHostAdapter 路径、权限、文件模式、用户组。",
+      "expected": "SYS-53 NativeHostAdapter 路径、权限、文件模式、用户组。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Path guards/modes/user-group/permission-negative cases remain.；Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "status": "PARTIAL",
+      "actual": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_description": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [
+        "Path guards/modes/user-group/permission-negative cases remain."
+      ],
+      "resolved_previous_dimensions": [
+        "Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:10687",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "INV-12",
+      "title": "systemd 只管理 NodeSteer Managed Application。",
+      "expected": "systemd 只管理 NodeSteer Managed Application。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Unregistered/unowned Unit operation rejection without touching service remains.；Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "status": "PARTIAL",
+      "actual": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_description": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_dimensions": [
+        "已保存首次执行前的单目标只读Host Task完整command、SHA、enabled/timeout/retry/offline_policy和无Schedule定义。",
+        "App五操作有独立真实SUCCESS执行，UI点击到Health/History抓取之间无open/reload；History SUCCESS数1→5。",
+        "宿主Unit/PID、Binary/Config及/proc可执行文件SHA逐操作匹配；停止PID0，重启PID变化，升级V2 SHA/config。",
+        "删除后App/Task/v2 Artifact均GET404；Unit not-found、PID0、Binary/Config移除；执行历史与共享V1 Artifact保留。"
+      ],
+      "remaining_dimensions": [
+        "Unregistered/unowned Unit operation rejection without touching service remains."
+      ],
+      "resolved_previous_dimensions": [
+        "Old Host inspection Task command definition and Execution command_snapshot are absent. Existing Unit/PID/SHA/config output retained as reported, but its physical oracle command source not independently verified; C re-run with definition saved before execution is required."
+      ],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:12854",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "X15",
+      "title": "PENDING→RUNNING→终态无需刷新；新日志分片、终态 stdout/stderr 完整且无旧 chunks 覆盖；断线恢复后的 Follow/搜索/流过滤/Copy。",
+      "expected": "PENDING→RUNNING→终态无需刷新；新日志分片、终态 stdout/stderr 完整且无旧 chunks 覆盖；断线恢复后的 Follow/搜索/流过滤/Copy。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "PENDING/RUNNING UI not sampled; stop first API poll SUCCESS, no invented PENDING.；Existing log/seq/retry/truncation/disconnect/Follow/Search/Copy gaps remain."
+      ],
+      "status": "PARTIAL",
+      "actual": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_description": "新保留的历史App留定义复验补足Host oracle来源：五操作UI/API/Agent及实际Unit/文件/进程状态和清理可追溯。",
+      "covered_dimensions": [
+        "本轮历史App/API采样包含deploy PENDING→SUCCESS；五操作同页Health/History反馈已验证。"
+      ],
+      "remaining_dimensions": [
+        "PENDING/RUNNING UI not sampled; stop first API poll SUCCESS, no invented PENDING.",
+        "Existing log/seq/retry/truncation/disconnect/Follow/Search/Copy gaps remain."
+      ],
+      "resolved_previous_dimensions": [],
+      "coverage_limits": [
+        "API采样不替代PENDING/RUNNING UI采样。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:11796",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json:29",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:79",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py:111",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py:12"
+      ],
+      "test_ids": [
+        "APP-HOST-RECHECK-20261005-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P09P11-18",
+      "title": "Task Detail单页Overview/Definition/Targets/Executions/Schedule分区（无Tab）",
+      "expected": "Task Detail单页Overview/Definition/Targets/Executions/Schedule分区（无Tab）",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "previous_remaining_dimensions": [
+        "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+      ],
+      "status": "PASS",
+      "actual": "C批P23-02在真实Task详情核验无tablist，Overview/Definition/Targets/Executions/Schedule五分区均可见；原canonical标题/expected全部满足。",
+      "covered_description": "C批P23-02在真实Task详情核验无tablist，Overview/Definition/Targets/Executions/Schedule五分区均可见；原canonical标题/expected全部满足。",
+      "covered_dimensions": [
+        "真实Task Detail无Tab并包含全部五分区。"
+      ],
+      "remaining_dimensions": [],
+      "resolved_previous_dimensions": [
+        "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+      ],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-results.json:168",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-run.json:1",
+        "web/e2e/tests/p23-detail-layout.spec.ts:56"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:4744",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-results.json:168",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-run.json:1",
+        "web/e2e/tests/p23-detail-layout.spec.ts:56"
+      ],
+      "test_ids": [
+        "P23-02"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P17P18-08",
+      "title": "Execution Detail单页元数据与Logs分区（无Tab）",
+      "expected": "Execution Detail单页元数据与Logs分区（无Tab）",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "previous_remaining_dimensions": [
+        "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+      ],
+      "status": "PARTIAL",
+      "actual": "C批P23-03真实Execution详情无tablist且Logs区、Wrap/Copy按钮可见；未断言单页元数据分区。",
+      "covered_description": "C批P23-03真实Execution详情无tablist且Logs区、Wrap/Copy按钮可见；未断言单页元数据分区。",
+      "covered_dimensions": [
+        "无Tab、Logs区可见。"
+      ],
+      "remaining_dimensions": [
+        "Execution详情单页元数据分区及其与Logs共同展示仍须独立核验。"
+      ],
+      "resolved_previous_dimensions": [],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-results.json:202",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-run.json:1",
+        "web/e2e/tests/p23-detail-layout.spec.ts:73"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:6915",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-results.json:202",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-run.json:1",
+        "web/e2e/tests/p23-detail-layout.spec.ts:73"
+      ],
+      "test_ids": [
+        "P23-03"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "E2E-01",
+      "title": "Script → Script Task → Node → Run → Logs → Audit → SUCCESS、输出和审计完整",
+      "expected": "Script → Script Task → Node → Run → Logs → Audit → SUCCESS、输出和审计完整；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "同一Script Task的浏览器Logs/Audit连续反馈和关联审计完整性尚缺，API解释器用例不能替代整条UI工作流。"
+      ],
+      "status": "PARTIAL",
+      "actual": "C批E2E-01真实UI创建Script→选择Script创建Task并选节点→UI确认Run→真实Agent SUCCESS stdout marker→Execution页面显示marker及Back入口。",
+      "covered_description": "C批E2E-01真实UI创建Script→选择Script创建Task并选节点→UI确认Run→真实Agent SUCCESS stdout marker→Execution页面显示marker及Back入口。",
+      "covered_dimensions": [
+        "同一真实UI Script Task的Node/Run/Agent输出/浏览器Logs连续链路。"
+      ],
+      "remaining_dimensions": [
+        "同一Script Task关联Audit事件、资源ID/执行ID及浏览器Audit连续反馈仍缺；完整审计不能由其他API脚本用例替代。"
+      ],
+      "resolved_previous_dimensions": [],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-results.json:83",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-run.json:1",
+        "web/e2e/tests/e2e-flows.spec.ts:5"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:8781",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-results.json:83",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-run.json:1",
+        "web/e2e/tests/e2e-flows.spec.ts:5"
+      ],
+      "test_ids": [
+        "E2E-01"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P04-06",
+      "title": "operator/viewer 点击受限操作的 UI 可见性、403 和状态不变。",
+      "expected": "operator/viewer 点击受限操作的 UI 可见性、403 和状态不变。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "previous_remaining_dimensions": [
+        "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+      ],
+      "status": "PARTIAL",
+      "actual": "Operator独占新enrollment节点的maintenance POST403，Operator/Viewer节点页Add Node不存在。",
+      "covered_description": "Operator独占新enrollment节点的maintenance POST403，Operator/Viewer节点页Add Node不存在。",
+      "covered_dimensions": [
+        "Operator对本轮独占节点status写入真实403。",
+        "两受限角色节点页无添加入口。"
+      ],
+      "remaining_dimensions": [
+        "Viewer节点状态写403和两角色实际控件操作反馈仍缺。",
+        "被拒节点修改前后状态未在此测试比对；不得声称无状态变化已证明。"
+      ],
+      "resolved_previous_dimensions": [],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:81",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:115",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:149",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:183",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:217",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:251",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1",
+        "web/e2e/tests/rbac.spec.ts:9",
+        "web/e2e/tests/rbac.spec.ts:14",
+        "web/e2e/tests/rbac.spec.ts:28",
+        "web/e2e/tests/rbac.spec.ts:88"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:2415",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:81",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:115",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:149",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:183",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:217",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:251",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1",
+        "web/e2e/tests/rbac.spec.ts:9",
+        "web/e2e/tests/rbac.spec.ts:14",
+        "web/e2e/tests/rbac.spec.ts:28",
+        "web/e2e/tests/rbac.spec.ts:88"
+      ],
+      "test_ids": [
+        "RBAC-07",
+        "RBAC-06",
+        "RBAC-02/03",
+        "RBAC-02",
+        "RBAC-03",
+        "RBAC-04",
+        "RBAC-08"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P04-07",
+      "title": "添加节点按钮权限与后端 admin-only 策略一致。",
+      "expected": "添加节点按钮权限与后端 admin-only 策略一致。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "previous_remaining_dimensions": [
+        "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+      ],
+      "status": "PARTIAL",
+      "actual": "Operator/Viewer节点页Add Node按钮不存在；Admin API可创建本轮独占enrollment节点。",
+      "covered_description": "Operator/Viewer节点页Add Node按钮不存在；Admin API可创建本轮独占enrollment节点。",
+      "covered_dimensions": [
+        "受限角色Add Node入口隐藏；Admin enrollment成功并精确删除。"
+      ],
+      "remaining_dimensions": [
+        "Admin浏览器Add Node允许路径及Viewer enrollment API拒绝尚未在此批次测试。"
+      ],
+      "resolved_previous_dimensions": [],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:81",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:115",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:149",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:183",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:217",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:251",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1",
+        "web/e2e/tests/rbac.spec.ts:9",
+        "web/e2e/tests/rbac.spec.ts:14",
+        "web/e2e/tests/rbac.spec.ts:28",
+        "web/e2e/tests/rbac.spec.ts:88"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:2428",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:81",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:115",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:149",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:183",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:217",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:251",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1",
+        "web/e2e/tests/rbac.spec.ts:9",
+        "web/e2e/tests/rbac.spec.ts:14",
+        "web/e2e/tests/rbac.spec.ts:28",
+        "web/e2e/tests/rbac.spec.ts:88"
+      ],
+      "test_ids": [
+        "RBAC-07",
+        "RBAC-06",
+        "RBAC-02/03",
+        "RBAC-02",
+        "RBAC-03",
+        "RBAC-04",
+        "RBAC-08"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P21-08",
+      "title": "Operator/Viewer 读取、保存按钮显示策略和 API 403。",
+      "expected": "Operator/Viewer 读取、保存按钮显示策略和 API 403。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "previous_remaining_dimensions": [
+        "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+      ],
+      "status": "PARTIAL",
+      "actual": "Operator/Viewer打开Settings后Save按钮count0；该测试未直接断言Settings GET或PUT状态。",
+      "covered_description": "Operator/Viewer打开Settings后Save按钮count0；该测试未直接断言Settings GET或PUT状态。",
+      "covered_dimensions": [
+        "两受限角色Settings页面无Save按钮。"
+      ],
+      "remaining_dimensions": [
+        "两角色实际Settings读取响应、可读内容与保存API403仍未测试。"
+      ],
+      "resolved_previous_dimensions": [],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:81",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:115",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:149",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:183",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:217",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:251",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1",
+        "web/e2e/tests/rbac.spec.ts:9",
+        "web/e2e/tests/rbac.spec.ts:14",
+        "web/e2e/tests/rbac.spec.ts:28",
+        "web/e2e/tests/rbac.spec.ts:88"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:7837",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:81",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:115",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:149",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:183",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:217",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:251",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1",
+        "web/e2e/tests/rbac.spec.ts:9",
+        "web/e2e/tests/rbac.spec.ts:14",
+        "web/e2e/tests/rbac.spec.ts:28",
+        "web/e2e/tests/rbac.spec.ts:88"
+      ],
+      "test_ids": [
+        "RBAC-07",
+        "RBAC-06",
+        "RBAC-02/03",
+        "RBAC-02",
+        "RBAC-03",
+        "RBAC-04",
+        "RBAC-08"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "AUTH-MANAGEMENT",
+      "title": "受保护管理API无凭据/非法过期会话401、越权403，具体端点实际状态一致",
+      "expected": "受保护管理API无凭据/非法过期会话401、越权403，具体端点实际状态一致",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "previous_remaining_dimensions": [
+        "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+      ],
+      "status": "PARTIAL",
+      "actual": "真实无会话GET /api/nodes401；Admin五管理GET成功；Operator/Viewer GET nodes/scripts成功、POST scripts403；Operator独占节点POST403。",
+      "covered_description": "真实无会话GET /api/nodes401；Admin五管理GET成功；Operator/Viewer GET nodes/scripts成功、POST scripts403；Operator独占节点POST403。",
+      "covered_dimensions": [
+        "所列真实管理端点401/角色403与允许读取。"
+      ],
+      "remaining_dimensions": [
+        "其余管理端点、非法/过期会话、错误响应结构及状态一致性仍须逐端点验证；不能泛化所有受保护API。"
+      ],
+      "resolved_previous_dimensions": [],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:81",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:115",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:149",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:183",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:217",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:251",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1",
+        "web/e2e/tests/rbac.spec.ts:9",
+        "web/e2e/tests/rbac.spec.ts:14",
+        "web/e2e/tests/rbac.spec.ts:28",
+        "web/e2e/tests/rbac.spec.ts:88"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:14174",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:81",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:115",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:149",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:183",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:217",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:251",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1",
+        "web/e2e/tests/rbac.spec.ts:9",
+        "web/e2e/tests/rbac.spec.ts:14",
+        "web/e2e/tests/rbac.spec.ts:28",
+        "web/e2e/tests/rbac.spec.ts:88"
+      ],
+      "test_ids": [
+        "RBAC-07",
+        "RBAC-06",
+        "RBAC-02/03",
+        "RBAC-02",
+        "RBAC-03",
+        "RBAC-04",
+        "RBAC-08"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "AUTH-USERS",
+      "title": "Users GET/写仅administrator，operator/viewer均403",
+      "expected": "Users GET/写仅administrator，operator/viewer均403",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "previous_remaining_dimensions": [
+        "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+      ],
+      "status": "PARTIAL",
+      "actual": "Admin GET /api/users成功；CR没有Operator/Viewer Users GET或写请求。",
+      "covered_description": "Admin GET /api/users成功；CR没有Operator/Viewer Users GET或写请求。",
+      "covered_dimensions": [
+        "Admin实际Users读取允许。"
+      ],
+      "remaining_dimensions": [
+        "Operator/Viewer Users GET/写均403及Admin写入完整允许路径未由CR测试；既有独立User证据保留原适用维度。"
+      ],
+      "resolved_previous_dimensions": [],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:81",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:115",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:149",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:183",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:217",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:251",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1",
+        "web/e2e/tests/rbac.spec.ts:9",
+        "web/e2e/tests/rbac.spec.ts:14",
+        "web/e2e/tests/rbac.spec.ts:28",
+        "web/e2e/tests/rbac.spec.ts:88"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:14187",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:81",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:115",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:149",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:183",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:217",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:251",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1",
+        "web/e2e/tests/rbac.spec.ts:9",
+        "web/e2e/tests/rbac.spec.ts:14",
+        "web/e2e/tests/rbac.spec.ts:28",
+        "web/e2e/tests/rbac.spec.ts:88"
+      ],
+      "test_ids": [
+        "RBAC-07",
+        "RBAC-06",
+        "RBAC-02/03",
+        "RBAC-02",
+        "RBAC-03",
+        "RBAC-04",
+        "RBAC-08"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "FL-15",
+      "title": "Admin Role Change → New Login → 新会话权限生效，旧会话行为明确",
+      "expected": "Admin Role Change → New Login → 新会话权限生效，旧会话行为明确；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Actual allowed/forbidden protected operations for each fresh Administrator/Operator/Viewer session remain; me role does not replace those operations.；Exact convergence duration is not measured in self-demotion record."
+      ],
+      "status": "PARTIAL",
+      "actual": "CR以独立Operator/Viewer新会话实际验证所列读取和禁止写入；Admin真实GET允许。",
+      "covered_description": "CR以独立Operator/Viewer新会话实际验证所列读取和禁止写入；Admin真实GET允许。",
+      "covered_dimensions": [
+        "CR独立账号新会话实际所列权限。"
+      ],
+      "remaining_dimensions": [
+        "Actual allowed/forbidden protected operations for each fresh Administrator/Operator/Viewer session remain; me role does not replace those operations.；Exact convergence duration is not measured in self-demotion record.",
+        "CR使用两个独立fixture账户，不能替代先前同一User Lifecycle角色改变后的三新会话；Admin可写操作和Operator实际Run仍缺。"
+      ],
+      "resolved_previous_dimensions": [],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:81",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:115",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:149",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:183",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:217",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:251",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1",
+        "web/e2e/tests/rbac.spec.ts:9",
+        "web/e2e/tests/rbac.spec.ts:14",
+        "web/e2e/tests/rbac.spec.ts:28",
+        "web/e2e/tests/rbac.spec.ts:88"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:8707",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:81",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:115",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:149",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:183",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:217",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:251",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1",
+        "web/e2e/tests/rbac.spec.ts:9",
+        "web/e2e/tests/rbac.spec.ts:14",
+        "web/e2e/tests/rbac.spec.ts:28",
+        "web/e2e/tests/rbac.spec.ts:88"
+      ],
+      "test_ids": [
+        "RBAC-07",
+        "RBAC-06",
+        "RBAC-02/03",
+        "RBAC-02",
+        "RBAC-03",
+        "RBAC-04",
+        "RBAC-08"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "E2E-15",
+      "title": "User Lifecycle → 创建、登录、改角色、新会话权限正确",
+      "expected": "User Lifecycle → 创建、登录、改角色、新会话权限正确；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Three fresh role-session actual allowed/forbidden protected operations remain as Root explicitly required."
+      ],
+      "status": "PARTIAL",
+      "actual": "CR补充两个独立角色账户的真实读取/拒绝写；无法关闭先前同一生命周期账号三角色新会话行为缺口。",
+      "covered_description": "CR补充两个独立角色账户的真实读取/拒绝写；无法关闭先前同一生命周期账号三角色新会话行为缺口。",
+      "covered_dimensions": [
+        "补充CR独立角色真实读取/403。"
+      ],
+      "remaining_dimensions": [
+        "Three fresh role-session actual allowed/forbidden protected operations remain as Root explicitly required.",
+        "CR角色账户与先前生命周期fixture不同；本批不证明同一用户role修改后各新会话的全部允许/禁止操作。"
+      ],
+      "resolved_previous_dimensions": [],
+      "coverage_limits": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:81",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:115",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:149",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:183",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:217",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:251",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1",
+        "web/e2e/tests/rbac.spec.ts:9",
+        "web/e2e/tests/rbac.spec.ts:14",
+        "web/e2e/tests/rbac.spec.ts:28",
+        "web/e2e/tests/rbac.spec.ts:88"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:9317",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:81",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:115",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:149",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:183",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:217",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:251",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-run.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1",
+        "web/e2e/tests/rbac.spec.ts:9",
+        "web/e2e/tests/rbac.spec.ts:14",
+        "web/e2e/tests/rbac.spec.ts:28",
+        "web/e2e/tests/rbac.spec.ts:88"
+      ],
+      "test_ids": [
+        "RBAC-07",
+        "RBAC-06",
+        "RBAC-02/03",
+        "RBAC-02",
+        "RBAC-03",
+        "RBAC-04",
+        "RBAC-08"
+      ],
+      "mapping_origin": "历史证据补记",
+      "runtime_evidence_date": "2026-10-04/05",
+      "new_runtime_execution_in_this_review": false,
+      "review_recommendation_only": true
+    }
+  ],
+  "defect_recommendations": [],
+  "noncanonical_supplementary_observations": [
+    {
+      "test_id": "P23-01",
+      "actual": "1920×1080节点/Task/Execution列表与详情main宽度相同；3840×2160任务列表main=2400px。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-results.json:134",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-run.json:1",
+        "web/e2e/tests/p23-detail-layout.spec.ts:34"
+      ],
+      "limits": [
+        "不增加canonical P23 case；未按G04-06完整1366×768/1440×900/移动宽度检查溢出与遮挡。"
+      ]
+    },
+    {
+      "test_id": "P23-02:geometry",
+      "actual": "1920×1080 Task dl最大grid列数>=2。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-results.json:168",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-run.json:1",
+        "web/e2e/tests/p23-detail-layout.spec.ts:56"
+      ],
+      "limits": [
+        "多列为额外几何维度，P09P11-18 PASS依据五分区与无Tab。"
+      ]
+    },
+    {
+      "test_id": "P23-03:controls",
+      "actual": "Wrap/Copy Logs按钮可见。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-results.json:202",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-run.json:1",
+        "web/e2e/tests/p23-detail-layout.spec.ts:73"
+      ],
+      "limits": [
+        "按钮存在不等于Wrap/Copy实际操作或剪贴板闭环通过。"
+      ]
+    },
+    {
+      "test_id": "P23-04",
+      "actual": "1280×640 sidebar菜单>=11、lastBottom<=footerTop、无内部滚动、group labels0；1366×768 reload后labels>0。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-results.json:236",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-run.json:1",
+        "web/e2e/tests/p23-detail-layout.spec.ts:85"
+      ],
+      "limits": [
+        "未逐名核验canonical12导航项，未验证Sidebar折叠/移动开关或页面整体无溢出。"
+      ]
+    }
+  ],
+  "cleanup_review": {
+    "app": "App/Task/v2 GET404、Unit not-found/PID0/文件移除，App/Task历史与共享V1保留。",
+    "rbac": "创建账户无删除API，精确账户最终Viewer、已知验证会话logout/me401；detail Task delete200/GET404。",
+    "evidence": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json:399",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-cleanup.json:1"
+    ]
+  },
+  "merge_rules": [
+    "保留既有independently accepted covered_dimensions和证据，只移除本review resolved_previous_dimensions明确补足的旧缺口。",
+    "PASS四项逐case标题/expected核实；App部署失败恢复、内部Journal/缓存时序、TLS/HostIntegration与全角色授权不由正常native循环泛化。",
+    "历史结果不能表述为2026-10-08新增运行；中央统计应由Root基于实际合并重新计算，504/22分母不变。",
+    "P23额外几何/控件抽样保留在noncanonical，不建立不存在的canonical P23编号。"
+  ],
+  "acceptance_limits": [
+    "没有运行新具体用例、远端命令或改变外部状态。",
+    "App原页指点击到反馈采集之间无reload/open，Host核验后正常导航回App；不声称全五操作始终未离开同一页面。",
+    "复用已有授权V1 Artifact不增UI upload覆盖；API seed V2也不算UI upload。",
+    "Host Agent配置NodeName/OS hostname允许不同，physical VM映射仍不独立证明。",
+    "不同RBAC fixture不能替代同一User Lifecycle的全部角色新会话操作。"
+  ],
+  "source_sha256": {
+    "web/e2e/tests/e2e-flows.spec.ts": "cd1c453a7d0bed6d88ef0a513b022797a6d877a4f12cc0a4a9d1c6877155bcc3",
+    "web/e2e/tests/p23-detail-layout.spec.ts": "bdee8f1121ad0c665ea3b3808cbb7d43cd5dd3e787056630ba9e833b8e2539f2",
+    "web/e2e/tests/rbac.spec.ts": "ffe9d65a30825bddd45c4f3b62777cb2fec3c6e01077867d9e8033e2982e46af",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck.py": "a843e8a49db1b7eb5407d70f21d8bd2b1e7bd107c8a09f561976b6ce18cd3824",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-recheck-continue.py": "ad2363ce9d2f9b6090aeb00372a165d412936805bbd0061585993c57d69bfd6a"
+  },
+  "run_hashes": {
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-c-01-results.json": "0a4e122b16b5a06aeca116288a8e80a16a083ea78406e5ba89da979b4e06cf86",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-cr-01-results.json": "f0470bb5b221abd7c7c69b031d64da4841a5195198ddfcc4f4bde4f95fe0d60d",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-recheck-20261005-01.json": "5dd62da0c578e248406742727f375bc47051e8ad50c1b769dfa2b05a502a5df6",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261004/app-host-inspector-definition-20261005-01.json": "8006fdd9968e50aeda4aa07f4b6cb822fe7b6d47bb68d4da6bddd7ffe21a2ce4"
+  },
+  "no_global_count_update": true,
+  "root_merged_at": "2026-10-08T07:13:28.281984+00:00",
+  "artifact_corrections": [
+    {
+      "reason": "生成时App evidence共享list在P14P15-12追加CR来源后污染其他App条目，现各条目独立且与直接source_refs严格一致。",
+      "case_ids": [
+        "P14P15-11",
+        "P14P15-07",
+        "P14P15-13",
+        "P14P15-14",
+        "P14P15-15",
+        "P14P15-16",
+        "FL-10",
+        "E2E-11",
+        "E2E-12",
+        "FL-11",
+        "SYS-45",
+        "SYS-46",
+        "SYS-47",
+        "SYS-48",
+        "SYS-49",
+        "SYS-53",
+        "INV-12",
+        "X15"
+      ],
+      "runtime_execution": false
+    }
+  ],
+  "root_state_changes": [
+    {
+      "case_id": "P14P15-11",
+      "from": "PARTIAL",
+      "to": "PASS"
+    },
+    {
+      "case_id": "E2E-11",
+      "from": "PARTIAL",
+      "to": "PASS"
+    },
+    {
+      "case_id": "SYS-46",
+      "from": "PARTIAL",
+      "to": "PASS"
+    },
+    {
+      "case_id": "P09P11-18",
+      "from": "NOT_RUN",
+      "to": "PASS"
+    },
+    {
+      "case_id": "P17P18-08",
+      "from": "NOT_RUN",
+      "to": "PARTIAL"
+    },
+    {
+      "case_id": "P04-06",
+      "from": "NOT_RUN",
+      "to": "PARTIAL"
+    },
+    {
+      "case_id": "P04-07",
+      "from": "NOT_RUN",
+      "to": "PARTIAL"
+    },
+    {
+      "case_id": "P21-08",
+      "from": "NOT_RUN",
+      "to": "PARTIAL"
+    },
+    {
+      "case_id": "AUTH-MANAGEMENT",
+      "from": "NOT_RUN",
+      "to": "PARTIAL"
+    },
+    {
+      "case_id": "AUTH-USERS",
+      "from": "NOT_RUN",
+      "to": "PARTIAL"
+    }
+  ]
+}

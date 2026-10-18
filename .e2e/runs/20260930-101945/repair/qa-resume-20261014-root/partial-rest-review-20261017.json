@@ -1,0 +1,62 @@
+{
+  "review_id": "ROOT-PARTIAL-REST-REVIEW-20261017",
+  "reviewed_at": "2026-10-17T14:51:31.853050+00:00",
+  "reviewer": "main-agent(root)",
+  "status": "INTEGRATED",
+  "dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-partial-rest",
+  "authorization_basis": "用户：全部修复 + 自动推进",
+  "verdicts": [
+    {
+      "case_id": "G04-03",
+      "canonical_after": "PASS",
+      "reason": "重名归一化在新构建已生效：API 400 `group name already exists`（含大小写/空白变体）、空名 400、PUT 不存在 404 `group not found`，15 项断言全部无 SQLite 原文；UI 显示本地化文案「分组名称已存在：…」、恰 1 次 POST；跨页源码扫描无 SQLite 文案路径"
+    },
+    {
+      "case_id": "P04-07",
+      "canonical_after": "PASS",
+      "reason": "隔离实例上 operator/viewer `POST /api/nodes/enrollment` → 403 permission denied（GET 同端点亦 403）；admin 200 正向对照；实例已销毁核验（进程 0/端口不监听/目录不存在）"
+    },
+    {
+      "case_id": "X08",
+      "canonical_after": "PASS",
+      "reason": "剩余维度全部实测：Stop/Run 取消 0 写、确认恰 1 请求、终态 CANCELED、审计恰 1 条；慢响应（注入 2.5s + 原生双击）Run/Stop 均恰 1 请求；吊销凭证取消 0 写、确认 1 请求→disabled；批量升级取消 0 写（受保护节点 cancel-only）；失败重试 400→重试→修正成功（POST 计数 3）"
+    },
+    {
+      "case_id": "SYS-40",
+      "canonical_after": "PARTIAL",
+      "reason": "per-attempt 审计取证确证：真实 retry=2 产生 3 次 attempt（双流 marker×3 + UI 同）、终态 FAILED(exit=7)、单 Execution；审计确实只有 1 条 execute 行（按 execution id 0 行、per-attempt 0 行）。建议产品裁决：接受为设计+文档化（审计粒度=逻辑触发，attempt 细节在日志）→ 裁决后按 C3 口径升 PASS；若要求 attempt 级审计则立项。间隔观测：3 次 attempt <50ms、无退避。"
+    }
+  ],
+  "cleanup": "7 个 owned fixture 逐条删除 + live GET404；残留扫描 0；不可删历史 2 条执行；未碰 8080/未重启 Hub/未改源码",
+  "counts_before": {
+    "PASS": 484,
+    "FAIL": 4,
+    "PARTIAL": 6,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "counts_after": {
+    "PASS": 487,
+    "FAIL": 4,
+    "PARTIAL": 3,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "status_changes": [
+    [
+      "G04-03",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P04-07",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "X08",
+      "PARTIAL",
+      "PASS"
+    ]
+  ]
+}

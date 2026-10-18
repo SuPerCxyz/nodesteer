@@ -1,0 +1,34 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch05-users",
+  "owner": "web",
+  "phase": "COMPLETE_PENDING_ROOT_REVIEW",
+  "updated_at_utc": "2026-10-14T09:35:00Z",
+  "authority": "http://192.168.100.209:18081 (isolated disposable instance)",
+  "nonce": "5ece52a9",
+  "steps": [
+    {"name": "recon: host/binary/port/data_dir check + repair config template read-only", "status": "done"},
+    {"name": "create isolated instance (data_dir/config/launch) + verify UI==repair (binary SHA + index.html SHA)", "status": "done", "result": "PASS"},
+    {"name": "TABLE-USERS-PAGE: create 13 users via UI (14 total) + first/last/prev/next + pageSize 10<->20 persistence + last-page data change", "status": "done", "result": "PASS"},
+    {"name": "P20-07: operator/viewer login + /users admin-only restriction + no user management controls + API 403 matrix", "status": "done", "result": "PASS"},
+    {"name": "P19-05: audit immutability (UI read-only, no write API, records unchanged) + method-200 finding", "status": "done", "result": "PASS (1 low deviation)"},
+    {"name": "P19-02: 3-role login + admin UI CRUD for Script/Task/Schedule/Artifact/Application + operator/viewer 403 matrix + UI control absence + no side effects", "status": "done", "result": "PASS"},
+    {"name": "teardown isolated instance + verify port/dir/process gone, repair untouched", "status": "done", "result": "PASS"},
+    {"name": "credential leak scan of evidence dir", "status": "done", "result": "CLEAN"}
+  ],
+  "case_status": {
+    "TABLE-USERS-PAGE": {"before": "PARTIAL", "proposed_after": "PASS", "confidence": "high"},
+    "P20-07": {"before": "NOT_RUN", "proposed_after": "PASS", "confidence": "high"},
+    "P19-05": {"before": "NOT_RUN", "proposed_after": "PASS", "confidence": "high", "note": "DEF-AUDIT-METHOD-200 low deviation"},
+    "P19-02": {"before": "NOT_RUN", "proposed_after": "PASS", "confidence": "medium-high"}
+  },
+  "outputs": ["results.json", "progress.json", "instance-ledger.json", "evidence/"],
+  "unverified_or_limitations": [
+    "P19-02 task/schedule 'run' produced no real execution: the isolated instance has no enrolled agents, so run ends with 'no target nodes' (operator) / 403 (viewer).",
+    "Artifact modify is N/A (no update endpoint).",
+    "Opens/answers recorded; the isolated instance is destroyed so no re-verification is possible without recreating it."
+  ],
+  "findings": [
+    {"id": "DEF-AUDIT-METHOD-200", "severity": "low", "detail": "handleAudit has no method switch; POST/PUT/DELETE /api/audit return 200 with the audit list instead of 405. No mutation occurs.", "case": "P19-05"},
+    {"id": "OBS-NAV-ROLE-UNFILTERED", "severity": "info", "detail": "Sidebar renders the 用户 link for operator/viewer even though /users is admin-only; the page body correctly shows the admin-only restriction.", "case": "P20-07"}
+  ]
+}

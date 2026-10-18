@@ -1,0 +1,58 @@
+{
+  "review_id": "ROOT-G8G9-REVIEW-20261017",
+  "reviewed_at": "2026-10-17T04:40:42.836350+00:00",
+  "reviewer": "main-agent(root)",
+  "status": "INTEGRATED",
+  "dirs": [
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261017-g8",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261017-g9"
+  ],
+  "authorization_basis": "授权清单 G8+G9（隔离可销毁实例）",
+  "verdicts": [
+    {
+      "case_id": "X16",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "FAIL",
+      "confidence": "high（矩阵证据齐全）",
+      "reason": "7 维中 6 维 PASS（默认值摘要/输入/Revision 历史/Audit/错误信息/凭据不入证据），但「Execution/运行日志」的拆片变体 FAIL → 并集可重组完整 secret"
+    },
+    {
+      "case_id": "X14",
+      "canonical_before": "PASS",
+      "canonical_after": "FAIL",
+      "confidence": "high",
+      "reason": "跨页勾选/筛选/pageSize/刷新/末页删除/搜索等维度通过；但「删除被选行之前的行 → 勾选按位置漂移 → 批量请求命中错误节点」经 3 条独立探针复现，根因为 data-table 未设 getRowId"
+    }
+  ],
+  "new_defects": [
+    "E2E-20261017-SECRET-SPLIT-VALUE-RECONSTRUCT",
+    "WEB-NODE-SELECTION-DRIFT-20261017"
+  ],
+  "instance_destroyed": "ISOLATED_INSTANCE_DESTROYED_AND_VERIFIED：进程 0、18086 不监听、data_dir/child_root/config/log 不存在、etc/varlib/varlog/tmp 残留 0、无 systemd 单元；旁证 repair(168213) 与 primary(1251) PID 未变",
+  "counts_before": {
+    "PASS": 471,
+    "FAIL": 6,
+    "PARTIAL": 17,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "counts_after": {
+    "PASS": 470,
+    "FAIL": 8,
+    "PARTIAL": 16,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "status_changes": [
+    [
+      "X14",
+      "PASS",
+      "FAIL"
+    ],
+    [
+      "X16",
+      "PARTIAL",
+      "FAIL"
+    ]
+  ]
+}

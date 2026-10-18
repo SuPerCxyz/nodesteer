@@ -1,0 +1,106 @@
+{
+  "run": "qa-resume-20261008-crosspage-e265cfde",
+  "authority": "http://192.168.100.209:18080",
+  "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+  "cases": {
+    "task_schedule_link": {
+      "status": "PASS",
+      "task_id": "81cb2b40-5c84-4183-9d29-9d4238e9457e",
+      "schedule_id": "3f183202-3d4b-4434-af70-f2c7f13d64eb",
+      "exact_link_visible": true
+    },
+    "schedule_detail_linked_task": {
+      "status": "PASS",
+      "task_id": "81cb2b40-5c84-4183-9d29-9d4238e9457e",
+      "schedule_id": "3f183202-3d4b-4434-af70-f2c7f13d64eb",
+      "task_name_visible": true
+    }
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/nodes",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/tasks",
+      "status": 200,
+      "id": "81cb2b40-5c84-4183-9d29-9d4238e9457e"
+    },
+    {
+      "method": "GET",
+      "path": "/tasks/81cb2b40-5c84-4183-9d29-9d4238e9457e",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/schedules",
+      "status": 200,
+      "id": "3f183202-3d4b-4434-af70-f2c7f13d64eb"
+    },
+    {
+      "method": "GET",
+      "path": "/schedules/3f183202-3d4b-4434-af70-f2c7f13d64eb",
+      "status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/schedules/3f183202-3d4b-4434-af70-f2c7f13d64eb",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/schedules/3f183202-3d4b-4434-af70-f2c7f13d64eb",
+      "status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/schedules/3f183202-3d4b-4434-af70-f2c7f13d64eb",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/schedules/3f183202-3d4b-4434-af70-f2c7f13d64eb",
+      "status": 200
+    },
+    {
+      "method": "DELETE",
+      "path": "/schedules/3f183202-3d4b-4434-af70-f2c7f13d64eb",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/schedules/3f183202-3d4b-4434-af70-f2c7f13d64eb",
+      "status": 404
+    },
+    {
+      "method": "DELETE",
+      "path": "/tasks/81cb2b40-5c84-4183-9d29-9d4238e9457e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/tasks/81cb2b40-5c84-4183-9d29-9d4238e9457e",
+      "status": 404
+    }
+  ],
+  "cleanup": [
+    {
+      "kind": "schedule",
+      "id": "3f183202-3d4b-4434-af70-f2c7f13d64eb",
+      "delete_http": 200,
+      "verify_get_http": 404,
+      "clean": true
+    },
+    {
+      "kind": "task",
+      "id": "81cb2b40-5c84-4183-9d29-9d4238e9457e",
+      "delete_http": 200,
+      "verify_get_http": 404,
+      "clean": true
+    }
+  ],
+  "status": "FAIL_OR_INCOMPLETE",
+  "error": "Assertion failed: Schedule edit form has one enabled checkbox"
+}

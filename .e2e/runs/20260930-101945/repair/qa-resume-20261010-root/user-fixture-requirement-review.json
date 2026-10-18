@@ -1,0 +1,42 @@
+{
+  "reviewed_at": "2026-10-10T11:51:12.945394+00:00",
+  "status": "USER_CONFIRMATION_REQUIRED_BEFORE_PERSISTENT_NEW_USER",
+  "understanding": "补齐现有管理员之外Operator/Viewer越权403、同一账号角色变化与新旧session实际权限，不改原账号",
+  "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/user-fixture-investigation.json",
+  "scope": {
+    "authority": "http://192.168.100.209:18080",
+    "new_user_max": 1,
+    "username": "qa-auth-role-cycle-20261010-01",
+    "role_sequence": [
+      "viewer",
+      "operator",
+      "administrator",
+      "viewer"
+    ],
+    "final_role": "viewer",
+    "collision": "FreshGET detects existing same username -> do not overwrite/reset",
+    "sessions": "Dedicated only; final logout all acquired test sessions and same-token401",
+    "credential_storage": "Unique /tmp directory0700 and file0600; random strong password; never repository/output/memory",
+    "business_objects": "No additional valid Task/Run/Deploy/Transfer writes in this account-only authorization"
+  },
+  "risk": "No User DELETE API;1Viewer User row and audit retained in repair DB. Original administrator, all existing users and primary8080 untouched.",
+  "excluded": [
+    "reset old User passwords/roles",
+    "primary management writes",
+    "DB direct delete",
+    "Git/delivery"
+  ],
+  "mapping": {
+    "executor": "existing e2e_recovery / collaboration / gpt-6-luna /slot1",
+    "write_scope": "exact one newrepairUser + own evidence/privatecredentialfile",
+    "root": "scope/budget/ownership/result403/session/role audit review"
+  },
+  "acceptance": [
+    "Three roles /me matches freshly set role",
+    "Operator/Viewer Users access/writes403 without logout",
+    "Viewer protected management mutation403 with no business object",
+    "Sameaccount old/new dedicated session permissions observed after role change",
+    "Final Viewer readback and all test token401"
+  ],
+  "confirmation_gate": "AGENTS.md§8 持久化操作必须确认准确目标/影响和授权"
+}

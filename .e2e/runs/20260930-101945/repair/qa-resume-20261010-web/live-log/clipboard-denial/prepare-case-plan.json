@@ -1,0 +1,31 @@
+{
+  "batch_id": "web-20261010-live-log-clipboard-denial",
+  "retained_execution_id": "e3555a68-d70c-4c6a-9589-6ec2568fd669",
+  "new_tasks": 0,
+  "new_runs": 0,
+  "source_observations": {
+    "helper": "web/src/lib/clipboard.ts",
+    "caller": "web/src/features/executions/index.tsx:648-656",
+    "behavior": "secure Clipboard API writeText rejection falls through to execCommand copy; helper returns false when legacy command reports success, caller shows info/manual copy; helper throws when fallback fails, caller shows error; success toast only when async Clipboard API resolves."
+  },
+  "oracle_steps": [
+    "fresh isolated page; wait until old toast count is zero and stable, then install MutationObserver before denied copy click",
+    "observer stores UTC/performance time, feedback classification, text length/hash, and only allowlisted product copy feedback strings; no execution log body",
+    "grant clipboard-read/write in sole owned default context with exact localhost origin; verify Permissions API states",
+    "write and read back a fresh session-only random sentinel; retain only length/hash/equality",
+    "deny clipboard-read and clipboard-write via Browser.setPermission descriptors in the same default context/origin; verify both actual permission states",
+    "click real Copy logs button once; capture only newly observed toast and screenshot the toast element, not the log pane",
+    "regrant for same origin/context and read actual clipboard; compare only hash/length/equality against sentinel and displayed stdout DOM",
+    "finally Browser.resetPermissions on the sole default context, dedicated logout and old /me 401, clear network, close session, exact-stop guarded SSH/listener"
+  ],
+  "safety": {
+    "origin": "http://127.0.0.1:38181",
+    "target_execution_only": true,
+    "context_id_omitted_only_if_target_equals_default": true,
+    "exact_internal_blank_allowlist_only": true,
+    "no_mock_clipboard": true,
+    "no_execCommand_in_test_harness": true,
+    "no_task_or_run": true,
+    "no_raw_log_or_credentials": true
+  }
+}

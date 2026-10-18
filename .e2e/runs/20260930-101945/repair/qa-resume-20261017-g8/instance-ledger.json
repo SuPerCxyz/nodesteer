@@ -1,0 +1,67 @@
+{
+ "batch_id": "qa-resume-20261017-g8（+G9 共享实例）",
+ "instance_id": "nodesteer-qa-g89202610178970c813",
+ "nonce": "g89202610178970c813",
+ "shared_by": [
+  "qa-resume-20261017-g8",
+  "qa-resume-20261017-g9"
+ ],
+ "canonical_ledger": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-g9/instance-ledger.json",
+ "purpose": "G8 授权要求遮蔽矩阵只在隔离实例构造敏感标记值；G9 授权要求多页数据集只在隔离实例构造；两批共用同一可整体销毁实例（端口 18086），用完整体销毁并核对零残留。",
+ "authorization_basis": "authorization-checklist-20261016.md G8 + G9",
+ "host": "192.168.100.209",
+ "port": 18086,
+ "tunnel_local_port": 38286,
+ "binary": {
+  "path": "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard",
+  "sha256_expected": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+  "note": "与当前 repair :18080 同一 CR-1 构建；index.html sha256 与 repair 相同（612c23ba…）"
+ },
+ "owned_child_agent_binary": {
+  "local_source": "/tmp/opencode/nodesteer-build-20261016-cr1/nodesteer-agent-static",
+  "sha256_expected": "b15f6df540a63a8eb530ec837c57d4628ff7925822153a02d624f021a525ac4f"
+ },
+ "config": {
+  "path": "/etc/nodesteer/qa-g89202610178970c813.yaml",
+  "mode_actual": "640 root:nodesteer"
+ },
+ "data_dir": {
+  "path": "/var/lib/nodesteer-qa-g89202610178970c813",
+  "mode_actual": "750 nodesteer:nodesteer"
+ },
+ "log": "/var/log/nodesteer-qa-g89202610178970c813.log",
+ "child_root": "/var/lib/nodesteer-qa-g89202610178970c813-child",
+ "launch": {
+  "method": "transient: runuser -u nodesteer -- setsid nohup <binary> --config <cfg>",
+  "systemd": "none"
+ },
+ "created_at_utc": "2026-10-17T03:58:48Z",
+ "pids_at_start": [
+  "212052 runuser -u nodesteer -- setsid nohup …/nodesteer-hub-static-login-guard --config /etc/nodesteer/qa-g89202610178970c813.yaml",
+  "212054 …/nodesteer-hub-static-login-guard --config /etc/nodesteer/qa-g89202610178970c813.yaml",
+  "212287 /var/lib/nodesteer-qa-g89202610178970c813-child/bin/nodesteer-agent --config …/child.yaml"
+ ],
+ "healthz_ok": true,
+ "sha256_verified": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+ "g8_usage": {
+  "scope": "遮蔽矩阵（默认值/输入/Revision/Execution/Audit/错误）+ 凭据泄漏面",
+  "markers": "非敏感 QAMARK-* 标记值，仅在实例内构造，随实例销毁",
+  "objects_touched": "1 个自有 Script、9 个自有 Task、1 个 owned child 节点；未建持久化用户（实例内仅 admin）",
+  "real_credentials_in_evidence": "无（证据目录扫描 0 命中）"
+ },
+ "data_created_during_batch": {
+  "users": 1,
+  "nodes_final": 28,
+  "tasks": 9,
+  "scripts": 1,
+  "executions": 11,
+  "audit_rows": 121,
+  "note": "全部对象仅在隔离实例 data_dir 内，随实例整体销毁；repair :18080 无任何持久写入。"
+ },
+ "teardown": {
+  "oracle": "final-cleanup-oracle.json",
+  "verified_at_utc": "2026-10-17T04:47:00Z",
+  "result": "ISOLATED_INSTANCE_DESTROYED_AND_VERIFIED（进程 0 / 端口 0 / data_dir·child_root·config·log 不存在 / repair :18080 与 primary :8080 PID 未变）"
+ },
+ "runners_location": "本批执行脚本位于 qa-resume-20261017-g9/runners/g8_*.py（G8/G9 共用同一套 harness：g89_common.py / g89_ui.py）"
+}

@@ -1,0 +1,105 @@
+{
+  "batch_id": "qa-resume-20261010-web-batch09-route-errors-execution-table",
+  "created_at_utc": "2026-10-10T14:17:37.694897+00:00",
+  "status": "APPROVED_BY_ROOT_CONTINUOUS_READONLY_SCOPE",
+  "executor": "gpt-6-luna",
+  "authorization": "Root authorizes continuous read-only ROUTE/TABLE cases with the same model/session/fixture boundary; this plan stays within that scope.",
+  "scope": "No new resources, server writes, Task/Run/User/Group/Node/Agent/Script create/edit/delete, execution, upload, token change or shared origin. Reuse existing dedicated browser/profile and exact tunnel.",
+  "cases": [
+    {
+      "id": "ROUTE-05",
+      "branch": "missing Agent detail ID then recovery",
+      "route": "/agents/:fresh-uuid -> /agents/:actual-id",
+      "actions": "API GET the fresh UUID first and require 404; direct-open UI route, observe GET404/NotFound; recover by actual href observed in /agents list and verify GET200.",
+      "oracles": "Only URL pattern/status/alert boolean/message class; actual row href supplies recovery id; no agent controls activated."
+    },
+    {
+      "id": "ROUTE-06",
+      "branch": "missing Node detail ID then recovery",
+      "route": "/nodes/:fresh-uuid -> /nodes/:actual-id",
+      "actions": "API GET fresh UUID first and require 404; direct-open UI route and verify error feedback; recover to exact existing detail href ID observed from current Nodes row.",
+      "oracles": "GET statuses, detail header match boolean, error state and recovery UI; no Node writes."
+    },
+    {
+      "id": "ROUTE-09",
+      "branch": "no live Group fixture; missing detail behavior only",
+      "route": "/groups/:fresh-uuid -> /groups",
+      "actions": "Confirm actual GET /api/groups count0; use a fresh UUID for authenticated GET404 then direct UI route; return to real empty /groups list.",
+      "oracles": "Route error/NotFound, GET404, list recovery. Mark PARTIAL because there is no live owned Group detail ID to exercise."
+    },
+    {
+      "id": "ROUTE-24",
+      "route": "/applications/new",
+      "actions": "Direct-open, refresh, back/forward; inspect only control counts/default/required state; never save.",
+      "oracles": "Actual GET statuses, ready/error feedback, zero write requests."
+    },
+    {
+      "id": "ROUTE-25",
+      "route": "/applications/new?artifact_id=:actual-artifact-id",
+      "actions": "Discover one live artifact ID from an actual UI link; direct-open with that exact ID, refresh/back/forward; no save. If no safe live ID, mark PARTIAL.",
+      "oracles": "Artifact preselection state/count boolean, GET status, route query presence; no artifact body or app data saved."
+    },
+    {
+      "id": "ROUTE-26",
+      "branch": "existing Application detail + missing-ID error/recovery",
+      "route": "/applications/:actual-id and /applications/:fresh-uuid",
+      "actions": "Open actual live row href and verify GET200; preflight a separate fresh UUID GET404, open the missing detail UI, then recover to the exact actual href.",
+      "oracles": "Detail ready/error state, GET statuses, ID match booleans, no app data values saved."
+    },
+    {
+      "id": "ROUTE-28",
+      "route": "/artifacts/new",
+      "actions": "Direct-open, refresh, back/forward; inspect form control counts only; do not create/upload.",
+      "oracles": "Actual GET status and form ready/validation state, zero POST/PUT/PATCH/DELETE."
+    },
+    {
+      "id": "ROUTE-30",
+      "branch": "missing Execution ID then recovery to retained owned Execution",
+      "route": "/executions/:fresh-uuid -> /executions/e3555a68-d70c-4c6a-9589-6ec2568fd669",
+      "actions": "Authenticated GET fresh UUID first and require 404; direct-open UI route and observe GET404/error UI; recover to retained owned Execution and verify status/log line count only.",
+      "oracles": "GET statuses, error feedback, restored exact owned route, no logs/command text saved."
+    },
+    {
+      "id": "TABLE-EXECUTIONS-COLUMNS",
+      "route": "/executions",
+      "actions": "Hide a safe column through actual View menu; refresh and confirm absent; restore visibility and refresh.",
+      "oracles": "Header/cell presence booleans, 565-row API count, local preference only; zero server writes."
+    },
+    {
+      "id": "TABLE-EXECUTIONS-PAGE",
+      "route": "/executions",
+      "actions": "Set actual pageSize=20, refresh, then use actual Next/Previous/Last/First controls and finally restore pageSize=10.",
+      "oracles": "GET page parameters/status/count, visible row counts, safe hashes of ordered execution IDs to prove page changes and restoration; never store task labels or outputs."
+    }
+  ],
+  "fixture_budget": {
+    "new_resources": 0,
+    "writes": 0,
+    "concurrent_resources": 0
+  },
+  "session": {
+    "name": "qawebsecure20261010-script-b05-38181",
+    "origin": "http://127.0.0.1:38181",
+    "repair_target": "192.168.100.209:18080",
+    "retain_two_owned_scripts": true
+  },
+  "data_handling": {
+    "audit/execution/application": "Only status/count/hash/booleans; no raw bodies, commands, logs, user or app values.",
+    "missing_ids": "Generate fresh local UUIDs only for safe GET404 checks; never POST them or create objects.",
+    "route_ids": "Any valid detail ID comes from an actual current list href or retained owned Execution; never guess or interchange route parameter IDs."
+  },
+  "source_refs": [
+    ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+    "web/src/routes/_authenticated/agents/$agentId.tsx",
+    "web/src/routes/_authenticated/nodes/$nodeId.tsx",
+    "web/src/routes/_authenticated/groups/$groupId.tsx",
+    "web/src/routes/_authenticated/applications/new.tsx",
+    "web/src/routes/_authenticated/applications/$applicationId.tsx",
+    "web/src/routes/_authenticated/artifacts/new.tsx",
+    "web/src/routes/_authenticated/executions/$executionId.tsx",
+    "web/src/components/data-table/view-options.tsx",
+    "web/src/components/data-table/pagination.tsx",
+    "web/src/lib/table-view.ts"
+  ],
+  "execution_started": false
+}

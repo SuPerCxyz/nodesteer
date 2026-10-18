@@ -1,0 +1,133 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch04",
+  "authority": "http://192.168.100.209:18080",
+  "authority_type": "repair",
+  "primary_8080_touched": false,
+  "nonce": "89fe789d",
+  "prefix": "qa-w1410b04-89fe789d",
+  "fixture_caps": {
+    "artifacts": 4,
+    "transfers": 4,
+    "applications": 1,
+    "scripts": 2,
+    "tasks": 2
+  },
+  "fixture_used": {
+    "artifacts": 0,
+    "transfers": 4,
+    "applications": 1,
+    "scripts": 0,
+    "tasks": 1
+  },
+  "created": [
+    {
+      "kind": "application",
+      "name": "qa-w1410b04-89fe789d-app-fl09",
+      "id": "862cf8d9-aef8-46c3-adc9-b5c14711bf5c",
+      "created_via": "UI /applications/new -> 名称+Unit -> native-3 checkbox -> 保存 (POST /api/applications 200 then POST /api/applications/{id}/assign 200)",
+      "used_for": "FL-09 assign write path (+ unassign write path)",
+      "deleted": true,
+      "deleted_via": "UI /applications row 操作 -> 删除 -> confirm dialog (DELETE /api/applications/{id} 200)",
+      "post_delete_verification": {
+        "GET /api/applications/862cf8d9-aef8-46c3-adc9-b5c14711bf5c": 404,
+        "evidence": "evidence/FL09-15-cleanup-get404.json"
+      }
+    },
+    {
+      "kind": "task",
+      "name": "qa-w1410b04-89fe789d-task-p11",
+      "id": "33332cdc-0311-465d-8516-4ae7cc64456b",
+      "created_via": "UI /tasks/new -> type 命令, command 'echo qa-w1410b04-89fe789d-p11-$(hostname)', target nodes native-1+native-3 -> 保存 (POST /api/tasks 200)",
+      "used_for": "P11-07 multi-node manual execution, P11-08 new UUID per manual run",
+      "deleted": true,
+      "deleted_via": "UI /tasks row 操作 -> 删除 -> confirm dialog (DELETE /api/tasks/33332cdc-0311-465d-8516-4ae7cc64456b 200)",
+      "post_delete_verification": {
+        "GET /api/tasks/33332cdc-0311-465d-8516-4ae7cc64456b": 404,
+        "evidence": "evidence/final-cleanup-get404.json"
+      }
+    },
+    {
+      "kind": "file_transfer",
+      "id": "f62913ec-dc41-47e4-bb93-62596f418c41",
+      "purpose": "P22-08 success + form reset / P22-09 aggregate SUCCESS",
+      "source": "native-1 91f44866-8a28-435e-bbda-2f2367126c00 : /tmp/qa-w1410b04-89fe789d/src-2mb.bin",
+      "targets": [
+        {"node": "native-3 37989297-3bc8-4c0c-b302-7c6efbdba630", "path": "/tmp/qa-w1410b04-89fe789d/d-2mb.bin", "final_status": "SUCCESS"}
+      ],
+      "final_status": "SUCCESS",
+      "retained_as_history": true,
+      "retention_reason": "no DELETE endpoint for transfers (internal/hub/api/api.go handleTransferByID: GET + POST retry/cancel only)"
+    },
+    {
+      "kind": "file_transfer",
+      "id": "ec3772f9-606d-493f-bdef-762861b6e93e",
+      "purpose": "P22-09 per-target independent status + aggregate; P22-12 DELIVERING cancel",
+      "source": "native-1 91f44866-8a28-435e-bbda-2f2367126c00 : /tmp/qa-w1410b04-89fe789d/src-small.bin",
+      "targets": [
+        {"node": "offline 15961ef7-81b4-43f3-80c8-1b6977ca2aea", "path": "/tmp/qa-w1410b04-89fe789d/c-offline.bin", "final_status": "CANCELED"},
+        {"node": "native-3 37989297-3bc8-4c0c-b302-7c6efbdba630", "path": "/tmp/qa-w1410b04-89fe789d/c-native3.bin", "final_status": "SUCCESS"},
+        {"node": "host001 f6a79d23-2410-450c-ac39-64dd70c9daa1", "path": "/tmp/qa-w1410b04-89fe789d/c-host001.bin", "final_status": "CANCELED", "failed_first": "FAILED: destination path: path is outside host allowlist"}
+      ],
+      "final_status": "CANCELED",
+      "retained_as_history": true
+    },
+    {
+      "kind": "file_transfer",
+      "id": "6bb56f76-f725-4158-9609-f2589fb8045d",
+      "purpose": "P22-12 UPLOADING cancel",
+      "source": "native-1 91f44866-8a28-435e-bbda-2f2367126c00 : /tmp/qa-w1410b04-89fe789d/src-big.bin (314572800 B sparse)",
+      "targets": [
+        {"node": "native-3 37989297-3bc8-4c0c-b302-7c6efbdba630", "path": "/tmp/qa-w1410b04-89fe789d/big-dst.bin", "final_status": "CANCELED"}
+      ],
+      "final_status": "CANCELED",
+      "staged_blob_sha256": "17a88af83717f68b8bd97873ffcf022c8aed703416fe9b08e0fa9e3287692bf0",
+      "retained_as_history": true
+    },
+    {
+      "kind": "file_transfer",
+      "id": "b5ecb82a-7603-43a6-b243-a7af8a80ad3b",
+      "purpose": "P22-12 PENDING cancel",
+      "source": "offline 15961ef7-81b4-43f3-80c8-1b6977ca2aea : /tmp/qa-w1410b04-89fe789d/pending-src.bin",
+      "targets": [
+        {"node": "native-3 37989297-3bc8-4c0c-b302-7c6efbdba630", "path": "/tmp/qa-w1410b04-89fe789d/pending-dst.bin", "final_status": "CANCELED"}
+      ],
+      "final_status": "CANCELED",
+      "retained_as_history": true
+    }
+  ],
+  "node_side_files": [
+    {"node": "native-1 192.168.100.204", "path": "/tmp/qa-w1410b04-89fe789d/", "contents": ["src-small.bin (1048576 B)", "src-2mb.bin (2097152 B)", "src-big.bin (314572800 B sparse, 3 MB real)"], "removed": true, "post_remove_verification": "0 matching entries under /tmp"},
+    {"node": "native-3 192.168.100.222", "path": "/tmp/qa-w1410b04-89fe789d/", "contents": ["c-native3.bin (1048576 B, delivered)", "d-2mb.bin (2097152 B, delivered)"], "removed": true, "post_remove_verification": "0 matching entries under /tmp"},
+    {"node": "native-4 192.168.100.247", "touched": false, "note": "no process, file or transfer started on native-4"},
+    {"node": "hub 192.168.100.209", "path": "/var/lib/nodesteer-hub-repair-20260930-101945/file-transfers/", "final_state": "empty (all staged .part/.blob removed by cancel/success cleanup)", "removed": "automatic by the product"}
+  ],
+  "undeletable_history": [
+    {"kind": "execution", "id": "ee33f0e0-1552-4fda-84e6-ceeb2ae89450", "task_id": "33332cdc-0311-465d-8516-4ae7cc64456b", "node": "native-3", "status": "SUCCESS", "note": "task deleted, execution kept"},
+    {"kind": "execution", "id": "92db8733-246f-4a6d-9927-2d3389e54877", "task_id": "33332cdc-0311-465d-8516-4ae7cc64456b", "node": "native-1", "status": "SUCCESS"},
+    {"kind": "execution", "id": "efea53bf-09c0-4b22-b211-032e2e2afa24", "task_id": "33332cdc-0311-465d-8516-4ae7cc64456b", "node": "native-3", "status": "SUCCESS"},
+    {"kind": "execution", "id": "f620ea0f-c7f4-4058-bb32-d8d1e8f684d8", "task_id": "33332cdc-0311-465d-8516-4ae7cc64456b", "node": "native-1", "status": "SUCCESS"},
+    {"kind": "file_transfer", "count": 4, "ids": ["f62913ec-dc41-47e4-bb93-62596f418c41", "ec3772f9-606d-493f-bdef-762861b6e93e", "6bb56f76-f725-4158-9609-f2589fb8045d", "b5ecb82a-7603-43a6-b243-a7af8a80ad3b"]}
+  ],
+  "forbidden_and_untouched": {
+    "users_created_or_deleted": 0,
+    "nodes_created_or_deleted": 0,
+    "groups_created_or_deleted": 0,
+    "node_state_changes": 0,
+    "writes_to_non_owned_objects": 0,
+    "real_deploys": 0,
+    "hub_or_agent_processes_stopped": 0,
+    "product_source_changes": 0,
+    "git_or_archive_actions": 0,
+    "non_owned_application_804e6b14": "still assigned to native-1 only (evidence/FL09-03-api-after-assign.json, evidence/FL09-09-api-after-unassign.json)"
+  },
+  "server_writes_total": {
+    "POST /api/transfers": 4,
+    "POST /api/transfers/{id}/cancel": 3,
+    "POST /api/applications": 1,
+    "POST /api/applications/{id}/assign": 2,
+    "DELETE /api/applications/{id}": 1,
+    "POST /api/tasks": 1,
+    "POST /api/tasks/{id}/run": 2,
+    "DELETE /api/tasks/{id}": 1
+  }
+}

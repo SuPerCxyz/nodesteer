@@ -1,0 +1,19 @@
+{
+  "reviewed_at": "2026-10-10T05:51:55.839451+00:00",
+  "case_id": "INV-05",
+  "status": "PASS_FOR_WRITE_BUSY_NEGATIVE_DIMENSION_ONLY",
+  "model": "gpt-6-luna",
+  "evidence": [
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/db-fault/sqlite-write-lock-fault-evidence.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/db-fault/recovery-api-timeline.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/quota-interruption-api-cleanup.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/quota-native4-cleanup-readonly-evidence.json"
+  ],
+  "actual": "LOCK_ACQUIRED真实ExecutionLogs门控后PUT v2，12s无SQL写锁；DB rev1362/Script v1 SHA保持，actualapply error/SQLITE_BUSY与两次NACK/applied0；holder SUCCESS/finally ROLLBACK。Hub后续观测child synced/rev1364。quota后Root仅收尾删除Script/Task/核验已消费tombstone，DB healthy/objects empty，child PID/ticks保持。",
+  "limits": [
+    "本例为SQLite写阶段BUSY，不是真CommitSync调用失败；INV05保持PARTIAL",
+    "正常恢复尚缺故障后child v2 SHA落盘+真实marker Run/UI、成功后重启持久化；Root未代替Luna执行这些测试",
+    "recovery-api-timeline第一started_at_utc误用monotonic值为1970、window_seconds0，不能据此宣称90s时间门禁通过；保留原文件与实际UTC观测，不伪修时间"
+  ],
+  "quota": "三个Luna实际usage limit，未切模型"
+}

@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "qa-resume-20261008-native4-proxy-sync-summary-7c13abbd",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport json\nfrom pathlib import Path\nrows=[]\nfor line in Path(\"/tmp/qa-resume-20261008-child-ciivjupc/proxy-events.jsonl\").read_text().splitlines()[-200:]:\n try:\n  x=json.loads(line)\n  if x.get(\"event\")==\"forward_control\" and x.get(\"type\")==\"SYNC_RESPONSE\": rows.append({\"connection\":x.get(\"connection\"),\"id\":x.get(\"id\"),\"global_rev\":x.get(\"global_rev\"),\"full_resync\":x.get(\"full_resync\"),\"scripts\":x.get(\"script_summary\",[])})\n except Exception: pass\nprint(json.dumps(rows[-12:],separators=(\",\",\":\")))\nPY",
+    "timeout": 30,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "command_sha256": "5565d65529ebbf61e91887f34162d8ca0aaf1cde73f7174722b80914031c32c8",
+  "source_contains_connection_token": false
+}

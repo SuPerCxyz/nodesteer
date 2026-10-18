@@ -1,0 +1,68 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch02",
+  "status": "COMPLETE_FOR_ROOT_REVIEW",
+  "phase": "RESULTS_SAVED_FIXTURES_CLEANED_AND_404_VERIFIED",
+  "updated_at_utc": "2026-10-14T08:22:00Z",
+  "session": "qaweb1410b02",
+  "origin": "http://192.168.100.209:18080",
+  "authority_type": "repair",
+  "primary_8080_management_writes": 0,
+  "case_ids": ["P09P11-01", "P12P13-01", "P09P11-11", "TABLE-APPLICATIONS-PAGE", "TABLE-APPLICATIONS-SORT", "P16-01"],
+  "results": {
+    "P09P11-01": { "status": "PASS", "confidence": "high", "evidence": "results.json#cases[0]" },
+    "P12P13-01": { "status": "PASS", "confidence": "high/medium-caveat", "evidence": "results.json#cases[1]" },
+    "P09P11-11": { "status": "PARTIAL", "confidence": "high", "evidence": "results.json#cases[2]" },
+    "TABLE-APPLICATIONS-PAGE": { "status": "PASS", "confidence": "high", "evidence": "results.json#cases[3]" },
+    "TABLE-APPLICATIONS-SORT": { "status": "PASS", "confidence": "high", "evidence": "results.json#cases[4]" },
+    "P16-01": { "status": "PASS", "confidence": "high/medium-caveat", "evidence": "results.json#cases[5]" }
+  },
+  "fixtures": {
+    "nonce": "646114",
+    "prefix": "qa-w1410b02-646114",
+    "created": { "tasks": 11, "schedules": 2, "applications": 10, "artifacts": 10, "total": 33 },
+    "caps": { "tasks": "11/12", "schedules": "2/2" },
+    "deleted": 33,
+    "all_get404_verified": true,
+    "ledger": "fixture-ledger.json",
+    "cleanup": "evidence/cleanup-get404-verification.json",
+    "guard": "final-cleanup-guard.json",
+    "created_via": "read-only-then-write API calls (runners/fixtures.py); all case actions were real UI operations"
+  },
+  "executed_real_operations": {
+    "ui_logins": 1,
+    "ui_navigations_and_nav_clicks": 12,
+    "form_fills_and_searches": 8,
+    "pagination_and_pagesize_clicks": 34,
+    "sort_header_clicks": 8,
+    "view_and_row_menu_clicks": 6,
+    "page_reloads": 6,
+    "request_interceptions": { "aborts": 1, "unroutes": 1 },
+    "read_only_api_snapshots": 8
+  },
+  "server_writes": {
+    "resource_mutations_created": 33,
+    "resource_mutations_deleted": 33,
+    "node_state_changes": 0,
+    "new_persistent_resources_left": 0,
+    "runs_or_executions_triggered": 0,
+    "auth_audit_rows_created_by_this_batch": "login/auth/local only",
+    "audit_evidence": "evidence/audit-my-fixtures.json (exactly 33 rows for this batch's fixture ids: task.create 11, schedule.create 2, application.create 10, artifact.upload 10; zero execute rows)"
+  },
+  "post_cleanup_counts_match_baseline": true,
+  "unverified_dimensions": [
+    "P09P11-11: positive 'matching node change' requires writing a node label (POST /nodes/{id}); node writes are outside this batch's read-only node scope.",
+    "P12P13-01: multi-page traversal with a UI-selectable pageSize (minimum 10) needs >=11 schedules, above the <=2 schedule cap; covered via the app's persisted-pageSize path (pageSize=1) as supplementary evidence.",
+    "P16-01: ListLayout true-empty state ('暂无数据' with 0 data rows) is unreachable while the non-owned baseline artifact exists; only the search no-result empty row was verified."
+  ],
+  "open_questions_for_root": [
+    "Confirm the fixture-authorization interpretation: the guard forbids creating/deleting persistent objects *other than* User/Group/Application/Artifact/Script; applications and artifacts were created only because the two table cases need >=11 rows (UI pageSize minimum is 10). 10 applications + 10 artifacts were created and fully cleaned up.",
+    "P09P11-11: authorize a temporary node-label write (add then remove a label on one repair node) if the 'matching node change' dimension must be closed.",
+    "P12P13-01 / P16-01: accept the cap-limited caveats, or authorize a larger fixture set to exercise multi-page with pageSize=10."
+  ],
+  "token_saved": false,
+  "raw_credentials_in_evidence": false,
+  "product_source_modified": false,
+  "central_state_files_modified": false,
+  "git_operations": "none",
+  "next_action": "Root review of results.json, fixture-ledger.json, final-cleanup-guard.json; then update the central feature-inventory.json (batch02 did not touch it)."
+}

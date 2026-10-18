@@ -1,0 +1,147 @@
+{
+  "config": {
+    "argv": [
+      "/usr/bin/node",
+      "/home/superc/code/nodesteer/web/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "e2e/playwright.config.ts",
+      "--reporter=json",
+      "--grep",
+      "SAFE-22"
+    ],
+    "configFile": "/home/superc/code/nodesteer/web/e2e/playwright.config.ts",
+    "rootDir": "/home/superc/code/nodesteer/web/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/superc/code/nodesteer/web/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "safe-ui.spec.ts",
+      "file": "safe-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "SAFE-22 Schedule四类型实际保存/OneTime时区转换/取消零写",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 15768,
+                  "error": {
+                    "message": "TimeoutError: locator.uncheck: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('label').filter({ hasText: /^启用$/ }).getByRole('checkbox')\u001b[22m\n",
+                    "stack": "TimeoutError: locator.uncheck: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('label').filter({ hasText: /^启用$/ }).getByRole('checkbox')\u001b[22m\n\n    at /home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts:669:82",
+                    "location": {
+                      "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                      "column": 82,
+                      "line": 669
+                    },
+                    "snippet": "  667 |       if(kind==='interval')await page.getByLabel(/^间隔/).fill('120')\n  668 |       if(kind==='one_time'){await page.getByLabel(/^时区$/).fill('Asia/Shanghai');await page.getByLabel(/^运行时间$/).fill(wall)}\n> 669 |       await page.locator('label').filter({hasText:/^启用$/}).getByRole('checkbox').uncheck()\n      |                                                                                  ^\n  670 |       const id=await captureCreated(page,'/api/schedules',()=>page.getByRole('button',{name:/^保存$/}).click());owned.unshift('/api/schedules/'+id)\n  671 |       const saved=(await apiRequest(page,'/api/schedules/'+id)).body as {run_at?:string;expression?:string;interval_sec?:number}\n  672 |       expect(saved).toMatchObject({task_id:task.id,type:kind,enabled:false})"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                        "column": 82,
+                        "line": 669
+                      },
+                      "message": "TimeoutError: locator.uncheck: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('label').filter({ hasText: /^启用$/ }).getByRole('checkbox')\u001b[22m\n\n\n  667 |       if(kind==='interval')await page.getByLabel(/^间隔/).fill('120')\n  668 |       if(kind==='one_time'){await page.getByLabel(/^时区$/).fill('Asia/Shanghai');await page.getByLabel(/^运行时间$/).fill(wall)}\n> 669 |       await page.locator('label').filter({hasText:/^启用$/}).getByRole('checkbox').uncheck()\n      |                                                                                  ^\n  670 |       const id=await captureCreated(page,'/api/schedules',()=>page.getByRole('button',{name:/^保存$/}).click());owned.unshift('/api/schedules/'+id)\n  671 |       const saved=(await apiRequest(page,'/api/schedules/'+id)).body as {run_at?:string;expression?:string;interval_sec?:number}\n  672 |       expect(saved).toMatchObject({task_id:task.id,type:kind,enabled:false})\n    at /home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts:669:82"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-01T10:21:47.113Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts/safe-ui-SAFE-22-Schedule四类型实际保存-OneTime时区转换-取消零写-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                    "column": 82,
+                    "line": 669
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "ddd7e7cf69376006a28d-fed866f5c02d5163067d",
+          "file": "safe-ui.spec.ts",
+          "line": 658,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-01T10:21:46.494Z",
+    "duration": 16498.493000000002,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

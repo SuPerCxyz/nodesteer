@@ -1,0 +1,897 @@
+{
+  "schema_version": 1,
+  "status": "READY_FOR_ROOT_REVIEW",
+  "review_scope": "Read-only actual A17+B22 results, exact existing assertions and run cleanup summary; exclusive temporary artifact only.",
+  "canonical_denominator": 504,
+  "defect_denominator": 22,
+  "case_recommendations": [
+    {
+      "case_id": "P01-01",
+      "title": "正确用户名/密码登录，跳 Dashboard，用户和角色正确。",
+      "status": "PARTIAL",
+      "covered_description": "Real form username/password login reaches Dashboard URL.",
+      "remaining_dimensions": [
+        "Current login user identity/role UI and me/API proof not asserted by this test."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:85",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1",
+        "web/e2e/tests/p01-login.spec.ts:5"
+      ],
+      "test_id": "p01-login.spec.ts:P01-01",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P01-02",
+      "title": "错误密码停留登录页，显示明确错误，不写入 Token。",
+      "status": "PARTIAL",
+      "covered_description": "Wrong password real form submission stays at sign-in.",
+      "remaining_dimensions": [
+        "Specific server error feedback, denied login HTTP and absence of stored token not asserted."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:119",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1",
+        "web/e2e/tests/p01-login.spec.ts:14"
+      ],
+      "test_id": "p01-login.spec.ts:P01-02",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P01-03",
+      "title": "用户名为空、密码为空、同时为空，前端校验和服务端响应正确。",
+      "status": "PARTIAL",
+      "covered_description": "Blank both fields submit remains at sign-in; combine only with prior separately accepted empty-one-field checks.",
+      "remaining_dimensions": [
+        "Direct server missing-field responses and Token/no-request assertions are not supplied by this shallow test."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:153",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1",
+        "web/e2e/tests/p01-login.spec.ts:23"
+      ],
+      "test_id": "p01-login.spec.ts:P01-03",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P01-06",
+      "title": "中文/English 切换及刷新持久化。",
+      "status": "PARTIAL",
+      "covered_description": "Real language menu switches English then Chinese, localStorage language and html lang match.",
+      "remaining_dimensions": [
+        "Language reload persistence is not tested; test waits but never reloads."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:187",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1",
+        "web/e2e/tests/p01-login.spec.ts:30"
+      ],
+      "test_id": "p01-login.spec.ts:P01-04",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "G02-01",
+      "title": "Header 语言菜单切换中文/English，刷新后保持。",
+      "status": "PARTIAL",
+      "covered_description": "Actual language menu English/Chinese and html/localStorage values tested on sign-in page.",
+      "remaining_dimensions": [
+        "Header on authenticated business page and reload persistence remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:187",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1",
+        "web/e2e/tests/p01-login.spec.ts:30"
+      ],
+      "test_id": "p01-login.spec.ts:P01-04",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "G-01-01",
+      "title": "未登录访问 `/`、`/agents`、`/tasks` 等 → 跳转 `/sign-in`",
+      "status": "PARTIAL",
+      "covered_description": "Anonymous /, /nodes, /scripts, /tasks, /executions each routes to sign-in.",
+      "remaining_dimensions": [
+        "Canonical /agents and remaining protected routes not independently included in this list; do not generalize all12."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:221",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1",
+        "web/e2e/tests/p01-login.spec.ts:49"
+      ],
+      "test_id": "p01-login.spec.ts:P01-06",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "G-01-05",
+      "title": "修改 localStorage Token 后刷新页面 → 401、清理 Token、跳转登录",
+      "status": "PARTIAL",
+      "covered_description": "Existing browser token replaced with invalid-token; next hard /nodes navigation reaches sign-in.",
+      "remaining_dimensions": [
+        "Actual401 request and localStorage token cleared are not captured/asserted here. This is invalid token, not natural TTL expiry."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:382",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1",
+        "web/e2e/tests/p02-layout.spec.ts:37"
+      ],
+      "test_id": "p02-layout.spec.ts:P02-04",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "G02-08",
+      "title": "验证当前 12 个 Sidebar 导航项：Dashboard、Tasks、Schedules、Executions、Transfers、Agents、Groups、Scripts、Applications、Audit、Users、Settings；Artifacts 通过 Application 页面“管理制品”入口及直接 URL 访问。",
+      "status": "PARTIAL",
+      "covered_description": "Sidebar actually clicks Nodes/Scripts/Tasks/Apps/Executions to correct route and sees Schedule link.",
+      "remaining_dimensions": [
+        "Remaining current12 entries plus Artifacts indirect entry all-click behavior not checked."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:314",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1",
+        "web/e2e/tests/p02-layout.spec.ts:5"
+      ],
+      "test_id": "p02-layout.spec.ts:P02-01",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P02-01",
+      "title": "当前12个Sidebar入口与Artifacts间接入口逐个打开对应页面",
+      "status": "PARTIAL",
+      "covered_description": "Five Sidebar links actual route assertions and Schedule link visibility.",
+      "remaining_dimensions": [
+        "All12 route entry clicks/Artifacts indirect entry must be completed."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:314",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1",
+        "web/e2e/tests/p02-layout.spec.ts:5"
+      ],
+      "test_id": "p02-layout.spec.ts:P02-01",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "X07",
+      "title": "所有详情/编辑/Run 深链刷新和前进后退；不存在 ID、并发删除、404/Error/Retry/返回；旧 tasks?view=schedules 重定向 /schedules。",
+      "status": "PARTIAL",
+      "covered_description": "Legacy tasks?view=schedules redirects to /schedules, survives reload; direct /schedules loaded.",
+      "remaining_dimensions": [
+        "Concurrent deletion race and other unresolved deep-link branches remain; preserve earlier accepted all-detail evidence."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:348",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1",
+        "web/e2e/tests/p02-layout.spec.ts:27",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:901",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1",
+        "web/e2e/tests/p24-task-schedules.spec.ts:7"
+      ],
+      "test_id": "p02-layout.spec.ts:P02-05,p24-task-schedules.spec.ts:P24-01",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P04-01",
+      "title": "列表字段：hostname、status、IP、Agent version、arch、deployment mode、last seen、操作。",
+      "status": "PARTIAL",
+      "covered_description": "Real authorized Nodes list table visible with rows>0.",
+      "remaining_dimensions": [
+        "Each hostname/status/IP/version/arch/mode/lastseen/action field correctness not asserted."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:518",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1",
+        "web/e2e/tests/p04-nodes.spec.ts:5"
+      ],
+      "test_id": "p04-nodes.spec.ts:P04-01",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P04-03",
+      "title": "hostname 进入 `/agents/{id}`。",
+      "status": "PARTIAL",
+      "covered_description": "Click first actual node-row anchor reaches /agents/<path>.",
+      "remaining_dimensions": [
+        "Exact clicked row hostname/UUID vs loaded Node detail identity not independently captured; do not call arbitrary prefix match full identity navigation."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:552",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1",
+        "web/e2e/tests/p04-nodes.spec.ts:16"
+      ],
+      "test_id": "p04-nodes.spec.ts:P04-02",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P06-09",
+      "title": "取消新建不发送请求。",
+      "status": "PARTIAL",
+      "covered_description": "Actual Group New-entry click, Cancel link returns Group list.",
+      "remaining_dimensions": [
+        "Cancel zero POST not explicitly counted; A ledger0 successful creates does not prove zero failed write requests."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:713",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1",
+        "web/e2e/tests/p06-groups.spec.ts:25"
+      ],
+      "test_id": "p06-groups.spec.ts:P06-06",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P07_P08-02",
+      "title": "新建入口、编辑入口、返回/取消。",
+      "status": "PARTIAL",
+      "covered_description": "Script list New entry clicked; owned Script editor direct route name changed then Cancel returns list with zero exact PUT and Revision1.",
+      "remaining_dimensions": [
+        "List edit-entry actual click and any distinct return controls not asserted in this batch; preserve prior actual Task-to-Script entry evidence."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:122",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1",
+        "web/e2e/tests/p07-scripts.spec.ts:13",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:232",
+        "web/e2e/tests/p07-scripts.spec.ts:65"
+      ],
+      "test_id": "p07-scripts.spec.ts:P07-02,p07-scripts.spec.ts:P08-08",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P07_P08-04",
+      "title": "名称、描述、内容、Working Directory、Run User、Timeout、Enabled。",
+      "status": "PARTIAL",
+      "covered_description": "Owned Script Enabled toggles false then true through list actions and actual API readback; new Script name/content saved.",
+      "remaining_dimensions": [
+        "Other Description/cwd/runUser/Timeout boundaries remain unless already independently proved; toggles do not prove all field consumers."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:156",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1",
+        "web/e2e/tests/p07-scripts.spec.ts:24",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:198",
+        "web/e2e/tests/p07-scripts.spec.ts:48"
+      ],
+      "test_id": "p07-scripts.spec.ts:P07-04,p07-scripts.spec.ts:P08-01",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P07_P08-07",
+      "title": "保存成功后列表出现、Revision=1、SHA256 正确。",
+      "status": "PARTIAL",
+      "covered_description": "Real UI Script Save creates precise ID, returns list and exact href exists.",
+      "remaining_dimensions": [
+        "GET same newly UI-created Script Revision1 and local-content SHA256 comparison absent; Revision1 on different API-created Cancel fixture cannot substitute."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:198",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1",
+        "web/e2e/tests/p07-scripts.spec.ts:48"
+      ],
+      "test_id": "p07-scripts.spec.ts:P08-01",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P09P11-02",
+      "title": "Task 名称详情、编辑、立即运行入口。",
+      "status": "PARTIAL",
+      "covered_description": "Real Task New form saves own command definition, exact Task list href visible.",
+      "remaining_dimensions": [
+        "Task name-to-detail/edit/Run entry clicks and correct target route identity remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:283",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1",
+        "web/e2e/tests/p09-tasks.spec.ts:5"
+      ],
+      "test_id": "p09-tasks.spec.ts:P10-01",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P09P11-09",
+      "title": "Target node：单节点、多节点、去选节点。",
+      "status": "PARTIAL",
+      "covered_description": "Actual UI chooses one authorized node before Task Save.",
+      "remaining_dimensions": [
+        "API target readback and actual single/multinode/unchecked target business results remain; no new command execution in this test."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:283",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1",
+        "web/e2e/tests/p09-tasks.spec.ts:5"
+      ],
+      "test_id": "p09-tasks.spec.ts:P10-01",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P12P13-02",
+      "title": "调度任务名链接、编辑、启用/禁用、删除确认。",
+      "status": "PARTIAL",
+      "covered_description": "Owned Schedule UI enable->true/disable->false exact API readback; UI new Cron creates own list link; cancel/confirm delete removes row.",
+      "remaining_dimensions": [
+        "Actual Task-name link click from Schedule list/detail to correct Task remains; preserve separately proved edit values/delete zero-write dimensions."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:368",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1",
+        "web/e2e/tests/p12-schedules.spec.ts:11",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:410",
+        "web/e2e/tests/p12-schedules.spec.ts:39",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:935",
+        "web/e2e/tests/p24-task-schedules.spec.ts:18"
+      ],
+      "test_id": "p12-schedules.spec.ts:P12-04,p12-schedules.spec.ts:P13-01,p24-task-schedules.spec.ts:P24-02",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P03-07",
+      "title": "Upcoming Schedules 的 View All、调度链接。",
+      "status": "PARTIAL",
+      "covered_description": "Dashboard Upcoming Schedule View All actually routes /schedules.",
+      "remaining_dimensions": [
+        "Actual upcoming schedule record link remains; ViewAll already previously accepted."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:969",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1",
+        "web/e2e/tests/p24-task-schedules.spec.ts:54"
+      ],
+      "test_id": "p24-task-schedules.spec.ts:P24-03",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P17P18-06",
+      "title": "Task、Execution、Agent 三类回链。",
+      "status": "PARTIAL",
+      "covered_description": "Actual first Execution list ID link clicked reaches /executions/<path>.",
+      "remaining_dimensions": [
+        "Exact execution UUID/current metadata identity and Task/Agent links all-click path remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:639",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1",
+        "web/e2e/tests/p17-executions.spec.ts:13"
+      ],
+      "test_id": "p17-executions.spec.ts:P17-03",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P20-09",
+      "title": "当前无删除用户能力，必须明确记录为产品边界，不伪造删除通过。",
+      "status": "PASS",
+      "covered_description": "Actual Admin Users page has zero Delete user buttons; combine documented no User deletion boundary and already-recorded owned QA account retained Viewer rather than fictional deletion.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:808",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1",
+        "web/e2e/tests/p19-misc.spec.ts:23"
+      ],
+      "test_id": "p19-misc.spec.ts:P20-05",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "X08",
+      "title": "删除/Run/Stop/批量升级/吊销取消零写请求，确认单请求；慢响应重复点击、失败后重试；取消编辑不改 Revision/Audit。",
+      "status": "PARTIAL",
+      "covered_description": "Owned Script edit cancel emits zero exact PUT and readback Revision1. Owned Schedule UI delete cancel preserves row then real confirm delete succeeds.",
+      "remaining_dimensions": [
+        "Cancel-edit Audit/other fields, Schedule cancel zero-request count (covered earlier independently), other resources/slow/error/retry branches remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:232",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1",
+        "web/e2e/tests/p07-scripts.spec.ts:65",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:935",
+        "web/e2e/tests/p24-task-schedules.spec.ts:18"
+      ],
+      "test_id": "p07-scripts.spec.ts:P08-08,p24-task-schedules.spec.ts:P24-02",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "review_recommendation_only": true
+    }
+  ],
+  "reviewed_runtime_specs": [
+    {
+      "test_id": "P01-01",
+      "title": "P01-01 正常登录",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p01-login.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:85",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P01-02",
+      "title": "P01-02 密码错误",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p01-login.spec.ts:14",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:119",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P01-03",
+      "title": "P01-03 空提交",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p01-login.spec.ts:23",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:153",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P01-04",
+      "title": "P01-04 中文/EN 切换",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p01-login.spec.ts:30",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:187",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P01-06",
+      "title": "P01-06 直接访问未登录页重定向",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p01-login.spec.ts:49",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:221",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P01-05",
+      "title": "P01-05 登录后回跳到目标页",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p01-login.spec.ts:118",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:263",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P02-01",
+      "title": "P02-01 侧栏导航项",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p02-layout.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:314",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P02-05",
+      "title": "P02-05 独立调度与旧入口重定向",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p02-layout.spec.ts:27",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:348",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P02-04",
+      "title": "P02-04 token 过期跳登录",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p02-layout.spec.ts:37",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:382",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P03-01",
+      "title": "P03-01 仪表盘渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p03-dashboard.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:433",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P03-03",
+      "title": "P03-03 仪表盘无崩溃",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p03-dashboard.spec.ts:23",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:467",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P04-01",
+      "title": "P04-01 节点列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p04-nodes.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:518",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P04-02",
+      "title": "P04-02 点击 hostname 进入详情",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p04-nodes.spec.ts:16",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:552",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P05-01",
+      "title": "P05-01 节点详情渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p04-nodes.spec.ts:75",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:594",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P06-01",
+      "title": "P06-01 列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p06-groups.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:645",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P06-02",
+      "title": "P06-02 新建分组入口",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p06-groups.spec.ts:13",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:679",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P06-06",
+      "title": "P06-06 取消新建",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p06-groups.spec.ts:25",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:713",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P07-01",
+      "title": "P07-01 列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p07-scripts.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:88",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P07-02",
+      "title": "P07-02 新建脚本入口",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p07-scripts.spec.ts:13",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:122",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P07-04",
+      "title": "P07-04 启用/禁用本轮脚本",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p07-scripts.spec.ts:24",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:156",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P08-01",
+      "title": "P08-01 新建脚本保存",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p07-scripts.spec.ts:48",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:198",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P08-08",
+      "title": "P08-08 取消编辑无写请求",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p07-scripts.spec.ts:65",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:232",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P10-01",
+      "title": "P10-01 新建 command 任务",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p09-tasks.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:283",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P12-01",
+      "title": "P12-01 列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p12-schedules.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:334",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P12-04",
+      "title": "P12-04 本轮调度启用/禁用",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p12-schedules.spec.ts:11",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:368",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P13-01",
+      "title": "P13-01 UI新建cron调度",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p12-schedules.spec.ts:39",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:410",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P14-01",
+      "title": "P14-01 列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p14-applications.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:461",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P15-01",
+      "title": "P15-01 新建托管应用入口",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p14-applications.spec.ts:15",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:503",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P16-01",
+      "title": "P16-01 列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p16-artifacts.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:554",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P17-01",
+      "title": "P17-01 列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p17-executions.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:605",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P17-03",
+      "title": "P17-03 点击 ID 进详情",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p17-executions.spec.ts:13",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:639",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P18-01",
+      "title": "P18-01 详情渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p17-executions.spec.ts:25",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:681",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P19-01",
+      "title": "P19-01 列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p19-misc.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:732",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P20-01",
+      "title": "P20-01 列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p19-misc.spec.ts:15",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:774",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P20-05",
+      "title": "P20-05 无删除用户功能",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p19-misc.spec.ts:23",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:808",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P21-01",
+      "title": "P21-01 表单渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p19-misc.spec.ts:33",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:850",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P24-01",
+      "title": "P24-01 独立深链刷新与旧入口重定向",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p24-task-schedules.spec.ts:7",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:901",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P24-02",
+      "title": "P24-02 调度新建、禁用、删除取消与确认",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p24-task-schedules.spec.ts:18",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:935",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P24-03",
+      "title": "P24-03 仪表盘即将执行调度查看全部落点",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p24-task-schedules.spec.ts:54",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:969",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    }
+  ],
+  "smoke_only_specs_no_canonical_PASS": [
+    {
+      "test_id": "P03-01",
+      "title": "P03-01 仪表盘渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p03-dashboard.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:433",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P03-03",
+      "title": "P03-03 仪表盘无崩溃",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p03-dashboard.spec.ts:23",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:467",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P05-01",
+      "title": "P05-01 节点详情渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p04-nodes.spec.ts:75",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:594",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P06-01",
+      "title": "P06-01 列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p06-groups.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-results.json:645",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1"
+    },
+    {
+      "test_id": "P07-01",
+      "title": "P07-01 列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p07-scripts.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:88",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P12-01",
+      "title": "P12-01 列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p12-schedules.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:334",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P14-01",
+      "title": "P14-01 列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p14-applications.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:461",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P15-01",
+      "title": "P15-01 新建托管应用入口",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p14-applications.spec.ts:15",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:503",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P16-01",
+      "title": "P16-01 列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p16-artifacts.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:554",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P17-01",
+      "title": "P17-01 列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p17-executions.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:605",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P18-01",
+      "title": "P18-01 详情渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p17-executions.spec.ts:25",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:681",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P19-01",
+      "title": "P19-01 列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p19-misc.spec.ts:5",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:732",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P20-01",
+      "title": "P20-01 列表渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p19-misc.spec.ts:15",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:774",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    },
+    {
+      "test_id": "P21-01",
+      "title": "P21-01 表单渲染",
+      "runtime_status": "passed",
+      "source": "web/e2e/tests/p19-misc.spec.ts:33",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-results.json:850",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1"
+    }
+  ],
+  "critical_number_mapping": [
+    "p19 test P20-05 No Delete user maps canonical P20-09, not P20-05 role persistence.",
+    "p02 test P02-05 legacy Schedule redirect maps X07, not canonical P02-05 Hub unavailable indicator.",
+    "p01 test P01-04 language maps canonical P01-06/G02-01, not canonical P01-04 pending login button.",
+    "p04 test P04-02 hostname anchor maps canonical P04-03; p04 test P05-01 body smoke cannot prove all Node detail fields.",
+    "P24 suite labels are supplementary, no new canonical cases or denominator expansion."
+  ],
+  "acceptance_limits": [
+    "Body nonempty includes app shell or error text and is not proof of correct requested data/section/fields.",
+    "Console Uncaught absence is useful limited smoke; handler registered after navigation does not capture all earlier errors or real API failures.",
+    "No UI_MOCK/shared setting/user-create gated spec included in A/B; safe source scope does not imply all business dimensions passed.",
+    "A/B source matches actual assertions at reported lines; original canonical requirements retain remaining fields, error/negative and data correctness dimensions.",
+    "Only report/source/cleanup summaries reviewed; no remote/browser/tests executed by reviewer."
+  ],
+  "cleanup_review": {
+    "A": {
+      "resource_log_records": 0,
+      "description": "No new product resource successful creates recorded; normal auth sessions may still exist. This is not a complete server session cleanup proof."
+    },
+    "B": {
+      "resource_log_records": 20,
+      "counts": {
+        "created": 10,
+        "deleted": 10
+      },
+      "description": "Exact own Script/Task/Schedule cleanupByIds calls run in finally; PASS would fail on refused unowned cleanup or non-success HTTP. Summary counts match, but individual final GET404/resource inventory not exposed in this report."
+    },
+    "evidence": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-a-01-run.json:1",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261005-b-01-run.json:1",
+      "web/e2e/tests/fixtures.ts:63",
+      "web/e2e/tests/p07-scripts.spec.ts:43",
+      "web/e2e/tests/p12-schedules.spec.ts:31",
+      "web/e2e/tests/p24-task-schedules.spec.ts:48"
+    ],
+    "remaining": "Root/Luna may privately inspect exact-ID resource ledger and known own auth sessions before final all-resource cleanup claim; never expose credentials."
+  },
+  "source_sha256": {
+    "web/e2e/tests/p01-login.spec.ts": "036c61ff5e61c1485aa7a2949e0d2f80b8af5ada250e891599c1b132ae4b2150",
+    "web/e2e/tests/p02-layout.spec.ts": "982ae82aa2db783bbc9b7d0b96e53f3c951c5f77a35ed68b9799f3dab8245f2d",
+    "web/e2e/tests/p03-dashboard.spec.ts": "bba2289b5936139e425d49a87c225180b62e2588f81a5f9956eec2ea3c4f6c0a",
+    "web/e2e/tests/p04-nodes.spec.ts": "f2693f047e82940676cada218518a5bd2c1295111254649b576565f9b470f87f",
+    "web/e2e/tests/p06-groups.spec.ts": "e7fa6260294f3e7623874946274d4ac2aa142ddc71ca6f58acab13f1068097fc",
+    "web/e2e/tests/p07-scripts.spec.ts": "d21b0c7aee81ca25b0373638c2e4f0f433dbdda879a3c9beffa17c5ff4ad995c",
+    "web/e2e/tests/p09-tasks.spec.ts": "ad242ea395d7c270658cf3c2753b7f070255301f1d281bbaa0b1283e40b76ded",
+    "web/e2e/tests/p12-schedules.spec.ts": "a38a58e336421ef1b69658ce4ae5994bc779fecd2911ca033b5a72e4be943050",
+    "web/e2e/tests/p14-applications.spec.ts": "129800d151442f7c1d52b7d69a3d329c03ef01f45e8fbc9743ab68f6199b150a",
+    "web/e2e/tests/p16-artifacts.spec.ts": "3e154582d776dc944b739beca8ff7cc2f67cde47a733aa1c9b03afcd78f2d30f",
+    "web/e2e/tests/p17-executions.spec.ts": "f082f882c202d45e1eaf530c9ac4c11198b9dfb891f3be0540490d5df33d5f00",
+    "web/e2e/tests/p19-misc.spec.ts": "50c49db51d28ba3d2400d0eeefc3ad067b769a1f1c833d1677ec98463e12ca54",
+    "web/e2e/tests/p24-task-schedules.spec.ts": "7b96b485294932d2e07386a588a4befdfca13fe1e9488bf302c402e87aaaadc1"
+  },
+  "run_hashes": {
+    "a": "5b039a28a3172ddfde6f35e5a56cf74a81fd318ee6b976dc17690ca80792896d",
+    "b": "667b106eaa44a265f56120ed7ba359510c0b6709a5c18d0bfea8d5a587eb090c"
+  },
+  "no_global_count_update": true,
+  "root_merged_at": "2026-10-04T23:50:25.027700+00:00"
+}

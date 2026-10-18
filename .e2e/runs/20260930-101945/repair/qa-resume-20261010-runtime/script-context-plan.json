@@ -1,0 +1,246 @@
+{
+  "created_at_utc": "2026-10-10T15:35:18+00:00",
+  "status": "PROPOSAL_ONLY_AWAIT_ROOT_REVIEW",
+  "objective": "One real ScriptTask Run on the verified repair Native-3 Agent, reusing its unique Script/Task/Execution to cover the Script-specific P11 and P17 gaps without creating any other business resource.",
+  "canonical_cases": {
+    "P11-03": "Observe actual Run button loading/disabled behavior during exactly one click/confirm; if the network is too fast to observe it, leave that dimension PARTIAL and do not rerun.",
+    "P11-05": "Script slice only; do not claim Command or Application coverage.",
+    "P11-06": "Actual non-secret parameter, environment, working directory, and RunUser behavior through real agent execution.",
+    "P17P18-02": "Use the new live ScriptTask name plus real TaskID/NodeID/ExecutionID as q search terms.",
+    "P17P18-06": "Follow Task history → Execution detail → Task/Node links → Node execution history using the same exact IDs.",
+    "P17P18-07": "Validate real ScriptTask detail metadata (Task/Script revision, Node, manual trigger, offline/synced, exit code, duration); note the current UI source shows Task revision but not Script revision.",
+    "P17P18-15": "Compare ScriptTask’s immutable task_revision/script_id/script_revision to Task/Script revision APIs and the visible Task revision. No Script revision UI claim if it is not rendered."
+  },
+  "target": {
+    "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+    "agent_id": "agent-bb005487-7d84-418c-b598-f93d8b0c86a0",
+    "selection": "Exactly one node target by Node ID; no group or label target.",
+    "prior_owner_evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/ui-native3/native3-process-sha-evidence.json",
+    "prior_status_evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/ui-native3/native3-final-node-readback.json",
+    "freshness": "Prior online/synced and owner evidence is from 2026-10-10 06:11Z; it is historical only. Before creating anything, fresh GET and process ownership readback must confirm same Node/Agent, online+synced, repair binary SHA d55dc5cd… and root-UID Agent, exact cgroup/unit/config-path guard. If any identity/owner/status differs, stop before writes."
+  },
+  "resource_budget": {
+    "new_script": 1,
+    "new_script_task": 1,
+    "new_execution_run": 1,
+    "new_user": 0,
+    "new_node": 0,
+    "new_agent": 0,
+    "new_schedule": 0,
+    "new_application": 0,
+    "new_artifact": 0,
+    "new_transfer": 0,
+    "task_retry": 0,
+    "task_target_count": 1,
+    "extra_probe_task": 0
+  },
+  "fixture_definition": {
+    "script": {
+      "type": "Script",
+      "interpreter": "shell",
+      "enabled": true,
+      "working_dir": "/tmp",
+      "run_user": "nobody",
+      "timeout_sec": 15,
+      "parameters": [
+        {
+          "name": "QA_PARAM",
+          "type": "string",
+          "required": true,
+          "default": ""
+        }
+      ],
+      "environment": {
+        "QA_MARKER": "unique non-secret per-attempt marker"
+      },
+      "content": "printf only the allowlisted QA_MARKER, NODESTEER_PARAM_QA_PARAM, PWD and id -u fields; sleep 3 seconds; no file or service changes."
+    },
+    "task": {
+      "type": "script",
+      "script_id": "the newly created Script ID",
+      "name": "unique attempt-scoped QA name",
+      "target": {
+        "type": "node",
+        "node_ids": [
+          "37989297-3bc8-4c0c-b302-7c6efbdba630"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "QA_PARAM",
+          "type": "string",
+          "required": true,
+          "default": ""
+        }
+      ],
+      "timeout_sec": 15,
+      "retry": 0,
+      "offline_policy": "hub_online_required",
+      "enabled": true,
+      "schedule": null,
+      "run_user": "unset so Script.run_user=nobody is effective"
+    },
+    "run_ui_parameter": "A unique non-secret QA value entered in the Task Run form; no credential or secret parameter."
+  },
+  "actual_user_path": [
+    {
+      "step": 1,
+      "path": "Open Scripts → New; enter the minimal shell body, unique non-secret marker, QA_PARAM string parameter, /tmp working directory, run user nobody, timeout 15; save once."
+    },
+    {
+      "step": 2,
+      "path": "Open Tasks → New; choose Script, select the just-created Script, set exact Node target, same required QA_PARAM, timeout 15, retry 0, online-required, enabled; do not configure a Schedule; save once."
+    },
+    {
+      "step": 3,
+      "path": "Open the new Task detail, confirm Script link/target/revision and no schedule; open Run, enter QA_PARAM, open confirmation dialog, click confirm exactly once."
+    },
+    {
+      "step": 4,
+      "path": "Observe the one POST /api/tasks/{taskID}/run (status/count/ID only). Before click, arm a local DOM MutationObserver on the Run button; record any real disabled/loading label transition during the request. Do not throttle or intercept network; if the state is too brief to observe, mark P11-03 PARTIAL."
+    },
+    {
+      "step": 5,
+      "path": "From the returned Execution ID, poll only this execution until terminal (bounded 20s); record PENDING/RUNNING/SUCCESS or failure transitions observed, with same-ID API checks and UI page route. Script sleeps 3s to make real RUNNING observation feasible; no proxy hold."
+    },
+    {
+      "step": 6,
+      "path": "On Task detail and Execution detail, traverse exact links to Script, Task, Node, Execution history and back; test q search by unique Task name, Task ID, Node ID, Execution ID; compare exact UI IDs to API results."
+    },
+    {
+      "step": 7,
+      "path": "Read exact Task, Script, Script revision 1 and Execution APIs; compare task_revision=Task.revision, script_id=Task.script_id, script_revision=Script.revision=1, Script SHA, and UI-visible fields. Read only selected stdout lines in memory; store allowed values plus stdout byte count/SHA, not raw logs."
+    }
+  ],
+  "expected_real_oracles": {
+    "script_revision": "New Script starts at revision 1; its API SHA-256 equals the local expected body SHA-256 and GET /api/scripts/{id}/revisions/1 content hash.",
+    "task_revision": "New ScriptTask starts at revision 1; Execution task_revision equals it.",
+    "execution_script_pin": "Execution script_id equals Task script_id; script_revision equals Script revision 1.",
+    "run_effect": "Single Execution reaches SUCCESS/exit_code 0; stdout contains exactly the unique allowed QA_MARKER, supplied QA_PARAM, PWD=/tmp, RUN_UID=65534; API and detail UI agree on the same Execution ID, Task ID, Node ID, status, Task revision, trigger=manual, offline=false, synced=true, exit code and duration.",
+    "ui_links": "Task’s Script link and Execution-history link, Execution’s Task/Node links, and Node’s Execution link all resolve to the exact new IDs.",
+    "dedup": "Exactly one UI confirmation and one POST; GET /api/executions?task_id=<newTaskID> has exactly one row; no second attempt under any condition."
+  },
+  "prewrite_guards": [
+    "Dedicated private auth only; first login token must be written to a unique /tmp mode-0700 directory file mode 0600 before any browser eval. Never put token/credentials in argv, stdout, workspace evidence or shared session; on any UI injection error, the token file remains available for same-token API logout and /me=401.",
+    "Freshly verify Node/Agent identity, process PID/startticks/UID/argv config path only/exe SHA/cgroup/unit and online+synced; never stop/restart/alter the service.",
+    "Fresh GET /api/scripts, /api/tasks, /api/schedules and verify generated unique Script/Task names absent, no schedule references the new Task, and no pending/running execution for it.",
+    "Confirm target is root-owned repair Agent; this is required for Script.run_user=nobody to prove a real UID change. Do not infer UID switch from a nonroot child.",
+    "No primary :8080, no other Node, no global config, no proxy, no injected hold, no source changes."
+  ],
+  "cleanup_dependencies": [
+    "Preserve the exact terminal Execution and audit history for evidence.",
+    "Delete only the new Task first; verify its GET returns 404 and it disappears from Task list. Ensure no Schedule exists.",
+    "Only after Task reference is gone, delete only the new Script; verify GET returns 404 and it disappears from Script list. ScriptManager rejects deletion while any Task references it.",
+    "Verify the historical Execution remains GET 200 with its ID/revisions/status/output byte count/SHA; verify target Node remains online+synced and no unrelated resource count/identity changed.",
+    "Logout the dedicated token through API and verify same-token /api/me=401, then close only the dedicated browser session and remove the profile after UID/mode/inode guard. Preserve private token only until logout verification, then unlink it."
+  ],
+  "known_limits": [
+    "Current Execution detail UI source displays Task revision but not Script revision; P17P18-15 may remain PARTIAL for Script revision UI until the unified product repair is applied.",
+    "P11-05 coverage from this plan is Script only; Command and Application dimensions remain unchanged.",
+    "If RUN button loading/disabled transition is not observed during the one real API request, do not add artificial delay or a second Run; keep P11-03 partial.",
+    "No existing Task/Script can be edited or used to avoid unique fixture creation; all fixtures must be new and exact-cleaned."
+  ],
+  "source_map": [
+    {
+      "file": "internal/models/models.go",
+      "lines": [
+        152,
+        161,
+        179,
+        195
+      ],
+      "why": "Script and Task fields: script content/environment/working_dir/run_user/parameters/revision and Task target/script_id/retry/parameters/run_user/revision."
+    },
+    {
+      "file": "internal/hub/api/api.go",
+      "lines": [
+        1132,
+        1168,
+        1237,
+        1270,
+        1379
+      ],
+      "why": "Scripts/Tasks create and delete routes; Run Now dispatch and one POST behavior."
+    },
+    {
+      "file": "internal/hub/execution.go",
+      "lines": [
+        66,
+        114,
+        280,
+        324
+      ],
+      "why": "Parameter→NODESTEER_PARAM_ mapping; Script/Task revision pin; Script RunUser fallback when Task RunUser is unset."
+    },
+    {
+      "file": "internal/agent/execution/runner.go",
+      "lines": [
+        194,
+        203
+      ],
+      "why": "Working directory, process environment and root-only UID/GID switch for non-root RunUser."
+    },
+    {
+      "file": "web/src/features/editors/index.tsx",
+      "lines": [
+        405,
+        428,
+        548,
+        559,
+        588,
+        660
+      ],
+      "why": "Actual Script UI fields and API save; environment and parameter editors."
+    },
+    {
+      "file": "web/src/features/tasks/index.tsx",
+      "lines": [
+        553,
+        827,
+        1414,
+        1422,
+        1446,
+        1470
+      ],
+      "why": "Task defaults/script selector/target settings; Run page parameter input, loading/disabled transition and confirmation dialog."
+    },
+    {
+      "file": "web/src/features/tasks/index.tsx",
+      "lines": [
+        304,
+        432,
+        478,
+        513
+      ],
+      "why": "Task detail queries its executions and provides exact Execution history link."
+    },
+    {
+      "file": "web/src/features/executions/index.tsx",
+      "lines": [
+        474,
+        487,
+        522,
+        533,
+        538,
+        541,
+        581
+      ],
+      "why": "Execution ID/Task revision, Node link, metadata fields and same-page logs; current UI does not render Script revision."
+    },
+    {
+      "file": "web/src/features/catalog/index.tsx",
+      "lines": [
+        543,
+        546,
+        800,
+        912,
+        943,
+        975
+      ],
+      "why": "Node detail Execution query and exact Execution link; Task link appears only while Task exists."
+    }
+  ],
+  "approval_gate": "This is plan-only. Do not create Script/Task, login, Run, or mutate API until Root reviews and explicitly authorizes the exact fixture/run scope.",
+  "created_by": "gpt-6-luna QA subagent",
+  "next_action": "Root review; if approved, perform fresh guards and execute the one fixture lifecycle exactly as specified."
+}

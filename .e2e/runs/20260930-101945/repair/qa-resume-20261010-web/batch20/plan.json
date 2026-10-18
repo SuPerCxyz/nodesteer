@@ -1,0 +1,109 @@
+{
+  "batch_id": "qa-resume-20261010-web-batch20-ui-language-nav-login-dashboard",
+  "created_at_utc": "2026-10-12T13:35:00Z",
+  "scope": [
+    "G02-01",
+    "G02-08",
+    "P01-06",
+    "P01-04",
+    "P03-04",
+    "P03-06",
+    "P03-08",
+    "P03-10"
+  ],
+  "budget": {
+    "new_business_resources": 0,
+    "task_run_user_node_group_application_artifact_transfer_writes": 0,
+    "invalid_login_posts": 1,
+    "new_owned_unauth_browser_profiles": 1
+  },
+  "main_session": "qawebsecure20261010-b18-clean38181",
+  "browser_origin": "http://127.0.0.1:38181",
+  "session_policy": "Keep existing authenticated main session and tunnel. P01-06/P01-04 use one separate owned unauth profile which is closed after both. Do not logout shared/root session, create User, run Task, mutate resources, OIDC, source, or global files.",
+  "secret_policy": "P01-04 fake unique username/password only; no raw form/body/header/token or actual credential saved/output.",
+  "cases": [
+    {
+      "case_id": "G02-01",
+      "actions": [
+        "Authenticated business route Header language menu Chinese→English",
+        "verify visible business text/header change",
+        "reload and verify English persisted",
+        "restore Chinese and verify visible business text"
+      ],
+      "oracle": "real UI language labels/text and reload state; route/API unchanged",
+      "risk": "existing logged-in profile only; restore Chinese"
+    },
+    {
+      "case_id": "G02-08",
+      "actions": [
+        "actual click current 12 Sidebar entries and verify final URL + expected list GET/status",
+        "click Applications existing record to detail",
+        "click exact Manage Artifacts link to /artifacts and verify GET",
+        "direct /artifacts URL and verify ready"
+      ],
+      "oracle": "DOM href/ref, actual clicks, route, pathname-only API requests/status, no raw records",
+      "risk": "existing logged-in session only; readonly"
+    },
+    {
+      "case_id": "P01-06",
+      "actions": [
+        "fresh owned unauth session /sign-in language switch Chinese→English",
+        "reload and verify persists",
+        "restore Chinese and verify"
+      ],
+      "oracle": "sign-in business text labels, reload state, local language flag only",
+      "risk": "new owned browser profile; no user/API writes"
+    },
+    {
+      "case_id": "P01-04",
+      "actions": [
+        "same unauth session; fill unique random nonexistent username and non-real dummy password",
+        "one actual UI submit; pause exact POST /api/login before server; observe button disabled/loading",
+        "while first POST paused attempt second click and Enter; assert browser did not send a second login POST",
+        "continue exactly one request; verify actual 401, error feedback, no auth token/session"
+      ],
+      "oracle": "Network request method/path/count/status only; DOM disabled/loading/error booleans; no payload/token",
+      "risk": "one authorized invalid login POST, expected 401; no user/session created; auth audit side effect only"
+    },
+    {
+      "case_id": "P03-04",
+      "actions": [
+        "Dashboard actual Application Status View All→/applications",
+        "click live application row link; assert href ID==detail route ID and exact GET200"
+      ],
+      "oracle": "dashboard GETs, clicked route, same-ID application API response status, row/detail feedback",
+      "risk": "readonly existing app"
+    },
+    {
+      "case_id": "P03-06",
+      "actions": [
+        "Dashboard Recent Executions View All→/executions",
+        "use actual recent Execution detail links and verify same ID/detail GET200",
+        "check task GET/live task link; if missing record true 404/absence rather than infer PASS"
+      ],
+      "oracle": "actual route/href IDs and execution/task GET statuses only; no names/log contents",
+      "risk": "readonly existing execution; no Run/task creation"
+    },
+    {
+      "case_id": "P03-08",
+      "actions": [
+        "Dashboard loads live APIs",
+        "compare displayed node total/online/offline/degraded and sync counts to GET /api/nodes",
+        "compare execution summary metrics to dashboard execution response",
+        "compare healthy application numerator/total to each real application state endpoint"
+      ],
+      "oracle": "integer aggregates and boolean equality only, no row text/IDs",
+      "risk": "readonly"
+    },
+    {
+      "case_id": "P03-10",
+      "actions": [
+        "load authenticated Dashboard and confirm baseline five query APIs 200",
+        "same-target exact GET failRequest only for one Dashboard query; verify ErrorState/Retry and no stale fake metrics",
+        "remove interception; click real Retry; verify failed path and remaining Dashboard query APIs return 200, metrics restored"
+      ],
+      "oracle": "exact pathname/method/status/counts, ErrorState/Retry, dashboard metric-present booleans",
+      "risk": "owned browser target only; 0 server writes"
+    }
+  ]
+}

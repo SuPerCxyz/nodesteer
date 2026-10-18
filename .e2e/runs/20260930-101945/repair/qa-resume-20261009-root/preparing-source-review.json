@@ -1,0 +1,22 @@
+{
+  "reviewed_at": "2026-10-09T08:49:58.202098+00:00",
+  "status": "APPROVED_OWNED_P0_FAULT_AND_RECOVERY",
+  "observer_sha256": "e6dd681a81611bca164d9d7be913de30257dc143bd369506fd21685be05c837d",
+  "launcher_sha256": "9a3b1bd5061435e7be065e3e85413a7bf2bdc09007f1cca67a50cad5864199c3",
+  "exact_target": {
+    "node_id": "c77b8a84-8085-4ea8-8532-de171761854b",
+    "app_id": "2e4fecee-afc8-43a8-9d93-dd36cfc10bf9",
+    "owner_nonce": "870358cd92ee",
+    "unit": "nodesteer-qa-e2e-20261009-p0-002-native1-870358cd92ee.service"
+  },
+  "verified_guards": [
+    "默认无flag/nonce不发远端请求或信号",
+    "READY实际日志+exact identity/v1/cache后仅发1次v2upgrade",
+    "SIGSTOP/SIGKILL前后exact PID/starttime/UID/argv/exeSHA/cgroup/owner、exactApp/DeploymentPREPARING+backup空、v1File/Unit SHA/Active匹配",
+    "错过窗口/异常/SIGTERM：未kill时finally exact指纹SIGCONT",
+    "READY和final stdout多JSON按行解析，只保存final observer_status对象及stdout SHA"
+  ],
+  "runtime_lifetime": "set-property runtime extension实测失败，未改；允许仅同owned child Unit/config/Node重建3600秒，原4Node/父两服务保持",
+  "not_runtime_pass": true,
+  "next": "Luna实际执行后审查fault/journal/file/service/API/UI/cleanup，不以源码审核计PASS"
+}

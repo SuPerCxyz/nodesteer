@@ -1,0 +1,24 @@
+{
+  "review_id": "ROOT-SYS-B04-REVIEW-20261015",
+  "reviewed_at": "2026-10-15T10:34:18.538484+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "run_dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b04",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 要求 5 路并行跑完全部测试；Root 将其列为独占串行（重启 Hub）",
+  "verdicts": [],
+  "hub_restart_verification": "本批未重启 Hub",
+  "meta": {
+    "oracle_clean": null,
+    "deviations": []
+  },
+  "counts_before": {
+    "PASS": 380,
+    "FAIL": 6,
+    "PARTIAL": 75,
+    "NOT_RUN": 34,
+    "BLOCKED": 9
+  },
+  "sys07_blocked_rationale": "Full Resync 条件为 since>0 && (current-since)>changelog_window；现场 current≈2652、window=5000，落在窗口外的最大 revision 是 current-5001<0，与 since>0 矛盾 → 本环境算术不可达；触及需改全局 changelog_window 或推进全局 revision>2349 步，均被约束禁止。已给两次真实边界观测（since=1、since=0，均 full_resync=false + snapshot=true + 完整对象集）。属环境/计划可行性边界，非产品缺陷。",
+  "new_observations": []
+}

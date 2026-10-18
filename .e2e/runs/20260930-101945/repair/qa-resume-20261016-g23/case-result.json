@@ -1,0 +1,404 @@
+{
+  "batch_id": "g23",
+  "title": "G2 协议帧/断连注入 + G3 调度停机/离线/补偿窗口（合并窗口，6 条 PARTIAL）",
+  "nonce": "d08f3dbc",
+  "owned_prefix": "qa-g23-d08f3dbc-",
+  "endpoint": "http://192.168.100.209:18080",
+  "node_used": {
+    "native-2": "192.168.100.206"
+  },
+  "executed_at_utc": "2026-10-16T09:29:21Z .. 2026-10-16T09:42:20Z",
+  "authorization": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/authorization-checklist-20261016.md 第「G2 协议帧注入／断连注入类（3 条）」与「G3 调度停机／离线／补偿窗口类（3 条）」组，并按「三、最小授权集」以 G2+G3 合并为一个 owned child 注入/停机窗口执行",
+  "environment": {
+    "repair_authority": "http://192.168.100.209:18080",
+    "hub_binary_sha256_verified": true,
+    "hub_sha_expected": "cd8b7f9d7e40841bbba982c6838b2f74ccfdfac785674030c5bf7d6f1f69120d",
+    "agent_binary_sha256": "b04383bf83013d61c804f68590d9956395b73ee4e0e4a8494e6a2b756101913c",
+    "primary_hub_8080_touched": false,
+    "repair_hub_restarted": false,
+    "vm_restarted": false,
+    "product_source_modified": false,
+    "owned_child": {
+      "node_id": "a029df98-9097-4ef0-948b-4913387a3916",
+      "host": "192.168.100.206",
+      "root": "/var/lib/nodesteer-qa-g23-d08f3dbc-a/fixtures",
+      "routing": "owned child(192.168.100.206) -> operator 192.168.100.170:32979 (own injectable frame proxy) -> repair hub :18080"
+    }
+  },
+  "cases": [
+    {
+      "case_id": "P11-08",
+      "title": "每次Manual Run生成新UUID代表新意图；同Execution ID/Key重复投递/上传按幂等验证",
+      "canonical_before": "PARTIAL — remaining: 同 Execution ID/Key 的重复投递/上传幂等未测试（需要构造重复投递）。",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261016-G23:P11-08-duplicate-delivery-and-upload",
+          "layer": "real-api + frame-wire injection + owned child Agent SQLite + on-node marker file",
+          "status": "PASS",
+          "description": [
+            "One Manual Run of a hub-owned task: the injectable owned frame proxy duplicated the real hub->agent RUN_EXECUTION frame (injection event seq 106) and the real agent->hub EXECUTION_FINISHED frame (seq 114) for the same Execution ID 90ddc8d8-1616-4198-94ea-883fb699d67e.",
+            "The Hub received the duplicated result upload twice (it acked the same Execution twice: 2 ACKs) and still kept exactly 1 execution row in SUCCESS; the child journal kept exactly 1 local execution row, synced once; the marker script ran exactly once (1 line).",
+            "A second, uninjected Manual Run produced a new UUID with its own row and its own marker line (new UUID = new intent; the dedup is by Execution ID, not by \"swallow all runs\")."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The injection only covers hub->agent RUN_EXECUTION duplication and agent->hub EXECUTION_FINISHED duplication on the owned child channel; LOG_CHUNK / ARTIFACT frames were not duplicated (out of scope)."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g23/evidence/phase3-p11-08-duplicate-delivery.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g23/evidence/phase2-fixtures.json"
+      ],
+      "actual_resources": {
+        "node": "a029df98-9097-4ef0-948b-4913387a3916",
+        "node_host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-g23-d08f3dbc-a/fixtures",
+        "proxy_port": 32979,
+        "task": "ed6a8705-1f71-45eb-9096-33e8c4804588",
+        "execution_ids": [
+          "90ddc8d8-1616-4198-94ea-883fb699d67e",
+          "2339039f-3d20-4a11-9702-2737be20c4af"
+        ],
+        "marker_file": "marker.log"
+      }
+    },
+    {
+      "case_id": "P17P18-03",
+      "title": "status：PENDING/RUNNING/SUCCESS/FAILED/SKIPPED/CANCELED/TIMED_OUT/BLOCKED",
+      "canonical_before": "PARTIAL — remaining: 六状态有正样本，PENDING/RUNNING 无真实样本。",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261016-G23:P17P18-03-pending-and-running-real-samples",
+          "layer": "real-api (executions list = UI query) + frame-wire hold injection + owned child Agent",
+          "status": "PASS",
+          "description": [
+            "A real PENDING row was sampled with the exact query the UI uses (`/api/executions?limit=50&offset=0&status=PENDING&task_id=4377e54f-7d00-4ed0-87f5-7b849bcca8a8`): one row for execution d3992703-aeea-4d7e-98fa-e3d9cddf1e80 in status PENDING at 2026-10-16T09:29:39Z while the proxy held the RUN_EXECUTION frame on the child channel (8s hold window).",
+            "A real RUNNING row was sampled for the same execution at 2026-10-16T09:29:46Z while the proxy held the EXECUTION_FINISHED frame (the task had already completed on the node, the Hub row was still RUNNING).",
+            "The row then converged to SUCCESS with the marker script executed exactly once, and all eight status selectors answered HTTP 200 against the same task-scoped query."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Sampling used the executions-list API (the very endpoint the executions page reads) rather than a browser session; the eight selector controls themselves were verified in earlier batches.",
+        "The PENDING/RUNNING windows exist because the owned child channel held the frame; no product code or protected node was touched."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g23/evidence/phase4-p17p18-03-pending-running.json"
+      ],
+      "actual_resources": {
+        "node": "a029df98-9097-4ef0-948b-4913387a3916",
+        "node_host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-g23-d08f3dbc-a/fixtures",
+        "proxy_port": 32979,
+        "task": "4377e54f-7d00-4ed0-87f5-7b849bcca8a8",
+        "execution_id": "d3992703-aeea-4d7e-98fa-e3d9cddf1e80",
+        "final_status": "SUCCESS"
+      }
+    },
+    {
+      "case_id": "AR-08",
+      "title": "Agent Offline During Hub Script Update；恢复后幂等、持久化、Desired State与实际状态一致",
+      "canonical_before": "PARTIAL — remaining: 无单独注入 duplicate/lost/reordered 通知帧或调度幂等维度。",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261016-G23:AR-08-notification-frame-faults",
+          "layer": "real-api + frame-wire injection (drop / duplicate / stale replay) + owned child Agent SQLite + Hub read-only SQLite desired-state compare",
+          "status": "PASS",
+          "description": [
+            "Lost notification: the real CHANGE_NOTIFICATION for a Hub Script update (global revision 3473) was dropped on the child channel; the child still converged to the new revision/sha within 19.184s via its own revision-check path (no silent divergence).",
+            "Duplicate notification: the real CHANGE_NOTIFICATION for the next Script update (global revision 3474) was delivered twice; the child converged once and idempotently in 0.351s with a single script row.",
+            "Reordered/stale delivery: the captured older notification (global revision 3473, script revision 2) was replayed after the newer revision 3 had been applied; the child kept revision 3 and the newest sha, and its global revision never regressed — i.e. a stale/reordered notification is ignored.",
+            "Desired state vs actual state after the fault window: all 9 owned scripts (revision+sha256), 9 owned tasks and 7 owned schedules match the Hub, and the live agent-owned schedule still produced exactly one execution per slot (no duplicate slots in Hub or child journal).",
+            "Restart persistence: the owned Agent was really stopped and restarted; definitions survived, every pre-restart execution id is still present with no duplicate ids, and the only new rows are genuinely new slots."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "On the shared repair authority the SYNC_REQUEST count inside the replay window is not a clean discriminator (heartbeat revision checks every 5s plus other batches' object changes); the applied-state comparison is the authoritative signal and is what the assertion uses."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g23/evidence/phase5-ar08-notification-faults.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g23/evidence/phase2-fixtures.json"
+      ],
+      "actual_resources": {
+        "node": "a029df98-9097-4ef0-948b-4913387a3916",
+        "node_host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-g23-d08f3dbc-a/fixtures",
+        "proxy_port": 32979,
+        "script_under_fault": "cb3cdea9-691f-45ac-9318-67b16d5713f3",
+        "hub_revision_before": 3472,
+        "schedule_id": "6318f463-fddb-4891-b3f9-c8a003ccf583"
+      }
+    },
+    {
+      "case_id": "P12P13-06",
+      "title": "Hub Owner 和 Agent Owner。",
+      "canonical_before": "PARTIAL — remaining: Hub-Owner vs Agent-Owner 的真实调度执行差异未验证。",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261016-G23:P12P13-06-owner-execution-difference",
+          "layer": "real-schedule (cron) + frame-wire source-of-trigger oracle + owned child Agent SQLite",
+          "status": "PASS",
+          "description": [
+            "Hub-owned cron: 2 executions, 2 distinct slots, every execution id present in a real hub->agent RUN_EXECUTION frame (the Hub is the trigger source); the child only executed what was dispatched.",
+            "Agent-owned cron, same expression, same child: 2 executions and exactly 0 hub->agent RUN_EXECUTION frames for that task; every execution id was reported by the agent's own EXECUTION_FINISHED frames, i.e. the Agent local scheduler is the trigger source.",
+            "Both owners produced a single execution per slot (no double trigger) and a real business effect (2 marker lines each); child journal trigger types are \"schedule\" for both."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "One slot of each owner fired immediately at enable time with a slot derived from the schedule creation anchor (start-minus-slot tens of seconds) — same enable-time behaviour as the previous p-sched run, not a difference between owners."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g23/evidence/phase6-p12p13-06-owner-difference.json"
+      ],
+      "actual_resources": {
+        "node": "a029df98-9097-4ef0-948b-4913387a3916",
+        "node_host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-g23-d08f3dbc-a/fixtures",
+        "proxy_port": 32979,
+        "hub_owned_task": "7d1c10ed-7201-4cd2-b5c2-ee381d0f50d2",
+        "agent_owned_task": "e9774cbc-0146-4049-8089-f3072eb74ec7",
+        "schedules": [
+          "4e3eb585-3556-4ae7-a282-c3c9457514c0",
+          "c1fec52a-38df-4bb1-9963-23d1818a2f65"
+        ]
+      }
+    },
+    {
+      "case_id": "P12P13-07",
+      "title": "`allow_offline` 与 `hub_online_required` 组合。",
+      "canonical_before": "PARTIAL — remaining: 两策略组合下的实际投递行为未验证。",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261016-G23:P12P13-07-offline-policy-quadrants",
+          "layer": "real-schedule (agent-owned 30s interval) + real channel cut on the owned child + node status + child journal offline/synced flags + Hub rows after reconnect",
+          "status": "PASS",
+          "description": [
+            "Quadrant 1+2 (child connected): both the allow_offline and the hub_online_required schedule fired (2 rows each, offline flag 0).",
+            "Quadrant 3 (child channel cut, allow_offline): 3 executions were created while disconnected, all with offline=1 and synced=0 (local-only until reconnect).",
+            "Quadrant 4 (child channel cut, hub_online_required): exactly 0 executions — the online gate really suppresses dispatch while the child has no Hub connection (the cut stops the listener, so the agent can never complete a handshake).",
+            "Recovery: after the channel was restored the Hub itself had already marked the node offline (observed 2.005s after the cut) and then online/synced; the offline executions were uploaded and appear as Hub rows with offline=true (3 rows); the hub_online_required schedule compensated the 3 missed slots with exactly 1 catch-up execution and then resumed its normal cadence.",
+            "No duplicate slots and the marker files match the child journal row counts exactly (business effect oracle)."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The cut was implemented as \"close both relay legs + stop the proxy listener\" on the child's own channel; the Hub-side node status transition to offline was observed in 2.0s."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g23/evidence/phase7-p12p13-07-offline-quadrants.json"
+      ],
+      "actual_resources": {
+        "node": "a029df98-9097-4ef0-948b-4913387a3916",
+        "node_host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-g23-d08f3dbc-a/fixtures",
+        "proxy_port": 32979,
+        "allow_offline_task": "c98acb89-4343-43c9-bc39-0df222931a1d",
+        "hub_online_required_task": "3e19bf4c-64df-4e07-bd44-e146c5e0c447",
+        "schedules": [
+          "4b716798-d097-4d9b-97a2-fac76f1b548e",
+          "d5f9859e-75a7-4f17-b23d-a980ee3fdda6"
+        ]
+      }
+    },
+    {
+      "case_id": "P12P13-08",
+      "title": "`run_once` 与 `skip` Misfire。",
+      "canonical_before": "PARTIAL — remaining: 漏触发真实场景（停机后补偿）未验证。",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261016-G23:P12P13-08-interval-misfire-after-real-stop",
+          "layer": "real-schedule (agent-owned 30s interval) + real Agent process stop/restart + child journal slot semantics + Hub row after reconnect",
+          "status": "PASS",
+          "description": [
+            "The Agent process was really stopped (2026-10-16T09:35:04Z) across 3 missed 30s slots and really restarted (2026-10-16T09:36:41Z); the slot arithmetic is done in the child clock frame (measured offset -0.035s).",
+            "run_once schedule: exactly 1 compensation execution after the restart, reporting the missed slot 2026-10-16T09:36:29Z (inside the stopped window) while starting at 2026-10-16T09:36:40.157695626Z — i.e. one catch-up for 3 missed boundaries, not one execution per missed slot; then normal cadence resumed.",
+            "skip schedule: 0 catch-up executions for the same stop window (no slot older than the restart was ever executed) and normal cadence resumed at the next boundary (2 rows after the restart).",
+            "The run_once compensation is visible on the Hub as the same execution id / slot (UI reads the same rows) and both schedules keep one execution per slot with marker lines matching row counts."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Overlap note (per the authorization checklist): the one-time \"missed slot\" SKIP/RUN_ONCE evidence already exists in p-sched phase5/phase9 (E2E-06). This run adds the INTERVAL-schedule dimension plus a real process stop/restart, which was not covered before."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g23/evidence/phase8-p12p13-08-misfire-after-stop.json"
+      ],
+      "actual_resources": {
+        "node": "a029df98-9097-4ef0-948b-4913387a3916",
+        "node_host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-g23-d08f3dbc-a/fixtures",
+        "proxy_port": 32979,
+        "misfire_runonce_task": "d4391c60-5501-458c-93d4-9baad74dc9b0",
+        "misfire_skip_task": "77f8b412-69b1-4fef-9299-07ef3e2c099b",
+        "schedules": [
+          "92d3da9b-4090-44d0-b45b-ec47db95c772",
+          "e7a7bdd7-5091-461d-9f7f-f39155f8a90a"
+        ]
+      }
+    }
+  ],
+  "fault_injection_modes": {
+    "injectable_frame_proxy": "owned child channel only; duplicate / drop / bounded hold / raw-frame replay + hard cut (both relay legs closed and listener stopped, same port re-bound)",
+    "proxy_port": 32979,
+    "frames_injected": {
+      "duplicate": 3,
+      "drop": 1,
+      "hold": 2,
+      "replay": 1,
+      "channel_cuts": 1
+    }
+  },
+  "retained_execution_history": {
+    "total_rows": 25,
+    "per_task": {
+      "task_dup_run": 2,
+      "task_pending": 1,
+      "task_notif": 2,
+      "task_owner_agent": 2,
+      "task_owner_hub": 2,
+      "task_off_allow": 6,
+      "task_off_req": 4,
+      "task_mis_runonce": 3,
+      "task_mis_skip": 3
+    },
+    "note": "Execution rows are undeletable product history (no delete API); counts are registered so the authority baseline can be reconciled."
+  },
+  "deleted_resources": {
+    "hub_fixtures_deleted": 25,
+    "all_get_404": true,
+    "node_deleted": [
+      {
+        "label": "a",
+        "id": "a029df98-9097-4ef0-948b-4913387a3916",
+        "delete_http": 200,
+        "get_http": 404,
+        "delete_body": {
+          "ok": "true"
+        }
+      }
+    ],
+    "child_removal": {
+      "signalled": [
+        131550
+      ],
+      "remaining_processes": [],
+      "root_removed": true,
+      "root_exists_after": false
+    }
+  },
+  "final_cleanup": {
+    "independent_oracle": "verify_cleanup.py (separate process, fresh reads)",
+    "ok": true,
+    "exact_all_404": true,
+    "hub_leftover_clear": true,
+    "protected_nodes_online_synced": true,
+    "native2_clean": true,
+    "proxy_ports_released": true,
+    "no_harness_processes_no_mux": true,
+    "healthz": {
+      "repair_18080": 200,
+      "primary_8080": 200
+    },
+    "hub_db_quick_check": "ok"
+  },
+  "observations": [
+    {
+      "observation_id": "OBS-20261016-G23-RECONNECT-WINDOW",
+      "title": "agent IsConnected() 在 WS 握手完成、HELLO/HELLO_ACK 之前即置真，hub_online_required 门禁存在毫秒级放行窗口",
+      "severity_candidate": "INFO / 低危（不改判本批用例结论；仅记录）",
+      "discovered_at_utc": "2026-10-16T09:23:31Z",
+      "harness_context": "phase7 P12P13-07 象限 4（child 链路 cut 期间）。本次 cut 采用「accept 后立即 close(1013)」，该实现会让 agent 的 websocket.Dial 完成握手，从而短暂置 connected=true。",
+      "observed": {
+        "proxy_events_around": [
+          {
+            "event": "client_rejected_while_cut",
+            "at_utc": "2026-10-16T09:23:22Z",
+            "port": 42747
+          },
+          {
+            "event": "client_rejected_while_cut",
+            "at_utc": "2026-10-16T09:23:26Z",
+            "port": 42747
+          },
+          {
+            "event": "client_rejected_while_cut",
+            "at_utc": "2026-10-16T09:23:28Z",
+            "port": 42747
+          },
+          {
+            "event": "client_rejected_while_cut",
+            "at_utc": "2026-10-16T09:23:31Z",
+            "port": 42747
+          },
+          {
+            "event": "client_rejected_while_cut",
+            "at_utc": "2026-10-16T09:23:35Z",
+            "port": 42747
+          },
+          {
+            "event": "client_rejected_while_cut",
+            "at_utc": "2026-10-16T09:23:37Z",
+            "port": 42747
+          }
+        ],
+        "hub_online_required_execution_created_during_cut": [
+          {
+            "id": "ffe35473-f551-42a4-9573-ecf2fbd14c15",
+            "task_id": "7dcff604-02eb-4fa6-8cd9-21e4b14928fc",
+            "script_id": "7b0b4296-93dd-4555-91da-e3d6ceef4761",
+            "trigger_type": "schedule",
+            "scheduled_time": "2026-10-16T09:23:23Z",
+            "status": "SUCCESS",
+            "exit_code": 0,
+            "offline": 1,
+            "synced": 0,
+            "start_time": "2026-10-16T09:23:31.502610093Z",
+            "end_time": "2026-10-16T09:23:31.513651744Z"
+          }
+        ],
+        "child_allow_offline_rows_during_cut_offline_flag": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "note": "child 在该时刻的 dial 被 proxy 以 1013 拒绝，但同秒出现一条 hub_online_required 执行（start_time 09:23:31.502），说明该 tick 落在 connected=true 的窗口内。"
+      },
+      "product_code_refs": [
+        "internal/agent/connection/manager.go:249 m.connected = true（dial 成功后、HELLO 之前）",
+        "internal/agent/agent.go:148 a.sch.SetOnlineFunc(a.conn.IsConnected)",
+        "internal/agent/scheduler/scheduler.go:142 hub_online_required 门禁读 online()"
+      ],
+      "impact": "门禁判定依据是「WS 握手成功」而非「会话已建立（HELLO_ACK）」。真实网络分区（dial 失败/超时）不受影响；仅在「对端 accept 后立刻关闭」这类 LB/代理行为下存在毫秒级放行窗口。",
+      "mitigation_in_this_batch": "后续运行的 cut 改为止停监听端口（dial 直接 ECONNREFUSED），消除该窗口，象限 4 断言因此为干净复测。"
+    }
+  ],
+  "budget": {
+    "api_mutations": 74,
+    "child_process_starts": 3,
+    "child_process_stops": 3,
+    "frames_dropped": 0,
+    "frames_duplicated": 0,
+    "frames_held": 0,
+    "frames_replayed": 1,
+    "channel_cuts": 1
+  },
+  "harness_errors": [],
+  "status_change_authority": "proposals only; Root/independent review decides ledger updates"
+}

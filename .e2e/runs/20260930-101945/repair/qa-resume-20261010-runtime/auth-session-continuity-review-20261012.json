@@ -1,0 +1,122 @@
+{
+  "reviewed_at_utc": "2026-10-12T14:17:29Z",
+  "classification": "STATIC_SOURCE_REVIEW_WITH_OWN_SESSION_RUNTIME_EVIDENCE",
+  "scope": "Backend bearer-session ownership, logout isolation, TTL source, JSON field casing, and this QA browser/profile metadata only.",
+  "conclusion": {
+    "logout_scope": "STATIC: /api/logout is behind withAuth; handler extracts the request Bearer and calls auth.Manager.Logout(token). Logout deletes only that exact token key from Manager.sessions; there is no per-user/session-wide deletion in this path.",
+    "login_effect": "STATIC: Login creates a fresh UUID token and inserts one map entry. It does not iterate over sessions or revoke earlier sessions for the same user. SSOLogin uses the same independent-token insertion pattern.",
+    "persistence": "STATIC: auth.Manager stores bearer sessions in an in-memory map; no user-session persistence store was found in the reviewed auth implementation. This is distinct from internal/hub/session.go Agent connection tracking.",
+    "ttl_source": "STATIC: DefaultConfig sets 24h; an optional YAML config can override session_ttl; applyEnv contains no session-TTL override; cfg.SessionTTL is passed to auth.New. The active Hub effective config was not read, and this QA metadata does not contain Session.Expires, so current effective TTL remains unknown.",
+    "role_and_token_shape": "STATIC: /api/login wraps the session as lowercase outer key token and user; Session exported fields serialize with Go-default uppercase Token/UserID/Username/Role/Expires, except Avatar tagged lowercase. /api/me returns Session directly. Frontend SessionInfo and sessionToUser consume Role/UserID/Username/Expires uppercase. Persist the outer login token before origin localStorage injection; do not infer a lowercase Role field.",
+    "unrelated_web_401": "No causal link can be established between the previously observed Web profile /me 401 and this QA session. Our evidence covers only our dedicated session and browser profile."
+  },
+  "source_refs": [
+    {
+      "path": "internal/hub/auth/auth.go",
+      "lines": "19-27",
+      "fact": "Session JSON shape: exported fields default to uppercase names; only Avatar has a lowercase tag."
+    },
+    {
+      "path": "internal/hub/auth/auth.go",
+      "lines": "31-49",
+      "fact": "Manager owns in-memory map keyed by token; default TTL is supplied by constructor."
+    },
+    {
+      "path": "internal/hub/auth/auth.go",
+      "lines": "109-133",
+      "fact": "Login verifies user, generates UUID, assigns Expires from sessionTTL and inserts a fresh token key; no existing-session invalidation."
+    },
+    {
+      "path": "internal/hub/auth/auth.go",
+      "lines": "139-174",
+      "fact": "Authenticate checks per-token expiry; Logout deletes the exact token key."
+    },
+    {
+      "path": "internal/hub/auth/auth.go",
+      "lines": "178-220",
+      "fact": "SSOLogin also generates and inserts a distinct token; no per-user invalidation."
+    },
+    {
+      "path": "internal/hub/api/api.go",
+      "lines": "120-122",
+      "fact": "/api/logout and /api/me both use bearer auth middleware."
+    },
+    {
+      "path": "internal/hub/api/api.go",
+      "lines": "218-239",
+      "fact": "withAuth authenticates the provided bearer before invoking the route."
+    },
+    {
+      "path": "internal/hub/api/api.go",
+      "lines": "282-287",
+      "fact": "Bearer token is taken from Authorization: Bearer ..."
+    },
+    {
+      "path": "internal/hub/api/api.go",
+      "lines": "392-450",
+      "fact": "Login returns lowercase token/user wrapper; logout deletes extracted token; /me returns Session directly."
+    },
+    {
+      "path": "cmd/hub/main.go",
+      "lines": "37-40,48-64",
+      "fact": "Config YAML session_ttl field and 24h default."
+    },
+    {
+      "path": "cmd/hub/main.go",
+      "lines": "72-87,133-140",
+      "fact": "YAML config is unmarshaled, environment overrides applied, then SessionTTL is passed to Hub."
+    },
+    {
+      "path": "cmd/hub/main.go",
+      "lines": "182-260",
+      "fact": "applyEnv does not define NODESTEER_SESSION_TTL or another TTL override."
+    },
+    {
+      "path": "packaging/systemd/hub.yaml.example",
+      "lines": "20-20",
+      "fact": "Example config uses 24h."
+    },
+    {
+      "path": "web/src/lib/api.ts",
+      "lines": "416-424",
+      "fact": "Frontend SessionInfo expects uppercase Role/UserID/Username/Expires, with lowercase avatar."
+    },
+    {
+      "path": "web/src/stores/auth-store.ts",
+      "lines": "26-35",
+      "fact": "Frontend role mapping reads Session.Role."
+    },
+    {
+      "path": "web/src/features/auth/sign-in/index.tsx",
+      "lines": "78-91",
+      "fact": "Frontend takes result.token from lowercase login wrapper before setting user from result.user."
+    },
+    {
+      "path": "internal/hub/session.go",
+      "lines": "21-29,32-46",
+      "fact": "SessionManager is a separate in-memory Agent connection map keyed by nodeID, not the bearer-token map in auth.Manager."
+    }
+  ],
+  "runtime_evidence": {
+    "evidence_paths": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/application-ui-run-b3ca14953c14/browser-auth-proof.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/application-ui-run-b3ca14953c14/dedicated-session-metadata.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/application-ui-run-b3ca14953c14/logout-result.json"
+    ],
+    "own_login_me_http": 200,
+    "own_role_observed": "administrator",
+    "own_logout_http": 200,
+    "same_own_token_me_after_logout_http": 401,
+    "shared_token_used": false,
+    "secret_values_read_or_recorded": false,
+    "own_browser_profile_removed": true,
+    "session_expires_recorded": false,
+    "runtime_ttl_verified": false
+  },
+  "uncertainties": [
+    "The actual Hub active configuration file and effective session_ttl were not inspected, so the live effective TTL is unknown.",
+    "No second-user or shared-session probe was run; non-interference with other tokens is a static code conclusion only.",
+    "The earlier Web profile 401 is not attributed to this QA session."
+  ],
+  "no_mutations": true
+}

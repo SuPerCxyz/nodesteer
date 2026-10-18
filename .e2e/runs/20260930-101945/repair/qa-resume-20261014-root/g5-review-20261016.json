@@ -1,0 +1,180 @@
+{
+  "review_id": "ROOT-G5-REVIEW-20261016",
+  "reviewed_at": "2026-10-16T09:20:58.291623+00:00",
+  "reviewer": "main-agent(root)",
+  "status": "INTEGRATED",
+  "dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g5",
+  "verified_build": "dddee4f0-e2e-repair-20261016",
+  "authorization_basis": "授权清单 G5（用户要求全力推进）",
+  "verdicts": [
+    {
+      "case_id": "P09P11-07",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "选「托管应用部署」→类型/应用/操作逐项枚举→保存 POST 200→运行 SUCCESS→单元 active、落盘二进制 sha==发布包 sha、health healthy（当前表单无独立 artifact/version 控件，实测不存在）"
+    },
+    {
+      "case_id": "P09P11-08",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "四操作逐项 UI 选择保存后真实执行：start→running、stop→dead、restart→active、upgrade→SUCCESS healthy；选项枚举 [启动,停止,重启,升级]"
+    },
+    {
+      "case_id": "P09P11-09",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "单节点[a]→多节点[a,b]→去选回[a]，每步 UI 勾选状态与 API target.node_ids 一致"
+    },
+    {
+      "case_id": "P09P11-11",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "标签任务真实投递：1 节点→加标签 2 节点→改 child-a 标签值后 child-a 0 条新增执行（匹配集合变化有投递证据）"
+    },
+    {
+      "case_id": "P09P11-15",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "8 metric×6 operator UI 逐项枚举 + API 受理；8 条负向 400；效果 SKIPPED(condition not satisfied)→清除后 SUCCESS"
+    },
+    {
+      "case_id": "P09P11-16",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "属性/操作符逐项；未选节点时设置远程条件为 no-op；7 条负向校验 400"
+    },
+    {
+      "case_id": "P09P11-17",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "API and[local,remote] 与嵌套 and 结构读回一致、空 and 被拒；UI AND 勾选落库为 and 且真实执行 SUCCESS"
+    },
+    {
+      "case_id": "X09",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "四类型编辑页回显+原样保存、隐藏字段逐类型不变；决定性证据：含残留 application_id+group_ids+label_* 的 script 任务真实执行只投 node 目标、只跑脚本、无部署副作用"
+    },
+    {
+      "case_id": "X11",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "回显四要素齐全；覆盖=替换；清除最后一个→库内 null 且执行由 SKIPPED 转 SUCCESS；AND 勾选未设置时 payload 无 condition"
+    },
+    {
+      "case_id": "FL-02",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "Agents→Agent Detail→任务链接→任务详情目标与 API 一致；节点维度任务过滤与标签语义一致"
+    },
+    {
+      "case_id": "FL-03",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "标签→标签组（key/value+计算成员）→任务目标→标签改变后跨页收敛"
+    },
+    {
+      "case_id": "FL-04",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "脚本 revision/history 递增（r2→r3、sha 可比）；克隆副本独立（改副本后原脚本 content/sha/revision 不变）；执行记录带 script_id+script_revision"
+    },
+    {
+      "case_id": "P14P15-09",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "节点详情渲染自有应用链接（href=/applications/<id>）→ 真实点击落到应用详情页"
+    },
+    {
+      "case_id": "P09P11-12",
+      "canonical_after": "PARTIAL",
+      "reason": "app_operation 已正确剔除（FAIL-G-001 修复生效），但 application_id/script_id/group_ids/label_* 仍随 payload 提交（惰性，不影响调度）"
+    }
+  ],
+  "new_observations": [
+    "OBS-20261016-G5-STALE-PAYLOAD-FIELDS-CARRIED",
+    "OBS-20261016-G5-AND-CONDITION-NO-SUMMARY-NO-CLEAR"
+  ],
+  "cleanup": "CLEAN：owned 残留 0；宿主无进程/目录/单元/挂载；agent 二进制 sha 未变；4 protected 节点 online/synced；主端点 healthz 200；不可删历史：节点执行 16 条、审计 59 行",
+  "counts_before": {
+    "PASS": 442,
+    "FAIL": 6,
+    "PARTIAL": 46,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "counts_after": {
+    "PASS": 455,
+    "FAIL": 6,
+    "PARTIAL": 33,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "status_changes": [
+    [
+      "P09P11-07",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P09P11-08",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P09P11-09",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P09P11-11",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P09P11-15",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P09P11-16",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P09P11-17",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P14P15-09",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "FL-02",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "FL-03",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "FL-04",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "X09",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "X11",
+      "PARTIAL",
+      "PASS"
+    ]
+  ]
+}

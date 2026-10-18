@@ -1,0 +1,481 @@
+{
+  "batch_id": "sys-b01",
+  "title": "Hub 重启：Agent 自动重连、Session/Desired State 重建与权威源收敛",
+  "nonce": "a2630efc1488",
+  "executed_at_utc": "2026-10-15T10:10:11Z",
+  "finished_at_utc": "2026-10-15T10:11:27Z",
+  "endpoint": "http://192.168.100.209:18080",
+  "cases": [
+    {
+      "case_id": "SYS-03",
+      "title": "SYS-03 Hub 重启：Agent 自动重连、Session 重建、Desired State 不丢",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-03",
+          "layer": "hub unit restart / hub sqlite / gateway sessions / 4 protected repair Agents",
+          "status": "PASS",
+          "description": [
+            "`systemctl stop/start nodesteer-hub-repair-20260930-101945.service` on 192.168.100.209: caller-visible /healthz and /readyz stopped answering (outage observed from the operator workstation), MainPID changed, and the binary sha256 stayed 164ea4ac...",
+            "All 4 protected repair Agents went through orphan-online reset at Hub start and reconnected by themselves to online/synced with global_revision >= the revision of a Desired State change committed just before the restart (timeline sampled every 1s).",
+            "Hub persistence survived: revision_sequence stayed >= the pre-restart revision, the owned script/task rows and their revision_changes rows were still present after the restart, PRAGMA quick_check = ok, and the owned child Agent reconciled exactly the one logical change with no duplicate Execution."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The 4 protected repair Agents had already applied the pre-restart Desired State change before the unit was stopped (they were connected when it was written), so their evidence covers session rebuild, retained applied revision and automatic reconnection; the \"lag while disconnected, then reconcile on reconnect\" direction is proven by the harness-owned child Agent, which was cut from the Hub before the change.",
+        "The observed Hub unavailability was short (~1.3 s: HTTP unanswered and TCP refused). A long outage beyond the Hub heartbeat timeout was not exercised in this batch.",
+        "The repair Hub was restarted once in the reported run (twice across both attempts); management API sessions live in Hub memory and therefore do not survive the restart - the next call returned 401 and was re-authenticated once by the harness client."
+      ],
+      "evidence": [
+        "attempt01-harness-bug",
+        "case-result.json",
+        "evidence/phase0-untouched-units-after.json",
+        "evidence/phase0-untouched-units.json",
+        "final-cleanup-oracle.json",
+        "fixture-ledger.json",
+        "node_units.py",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase0-untouched-units.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-pre-restart-execution.json",
+        "phase4-desired-state-change.json",
+        "phase5-hub-restart.json",
+        "phase6-post-restart.json",
+        "phase6-proxy-frames.json",
+        "phase7-no-duplicate-executions.json",
+        "phase8-cleanup.json",
+        "progress.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb01-a2630efc1488-",
+        "child_node_id": "71fc6e71-cb1b-434e-b1c2-f713429c34cf",
+        "child_agent_id": "agent-b4b6e2d9-e83e-45ac-8e53-0838c76011dc",
+        "script_id": "e660a82f-8b48-4c8f-b951-99f46a5155c6",
+        "task_id": "f2406a89-f1a0-495f-986d-4c075e3eb749",
+        "target_node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+        "executions": {
+          "pre_restart_target_node": "9693fe3a-7ebb-404f-8765-5a28526cc3fc",
+          "during_reconcile_child": "6e8231ef-d21b-4dff-948c-9ccac6c4c6c4",
+          "after_ready_child": "db35338b-95d2-43f1-9d83-82ea0320a4ef",
+          "post_restart_target_node": "2e35feee-ccc5-4abc-b4e3-202f890c3a45"
+        },
+        "preserved_execution_history": [
+          "9693fe3a-7ebb-404f-8765-5a28526cc3fc",
+          "6e8231ef-d21b-4dff-948c-9ccac6c4c6c4",
+          "db35338b-95d2-43f1-9d83-82ea0320a4ef",
+          "2e35feee-ccc5-4abc-b4e3-202f890c3a45"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 11,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 4,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1,
+        "hub_restarts": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "f2406a89-f1a0-495f-986d-4c075e3eb749",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "e660a82f-8b48-4c8f-b951-99f46a5155c6",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native1_child_removal": {
+          "signalled": [
+            24485
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "71fc6e71-cb1b-434e-b1c2-f713429c34cf",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "SYS-17",
+      "title": "SYS-17 Agent 重连前不宣告 READY，完成 Reconciliation 后再 READY",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-17",
+          "layer": "owned child Agent ready gate / harness frame proxy / hub execution dispatch",
+          "status": "PASS",
+          "description": [
+            "Reconnect order on the wire: HELLO -> HELLO_ACK -> SYNC_REQUEST -> SYNC_RESPONSE -> SYNC_ACK; the harness held the Hub->Agent SYNC_RESPONSE(s) so the Reconciliation window stayed open.",
+            "While the reply was withheld the owned child was online on the Hub but its applied revision was still the pre-restart one and its local store still held the old script sha: no READY.",
+            "A real manual Run dispatched in that window produced a real BLOCKED Execution whose block_reason is the Agent's own \"agent not ready (reconciling)\" gate - the business-level proof that READY was not claimed.",
+            "After the reply was released the Agent applied the sync (SYNC_ACK applied_rev = Hub revision), its reported revision caught up, and the next manual Run returned SUCCESS with the nonce marker."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "READY is an internal Agent state; it was observed through its product-level effects (rejected dispatch in the Reconciliation window, accepted dispatch after it) and the Hub-visible applied revision, not by reading Agent memory.",
+        "The Reconciliation window was widened by holding SYNC_RESPONSE frames on the harness's own frame proxy for its own child Agent; no product code and no protected Agent was changed."
+      ],
+      "evidence": [
+        "attempt01-harness-bug",
+        "case-result.json",
+        "evidence/phase0-untouched-units-after.json",
+        "evidence/phase0-untouched-units.json",
+        "final-cleanup-oracle.json",
+        "fixture-ledger.json",
+        "node_units.py",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase0-untouched-units.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-pre-restart-execution.json",
+        "phase4-desired-state-change.json",
+        "phase5-hub-restart.json",
+        "phase6-post-restart.json",
+        "phase6-proxy-frames.json",
+        "phase7-no-duplicate-executions.json",
+        "phase8-cleanup.json",
+        "progress.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb01-a2630efc1488-",
+        "child_node_id": "71fc6e71-cb1b-434e-b1c2-f713429c34cf",
+        "child_agent_id": "agent-b4b6e2d9-e83e-45ac-8e53-0838c76011dc",
+        "script_id": "e660a82f-8b48-4c8f-b951-99f46a5155c6",
+        "task_id": "f2406a89-f1a0-495f-986d-4c075e3eb749",
+        "target_node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+        "executions": {
+          "pre_restart_target_node": "9693fe3a-7ebb-404f-8765-5a28526cc3fc",
+          "during_reconcile_child": "6e8231ef-d21b-4dff-948c-9ccac6c4c6c4",
+          "after_ready_child": "db35338b-95d2-43f1-9d83-82ea0320a4ef",
+          "post_restart_target_node": "2e35feee-ccc5-4abc-b4e3-202f890c3a45"
+        },
+        "preserved_execution_history": [
+          "9693fe3a-7ebb-404f-8765-5a28526cc3fc",
+          "6e8231ef-d21b-4dff-948c-9ccac6c4c6c4",
+          "db35338b-95d2-43f1-9d83-82ea0320a4ef",
+          "2e35feee-ccc5-4abc-b4e3-202f890c3a45"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 11,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 4,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1,
+        "hub_restarts": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "f2406a89-f1a0-495f-986d-4c075e3eb749",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "e660a82f-8b48-4c8f-b951-99f46a5155c6",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native1_child_removal": {
+          "signalled": [
+            24485
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "71fc6e71-cb1b-434e-b1c2-f713429c34cf",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "INV-01",
+      "title": "INV-01 Hub 是 Desired State 唯一权威源",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:INV-01",
+          "layer": "hub script authority / owned child store / hub restart persistence",
+          "status": "PASS",
+          "description": [
+            "The operator changed the script on the Hub while the owned child was cut from the Hub; the child kept its stale copy and its old local revision, i.e. the Agent never became the source of the value.",
+            "After the restart the Hub still served exactly the operator-written object (same sha256/revision) and the Agent converged to it on reconnection - Hub -> Agent only.",
+            "Hub rows and revision_changes were unchanged by the Agent side across the restart; no Agent-originated Desired State write path was observed in the frame ledger."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Authority was exercised through the script (Desired State) object path; the Execution/Journal upload path is a separate direction of the protocol and was out of scope for this invariant."
+      ],
+      "evidence": [
+        "attempt01-harness-bug",
+        "case-result.json",
+        "evidence/phase0-untouched-units-after.json",
+        "evidence/phase0-untouched-units.json",
+        "final-cleanup-oracle.json",
+        "fixture-ledger.json",
+        "node_units.py",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase0-untouched-units.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-pre-restart-execution.json",
+        "phase4-desired-state-change.json",
+        "phase5-hub-restart.json",
+        "phase6-post-restart.json",
+        "phase6-proxy-frames.json",
+        "phase7-no-duplicate-executions.json",
+        "phase8-cleanup.json",
+        "progress.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb01-a2630efc1488-",
+        "child_node_id": "71fc6e71-cb1b-434e-b1c2-f713429c34cf",
+        "child_agent_id": "agent-b4b6e2d9-e83e-45ac-8e53-0838c76011dc",
+        "script_id": "e660a82f-8b48-4c8f-b951-99f46a5155c6",
+        "task_id": "f2406a89-f1a0-495f-986d-4c075e3eb749",
+        "target_node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+        "executions": {
+          "pre_restart_target_node": "9693fe3a-7ebb-404f-8765-5a28526cc3fc",
+          "during_reconcile_child": "6e8231ef-d21b-4dff-948c-9ccac6c4c6c4",
+          "after_ready_child": "db35338b-95d2-43f1-9d83-82ea0320a4ef",
+          "post_restart_target_node": "2e35feee-ccc5-4abc-b4e3-202f890c3a45"
+        },
+        "preserved_execution_history": [
+          "9693fe3a-7ebb-404f-8765-5a28526cc3fc",
+          "6e8231ef-d21b-4dff-948c-9ccac6c4c6c4",
+          "db35338b-95d2-43f1-9d83-82ea0320a4ef",
+          "2e35feee-ccc5-4abc-b4e3-202f890c3a45"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 11,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 4,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1,
+        "hub_restarts": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "f2406a89-f1a0-495f-986d-4c075e3eb749",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "e660a82f-8b48-4c8f-b951-99f46a5155c6",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native1_child_removal": {
+          "signalled": [
+            24485
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "71fc6e71-cb1b-434e-b1c2-f713429c34cf",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "AR-01",
+      "title": "AR-01 Hub Restart；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-01",
+          "layer": "hub restart / real executions on a protected repair node / idempotency",
+          "status": "PASS",
+          "description": [
+            "Real execution before the restart on protected native-2: terminal SUCCESS, stdout carried the nonce pre marker, exactly one Hub row.",
+            "Real execution after the restart on the same protected node: terminal SUCCESS, stdout carried the nonce post marker, exactly one Hub row - the restart did not lose or duplicate work.",
+            "After a settle window the Task had exactly 2 Executions on the target node and 2 on the owned child (one BLOCKED during Reconciliation, one SUCCESS after it): no duplicated Execution and no half state.",
+            "Desired State and actual state agreed after the restart: the Hub script sha256/revision were the operator-written values and both the protected node and the owned child had applied them."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Hub restart was performed once, on the single authorised repair unit; the primary :8080 Hub and every Agent service kept their original MainPIDs (recorded read-only before and after)."
+      ],
+      "evidence": [
+        "attempt01-harness-bug",
+        "case-result.json",
+        "evidence/phase0-untouched-units-after.json",
+        "evidence/phase0-untouched-units.json",
+        "final-cleanup-oracle.json",
+        "fixture-ledger.json",
+        "node_units.py",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase0-untouched-units.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-pre-restart-execution.json",
+        "phase4-desired-state-change.json",
+        "phase5-hub-restart.json",
+        "phase6-post-restart.json",
+        "phase6-proxy-frames.json",
+        "phase7-no-duplicate-executions.json",
+        "phase8-cleanup.json",
+        "progress.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb01-a2630efc1488-",
+        "child_node_id": "71fc6e71-cb1b-434e-b1c2-f713429c34cf",
+        "child_agent_id": "agent-b4b6e2d9-e83e-45ac-8e53-0838c76011dc",
+        "script_id": "e660a82f-8b48-4c8f-b951-99f46a5155c6",
+        "task_id": "f2406a89-f1a0-495f-986d-4c075e3eb749",
+        "target_node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+        "executions": {
+          "pre_restart_target_node": "9693fe3a-7ebb-404f-8765-5a28526cc3fc",
+          "during_reconcile_child": "6e8231ef-d21b-4dff-948c-9ccac6c4c6c4",
+          "after_ready_child": "db35338b-95d2-43f1-9d83-82ea0320a4ef",
+          "post_restart_target_node": "2e35feee-ccc5-4abc-b4e3-202f890c3a45"
+        },
+        "preserved_execution_history": [
+          "9693fe3a-7ebb-404f-8765-5a28526cc3fc",
+          "6e8231ef-d21b-4dff-948c-9ccac6c4c6c4",
+          "db35338b-95d2-43f1-9d83-82ea0320a4ef",
+          "2e35feee-ccc5-4abc-b4e3-202f890c3a45"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 11,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 4,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1,
+        "hub_restarts": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "f2406a89-f1a0-495f-986d-4c075e3eb749",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "e660a82f-8b48-4c8f-b951-99f46a5155c6",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native1_child_removal": {
+          "signalled": [
+            24485
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "71fc6e71-cb1b-434e-b1c2-f713429c34cf",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    }
+  ],
+  "deviations": [],
+  "budget": {
+    "api_mutations": 11,
+    "hub_definition_creates": 2,
+    "hub_definition_deletes": 2,
+    "manual_run_posts": 4,
+    "node_enroll_posts": 1,
+    "child_process_starts": 1,
+    "child_process_stops": 1,
+    "hub_restarts": 1
+  },
+  "final_cleanup_oracle_clean": true,
+  "harness_seams": {
+    "authority": "management writes only to repair http://192.168.100.209:18080",
+    "hub_restart": "only nodesteer-hub-repair-20260930-101945.service was stopped/started once; nodesteer-hub.service (:8080) and all Agent units untouched",
+    "owned_child": "one harness-owned child Agent on native-1 (exact repair Agent binary d55dc5cd...) behind a harness-owned frame proxy on 192.168.100.170",
+    "ready_gate": "SYNC_RESPONSE frames were held on the harness frame proxy so the Reconciliation window could be observed and exercised by a real manual Run",
+    "product_source_changes": 0,
+    "git_operations": 0,
+    "vms_restarted": 0
+  },
+  "post_run_addendum": {
+    "post_run_additions": [
+      "evidence/phase0-untouched-units-after.json - identical read-only unit probe repeated AFTER the batch; compared with evidence/phase0-untouched-units.json it shows every protected Agent and the primary Hub kept the same MainPID, while only the repair Hub MainPID changed (authorised restart).",
+      "evidence/attempt01-harness-bug/ - artifacts of the first attempt, kept unmodified. It failed on a harness bug (the repair-Hub restart invalidated the management API session, so the client did not re-authenticate; plus a %-formatting bug in the child remove helper). Both were fixed and the batch was re-run completely (EXIT=0); the report above is the second, complete run.",
+      "Repair-Hub restart count for the whole sys-b01 batch: 2 (one per attempt). Attempt 1 restarted the unit once (MainPID 5952 -> 97295) and then aborted on the harness bug; attempt 2 restarted it again (MainPID 97295 -> 97389) and completed. The unit is active at the end of the batch and /healthz, /readyz both answer 200; no protected Agent unit and no primary-Hub unit was ever restarted.",
+      "Product observation (not a failure): the repair Hub keeps management sessions in memory, so the first API call after the restart returned 401 \"invalid or expired session\" and the client re-authenticated once. Recorded in evidence/phase6-post-restart.json -> management_session_after_restart."
+    ],
+    "claims_changed": false
+  }
+}

@@ -1,0 +1,363 @@
+{
+  "created_at_utc": "2026-10-10T15:14:09Z",
+  "status": "READ_ONLY_NEXT_BATCH_PLAN_NO_RUNTIME_ACTION",
+  "scope": "10 precise runtime case rows/groups from current repair canonical state; shortlist only, no Task/Run/API/resource/process operations.",
+  "input_sources": {
+    "feature_inventory": {
+      "path": ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+      "sha256": "05f22232f5ee1a837bb18eff4ca82e1ebc798f975d4572a2c0e84aa17d3700b7",
+      "updated_at": "2026-10-10T15:12:56.058319+00:00",
+      "summary": {
+        "PASS": 162,
+        "FAIL": 1,
+        "PARTIAL": 162,
+        "NOT_RUN": 179,
+        "BLOCKED": 0
+      }
+    },
+    "defect_regression_matrix": {
+      "path": ".e2e/runs/20260930-101945/repair/defect-regression-matrix.json",
+      "sha256": "efa564ecbcb4f3ccd4dca1a4f4334198e83d33591de7831ccc1a23ef1bfed290",
+      "updated_at": "2026-10-10T06:50:34.541080+00:00",
+      "summary": {
+        "PASS": 19,
+        "FAIL": 0,
+        "PARTIAL": 1,
+        "NOT_RUN": 1,
+        "BLOCKED": 1
+      }
+    },
+    "attempt06_runtime": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt06/case-result-attempt02.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt06/timing-wire-diagnosis.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt06/stdout-container-final-readonly-attempt02.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt06/web-live-log-supplement.json"
+    ],
+    "existing_handoff": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/backend-next-batch-plan.json already proposes SYS-12 and AUTH-RELAY; not duplicated here."
+    ]
+  },
+  "current_status_note": "Use repair canonical only; historical-state/run originals are background, not new PASS. P17P18-11 is PASS and omitted. WEB-LIVE-LOG has a real attempt06 PENDING→RUNNING→SUCCESS capture; Root read-only physical proxy/control readback is still pending. Pending-empty-<pre> is not a canonical gate. X15 retry-attempt grouping remains unverified. P17P18-07 is a separate observed product bug candidate and must wait for user Requirement Review before any source change or retest.",
+  "budget": "No new Task/Run budget is authorized for this plan. Every resource count below is proposal-only and awaits Root budget; host capability items also await explicit user/Root isolation authorization.",
+  "items": [
+    {
+      "case_id": "WEB-LIVE-LOG",
+      "source": "defect-regression-matrix.json",
+      "canonical_status": "PARTIAL",
+      "canonical_remaining": [
+        "真实PENDING UI未捕获"
+      ],
+      "current_attempt06_delta": "Same-id PENDING→RUNNING→SUCCESS on one detail document and terminal stdout marker were captured. Root is coordinating exact proxy hold/release and controls/watchdog readback. The extra pending-empty-<pre> check is not a canonical gate.",
+      "classification": "CAN_CLOSE_WITH_EXISTING_RUN_AFTER_READONLY_PHYSICAL_READBACK",
+      "resource_budget": {
+        "new_child_task": 0,
+        "new_child_run": 0,
+        "new_app_or_artifact": 0,
+        "read_only_helper": "0 if Root combined inspector covers nonce; otherwise at most 1"
+      },
+      "user_path": "Open exact Task Run page, submit real confirmation once, observe same Execution ID PENDING→RUNNING→SUCCESS, then view terminal stdout; exact Task is deleted while execution history remains.",
+      "acceptance": [
+        "Exact RUN_EXECUTION hold/release event for this Execution and watchdog release/controls {} are verified by the Root inspector.",
+        "API/UI show same Execution/Task/Node IDs, PENDING→RUNNING→SUCCESS, same document, marker in actual stdout <pre>.",
+        "Task/helper GET404, execution history preserved, dedicated logout/me401/profile removal."
+      ],
+      "cleanup": "No new fixture; Root inspector must only read exact nonce-owned sidecars/controls. Preserve history."
+    },
+    {
+      "case_id": "X15",
+      "source": "feature-inventory.json",
+      "canonical_status": "PARTIAL",
+      "canonical_remaining": [
+        "Canonical file says PENDING UI not sampled; attempt06 provides it pending integration.",
+        "API/UI have no retry-attempt metadata/grouping; broader dimension remains."
+      ],
+      "current_attempt06_delta": "Real PENDING/RUNNING/SUCCESS and terminal stdout marker on same exact execution detail.",
+      "classification": "EXISTING_EVIDENCE_CLOSES_PENDING_DIMENSION; RETRY_GROUPING_REMAINS_PARTIAL",
+      "resource_budget": {
+        "new_child_task": 0,
+        "new_child_run": 0,
+        "new_app_or_artifact": 0
+      },
+      "user_path": "Use attempt06 existing execution evidence; no new UI operation needed.",
+      "acceptance": [
+        "Integrate PENDING UI dimension only after direct proxy/control readback.",
+        "Do not infer retry count/group from duplicate output; no attempt metadata exists."
+      ],
+      "cleanup": "No new resources; preserve attempt06 evidence/history."
+    },
+    {
+      "case_id": "P17P18-07",
+      "source": "feature-inventory.json + .e2e/runs/20260930-101945/repair/e2e03-case-review-20261008.json",
+      "canonical_status": "FAIL",
+      "canonical_remaining": [
+        "ExitCode=0 repair is awaiting a user Requirement Review; other metadata dimensions remain to be exercised after any approved fix."
+      ],
+      "existing_evidence": "A real SUCCESS Execution with normal process stdout had API exit_code absent and UI displayed “-”; Root review confirmed the independent product bug candidate. No source change has been authorized.",
+      "classification": "WAIT_FOR_USER_REQUIREMENT_REVIEW; do not modify product source or spend new Run budget before confirmation.",
+      "resource_budget": {
+        "now": {
+          "new_task": 0,
+          "new_run": 0
+        },
+        "after_user_review_if_fix_approved": {
+          "one_unique_task": 1,
+          "one_execution_run": 1,
+          "list_and_detail_UI_checks": true
+        }
+      },
+      "user_path": "After the user confirms the exact product fix, run one real command that exits 0; verify the same Execution List and Detail API/UI show exit_code 0. Also retain an existing unknown/missing exit-code case as “-” if applicable.",
+      "acceptance_after_confirmation": [
+        "API JSON contains exit_code:0 (not omitted).",
+        "Execution List and Detail show 0 for the same real successful Execution; unknown remains distinguishable.",
+        "No Task/Run is performed before Review confirmation."
+      ],
+      "cleanup": "Delete only new QA Task GET404 after terminal; preserve Execution/Audit history."
+    },
+    {
+      "case_id": [
+        "SYS-01",
+        "SYS-02",
+        "INV-02"
+      ],
+      "source": "feature-inventory.json",
+      "canonical_status": {
+        "SYS-01": "PARTIAL",
+        "SYS-02": "PARTIAL",
+        "INV-02": "PARTIAL"
+      },
+      "classification": "ONE_BATCH_WITH_SEPARATE_ENROLLMENT_AND_READONLY_PROCESS_SUBCASES; Root resource budget required; SYS02 heartbeat stays blocked without packet oracle",
+      "resource_budget": {
+        "SYS01": {
+          "new_node": 1,
+          "owned_agent_process": 1,
+          "parent_enrollment_task_and_run": 1,
+          "shared_users_or_agents": 0
+        },
+        "SYS02_INV02": {
+          "read_only_parent_helper_task_and_run": "1 if not already available",
+          "child_business_task_or_run": 0,
+          "process_signal_or_unit_change": 0
+        }
+      },
+      "subcases": [
+        {
+          "case_id": "SYS-01",
+          "remaining_dimensions": [
+            "Invalid/expired/revoked token and duplicate re-enrollment not tested.",
+            "Raw credential must remain private; fingerprint only."
+          ],
+          "user_path": "Enroll a unique QA Agent; invalid token creates no Hub Node, valid token yields one online/synced Node, then reconnect same Agent without duplicate Node/Agent IDs.",
+          "acceptance": [
+            "Invalid token rejected/no Node; valid token actual HELLO and stable identity after reconnect.",
+            "Only token fingerprint is recorded; no raw token/credential."
+          ],
+          "cleanup": "Stop only exact owned process; delete exact QA Node GET404 and unique private root."
+        },
+        {
+          "case_id": "SYS-02",
+          "remaining_dimensions": [
+            "Actual HELLO/Heartbeat packet or count is missing; last_seen is not proof.",
+            "Docker/other host variants remain."
+          ],
+          "user_path": "Restart/reconnect same owned Agent identity and observe online/synced; read an actual packet counter/log if the approved runtime exposes one.",
+          "acceptance": [
+            "Same Node/Agent IDs, online/synced.",
+            "Do not mark packet-level heartbeat PASS without an actual packet/count source; current proxy CONTROL_TYPES excludes HEARTBEAT."
+          ],
+          "cleanup": "No signal/Unit operation; read-only Task GET404; preserve Native4 owner root."
+        },
+        {
+          "case_id": "INV-02",
+          "remaining_dimensions": [
+            "Exact child /proc socket/listener inventory is missing.",
+            "Docker/Host topology remains."
+          ],
+          "user_path": "Inspect the exact owner-guarded child PID fd/socket table and listening sockets, cross-check its outbound Hub connection and absence of reverse listeners.",
+          "acceptance": [
+            "PID/startticks/UID/exeSHA/root/cgroup guard passes and socket ownership binds to that PID.",
+            "Only Native Linux slice can close; Docker/Host still separate."
+          ],
+          "cleanup": "Same read-only helper cleanup; preserve process/Unit."
+        }
+      ],
+      "combined_user_path": "These are three distinct oracles and cannot be collapsed to one PASS; execute only the subcase with an available authorized helper."
+    },
+    {
+      "case_id": "SYS-09",
+      "source": "feature-inventory.json",
+      "canonical_status": "PARTIAL",
+      "canonical_remaining": [
+        "Prior cleanup stopped Agent before Hub deletion; no live tombstone consumption.",
+        "No Schedule/future-slot suppression exercised."
+      ],
+      "classification": "NEEDS_ONE_CHILD_TASK_ONE_SCHEDULE_ONE_RUN; EXISTING_NATIVE4_AFTER_FRESH_GUARD",
+      "resource_budget": {
+        "new_child_task": 1,
+        "new_schedule": 1,
+        "child_run": 1,
+        "new_script_or_artifact": 0,
+        "unit_or_parent_process_operation": 0
+      },
+      "user_path": "Create one harmless Task with a short recurrence, run it once, delete Task and Schedule while Agent remains online, wait through one bounded due window, and inspect history/scheduler state.",
+      "acceptance": [
+        "Connected Agent consumes definition tombstones and advances beyond delete revision.",
+        "Task/Schedule GET404; no later scheduled Execution after due window.",
+        "Prior completed Execution/Audit remains available."
+      ],
+      "cleanup": "Delete only exact Task/Schedule, GET404, preserve history, keep parent Unit and original nodes."
+    },
+    {
+      "case_id": "AR-08",
+      "source": "feature-inventory.json",
+      "canonical_status": "PARTIAL",
+      "canonical_remaining": [
+        "No separately injected duplicate/lost/reordered notification or schedule idempotency dimension."
+      ],
+      "classification": "NEEDS_ONE_SCRIPT_TASK_AND_ONE_RUN_PLUS_EXACT_CHILD_PROXY_CONTROL",
+      "resource_budget": {
+        "new_script": 1,
+        "new_script_task": 1,
+        "child_run": 1,
+        "temporary_control": "duplicate one CHANGE_NOTIFICATION to exact owned child",
+        "new_node_or_app": 0
+      },
+      "user_path": "User edits one Script revision; the owned proxy duplicates its ChangeNotification; child syncs the desired revision and runs the ScriptTask once with a unique marker.",
+      "acceptance": [
+        "Proxy event ties duplicate notification to exact owned connection/type/id.",
+        "SQLite revision/SHA/Journal show one desired revision and no double side effect.",
+        "API/UI display one exact successful Execution and marker."
+      ],
+      "cleanup": "Clear only owned duplicate setting, GET404 exact Script/Task, preserve execution history, check controls {}."
+    },
+    {
+      "case_id": "INV-05",
+      "source": "feature-inventory.json",
+      "canonical_status": "PARTIAL",
+      "canonical_remaining": [
+        "CommitSync call itself has not failed; SQLite_BUSY write-stage test is a separate stage."
+      ],
+      "existing_evidence": "Attempt02 SQLite_BUSY returned a real negative ACK and preserved old revision/SHA, then normal recovery; it is not CommitSync failure.",
+      "classification": "WAIT_FOR_EXPLICIT_APPROVAL_OF_DISPOSABLE_FILESYSTEM_FAULT_FIXTURE",
+      "resource_budget": {
+        "disposable_owned_db_or_child": 1,
+        "script_task": 1,
+        "child_run": 1,
+        "deterministic_fs_fault": 1,
+        "existing_native4_db_mutation": 0
+      },
+      "user_path": "Apply one Script revision under a deterministic CommitSync failure, observe a negative apply result and unchanged committed revision, release fault, and sync/run the same desired revision.",
+      "acceptance": [
+        "Fault is at the actual CommitSync call, not transaction begin or SQLITE_BUSY.",
+        "Negative ACK and old committed revision are read back; success after release has exact new SHA/revision/marker."
+      ],
+      "cleanup": "Restore exact filesystem state; quick_check; remove only disposable root/Script/Task; preserve history. No current DB permission/FS mutation."
+    },
+    {
+      "case_id": "SYS-45",
+      "source": "feature-inventory.json",
+      "canonical_status": "PARTIAL",
+      "canonical_remaining": [
+        "Resolve→Download→Verify→Install order not independently observed in one direct TLS deployment; prior HTTPS prefetch then ArtifactID-derived HTTP cache hit; direct TLS deploy-fetch untested."
+      ],
+      "existing_evidence": "qa-resume-20261010-host-tls/tls-final-summary.json covers selected CA/TLS dimensions and says direct TLS deploy-fetch not tested; cleanup PASS.",
+      "classification": "NEEDS_NEW_ISOLATED_HOST_APP_FIXTURE_AND_ONE_DEPLOY_RUN",
+      "resource_budget": {
+        "owned_host_runner": 1,
+        "app": 1,
+        "artifact": "reuse only after exact GET200/SHA check",
+        "deploy_task": 1,
+        "deploy_run": 1,
+        "owned_host_unit": 1
+      },
+      "user_path": "Create App with HTTPS Artifact, deploy once with empty app cache, view the ordered resolve/download/verify/install/start/health trace and UI result.",
+      "acceptance": [
+        "Direct TLS GET is attributable to the deploy; no prefetch/cache hit.",
+        "Artifact/binary/config SHA, exact Unit/process ownership and health UI/API agree.",
+        "Negative CA/hash paths still reject and cleanup removes only this App/Unit/files."
+      ],
+      "cleanup": "Remove only new App/Task/owned Unit/files; verify GET404 and no process/unit remains; preserve shared Artifact."
+    },
+    {
+      "case_id": "AR-26",
+      "source": "feature-inventory.json",
+      "canonical_status": "NOT_RUN",
+      "canonical_remaining": [
+        "All repair-build applicable dimensions unrun; legacy build evidence excluded."
+      ],
+      "classification": "SHARE_SYS45_FIXTURE; NEEDS_ONE_ADDITIONAL_RECOVERY_OPERATION_AND_RUN",
+      "resource_budget": {
+        "new_app_or_artifact": 0,
+        "share_sys45_app_and_owned_host_root": true,
+        "additional_recovery_task_or_operation": 1,
+        "additional_run": 1
+      },
+      "user_path": "After SYS-45 establishes the dedicated App, restart/recover the same Agent or reapply unchanged desired state; open App/History and confirm the same identity is healthy.",
+      "acceptance": [
+        "Same App/Agent desired revision and binary/config SHA after recovery.",
+        "One active Unit/process only; no duplicate registry rows or extra unit.",
+        "API/UI history reports successful recovery and real health."
+      ],
+      "cleanup": "Jointly with SYS-45 after both checks: exact App/Task deletion; verify unit/files/process removed, preserve Execution history/shared artifact."
+    },
+    {
+      "case_id": [
+        "INV-14",
+        "SYS-55",
+        "AR-31",
+        "FAIL-ENV-HOST-001",
+        "FAIL-ENV-HOST-002"
+      ],
+      "source": "feature-inventory.json + defect-regression-matrix.json",
+      "canonical_status": {
+        "INV-14": "NOT_RUN",
+        "SYS-55": "NOT_RUN",
+        "AR-31": "NOT_RUN",
+        "FAIL-ENV-HOST-001": "BLOCKED",
+        "FAIL-ENV-HOST-002": "NOT_RUN"
+      },
+      "canonical_remaining": [
+        "Native/Docker HostAdapter differences and mount missing/readonly/wrong-target plus restore are not tested; Host001 is blocked at proc-root privilege/environment gate."
+      ],
+      "classification": "WAIT_FOR_EXPLICIT_ROOTFUL_HOST_RUNNER_PERMISSION_AND_ENVIRONMENT",
+      "resource_budget": {
+        "new_isolated_docker_node": 1,
+        "owned_container": 1,
+        "mount_variants": [
+          "missing",
+          "read-only",
+          "wrong-target",
+          "corrected"
+        ],
+        "task_runs": 3,
+        "existing_host001_change": 0
+      },
+      "user_path": "Use a dedicated Docker Node and exact new Host roots; attempt FileRelay/write on each invalid mount and finally the corrected mount, observe API/UI results and host-side markers.",
+      "acceptance": [
+        "Runtime mode is truly Docker/HostIntegration, not a non-host container or Native Agent.",
+        "Missing/RO/wrong path returns non-success and writes no unintended host path.",
+        "Corrected path produces the real marker/bytes/SHA and UI/API state.",
+        "Deletion/restore is idempotent and no stale Host Unit/volume remains."
+      ],
+      "cleanup": "Only exact new container/Node/network/mount/root by owner labels; preserve existing Host001 and original four Nodes."
+    }
+  ],
+  "coordination_order": [
+    "Root read-only exact proxy hold/release and controls/watchdog readback, then integrate WEB-LIVE-LOG and only verified X15 dimensions.",
+    "P17P18-07 is not a runtime-only rerun: provide user Requirement Review for the exit-code-zero fix before product edits or a confirming Run.",
+    "Use one fresh owner-guarded readonly helper for SYS-02/INV-02 only if the current handoff lacks the required socket readback; no process signal.",
+    "If Root allocates one Native4 run window, prioritize SYS-09 tombstone+future-slot and AR-08 duplicate notification sequentially with fresh independent scopes and exact cleanup.",
+    "INV-05 requires a disposable DB filesystem-fault mechanism and explicit approval; current SQLite_BUSY evidence is not enough.",
+    "SYS-45 and AR-26 share one fresh Host-managed App fixture; do not reuse the cleaned Native1 child.",
+    "INV-14/SYS-55/AR-31/Host001/002 stay blocked until an isolated rootful Docker host runner is approved; leave Host001 unchanged."
+  ],
+  "excluded_or_guards": [
+    "No global inventory/matrix edits.",
+    "No product/proxy/schema changes.",
+    "No use of cleaned Native1 child as an available fixture.",
+    "No changes to existing Host001, original four Agents, parent Unit/cgroup, shared users/credentials, or primary:8080.",
+    "Do not infer CommitSync failure from SQLITE_BUSY, heartbeat packets from last_seen, or HostIntegration from a non-host Docker test."
+  ],
+  "case_shortlist_count": 10,
+  "grouping_note": "SYS-01, SYS-02 and INV-02 are grouped under one batch row for brevity but retain separate resource budgets and acceptance oracles; they are not one combined PASS.",
+  "updated_at_utc": "2026-10-10T15:15:25Z"
+}

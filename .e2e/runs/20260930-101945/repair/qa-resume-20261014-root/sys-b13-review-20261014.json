@@ -1,0 +1,68 @@
+{
+  "review_id": "ROOT-SYS-B13-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T10:06:15.563581+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "run_dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b13",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试、剩余分母全量推进；并发上限 5",
+  "verdicts": [
+    {
+      "case_id": "E2E-17",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "docker run 与 Compose 两种接入各建 1 个 Docker Node：deployment_mode=docker、host_integration=false、online/synced；容器内 /.dockerenv、uid 65534、只读根/cap-drop ALL；agent 日志 mode=docker + agent connected；持久目录内 state.db 属实。"
+    },
+    {
+      "case_id": "AR-03",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "真实 docker restart：PID 10338→11649、StartedAt 变化；DB (dev,inode)=(65026,4653987) 不变、quick_check=ok；identity/revision 不变、Execution 行集不变（无重复）、待同步 Script revision 1 与发布 sha 一致。"
+    },
+    {
+      "case_id": "AR-05",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "负向：真删命名卷→Compose 重建空卷→容器 exited ExitCode=1、日志 `unable to open database file (14)`、DB 不存在、Node offline、无伪 SUCCESS；恢复：回灌原卷→同 node/agent_id 复联 online/synced、quick_check=ok、revision 不回退、无重复执行，恢复后真实执行 SUCCESS。"
+    },
+    {
+      "case_id": "INV-13",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "容器内进程镜像 sha 与 native-4 二进制 sha 均等于 d55dc5cd…；--help 正文逐字节相同（仅 argv[0] 行不同）；本地 SQLite schema sha 相同；Hub capability 键集相同；同一 Script 在两种形态均 SUCCESS 且 journal 形态一致。"
+    }
+  ],
+  "verified_independently_by_root": {
+    "native4_docker_guard": [
+      "0",
+      "0",
+      "0"
+    ],
+    "hub_node_delete": "Node A/B DELETE 200 → GET 404",
+    "oracle": "final-cleanup-oracle + final-absence：容器/网络/卷均不存在、/opt/qa-sysb13-* 已删"
+  },
+  "deviation_accepted": {
+    "issue": "指定节点 native-4 的 daemon 无 pinned 镜像",
+    "action": "经 native-2 **只读** `docker save | docker load` 把镜像按原 digest sha256:ecd4dd9f… 导入 native-4（核对镜像内 agent 二进制 d55dc5cd…），用毕 `docker rmi` 复原 native-4 baseline",
+    "assessment": "未改动 native-2 daemon 状态、未触碰 Host001 容器/卷/网、未 pull/rebuild/retag；属可接受的隔离内偏差，本轮采纳并留档"
+  },
+  "counts_before": {
+    "PASS": 258,
+    "FAIL": 5,
+    "PARTIAL": 163,
+    "NOT_RUN": 69,
+    "BLOCKED": 9
+  },
+  "not_claimed": "未执行产品修复、Git 交付或 Archive",
+  "counts_after": {
+    "PASS": 262,
+    "FAIL": 5,
+    "PARTIAL": 163,
+    "NOT_RUN": 65,
+    "BLOCKED": 9
+  }
+}

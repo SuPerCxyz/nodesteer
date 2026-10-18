@@ -1,0 +1,107 @@
+{
+  "captured_at_utc": "2026-10-10T11:36:35Z",
+  "source_of_truth": ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+  "status": "CANDIDATES_ONLY_NO_GLOBAL_UPDATE",
+  "candidate_mappings": [
+    {
+      "case_id": "AR-02",
+      "canonical_status": "NOT_RUN",
+      "candidate": "Consider a narrow PARTIAL mapping for same-identity Agent process restart, persistent DB identity/revision, reconnect SYNC_ACK, Hub online/synced. This actual child restart did not exercise pending-work idempotency or prove all desired/actual state equal; no UI oracle.",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/ui-native3/restart/manual-attempt01/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/ui-native3/restart/manual-attempt01/restart-evidence.json"
+      ],
+      "observed": "SIGTERM exact owned child then same binary/config restart; same NodeID/AgentID; quick_check ok before/after; local revision 1400 before/after; successful SYNC_ACK applied_rev=1400; Hub online/synced; parent Unit/proxy/original four preserved.",
+      "gaps": [
+        "idempotent replay/recovery with pending work",
+        "full desired/actual state equivalence",
+        "UI feedback"
+      ]
+    },
+    {
+      "case_id": "AR-25",
+      "canonical_status": "NOT_RUN",
+      "candidate": "Do not map existing SHA-prune test to this case: it corrupts a Script content hash in a SYNC_RESPONSE frame; it does not attempt an Application Artifact checksum failure during installation.",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/negative-oracle-attempt02-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/positive-prune-oracle-evidence.json"
+      ],
+      "observed": "Real malformed Script frame was rejected with negative ACK applied_rev=0 and old App files/Unit retained; after release a valid complete snapshot pruned the App and applied Scripts.",
+      "gaps": [
+        "actual Artifact SHA mismatch during application install",
+        "installation rejection/rollback oracle and related UI feedback"
+      ]
+    },
+    {
+      "case_id": "AR-30",
+      "canonical_status": "PARTIAL",
+      "candidate": "Existing reviewed mapping is valid for the PREPARING conservative failure branch only; no additional mapping proposed.",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/p0-002-final-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/attempt03/p0-preparing-fault-attempt03-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/attempt03/post-restart-local-state-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/attempt03/restart-after-fault-evidence.json"
+      ],
+      "observed": "Crash during PREPARING preserved old v1 physical files/Unit and reported FAILED/recovery inspection; no false DONE/healthy.",
+      "gaps": [
+        "full successful desired-version recovery/idempotency path remains outside this branch"
+      ]
+    },
+    {
+      "case_id": "SYS-02",
+      "canonical_status": "PARTIAL",
+      "candidate": "Current covered dimensions already include SHA-prune reconnect and Native4 same-identity restart. Do not upgrade overall status: the heartbeat packet remains unobserved.",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/ui-native3/restart/manual-attempt01/case-result.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/ui-native3/restart/manual-attempt01/restart-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/armed-child-restart-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/positive-prune-oracle-evidence.json"
+      ],
+      "observed": "Native4 manual restart produced reconnect + successful SYNC_ACK, same Node/Agent identity, online/synced; recorded hello_message_event_count=0 and heartbeat proxy_event_count=0/packet_captured=false. Existing SHA-prune dimension has separate HELLO/SYNC evidence per canonical review.",
+      "gaps": [
+        "captured heartbeat packet/event for Native4 restart scenario"
+      ]
+    },
+    {
+      "case_id": "INV-10",
+      "canonical_status": "NOT_RUN",
+      "candidate": "Do not map malformed Script-frame rejection as Artifact validation failure; retain NOT_RUN pending an actual Artifact install integrity-failure scenario.",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/negative-oracle-attempt02-evidence.json"
+      ],
+      "gaps": [
+        "Artifact bytes/hash validation at install boundary",
+        "proof no managed installation or Unit/file mutation after Artifact SHA failure"
+      ]
+    },
+    {
+      "case_id": "INV-11",
+      "canonical_status": "PARTIAL",
+      "candidate": "Existing reviewed PREPARING conservative branch already maps; no additional mapping proposed.",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/p0-002-final-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/attempt03/p0-preparing-fault-attempt03-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/attempt03/post-restart-local-state-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/attempt03/restart-after-fault-evidence.json"
+      ],
+      "observed": "Actual ManagedApp PREPARING crash refused false success and retained prior v1 files/active Unit with explicit failed/recovery state.",
+      "gaps": [
+        "recovered healthy desired-version completion not tested in this branch"
+      ]
+    },
+    {
+      "case_id": "P11-02",
+      "canonical_status": "NOT_RUN",
+      "candidate": "Do not count UI_READY/prepared page as runtime coverage: attempt04 had real route/Task GET200/name/Run-button, but arm helper failed before UI click. Independent inspector later confirmed controls {} and watchdog NOOP; no Execution/UI PENDING or terminal transition occurred.",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt04/prepared-proof.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt04/controller-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/owner-inspection-attempt04/result.json"
+      ],
+      "observed": "No child Execution; no UI Run. arm-control local argument-order defect caused deterministic false CAS failure; physical readback confirmed controls remained {} and watchdog NOOP_CONTROL_OWNER_MISMATCH.",
+      "gaps": [
+        "single real UI Run; PENDING/RUNNING/terminal badge; same-ID API/log marker"
+      ]
+    }
+  ]
+}

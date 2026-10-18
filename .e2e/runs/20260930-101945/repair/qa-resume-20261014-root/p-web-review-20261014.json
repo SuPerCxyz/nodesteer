@@ -1,0 +1,97 @@
+{
+  "review_id": "ROOT-P-WEB-REVIEW-20261014",
+  "reviewed_at": "2026-10-15T07:58:39.022612+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "run_dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/p-web",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 要求 5 路并行跑完全部测试",
+  "summary": {
+    "requested": 86,
+    "concluded": 86,
+    "pass": 26,
+    "partial": 60,
+    "fail": 0
+  },
+  "pass_cases": [
+    "E2E-02",
+    "G04-02",
+    "P02-01",
+    "P03-07",
+    "P04-01",
+    "P04-03",
+    "P05A-12",
+    "P05B-04",
+    "P06-05",
+    "P07_P08-01",
+    "P07_P08-04",
+    "P09P11-02",
+    "P09P11-13",
+    "P09P11-22",
+    "P12P13-02",
+    "P12P13-04",
+    "P14P15-02",
+    "P14P15-04",
+    "P19-01",
+    "P19-04",
+    "P20-01",
+    "P20-02",
+    "P20-03",
+    "P22-05",
+    "X05",
+    "X07"
+  ],
+  "structural_limitation": {
+    "id": "PWEB-HARNESS-02",
+    "detail": "本批子 Agent 被平台深度限制拦截（Subagent depth limit reached (1)），无法派发并行子任务，改由单会话串行执行 → 多数跨页/夹具链维度未覆盖，是本批 60 个 PARTIAL 的首要原因。",
+    "root_lesson": "本平台子 Agent 深度上限为 1：不得把「再派子 Agent 并行」作为批次计划前提；由 Root 直接铺平批次。"
+  },
+  "candidate_findings": [
+    {
+      "id": "E2E-20261014-TIMEOUT-CONTENT-VALIDATION-GAP",
+      "priority": "P1",
+      "title": "Task/Script 超时与内容边界校验缺失：负数 timeout(-5) 经 API 200 持久化、timeout=0 被接受、307200 字节脚本内容被接受",
+      "status": "CONFIRMED_TEST_FAILURE_REPAIR_SCOPE_REVIEW_PENDING",
+      "source_change_authorized": false,
+      "affected_cases": [
+        "P07_P08-11"
+      ],
+      "actual": "p-web 实测：POST 携带 timeout=-5 返回 200 且持久化；timeout=0 接受；307200 字节脚本内容被接受。用例期望的「超长/超时边界拒绝」未观察到。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/p-web/results.json"
+      ],
+      "needs": "需修复范围 Review；若产品有意允许则应在文档中明确"
+    },
+    {
+      "id": "OBS-20261014-SCHEDULE-INTERVAL-ZERO-SAVE-ENABLED",
+      "case": "P12P13-04",
+      "detail": "间隔 0/-1 仅给提示文案，保存按钮仍可用（未点击保存，无写）"
+    },
+    {
+      "id": "OBS-20261014-INVALID-TASK-DEEPLINK-NO-ERROR",
+      "case": "X05",
+      "detail": "无效 task_id 深链只有「任务已锁定」提示，无明确「任务不存在」错误"
+    },
+    {
+      "id": "OBS-20261014-PAST-ONETIME-SAVE-ENABLED",
+      "case": "P12P13-05",
+      "detail": "过去时间的 One-Time 运行时间无内联错误、保存仍可用（未提交）"
+    }
+  ],
+  "cleanup": "前后计数完全一致（nodes6/apps1/tasks0/schedules0/scripts2/artifacts1/transfers38/users8）；qa-pweb-* 残留 0；逐条 GET404；节点侧自有 root/进程/marker 全 0；未重启 VM/Hub；agent-browser 仅关自有会话（未用 --all）",
+  "counts_before": {
+    "PASS": 295,
+    "FAIL": 5,
+    "PARTIAL": 161,
+    "NOT_RUN": 34,
+    "BLOCKED": 9
+  },
+  "not_claimed": "未执行产品修复、Git 交付或 Archive",
+  "counts_after": {
+    "PASS": 321,
+    "FAIL": 5,
+    "PARTIAL": 135,
+    "NOT_RUN": 34,
+    "BLOCKED": 9
+  }
+}

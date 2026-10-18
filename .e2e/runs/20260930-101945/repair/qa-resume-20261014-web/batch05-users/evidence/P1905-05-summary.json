@@ -1,0 +1,43 @@
+{
+  "case": "P19-05",
+  "assertion": "审计记录不可被普通用户修改或删除。",
+  "authority": "http://192.168.100.209:18081 (isolated disposable instance)",
+  "data_immutability": {
+    "before_sample_count": 5,
+    "after_total_count": 20,
+    "target_record_unchanged": true,
+    "records_missing_after_attempts": [],
+    "note": "after_total grew due to legitimate audit entries from the batch's own operations; no record was removed or altered"
+  },
+  "api_attempts": {
+    "operator_GET_audit": 200,
+    "viewer_GET_audit": 200,
+    "operator_POST_audit": 200,
+    "operator_PUT_audit": 200,
+    "operator_DELETE_audit": 200,
+    "viewer_PUT_audit": 200,
+    "viewer_DELETE_audit": 200,
+    "operator_PUT_audit_byid": 404,
+    "operator_DELETE_audit_byid": 404,
+    "admin_DELETE_audit_byid": 404
+  },
+  "ui": {
+    "operator_audit_page_row_buttons": [],
+    "admin_audit_page_row_buttons": [],
+    "row_checkboxes": false,
+    "edit_or_delete_controls": [],
+    "read_only_table": true
+  },
+  "deviation_finding": {
+    "id": "DEF-AUDIT-METHOD-200",
+    "detail": "handleAudit (internal/hub/api/api.go:1865) has no HTTP method switch; POST/PUT/DELETE /api/audit all return 200 with the audit list instead of 405 Method Not Allowed.",
+    "impact": "No mutation occurs (store exposes only AddAudit/ListAudit/CountAudit), so the immutability assertion still holds. But a write-shaped request receives a success-looking 200, which is misleading API semantics.",
+    "severity": "low (no false success path in the shipped UI; audit page exposes no write controls)"
+  },
+  "evidence": [
+    "evidence/P1905-01-audit-before.json",
+    "evidence/P1905-02-audit-write-attempts.json",
+    "evidence/P1905-03-audit-after.json",
+    "evidence/P1905-04-operator-audit-page.png"
+  ]
+}

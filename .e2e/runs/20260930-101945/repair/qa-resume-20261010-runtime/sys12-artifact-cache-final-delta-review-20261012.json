@@ -1,0 +1,84 @@
+{
+  "reviewed_at_utc": "2026-10-12 15:01:30 UTC",
+  "review_mode": "read-only frozen-source delta review",
+  "runtime_actions": false,
+  "source_pins": {
+    "helper": {
+      "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/artifact_cache_lifecycle.py",
+      "sha256": "18cd6964031278b6f9477f6332b6995dca691b07e9daaf95facae3e53b81fd74"
+    },
+    "controller": {
+      "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/artifact_cache_controller.py",
+      "sha256": "1e333baa3a99dfe7df3323ea9a7e3396e473f83a6b3ff0d8a87564f945b6fabf"
+    },
+    "resource_plan_sha256": "37d6eae4461cbd2752851d13b1e736851f38903ee664d3cd46587a174f3a9784",
+    "recovery_review": {
+      "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/review.json",
+      "sha256": "6c0ba58deee82ab3fed3b58dfc7c94219b0ab5feaabd5d05717637ee382cfcf7"
+    }
+  },
+  "delta_findings": [
+    {
+      "id": "RECOVERY-API-DELETE-RECONCILIATION",
+      "status": "PASS_STATIC",
+      "evidence": [
+        "artifact_cache_controller.py:107-118",
+        "artifact_cache_controller.py:180-210"
+      ],
+      "finding": "Recovery permits an already-absent ledger-pinned ID, then requires a successful collection read with neither that ID nor nonce-owned name present and a direct GET 404. Existing objects are identity-checked before unassignment/deletion, followed by exact 404 checks."
+    },
+    {
+      "id": "RECOVERY-RUNTIME-DELETE-RECONCILIATION",
+      "status": "HOLD_STATIC",
+      "evidence": [
+        "artifact_cache_lifecycle.py:720-729",
+        "artifact_cache_lifecycle.py:745-778",
+        "artifact_cache_lifecycle.py:876-880"
+      ],
+      "finding": "When exact-name inspect reports absent and a previously recorded immutable container ID exists, the helper calls _container_by_id_or_absent() but ignores the returned value, then records that ID as removed. If the immutable ID is still present and passes ownership inspection, cleanup can falsely record absence; cleanup-root trusts this ledger subset check rather than re-inspecting Docker. Fail closed unless the return is None (or explicitly guarded stop/rm and confirm absence) before recording removal."
+    },
+    {
+      "id": "RECOVERY-ROOT-CLEANUP-RESTARTABILITY",
+      "status": "PASS_STATIC",
+      "evidence": [
+        "artifact_cache_lifecycle.py:823-880",
+        "artifact_cache_lifecycle.py:884-956"
+      ],
+      "finding": "Cleanup is gated by Hub objects 404 and pinned root dev/inode/UID/mode. Unknown entries/symlinks block; only exact metadata temp-name patterns are considered, and they are removed after owner/ledger binding checks. Children are validated and removed before metadata; ROOT_CHILDREN_CLEANUP/ROOT_CHILDREN_REMOVED plus owner-only/empty-root states support retry without recursive deletion."
+    },
+    {
+      "id": "RECOVERY-UNKNOWN-CONTAINER-CREATE",
+      "status": "PASS_STATIC",
+      "evidence": [
+        "artifact_cache_lifecycle.py:327-350",
+        "artifact_cache_lifecycle.py:709-779"
+      ],
+      "finding": "Ambiguous create results recover only through exact nonce container name inspect and validate immutable ID and full owner/policy identity; ambiguous identity stops. Runtime cleanup rechecks immutable ID after stop/remove."
+    },
+    {
+      "id": "HELPER-BUDGET-AND-CALLER-RECOVERY",
+      "status": "PASS_STATIC",
+      "evidence": [
+        "resource-plan.json:6-26",
+        "sys12_outer_controller.py:356-400",
+        "artifact_cache_controller.py:122-225"
+      ],
+      "finding": "Plan calls six normal helper phases and reserves four recovery calls (10 total). The outer controller derives counters from call records, rejects inconsistent/exceeded ledgers, and marks the recovery call before Task creation. Recovery proves helper executions terminal before resource mutation, cleans exact API objects and verifies 404 before root cleanup, and stops if budget or owner evidence is insufficient."
+    },
+    {
+      "id": "ARTIFACT-URL-CURRENT-EPOCH",
+      "status": "PASS_EVIDENCE_SCOPE_LIMITED",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/artifact-url-preflight/attempt01/final-summary.json",
+        "review.json:38-40"
+      ],
+      "finding": "The live Native1 probe is the supplied current-epoch authority evidence for that exact Hub/Node path. The static review JSON still labels the URL hold unresolved; this review does not generalize the runtime proof to other Hubs or claim the fixture E2E ran."
+    }
+  ],
+  "overall": "HOLD_STATIC",
+  "scope_limits": [
+    "No API, Docker, Task, Run, or runtime mutation was performed.",
+    "Static checks do not constitute SYS12 ArtifactCache E2E acceptance.",
+    "No other Hub or Node URL authority is inferred from the Native1 current-epoch probe."
+  ]
+}

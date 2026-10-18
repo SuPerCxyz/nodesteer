@@ -1,0 +1,181 @@
+{
+  "config": {
+    "argv": [
+      "/usr/bin/node",
+      "/home/superc/code/nodesteer/web/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "e2e/playwright.config.ts",
+      "--reporter=json",
+      "--grep",
+      "GAP-09|GAP-11"
+    ],
+    "configFile": "/home/superc/code/nodesteer/web/e2e/playwright.config.ts",
+    "rootDir": "/home/superc/code/nodesteer/web/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/superc/code/nodesteer/web/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "gap-ui.spec.ts",
+      "file": "gap-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "GAP-09 Artifact真实8MiB上传pending与精确大小SHA",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 100000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2933,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-03T00:58:13.400Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e7bf0fd7afce34bc30c5-109ac0d447d3004958f6",
+          "file": "gap-ui.spec.ts",
+          "line": 354,
+          "column": 1
+        },
+        {
+          "title": "GAP-11 Task RunUser启用离线策略及每次ManualRun新UUID",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 100000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 16599,
+                  "error": {
+                    "message": "TimeoutError: locator.fill: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('命令', { exact: true })\u001b[22m\n",
+                    "stack": "TimeoutError: locator.fill: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('命令', { exact: true })\u001b[22m\n\n    at /home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts:413:181",
+                    "location": {
+                      "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                      "column": 181,
+                      "line": 413
+                    },
+                    "snippet": "  411 |   const task = await createIsolatedTask(page, 'runuser-offline')\n  412 |   try {\n> 413 |     await page.waitForLoadState('networkidle'); await page.goto(`/tasks/${task.id}/edit`); await page.waitForLoadState('networkidle'); await page.getByLabel('命令', { exact: true }).fill(\"printf 'qa-run-user='; id -un\")\n      |                                                                                                                                                                                     ^\n  414 |     await page.getByLabel('运行用户', { exact: true }).fill('root'); await select(page, '离线策略', '允许离线')\n  415 |     const enabled = page.locator('label').filter({ hasText: /^已启用$/ }).getByRole('checkbox'); await enabled.uncheck()\n  416 |     await page.getByRole('button', { name: /^保存$/ }).click(); await page.waitForURL(/\\/tasks$/)"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                        "column": 181,
+                        "line": 413
+                      },
+                      "message": "TimeoutError: locator.fill: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('命令', { exact: true })\u001b[22m\n\n\n  411 |   const task = await createIsolatedTask(page, 'runuser-offline')\n  412 |   try {\n> 413 |     await page.waitForLoadState('networkidle'); await page.goto(`/tasks/${task.id}/edit`); await page.waitForLoadState('networkidle'); await page.getByLabel('命令', { exact: true }).fill(\"printf 'qa-run-user='; id -un\")\n      |                                                                                                                                                                                     ^\n  414 |     await page.getByLabel('运行用户', { exact: true }).fill('root'); await select(page, '离线策略', '允许离线')\n  415 |     const enabled = page.locator('label').filter({ hasText: /^已启用$/ }).getByRole('checkbox'); await enabled.uncheck()\n  416 |     await page.getByRole('button', { name: /^保存$/ }).click(); await page.waitForURL(/\\/tasks$/)\n    at /home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts:413:181"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-03T00:58:16.401Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts/gap-ui-GAP-11-Task-RunUser启用离线策略及每次ManualRun新UUID-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                    "column": 181,
+                    "line": 413
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e7bf0fd7afce34bc30c5-f9c3773a44b5baaef65b",
+          "file": "gap-ui.spec.ts",
+          "line": 406,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-03T00:58:12.812Z",
+    "duration": 20227.226000000002,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

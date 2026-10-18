@@ -1,0 +1,128 @@
+{
+  "created_at_utc": "2026-10-12T13:52:12.593005+00:00",
+  "status": "READONLY_PLAN_ONLY_ROOT_REVIEW_REQUIRED",
+  "scope": "只读诊断 FAIL-ENV-HOST-002 / SYS-55 / AR-31 的安全可执行边界，并评估 SYS-12 ArtifactCache 跨重建缺口。未创建 Task/Node/Transfer/App/Artifact/Container，未调用 Docker，未改 Host mount/policy，未改任何全局 artifact。",
+  "canonical": {
+    "SYS-55": {"priority": "P0", "status": "NOT_RUN", "baseline": "FAIL", "expected": "Docker Host mount 缺失/只读/错误路径时拒绝或写到真实逻辑 Host 目标；用户反馈与实际文件一致，清理无额外副作用。", "source": ".e2e/runs/20260930-101945/repair/feature-inventory.json:14589-14596"},
+    "AR-31": {"priority": "P0", "status": "NOT_RUN", "baseline": "FAIL", "expected": "Host mount 缺失恢复后幂等，持久化、Desired State 与实际状态一致；错误路径不得报告成功。", "source": ".e2e/runs/20260930-101945/repair/feature-inventory.json:16871-16878"},
+    "FAIL-ENV-HOST-002": {"priority": "P1", "status": "NOT_RUN", "baseline_failure_status": "open", "expected": "HostIntegration 缺失或错误挂载时 FileRelay 不得报告 SUCCESS；逻辑 Host 目标必须真实写入。", "source": ".e2e/runs/20260930-101945/repair/defect-regression-matrix.json:767-785"}
+  },
+  "observed_environment": {
+    "authority": "repair :18080 only",
+    "protected_node_get_at": "2026-10-12T13:52:12.593005+00:00",
+    "allowed_nodes": [
+      {"id": "91f44866-8a28-435e-bbda-2f2367126c00", "http": 200, "deployment_mode": "native", "host_integration": false, "host_filesystem_capability": true},
+      {"id": "611c02a5-1859-4465-878b-d543b7f6fdec", "http": 200, "deployment_mode": "native", "host_integration": false, "host_filesystem_capability": true},
+      {"id": "37989297-3bc8-4c0c-b302-7c6efbdba630", "http": 200, "deployment_mode": "native", "host_integration": false, "host_filesystem_capability": true},
+      {"id": "03cb50cc-eab6-4afd-bbe0-f73c4e326773", "http": 200, "deployment_mode": "native", "host_integration": false, "host_filesystem_capability": true},
+      {"id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea", "http": 200, "deployment_mode": "native", "host_integration": false, "host_filesystem_capability": true}
+    ],
+    "conclusion": "当前五个允许只读节点中没有 Docker/noHost Agent 或 HostIntegration Agent 可复用。要运行负向闭环，需 Root 另审一个全新、无 Host mount 的隔离 Docker source/receiver fixture；旧 Host001 不动。"
+  },
+  "host_002_analysis": {
+    "baseline_reproduction": "历史 failures.json 记录明确的 HostIntegration receiver、unique owned /opt destination、缺少目录 bind/错绑目录两类输入；旧结果中 FileRelay HTTP/状态成功但预期 Host 文件缺失。证据文件 environment/failures.json:97-120、environment/host-negative-results.json:82-84,242-244。",
+    "source_contract": [
+      {"fact": "deployment_mode=docker_host_integration 才推导 host_integration=true；普通 Docker 与 native 的 HostIntegration=false。", "source": "internal/agent/detect.go:40-44; internal/agent/agent.go:94-131"},
+      {"fact": "目标 FileRelay 校验 logical path，下载后调用 HostAdapter.AtomicReplaceReader；失败通过 FileDeliveryResult(OK=false)回 Hub。", "source": "internal/agent/agent.go:1305-1370,1431-1452"},
+      {"fact": "ContainerHostAdapter 在任何映射写副作用前比较 private/host PID1 mount namespace，再逐级 SameFile 验证 mapped path 与 /proc/1/root 逻辑目标。", "source": "internal/agent/host/container.go:35-43,79-110"},
+      {"fact": "AtomicReplaceReader 首先调用 validateMappedPath；失败时尚未 MkdirAll/CreateTemp/Rename。", "source": "internal/agent/host/container.go:229-254"},
+      {"fact": "Hub 收到 target OK=false 后将目标置为 FAILED；所有目标终态且有失败时 FileTransfer 为 FAILED，不是 SUCCESS。", "source": "internal/hub/file_transfer.go:476-530"},
+      {"fact": "Transfer 有 GET/retry/cancel，未见 item DELETE；Cancel 可删除 Hub part/blob 但保留传输记录。", "source": "internal/hub/api/api.go:1009-1048; internal/hub/file_transfer.go:576-606"}
+    ],
+    "safe_negative_feasibility": {
+      "existing_fixture": false,
+      "new_isolated_fixture": "可仅用此前审过的 pinned Agent image 新建两个 nonce-owned 普通 container；一个 source deployment_mode=docker，另一个 target deployment_mode=docker_host_integration。target 不挂载 /host、/proc、host PID/net、systemd/DBus 或设备；privileged=false、cap-drop ALL、default seccomp、no-new-privileges、PID private、config RO、DataDir RW、动态 bridge。",
+      "expected_fail_closed_path": "target private PID 情况下，ContainerHostAdapter 会发现 /proc/1/ns/mnt 与 /proc/self/ns/mnt 相同并在 validateMappedPath 早退；即使没有 /host bind，FileRelay 目标在 AtomicReplaceReader 之前失败。测试期望 Transfer/Target FAILED 而非 SUCCESS，Host physical target 与 container /host target 均不存在。",
+      "coverage_limit": "只覆盖 missing-/host-bind 的 fail-closed 负向。private PID 下会先因无法验证真实 Host namespace 早退，无法区分 wrong-target bind 与 readonly bind，也没有验证有效 HostIntegration 写入/恢复路径；因此 SYS-55/AR-31 完整范围仍 PARTIAL。不要挂 hostPID、Host /proc、privileged、nsenter 或改 Host policy 来扩展本轮。"
+    },
+    "minimum_candidate_budget": {
+      "new_nodes": 2,
+      "node_modes": {"source": "docker", "target": "docker_host_integration"},
+      "containers": 2,
+      "containers_concurrent_max": 2,
+      "owned_roots": 1,
+      "owned_bridges": 1,
+      "host_mounts": 0,
+      "cap_add": 0,
+      "privileged": false,
+      "host_pid_or_proc_mount": false,
+      "users": 0,
+      "business_file_transfers": 1,
+      "payload_bytes": 32,
+      "business_schedule": 0,
+      "tasks": 3,
+      "task_runs": 4,
+      "task_breakdown": {"source_payload_write": 1, "target_container_path_readonly_check": 1, "Native2_physical_path_absence_probe": 2},
+      "applications_artifacts": 0
+    },
+    "candidate_steps_and_oracles": [
+      "以新 nonce 创建唯一 root/config/DataDir 与动态 bridge，source/target 各一个容器；确认 HELLO/Node ID，target API 明确 deployment_mode=docker_host_integration、host_integration=true、host_filesystem capability 可用；任何 Host mount/capability 放宽都中止。",
+      "在 source Agent 的独立 DataDir 中用一个 exact Command Task 生成 32-byte unique payload；Run SUCCESS 且 source 文件 SHA/size 符合定义。sourcePath 用 /var/lib/nodesteer 下已 allowlist 的 exact owned 文件。",
+      "在 Native2 Host 上用一个只读 Task Run 确认 exact /opt/qa-host002-<nonce>/logical-target.bin 开始不存在；无文件创建。",
+      "POST 一次 /api/transfers（source Node、精确 sourcePath、一个 target Node 和该逻辑目标）。等待源 upload SHA/size 已暂存，再等待 target 终态；唯一允许结果为 Transfer FAILED/Target FAILED，error 来自 Host namespace/mount validation，不能是 SUCCESS。",
+      "在 target 中用只读 Command Task 检查 /host/opt/qa-host002-<nonce>/logical-target.bin 不存在；在 Native2 用同一个 owned read-only Task 第二次检查真实 /opt/qa-host002-<nonce>/logical-target.bin 仍不存在。任何文件出现都停止普通清理并保留证据，由 Root 定点审查。",
+      "先固化 Transfer FAILED/Target FAILED、source SHA/size、exact error、两个 absence oracles 与 UI/API 展示；之后可对该 exact Transfer POST cancel 清 Hub staged file，记录 final CANCELED 与 retained history。Hub Transfer 无 DELETE，禁止 SQLite 删除记录。"
+    ],
+    "cleanup_candidate": [
+      "依次 DELETE source payload Task、target read-only Task、Native2 path-probe Task，并对各 exact ID GET404；执行历史保留。",
+      "Transfer 如已失败，按批准的 API POST cancel exact ID，GET 确认 CANCELED 和 staged file 清理；保留 Transfer/Audit 历史，不声称 Transfer GET404。",
+      "确认 Transfer terminal 后，DELETE 两个 exact owned Node 并 GET404；停止/删除 exact immutable container IDs、owner network、root；确保四原 Node/Native4/HOST001 unchanged。"
+    ],
+    "remaining_unknowns": [
+      "当前没有 active noHost Docker fixture；两容器 future fixture需 Root 独立资源审查/准入。",
+      "历史结果未证明当前 Native2 daemon 为本轮新 target 提供能通过 /proc mount-namespace gate 的 HostIntegration path；本计划故意不提供这种高信任路径。",
+      "Target Command Task 的 /host 检查可证明容器映射视图，但物理 Native2 probe 是唯一 Host-side absence oracle；需未来 grant 明确许可这两个只读 Native2 Runs。",
+      "该负向无法覆盖只读/错目标 mount，也不能证明成功写入和恢复幂等；SYS-55/AR-31 继续 NOT_RUN/PARTIAL，不能外推完整 PASS。"
+    ]
+  },
+  "sys12_artifact_cache_evaluation": {
+    "canonical_gap": "SYS-12 当前 PARTIAL；上一轮只测 Script SQLite cache，ArtifactCache 跨 A→B 未测。",
+    "source_contract": [
+      {"fact": "仅已分配给该 Node 的 App 进入 DesiredState Apps；Hub 同步载荷派生 ArtifactURL/SHA。", "source": "internal/hub/sync.go:153-207,232-312"},
+      {"fact": "App Assign 是 Desired State 变更并发送 sync notification；不调用 Deploy 或创建 Execution。", "source": "internal/hub/application.go:154-202; internal/hub/api/api.go:1641-1660"},
+      {"fact": "Agent applySync 提交 Applications 后调用异步 prefetchApplications；它只遍历 App Artifact URL/SHA 并调用 ArtifactCache.Prefetch，不调用 Deploy。", "source": "internal/agent/agent.go:789-930"},
+      {"fact": "ArtifactCache 写入 DataDir/artifacts/<SHA>，核验下载 SHA 后 rename，再写本地 SQLite artifacts 行；Has 同时要求 DB 行存在且文件 SHA 正确；命中时直接返回。", "source": "internal/agent/artifact.go:25-110; internal/agent/store.go:120-125,537-545"},
+      {"fact": "Product/Architecture 明确 Application Definition Sync 与 Deploy 分离；HostIntegration 仅在托管应用/Host能力时启用。", "source": "docs/PRODUCT.md:233-262,330-347,974-984; docs/ARCHITECTURE.md:271-337,1032-1050"}
+    ],
+    "conclusion": "可在普通 deployment_mode=docker、host_integration=false、无 Host mount 的安全 Agent 上，通过 App assignment 走正常 Sync Prefetch，不部署 App；这正好覆盖 SYS-12 缺失的 ArtifactCache slice。源码路径充分支持，但没有当前运行证据。",
+    "minimum_candidate_budget": {
+      "new_nodes": 1,
+      "new_agent_mode": "docker, host_integration=false",
+      "sequential_containers": 2,
+      "concurrent_containers_max": 1,
+      "owned_roots": 1,
+      "owned_bridges": 1,
+      "host_mounts": 0,
+      "host_capabilities": 0,
+      "artifact_records": 1,
+      "artifact_size_bytes": 32,
+      "applications": 1,
+      "application_assignments": 1,
+      "application_deploys": 0,
+      "application_execution_tasks": 0,
+      "business_runs": 0,
+      "temporary_Native2_helpers": 6,
+      "helper_runs": 6,
+      "users_transfers": 0
+    },
+    "candidate_steps_and_oracles": [
+      "用 32-byte unique fixture 上传一个 Artifact，并创建一个唯一 Application 定义（ArtifactID、独立 UnitName 等）；不调用 deploy/upgrade，也不创建 App Task。",
+      "在唯一 noHost Docker Node 上仅 Assign App；GET application/nodes 确认 assigned；等 Node synced 和 Agent 本地应用 row。由 Hub SyncManager 派生 URL/SHA 后，Agent 正常异步 Prefetch。",
+      "Helper A 只读检查 DataDir/artifacts/<SHA> 为 regular file、size/SHA 匹配，并在 SQLite query_only 验证 artifacts 表该 SHA/path 登记；记录 DB dev/inode 和 cache file dev/inode；确认没有 App execution/deployment state。",
+      "停止并移除 A；在 B 启动前读取相同 DataDir 的 ArtifactCache 文件/DB row；B 使用相同 Config/DataDir 在同一动态 bridge 启动，等待同 NodeID/AgentID、online/synced。B Agent 对 Assigned App 收到 Sync 后 Prefetch；同一文件/DB row 的 SHA/size/dev/inode 必须保持，quick_check ok，revision 不回退且与当前 sync 对齐。",
+      "再 GET application executions 确认为无 App Deploy Execution；没有 Host unit 写入。此用例只证明 assigned-but-not-deployed 的 ArtifactCache 预取和跨重建持久化，不覆盖真正 App Deploy/Host unit。"
+    ],
+    "cleanup_candidate": [
+      "先 POST /api/applications/{id}/assign，body {node_ids:[exact node ID], remove:true}；确认 GET application/nodes 不再列该 Node。再 DELETE exact App+GET404，随后 DELETE exact Artifact+GET404。",
+      "保留 Hub Artifact upload/delete Audit 和所有 Execution/Audit history；无 Agent task/Run、无 Host unit。DELETE exact Node+GET404 后移除 exact B/container/network/root。"
+    ],
+    "confidence_and_limits": "源码证明 assignment sync 会触发异步 prefetch，但运行时仍须记录真实下载完成、SQLite artifact row 与物理缓存 SHA，并跨同一 DataDir A→B 验证；绝不把 source-only 计划计为 PASS。ArtifactCache slice 可补 SYS-12，但不覆盖 App deploy/Host integration。"
+  },
+  "read_only_actions_performed": {
+    "management": "仅通过 repair :18080 GET 读取允许的 5 个 Node ID/capabilities/deployment_mode/host_integration，均HTTP200；未输出 Token、配置、完整 Node 对象或其他字段。",
+    "docker_host": "0 Docker commands or mutations",
+    "tasks_runs_transfers_apps_artifacts": "0",
+    "policy_host_paths": "0 changes",
+    "global_files": "0 changes"
+  }
+}

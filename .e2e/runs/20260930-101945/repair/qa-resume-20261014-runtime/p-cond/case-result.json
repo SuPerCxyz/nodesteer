@@ -1,0 +1,1134 @@
+{
+  "batch_id": "p-cond",
+  "title": "条件引擎 P-COND：Local metric/operator 矩阵、AND 组合、Remote online/last_execution/TTL 与 Fail Closed",
+  "case_ids": [
+    "SYS-25",
+    "SYS-28",
+    "SYS-29",
+    "SYS-30",
+    "E2E-09",
+    "E2E-10",
+    "INV-09"
+  ],
+  "run_dir": "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-cond",
+  "authority": "http://192.168.100.209:18080",
+  "nonce": "0c3335fd",
+  "executed_at_utc": "2026-10-15T07:13:07.834357+00:00",
+  "finalized_at_utc": "2026-10-15T07:22:42.867999+00:00",
+  "verified_binary_sha256": {
+    "agent_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+    "verified_live": true,
+    "method": "readlink /proc/<pid>/exe of the :18080 listener + sha256sum on the same file (read-only)",
+    "serving_binary_hub": "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard (listener on :18080)",
+    "agent_binary_native1": "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent",
+    "note": "on-disk nodesteer-hub (e0b120e6...) in the same directory is NOT the serving binary; the :18080 listener resolves to the login-guard build",
+    "evidence": [
+      "evidence/phase9-live-binaries.json",
+      ".e2e/runs/20260930-101945/repair/environment/static-cutover.json"
+    ]
+  },
+  "live_binary_measurement": {
+    "captured_at_utc": "2026-10-15T07:22:10.699172+00:00",
+    "method": "readlink /proc/<pid>/exe of the :18080 listener + sha256sum on the same file (read-only)",
+    "hub_host_18080": {
+      "rc": 0,
+      "stdout": "LISTEN 0      4096               *:8080             *:*    users:((\"nodesteer-hub\",pid=1251,fd=9))                 \nLISTEN 0      4096               *:18080            *:*    users:((\"nodesteer-hub-s\",pid=5952,fd=9))               \n--- exe of :18080 listener\n/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard\n164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6  /proc/5952/exe\n--- all repair hub binaries\ne0b120e6e63fa5781cd4c5aef4a39f8094e799a4f5824bb969a816737d37c472  /opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub\n395f4b76fcf41d8cc5f827cd38f564fa80e87c4cab0fc1193a529f54bce1567e  /opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub.dynamic-cgo1.bak\n164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6  /opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard\n",
+      "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+    },
+    "agent_native1": {
+      "rc": 0,
+      "stdout": "--- agent exe\n/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent\nd55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add  /proc/1494/exe\n--- configured binary\nd55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add  /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent\n--- units\nactive\nactive\n",
+      "stderr": "Warning: Permanently added '192.168.100.204' (ED25519) to the list of known hosts.\n"
+    }
+  },
+  "target_nodes": {
+    "qa-repair-20260930-101945-native-1": {
+      "id": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "hostname": "qa-repair-20260930-101945-native-1",
+      "status": "online",
+      "sync_status": "synced",
+      "agent_id": "agent-d21d5e7d-0ff0-4355-b8de-4889dc865343",
+      "global_revision": 2052
+    },
+    "qa-repair-20260930-101945-native-2": {
+      "id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+      "hostname": "qa-repair-20260930-101945-native-2",
+      "status": "online",
+      "sync_status": "synced",
+      "agent_id": "agent-ef905092-34f1-4850-b0c9-445e6e87ff97",
+      "global_revision": 2052
+    },
+    "qa-repair-20260930-101945-native-3": {
+      "id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+      "hostname": "qa-repair-20260930-101945-native-3",
+      "status": "online",
+      "sync_status": "synced",
+      "agent_id": "agent-bb005487-7d84-418c-b598-f93d8b0c86a0",
+      "global_revision": 2052
+    },
+    "qa-repair-20260930-101945-native-4": {
+      "id": "03cb50cc-eab6-4afd-bbe0-f73c4e326773",
+      "hostname": "qa-repair-20260930-101945-native-4",
+      "status": "online",
+      "sync_status": "synced",
+      "agent_id": "agent-bbd350f8-69f9-4406-923c-4f9c335e6962",
+      "global_revision": 2052
+    },
+    "qa-resume-20261008-native4-child-c5d48ea9-da08-4123-94fb-69b11abd59a7": {
+      "id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+      "hostname": "qa-resume-20261008-native4-child-c5d48ea9-da08-4123-94fb-69b11abd59a7",
+      "status": "offline",
+      "sync_status": "synced",
+      "agent_id": "agent-ab15a133-73cd-4025-8c97-f2ff37e000f5",
+      "global_revision": 1641
+    },
+    "qa-resume-20261010-host-f174890c3846-host001": {
+      "id": "f6a79d23-2410-450c-ac39-64dd70c9daa1",
+      "hostname": "qa-resume-20261010-host-f174890c3846-host001",
+      "status": "online",
+      "sync_status": "synced",
+      "agent_id": "agent-dba4469f-32df-48e1-babc-db27fb414558",
+      "global_revision": 2052
+    }
+  },
+  "scheduling_target": {
+    "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+    "hostname": "qa-repair-20260930-101945-native-1",
+    "note": "the only node fixtures were scheduled onto"
+  },
+  "clock_skew_hub_minus_native1_s": {
+    "samples": [
+      0.0864,
+      0.1429,
+      0.1437,
+      0.1443,
+      0.1451,
+      0.146,
+      0.1464,
+      0.1474,
+      0.1478,
+      0.1488,
+      0.1501,
+      0.1503
+    ],
+    "median": 0.1464,
+    "method": "ssh date -u +%s.%N on hub host and native-1, interleaved, corrected to a common instant",
+    "interpretation": "positive => hub clock ahead of agent clock => observed_at(hub now) > agent now => agent validRemoteState rejects => remote condition UNKNOWN => BLOCKED"
+  },
+  "execution_counts": {
+    "total_recorded_rows": 116,
+    "primary_rows": 86,
+    "repeat_control_rows": 30,
+    "local_metric_operator_rows": 66,
+    "and_combo_rows": 7,
+    "remote_rows": 13,
+    "by_status": {
+      "BLOCKED": 31,
+      "SKIPPED": 34,
+      "SUCCESS": 51
+    }
+  },
+  "case_index": {
+    "SYS-25": {
+      "canonical_before": "PARTIAL",
+      "proposed_after": "PASS_WITH_NOTES",
+      "confidence": "high (local matrix) / high (remote combination blocked)"
+    },
+    "SYS-30": {
+      "canonical_before": "PARTIAL",
+      "proposed_after": "PASS_WITH_NOTES",
+      "confidence": "high"
+    },
+    "E2E-09": {
+      "canonical_before": "PARTIAL",
+      "proposed_after": "PASS",
+      "confidence": "high"
+    },
+    "E2E-10": {
+      "canonical_before": "PARTIAL",
+      "proposed_after": "PARTIAL (Remote 正向路径受 SYS-27 缺陷阻塞)",
+      "confidence": "high (observation) / high (blocked by confirmed SYS-27 defect)"
+    },
+    "SYS-28": {
+      "canonical_before": "PARTIAL",
+      "proposed_after": "PARTIAL (正向/负向比较受 SYS-27 缺陷阻塞)",
+      "confidence": "high (both observed)"
+    },
+    "SYS-29": {
+      "canonical_before": "PARTIAL",
+      "proposed_after": "PARTIAL (未过期/过期 语义不可独立分离；受 SYS-27 缺陷与缓存路径不可达限制)",
+      "confidence": "high (observations) / medium (cache-path unreachable claim, code-level)"
+    },
+    "INV-09": {
+      "canonical_before": "PARTIAL",
+      "proposed_after": "PASS_WITH_NOTES",
+      "confidence": "medium-high"
+    }
+  },
+  "cases": {
+    "SYS-25": {
+      "expected": "SYS-25 Local Condition 的全部 metric/operator。",
+      "canonical_before": "PARTIAL",
+      "remaining_dimensions_before": [
+        "8个metric各一个比较组合已真测；全部合法operator、false/unknown、AND/Remote组合尚缺。"
+      ],
+      "proposed_after": "PASS_WITH_NOTES",
+      "confidence": "high (local matrix) / high (remote combination blocked)",
+      "dimensions_verified_this_run": [
+        {
+          "id": "PCOND-LOCAL-METRIC-OPERATOR-MATRIX",
+          "desc": "8 metrics x 6 legal operators (==,!=,>,<,>=,<=) with satisfied and unsatisfied outcomes; 66 real executions",
+          "cases": {
+            "n": 66,
+            "statuses": [
+              "BLOCKED",
+              "SKIPPED",
+              "SUCCESS"
+            ],
+            "block_reasons": [
+              "condition not satisfied",
+              "condition unknown: exit status 127",
+              "condition unknown: exit status 3",
+              "condition unknown: no such file or directory"
+            ],
+            "cases": [
+              "PC-CMD-RET-01",
+              "PC-CMD-RET-02",
+              "PC-CMD-RET-03",
+              "PC-CMD-RET-04",
+              "PC-CMD-NUM-01",
+              "PC-CMD-NUM-02",
+              "PC-CMD-NUM-03",
+              "PC-CMD-NUM-04",
+              "PC-CMD-NUM-05",
+              "PC-CMD-NUM-06",
+              "PC-CMD-FLT-01",
+              "PC-CMD-STR-01",
+              "PC-CMD-STR-02",
+              "PC-CMD-ERR-01",
+              "PC-CMD-ERR-02",
+              "PC-CMD-TRM-01",
+              "PC-CPU-01",
+              "PC-CPU-02",
+              "PC-CPU-03",
+              "PC-CPU-04",
+              "PC-CPU-05",
+              "PC-CPU-06",
+              "PC-MEM-01",
+              "PC-MEM-02",
+              "PC-MEM-03",
+              "PC-MEM-04",
+              "PC-MEM-05",
+              "PC-MEM-06",
+              "PC-DSK-01",
+              "PC-DSK-02",
+              "PC-DSK-03",
+              "PC-DSK-04",
+              "PC-DSK-05",
+              "PC-DSK-06",
+              "PC-DSK-ERR-01",
+              "PC-FILE-01",
+              "PC-FILE-02",
+              "PC-FILE-03",
+              "PC-FILE-04",
+              "PC-FILE-05",
+              "PC-FILE-06",
+              "PC-FILE-07",
+              "PC-FILE-08",
+              "PC-FILE-09",
+              "PC-FILE-10",
+              "PC-DIR-01",
+              "PC-DIR-02",
+              "PC-DIR-03",
+              "PC-DIR-04",
+              "PC-DIR-05",
+              "PC-DIR-06",
+              "PC-DIR-07",
+              "PC-PROC-01",
+              "PC-PROC-02",
+              "PC-PROC-03",
+              "PC-PROC-04",
+              "PC-PROC-05",
+              "PC-PROC-06",
+              "PC-PROC-07",
+              "PC-PORT-01",
+              "PC-PORT-02",
+              "PC-PORT-03",
+              "PC-PORT-04",
+              "PC-PORT-05",
+              "PC-PORT-06",
+              "PC-PORT-07"
+            ]
+          },
+          "result": "PASS",
+          "evidence": [
+            "evidence/phase3-local-matrix.json",
+            "evidence/cases.jsonl"
+          ]
+        },
+        {
+          "id": "PCOND-LOCAL-UNKNOWN-FAIL-CLOSED",
+          "desc": "unevaluable local conditions (command_result non-zero exit 3 / exit 127, statfs on a missing path) -> BLOCKED, never SKIPPED, no side effect",
+          "cases": [
+            "PC-CMD-ERR-01",
+            "PC-CMD-ERR-02",
+            "PC-DSK-ERR-01"
+          ],
+          "result": "PASS",
+          "evidence": [
+            "evidence/phase3-local-matrix.json"
+          ]
+        },
+        {
+          "id": "PCOND-AND-COMBOS",
+          "desc": "AND single-level and 2-level nested: true/true -> execute, any false -> SKIPPED, any unknown -> BLOCKED (unknown is never downgraded), false-before-unknown short-circuits to SKIPPED",
+          "cases": [
+            "PC-AND-01",
+            "PC-AND-02",
+            "PC-AND-03",
+            "PC-AND-04",
+            "PC-AND-05",
+            "PC-AND-06"
+          ],
+          "result": "PASS",
+          "evidence": [
+            "evidence/phase4-and-combos.json"
+          ]
+        },
+        {
+          "id": "PCOND-REPEATABILITY",
+          "desc": "5 representative cases x 6 repeats each -> identical terminal state",
+          "cases": [
+            "PC-REP-01",
+            "PC-REP-02",
+            "PC-REP-03",
+            "PC-REP-04",
+            "PC-REP-05"
+          ],
+          "result": "PASS",
+          "evidence": [
+            "evidence/phase4b-repeatability.json"
+          ]
+        }
+      ],
+      "dimensions_blocked_this_run": [
+        {
+          "id": "PCOND-AND-REMOTE-COMBINATION",
+          "desc": "AND[remote(online==online), local(true)] combination",
+          "case": "PC-AND-07",
+          "observed": "BLOCKED / block_reason=\"condition unknown: <nil>\"",
+          "reason": "受 SYS-27 缺陷阻塞（Remote 查询在修复版环境恒为未知）",
+          "evidence": [
+            "evidence/phase4-and-combos.json"
+          ]
+        }
+      ],
+      "notes": [
+        "All local dimensions of this case are proven with real executions + on-node side-effect oracle; the only unfilled item is the Remote sub-combination, which is externally blocked by the SYS-27 defect and tracked there."
+      ]
+    },
+    "SYS-30": {
+      "expected": "SYS-30 Condition 不满足记录 SKIPPED，不能误执行。",
+      "canonical_before": "PARTIAL",
+      "remaining_dimensions_before": [
+        "Local command_result false→SKIPPED/no marker已测；AND/Remote等不满足路径及不同比较组合未覆盖。"
+      ],
+      "proposed_after": "PASS_WITH_NOTES",
+      "confidence": "high",
+      "dimensions_verified_this_run": [
+        {
+          "id": "PCOND-SKIPPED-NO-MISFIRE",
+          "desc": "unsatisfied conditions across all 8 metrics and all 6 operators -> status SKIPPED, block_reason \"condition not satisfied\", empty stdout, no on-node side effect",
+          "cases": [
+            "PC-CMD-RET-02",
+            "PC-CMD-RET-04",
+            "PC-CMD-NUM-02",
+            "PC-CMD-NUM-05",
+            "PC-CMD-NUM-06",
+            "PC-CMD-STR-02",
+            "PC-CPU-04",
+            "PC-CPU-05",
+            "PC-MEM-04",
+            "PC-MEM-05",
+            "PC-DSK-04",
+            "PC-DSK-06",
+            "PC-FILE-02",
+            "PC-FILE-04",
+            "PC-FILE-07",
+            "PC-FILE-10",
+            "PC-DIR-02",
+            "PC-DIR-05",
+            "PC-DIR-07",
+            "PC-PROC-02",
+            "PC-PROC-05",
+            "PC-PROC-07",
+            "PC-PORT-02",
+            "PC-PORT-05",
+            "PC-PORT-07",
+            "PC-AND-02",
+            "PC-AND-04",
+            "PC-AND-06"
+          ],
+          "result": "PASS",
+          "evidence": [
+            "evidence/cases.jsonl",
+            "evidence/phase3-local-matrix.json"
+          ]
+        },
+        {
+          "id": "PCOND-AND-UNSATISFIED",
+          "desc": "AND[true,false] -> SKIPPED; nested AND[and[t,t],false] -> SKIPPED; AND[false,unknown] -> SKIPPED (must not execute)",
+          "cases": [
+            "PC-AND-02",
+            "PC-AND-04",
+            "PC-AND-06"
+          ],
+          "result": "PASS",
+          "evidence": [
+            "evidence/phase4-and-combos.json"
+          ]
+        },
+        {
+          "id": "PCOND-SKIPPED-UI-FEEDBACK",
+          "desc": "Execution detail UI renders 已跳过 with 阻塞原因=condition not satisfied and empty output for the SKIPPED execution",
+          "cases": [
+            "PC-CMD-RET-02"
+          ],
+          "result": "PASS",
+          "evidence": [
+            "evidence/phase6-ui.json",
+            "evidence/ui-execution-skipped-PC-CMD-RET-02.png"
+          ]
+        }
+      ],
+      "dimensions_blocked_this_run": [
+        {
+          "id": "PCOND-REMOTE-UNSATISFIED",
+          "desc": "Remote condition that should be \"not satisfied\" (SKIPPED)",
+          "cases": [
+            "PC-REM-ON-03",
+            "PC-REM-ON-04",
+            "PC-REM-ON-06",
+            "PC-REM-LX-03",
+            "PC-REM-LX-04"
+          ],
+          "observed": "all BLOCKED instead of SKIPPED; no side effect",
+          "reason": "受 SYS-27 缺陷阻塞：远程状态恒为未知，无法区分「不满足」与「不可评估」。业务效果（未执行）与预期一致，但终态不精确。",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json"
+          ]
+        }
+      ]
+    },
+    "E2E-09": {
+      "expected": "Local Condition → 满足执行，不满足 SKIPPED，未知不放行。",
+      "canonical_before": "PARTIAL",
+      "remaining_dimensions_before": [
+        "仅Local满足及false具新证据；Local错误UNKNOWN、多层组合和UI完整反馈未由本suite证明。"
+      ],
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "dimensions_verified_this_run": [
+        {
+          "id": "E2E09-LOCAL-SATISFIED-EXECUTES",
+          "desc": "satisfied local condition -> SUCCESS with real on-node side effect (marker written inside the execution window)",
+          "cases": [
+            "PC-CMD-RET-01",
+            "PC-CMD-RET-03",
+            "PC-CMD-NUM-01",
+            "PC-CMD-NUM-03",
+            "PC-CMD-NUM-04",
+            "PC-CMD-FLT-01",
+            "PC-CMD-STR-01",
+            "PC-CMD-TRM-01",
+            "PC-CPU-01",
+            "PC-CPU-02",
+            "PC-CPU-03",
+            "PC-CPU-06",
+            "PC-MEM-01",
+            "PC-MEM-02",
+            "PC-MEM-03",
+            "PC-MEM-06",
+            "PC-DSK-01",
+            "PC-DSK-02",
+            "PC-DSK-03",
+            "PC-DSK-05"
+          ],
+          "result": "PASS",
+          "evidence": [
+            "evidence/cases.jsonl"
+          ]
+        },
+        {
+          "id": "E2E09-LOCAL-UNSATISFIED-SKIPPED",
+          "desc": "unsatisfied local condition -> SKIPPED, no side effect",
+          "cases": [
+            "PC-CMD-RET-02",
+            "PC-CMD-RET-04",
+            "PC-FILE-02",
+            "PC-PORT-05"
+          ],
+          "result": "PASS",
+          "evidence": [
+            "evidence/cases.jsonl"
+          ]
+        },
+        {
+          "id": "E2E09-LOCAL-UNKNOWN-NOT-PASSED",
+          "desc": "unevaluable local condition -> BLOCKED (fail closed), never executed and never downgraded to SKIPPED; 3 independent causes (exit status 3, exit status 127/missing binary, statfs no-such-file)",
+          "cases": [
+            "PC-CMD-ERR-01",
+            "PC-CMD-ERR-02",
+            "PC-DSK-ERR-01"
+          ],
+          "result": "PASS",
+          "evidence": [
+            "evidence/phase3-local-matrix.json"
+          ]
+        },
+        {
+          "id": "E2E09-MULTILAYER-COMPOSITION",
+          "desc": "AND multi-layer: 1-level and 2-level nesting, true/false/unknown propagation, short-circuit ordering",
+          "cases": [
+            "PC-AND-01",
+            "PC-AND-02",
+            "PC-AND-03",
+            "PC-AND-04",
+            "PC-AND-05",
+            "PC-AND-06",
+            "PC-AND-07"
+          ],
+          "result": "PASS (6/7; 7th is the Remote combination)",
+          "evidence": [
+            "evidence/phase4-and-combos.json"
+          ]
+        },
+        {
+          "id": "E2E09-UI-COMPLETE-FEEDBACK",
+          "desc": "Execution detail UI for SUCCESS/SKIPPED/BLOCKED(local)/BLOCKED(remote): status label, block_reason, empty-vs-nonempty output, execution id, node",
+          "cases": [
+            "PC-CMD-RET-01",
+            "PC-CMD-RET-02",
+            "PC-CMD-ERR-01",
+            "PC-REM-ON-01"
+          ],
+          "result": "PASS",
+          "evidence": [
+            "evidence/phase6-ui.json",
+            "evidence/ui-execution-success-PC-CMD-RET-01.png",
+            "evidence/ui-execution-skipped-PC-CMD-RET-02.png",
+            "evidence/ui-execution-blocked_local-PC-CMD-ERR-01.png",
+            "evidence/ui-execution-blocked_remote-PC-REM-ON-01.png"
+          ]
+        }
+      ],
+      "dimensions_blocked_this_run": [
+        {
+          "id": "E2E09-REMOTE-EVALUABLE-CONTRAST",
+          "desc": "Remote branch of the same gate is unobservable because every remote query is UNKNOWN under the SYS-27 defect",
+          "observed": "BLOCKED",
+          "reason": "受 SYS-27 缺陷阻塞",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json"
+          ]
+        }
+      ]
+    },
+    "E2E-10": {
+      "expected": "Remote Condition → online/last_execution、TTL 过期 Fail Closed。",
+      "canonical_before": "PARTIAL",
+      "remaining_dimensions_before": [
+        "Remote online属性正向/负向与真实断连状态UNKNOWN及恢复未全部运行；不能由last_execution/TTL代理故障泛化。"
+      ],
+      "proposed_after": "PARTIAL (Remote 正向路径受 SYS-27 缺陷阻塞)",
+      "confidence": "high (observation) / high (blocked by confirmed SYS-27 defect)",
+      "dimensions_verified_this_run": [
+        {
+          "id": "E2E10-REMOTE-FAIL-CLOSED-NO-EFFECT",
+          "desc": "13/13 remote conditions (online x2 online nodes, online on a genuinely disconnected node, last_execution SUCCESS/FAILED/never-observed) -> BLOCKED with empty stdout and no on-node side effect",
+          "cases": [
+            "PC-REM-ON-01",
+            "PC-REM-ON-02",
+            "PC-REM-ON-03",
+            "PC-REM-ON-04",
+            "PC-REM-ON-05",
+            "PC-REM-ON-06",
+            "PC-REM-ON-07",
+            "PC-REM-LX-01",
+            "PC-REM-LX-02",
+            "PC-REM-LX-03",
+            "PC-REM-LX-04",
+            "PC-REM-LX-05",
+            "PC-REM-LX-06"
+          ],
+          "result": "PASS (fail-closed holds)",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json"
+          ]
+        },
+        {
+          "id": "E2E10-REAL-DISCONNECTED-NODE-OBSERVED",
+          "desc": "a registered-but-disconnected node (status=offline, last_seen 2026-10-13) was used as the remote target; its definable state \"offline\" still yields BLOCKED, proving the gate rejects even fully determinable remote states",
+          "cases": [
+            "PC-REM-ON-05",
+            "PC-REM-ON-06"
+          ],
+          "result": "PASS (observation)",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json",
+            "evidence/phase6-ui.json",
+            "evidence/ui-node-offline.png"
+          ]
+        }
+      ],
+      "dimensions_blocked_this_run": [
+        {
+          "id": "E2E10-REMOTE-ONLINE-POSITIVE",
+          "desc": "remote online satisfied path (should be SUCCESS)",
+          "cases": [
+            "PC-REM-ON-01",
+            "PC-REM-ON-02",
+            "PC-REM-ON-05",
+            "PC-REM-ON-07"
+          ],
+          "observed": "BLOCKED / block_reason=\"condition unknown: <nil>\"",
+          "reason": "受 SYS-27 缺陷阻塞（跨主机时钟偏移导致 observed_at 恒被判为未来）",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json",
+            "evidence/phase0-guard.json"
+          ]
+        },
+        {
+          "id": "E2E10-REMOTE-LAST-EXECUTION-POSITIVE",
+          "desc": "remote last_execution satisfied paths on real SUCCESS/FAILED history",
+          "cases": [
+            "PC-REM-LX-01",
+            "PC-REM-LX-02"
+          ],
+          "observed": "BLOCKED / block_reason=\"condition unknown: <nil>\"",
+          "reason": "受 SYS-27 缺陷阻塞",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json"
+          ]
+        },
+        {
+          "id": "E2E10-TTL-EXPIRED",
+          "desc": "Remote state TTL expired branch",
+          "observed": "not constructible through the real product path",
+          "reason": "Hub 侧远程状态缓存只能由 Agent 主动上报 MsgRemoteState 填充，而当前 Agent 没有任何上报该消息的代码路径（Repository: internal/hub/gateway.go:570 SetRemoteState 的唯一调用点；无 agent 侧发送方），因此 resolveRemoteState 恒走实时分支，无法构造\"已过期缓存\"；叠加 SYS-27 偏移，过期语义不可独立分离。",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json"
+          ]
+        },
+        {
+          "id": "E2E10-RECOVERY",
+          "desc": "remote online recovery after reconnect",
+          "observed": "not run",
+          "reason": "本批禁止重启任何 VM/Agent；环境无自动恢复窗口",
+          "evidence": []
+        }
+      ]
+    },
+    "SYS-28": {
+      "expected": "SYS-28 Remote last_execution 成功/失败/不存在。",
+      "canonical_before": "PARTIAL",
+      "remaining_dimensions_before": [
+        "仅无历史last_execution的BLOCKED/no marker已测；SUCCESS/FAILED比较、false及实际online属性尚缺。"
+      ],
+      "proposed_after": "PARTIAL (正向/负向比较受 SYS-27 缺陷阻塞)",
+      "confidence": "high (both observed)",
+      "dimensions_verified_this_run": [
+        {
+          "id": "SYS28-LAST-EXECUTION-NOT-EXIST",
+          "desc": "last_execution for a task with no execution on the target node -> UNKNOWN -> BLOCKED, no side effect (fail closed)",
+          "cases": [
+            "PC-REM-LX-05",
+            "PC-REM-LX-06"
+          ],
+          "result": "PASS",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json"
+          ]
+        },
+        {
+          "id": "SYS28-REAL-HISTORY-SEEDED",
+          "desc": "real SUCCESS and FAILED history were created on native-1 (owned tasks) so the 成功/失败 comparisons are genuinely exercisable",
+          "cases": [
+            "0deae695-2a5f-4d68-a942-40dc79cf7728",
+            "52e33cc4-180a-47b0-9d18-d1b691e0e2e4"
+          ],
+          "result": "PASS (fixture control group)",
+          "evidence": [
+            "evidence/phase2-fixtures.json"
+          ]
+        }
+      ],
+      "dimensions_blocked_this_run": [
+        {
+          "id": "SYS28-LAST-EXECUTION-SUCCESS-COMPARE",
+          "desc": "last_execution == SUCCESS over real SUCCESS history (should be SUCCESS)",
+          "cases": [
+            "PC-REM-LX-01"
+          ],
+          "observed": "BLOCKED",
+          "reason": "受 SYS-27 缺陷阻塞",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json"
+          ]
+        },
+        {
+          "id": "SYS28-LAST-EXECUTION-FAILED-COMPARE",
+          "desc": "last_execution == FAILED over real FAILED history (should be SUCCESS)",
+          "cases": [
+            "PC-REM-LX-02"
+          ],
+          "observed": "BLOCKED",
+          "reason": "受 SYS-27 缺陷阻塞",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json"
+          ]
+        },
+        {
+          "id": "SYS28-LAST-EXECUTION-FALSE-COMPARE",
+          "desc": "last_execution mismatch comparisons (should be SKIPPED)",
+          "cases": [
+            "PC-REM-LX-03",
+            "PC-REM-LX-04"
+          ],
+          "observed": "BLOCKED (not SKIPPED)",
+          "reason": "受 SYS-27 缺陷阻塞",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json"
+          ]
+        },
+        {
+          "id": "SYS28-ONLINE-PROPERTY",
+          "desc": "actual online property comparisons on online/offline nodes",
+          "cases": [
+            "PC-REM-ON-01",
+            "PC-REM-ON-03",
+            "PC-REM-ON-05",
+            "PC-REM-ON-06"
+          ],
+          "observed": "BLOCKED",
+          "reason": "受 SYS-27 缺陷阻塞",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json"
+          ]
+        }
+      ]
+    },
+    "SYS-29": {
+      "expected": "SYS-29 Remote State TTL 未过期、过期、未观察：UNKNOWN → BLOCKED。",
+      "canonical_before": "PARTIAL",
+      "remaining_dimensions_before": [
+        "真实Agent/Hub断连后Remote fail-closed、缺失ObservedAt字段/未观察时间等独立适用维度仍待验证。"
+      ],
+      "proposed_after": "PARTIAL (未过期/过期 语义不可独立分离；受 SYS-27 缺陷与缓存路径不可达限制)",
+      "confidence": "high (observations) / medium (cache-path unreachable claim, code-level)",
+      "dimensions_verified_this_run": [
+        {
+          "id": "SYS29-UNOBSERVED-BLOCKS",
+          "desc": "未观察：no remote observation for the (node,property,task) tuple -> UNKNOWN -> BLOCKED, no side effect",
+          "cases": [
+            "PC-REM-LX-05",
+            "PC-REM-LX-06"
+          ],
+          "result": "PASS",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json"
+          ]
+        },
+        {
+          "id": "SYS29-REAL-DISCONNECT-BLOCKED",
+          "desc": "真实断连：remote query against a registered but disconnected node (status=offline) -> BLOCKED, no side effect",
+          "cases": [
+            "PC-REM-ON-05",
+            "PC-REM-ON-06",
+            "PC-REM-LX-06"
+          ],
+          "result": "PASS",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json",
+            "evidence/ui-node-offline.png"
+          ]
+        },
+        {
+          "id": "SYS29-FRESH-NOT-USABLE",
+          "desc": "未过期：Hub 侧实时解析（TTL=60s, observed_at=Hub now）本应可用，但 13/13 仍为 BLOCKED",
+          "cases": [
+            "PC-REM-ON-01",
+            "PC-REM-ON-02",
+            "PC-REM-ON-03",
+            "PC-REM-ON-04",
+            "PC-REM-ON-05",
+            "PC-REM-ON-06",
+            "PC-REM-ON-07",
+            "PC-REM-LX-01",
+            "PC-REM-LX-02",
+            "PC-REM-LX-03",
+            "PC-REM-LX-04",
+            "PC-REM-LX-05",
+            "PC-REM-LX-06"
+          ],
+          "result": "BLOCKED by SYS-27",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json",
+            "evidence/phase0-guard.json"
+          ]
+        }
+      ],
+      "dimensions_blocked_this_run": [
+        {
+          "id": "SYS29-TTL-EXPIRED",
+          "desc": "过期：cached remote state past TTL",
+          "observed": "not constructible + 受 SYS-27 缺陷阻塞",
+          "reason": "真实产品路径下 Hub 远程状态缓存无写入方（无 Agent 发送 MsgRemoteState），resolveRemoteState 恒走实时分支，因此\"已过期缓存\"不可构造。",
+          "evidence": []
+        }
+      ]
+    },
+    "INV-09": {
+      "expected": "Unknown Remote State 默认 Fail Closed。",
+      "canonical_before": "PARTIAL",
+      "remaining_dimensions_before": [
+        "真实离线/Hub断连后Remote查询UNKNOWN无业务效果及恢复仍待验证。"
+      ],
+      "proposed_after": "PASS_WITH_NOTES",
+      "confidence": "medium-high",
+      "dimensions_verified_this_run": [
+        {
+          "id": "INV09-UNKNOWN-REMOTE-FAIL-CLOSED",
+          "desc": "unknown/unobserved remote state -> BLOCKED, empty stdout, no on-node side effect (business effect never happens)",
+          "cases": [
+            "PC-REM-LX-05",
+            "PC-REM-LX-06"
+          ],
+          "result": "PASS",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json"
+          ]
+        },
+        {
+          "id": "INV09-DISCONNECTED-NODE-FAIL-CLOSED",
+          "desc": "remote query against a genuinely disconnected node -> BLOCKED, no effect",
+          "cases": [
+            "PC-REM-ON-05",
+            "PC-REM-ON-06"
+          ],
+          "result": "PASS",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json",
+            "evidence/ui-node-offline.png"
+          ]
+        }
+      ],
+      "dimensions_blocked_this_run": [
+        {
+          "id": "INV09-DISCRIMINATING-CONTRAST",
+          "desc": "the contrast case (a remote state that is definitively known and would otherwise be satisfied) is unavailable: PC-REM-ON-05 shows even the definitive state \"offline\" is treated as UNKNOWN -> BLOCKED",
+          "observed": "all 13 remote conditions BLOCKED",
+          "reason": "受 SYS-27 缺陷阻塞",
+          "evidence": [
+            "evidence/phase5-remote-matrix.json"
+          ]
+        },
+        {
+          "id": "INV09-RECOVERY",
+          "desc": "recovery after Hub disconnect / node reconnect",
+          "observed": "not run",
+          "reason": "本批禁止重启任何 VM/Agent，环境无恢复窗口",
+          "evidence": []
+        }
+      ],
+      "notes": [
+        "Fail-closed behaviour itself is directly observed twice with no business effect; because every remote query is UNKNOWN under SYS-27 the \"unknown vs known\" discriminating power of the observation is reduced."
+      ]
+    }
+  },
+  "oracle_crosscheck": {
+    "success_runs": 51,
+    "success_marker_inside_execution_window": 51,
+    "success_marker_outside_window": 0,
+    "outside_detail": [],
+    "non_success_runs": 65,
+    "non_success_with_marker": 0,
+    "non_success_with_stdout": 0,
+    "method": "owned task command writes /var/lib/nodesteer-qa-pcond-<nonce>/markers/<key>.marker with its own UTC timestamp; harness deletes the marker after each readback, so presence after a run proves this execution executed. Marker timestamp must fall inside [start_time-3s, end_time+30s].",
+    "conclusion": "no side effect for unsatisfied/blocked conditions; every satisfied condition produced a genuine on-node side effect."
+  },
+  "repeatability": {
+    "all_deterministic": true,
+    "rows": [
+      {
+        "case_id": "PC-REP-01",
+        "task_key": "cmd",
+        "expect": "SUCCESS",
+        "dimension": "SYS-25/E2E-09",
+        "runs": 6,
+        "distinct_statuses": [
+          "SUCCESS"
+        ],
+        "deterministic": true
+      },
+      {
+        "case_id": "PC-REP-02",
+        "task_key": "cmd",
+        "expect": "SKIPPED",
+        "dimension": "SYS-30/E2E-09",
+        "runs": 6,
+        "distinct_statuses": [
+          "SKIPPED"
+        ],
+        "deterministic": true
+      },
+      {
+        "case_id": "PC-REP-03",
+        "task_key": "cmd",
+        "expect": "BLOCKED",
+        "dimension": "E2E-09",
+        "runs": 6,
+        "distinct_statuses": [
+          "BLOCKED"
+        ],
+        "deterministic": true
+      },
+      {
+        "case_id": "PC-REP-04",
+        "task_key": "remote",
+        "expect": "BLOCKED",
+        "dimension": "E2E-10/SYS-27",
+        "runs": 6,
+        "distinct_statuses": [
+          "BLOCKED"
+        ],
+        "deterministic": true
+      },
+      {
+        "case_id": "PC-REP-05",
+        "task_key": "file",
+        "expect": "SUCCESS",
+        "dimension": "SYS-25",
+        "runs": 6,
+        "distinct_statuses": [
+          "SUCCESS"
+        ],
+        "deterministic": true
+      }
+    ],
+    "evidence": "evidence/phase4b-repeatability.json"
+  },
+  "ui_feedback": {
+    "success": {
+      "case_id": "PC-CMD-RET-01",
+      "execution_id": "452ca240-cc71-4bfe-a24e-6e193410846f",
+      "url": "http://192.168.100.209:18080/executions/452ca240-cc71-4bfe-a24e-6e193410846f",
+      "expected_status": "SUCCESS",
+      "expected_status_label": "成功",
+      "ui_contains_status_label": true,
+      "ui_contains_block_reason": true,
+      "ui_contains_execution_id": true,
+      "ui_contains_node_hostname": true,
+      "ui_shows_empty_output": false,
+      "ui_contains_stdout_marker": true,
+      "screenshot": "evidence/ui-execution-success-PC-CMD-RET-01.png"
+    },
+    "skipped": {
+      "case_id": "PC-CMD-RET-02",
+      "execution_id": "ef4ced04-f56c-4c75-bab6-b790eece9d57",
+      "url": "http://192.168.100.209:18080/executions/ef4ced04-f56c-4c75-bab6-b790eece9d57",
+      "expected_status": "SKIPPED",
+      "expected_status_label": "已跳过",
+      "ui_contains_status_label": true,
+      "ui_contains_block_reason": true,
+      "ui_contains_execution_id": true,
+      "ui_contains_node_hostname": true,
+      "ui_shows_empty_output": true,
+      "ui_contains_stdout_marker": false,
+      "screenshot": "evidence/ui-execution-skipped-PC-CMD-RET-02.png"
+    },
+    "blocked_local": {
+      "case_id": "PC-CMD-ERR-01",
+      "execution_id": "0cc32d05-1c22-4b0d-8a7b-b6d8e16b1079",
+      "url": "http://192.168.100.209:18080/executions/0cc32d05-1c22-4b0d-8a7b-b6d8e16b1079",
+      "expected_status": "BLOCKED",
+      "expected_status_label": "已阻断",
+      "ui_contains_status_label": true,
+      "ui_contains_block_reason": true,
+      "ui_contains_execution_id": true,
+      "ui_contains_node_hostname": true,
+      "ui_shows_empty_output": true,
+      "ui_contains_stdout_marker": false,
+      "screenshot": "evidence/ui-execution-blocked_local-PC-CMD-ERR-01.png"
+    },
+    "blocked_remote": {
+      "case_id": "PC-REM-ON-01",
+      "execution_id": "91292b2f-b249-41e8-b23a-3eabf1c71790",
+      "url": "http://192.168.100.209:18080/executions/91292b2f-b249-41e8-b23a-3eabf1c71790",
+      "expected_status": "BLOCKED",
+      "expected_status_label": "已阻断",
+      "ui_contains_status_label": true,
+      "ui_contains_block_reason": true,
+      "ui_contains_execution_id": true,
+      "ui_contains_node_hostname": true,
+      "ui_shows_empty_output": true,
+      "ui_contains_stdout_marker": false,
+      "screenshot": "evidence/ui-execution-blocked_remote-PC-REM-ON-01.png"
+    },
+    "node_offline": {
+      "node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+      "url": "http://192.168.100.209:18080/nodes/15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+      "ui_contains_hostname": true,
+      "ui_contains_offline_label": true,
+      "screenshot": "evidence/ui-node-offline.png"
+    },
+    "task_remote_condition": {
+      "task_id": "9c35b150-0f98-452a-86e5-45842b4e9efa",
+      "url": "http://192.168.100.209:18080/tasks/9c35b150-0f98-452a-86e5-45842b4e9efa",
+      "ui_mentions_node_id_hostname": true,
+      "ui_shows_blocked_executions": true,
+      "screenshot": "evidence/ui-task-remote-condition.png"
+    }
+  },
+  "defects_confirmed": [
+    {
+      "id": "QA-SYSB09-REMOTE-CONDITION-CLOCK-SKEW (re-confirmed by p-cond)",
+      "case_ids": [
+        "SYS-27",
+        "E2E-10",
+        "SYS-28",
+        "SYS-29",
+        "INV-09",
+        "SYS-25(and+remote)",
+        "SYS-30(remote unsatisfied)"
+      ],
+      "severity": "high (P0 case positive path unusable)",
+      "summary": "Remote conditions are always UNKNOWN -> BLOCKED in this environment. Independently re-measured in this batch: repair Hub clock is ahead of the native-1 agent clock by a median of +0.1464s (12 interleaved samples, range 0.086-0.150), so the Hub-provided observed_at is always in the agent's future and validRemoteState rejects it.",
+      "reproduction": [
+        "evidence/phase5-remote-matrix.json",
+        "evidence/phase0-guard.json",
+        "evidence/phase6-ui.json"
+      ],
+      "code_references": [
+        "internal/agent/sync_validation.go:31-42 (validRemoteState)",
+        "internal/hub/gateway.go:594-617 (resolveRemoteState, observedAt = Hub time.Now())",
+        "internal/agent/agent.go:1685-1725 / 1023-1027"
+      ],
+      "not_claimed": "未修改任何产品源码；未主张修复方案与阈值。"
+    }
+  ],
+  "observations": [
+    {
+      "id": "PCOND-OBS-REMOTE-STATE-CACHE-UNREACHABLE",
+      "severity": "medium (coverage/design dead branch, not claimed as a defect)",
+      "summary": "Hub 远程状态缓存分支在当前代码中不可达：SetRemoteState 的唯一调用点是 gateway.handleRemoteState（处理 Agent 上报的 MsgRemoteState），但仓库中没有任何 Agent 侧发送 MsgRemoteState 的代码路径。因此 resolveRemoteState 的缓存命中分支永远不成立，\"TTL 过期\"维度无法通过真实产品路径构造。",
+      "evidence": [
+        "evidence/phase5-remote-matrix.json"
+      ],
+      "verification": "code read: internal/hub/gateway.go:570 (SetRemoteState), grep MsgRemoteState across repository -> only inbound handlers in agent/connection/manager.go:357 and hub/gateway.go:261, no sender."
+    },
+    {
+      "id": "PCOND-OBS-NONNUMERIC-RELATIONAL-OPERATORS",
+      "severity": "low (behaviour as implemented; semantics arguably surprising)",
+      "summary": "file_exists / dir_exists / process_exists / port_listening 的 actual 值为 \"true\"/\"false\"，但 Hub 校验器允许全部 6 个 operator；>、<、>=、<= 走 numericCompare 的非数值回退（字典序字符串比较），因此 \"file_exists > false\" 会判定为满足。已在真实执行中观测（PC-FILE-05/06 等 6 条）。未主张为缺陷。",
+      "evidence": [
+        "evidence/phase3-local-matrix.json",
+        "evidence/cases.jsonl"
+      ],
+      "verification": "observed real executions; code read internal/agent/condition/engine.go:232-264 (compare / numericCompare) and internal/hub/validation.go:96."
+    }
+  ],
+  "safety": {
+    "management_writes_only_repair_18080": true,
+    "endpoint": "http://192.168.100.209:18080",
+    "primary_8080_management_writes": 0,
+    "repair_hub_restarted": false,
+    "protected_agents_stopped_or_restarted": false,
+    "nodesteer_agent_service_touched": false,
+    "vm_restarted": false,
+    "product_source_modified": false,
+    "git_or_archive_actions": 0,
+    "owned_child_processes_started": 0,
+    "proxy_or_fake_server_started": false,
+    "write_endpoints_used": [
+      "POST /api/login",
+      "POST /api/tasks",
+      "PUT /api/tasks/{id}",
+      "POST /api/tasks/{id}/run",
+      "DELETE /api/tasks/{id}"
+    ],
+    "host_writes_on_native1": [
+      "/var/lib/nodesteer-qa-pcond-<nonce>/ (created then removed)"
+    ]
+  },
+  "deviations": [
+    "Remote 正向/负向与「TTL 过期」维度按任务要求如实标为受 SYS-27 缺陷阻塞的 PARTIAL/BLOCKED，未通过放宽断言或人为偏移时钟绕过缺陷。",
+    "未重启任何 VM/Agent，因此 E2E-10/INV-09 的「恢复」维度未运行（环境限制，非豁免）。",
+    "真实断连 target 使用环境中既有的 offline 节点 (15961ef7-.../qa-resume-20261008-native4-child-...)，仅做只读引用，未修改该节点、未重启其 VM；该节点不属于本批 owned fixture。",
+    "condition 通过 PUT /api/tasks/{id} 在 8+1+1+3 个 owned 任务上切换，每个断言用例均为一次独立真实执行（execution 记录 task_revision 可追溯）。"
+  ],
+  "harness_errors": [
+    {
+      "id": "PCOND-HE-01",
+      "when": "fixtures phase (first attempt)",
+      "error": "TypeError: unsupported operand type(s) for +: 'NoneType' and 'str' — BASE/TOKEN were module state and phases were run in separate invocations",
+      "fix": "added idempotent bootstrap() called from main(); re-ran the phase",
+      "impact": "no fixture was created before the failure (create never reached the API); no data lost"
+    },
+    {
+      "id": "PCOND-HE-02",
+      "when": "ui phase (first attempt)",
+      "error": "ui_contains_status asserted the English enum on a Chinese-localised UI (\"成功\"/\"已跳过\"/\"已阻断\"), so all four pages reported False",
+      "fix": "phase_ui rewritten with the status-label map plus block_reason / output / node / execution-id assertions; evidence/phase6-ui.json regenerated",
+      "impact": "only the first UI snapshot was wrong; conclusions use the corrected run"
+    }
+  ],
+  "untested": [
+    "E2E-10 / INV-09 的「恢复」维度（需重启或重连窗口，本批禁止）。",
+    "SYS-29 的「TTL 过期」分支（缓存路径不可达，无法构造）。",
+    "Remote 正向「满足」路径（受 SYS-27 缺陷阻塞，非本批可解）。",
+    "Schedule/on_start 触发下的条件评估（属其他用例范围）。",
+    "跨主机（非 native-1）的本地指标语义（本批只调度到 native-1）。"
+  ],
+  "verdicts": {
+    "proposed_states": {
+      "SYS-25": {
+        "canonical_before": "PARTIAL",
+        "proposed_after": "PASS_WITH_NOTES",
+        "confidence": "high (local matrix) / high (remote combination blocked)"
+      },
+      "SYS-30": {
+        "canonical_before": "PARTIAL",
+        "proposed_after": "PASS_WITH_NOTES",
+        "confidence": "high"
+      },
+      "E2E-09": {
+        "canonical_before": "PARTIAL",
+        "proposed_after": "PASS",
+        "confidence": "high"
+      },
+      "E2E-10": {
+        "canonical_before": "PARTIAL",
+        "proposed_after": "PARTIAL (Remote 正向路径受 SYS-27 缺陷阻塞)",
+        "confidence": "high (observation) / high (blocked by confirmed SYS-27 defect)"
+      },
+      "SYS-28": {
+        "canonical_before": "PARTIAL",
+        "proposed_after": "PARTIAL (正向/负向比较受 SYS-27 缺陷阻塞)",
+        "confidence": "high (both observed)"
+      },
+      "SYS-29": {
+        "canonical_before": "PARTIAL",
+        "proposed_after": "PARTIAL (未过期/过期 语义不可独立分离；受 SYS-27 缺陷与缓存路径不可达限制)",
+        "confidence": "high (observations) / medium (cache-path unreachable claim, code-level)"
+      },
+      "INV-09": {
+        "canonical_before": "PARTIAL",
+        "proposed_after": "PASS_WITH_NOTES",
+        "confidence": "medium-high"
+      }
+    },
+    "note": "proposed_after 是本批可核查证据支持的结论；ledger 更新由上层批量流程决定。"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "review_id": "ROOT-CONTROL-GAP-REVIEW-20261017",
+  "reviewed_at": "2026-10-17T12:04:44.954857+00:00",
+  "reviewer": "main-agent(root)",
+  "status": "INTEGRATED",
+  "dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-control-gap",
+  "authorization_basis": "控件级覆盖审计的\"必须补测/需夹具\"档，用户指示自动推进",
+  "verdicts": [
+    {
+      "case_id": "P17P18-04",
+      "canonical_after": "PASS",
+      "reason": "/executions 触发方式过滤：手动/调度 URL 参数+API trigger_type+10/10 行一致；系统请求正确但 0 行（无样本）；全部清除恢复（system 无样本属数据源限制，非 UI 缺口）"
+    },
+    {
+      "case_id": "P12P13-05",
+      "canonical_after": "PASS",
+      "reason": "/schedules/new 时区端到端：墙钟 2030-06-16T10:00+Asia/Shanghai → API run_at=2030-06-16T02:00:00Z 换算正确；编辑页回显一致；空 run_at 被内联拦截且 0 写；非法时区 Not/AZone 报错并重置合法值"
+    },
+    {
+      "case_id": "X10",
+      "canonical_after": "PASS",
+      "reason": "非法时区回退 on_start + One-Time 时区转换本轮实测；DST 边界保留为观察项"
+    },
+    {
+      "case_id": "X06",
+      "canonical_after": "PASS",
+      "reason": "remaining 三项全部验证：深链预选 ?artifact_id=&version=、上传成功自动选中新发布包、失败/取消不覆盖既有定义"
+    },
+    {
+      "case_id": "G04-04",
+      "canonical_after": "PARTIAL",
+      "reason": "Skip to Main 键盘可达但激活为死锚点（新缺陷）→ 该维度未满足"
+    },
+    {
+      "case_id": "X19",
+      "canonical_after": "PARTIAL",
+      "reason": "同上；批量工具栏既有证据仍有效"
+    },
+    {
+      "case_id": "X08",
+      "canonical_after": "PARTIAL",
+      "reason": "「取消编辑不改 Revision/Audit」已实测通过；停止/批量升级/吊销取消、慢响应、失败重试仍未执行"
+    }
+  ],
+  "new_defect": "WEB-SKIP-TO-MAIN-DEAD-ANCHOR-20261017",
+  "cleanup": "7 个 owned 夹具全部 DELETE 200→GET 404；全库前缀扫描 0 残留；未创建任何执行；healthz/readyz 200；4 节点 online/synced",
+  "counts_before": {
+    "PASS": 473,
+    "FAIL": 8,
+    "PARTIAL": 13,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "counts_after": {
+    "PASS": 477,
+    "FAIL": 8,
+    "PARTIAL": 9,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "status_changes": [
+    [
+      "P12P13-05",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P17P18-04",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "X06",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "X10",
+      "PARTIAL",
+      "PASS"
+    ]
+  ]
+}

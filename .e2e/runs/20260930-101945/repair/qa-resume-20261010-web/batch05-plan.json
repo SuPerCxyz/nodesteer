@@ -1,0 +1,108 @@
+{
+  "created_at_utc": "2026-10-10T11:12:59.678321+00:00",
+  "status": "WAITING_ROOT_APPROVAL",
+  "executor": "gpt-6-luna",
+  "case_ids": [
+    "P07_P08-01",
+    "P07_P08-02",
+    "P07_P08-04",
+    "P07_P08-05",
+    "P07_P08-06",
+    "P07_P08-07",
+    "P07_P08-08",
+    "P07_P08-09"
+  ],
+  "fixtures": {
+    "script_budget": 1,
+    "clone_budget": 1,
+    "max_simultaneous_owned_resources": 2,
+    "other_resource_writes": 0,
+    "run_or_task_creation": 0,
+    "resource_owner_rule": "Create only via the UI in this session; capture each POST response ID immediately in the owned ledger. Delete only those exact IDs via UI first, with exact-ID API DELETE fallback and GET 404 verification.",
+    "test_content_policy": "Use deterministic non-executed bash marker text and synthetic non-sensitive defaults/environment values. Never put real credentials in secret-typed parameter fields; record API allowlisted metadata and hashes only."
+  },
+  "case_plan": [
+    {
+      "id": "P07_P08-01",
+      "prior_state": "NOT_RUN in repair feature inventory",
+      "actions": "Open Scripts list; search unique fixture name and a guaranteed no-match term; verify row fields; open View, hide and restore one hideable column, then reload and check stored visibility. Observe pagination only if live dataset naturally exceeds one page.",
+      "oracle": "GET /api/scripts count and owned Script row; visible table header/cell values; search hit/no-result UI; column visibility before/after reload and `scripts` localStorage view setting.",
+      "remaining_or_limit": "No extra Scripts may be created for page-size coverage. If live count is below page size, pagination/empty-list dimensions remain PARTIAL; no broad pagination PASS."
+    },
+    {
+      "id": "P07_P08-02",
+      "prior_state": "PARTIAL",
+      "actions": "Use list New link. Type a unique name on new form then Cancel; verify return and zero POST. Later edit only the owned original, make an unsaved name change, then Cancel.",
+      "oracle": "Route `/scripts/new` to `/scripts`; network has no POST; `/api/audit?q=<unique-name>` remains zero. For edit Cancel, GET owned Script and `/revisions` remain unchanged and audit query count/actions do not change. Verify list edit link opens the exact owned editor.",
+      "remaining_or_limit": "Keep unrelated Task-to-Script route evidence separate; do not infer untested return controls."
+    },
+    {
+      "id": "P07_P08-04",
+      "prior_state": "PARTIAL",
+      "actions": "Create the owned Script through the UI with synthetic name/description/content, shell interpreter, `/tmp` working directory, `nobody` run user, timeout 0 (UI min boundary) and enabled state. Verify default/selected field values through save and reopen; toggle enabled/disabled through the list action and restore enabled.",
+      "oracle": "POST-created ID immediately ledgered; GET same ID matches saved fields/revision, including whether timeout 0 round-trips; later edit to 17 checks a typical positive value; list status and subsequent GET confirm enable/disable changes. Compare known-body SHA-256, not raw API body.",
+      "remaining_or_limit": "No Task/Run means cwd/runUser execution remains untested in this batch; keep that dimension PARTIAL. If timeout 0 is rejected or normalized, record exact observed response/readback rather than assuming acceptance."
+    },
+    {
+      "id": "P07_P08-05",
+      "prior_state": "PARTIAL",
+      "actions": "On the new form add each supported parameter type (`string`, `number`, `bool`, `secret`) with known synthetic defaults; save original, reopen, inspect API/UI values, remove selected/all parameters, save again and verify persistence.",
+      "oracle": "GET same owned ID parameter type/name/default allowlist and revision; reopened UI row values/removal; secret default is synthetic only and evidence stores equality/hash, never a credential.",
+      "remaining_or_limit": "Do not run a Script or create a Task to test parameter consumption."
+    },
+    {
+      "id": "P07_P08-06",
+      "prior_state": "PARTIAL",
+      "actions": "Add a synthetic env key, overwrite same key, add a second key; save. Reopen, overwrite the first and delete the second; save and reopen again.",
+      "oracle": "GET same Script environment key/value hashes after each save; UI row shows one current value per key, deleted key absent; no values are secrets.",
+      "remaining_or_limit": "No Task/Run means Agent environment consumption is outside this batch."
+    },
+    {
+      "id": "P07_P08-07",
+      "prior_state": "PARTIAL",
+      "actions": "Create the original Script by the visible Save button, capture the UI POST response ID before assertions, then use UI list/search/open and GET same ID.",
+      "oracle": "Same UI-created ID exists in list and GET with revision 1; server SHA-256 equals local SHA-256 of the known synthetic content; UI success and matching row are visible.",
+      "remaining_or_limit": "Do not substitute API-created fixtures or another ID for this oracle."
+    },
+    {
+      "id": "P07_P08-08",
+      "prior_state": "PARTIAL; prior evidence says edit reached revision 2, UI history content expansion remains",
+      "actions": "After clone assertions, edit the original's content/metadata/environment once and Save. Reopen original, expand revision history entries through their actual summary controls.",
+      "oracle": "GET original revision increments exactly +1; `/api/scripts/:id/revisions` returns expected revisions and content hashes; UI expanded `<details>` shows both known body versions, confirmed by safe equality/SHA.",
+      "remaining_or_limit": "Do not treat history section presence without expansion/content comparison as PASS."
+    },
+    {
+      "id": "P07_P08-09",
+      "prior_state": "PARTIAL",
+      "actions": "From the original's actual list row Actions menu choose Clone; immediately ledger the POST response ID. Verify copied row/detail, then edit only the clone once and compare the original unchanged.",
+      "oracle": "Clone has distinct ID, revision 1 at creation, `(copy)` name, and matching original content/parameters/environment; after clone edit, original GET/revision/SHA remains unchanged while clone revision increments.",
+      "remaining_or_limit": "Delete both owned IDs exactly in finally; preserve their audit/revision history according to existing retention policy."
+    }
+  ],
+  "test_interaction": {
+    "tool": "agent-browser CLI using fresh `snapshot -i -u` refs for each UI action; no large single-flow runner.",
+    "origin": "repair target :18080 through exact owned loopback forward :38181 only",
+    "login": "Dedicated API login with credentials only in wrapper memory; never print or persist token/password.",
+    "audit_oracle": "Read-only GET /api/audit?q=<owned unique name or ID>; retain only count and safe action/resource metadata.",
+    "cleanup": "Dedicated logout -> old token /api/me 401; close browser; exact SSH PID/startticks/argv guard; listener count 0."
+  },
+  "source_refs": [
+    "web/src/features/editors/index.tsx:382-457",
+    "web/src/features/editors/index.tsx:488-577",
+    "web/src/features/editors/index.tsx:581-718",
+    "web/src/features/editors/index.tsx:719-751",
+    "web/src/features/catalog/index.tsx:1203-1239",
+    "web/src/features/catalog/index.tsx:1245-1384",
+    "web/src/features/shared/data-table.tsx:133-155",
+    "web/src/components/data-table/view-options.tsx:23-57",
+    "web/e2e/tests/safe-ui.spec.ts:108-130",
+    "web/e2e/tests/safe-ui.spec.ts:692-710",
+    "internal/hub/definitions.go:48-68",
+    "internal/hub/definitions.go:71-108",
+    "internal/hub/api/api.go:1167-1195",
+    "internal/hub/api/api.go:1865-1891",
+    "internal/store/sqlite_executions.go:369-419"
+  ],
+  "execution_started": false,
+  "new_resources_created": 0
+}

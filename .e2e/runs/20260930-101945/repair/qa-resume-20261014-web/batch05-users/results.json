@@ -1,0 +1,289 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch05-users",
+  "owner": "web",
+  "updated_at_utc": "2026-10-14T09:30:00Z",
+  "status": "COMPLETE_PENDING_ROOT_REVIEW",
+  "environment": {
+    "authority": "http://192.168.100.209:18081",
+    "authority_type": "isolated disposable hub instance (created for this batch, destroyed after)",
+    "repair_authority_18080": "read-only parity checks only, no writes",
+    "primary_8080_touched": false,
+    "binary": "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard",
+    "binary_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+    "ui_parity": "isolated index.html sha256 == repair index.html sha256 (612c23ba...); identical asset bundle names",
+    "browser": "agent-browser 0.32.4 (sessions qausers1410b05/qausers1410op/qausers1410view)",
+    "nonce": "5ece52a9"
+  },
+  "cases": [
+    {
+      "case_id": "TABLE-USERS-PAGE",
+      "canonical_before": {
+        "status": "PARTIAL",
+        "baseline_status": "PASS",
+        "priority": "P1",
+        "evidence": [".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/web-batch03-review-20261014.json"],
+        "actual": "8 用户单页、导航全禁用；pageSize 20 持久化（reload 保持）已验证。",
+        "remaining": "多页遍历与末页数据变化需 ≥11 用户"
+      },
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "TABLE-USERS-PAGE-20261014-BATCH05",
+          "layer": "real-ui-api-node",
+          "status": "PASS",
+          "description": "14 users (1 admin + 13 created through the Web UI form) -> 2 pages at pageSize 10; first/prev disabled on page 1, next/last enabled; 下一页 -> page 2 with 3 rows and first/prev enabled, next/last disabled; 上一页 -> 10 rows; 跳转到最后一页 -> 3 rows; 跳转到第一页 -> 10 rows; page indicator 第 1 页，共 2 页 / 第 2 页，共 2 页",
+          "evidence": [
+            "evidence/USERS-03-page1-state.json",
+            "evidence/USERS-04-page2-state.json",
+            "evidence/USERS-03-page1.png",
+            "evidence/USERS-04-page2-last.png"
+          ]
+        },
+        {
+          "test_id": "TABLE-USERS-PAGE-PAGESIZE-20261014-BATCH05",
+          "layer": "real-ui-api-node",
+          "status": "PASS",
+          "description": "pageSize 10 -> 20 -> 13 rows single page, nav all disabled, localStorage nodesteer.table.users={columnVisibility:{},pageSize:20}; reload restores pageSize 20 and 13 rows on one page; back to 10 restores 2 pages",
+          "evidence": [
+            "evidence/USERS-05-pagesize20-state.json",
+            "evidence/USERS-06-pagesize20-after-reload.json",
+            "evidence/USERS-05-pagesize20.png",
+            "evidence/USERS-06-pagesize20-after-reload.png"
+          ]
+        },
+        {
+          "test_id": "TABLE-USERS-PAGE-LASTPAGE-CHANGE-20261014-BATCH05",
+          "layer": "real-ui-api-node",
+          "status": "PASS",
+          "description": "last page row count 3 (admin,u010..u012 -> u010,u011,u012) -> create a new user qa1410-u013 through the UI -> API count 14 -> last page now has 4 rows (u010,u011,u012,u013)",
+          "evidence": [
+            "evidence/USERS-07-lastpage-before-change.json",
+            "evidence/USERS-08-lastpage-after-change.json",
+            "evidence/USERS-07-lastpage-before-change.png",
+            "evidence/USERS-08-lastpage-after-change.png",
+            "evidence/USERS-02-network-requests.txt"
+          ]
+        }
+      ],
+      "remaining_or_limitations": [],
+      "evidence": [
+        "evidence/USERS-01-api-list-after-create.json",
+        "evidence/USERS-02-network-requests.txt",
+        "evidence/USERS-09-pagination-summary.json"
+      ],
+      "actual": {
+        "users_total": 14,
+        "page_size_default": 10,
+        "pages": 2,
+        "page1_rows": 10,
+        "page2_rows": 3,
+        "page2_rows_after_create": 4,
+        "page_size_persisted": 20,
+        "localStorage_key": "nodesteer.table.users",
+        "last_page_change": "3 -> 4 rows after UI create"
+      }
+    },
+    {
+      "case_id": "P20-07",
+      "canonical_before": {
+        "status": "NOT_RUN",
+        "baseline_status": "PASS",
+        "priority": "P1",
+        "expected": "Operator/Viewer 无用户管理控件，访问页面显示管理员限制。"
+      },
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "P20-07-UI-20261014-BATCH05",
+          "layer": "real-ui-api-node",
+          "status": "PASS",
+          "description": "Operator (qa1410-op1) and Viewer (qa1410-view1) each log in through the UI; on /users both see only '只有管理员可以管理用户。' with no 新建用户 button, no table, no role comboboxes, 0 user rows",
+          "evidence": [
+            "evidence/P2007-01-operator-users-page.png",
+            "evidence/P2007-04-viewer-users-page.png",
+            "evidence/P2007-06-summary.json"
+          ]
+        },
+        {
+          "test_id": "P20-07-API-20261014-BATCH05",
+          "layer": "real-ui-api-node",
+          "status": "PASS",
+          "description": "GET/POST /api/users and PUT/DELETE /api/users/{id} all return 403 for operator and viewer; admin GET 200 / POST 200 / PUT 200 / DELETE 405 (no DeleteUser API)",
+          "evidence": [
+            "evidence/P2007-02-users-api-by-role.json",
+            "evidence/P2007-03-user-crud-api-by-role.json"
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The sidebar still renders the 用户 link for operator/viewer (nav is not role-filtered); only the page body is restricted. Reported as an observation, not a failure of the assertion.",
+        "There is no server-side DeleteUser API (admin DELETE /api/users/{id} = 405)."
+      ],
+      "evidence": [
+        "evidence/P2007-01-operator-users-page.png",
+        "evidence/P2007-04-viewer-users-page.png",
+        "evidence/P2007-05-operator-dashboard.png",
+        "evidence/P2007-02-users-api-by-role.json",
+        "evidence/P2007-03-user-crud-api-by-role.json",
+        "evidence/P2007-06-summary.json"
+      ],
+      "actual": {
+        "operator_users_page_text": "只有管理员可以管理用户。",
+        "viewer_users_page_text": "只有管理员可以管理用户。",
+        "operator_new_user_button": false,
+        "viewer_new_user_button": false,
+        "operator_api": {"GET": 403, "POST": 403, "PUT": 403, "DELETE": 403},
+        "viewer_api": {"GET": 403, "POST": 403, "PUT": 403, "DELETE": 403}
+      }
+    },
+    {
+      "case_id": "P19-05",
+      "canonical_before": {
+        "status": "NOT_RUN",
+        "baseline_status": "PASS",
+        "priority": "P1",
+        "expected": "审计记录不可被普通用户修改或删除。"
+      },
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "P19-05-IMMUTABILITY-20261014-BATCH05",
+          "layer": "real-ui-api-node",
+          "status": "PASS",
+          "description": "No write path for audit exists (store exposes only AddAudit/ListAudit/CountAudit). Operator/viewer PUT/POST/DELETE /api/audit and DELETE /api/audit/{id} leave data intact: sampled record present and byte-identical afterwards, no record missing.",
+          "evidence": [
+            "evidence/P1905-01-audit-before.json",
+            "evidence/P1905-02-audit-write-attempts.json",
+            "evidence/P1905-03-audit-after.json"
+          ]
+        },
+        {
+          "test_id": "P19-05-UI-20261014-BATCH05",
+          "layer": "real-ui",
+          "status": "PASS",
+          "description": "Audit page is read-only for operator and admin: no row buttons, no checkboxes, no edit/delete controls",
+          "evidence": [
+            "evidence/P1905-04-operator-audit-page.png"
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "DEF-AUDIT-METHOD-200 (low): handleAudit has no HTTP method switch, so POST/PUT/DELETE /api/audit return 200 with the audit list instead of 405. No mutation occurs, but the success-shaped response is misleading API semantics.",
+        "Audit is readable by all authenticated roles (HasPermission read); the assertion is about modify/delete, which is impossible."
+      ],
+      "evidence": [
+        "evidence/P1905-01-audit-before.json",
+        "evidence/P1905-02-audit-write-attempts.json",
+        "evidence/P1905-03-audit-after.json",
+        "evidence/P1905-04-operator-audit-page.png",
+        "evidence/P1905-05-summary.json"
+      ],
+      "actual": {
+        "target_record_unchanged": true,
+        "records_missing_after": [],
+        "operator_GET_audit": 200,
+        "viewer_GET_audit": 200,
+        "operator_POST/PUT/DELETE_audit": 200,
+        "operator_PUT/DELETE_audit_byid": 404,
+        "admin_DELETE_audit_byid": 404,
+        "ui_row_controls": []
+      }
+    },
+    {
+      "case_id": "P19-02",
+      "canonical_before": {
+        "status": "NOT_RUN",
+        "baseline_status": "PASS",
+        "priority": "P1",
+        "expected": "登录、创建/修改/删除 Script、Task、Schedule、Artifact、Application（按用户角色权限验证）。"
+      },
+      "proposed_after": "PASS",
+      "confidence": "medium-high",
+      "covered_dimensions": [
+        {
+          "test_id": "P19-02-LOGIN-20261014-BATCH05",
+          "layer": "real-ui-api-node",
+          "status": "PASS",
+          "description": "administrator / operator / viewer all log in through the Web UI; /api/me returns the expected Username/Role/UserID",
+          "evidence": ["evidence/P1902-00-login-all-roles.json"]
+        },
+        {
+          "test_id": "P19-02-ADMIN-CRUD-20261014-BATCH05",
+          "layer": "real-ui-api-node",
+          "status": "PASS",
+          "description": "Admin create/delete through the real UI for Script, Task, Schedule, Artifact, Application; modify through the UI for Script (r1->r2), Task (r1->r2), Schedule (r1->r2), Application (r1->r2). Artifact upload size/sha256 match local file.",
+          "evidence": [
+            "evidence/P1902-17-admin-crud-summary.json",
+            "evidence/P1902-18-mutation-requests.txt",
+            "evidence/P1902-02-admin-script-created.png",
+            "evidence/P1902-03-admin-script-edited.png",
+            "evidence/P1902-04-admin-application-created.png",
+            "evidence/P1902-05-admin-artifact-uploaded.png",
+            "evidence/P1902-06-admin-task-created.png",
+            "evidence/P1902-08-admin-schedule-created.png",
+            "evidence/P1902-20-admin-task-edited.png",
+            "evidence/P1902-21-admin-application-edited.png",
+            "evidence/P1902-22-admin-schedule-edited.png"
+          ]
+        },
+        {
+          "test_id": "P19-02-RBAC-20261014-BATCH05",
+          "layer": "real-ui-api-node",
+          "status": "PASS",
+          "description": "Operator/Viewer read all five collections (200) but every create/update/delete returns 403; task run discriminates operator (canRun -> 400 'no target nodes') from viewer (403). UI hides create/upload/edit/delete controls for both; operator keeps the run control.",
+          "evidence": [
+            "evidence/P1902-14-rbac-matrix.json",
+            "evidence/P1902-ui-operator-scripts.json",
+            "evidence/P1902-ui-operator-tasks-controls.json",
+            "evidence/P1902-ui-operator-schedules.json",
+            "evidence/P1902-ui-operator-artifacts.json",
+            "evidence/P1902-ui-operator-applications.json",
+            "evidence/P1902-ui-viewer-scripts.json",
+            "evidence/P1902-ui-viewer-tasks-controls.json",
+            "evidence/P1902-ui-viewer-schedules.json",
+            "evidence/P1902-ui-viewer-artifacts.json",
+            "evidence/P1902-ui-viewer-applications.json",
+            "evidence/P1902-15-operator-task-run-page.png",
+            "evidence/P1902-16-operator-run-result.png"
+          ]
+        },
+        {
+          "test_id": "P19-02-NO-SIDEEFFECT-20261014-BATCH05",
+          "layer": "real-ui-api-node",
+          "status": "PASS",
+          "description": "All five collections are byte-identical before/after the denied operator+viewer write attempts",
+          "evidence": ["evidence/P1902-14-rbac-matrix.json"]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The isolated instance has no enrolled agents, so Task/Schedule creation used a label target in the real UI form and 'run' cannot produce a real execution (ends with 'no target nodes').",
+        "Artifact has no update API by design; artifact modify is not applicable.",
+        "The whole instance (and all created users/resources) was destroyed after the batch."
+      ],
+      "evidence": [
+        "evidence/P1902-00-login-all-roles.json",
+        "evidence/P1902-14-rbac-matrix.json",
+        "evidence/P1902-17-admin-crud-summary.json",
+        "evidence/P1902-18-mutation-requests.txt",
+        "evidence/P1902-19-summary.json"
+      ],
+      "actual": {
+        "operator": {"read": 200, "create_update_delete": 403, "task_run": 400, "ui_write_controls": "absent", "ui_run_control": "present"},
+        "viewer": {"read": 200, "create_update_delete": 403, "task_run": 403, "ui_write_controls": "absent"},
+        "admin": {"resources_created": ["script", "task", "schedule", "artifact", "application"], "modify_verified": ["script", "task", "schedule", "application"], "delete_verified": ["script", "task", "schedule", "artifact", "application"]},
+        "no_side_effects": "all five collections UNCHANGED"
+      }
+    }
+  ],
+  "safety": {
+    "server_writes": "only to :18081 (isolated instance): POST /api/users x13, PUT /api/users/{id} x3, POST/PUT/DELETE /api/scripts, /api/tasks, /api/schedules, POST/DELETE /api/artifacts, POST/PUT/DELETE /api/applications, plus denied (403) role probes",
+    "repair_18080": "read-only GET / for UI parity; no writes",
+    "primary_8080": "untouched (listener exists on the same host, never contacted)",
+    "credentials": "new admin/test passwords only in 0600 files on the operator workstation and in the 0640 root:nodesteer config on the hub VM; no plaintext credentials in evidence files",
+    "instance_teardown": "process stopped, data_dir + config removed, :18081 no longer listening, data_dir gone (see instance-ledger.json)"
+  },
+  "not_claimed": "No product code change, no Git delivery, no Archive, no repair configuration/unit change."
+}

@@ -1,0 +1,41 @@
+{
+  "reviewed_at": "2026-10-09T08:06:46.786264+00:00",
+  "type": "Root evidence audit; 20261008 historical repair runtime integration, not new 20261009 runtime",
+  "case": "BE-SCRIPT-SHA-002",
+  "result": "PARTIAL",
+  "canonical_case_ids": [
+    "INV-05"
+  ],
+  "verified": [
+    "同一SYNC_RESPONSE含good/bad Script v2，单坏SHA导致SYNC_ACK ok=false/applied_rev=0",
+    "数据库只读oracle保持revision692，与checkpoint fault前692相同；两Script仍revision1",
+    "good物理文件仍good-v1，bad/injected marker不存在",
+    "撤故障后两Script revision2及内容SHA一致，Task SUCCESS，Execution UI反馈",
+    "两Task/两Script精确删除并GET404；child为后续场景保留"
+  ],
+  "remaining_dimensions": [
+    "尚未实际验证坏SHA FullSnapshot/FullResync同时prune ManagedApplication时旧托管Binary/Config/Unit物理状态保持；普通Script marker不能代替该路径。",
+    "INV-05中的SQLite事务写入/Commit故障以及进程重启后的Revision一致性，不由此坏SHA拒绝帧泛化。"
+  ],
+  "evidence": [
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-summary.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-checkpoint.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-frame-events.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-local-oracle.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-db-task-result.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-file-oracle-task-result.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-execution-ui.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-case-cleanup.json"
+  ],
+  "source_refs": [
+    "internal/agent/agent.go:741",
+    "internal/agent/agent.go:747",
+    "internal/agent/sync_validation_test.go:17"
+  ],
+  "model": "gpt-6-luna",
+  "historical_evidence_is_not_new_runtime": true,
+  "counter_increment": {
+    "PASS": 0,
+    "NOT_RUN_to_PARTIAL": 1
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "batch_id": "qa-resume-20261010-web-batch17-real-fetch-error-recovery",
+  "scope": [
+    "TABLE-NODES-ERROR",
+    "TABLE-TASKS-ERROR",
+    "TABLE-GROUPS-ERROR",
+    "TABLE-SCHEDULES-ERROR",
+    "TABLE-SCRIPTS-ERROR",
+    "TABLE-APPLICATIONS-ERROR",
+    "TABLE-ARTIFACTS-ERROR",
+    "TABLE-EXECUTIONS-ERROR",
+    "TABLE-TRANSFERS-ERROR",
+    "TABLE-AUDIT-ERROR",
+    "TABLE-USERS-ERROR"
+  ],
+  "mode": "read-only real app request failure and recovery in the existing owned 38181 browser session",
+  "fault_method": "Use agent-browser CDP request interception with failRequest/--abort for the exact same-origin GET endpoint only. Do not return mock success data; do not alter server resources or task state. Remove the interception before clicking the actual ErrorState Retry control.",
+  "per_case_actions": "Fresh document open of the canonical list page; fail only its GET endpoint; observe actual query ErrorState and app fetch rejection; remove fail rule; click visible Retry; verify same endpoint GET 200 and real data/EmptyState restoration. Keep browser navigator.onLine true.",
+  "oracles": "Only route, endpoint pathname, GET response status, error class/message, count/hash or EmptyState, Retry visibility/click, restored page state. No raw API body, rows, IDs, logs, names, credentials or tokens.",
+  "budget": {
+    "new_resources": 0,
+    "server_writes": 0,
+    "task_run_user_group_node_agent_script_mutations": 0
+  },
+  "endpoint_map": {
+    "TABLE-NODES-ERROR": "/api/nodes",
+    "TABLE-TASKS-ERROR": "/api/tasks",
+    "TABLE-GROUPS-ERROR": "/api/groups",
+    "TABLE-SCHEDULES-ERROR": "/api/schedules",
+    "TABLE-SCRIPTS-ERROR": "/api/scripts",
+    "TABLE-APPLICATIONS-ERROR": "/api/applications",
+    "TABLE-ARTIFACTS-ERROR": "/api/artifacts",
+    "TABLE-EXECUTIONS-ERROR": "/api/executions*",
+    "TABLE-TRANSFERS-ERROR": "/api/transfers",
+    "TABLE-AUDIT-ERROR": "/api/audit*",
+    "TABLE-USERS-ERROR": "/api/users"
+  },
+  "created_at_utc": "2026-10-10T15:19:55.032614+00:00"
+}

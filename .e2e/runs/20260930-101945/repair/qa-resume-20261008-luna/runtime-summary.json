@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "run_id": "repair-qa-resume-20261008-luna",
+  "updated_at": "2026-10-08",
+  "status": "PARTIAL",
+  "current_authority": "http://192.168.100.209:18080",
+  "private_runtime": {
+    "directory": "/tmp/nodesteer-e2e-resume-20261008-q0w7xmcw",
+    "directory_mode": "0700",
+    "connection_file_mode": "0600",
+    "current_browser_session": "nodesteer-luna-20261008-2ca6673010a6",
+    "authenticated_session_remains_active_for_continuation": true,
+    "credential_values_written_to_evidence": false,
+    "primary_8080_access": "none",
+    "business_source_written_or_deployed_by_executor": false
+  },
+  "authentication_safety": {
+    "misused_command": "agent-browser storage local",
+    "old_session_ui_logout_completed": true,
+    "old_session_backend_logout_http": 200,
+    "old_session_api_me_after_logout_http": 401,
+    "fresh_login_api_me_http": 200,
+    "fresh_login_role": "administrator",
+    "current_user_name_or_token_recorded": false,
+    "evidence": [
+      "security-event.json",
+      "relogin-status.json",
+      "login-ui-match.json"
+    ]
+  },
+  "tests": [
+    {
+      "id": "P01-01-authenticated-login",
+      "canonical_recommendation": "PASS",
+      "trigger": "\u4f7f\u7528\u9694\u79bb\u79c1\u5bc6\u51ed\u636e\u7ecf\u767b\u5f55\u8868\u5355\u767b\u5f55\uff1b\u8bbf\u95ee\u4eea\u8868\u76d8\u5e76\u8bfb\u53d6 /api/me",
+      "request_state": "\u767b\u5f55 POST 200\uff0c/api/me 200\uff0cRole=administrator",
+      "ui_feedback": "\u4eea\u8868\u76d8\u663e\u793a\u5f53\u524d\u7528\u6237\u540d\u548c\u7ba1\u7406\u5458\u89d2\u8272\uff0c\u5747\u4e0e /api/me \u8eab\u4efd\u5339\u914d\uff1b\u5bc6\u7801\u5b57\u6bb5\u4e0d\u5b58\u5728",
+      "evidence": [
+        "login-ui-match.json",
+        "authenticated-regression.network.txt"
+      ],
+      "limitations": [
+        "\u8bc1\u636e\u4ec5\u4fdd\u5b58\u89d2\u8272\u4e0e\u5339\u914d\u5e03\u5c14\u503c\uff0c\u4e0d\u4fdd\u5b58\u7528\u6237\u540d\u3001\u5bc6\u7801\u6216 token"
+      ]
+    },
+    {
+      "id": "G-01-01-unauth-protected-routes",
+      "canonical_recommendation": "PASS",
+      "trigger": "\u4f7f\u7528\u72ec\u7acb\u65e0\u8ba4\u8bc1\u4f1a\u8bdd\u76f4\u63a5\u8bbf\u95ee\u5168\u90e8\u53d7\u4fdd\u62a4\u9876\u7ea7\u8def\u7531\u548c\u4ee3\u8868\u6027\u52a8\u6001/\u65b0\u5efa\u8def\u7531",
+      "request_state": "13\u4e2a\u9876\u7ea7\u8def\u5f84\u53ca\u4e24\u4e2a\u52a8\u6001/\u65b0\u5efa\u8def\u5f84\u7684\u6587\u6863\u5747\u7531 :18080 \u8fd4\u56de\uff0c\u524d\u7aef\u91cd\u5b9a\u5411\u81f3 /sign-in \u5e76\u4fdd\u7559 redirect \u53c2\u6570",
+      "ui_feedback": "\u6700\u7ec8\u663e\u793a\u767b\u5f55\u8868\u5355\uff1b\u533f\u540d\u8bbf\u95ee /api/me \u4e0e /api/nodes \u4e24\u9879\u53ea\u8bfb\u63a5\u53e3\u5747\u8fd4\u56de 401 application/json",
+      "tested_paths": [
+        "/",
+        "/nodes",
+        "/scripts",
+        "/tasks",
+        "/executions",
+        "/applications",
+        "/users",
+        "/settings",
+        "/transfers",
+        "/agents",
+        "/groups",
+        "/schedules",
+        "/artifacts",
+        "/audit",
+        "/tasks/new",
+        "/agents/unauthenticated-probe"
+      ],
+      "evidence": [
+        "protected-root.url.txt",
+        "protected-nodes.url.txt",
+        "protected-scripts.url.txt",
+        "protected-tasks.url.txt",
+        "protected-executions.url.txt",
+        "protected-applications.url.txt",
+        "protected-users.url.txt",
+        "protected-settings.url.txt",
+        "protected-transfers.url.txt",
+        "protected-tasks-new.url.txt",
+        "protected-agent-detail.url.txt",
+        "extra-protected-routes.json",
+        "api-unauth-probe.json",
+        "api-unauth-probe.network.txt"
+      ],
+      "limitations": [
+        "API 401 \u53ea\u76f4\u63a5\u63a2\u6d4b /api/me \u4e0e /api/nodes"
+      ]
+    },
+    {
+      "id": "BE-SECRET-STREAM-001-same-stream-and-lifecycle",
+      "canonical_recommendation": "PASS_CANDIDATE_WITH_REMAINING",
+      "trigger": "\u7ecf\u771f\u5b9e Hub/Agent \u6267\u884c\u4eba\u5de5\u975e\u654f\u611f marker\uff1a\u5b8c\u6574 marker \u9010\u5b57\u8282\u5199 stdout \u548c stderr\uff1b\u53e6\u4ee5\u5b8c\u6574 marker \u5206\u522b\u8de8\u540c\u4e00 stdout \u4e0e\u540c\u4e00 stderr \u7684 64 KiB \u8fb9\u754c\uff1b\u6267\u884c\u91cd\u8bd5\u3001\u53d6\u6d88\u3001\u8d85\u65f6\u548c\u771f\u5b9e\u9650\u989d\u622a\u65ad",
+      "request_state": "\u666e\u901a\u8fd0\u884c SUCCESS\uff1bretry=1 \u4e24\u6b21\u6267\u884c\u540e SUCCESS\uff1b\u53d6\u6d88 CANCELED\uff1btimeout TIMED_OUT\uff1b\u8fd0\u884c\u65f6 max_log_bytes=1,048,576\uff1b\u8de864KiB\u8fb9\u754c\u4e0e1MiB\u622a\u65ad\u5747\u6210\u529f\u7ed3\u675f",
+      "ui_feedback": "\u5b9e\u65f6 chunks \u4e0e\u7ec8\u6001\u5b57\u6bb5\u5747\u672a\u5305\u542b\u540c\u6d41\u5b8c\u6574 marker\uff1b\u975e secret \u5c3e\u90e8\u5728 retry/cancel/timeout \u4e0e\u622a\u65ad\u4efb\u52a1\u53ef\u89c1\uff1b\u7ec8\u6001\u88ab\u622a\u65ad\u6458\u8981\u672b\u5c3e\u4e3a [REDACTED]",
+      "evidence": [
+        "live-ui-initial.json",
+        "retry-results.json",
+        "cancel-results.json",
+        "timeout-results.json",
+        "boundary-created.json",
+        "boundary-order.json",
+        "boundary-verification.json",
+        "boundary-final-log-view.json",
+        "limit-mid-secret-result.json",
+        "prefix-cancel-result.json",
+        "prefix-timeout-result.json",
+        "partial-secret-cleanup.json"
+      ],
+      "observed_secret_shapes": {
+        "bytewise": "\u540c\u4e00\u4e2a\u5b8c\u6574 marker \u7684\u6bcf\u4e2a\u5b57\u8282\u9010\u6b21 flush \u5230 stdout\uff0c\u540c\u65f6\u4e5f\u9010\u6b21 flush \u5230 stderr\uff1b\u4e0d\u662f\u628a\u4e00\u4e2a marker \u7684\u524d\u534a\u653e stdout\u3001\u540e\u534a\u653e stderr\u3002\u4f20\u8f93\u5c42\u662f\u5426\u4fdd\u7559\u6bcf\u4e2a\u5355\u5b57\u8282 frame \u672a\u5355\u72ec\u8bc1\u5b9e\u3002",
+        "64k_boundary": "\u540c\u4e00\u5b8c\u6574 marker \u5206\u522b\u5728 stdout \u548c stderr \u5185\u62c6\u6210\u4e24\u5757\uff0c\u524d\u534a\u7d27\u8d34\u7cbe\u786e65536\u5b57\u8282\u9996\u5757\u672b\u7aef\u3001\u540e\u534a\u5728\u540e\u7eed\u5199\u5165\uff1b\u4e0d\u662f\u8de8 stdout/stderr \u62c6\u5206\u3002",
+        "cancel_timeout_partial": "stdout \u53ea\u6536\u5230 marker \u524d\u7f00\u5c31\u53d6\u6d88\u6216\u8d85\u65f6\uff1b\u7ec8\u6001 stdout \u548c\u5b9e\u65f6 chunks \u90fd\u4e3a [REDACTED]\uff0c\u672a\u89c1\u524d\u7f00\u3002",
+        "stdout_stderr_split": "\u5355\u4e2a marker \u524d\u7f00\u53ea\u5199 stdout\uff0c\u540e\u7f00\u53ea\u5199 stderr\uff1b\u7ec8\u6001 stdout \u88ab\u66ff\u4e3a [REDACTED]\uff0cstderr \u548c UI \u4ecd\u663e\u793a\u540e\u7f00\u7247\u6bb5\u3002\u5b8c\u6574 marker \u672a\u5728\u4efb\u4e00\u7ec8\u6001\u5b57\u6bb5\u91cd\u5efa\uff0c\u4f46\u53d1\u751f\u4e86\u540e\u7f00\u90e8\u5206\u66b4\u9732\u3002",
+        "truncated_summary": "stdout \u539f\u59cb\u4fdd\u7559\u9650\u989d\u6b63\u597d\u843d\u5728 marker \u4e2d\u95f4\uff1b\u7ec8\u6001 stdout_truncated=true\uff0c\u6458\u8981\u4ee5 [REDACTED] \u7ed3\u675f\uff0cchunks \u4e2d\u65e0 marker\uff0c\u5b9e\u65f6\u5b8c\u6574 tail \u53ef\u89c1\u3002"
+      },
+      "remaining": [
+        "\u5355\u5b57\u8282\u8fdb\u7a0b\u5199\u5165\u7684\u7269\u7406 Agent/WebSocket frame \u8fb9\u754c\u56e0\u7f13\u51b2/\u5408\u5e76\u672a\u76f4\u63a5\u89c2\u6d4b\u3002",
+        "BE-SECRET \u7684\u8de8 stdout/stderr \u5f62\u72b6\u672a\u6cc4\u9732\u5b8c\u6574 marker\uff0c\u4f46 stderr \u540e\u7f00\u90e8\u5206\u66b4\u9732\uff1b\u9700 Root \u5224\u65ad\u8be5\u7b56\u7565\u662f\u5426\u6ee1\u8db3\u4ea7\u54c1\u8131\u654f\u53e3\u5f84\u3002"
+      ],
+      "limitations": [
+        "\u4ec5\u4f7f\u7528\u4eba\u5de5\u975e\u654f\u611f QA marker\uff1b\u672a\u4f7f\u7528\u771f\u5b9e\u8d26\u6237 secret/token\u3002",
+        "\u8de8\u6d41\u540e\u7f00\u90e8\u5206\u66b4\u9732\u4e0d\u80fd\u5916\u63a8\u4e3a\u5b8c\u6574\u771f\u5b9e\u51ed\u636e\u6cc4\u6f0f\u3002"
+      ]
+    },
+    {
+      "id": "WEB-LIVE-LOG",
+      "canonical_recommendation": "PASS_CANDIDATE",
+      "trigger": "\u957f\u65f6 Script Task \u7ecf\u771f\u5b9e UI \u53d1\u8d77\uff1b\u8fd0\u884c\u8be6\u60c5\u9875\u5728 RUNNING \u65f6\u5df2\u8f7d\u5165\u65e5\u5fd7\uff0c\u7ee7\u7eed\u89c2\u5bdf\u540e\u7eed\u8f93\u51fa\u3001\u641c\u7d22\u3001\u590d\u5236\u56de\u9000\u3001\u8ddf\u968f\u548c\u7ec8\u6001",
+      "request_state": "POST /api/tasks/:id/run 200\uff1bRUNNING \u65f6\u65e5\u5fd7\u884c\u589e\u52a0\uff1b\u6700\u7ec8 SUCCESS\u3001stdout/stderr \u5c3e\u90e8\u8865\u5165\uff0c\u9875\u9762 navigation count\u4fdd\u63011",
+      "ui_feedback": "\u641c\u7d22\u7cbe\u786e\u8fc7\u6ee4\uff1b\u8ddf\u968f\u72b6\u6001\u6eda\u52a8\u5230\u5e95\u90e8\uff1b\u590d\u5236\u6309\u94ae\u5728 HTTP \u975e\u5b89\u5168\u4e0a\u4e0b\u6587\u663e\u793a\u624b\u52a8 Ctrl+C \u63d0\u793a\uff0c\u641c\u7d22\u548c\u8fc7\u6ee4\u7ed3\u679c\u4fdd\u7559\uff1b\u7cfb\u7edf\u526a\u8d34\u677f\u672a\u58f0\u79f0\u6210\u529f",
+      "evidence": [
+        "live-long-running-start.json",
+        "live-follow-running.json",
+        "live-search-running.raw-private.txt",
+        "live-copy-running.raw-private.txt",
+        "live-terminal.raw-private.txt",
+        "live-ui-live-results.json",
+        "copy-fallback-state.json",
+        "authenticated-regression.network.txt"
+      ],
+      "limitations": [
+        "HTTP \u73af\u5883\u4ec5\u786e\u8ba4\u624b\u52a8\u590d\u5236\u56de\u9000\u548c\u72b6\u6001\u53ef\u6062\u590d\uff0c\u4e0d\u9a8c\u8bc1\u64cd\u4f5c\u7cfb\u7edf\u526a\u8d34\u677f\u5199\u5165"
+      ]
+    },
+    {
+      "id": "EXECUTION-LOG-TRUNCATION-REAL-LIMIT",
+      "canonical_recommendation": "PASS",
+      "trigger": "\u7531 /api/settings \u8bfb\u53d6\u5b9e\u9645 1 MiB \u9650\u989d\uff0c\u771f\u5b9e Agent stdout \u8d85\u9650\u6267\u884c\uff1b\u53e6\u6d4b secret \u4f4d\u4e8e\u622a\u65ad\u8fb9\u754c",
+      "request_state": "stdout_truncated=true\u30011,048,557\u62161,048,567\u5b57\u7b26\uff08\u4f9d redaction \u66ff\u6362\u957f\u5ea6\uff09\uff1bstderr \u72ec\u7acb\u4fdd\u630165,547\u5b57\u7b26\u4e14\u672a\u622a\u65ad\uff1bAPI chunks\u5b8c\u6574\u7ea61.18M\u5b57\u7b26\u4e14\u5305\u542b\u9650\u989d\u540e\u5c3e\u90e8",
+      "ui_feedback": "\u7ec8\u6001\u6458\u8981\u622a\u65ad\u4e14 chunks \u4ecd\u4fdd\u7559\u5b8c\u6574\u5b9e\u65f6 tail\uff0cUI\u663e\u793achunks\u4e2d\u7684tail\uff1b\u8be5\u72b6\u6001\u7b26\u5408 executionLogView \u4fdd\u7559\u5b8c\u6574chunks\u7684\u8bbe\u8ba1\uff0c\u4e0d\u80fd\u628a\u6ca1\u6709\u989d\u5916\u201c\u5df2\u622a\u65ad\u201d\u5fbd\u6807\u5f53\u6210\u65e5\u5fd7\u4e22\u5931",
+      "evidence": [
+        "log-limit.json",
+        "boundary-final-log-view.json",
+        "boundary-verification.json",
+        "limit-mid-secret-result.json"
+      ],
+      "limitations": [
+        "\u603b\u7ed3\u957f\u5ea6\u56e0 [REDACTED] \u66ff\u6362\u6539\u53d8\uff0c\u4e0d\u7b49\u4e8e\u539f\u59cb stdout \u7684\u5b57\u8282\u6570"
+      ]
+    },
+    {
+      "id": "EXECUTION-LOG-EMPTY",
+      "canonical_recommendation": "PASS",
+      "trigger": "\u771f\u5b9e Agent Script \u6210\u529f\u9000\u51fa\u4e14\u65e0 stdout/stderr",
+      "request_state": "Execution SUCCESS\uff1bstdout\u3001stderr \u57470\u5b57\u7b26\uff0c\u65e5\u5fd7chunks\u4e3a0",
+      "ui_feedback": "\u8be6\u60c5\u9875\u65e5\u5fd7\u9762\u677f\u663e\u793a\u201c\uff08\u7a7a\uff09\u201d",
+      "evidence": [
+        "empty-execution.json",
+        "empty-verification.json",
+        "resilience-cleanup.json"
+      ]
+    }
+  ],
+  "remaining": [
+    "\u771f\u5b9e\u6d4f\u89c8\u5668 offline/online \u65ad\u8fde\u6062\u590d\u672c\u8f6e\u672a\u6267\u884c\uff1b\u6ca1\u6709\u4fee\u6539\u5171\u4eab\u7f51\u7edc\u6216\u4f7f\u7528 mock\u3002",
+    "\u5b8c\u6574504\u573a\u666f\u77e9\u9635\u6ca1\u6709\u5728\u672c\u5b50\u4efb\u52a1\u91cd\u8dd1\uff1b\u672c\u8f6e\u8bc1\u636e\u4e0d\u589e\u52a0504\u5206\u6bcd\uff0c\u4e2d\u592e\u72b6\u6001\u6587\u4ef6\u672a\u4fee\u6539\u3002",
+    "BE-SECRET \u7684\u7269\u7406\u5355\u5b57\u8282 frame \u548c\u8de8\u6d41\u540e\u7f00\u5904\u7406\u7b56\u7565\u5f85 Root \u5224\u65ad\uff1b\u540c\u6d41\u8de8chunk\u300164KiB\u3001\u53d6\u6d88/\u8d85\u65f6\u90e8\u5206\u524d\u7f00\u53ca\u7ec8\u6001\u9650\u989d\u622a\u65ad\u5747\u5df2\u6709\u771f\u5b9e\u7ed3\u679c\u3002"
+  ],
+  "cleanup_and_history": {
+    "owned_tasks_deleted": 12,
+    "owned_scripts_deleted": 5,
+    "all_deletes_http": 200,
+    "all_get_after_delete_http": 404,
+    "executions_retained": 11,
+    "execution_get_after_cleanup_http": 200,
+    "audit_retention_verified": [
+      "boundary task create/execute/delete",
+      "empty-output task create/execute/delete"
+    ],
+    "temporary_agent_files": "retry marker self-removed after successful retry; other cases wrote no persistent test file"
+  },
+  "environment_after_run": {
+    "healthz_http": 200,
+    "readyz_http": 200,
+    "nodes_http": 200,
+    "node_count": 4,
+    "all_online_and_synced": true,
+    "browser_console_errors_observed": 0,
+    "evidence": "final-environment.json"
+  },
+  "workspace_scope": {
+    "worktree_business_changes_by_executor": false,
+    "central_e2e_state_files_modified": false,
+    "openspec_or_git_changed_by_executor": false,
+    "only_written_workspace_path": ".e2e/runs/20260930-101945/repair/qa-resume-20261008-luna",
+    "note": "\u542f\u52a8\u5b9a\u4f4d\u65f6\u8bef\u8fd0\u884c\u8fc7\u4e00\u6b21\u53ea\u8bfb `git status --short`\uff1b\u672a\u6267\u884c\u4efb\u4f55 Git \u5199\u64cd\u4f5c\u3002\u5386\u53f2 anonymous-phase results.json \u4fdd\u7559\u4e3a\u5f53\u65f6\u4e8b\u5b9e\uff0c\u4e0d\u4f5c\u4e3a\u5f53\u524d\u8ba4\u8bc1\u72b6\u6001\uff1b\u672c\u6587\u4ef6\u4e3a\u5f53\u524d resume \u72b6\u6001\u3002"
+  }
+}

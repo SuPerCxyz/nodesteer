@@ -1,0 +1,140 @@
+{
+  "batch_id": "qa-resume-20261010-web-batch19-table-error-recovery",
+  "created_at_utc": "2026-10-12T13:16:00Z",
+  "scope": [
+    "TABLE-NODES-ERROR",
+    "TABLE-APPLICATIONS-ERROR",
+    "TABLE-ARTIFACTS-ERROR",
+    "TABLE-EXECUTIONS-ERROR",
+    "TABLE-TRANSFERS-ERROR",
+    "TABLE-AUDIT-ERROR",
+    "TABLE-USERS-ERROR"
+  ],
+  "mode": "existing owned agent-browser session qawebsecure20261010-b18-clean38181; real browser app GETs, exact per-target CDP interception only",
+  "budget": {
+    "new_resources": 0,
+    "server_writes": 0,
+    "runs": 0,
+    "users": 0,
+    "node_agent_group_task_schedule_script_mutations": 0
+  },
+  "browser_origin": "http://127.0.0.1:38181",
+  "tunnel": "127.0.0.1:38181 -> repair origin :18080, owned only",
+  "per_case_sequence": [
+    "Navigate UI to canonical list route and verify same repair origin.",
+    "Hard reload while same owned page target pauses only that exact GET at request stage; sample loading DOM for at most 2s (skeleton/spinner/aria-busy/loading text and row count) while request is held.",
+    "Continue the actual GET; record actual 200, page ready and real row/empty state. Empty only when actual successful API response count is zero.",
+    "On the same page target, fail only exact list GET (Fetch.failRequest); observe Network.loadingFailed and actual ErrorState/Retry.",
+    "Disable Fetch/cache instrumentation before a real user click on the visible Retry control; observe same endpoint actual 200 and recovered data/empty UI.",
+    "Save whitelisted method/path/status/timing/count/hash and DOM state only; no response body, row values, user/log text, credentials, token or headers.",
+    "After retry, classify Empty only from an actual successful API response with count 0 and visible real EmptyState/no-results feedback; otherwise retain PARTIAL for that dimension."
+  ],
+  "cases": [
+    {
+      "case_id": "TABLE-NODES-ERROR",
+      "route": "/nodes",
+      "list_get_path": "/api/nodes",
+      "expected_render_contract": "catalog/Agents query + ListLayout",
+      "source_refs": "catalog/index.tsx:88-92; 271-300; 2320-2358",
+      "required_observations": [
+        "hard-reload actual loading feedback during paused GET",
+        "actual GET 200 after continue",
+        "exact real GET failure and ErrorState/Retry feedback",
+        "click real Retry and actual GET 200",
+        "actual table row count or true EmptyState based on real successful API response"
+      ],
+      "status": "NOT_RUN"
+    },
+    {
+      "case_id": "TABLE-APPLICATIONS-ERROR",
+      "route": "/applications",
+      "list_get_path": "/api/applications",
+      "expected_render_contract": "Applications query + ListLayout",
+      "source_refs": "catalog/index.tsx:1513-1522; 1615-1645; 2320-2358",
+      "required_observations": [
+        "hard-reload actual loading feedback during paused GET",
+        "actual GET 200 after continue",
+        "exact real GET failure and ErrorState/Retry feedback",
+        "click real Retry and actual GET 200",
+        "actual table row count or true EmptyState based on real successful API response"
+      ],
+      "status": "NOT_RUN"
+    },
+    {
+      "case_id": "TABLE-ARTIFACTS-ERROR",
+      "route": "/artifacts",
+      "list_get_path": "/api/artifacts",
+      "expected_render_contract": "Artifacts query + ListLayout",
+      "source_refs": "catalog/index.tsx:1652-1667; 1810-1845; 2320-2358",
+      "required_observations": [
+        "hard-reload actual loading feedback during paused GET",
+        "actual GET 200 after continue",
+        "exact real GET failure and ErrorState/Retry feedback",
+        "click real Retry and actual GET 200",
+        "actual table row count or true EmptyState based on real successful API response"
+      ],
+      "status": "NOT_RUN"
+    },
+    {
+      "case_id": "TABLE-EXECUTIONS-ERROR",
+      "route": "/executions",
+      "list_get_path": "/api/executions",
+      "expected_render_contract": "Executions page query with server pagination",
+      "source_refs": "executions/index.tsx:81-102; 265-300",
+      "required_observations": [
+        "hard-reload actual loading feedback during paused GET",
+        "actual GET 200 after continue",
+        "exact real GET failure and ErrorState/Retry feedback",
+        "click real Retry and actual GET 200",
+        "actual table row count or true EmptyState based on real successful API response"
+      ],
+      "status": "NOT_RUN"
+    },
+    {
+      "case_id": "TABLE-TRANSFERS-ERROR",
+      "route": "/transfers",
+      "list_get_path": "/api/transfers",
+      "expected_render_contract": "Transfers query with LoadingState/ErrorState/EmptyState branches",
+      "source_refs": "transfers/index.tsx:40-52; 385-405",
+      "required_observations": [
+        "hard-reload actual loading feedback during paused GET",
+        "actual GET 200 after continue",
+        "exact real GET failure and ErrorState/Retry feedback",
+        "click real Retry and actual GET 200",
+        "actual table row count or true EmptyState based on real successful API response"
+      ],
+      "status": "NOT_RUN"
+    },
+    {
+      "case_id": "TABLE-AUDIT-ERROR",
+      "route": "/audit",
+      "list_get_path": "/api/audit",
+      "expected_render_contract": "Audit paged query + ListLayout",
+      "source_refs": "catalog/index.tsx:1855-1870; 1925-1943; 2320-2358",
+      "required_observations": [
+        "hard-reload actual loading feedback during paused GET",
+        "actual GET 200 after continue",
+        "exact real GET failure and ErrorState/Retry feedback",
+        "click real Retry and actual GET 200",
+        "actual table row count or true EmptyState based on real successful API response"
+      ],
+      "status": "NOT_RUN"
+    },
+    {
+      "case_id": "TABLE-USERS-ERROR",
+      "route": "/users",
+      "list_get_path": "/api/users",
+      "expected_render_contract": "Admin-only Users query + ListLayout",
+      "source_refs": "catalog/index.tsx:1950-1970; 2050-2080; 2320-2358",
+      "required_observations": [
+        "hard-reload actual loading feedback during paused GET",
+        "actual GET 200 after continue",
+        "exact real GET failure and ErrorState/Retry feedback",
+        "click real Retry and actual GET 200",
+        "actual table row count or true EmptyState based on real successful API response"
+      ],
+      "status": "NOT_RUN"
+    }
+  ],
+  "canonical_scope_rule": "True Empty is an applicable dimension for all seven cases. It is PASS evidence only when the actual successful list API GET returns count 0 and the real UI shows its empty/no-results feedback; nonempty real data leaves the case PARTIAL. No resource mutation or mocked-empty response is allowed."
+}

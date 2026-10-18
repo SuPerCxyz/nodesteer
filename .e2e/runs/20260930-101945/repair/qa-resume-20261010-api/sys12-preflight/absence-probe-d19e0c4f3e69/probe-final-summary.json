@@ -1,0 +1,53 @@
+{
+  "captured_at_utc": "2026-10-12T13:34:24Z",
+  "status": "DIAGNOSTIC_COMPLETE_TASK_CLEANED",
+  "grant_context": "ROOT-SYS12-OWNED-LIFECYCLE-20261012-02 additional normal helper slot",
+  "source_attempt": "d19e0c4f3e69",
+  "authority_port": 18080,
+  "helper_source": {
+    "path": "absence_probe.py",
+    "sha256": "9cdd9861e047862bfed764c5158a64ec680918cd5d28ed3f5187df06c016cae7",
+    "command_sha256": "e618ab8fa9e9eeec54b3fd01569ab612a94d0c60c118440e2ab0f664abb33b38"
+  },
+  "temporary_task": {
+    "name": "qa-sys12-absence-probe-d19e0c4f3e69",
+    "id": "a3add1a2-ba7a-4b96-85e6-84fdec3b0f1c",
+    "execution_id": "61afa154-95ae-44a1-8fbb-f002c1f82a1e",
+    "execution_status": "SUCCESS",
+    "delete_http": 200,
+    "get_after_delete_http": 404,
+    "business_runs": 0,
+    "docker_mutations": 0
+  },
+  "inspections": [
+    {
+      "kind": "container",
+      "id": "88a04edab1fa3f2ed05b885e05056981d499bdd8496b69f2961363b3ead2dd53",
+      "returncode": 1,
+      "stdout_bytes": 3,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_bytes": 112,
+      "stderr_sha256": "e15fe68d70109243eb374d25a9321082530c91b6c85122f9023da9278b2504c1",
+      "classification": "EXACT_NO_SUCH_CONTAINER"
+    },
+    {
+      "kind": "network",
+      "id": "5fcc323b477f67cdd12cdcce46a705a611a4a12f80f60e9287edef6d72c240a9",
+      "returncode": 1,
+      "stdout_bytes": 3,
+      "stdout_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stderr_bytes": 111,
+      "stderr_sha256": "c961971a30fa22701e9a7747894002fda65116b02744a0f554941502539a4674",
+      "classification": "UNKNOWN_DIAGNOSTIC"
+    }
+  ],
+  "root_cause": {
+    "source_predicate": "lifecycle_source_proposal.py recreate path accepts absence only when stderr contains the exact lowercase substring 'no such object: <container-id>' (or inspect returns nonzero and that substring is present).",
+    "container_finding": "The read-only exact-ID probe classified the actual suffix as EXACT_NO_SUCH_CONTAINER. Thus the prior container absence predicate was too narrow for the observed Docker diagnostic class. Raw stderr is intentionally not printed or stored.",
+    "network_finding": "Exact network inspect returned rc=1 but the strict suffix classifier returned UNKNOWN_DIAGNOSTIC. No stderr text is available; its specific diagnostic kind remains unknown and no error string is inferred.",
+    "stderr_policy": "Only byte count and SHA-256 were emitted; actual stdout/stderr bytes were neither printed nor persisted."
+  },
+  "preflight": "All five d19 helper Executions verified terminal and Task GET404; d19 Schedule/Task/Script/Node GET404; the four protected original Nodes were online/synced; exact probe task name unused.",
+  "driver_reporting_note": "The one-shot driver printed status PREPARED and probe-result.json retains that initial status because its persist() updates ledger status but not result.status. The independent probe ledger and progress both say COMPLETE, with Task DELETE200/GET404 and the exact terminal Execution ID/status recorded; this summary uses those persisted terminal fields.",
+  "limitations": "This diagnostic only classified absence for the exact removed container/network IDs. It did not mutate Docker, create a Node, or repeat the business lifecycle. No inference is made about any other Docker error text."
+}

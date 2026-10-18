@@ -1,0 +1,74 @@
+{
+  "review_id": "ROOT-REUSABLE-EVIDENCE-INTEGRATION-20261014",
+  "reviewed_at": "2026-10-14T08:08:31.783723+00:00",
+  "reviewer": "main-agent(root)",
+  "verification": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/reusable-evidence-verification-20261014.json",
+  "status": "INTEGRATED",
+  "summary": "独立核验后按保守口径汇入：INV-15 升 PASS；E2E-18/AR-04/E2E-16/AR-26 升 PARTIAL 并写明仍缺维度。",
+  "decisions": {
+    "INV-15": {
+      "from": "NOT_RUN",
+      "to": "PASS",
+      "remaining": []
+    },
+    "E2E-18": {
+      "from": "NOT_RUN",
+      "to": "PARTIAL",
+      "remaining": [
+        "Journal 语义未在被引证据中覆盖（attempt04 该文件 0 处 journal；Journal/Schedule 在同案 attempt02 sys12-b9e47f16deb9，plan 未引用，需显式采纳）",
+        "Compose 形态重建未验证",
+        "B 恢复后 online/synced 读回与 UI 观测缺失（唯一只读窗口 P05B-04 仍 PARTIAL）"
+      ]
+    },
+    "AR-04": {
+      "from": "NOT_RUN",
+      "to": "PARTIAL",
+      "remaining": [
+        "无任何\"恢复后幂等\"直接证据（attempt04 全程 0 Execution、未 Deploy、Unit 缺失）",
+        "Desired State 对账缺失（attempt02 显示 Hub desired 1573 vs B 本地 1575 不一致且未解释）",
+        "重复执行/重复上传去重对照未做",
+        "恢复后 online/synced 与 UI 收敛未读回"
+      ]
+    },
+    "E2E-16": {
+      "from": "NOT_RUN",
+      "to": "PARTIAL",
+      "remaining": [
+        "pending 阶段无任何观测（无 pending→HELLO 状态迁移证据）",
+        "HELLO/heartbeat 报文级证据缺失",
+        "UI 反馈未验证"
+      ]
+    },
+    "AR-26": {
+      "from": "NOT_RUN",
+      "to": "PARTIAL",
+      "remaining": [
+        "恢复后幂等、Desired State 对账未覆盖",
+        "升级/Health 失败分支未覆盖",
+        "baseline FAIL 所在的 FAIL-ENV-HOST-001（Docker Host Integration）分支恰为不可复用部分",
+        "该证据自述首次失败为 harness 只读限制且原文为 \"rollback failed\"、ROLLING_BACK 未闭合"
+      ]
+    }
+  },
+  "flagged_for_user": [
+    "E2E-18/AR-04/INV-15 的复用源自 SYS-12（confidence=medium，含 3 条 limitation），属跨用例推论，Root 已保守降级为 PARTIAL/PASS(物理证据) 并保留限制"
+  ],
+  "observations_opened": [
+    "OBS-20261014-AR26-ROLLBACK-UNCLOSED"
+  ],
+  "counts_before": {
+    "PASS": 216,
+    "FAIL": 4,
+    "PARTIAL": 158,
+    "NOT_RUN": 121,
+    "BLOCKED": 5
+  },
+  "counts_after": {
+    "PASS": 217,
+    "FAIL": 4,
+    "PARTIAL": 162,
+    "NOT_RUN": 116,
+    "BLOCKED": 5
+  },
+  "not_claimed": "未执行产品修复、Git 交付或 Archive"
+}

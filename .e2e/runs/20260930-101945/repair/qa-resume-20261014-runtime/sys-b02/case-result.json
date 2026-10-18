@@ -1,0 +1,861 @@
+{
+  "batch_id": "sys-b02",
+  "title": "提交边界与通知语义：Commit 前不通知、通知不承担最终一致性、依赖同步失败回滚",
+  "nonce": "321fac84",
+  "owned_prefix": "qa-sysb02-321fac84-",
+  "executed_at_utc": "2026-10-14T10:30:52Z",
+  "finished_at_utc": "2026-10-14T10:33:00Z",
+  "endpoint": "http://192.168.100.209:18080",
+  "cases": [
+    {
+      "case_id": "SYS-10",
+      "title": "SYS-10 Commit 前不发送通知，Commit 后通知一次或可安全重复",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-10",
+          "layer": "hub commit -> websocket frame ledger -> owned child Agent sqlite",
+          "status": "PASS",
+          "description": [
+            "Commit-before-notify was measured for 6 real mutations: a hub-local read-only poller (2 ms sampling, 18460 samples) recorded when each change became visible in the committed SQLite store; the CHANGE_NOTIFICATION frame was received at the frame proxy 9.7-12.1 ms AFTER that instant in all 6 cases (dedicated in-run clock offset probe, half-spread 0.247 ms).",
+            "Each committed change produced exactly one CHANGE_NOTIFICATION naming the committed object type/id and the exact committed object/global revision; a FAILED mutation (HTTP 400) produced none.",
+            "Duplicating a CHANGE_NOTIFICATION frame (same revision) was safe: the owner Agent stored one row, the content matched the committed SHA, and the extra frame only caused a redundant SYNC_REQUEST that returned the same authoritative state."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The Hub send instant itself cannot be instrumented without product-source changes; the ordering claim is a runtime falsification test with a measured tolerance (0.05 s) plus a positive control (see INV-17), not a source-level proof.",
+        "Notification counts are per connected Agent; the run had exactly one connected owned child plus other batches' nodes, and the assertion is scoped to the owned object ids."
+      ],
+      "evidence": [
+        "evidence/phase0-guard.json",
+        "evidence/phase1-owned-child.json",
+        "evidence/phase2-fixtures-and-notify-ordering.json",
+        "evidence/phase3-notify-once-and-duplicate.json",
+        "evidence/phase4-inv17-uncommitted-no-notification.json",
+        "evidence/phase5-inv03-notify-revisioncheck-reconcile.json",
+        "evidence/phase6-inv04-notification-not-authority.json",
+        "evidence/phase7-sys08-sync-failure-rollback.json",
+        "evidence/phase8-ar16-recovery-persistence.json",
+        "evidence/phase9-executions.json",
+        "evidence/phase10-cleanup.json",
+        "evidence/phase11-independent-cleanup-verification.json",
+        "evidence/phase-frames.json",
+        "final-cleanup-oracle.json",
+        "fixture-ledger.json",
+        "run-evidence.json",
+        "case-result.json",
+        "progress.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb02-321fac84-",
+        "child_node_id": "63c38860-11f8-486d-8859-06a0873a1018",
+        "child_agent_id": "agent-00bcbd6e-8c74-4a81-91ef-b8dd2a2f144d",
+        "host": "192.168.100.204 (native-1)",
+        "scripts": {
+          "good": "c6ce2d11-1f79-4f16-a144-6bba153db84b",
+          "dep": "e1d5492a-9dc1-42c1-906f-b2b7e6fffa4e",
+          "fail": "40f8cdab-a59f-453c-8fcc-fba4c9feba63"
+        },
+        "tasks": {
+          "run": "7ab0c8c1-8e8d-4f52-9ea2-f8e16add1b05",
+          "dep": "241b70ff-512b-4c76-83ce-536e014d68ff",
+          "fail": "930a02f4-53fd-47f1-80e6-cb0c6569e78c"
+        },
+        "proxy_listen_port": 36019,
+        "preserved_execution_history": [
+          "6a49fc8a-2cb0-4ff3-869f-7a8be5c6cde8",
+          "8fc0f97d-ed53-48fd-9611-062c864673cf"
+        ],
+        "proxy_port_released": true
+      },
+      "actual_budget": {
+        "api_mutations": 27,
+        "hub_definition_creates": 6,
+        "hub_definition_deletes": 6,
+        "node_enroll_posts": 1,
+        "child_process_starts": 2,
+        "child_process_stops": 2,
+        "proxy_injections": 2,
+        "sync_responses_mutated": 3
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "7ab0c8c1-8e8d-4f52-9ea2-f8e16add1b05",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "241b70ff-512b-4c76-83ce-536e014d68ff",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "930a02f4-53fd-47f1-80e6-cb0c6569e78c",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "c6ce2d11-1f79-4f16-a144-6bba153db84b",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "e1d5492a-9dc1-42c1-906f-b2b7e6fffa4e",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "40f8cdab-a59f-453c-8fcc-fba4c9feba63",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native1_child_removal": {
+          "signalled": [
+            7492
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "63c38860-11f8-486d-8859-06a0873a1018",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "INV-17",
+      "title": "INV-17 Commit 前不得发送 Desired State Notification",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:INV-17",
+          "layer": "hub commit ordering / frame ledger / hub read-only sqlite",
+          "status": "PASS",
+          "description": [
+            "Ordering: for every mutation the notification described a revision that was already durable in the Hub committed store before the frame arrived (no notification was ever observed for an uncommitted revision).",
+            "Negative: a rejected desired-state mutation (POST /api/tasks with a non-existent script_id -> HTTP 400 \"referenced script not found\") left revision_sequence unchanged (2017) and added 0 change-log rows, and the frame ledger contains 0 notifications naming the rejected object.",
+            "Detection power (control): the harness injected a synthetic CHANGE_NOTIFICATION carrying the committed revision + 100000; the same checker classified it as VIOLATION because that revision was never committed, proving the check would catch a pre-commit notification."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Only one deterministic rejected-mutation path was exercised (referenced-script validation). A mutation that fails *inside* the Hub write transaction could not be forced without concurrency tricks or product changes, so the \"no notification on rollback\" statement rests on the validation-rejection path plus the control."
+      ],
+      "evidence": [
+        "evidence/phase0-guard.json",
+        "evidence/phase1-owned-child.json",
+        "evidence/phase2-fixtures-and-notify-ordering.json",
+        "evidence/phase3-notify-once-and-duplicate.json",
+        "evidence/phase4-inv17-uncommitted-no-notification.json",
+        "evidence/phase5-inv03-notify-revisioncheck-reconcile.json",
+        "evidence/phase6-inv04-notification-not-authority.json",
+        "evidence/phase7-sys08-sync-failure-rollback.json",
+        "evidence/phase8-ar16-recovery-persistence.json",
+        "evidence/phase9-executions.json",
+        "evidence/phase10-cleanup.json",
+        "evidence/phase11-independent-cleanup-verification.json",
+        "evidence/phase-frames.json",
+        "final-cleanup-oracle.json",
+        "fixture-ledger.json",
+        "run-evidence.json",
+        "case-result.json",
+        "progress.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb02-321fac84-",
+        "child_node_id": "63c38860-11f8-486d-8859-06a0873a1018",
+        "child_agent_id": "agent-00bcbd6e-8c74-4a81-91ef-b8dd2a2f144d",
+        "host": "192.168.100.204 (native-1)",
+        "scripts": {
+          "good": "c6ce2d11-1f79-4f16-a144-6bba153db84b",
+          "dep": "e1d5492a-9dc1-42c1-906f-b2b7e6fffa4e",
+          "fail": "40f8cdab-a59f-453c-8fcc-fba4c9feba63"
+        },
+        "tasks": {
+          "run": "7ab0c8c1-8e8d-4f52-9ea2-f8e16add1b05",
+          "dep": "241b70ff-512b-4c76-83ce-536e014d68ff",
+          "fail": "930a02f4-53fd-47f1-80e6-cb0c6569e78c"
+        },
+        "proxy_listen_port": 36019,
+        "preserved_execution_history": [
+          "6a49fc8a-2cb0-4ff3-869f-7a8be5c6cde8",
+          "8fc0f97d-ed53-48fd-9611-062c864673cf"
+        ],
+        "proxy_port_released": true
+      },
+      "actual_budget": {
+        "api_mutations": 27,
+        "hub_definition_creates": 6,
+        "hub_definition_deletes": 6,
+        "node_enroll_posts": 1,
+        "child_process_starts": 2,
+        "child_process_stops": 2,
+        "proxy_injections": 2,
+        "sync_responses_mutated": 3
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "7ab0c8c1-8e8d-4f52-9ea2-f8e16add1b05",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "241b70ff-512b-4c76-83ce-536e014d68ff",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "930a02f4-53fd-47f1-80e6-cb0c6569e78c",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "c6ce2d11-1f79-4f16-a144-6bba153db84b",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "e1d5492a-9dc1-42c1-906f-b2b7e6fffa4e",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "40f8cdab-a59f-453c-8fcc-fba4c9feba63",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native1_child_removal": {
+          "signalled": [
+            7492
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "63c38860-11f8-486d-8859-06a0873a1018",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "INV-03",
+      "title": "INV-03 同步必须是 Notify + Revision Check + Reconciliation",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:INV-03",
+          "layer": "frame ledger (3 layers) + hub node readback + owned child sqlite",
+          "status": "PASS",
+          "description": [
+            "Notify: one committed mutation produced the exact frame chain CHANGE_NOTIFICATION -> SYNC_REQUEST -> SYNC_RESPONSE -> SYNC_ACK within 0.034 s, and the object became the committed revision locally.",
+            "Revision Check: with all CHANGE_NOTIFICATION frames dropped by the proxy the Agent stayed stale for >6 s and converged only through a periodic REVISION_CHECK -> REVISION_CHECK_ACK -> SYNC_REQUEST chain (convergence 13.933 s from the mutation; hub setting revision_check_interval_sec=45).",
+            "Reconnect Reconciliation: after cutting the owned child link and committing a mutation while it was offline, HELLO(local_global_rev=2020) -> HELLO_ACK(desired_global_rev=2021) -> SYNC_REQUEST(since=2020) converged in 5.499 s and the node returned to online/synced."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The revision-check layer relies on the hub-configured 45 s interval, so convergence is bounded by that period; no jitter-threshold claim is made.",
+        "All three layers were exercised on one owned child Agent (one hub session)."
+      ],
+      "evidence": [
+        "evidence/phase0-guard.json",
+        "evidence/phase1-owned-child.json",
+        "evidence/phase2-fixtures-and-notify-ordering.json",
+        "evidence/phase3-notify-once-and-duplicate.json",
+        "evidence/phase4-inv17-uncommitted-no-notification.json",
+        "evidence/phase5-inv03-notify-revisioncheck-reconcile.json",
+        "evidence/phase6-inv04-notification-not-authority.json",
+        "evidence/phase7-sys08-sync-failure-rollback.json",
+        "evidence/phase8-ar16-recovery-persistence.json",
+        "evidence/phase9-executions.json",
+        "evidence/phase10-cleanup.json",
+        "evidence/phase11-independent-cleanup-verification.json",
+        "evidence/phase-frames.json",
+        "final-cleanup-oracle.json",
+        "fixture-ledger.json",
+        "run-evidence.json",
+        "case-result.json",
+        "progress.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb02-321fac84-",
+        "child_node_id": "63c38860-11f8-486d-8859-06a0873a1018",
+        "child_agent_id": "agent-00bcbd6e-8c74-4a81-91ef-b8dd2a2f144d",
+        "host": "192.168.100.204 (native-1)",
+        "scripts": {
+          "good": "c6ce2d11-1f79-4f16-a144-6bba153db84b",
+          "dep": "e1d5492a-9dc1-42c1-906f-b2b7e6fffa4e",
+          "fail": "40f8cdab-a59f-453c-8fcc-fba4c9feba63"
+        },
+        "tasks": {
+          "run": "7ab0c8c1-8e8d-4f52-9ea2-f8e16add1b05",
+          "dep": "241b70ff-512b-4c76-83ce-536e014d68ff",
+          "fail": "930a02f4-53fd-47f1-80e6-cb0c6569e78c"
+        },
+        "proxy_listen_port": 36019,
+        "preserved_execution_history": [
+          "6a49fc8a-2cb0-4ff3-869f-7a8be5c6cde8",
+          "8fc0f97d-ed53-48fd-9611-062c864673cf"
+        ],
+        "proxy_port_released": true
+      },
+      "actual_budget": {
+        "api_mutations": 27,
+        "hub_definition_creates": 6,
+        "hub_definition_deletes": 6,
+        "node_enroll_posts": 1,
+        "child_process_starts": 2,
+        "child_process_stops": 2,
+        "proxy_injections": 2,
+        "sync_responses_mutated": 3
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "7ab0c8c1-8e8d-4f52-9ea2-f8e16add1b05",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "241b70ff-512b-4c76-83ce-536e014d68ff",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "930a02f4-53fd-47f1-80e6-cb0c6569e78c",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "c6ce2d11-1f79-4f16-a144-6bba153db84b",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "e1d5492a-9dc1-42c1-906f-b2b7e6fffa4e",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "40f8cdab-a59f-453c-8fcc-fba4c9feba63",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native1_child_removal": {
+          "signalled": [
+            7492
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "63c38860-11f8-486d-8859-06a0873a1018",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "INV-04",
+      "title": "INV-04 Notification 不承担最终一致性",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:INV-04",
+          "layer": "lost / duplicate / stale notification injection + frame payload structure",
+          "status": "PASS",
+          "description": [
+            "Lost: dropping every CHANGE_NOTIFICATION still converged to the committed revision through the periodic revision check (see INV-03 revision_check_layer).",
+            "Duplicate: a duplicated CHANGE_NOTIFICATION for the same revision caused no state change (one row, unchanged SHA, no regression).",
+            "Stale / out-of-order: a notification carrying a revision older than the locally applied revision (local 2021, injected 2019) produced 0 SYNC_REQUESTs and left the local object revision/SHA untouched.",
+            "Structural: the observed notification payload keys are exactly ['global_revision', 'object_id', 'object_revision', 'object_type'] - no object content - so consistency can only come from the authoritative SYNC_RESPONSE snapshot.",
+            "Fabricated future revision: a notification for committed+100000 made the Agent sync and it converged to the Hub current revision (2018), not to the notified revision."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Injections are harness-side frame manipulations in front of the owned child; the Hub and its authoritative store are the unmodified product path.",
+        "Out-of-order was exercised as a strictly-stale notification plus a far-future one; a shuffled pair of consecutive revisions while a sync was in flight was not forced (covered by sys-b04)."
+      ],
+      "evidence": [
+        "evidence/phase0-guard.json",
+        "evidence/phase1-owned-child.json",
+        "evidence/phase2-fixtures-and-notify-ordering.json",
+        "evidence/phase3-notify-once-and-duplicate.json",
+        "evidence/phase4-inv17-uncommitted-no-notification.json",
+        "evidence/phase5-inv03-notify-revisioncheck-reconcile.json",
+        "evidence/phase6-inv04-notification-not-authority.json",
+        "evidence/phase7-sys08-sync-failure-rollback.json",
+        "evidence/phase8-ar16-recovery-persistence.json",
+        "evidence/phase9-executions.json",
+        "evidence/phase10-cleanup.json",
+        "evidence/phase11-independent-cleanup-verification.json",
+        "evidence/phase-frames.json",
+        "final-cleanup-oracle.json",
+        "fixture-ledger.json",
+        "run-evidence.json",
+        "case-result.json",
+        "progress.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb02-321fac84-",
+        "child_node_id": "63c38860-11f8-486d-8859-06a0873a1018",
+        "child_agent_id": "agent-00bcbd6e-8c74-4a81-91ef-b8dd2a2f144d",
+        "host": "192.168.100.204 (native-1)",
+        "scripts": {
+          "good": "c6ce2d11-1f79-4f16-a144-6bba153db84b",
+          "dep": "e1d5492a-9dc1-42c1-906f-b2b7e6fffa4e",
+          "fail": "40f8cdab-a59f-453c-8fcc-fba4c9feba63"
+        },
+        "tasks": {
+          "run": "7ab0c8c1-8e8d-4f52-9ea2-f8e16add1b05",
+          "dep": "241b70ff-512b-4c76-83ce-536e014d68ff",
+          "fail": "930a02f4-53fd-47f1-80e6-cb0c6569e78c"
+        },
+        "proxy_listen_port": 36019,
+        "preserved_execution_history": [
+          "6a49fc8a-2cb0-4ff3-869f-7a8be5c6cde8",
+          "8fc0f97d-ed53-48fd-9611-062c864673cf"
+        ],
+        "proxy_port_released": true
+      },
+      "actual_budget": {
+        "api_mutations": 27,
+        "hub_definition_creates": 6,
+        "hub_definition_deletes": 6,
+        "node_enroll_posts": 1,
+        "child_process_starts": 2,
+        "child_process_stops": 2,
+        "proxy_injections": 2,
+        "sync_responses_mutated": 3
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "7ab0c8c1-8e8d-4f52-9ea2-f8e16add1b05",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "241b70ff-512b-4c76-83ce-536e014d68ff",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "930a02f4-53fd-47f1-80e6-cb0c6569e78c",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "c6ce2d11-1f79-4f16-a144-6bba153db84b",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "e1d5492a-9dc1-42c1-906f-b2b7e6fffa4e",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "40f8cdab-a59f-453c-8fcc-fba4c9feba63",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native1_child_removal": {
+          "signalled": [
+            7492
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "63c38860-11f8-486d-8859-06a0873a1018",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "SYS-08",
+      "title": "SYS-08 Script/Task 依赖同步失败：事务回滚，Revision 不前进，无半同步",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-08",
+          "layer": "corrupted SYNC_RESPONSE -> owned child agent transaction -> hub node readback",
+          "status": "PASS",
+          "description": [
+            "V1 dependency SHA failure: one SYNC_RESPONSE carrying a corrupted sha256 for the Script referenced by the Task was rejected with SYNC_ACK ok=false error=\"... sha256 mismatch\"; the Agent local revision stayed 2021 while the Hub had already advanced to 2022, and no local row changed (no half sync).",
+            "V2 in-transaction rollback: the injected SYNC_RESPONSE contained a valid phantom Script entry and a malformed Task entry, so the Agent write transaction failed after the script write; SYNC_ACK ok=false error=\"json: cannot unmarshal string into Go value of type models.Task\", the phantom script is absent from the Agent SQLite, the local script count stayed 3, and the local revision did not advance.",
+            "Hub-side readback: the node row in the Hub committed store is sync_status=\"error\" with global_revision=0 immediately after each failed sync, while committed definitions remain intact (dependency row unchanged)."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The failing SYNC_RESPONSE is harness-injected at the frame layer (product source unmodified); the validation and transaction paths exercised are the unmodified product paths.",
+        "V3 observation (not a failure claim): a snapshot that simply omits a task-referenced script is accepted by the Agent (the Hub is authoritative and prune removes the local copy); no rollback occurs for that shape. It is unreachable from an unmodified Hub, which always ships referenced scripts, and the next authoritative snapshot restored the row (see AR-16)."
+      ],
+      "evidence": [
+        "evidence/phase0-guard.json",
+        "evidence/phase1-owned-child.json",
+        "evidence/phase2-fixtures-and-notify-ordering.json",
+        "evidence/phase3-notify-once-and-duplicate.json",
+        "evidence/phase4-inv17-uncommitted-no-notification.json",
+        "evidence/phase5-inv03-notify-revisioncheck-reconcile.json",
+        "evidence/phase6-inv04-notification-not-authority.json",
+        "evidence/phase7-sys08-sync-failure-rollback.json",
+        "evidence/phase8-ar16-recovery-persistence.json",
+        "evidence/phase9-executions.json",
+        "evidence/phase10-cleanup.json",
+        "evidence/phase11-independent-cleanup-verification.json",
+        "evidence/phase-frames.json",
+        "final-cleanup-oracle.json",
+        "fixture-ledger.json",
+        "run-evidence.json",
+        "case-result.json",
+        "progress.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb02-321fac84-",
+        "child_node_id": "63c38860-11f8-486d-8859-06a0873a1018",
+        "child_agent_id": "agent-00bcbd6e-8c74-4a81-91ef-b8dd2a2f144d",
+        "host": "192.168.100.204 (native-1)",
+        "scripts": {
+          "good": "c6ce2d11-1f79-4f16-a144-6bba153db84b",
+          "dep": "e1d5492a-9dc1-42c1-906f-b2b7e6fffa4e",
+          "fail": "40f8cdab-a59f-453c-8fcc-fba4c9feba63"
+        },
+        "tasks": {
+          "run": "7ab0c8c1-8e8d-4f52-9ea2-f8e16add1b05",
+          "dep": "241b70ff-512b-4c76-83ce-536e014d68ff",
+          "fail": "930a02f4-53fd-47f1-80e6-cb0c6569e78c"
+        },
+        "proxy_listen_port": 36019,
+        "preserved_execution_history": [
+          "6a49fc8a-2cb0-4ff3-869f-7a8be5c6cde8",
+          "8fc0f97d-ed53-48fd-9611-062c864673cf"
+        ],
+        "proxy_port_released": true
+      },
+      "actual_budget": {
+        "api_mutations": 27,
+        "hub_definition_creates": 6,
+        "hub_definition_deletes": 6,
+        "node_enroll_posts": 1,
+        "child_process_starts": 2,
+        "child_process_stops": 2,
+        "proxy_injections": 2,
+        "sync_responses_mutated": 3
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "7ab0c8c1-8e8d-4f52-9ea2-f8e16add1b05",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "241b70ff-512b-4c76-83ce-536e014d68ff",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "930a02f4-53fd-47f1-80e6-cb0c6569e78c",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "c6ce2d11-1f79-4f16-a144-6bba153db84b",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "e1d5492a-9dc1-42c1-906f-b2b7e6fffa4e",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "40f8cdab-a59f-453c-8fcc-fba4c9feba63",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native1_child_removal": {
+          "signalled": [
+            7492
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "63c38860-11f8-486d-8859-06a0873a1018",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "AR-16",
+      "title": "AR-16 Sync Dependency Failure；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-16",
+          "layer": "recovery sync + hub/agent field comparison + child restart",
+          "status": "PASS",
+          "description": [
+            "Recovery: after the dependency failures a clean authoritative sync applied revision 10 with SYNC_ACK ok=true applied_rev=2025; Hub and Agent SHA agree (8156d08a75cff792...) and the Agent local revision equals the Hub global revision (2025).",
+            "Desired == Actual: all 3 owned Scripts (revision + sha256) and all 3 owned Tasks (revision) match between the Hub committed store and the Agent local SQLite, and the node is online/synced.",
+            "Idempotency: re-issuing the identical desired state produced identical row counts (3/3/0) and identical script SHAs - no duplicates, no churn.",
+            "Persistence: a real owned-child Agent restart preserved node_id/agent_id, the applied revision and all rows, and the Agent returned to online/synced.",
+            "Real business effect: 1 manual Execution SUCCESS (marker \"QA:321fac84:EXEC-good\", exit 0) and 1 manual Execution FAILED (exit 3) reached terminal state on the Hub with matching Agent journal rows."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Persistence was verified with a real child Agent process restart of the owned fixture, not a host reboot; the protected repair Agents were never restarted."
+      ],
+      "evidence": [
+        "evidence/phase0-guard.json",
+        "evidence/phase1-owned-child.json",
+        "evidence/phase2-fixtures-and-notify-ordering.json",
+        "evidence/phase3-notify-once-and-duplicate.json",
+        "evidence/phase4-inv17-uncommitted-no-notification.json",
+        "evidence/phase5-inv03-notify-revisioncheck-reconcile.json",
+        "evidence/phase6-inv04-notification-not-authority.json",
+        "evidence/phase7-sys08-sync-failure-rollback.json",
+        "evidence/phase8-ar16-recovery-persistence.json",
+        "evidence/phase9-executions.json",
+        "evidence/phase10-cleanup.json",
+        "evidence/phase11-independent-cleanup-verification.json",
+        "evidence/phase-frames.json",
+        "final-cleanup-oracle.json",
+        "fixture-ledger.json",
+        "run-evidence.json",
+        "case-result.json",
+        "progress.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb02-321fac84-",
+        "child_node_id": "63c38860-11f8-486d-8859-06a0873a1018",
+        "child_agent_id": "agent-00bcbd6e-8c74-4a81-91ef-b8dd2a2f144d",
+        "host": "192.168.100.204 (native-1)",
+        "scripts": {
+          "good": "c6ce2d11-1f79-4f16-a144-6bba153db84b",
+          "dep": "e1d5492a-9dc1-42c1-906f-b2b7e6fffa4e",
+          "fail": "40f8cdab-a59f-453c-8fcc-fba4c9feba63"
+        },
+        "tasks": {
+          "run": "7ab0c8c1-8e8d-4f52-9ea2-f8e16add1b05",
+          "dep": "241b70ff-512b-4c76-83ce-536e014d68ff",
+          "fail": "930a02f4-53fd-47f1-80e6-cb0c6569e78c"
+        },
+        "proxy_listen_port": 36019,
+        "preserved_execution_history": [
+          "6a49fc8a-2cb0-4ff3-869f-7a8be5c6cde8",
+          "8fc0f97d-ed53-48fd-9611-062c864673cf"
+        ],
+        "proxy_port_released": true
+      },
+      "actual_budget": {
+        "api_mutations": 27,
+        "hub_definition_creates": 6,
+        "hub_definition_deletes": 6,
+        "node_enroll_posts": 1,
+        "child_process_starts": 2,
+        "child_process_stops": 2,
+        "proxy_injections": 2,
+        "sync_responses_mutated": 3
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "7ab0c8c1-8e8d-4f52-9ea2-f8e16add1b05",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "241b70ff-512b-4c76-83ce-536e014d68ff",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "930a02f4-53fd-47f1-80e6-cb0c6569e78c",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "c6ce2d11-1f79-4f16-a144-6bba153db84b",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "e1d5492a-9dc1-42c1-906f-b2b7e6fffa4e",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "40f8cdab-a59f-453c-8fcc-fba4c9feba63",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "native1_child_removal": {
+          "signalled": [
+            7492
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "63c38860-11f8-486d-8859-06a0873a1018",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    }
+  ],
+  "deviations": [],
+  "budget": {
+    "api_mutations": 27,
+    "hub_definition_creates": 6,
+    "hub_definition_deletes": 6,
+    "node_enroll_posts": 1,
+    "child_process_starts": 2,
+    "child_process_stops": 2,
+    "proxy_injections": 2,
+    "sync_responses_mutated": 3
+  },
+  "final_cleanup_oracle_clean": true,
+  "independent_cleanup_verification": true,
+  "harness_seams": {
+    "authority": "management writes only to repair http://192.168.100.209:18080; the primary :8080 Hub and the 4 protected repair Agents were never written to, stopped or restarted",
+    "owned_child": "enrolled node + the exact repair Agent binary (sha256 d55dc5cd...) run as a harness-owned background process under /var/lib/nodesteer-qa-sysb02-321fac84 on native-1, connected through a harness frame proxy on the operator host 192.168.100.170 on an ephemeral port",
+    "commit_oracle": "read-only hub SQLite (mode=ro, PRAGMA query_only) plus a 2 ms hub-local revision_sequence poller on the hub clock; the notification receipt timestamps come from the frame proxy and are related through a measured clock offset (half-spread 0.247 ms)",
+    "notification_injections": "the proxy dropped / duplicated CHANGE_NOTIFICATION frames and injected synthetic ones (stale revision, far-future revision) to exercise lost/duplicate/out-of-order and to prove detector power",
+    "sync_failure_injection": "the proxy mutated exactly one SYNC_RESPONSE in flight (corrupted dependency SHA; phantom script entry plus malformed task entry) - the Agent validation and transaction paths are unmodified product code",
+    "lost_notification": "offline/reconnect was produced by cutting the owned child link at the proxy layer; the Hub and protected Agents were never stopped",
+    "product_source_changes": 0,
+    "git_operations": 0,
+    "hub_restarts": 0,
+    "protected_services_untouched": true
+  },
+  "environment_notes": [
+    "The first run attempt aborted in a harness lock deadlock; a native-1 reboot external to this batch happened at 2026-10-14T10:16Z (native-1 and native-3 repair nodes briefly offline) and the environment was healthy again before the successful run (preflight in evidence/phase0-guard.json shows all 4 protected nodes online/synced and both binary SHAs matching).",
+    "Up to 7 concurrent nodes from other batches were visible in /api/nodes during the run; all assertions are scoped to the nonce-owned object ids, and the frame ledger records every notification received by the owned child."
+  ],
+  "rerun_note": "Failed harness attempts are preserved unmodified under evidence/attempt01-lock-deadlock/ (harness threading-lock deadlock), evidence/attempt02-dbsummary-format-bug/ and evidence/attempt03-dbsummary-format-bug/ (harness string-format bug in the local-SQLite readback helper). This report reflects the final complete run (EXIT=0, deviations=[]).",
+  "evidence": [
+    "evidence/phase0-guard.json",
+    "evidence/phase1-owned-child.json",
+    "evidence/phase2-fixtures-and-notify-ordering.json",
+    "evidence/phase3-notify-once-and-duplicate.json",
+    "evidence/phase4-inv17-uncommitted-no-notification.json",
+    "evidence/phase5-inv03-notify-revisioncheck-reconcile.json",
+    "evidence/phase6-inv04-notification-not-authority.json",
+    "evidence/phase7-sys08-sync-failure-rollback.json",
+    "evidence/phase8-ar16-recovery-persistence.json",
+    "evidence/phase9-executions.json",
+    "evidence/phase10-cleanup.json",
+    "evidence/phase11-independent-cleanup-verification.json",
+    "evidence/phase-frames.json",
+    "final-cleanup-oracle.json",
+    "fixture-ledger.json",
+    "run-evidence.json",
+    "case-result.json",
+    "progress.json"
+  ]
+}

@@ -1,168 +1,2784 @@
 {
- "schema_version": 1,
- "generated_at": "2026-09-22T19:11:34+08:00",
- "base_url": "http://192.168.100.209:8080",
- "summary": {
-  "features_discovered": 184,
-  "features_tested": 89,
-  "features_passed": 89,
-  "features_failed": 0,
-  "features_partial": 0,
-  "features_blocked": 0,
-  "features_untested": 95,
-  "workflows_generated": 20,
-  "workflows_executed": 20,
-  "failures_open": 0,
-  "failures_carried": 16,
-  "ui_findings_open": 0,
-  "e2e_automation": {
-   "command": "cd web && CADENTRA_E2E_PASSWORD=*** CADENTRA_E2E_RBAC_PASSWORD=*** CADENTRA_E2E_OPERATOR_USERNAME=e2e-b-20260922-a1b2-op CADENTRA_E2E_VIEWER_USERNAME=e2e-b-20260922-a1b2-viewer npx playwright test --config e2e/playwright.config.ts",
-   "base_url": "http://192.168.100.209:8080",
-   "specs": 17,
-   "passed": 64,
-   "skipped": 1,
-   "failed": 0,
-   "duration_minutes": 3.1,
-   "skip_reason": "P01-04 登录页语言切换：产品缺口 FAIL-B-110（test.fixme 标记）"
+  "schema_version": 1,
+  "run_id": "20260930-101945",
+  "status": "running",
+  "updated_at": "2026-10-18T05:44:05.909151+00:00",
+  "definition": "504条业务/系统场景为唯一功能分母；API细断言和各suite数量为补充，不累计充当新增业务覆盖。PASS要求该case全部适用维度与证据；PARTIAL保留已测子维度。",
+  "summary": {
+    "total_cases": 504,
+    "statuses": {
+      "PASS": 315,
+      "FAIL": 42,
+      "PARTIAL": 146,
+      "BLOCKED": 1
+    },
+    "confirmed_product_failures": 22,
+    "by_owner": {
+      "api": {
+        "PASS": 7,
+        "FAIL": 1
+      },
+      "system": {
+        "PASS": 102,
+        "PARTIAL": 16,
+        "FAIL": 15,
+        "BLOCKED": 1
+      },
+      "web": {
+        "PASS": 206,
+        "FAIL": 26,
+        "PARTIAL": 130
+      }
+    },
+    "architecture_scenarios": {
+      "PASS": 29,
+      "PARTIAL": 3,
+      "FAIL": 3
+    },
+    "architecture_invariants": {
+      "PARTIAL": 4,
+      "PASS": 10,
+      "FAIL": 4
+    }
   },
-  "ui_review_combinations": 105,
-  "ui_review_hscroll": 0,
-  "ui_review_console_errors": 0,
-  "failures_resolved": 27,
-  "e2e_automation_after_fix": {
-   "passed": 65,
-   "skipped": 0,
-   "failed": 0,
-   "specs": 17
+  "gaps": [
+    {
+      "case_id": "G-01-02",
+      "title": "已登录访问 `/sign-in` → 不进入登录表单，回到业务页",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "authenticated direct sign-in tested"
+      ],
+      "remaining_dimensions": [
+        "product redirect defect"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/root-gap-round2-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/authenticated-sign-in.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/authenticated-sign-in.png"
+      ]
+    },
+    {
+      "case_id": "G02-02",
+      "title": "Theme 菜单验证 `light/dark/system`，刷新后保持，`theme-color` 正确。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "Real light/dark/system menu selection",
+        "Reload persistence for all three modes",
+        "Actual light/dark media preference switching",
+        "Meta content decoded to RGBA and compared with resolved-theme palette",
+        "Actual body CSS color/RGBA and root class captured"
+      ],
+      "remaining_dimensions": "",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/readonly-ui-continuation/summary.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/readonly-ui-continuation/theme-system-media-dark.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/readonly-ui-continuation/theme-system-dark-reloaded.png"
+      ]
+    },
+    {
+      "case_id": "G03-04",
+      "title": "Reset 清除搜索/筛选。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "G03-09",
+      "title": "API 失败显示 Error，Retry 会重新请求。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/safe-tables-results.json"
+      ]
+    },
+    {
+      "case_id": "G03-10",
+      "title": "Loading、Empty、No Results 三种空数据语义不混淆。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/safe-tables-results.json"
+      ]
+    },
+    {
+      "case_id": "G04-01",
+      "title": "所有提交按钮 pending 时禁用，不能重复创建。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "Task real PUT pending Save remains enabled and two clicks issue two requests"
+      ],
+      "remaining_dimensions": [
+        "Task pending Save defect; final revision=2 does not prove two server mutations",
+        "X08 all other dialog branches remain individually documented"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/task-pending-secret.json"
+      ]
+    },
+    {
+      "case_id": "G04-02",
+      "title": "删除菜单必须打开确认框；取消不发送 DELETE，确认后才删除。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "artifact delete opens confirmation dialog",
+        "cancel sends zero DELETE and preserves row",
+        "confirm sends exactly one DELETE and removes row",
+        "object GET and download return 404 after deletion"
+      ],
+      "remaining_dimensions": [
+        "other resource deletion menus and error branches"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/luna-gap19-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/artifact-unreferenced-ui-delete.json"
+      ]
+    },
+    {
+      "case_id": "G04-03",
+      "title": "所有 Alert/Error 文案具体、无重复通用错误。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "specific server validation error displayed in the actual Task editor",
+        "no generic duplicate message observed in this validation flow"
+      ],
+      "remaining_dimensions": [
+        "other alert/error sources and duplicate generic-message check across pages"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/luna-gap20-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/script-disabled-reference-boundaries.json"
+      ]
+    },
+    {
+      "case_id": "G04-04",
+      "title": "Tab 键顺序、Enter 提交、Escape 关闭弹窗符合预期。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "server immediate downgrade",
+        "five-second stale button",
+        "actual stale-control click403",
+        "reload recovery"
+      ],
+      "remaining_dimensions": [
+        "UI permission-cache defect"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/auth-keyboard-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/self-role-feedback-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/self-role-downgrade.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/self-role-downgrade.png"
+      ]
+    },
+    {
+      "case_id": "G04-05",
+      "title": "所有图标按钮具备可识别 aria-label/title。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "Application detail visible buttons named",
+        "Group detail visible buttons named",
+        "Schedule detail visible buttons named",
+        "App/Group/Schedule action menu entries have accessible names"
+      ],
+      "remaining_dimensions": [
+        "remaining detail pages",
+        "parameter/dynamic dialog button names",
+        "complete AX-tree query including non-button controls"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/luna-gap22-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/dynamic-detail-menu-button-names.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/button-accessibility-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/detail-accessibility.json"
+      ]
+    },
+    {
+      "case_id": "G04-07",
+      "title": "长 ID、SHA256、路径、命令可复制或换行，不覆盖按钮。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "2144-character Task command fully rendered",
+        "long text selectable in browser",
+        "horizontal overflow contained in scrollable code block",
+        "Run action remains visible and enabled at 760×720"
+      ],
+      "remaining_dimensions": [
+        "clipboard paste/read exactness under secure clipboard context",
+        "long ID, SHA256, and path controls/layout"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/luna-gap21-final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/long-command-detail-layout.json"
+      ]
+    },
+    {
+      "case_id": "P01-07",
+      "title": "OIDC disabled 时 SSO 按钮不显示。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P01-08",
+      "title": "OIDC enabled 时 SSO 按钮跳转 IdP，state/PKCE 正常。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "Existing public evidence shows OIDC enabled with local_fallback=false",
+        "Existing real environment record shows local password login rejected while SSO-only mode is active",
+        "Existing real environment record shows recovered SSO login completed with HTTP 200 and viewer role after IdP recovery",
+        "Existing callback negative cases cover missing state/code, wrong state, invalid code, and consumed-state replay"
+      ],
+      "remaining_dimensions": "No retained public AuthLocation URL/query-parameter record proves actual state/nonce/code_challenge/code_challenge_method values；No retained runtime evidence records the authorization-code exchange request or PKCE verifier outcome",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/readonly-ui-continuation/transport-summary.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/idp-down-ui-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/oidc-negative-results.json"
+      ]
+    },
+    {
+      "case_id": "P02-04",
+      "title": "浏览器前进、后退、刷新、直接输入子路由。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "browser history",
+        "node/schedule direct and reload"
+      ],
+      "remaining_dimensions": [
+        "all detail subroute permutations"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/auth-keyboard-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/root-gap-round1-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/readonly-entry-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/dashboard-node-links.json"
+      ]
+    },
+    {
+      "case_id": "P03-02",
+      "title": "Running Executions 的 View All 和每条执行链接。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "View All navigation"
+      ],
+      "remaining_dimensions": [
+        "all record detail links"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/root-gap-round1-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/readonly-entry-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/dashboard-node-links.json"
+      ]
+    },
+    {
+      "case_id": "P04-01",
+      "title": "列表字段：hostname、status、IP、Agent version、arch、deployment mode、last seen、操作。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P04-03",
+      "title": "hostname 进入 `/agents/{id}`。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P04-06",
+      "title": "operator/viewer 点击受限操作的 UI 可见性、403 和状态不变。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P05A-05",
+      "title": "Hub 地址仅允许 http/https 且 Host 有效。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "http valid",
+        "ftp rejected",
+        "empty rejected",
+        "HTTPS Hub accepted"
+      ],
+      "remaining_dimensions": [
+        "missing Host native validity UI edge"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/enrollment-validation-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/enrollment-real-validation.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/enrollment-retry-pending.json"
+      ]
+    },
+    {
+      "case_id": "P05A-09",
+      "title": "三种命令包含 Gateway、Registration Token、节点身份和节点参数。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "registration key",
+        "identity",
+        "node name/ip"
+      ],
+      "remaining_dimensions": [
+        "gateway value assertion"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/enrollment-validation-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/enrollment-real-validation.json"
+      ]
+    },
+    {
+      "case_id": "P05A-10",
+      "title": "Copy 成功显示 Copied；剪贴板失败显示 copy failed。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "HTTP manual fallback"
+      ],
+      "remaining_dimensions": [
+        "secure copied",
+        "clipboard failure"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/enrollment-validation-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/enrollment-real-validation.json"
+      ]
+    },
+    {
+      "case_id": "P05A-12",
+      "title": "提交后校验 Hub 侧 pending 节点记录；Agent HELLO 后复用 Node ID/Agent ID 并变为 online/synced。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "actual pending node creation"
+      ],
+      "remaining_dimensions": [
+        "HELLO identity reuse/online/sync"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/enrollment-validation-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/enrollment-real-validation.json"
+      ]
+    },
+    {
+      "case_id": "P05B-01",
+      "title": "Node Detail 单页各分区：Overview、Inventory、Capability、Labels、Tasks、Schedules、Applications、Executions；不要求不存在的 Tab。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P05B-02",
+      "title": "Node ID、Agent ID、IP、OS、Version、Arch、Mode、Revision、Sync、Last Seen。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P05B-03",
+      "title": "Inventory：OS、Kernel、CPU、Memory、Filesystem、Network。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P05B-04",
+      "title": "Capability enabled/disabled 展示。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P05B-10",
+      "title": "Execution 表中的 Task 链接，ID 是否可点击按当前设计验证。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P05B-11",
+      "title": "返回按钮回 `/agents`。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P06-01",
+      "title": "列表、搜索、分页、空态、Error/Retry。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P07_P08-01",
+      "title": "列表字段、搜索、空态、分页、View 列控制。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "search hit/no result",
+        "sort cycle",
+        "column persist",
+        "page size and boundary"
+      ],
+      "remaining_dimensions": [
+        "remaining title-specific dimensions"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "P07_P08-02",
+      "title": "新建入口、编辑入口、返回/取消。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/interpreter-final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json"
+      ]
+    },
+    {
+      "case_id": "P07_P08-08",
+      "title": "编辑保存 Revision +1，历史内容可展开查看。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/interpreter-final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json"
+      ]
+    },
+    {
+      "case_id": "P07_P08-11",
+      "title": "后端错误、重复名称、超长内容、超时边界。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "disabled script reference rejected by real UI save with visible server error",
+        "enable script then save Task and real Node1 execution succeeds",
+        "duplicate script name rejected with HTTP 400",
+        "294958-byte script content and SHA256 round-trip exactly",
+        "timeout zero accepted",
+        "negative timeout update accepted as observed"
+      ],
+      "remaining_dimensions": [
+        "script editor UI display/interaction at 294958 bytes",
+        "explicit script backend-error UI path",
+        "timeout negative-value contract review"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/luna-gap20-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/script-disabled-reference-boundaries.json"
+      ]
+    },
+    {
+      "case_id": "P09P11-01",
+      "title": "列表、搜索、分页、View、空态、Error/Retry。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "search hit/no result",
+        "sort cycle",
+        "column persist",
+        "page size and boundary"
+      ],
+      "remaining_dimensions": [
+        "remaining title-specific dimensions"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "P09P11-02",
+      "title": "Task 名称详情、编辑、立即运行入口。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P09P11-04",
+      "title": "删除确认框取消/确认。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "zero DELETE cancel",
+        "one DELETE confirm after reload"
+      ],
+      "remaining_dimensions": [
+        "cancel UI recovery defect"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/group-task-cancel-state-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/group-task-roundtrip.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/delete-cancel-groups.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/delete-cancel-tasks.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/delete-cancel-tasks.png"
+      ]
+    },
+    {
+      "case_id": "P09P11-05",
+      "title": "类型 command：命令必填、保存、实际执行。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P09P11-06",
+      "title": "类型 script：脚本选择、禁用脚本不可引用、保存、实际执行。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P09P11-09",
+      "title": "Target node：单节点、多节点、去选节点。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P09P11-14",
+      "title": "参数添加/删除、secret 类型不在页面泄漏值。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "parameter add/save",
+        "Task secret default summary exposed",
+        "parameter remove and saved empty array"
+      ],
+      "remaining_dimensions": [
+        "secret default visibility defect"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/task-form-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/task-form-switch-condition.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/task-pending-secret.json"
+      ]
+    },
+    {
+      "case_id": "P09P11-16",
+      "title": "Remote Condition online、last_execution、operator、节点和 task_id 校验。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "online",
+        "last_execution controls",
+        "node/task_id fields",
+        "online save/readback"
+      ],
+      "remaining_dimensions": [
+        "remote operator variants",
+        "invalid node/task validation"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/task-form-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/task-form-switch-condition.json"
+      ]
+    },
+    {
+      "case_id": "P09P11-22",
+      "title": "空名称、空命令、无脚本、无应用、无目标、非法 ID 的错误反馈。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "UI empty name client reject",
+        "command/script/application/operation/target missing real 400 feedback"
+      ],
+      "remaining_dimensions": [
+        "invalid ID injection API evidence belongs to Root; UI selectors do not accept nonexistent IDs"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/task-missing-fields.json"
+      ]
+    },
+    {
+      "case_id": "P11-03",
+      "title": "运行中按钮 loading/禁用。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P11-05",
+      "title": "command/script/application 三类任务实际运行结果。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "real Task UI create/save",
+        "Task Run UI",
+        "per-operation execution SUCCESS",
+        "Unit/config/binary SHA/health"
+      ],
+      "remaining_dimensions": [
+        "same-page terminal feedback for every task type"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/managed-app-task-path-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/managed-app-792c2de9.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/managed-app-792c2de9-cleanup.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/managed-app-task-traced-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/managed-app-765608ef.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/managed-app-765608ef-cleanup.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json"
+      ]
+    },
+    {
+      "case_id": "P11-06",
+      "title": "参数值、环境变量、Working Directory、Run User 实际生效。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P11-08",
+      "title": "每次Manual Run生成新UUID代表新意图；同Execution ID/Key重复投递/上传按幂等验证",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "two real Manual Run requests generate distinct fresh UUIDs"
+      ],
+      "remaining_dimensions": [
+        "same Execution ID delivery/upload idempotence is backend/system evidence"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/task-runuser-policy-uuid.json"
+      ]
+    },
+    {
+      "case_id": "P12P13-01",
+      "title": "列表、搜索、分页、类型/表达式/时区/Owner/Offline/Misfire/Enabled。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "table controls",
+        "cron fields"
+      ],
+      "remaining_dimensions": [
+        "all type rendered fields",
+        "error/empty data"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/cron-form-complete-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/cron-fields-safe.json"
+      ]
+    },
+    {
+      "case_id": "P12P13-02",
+      "title": "调度任务名链接、编辑、启用/禁用、删除确认。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P12P13-03",
+      "title": "Cron 表达式必填和非法表达式。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/safe-tables-results.json"
+      ]
+    },
+    {
+      "case_id": "P12P13-04",
+      "title": "Interval 最小值、0、负数、小数和超大值。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/safe-tables-results.json"
+      ]
+    },
+    {
+      "case_id": "P12P13-05",
+      "title": "One-Time 未来时间、过去时间、时区、空 run_at。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "future time",
+        "IANA wall to UTC",
+        "timezone edit same instant",
+        "empty validation"
+      ],
+      "remaining_dimensions": [
+        "past time",
+        "DST observed behavior"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/safe-tables-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/schedule-four-types-final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/schedule-four-types.json"
+      ]
+    },
+    {
+      "case_id": "P12P13-07",
+      "title": "`allow_offline` 与 `hub_online_required` 组合。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "hub/required persisted",
+        "agent/allow persisted"
+      ],
+      "remaining_dimensions": [
+        "two cross combinations",
+        "actual offline scheduling"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/cron-form-complete-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/cron-fields-safe.json"
+      ]
+    },
+    {
+      "case_id": "P14P15-02",
+      "title": "新建名称、版本、描述、Artifact、Binary Path、Config Path、Unit、Config。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/managed-app-complete-results.json"
+      ]
+    },
+    {
+      "case_id": "P14P15-06",
+      "title": "创建后 Revision、Artifact Usage、Node Assignment。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/managed-app-complete-results.json"
+      ]
+    },
+    {
+      "case_id": "P14P15-07",
+      "title": "编辑保存 Revision +1、版本历史。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/managed-app-complete-results.json"
+      ]
+    },
+    {
+      "case_id": "P14P15-08",
+      "title": "勾选多个节点分配，取消勾选后取消分配。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P14P15-11",
+      "title": "Deploy、Start、Stop、Restart、Upgrade 五种操作逐一验证。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/managed-app-complete-results.json"
+      ]
+    },
+    {
+      "case_id": "P14P15-12",
+      "title": "Admin/operator/viewer 的部署、定义修改权限。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "三角色应用读取、Operator/Viewer定义创建拒绝",
+        "Operator实际首次部署/操作成功，Viewer操作拒绝",
+        "Operator/Viewer应用 GUI权限和按钮"
+      ],
+      "remaining_dimensions": "Operator/Viewer 修改和删除定义的直接 API 拒绝；Operator GUI Deploy→物理效果→执行/状态反馈",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/continuation/remaining-web-system-crossmap.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/api-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.application.lifecycle-e22782da.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.application.operator-deploy-6d0afc51.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/role-ui-results.json"
+      ]
+    },
+    {
+      "case_id": "P14P15-13",
+      "title": "state 页面显示 version、operation、health、error、updated_at。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/managed-app-complete-results.json"
+      ]
+    },
+    {
+      "case_id": "P14P15-14",
+      "title": "无状态、UNKNOWN、healthy、unhealthy、stopped。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/managed-app-complete-results.json"
+      ]
+    },
+    {
+      "case_id": "P14P15-15",
+      "title": "systemd/TCP/HTTP/Command 健康检查实际结果。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/managed-app-complete-results.json"
+      ]
+    },
+    {
+      "case_id": "P14P15-17",
+      "title": "Artifact 不存在、节点离线、Capability 缺失、Agent 不可达。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "没有 application_deploy capability 的节点拒绝派发",
+        "Artifact 下载网络故障相关边界"
+      ],
+      "remaining_dimensions": "应用引用不存在 Artifact；应用动作目标物理离线；有 capability Agent 不可达；上述负向的应用页面反馈",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/continuation/remaining-web-system-crossmap.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.capability.host-operation-eb048d21.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/continuation/artifact-web-crossmap.json"
+      ]
+    },
+    {
+      "case_id": "P14P15-18",
+      "title": "应用部署失败后 Binary、Config、Unit、Health、Deployment Journal 均可恢复。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "普通健康检查失败后回滚已运行旧版本",
+        "PREPARING 中途崩溃恢复旧文件",
+        "已保存备份的四个升级阶段崩溃恢复",
+        "首次安装空间不足/只读文件系统的失败清理"
+      ],
+      "remaining_dimensions": "普通失败的完整恢复组合；部署恢复的页面反馈",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/continuation/remaining-web-system-crossmap.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.application.lifecycle-e22782da.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/native-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/failures.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/native-storage-edge-results.json"
+      ]
+    },
+    {
+      "case_id": "P16-01",
+      "title": "列表、搜索、分页、View、空态、Error/Retry。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "search hit/no result",
+        "sort cycle",
+        "column persist",
+        "page size and boundary"
+      ],
+      "remaining_dimensions": [
+        "remaining title-specific dimensions"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "P16-04",
+      "title": "重复对象、空文件、超大文件、上传中按钮禁用。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "actual 8MiB multipart upload",
+        "pending upload disabled and one request",
+        "size/SHA correct"
+      ],
+      "remaining_dimensions": [
+        "current API has no maximum size contract; unbounded enormous-file stress not executed"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/artifact-large-pending.json"
+      ]
+    },
+    {
+      "case_id": "P16-08",
+      "title": "删除确认框取消/确认；被应用引用时行为明确。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "referenced Artifact cancel0DELETE",
+        "confirm1DELETE409 concrete reference error and retained object"
+      ],
+      "remaining_dimensions": [
+        "unreferenced Artifact UI delete-success branch (API cleanup already completed)"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/artifact-boundaries-reference-delete.json"
+      ]
+    },
+    {
+      "case_id": "P16-09",
+      "title": "Agent Cache 下载 `.tmp`、校验失败不安装、不污染正式缓存。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "完整HTTP错误body的校验保护/可信缓存不提升",
+        "故障时观察未出现bin/unit",
+        "Native损坏既有缓存被拒绝使用并恢复正确下载后安装",
+        "HTTP故障解除后的正确缓存恢复"
+      ],
+      "remaining_dimensions": "SHA错误/截断后的Cache下载.tmp真实清理：两个20-event record仅检查正式cache、artifacts表、unused-bin/unit；没有对Artifact下载临时路径test ! -e/list/stat，不能从正式cache缺失或后来恢复推断错误时tmp不存在。；有capability的Native在持续错误下载SHA下拒绝安装（如果标题采用完整安装链解释）：Docker SHA case只Prefetch无deploy；Native cache-recovery最终获取正确bytes后升级成功。可合并安全性维度，但不是故障保持期间Native安装拒绝的同一路径用例。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/continuation/artifact-web-crossmap.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/cache-recovery-result.json"
+      ]
+    },
+    {
+      "case_id": "P16-10",
+      "title": "下载中断后临时文件清理和重试。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "真实下载截断",
+        "截断后不污染可信正式缓存/业务文件",
+        "解除截断后的实际恢复重取"
+      ],
+      "remaining_dimensions": "截断返回后、恢复触发前.tmp清理：interruption /events/10只检查正式cache SHA文件，而非.tmp。后来sha正确/metadata成功不证明失败时临时文件已清理。；无新Desired State操作的自动重试（仅若产品契约要求）：当前证据恢复流程使用真实PUT App来触发再次prefetch；不要把它叫自动重试，也不凭旧prompt新增自动定时重试契约。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/continuation/artifact-web-crossmap.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json"
+      ]
+    },
+    {
+      "case_id": "P17P18-01",
+      "title": "列表字段、分页、空态、无匹配结果。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "search hit/no result",
+        "sort cycle",
+        "column persist",
+        "page size and boundary"
+      ],
+      "remaining_dimensions": [
+        "remaining title-specific dimensions"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "P17P18-02",
+      "title": "q 搜索：Execution ID、Task ID/名称、Node ID。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/safe-tables-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/execution-cross-page-search.json"
+      ]
+    },
+    {
+      "case_id": "P17P18-04",
+      "title": "trigger：manual/schedule/system。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "manual trigger filter"
+      ],
+      "remaining_dimensions": [
+        "schedule/system trigger discovery across pages"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/transfer-source-change-ui-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/execution-filters.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/execution-filter-transfer-draft.json"
+      ]
+    },
+    {
+      "case_id": "P17P18-06",
+      "title": "Task、Execution、Agent 三类回链。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P17P18-07",
+      "title": "Detail 元数据：Task/Revision/Script/Node/Trigger/Offline/Synced/Exit/Duration。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P17P18-10",
+      "title": "Wrap、Follow、Copy Logs。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "wrap toggle",
+        "follow toggle",
+        "HTTP manual Copy",
+        "secure-origin Clipboard exact contents through trusted native paste"
+      ],
+      "remaining_dimensions": "Follow新分片滚动仍缺专门实证，并受既有实时日志不更新缺陷影响；不泛称其他Copy入口已通过。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/execution-log-cancel-http-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/execution-log-cancel.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/readonly-ui-continuation/summary.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/readonly-ui-continuation/localhost-real-copy.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/readonly-ui-continuation/summary.json"
+      ]
+    },
+    {
+      "case_id": "P17P18-11",
+      "title": "空日志、截断日志、实时分片日志。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json"
+      ]
+    },
+    {
+      "case_id": "P17P18-13",
+      "title": "BLOCKED 显示 block_reason。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "actual never-run remote condition UNKNOWN produces Agent BLOCKED",
+        "API actual block_reason recorded",
+        "UI BLOCKED lacks actual reason"
+      ],
+      "remaining_dimensions": [
+        "BLOCKED reason UI missing defect"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/offline-node-condition-blocked.json"
+      ]
+    },
+    {
+      "case_id": "P17P18-14",
+      "title": "Agent Offline 执行 synced=false，恢复后幂等上传为 synced=true。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "Hub 真离线时执行结果 synced=false，重连 ACK 后 true",
+        "丢 ACK 后原卷重建重连补传/重复上传幂等"
+      ],
+      "remaining_dimensions": "执行页 Offline/Synced 同场过渡反馈",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/continuation/remaining-web-system-crossmap.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.offline_scheduled_execution-3a44bc7a.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.execution_re_upload-7e09dabb.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.duplicate_execution_upload-75196223.json"
+      ]
+    },
+    {
+      "case_id": "P17P18-15",
+      "title": "Task/Script Revision 在 Execution 中固定记录。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "P19-01",
+      "title": "列表、搜索、分页、空态、Error/Retry。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "Audit table controls"
+      ],
+      "remaining_dimensions": [
+        "API error/retry",
+        "empty audit dataset"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/execution-log-cancel-http-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/execution-log-cancel.json"
+      ]
+    },
+    {
+      "case_id": "P19-03",
+      "title": "执行、取消、部署、升级、节点状态、用户角色/密码修改。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "run audit",
+        "cancel audit UI"
+      ],
+      "remaining_dimensions": [
+        "all other action types"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/execution-log-cancel-http-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/execution-log-cancel.json"
+      ]
+    },
+    {
+      "case_id": "P19-04",
+      "title": "`action/resource/resource_id/username/time/detail` 正确。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "actual cancel audit fields",
+        "UI search",
+        "actual offset10 row hit",
+        "first/previous/next page boundaries",
+        "Reset restores full current page",
+        "known other-page ID misses offset0 search"
+      ],
+      "remaining_dimensions": [
+        "server-page-local audit search defect"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/execution-log-cancel-http-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/execution-log-cancel.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/audit-cross-page-search.json"
+      ]
+    },
+    {
+      "case_id": "P20-01",
+      "title": "Admin 列表、搜索、分页、角色下拉。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "search hit/no result",
+        "sort cycle",
+        "column persist",
+        "page size and boundary"
+      ],
+      "remaining_dimensions": [
+        "remaining title-specific dimensions"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "P20-03",
+      "title": "用户名/密码必填，角色 administrator/operator/viewer。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "empty required disabled",
+        "synthetic password masked",
+        "three roles"
+      ],
+      "remaining_dimensions": [
+        "API validation defects"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/root-gap-round2-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/readonly-user-settings.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/user-validation-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/failures.json"
+      ]
+    },
+    {
+      "case_id": "P20-04",
+      "title": "创建成功、重复用户名、错误输入。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "UI create",
+        "duplicate400"
+      ],
+      "remaining_dimensions": [
+        "other invalid input UI cases"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/user-lifecycle-ui-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/user-lifecycle-ui.json"
+      ]
+    },
+    {
+      "case_id": "P20-06",
+      "title": "修改 admin 自身角色的锁定/降权行为。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "server immediate downgrade",
+        "five-second stale button",
+        "actual stale-control click403",
+        "reload recovery"
+      ],
+      "remaining_dimensions": [
+        "UI permission-cache defect"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/self-role-downgrade-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/self-role-downgrade.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/self-role-feedback-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/self-role-downgrade.png"
+      ]
+    },
+    {
+      "case_id": "P22-03",
+      "title": "源节点不能作为目标。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "initial exclusion",
+        "source switch stale target",
+        "Start enabled",
+        "actual prior self POST200/history FAILED missing QA source"
+      ],
+      "remaining_dimensions": [
+        "UI source/target selection consistency defect"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/transfer-source-change-ui-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/execution-filters.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/execution-filter-transfer-draft.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/transfer-source-change-ui.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/transfer-source-change-self.json"
+      ]
+    },
+    {
+      "case_id": "P22-07",
+      "title": "开始传输按钮的禁用条件和 loading。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/relay-verified-results.json"
+      ]
+    },
+    {
+      "case_id": "P22-10",
+      "title": "目标失败隔离，其他目标仍成功。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "失败目标隔离、成功目标实际文件正确",
+        "失败目标单独重试而保持成功目标"
+      ],
+      "remaining_dimensions": "混合成功/失败目标的 GUI 呈现与反馈",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/continuation/remaining-web-system-crossmap.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.transfer.multitarget-retry-470e9d05.json"
+      ]
+    },
+    {
+      "case_id": "P22-11",
+      "title": "FAILED → retry，验证整体重试和 `target_id` 单目标重试。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/relay-verified-results.json"
+      ]
+    },
+    {
+      "case_id": "P22-12",
+      "title": "PENDING/UPLOADING/DELIVERING → cancel，取消确认按当前产品设计验证。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/relay-verified-results.json"
+      ]
+    },
+    {
+      "case_id": "P22-13",
+      "title": "源/目标相对路径、路径逃逸、错误 Agent Credential、文件超限。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "目标 traversal/allowlist/symlink 逃逸拒绝",
+        "持有有效但错误 Agent 身份的 Relay 越权",
+        "Relay 声明文件大小超限/缺失/负值/非数字"
+      ],
+      "remaining_dimensions": "源相对路径与源 traversal；目标相对路径；传输编辑器非法路径的 GUI 校验/反馈",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/continuation/remaining-web-system-crossmap.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/host-negative-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/relay-edge-results.json"
+      ]
+    },
+    {
+      "case_id": "P22-14",
+      "title": "目标文件内容、Mode、SHA256、原子替换和半文件清理。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/relay-verified-results.json"
+      ]
+    },
+    {
+      "case_id": "P22-15",
+      "title": "Hub 重启、Agent 重连、目标离线后的传输恢复。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "目标真实离线、Hub Stage 持久、重启重连恢复完整文件"
+      ],
+      "remaining_dimensions": "对应故障后 transfer 页面恢复显示",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/continuation/remaining-web-system-crossmap.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.transfer.offline-restart-ed34f132.json"
+      ]
+    },
+    {
+      "case_id": "FL-04",
+      "title": "Script Create/Edit/Clone → Task Script → 副本独立、Revision/SHA、任务引用正确",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/interpreter-final-results.json"
+      ]
+    },
+    {
+      "case_id": "FL-05",
+      "title": "Task → Run Now → Execution → Logs → 参数、环境、stdout/stderr、状态和回链",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/interpreter-final-results.json"
+      ]
+    },
+    {
+      "case_id": "FL-10",
+      "title": "Application Deploy → State/Execution → 部署执行、健康、版本、错误一致",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/managed-app-complete-results.json"
+      ]
+    },
+    {
+      "case_id": "FL-11",
+      "title": "Application Upgrade → Rollback → 版本、备份、Unit、Config、Health、Journal 一致",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "普通健康检查失败后回滚已运行旧版本",
+        "PREPARING 中途崩溃恢复旧文件",
+        "已保存备份的四个升级阶段崩溃恢复",
+        "备份实际缺失时明确失败/不误报成功"
+      ],
+      "remaining_dimensions": "普通升级健康失败后的版本/全部文件/备份/健康/Journal 同场一致；用户通过 GUI 升级→失败→Rollback 的反馈闭环",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/continuation/remaining-web-system-crossmap.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.application.lifecycle-e22782da.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/native-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/failures.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/backup-missing-result.json"
+      ]
+    },
+    {
+      "case_id": "FL-14",
+      "title": "Token Expire → Login Redirect → 回跳目标安全且路径正确",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "Fresh TTL=3s login, /api/me=200 administrator, server Expires recorded",
+        "Waited more than five seconds without changing any clock",
+        "Dashboard issued real API request(s) and received HTTP 401 after expiry",
+        "Captured post-401 URL, login form and localStorage token state",
+        "A protected same-origin /executions request retained its internal target through a fresh UI login"
+      ],
+      "remaining_dimensions": "Automatic redirect from the expired Dashboard to /sign-in was not observed; correlate this reproduction with the existing session-expiry defect.",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/empty-ttl/empty-ttl-summary.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/empty-ttl/dashboard-ttl-expired.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/empty-ttl/empty-ttl-summary.json"
+      ]
+    },
+    {
+      "case_id": "FL-15",
+      "title": "Admin Role Change → New Login → 新会话权限生效，旧会话行为明确",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "server immediate downgrade",
+        "five-second stale button",
+        "actual stale-control click403",
+        "reload recovery"
+      ],
+      "remaining_dimensions": [
+        "UI permission-cache defect"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/user-lifecycle-ui-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/user-lifecycle-ui.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/self-role-downgrade-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/self-role-downgrade.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/self-role-feedback-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/self-role-downgrade.png"
+      ]
+    },
+    {
+      "case_id": "FL-16",
+      "title": "Settings Save → Agent Runtime → Agent 心跳/Revision/日志设置实际消费或明确不消费",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "真实 Settings UI 保存→四 Native 心跳运行消费→恢复",
+        "Settings UI 非法值拒绝与 heartbeat 修改持久化"
+      ],
+      "remaining_dimensions": "revision_check_interval_sec 改值后的 Agent 运行周期；max_log_bytes 改值后的执行实际截断",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/continuation/remaining-web-system-crossmap.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/settings-runtime-evidence.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/settings-ui-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/settings-persistence-result.json"
+      ]
+    },
+    {
+      "case_id": "E2E-01",
+      "title": "Script → Script Task → Node → Run → Logs → Audit → SUCCESS、输出和审计完整",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/interpreter-final-results.json"
+      ]
+    },
+    {
+      "case_id": "E2E-03",
+      "title": "Script Task 参数/环境/用户/目录 → 客户机实际读取到正确值",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/interpreter-final-results.json"
+      ]
+    },
+    {
+      "case_id": "E2E-08",
+      "title": "Retry/Timeout/Cancel → 次数、最终状态、进程组清理正确",
+      "owner": "system",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "Docker Z态观察不代表活进程泄漏，但复合无残留尚未全通过。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/task.retry.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/task.timeout.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/task.cancel.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.process.native-bab6a27a.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+      ]
+    },
+    {
+      "case_id": "E2E-10",
+      "title": "Remote Condition → online/last_execution、TTL 过期 Fail Closed",
+      "owner": "system",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/condition.remote-unknown.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.condition.remote-ttl-bf27e07e.json"
+      ]
+    },
+    {
+      "case_id": "E2E-11",
+      "title": "Artifact → Application → Deploy → Stop → 文件、Unit、状态和健康检查正确",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "UI upload/app creation",
+        "actual deploy/stop",
+        "binary config Unit health correct"
+      ],
+      "remaining_dimensions": [
+        "current-page health/history refresh defect"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/managed-app-complete-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/managed-app-5994994a.json"
+      ]
+    },
+    {
+      "case_id": "E2E-13",
+      "title": "Application Crash Recovery → 中途崩溃后由 Deployment Journal 恢复明确状态",
+      "owner": "system",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/native-results.json"
+      ]
+    },
+    {
+      "case_id": "E2E-14",
+      "title": "File Relay 多目标 → 成功、失败、重试、取消、Hub 重启均正确",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/relay-verified-results.json"
+      ]
+    },
+    {
+      "case_id": "SYS-18",
+      "title": "SYS-18 心跳、Revision Check、重连退避包含配置和 Jitter 行为。",
+      "owner": "system",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "重连delay/jitter分布已实测；心跳热更新与丢通知后Revision收敛有既有证据，但Revision周期jitter/改值周期消费的独立采样仍缺。本次dummy未连接Hub，不冒称本采样完成HELLO。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/settings-runtime-evidence.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.lost_notification-ef6007fd.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/jitter/sys18-jitter.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/jitter/reconnect-syn.txt",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/jitter-independent-check.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/jitter/sys18-jitter.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/jitter/reconnect-syn.txt",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/jitter-independent-check.json"
+      ]
+    },
+    {
+      "case_id": "SYS-24",
+      "title": "SYS-24 Timezone/DST 边界。",
+      "owner": "system",
+      "status": "BLOCKED",
+      "covered_dimensions": null,
+      "remaining_dimensions": "真实DST边界需独立可调时钟环境；不能修改承载primary的HubVM时间或用unit/mock代替。",
+      "evidence": []
+    },
+    {
+      "case_id": "SYS-29",
+      "title": "SYS-29 Remote State TTL 未过期、过期、未观察：UNKNOWN → BLOCKED。",
+      "owner": "system",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/condition.remote-unknown.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.condition.remote-ttl-bf27e07e.json"
+      ]
+    },
+    {
+      "case_id": "SYS-38",
+      "title": "SYS-38 Timeout 发送 SIGTERM，再按 Grace Period SIGKILL。",
+      "owner": "system",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "Docker两条路径仍观察到Z态；Native全部PID收割已通过。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.process.native-bab6a27a.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+      ]
+    },
+    {
+      "case_id": "SYS-39",
+      "title": "SYS-39 Cancel 清理整个进程组，不残留子进程。",
+      "owner": "system",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "Docker两条路径仍观察到Z态；Native全部PID收割已通过。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.process.native-bab6a27a.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+      ]
+    },
+    {
+      "case_id": "SYS-43",
+      "title": "SYS-43 Artifact 下载中断、超时、HTTP 错误后 `.tmp` 清理。",
+      "owner": "system",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "明确下载timeout与HTTP非200的完整tmp清理组合；不能用TLS错误替代HTTP错误。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/cache-recovery-result.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/tls-full-results.json"
+      ]
+    },
+    {
+      "case_id": "SYS-44",
+      "title": "SYS-44 Prefetch 成功、失败、重复 Prefetch。",
+      "owner": "system",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "TLS业务下载路径缺陷不能由HTTP路径PASS覆盖。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.artifact_sha_failure-4842b7c5.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/tls-full-results.json"
+      ]
+    },
+    {
+      "case_id": "SYS-45",
+      "title": "SYS-45 Application 初次部署：Resolve → Download → Verify → Install → Unit → Start → Health。",
+      "owner": "system",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.application.lifecycle-e22782da.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.application.operator-deploy-6d0afc51.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/hostintegration-preflight.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/hostintegration-application.json"
+      ]
+    },
+    {
+      "case_id": "SYS-51",
+      "title": "SYS-51 升级每个阶段崩溃后的 Deployment Journal 恢复。",
+      "owner": "system",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/native-results.json"
+      ]
+    },
+    {
+      "case_id": "SYS-54",
+      "title": "SYS-54 ContainerHostAdapter `/host` 映射和 Host Inventory。",
+      "owner": "system",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "宿主OS、CPU、内存、磁盘等完整Inventory与宿主实值逐字段比对。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/hostintegration-preflight.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/hostintegration-application.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/host-negative-results.json"
+      ]
+    },
+    {
+      "case_id": "SYS-55",
+      "title": "SYS-55 Docker Host Mount 缺失/只读/错误路径。",
+      "owner": "system",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/host-negative-results.json"
+      ]
+    },
+    {
+      "case_id": "SYS-61",
+      "title": "SYS-61 大小校验、SHA256 校验、Hub staged blob 原子提升。",
+      "owner": "system",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "Hub staged原子提升前后精确故障窗口、持久化与重启恢复。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/relay-edge-results.json"
+      ]
+    },
+    {
+      "case_id": "SYS-62",
+      "title": "SYS-62 目标文件 `.tmp` 下载、校验、原子替换。",
+      "owner": "system",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "目标下载中途断连以及SHA校验至rename原子替换窗口的精确故障注入。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/relay-edge-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/host-negative-results.json"
+      ]
+    },
+    {
+      "case_id": "X01",
+      "title": "节点批量 Native Agent 自升级：混选 Docker、暂停/离线、重复在途升级、部分失败、取消确认、版本更新和重连。",
+      "owner": "system",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "real native selection",
+        "upgrade cancel",
+        "maintenance cancel",
+        "toolbar keyboard"
+      ],
+      "remaining_dimensions": "API组合已完成；批量UI完整确认/结果反馈等未实测组合不以API代替。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.node.docker-upgrade-78e2a7d2.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/upgrade-ui-result.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/bulk-upgrade-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/bulk-upgrade-results.json"
+      ]
+    },
+    {
+      "case_id": "X02",
+      "title": "节点 Credential 吊销确认/取消；本轮测试节点拒绝旧凭据，重新纳管后恢复；不得吊销既有节点。",
+      "owner": "system",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.node.revoke-3dfd204f.json"
+      ]
+    },
+    {
+      "case_id": "X04",
+      "title": "Cron 图形五字段/预设/原始表达式双向同步、非法表达式、下次执行预览与浏览器/IANA时区。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "all presets",
+        "minute/raw bidirectional",
+        "five next-runs",
+        "valid/invalid IANA"
+      ],
+      "remaining_dimensions": [
+        "four other graphical fields",
+        "browser timezone combinations"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/cron-form-complete-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/cron-fields-safe.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/safe-tables-results.json"
+      ]
+    },
+    {
+      "case_id": "X06",
+      "title": "Artifact 列表新建 Application 预选 artifact_id/version；应用内嵌上传成功自动选中，失败/取消不覆盖已有定义。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "inline cancel zero upload",
+        "native required invalid zero upload preserves v1",
+        "actual successful inline upload auto-picks new artifact/v2 and App saved"
+      ],
+      "remaining_dimensions": [
+        "server-side upload failure does not overwrite draft; native required is not that branch"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/inline-artifact-upload.json"
+      ]
+    },
+    {
+      "case_id": "X07",
+      "title": "所有详情/编辑/Run 深链刷新和前进后退；不存在 ID、并发删除、404/Error/Retry/返回；旧 tasks?view=schedules 重定向 /schedules。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "12 detailed routes",
+        "nine missing-resource pages",
+        "Retry/back",
+        "old schedule redirect"
+      ],
+      "remaining_dimensions": [
+        "concurrent deletion",
+        "invalid presets",
+        "rapid navigation auth"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/detail-deep-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/detail-deep-links.json"
+      ]
+    },
+    {
+      "case_id": "X08",
+      "title": "删除/Run/Stop/批量升级/吊销取消零写请求，确认单请求；慢响应重复点击、失败后重试；取消编辑不改 Revision/Audit。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "Task real PUT pending Save remains enabled and two clicks issue two requests"
+      ],
+      "remaining_dimensions": [
+        "Task pending Save defect; final revision=2 does not prove two server mutations",
+        "X08 all other dialog branches remain individually documented"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/task-pending-secret.json"
+      ]
+    },
+    {
+      "case_id": "X10",
+      "title": "Schedule四类型往返字段裁剪/非法时区切on_start/One-Time时区转换/Owner-Offline组合；DST边界按当前解析实现观察，不新增拒绝或补偿契约。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "all four type persistence",
+        "on_start cropping",
+        "nonOneTime run_at crop",
+        "OneTime zone conversion"
+      ],
+      "remaining_dimensions": [
+        "same-resource type roundtrip",
+        "DST"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/schedule-four-types-final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/schedule-four-types.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/cron-form-complete-results.json"
+      ]
+    },
+    {
+      "case_id": "X11",
+      "title": "Local/Remote/AND 条件编辑回显、AND 勾选未设置的语义、覆盖/清除一个和最后一个条件后实际执行/阻断。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "GUI condition set/clear",
+        "AND readback",
+        "final condition removed",
+        "actual local false SKIPPED no command",
+        "actual remote UNKNOWN BLOCKED no command"
+      ],
+      "remaining_dimensions": [
+        "AND unchecked/unset/clear-last full execution matrix still open",
+        "BLOCKED UI reason missing"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/task-form-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/task-form-switch-condition.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/offline-node-condition-blocked.json"
+      ]
+    },
+    {
+      "case_id": "X12",
+      "title": "Label/Group/Application Assignment 改变后立即及缓存收敛后检查跨页与下次真实执行目标；空目标、重叠组、离线/禁用/维护/Capability 不匹配。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/dynamic-targets-results.json"
+      ]
+    },
+    {
+      "case_id": "X13",
+      "title": "跨页缓存和两会话编辑、旧会话改角色后 API 权限、另一标签退出或替换 Token 后保护页面；记录实际收敛时间。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "server immediate downgrade",
+        "five-second stale button",
+        "actual stale-control click403",
+        "reload recovery"
+      ],
+      "remaining_dimensions": [
+        "UI permission-cache defect",
+        "two-tab/logout replacement branches not covered"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/self-role-feedback-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/self-role-downgrade.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/self-role-downgrade.png"
+      ]
+    },
+    {
+      "case_id": "X14",
+      "title": "选中 Node 后过滤/排序/翻页/列表增删/刷新，批量请求 ID 不漂移；删除最后页末项、pageSize/筛选/总数；Execution 跨页搜索/Trigger。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/safe-tables-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/execution-cross-page-search.json"
+      ]
+    },
+    {
+      "case_id": "X15",
+      "title": "PENDING→RUNNING→终态无需刷新；新日志分片、终态 stdout/stderr 完整且无旧 chunks 覆盖；断线恢复后的 Follow/搜索/流过滤/Copy。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json"
+      ]
+    },
+    {
+      "case_id": "X16",
+      "title": "使用非敏感标记值检查 secret 默认值/输入/Revision/Execution/Audit/错误遮蔽；凭据、Registration Token、Authorization 和 Cookie 不进入交付证据。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/secret-default-repro.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/secret-default-repro.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/secret-log-independent-check.json"
+      ]
+    },
+    {
+      "case_id": "X17",
+      "title": "真实 OIDC enabled/local_fallback/缺字段/慢响应/失败、SSO成功/拒绝/取消；外站/协议相对/sign-in/query/hash 回跳；停留页轮询/写请求401退登。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/failures.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/session-expiry-network.json"
+      ]
+    },
+    {
+      "case_id": "X18",
+      "title": "批量一成功一失败不互相覆盖；Application 定义成功 Assign 失败可定位重试；Transfer 添加目标后换源不变成自传，重试不破坏已成功目标。",
+      "owner": "web",
+      "status": "FAIL",
+      "covered_dimensions": [
+        "Transfer source-change consistency"
+      ],
+      "remaining_dimensions": [
+        "UI defect",
+        "Application assign partial failure",
+        "batch UI partial failures"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/transfer-source-change-ui-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/execution-filters.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/execution-filter-transfer-draft.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/transfer-source-change-ui.png"
+      ]
+    },
+    {
+      "case_id": "X19",
+      "title": "键盘 Tab/Enter/Escape 确认/取消与焦点返回；批量工具栏 Arrow/Home/End/Escape 不误清选择或误执行。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "bulk Home/End/Arrow",
+        "upgrade cancel",
+        "maintenance cancel",
+        "Escape clear",
+        "Profile Enter/Escape"
+      ],
+      "remaining_dimensions": [
+        "Tab focus return",
+        "Dropdown Escape branch"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/auth-keyboard-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/keyboard-history-safe.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/bulk-selection-keyboard-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/bulk-selection-keyboard.json"
+      ]
+    },
+    {
+      "case_id": "X20",
+      "title": "长中文名称/路径/ID/SHA/命令/大量参数/日志；列全部隐藏再恢复、空搜索恢复、窄屏表单/菜单/确认框。",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "all eleven tables sixty-six hideable columns all hidden, reload-persisted, baseline restored"
+      ],
+      "remaining_dimensions": [
+        "long Chinese/path/ID/command/parameters/log cases and narrow form/menu/dialog layout"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/all-tables-all-columns.json"
+      ]
+    },
+    {
+      "case_id": "AR-23",
+      "title": "Process Group Cleanup；恢复后幂等、持久化、Desired State与实际状态一致",
+      "owner": "system",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "Docker两条路径仍观察到Z态；Native全部PID收割已通过。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.process.native-bab6a27a.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+      ]
+    },
+    {
+      "case_id": "AR-26",
+      "title": "Application Install；恢复后幂等、持久化、Desired State与实际状态一致",
+      "owner": "system",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.application.lifecycle-e22782da.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.application.operator-deploy-6d0afc51.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/hostintegration-preflight.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/hostintegration-application.json"
+      ]
+    },
+    {
+      "case_id": "AR-27",
+      "title": "Upgrade；恢复后幂等、持久化、Desired State与实际状态一致",
+      "owner": "system",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "Host升级被已确认部署exit126缺陷阻断；不能改产品或绕过nsenter宣称通过。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.application.lifecycle-e22782da.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/summary.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/cross-fs-result.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/cache-recovery-result.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/backup-missing-result.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/native-results.json"
+      ]
+    },
+    {
+      "case_id": "AR-30",
+      "title": "Crash During Upgrade；恢复后幂等、持久化、Desired State与实际状态一致",
+      "owner": "system",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/native-results.json"
+      ]
+    },
+    {
+      "case_id": "AR-31",
+      "title": "Docker Host Mount Missing；恢复后幂等、持久化、Desired State与实际状态一致",
+      "owner": "system",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/host-negative-results.json"
+      ]
+    },
+    {
+      "case_id": "AR-32",
+      "title": "Host Adapter Permission Denied；恢复后幂等、持久化、Desired State与实际状态一致",
+      "owner": "system",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "独立宿主owner/group与文件权限的完整组合。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/host-negative-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/native-storage-edge-results.json"
+      ]
+    },
+    {
+      "case_id": "INV-01",
+      "title": "Hub 是 Desired State 唯一权威源。",
+      "owner": "system",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "Hub修改与重连收敛已测；Agent本地永久篡改对账维度未注入。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.agent_offline_during_hub_script_update-4c6237be.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.agent_offline_during_task_update-bf905097.json"
+      ]
+    },
+    {
+      "case_id": "INV-02",
+      "title": "Agent 主动连接 Hub。",
+      "owner": "system",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "Docker/Host等其余拓扑的实际进程Socket和反向监听核验；正常连接日志不能证明无监听。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.hub_restart-56006af8.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/agent-outbound-sockets.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/agent-outbound-sockets.json"
+      ]
+    },
+    {
+      "case_id": "INV-05",
+      "title": "Agent Revision 成功落盘后才能前进。",
+      "owner": "system",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.sync.script-sha-a7d33af9.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.sync_dependency_failure-24a4e9ce.json"
+      ]
+    },
+    {
+      "case_id": "INV-09",
+      "title": "Unknown Remote State 默认 Fail Closed。",
+      "owner": "system",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/condition.remote-unknown.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.condition.remote-ttl-bf27e07e.json"
+      ]
+    },
+    {
+      "case_id": "INV-11",
+      "title": "Managed Application 必须存在恢复路径。",
+      "owner": "system",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/native-results.json"
+      ]
+    },
+    {
+      "case_id": "INV-13",
+      "title": "Native 与 Docker 共享 Agent Core。",
+      "owner": "system",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "完整HostIntegration与Native/Docker相同任务/离线调度等共享Core行为链路，不能由代码共用直接推定。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.docker_agent_restart-660b369c.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/hostintegration-application.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/host-negative-results.json"
+      ]
+    },
+    {
+      "case_id": "INV-14",
+      "title": "Native/Docker 差异必须进入 Host Adapter。",
+      "owner": "system",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/summary.json"
+      ]
+    },
+    {
+      "case_id": "INV-18",
+      "title": "Artifact/File Payload 不走控制长连接。",
+      "owner": "system",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "全部payload种类与控制长连接的完整流量分离抓包；TLS已测，不再列为未执行。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.artifact_download_interruption-ceba9d89.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.transfer.multitarget-retry-470e9d05.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/tls-full-results.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-01",
+      "title": "/sign-in 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-02",
+      "title": "/ 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-03",
+      "title": "/agents 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-04",
+      "title": "/nodes 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-07",
+      "title": "/groups 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-08",
+      "title": "/groups/new 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-10",
+      "title": "/scripts 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-11",
+      "title": "/scripts/new 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-13",
+      "title": "/tasks 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-14",
+      "title": "/tasks/new 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-18",
+      "title": "/schedules 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-19",
+      "title": "/tasks?view=schedules 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-20",
+      "title": "/schedules/new 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-21",
+      "title": "/schedules/new?task_id={own_task_id} 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "actual preset query",
+        "reload",
+        "back/forward"
+      ],
+      "remaining_dimensions": [
+        "invalid preset",
+        "concurrent delete"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/detail-deep-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/detail-deep-links.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-23",
+      "title": "/applications 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-24",
+      "title": "/applications/new 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-25",
+      "title": "/applications/new?artifact_id={own_artifact_id} 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": [
+        "actual preset query",
+        "reload",
+        "back/forward"
+      ],
+      "remaining_dimensions": [
+        "invalid preset",
+        "concurrent delete"
+      ],
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/detail-deep-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/detail-deep-links.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-27",
+      "title": "/artifacts 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-28",
+      "title": "/artifacts/new 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-29",
+      "title": "/executions 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-31",
+      "title": "/audit 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-32",
+      "title": "/users 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-33",
+      "title": "/settings 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-34",
+      "title": "/transfers 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "ROUTE-35",
+      "title": "/invalid-e2e-route 直接访问/刷新/回链/前进后退/错误空态",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/page-discovery.json"
+      ]
+    },
+    {
+      "case_id": "TABLE-NODES-ERROR",
+      "title": "nodes Loading/Empty/Error/Retry",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "TABLE-GROUPS-ERROR",
+      "title": "groups Loading/Empty/Error/Retry",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "TABLE-SCRIPTS-ERROR",
+      "title": "scripts Loading/Empty/Error/Retry",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "TABLE-TASKS-ERROR",
+      "title": "tasks Loading/Empty/Error/Retry",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "TABLE-SCHEDULES-ERROR",
+      "title": "schedules Loading/Empty/Error/Retry",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "TABLE-APPLICATIONS-ERROR",
+      "title": "applications Loading/Empty/Error/Retry",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "TABLE-ARTIFACTS-ERROR",
+      "title": "artifacts Loading/Empty/Error/Retry",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "TABLE-EXECUTIONS-SEARCH",
+      "title": "executions 搜索命中/无结果/清空/Reset",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "TABLE-EXECUTIONS-ERROR",
+      "title": "executions Loading/Empty/Error/Retry",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "TABLE-TRANSFERS-ERROR",
+      "title": "transfers Loading/Empty/Error/Retry",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "TABLE-AUDIT-ERROR",
+      "title": "audit Loading/Empty/Error/Retry",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "TABLE-USERS-ERROR",
+      "title": "users Loading/Empty/Error/Retry",
+      "owner": "web",
+      "status": "PARTIAL",
+      "covered_dimensions": null,
+      "remaining_dimensions": null,
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/tables-verified-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/tables-safe.json"
+      ]
+    },
+    {
+      "case_id": "API-CONTRACT",
+      "title": "每端点错误JSON/必填/方法/成功响应结构与状态码按实际实现",
+      "owner": "api",
+      "status": "FAIL",
+      "covered_dimensions": null,
+      "remaining_dimensions": "尚未穷举每个端点的所有必填字段组合及各成功响应字段；按场景关联业务证据继续补。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/api-contract-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/api-edge-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/api-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/api-contract-matrix.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/user-validation-results.json"
+      ]
+    }
+  ],
+  "missing_evidence_paths": [],
+  "not_final": "仍在补测；本文件不表示全部功能完成或产品可交付。",
+  "repair_summary": {
+    "PASS": 20,
+    "FAIL": 0,
+    "PARTIAL": 0,
+    "NOT_RUN": 1,
+    "BLOCKED": 1
   },
-  "e2e_automation_final": {
-   "passed": 65,
-   "skipped": 0,
-   "failed": 0,
-   "specs": 17
-  }
- },
- "untested_features": [
-  "tasks.id",
-  "tasks.view.schedules.cron",
-  "tasks.new.and.cpu.usage.value.value",
-  "tasks.id.edit.tasks.new",
-  "tasks.id.edit.item",
-  "transfers.agent",
-  "transfers.id",
-  "scripts.sha256",
-  "scripts.new.scripts.id.shell.bash.python",
-  "scripts.new.scripts.id.item",
-  "scripts.new.scripts.id.key.value",
-  "scripts.new.scripts.id.rn.sha256",
-  "schedules.new.schedules.id.item",
-  "schedules.new.schedules.id.cron.datetime.local",
-  "sign.in.username",
-  "sign.in.password",
-  "sign.in.show.password",
-  "sign.in.item",
-  "item.nodesteer",
-  "item.toggle.sidebar",
-  "item.admin",
-  "item.skip.to.main",
-  "agents.skip.to.main",
-  "agents.nodesteer.linux",
-  "agents.toggle.sidebar",
-  "agents.admin",
-  "agents.agent.id",
-  "agents.nodesteer.agent.1",
-  "agents.nodesteer.agent.2",
-  "agents.nodesteer.agent.3",
-  "agents.nodesteer.agent.4",
-  "agents.10",
-  "agents.1.1",
-  "agents.hub",
-  "agents.close",
-  "agents.id.skip.to.main",
-  "agents.id.nodesteer.linux",
-  "agents.id.toggle.sidebar",
-  "agents.id.item",
-  "agents.id.admin",
-  "agents.id.key",
-  "agents.id.value",
-  "agents.id.test.date.1node",
-  "agents.id.nodesteer.e2e.smoke",
-  "nodes.skip.to.main",
-  "nodes.nodesteer.linux",
-  "nodes.toggle.sidebar",
-  "nodes.item",
-  "nodes.admin",
-  "nodes.agent.id",
-  "nodes.nodesteer.agent.1",
-  "nodes.nodesteer.agent.2",
-  "nodes.nodesteer.agent.3",
-  "nodes.nodesteer.agent.4",
-  "nodes.10",
-  "nodes.1.1",
-  "groups.skip.to.main",
-  "groups.nodesteer.linux",
-  "groups.toggle.sidebar",
-  "groups.admin",
-  "groups.new.groups.id.skip.to.main",
-  "groups.new.groups.id.nodesteer.linux",
-  "groups.new.groups.id.toggle.sidebar",
-  "groups.new.groups.id.item",
-  "groups.new.groups.id.admin",
-  "users.skip.to.main",
-  "users.nodesteer.linux",
-  "users.toggle.sidebar",
-  "users.admin",
-  "users.10",
-  "users.1.1",
-  "audit.skip.to.main",
-  "audit.nodesteer.linux",
-  "audit.toggle.sidebar",
-  "audit.admin",
-  "audit.10",
-  "audit.1.1",
-  "audit.2.2",
-  "audit.3.3",
-  "audit.4.4",
-  "audit.10.10",
-  "settings.skip.to.main",
-  "settings.nodesteer.linux",
-  "settings.toggle.sidebar",
-  "settings.admin",
-  "dashboard.item",
-  "dashboard.executions",
-  "dashboard.agent.agents",
-  "dashboard.applications",
-  "dashboard.agents",
-  "dashboard.tasks.view.schedules",
-  "dashboard.toggle.sidebar",
-  "dashboard.admin",
-  "applications.new.item",
-  "applications.new.unit"
- ],
- "untested_notes": [
-  "/artifacts 无详情页（行内无详情入口），无法验证单制品详情视图（产品边界）。",
-  "Agent 重连（重启/断网）对「维护」状态的影响未做运行时验证（禁止重启 Hub/Agent），仅基于 internal/hub/node.go:104 代码阅读给出观察。",
-  "Hub 执行方（execution_owner=hub）的调度触发未验证：按安全规则不创建长期后台调度；本轮全部使用 Agent 执行方（一次性调度真实触发已验证）。",
-  "RBAC 未覆盖脚本/发布包/应用/文件传输等其它域的按钮可见性（属其它执行单元范围），仅覆盖节点、分组、用户、设置、任务入口与直连接口。",
-  "RBAC（viewer/operator 对运行域接口的 403）未验证：本轮全程使用 admin；属其他单元范围。",
-  "arm64 制品上传/下载未在本轮重复（历史 G-09 已覆盖）。",
-  "「设置条件/设置远程条件」的清除入口、AND 组合等仅确认存在，未逐组合验证。",
-  "任务「条件」（本地 cpu_usage / 远程节点字段）仅完成字段枚举与「设置/清除」入口确认，未构造满足/不满足条件的分支执行验证。",
-  "传输大文件成功路径的 SHA256 未验证：300MB 用例用于中途取消，未等待完成；小文件（35B）已完成端到端内容与 SHA256 校验。",
-  "分组/标签类任务目标未执行验证（属节点/分组单元范围），本轮只做表单枚举。",
-  "删除确认对话框的「取消」路径未单独取证（取消按钮存在于制品/应用删除确认框）。",
-  "制品编辑器非法输入（Unit 名非法字符、健康检查数值边界如 0/负数/非数字）未逐一穷举。",
-  "响应式（1024/820）与深色主题、i18n 切换下的运行域页面未复检（属 ui-review 范围）。",
-  "多页分页交互仅在 /audit（10 页）实测，节点/分组/用户列表因数据量不足无法验证跨页行为。",
-  "应用手动回滚：UI 无入口（部署操作仅 deploy/start/stop/restart/upgrade），无法测试手动回滚；健康检查失败自动回滚本轮未复测（历史轮次已覆盖）。",
-  "托管应用部署/操作类任务未能端到端验证：环境内无任何托管应用（其他单元已清理），应用下拉为空。仅完成表单枚举与 400 错误路径验证；历史 FAIL-G-001 需在有应用的条件下复测。",
-  "执行/传输/审计记录无删除能力，测试数据只能保留；若需要干净基线需数据治理方案。",
-  "真实 Agent 的「撤销凭证 / 重新纳管」闭环未在真实节点上执行（保护 4 台 Agent），仅在自建 pending 节点上验证了撤销与同名重纳管。",
-  "节点详情「托管应用」分区因当前无应用分配，仅验证空态。",
-  "表格列宽拖拽/列排序等 tanstack-table 能力因无 UI 入口未验证（见 FAIL-B-112）。",
-  "语言/主题与浏览器 system 偏好联动（prefers-color-scheme）未验证。",
-  "跨代际传输（DELIVERING 中断/Agent 重连后恢复）未验证：需要停止 Agent，超出本单元安全边界。",
-  "部署失败/节点离线场景未复测：4 台节点全部在线，本轮未构造节点离线部署；也未构造健康检查失败用例。"
- ],
- "blocked_items": []
+  "repair_feature_inventory": "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/feature-inventory.json",
+  "baseline_counts_are_not_repaired_version_results": true,
+  "repair_feature_counts": {
+    "PASS": 494,
+    "FAIL": 0,
+    "PARTIAL": 0,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "summary_scope": "dddee4f0原版基线；修复版进度以repair_feature_counts及repair_gaps为准",
+  "repair_gaps": [],
+  "repair_additional_confirmed_defects": 2,
+  "repair_gaps_note": "2026-10-14 汇入后从 gaps 移除已通过用例：FL-05, SYS-12, SYS-34；来源 .e2e/runs/20260930-101945/repair/qa-resume-20261010-root/latest-evidence-integration-20261014.json | 2026-10-14 可复用证据复核：INV-15 升 PASS 从 gaps 移除，E2E-18/AR-04/E2E-16/AR-26 升 PARTIAL 并更新 remaining。 | 2026-10-14 batch02：从 gaps 移除 P09P11-01, P12P13-01, P16-01, TABLE-APPLICATIONS-PAGE, TABLE-APPLICATIONS-SORT；P09P11-11 更新为 PARTIAL。 | 2026-10-14 sys-b05：从 gaps 移除 AR-20, INV-07, SYS-15, SYS-31, SYS-32。 | 2026-10-14 batch03：从 gaps 移除 FL-09, FL-13, TABLE-ARTIFACTS-PAGE, TABLE-ARTIFACTS-SORT；P22-12/TABLE-USERS-PAGE 更新为 PARTIAL。 | 2026-10-14 sys-b10：从 gaps 移除 AR-24, AR-25, INV-10, SYS-41, SYS-42, SYS-43。 | 2026-10-14 batch04：移除已 PASS 的 P11-07, P22-08, P22-12 与剩余为空的 FL-09；P11-08/P22-09 更新为 PARTIAL。 | 2026-10-14 batch05-users：从 gaps 移除 P19-02, P19-05, P20-07, TABLE-USERS-PAGE（隔离 authority 完成，实例已整体销毁）。 | 2026-10-14 sys-b11：从 gaps 移除 AR-27, AR-28, AR-29, SYS-50, SYS-52。 | 2026-10-14 sys-b03：从 gaps 移除 AR-10, AR-13, SYS-04, SYS-06。 | 2026-10-14 sys-b07：从 gaps 移除 AR-02, AR-06, AR-09, SYS-16。 | 2026-10-14 sys-b13：从 gaps 移除 AR-03, AR-05, E2E-17, INV-13。 | 2026-10-14 batch06+sys-b12：从 gaps 移除 AR-33, AR-34, AR-35, INV-16, P04-04, P04-05, P06-08, P11-04, P17P18-14, SYS-56, SYS-57, SYS-58；AR-32 更新为 PARTIAL（含新缺陷）。 | 2026-10-14 sys-b02+batch07+batch08：从 gaps 移除 AR-16, INV-03, INV-04, INV-17, P07_P08-10, P14P15-17, P16-09, P16-10, P22-11, P22-13, P22-14, SYS-08, SYS-10。 | 2026-10-14 修正：sys-b09 的 SYS-22, SYS-23, SYS-26, AR-17 误按 baseline 记状态，现按本批真实证据移除。 | 2026-10-14 p-cond：移除 E2E-09, INV-09, SYS-25, SYS-30。 | 2026-10-14 p-web：移除 26 个 PASS；60 个 PARTIAL 更新 remaining。 | 2026-10-14 p-table：移除 22 个 PASS。 | 2026-10-14 p-sched：移除 13 个 PASS。 | 2026-10-15 p-api：4 个 api PARTIAL 全部升 PASS。 | 2026-10-15 p-sysmisc：移除 5 个 PASS。 | 2026-10-15 p-app：移除 17 个 PASS；AR-32 降 FAIL。 | 2026-10-15 sys-b01/b04：移除 10 个（PASS/BLOCKED）。 | 2026-10-15 sys-b06/b08：移除 10 个 PASS。 | 2026-10-15 sys-b14/batch10：移除 6 个 PASS。 | 2026-10-15 settings 组：移除 6 个 PASS。 | 2026-10-15 sys-b15：移除 2 个 PASS；NOT_RUN 清零。 | 2026-10-16 修复回归：移除 23 个；构建切换为 dddee4f0-e2e-repair-20261016。 | 2026-10-16 修复回归（复合标签补录）：移除 P07_P08-11, INV-05。 | 2026-10-16 状态复核：4 条升 PASS、G04-01 转 FAIL。 | 2026-10-16 WEB-GAP：9 升 PASS、X20 转 FAIL。 | 2026-10-16 APP-UI：8 升 PASS。 | 2026-10-16 G5：13 升 PASS。 | 2026-10-16 G2+G3：6 升 PASS。 | 2026-10-16 G1：8 升 PASS。 | 2026-10-17 G4：2 升 PASS（Docker/Compose）。 | 2026-10-17 G8+G9：X16/X14 转 FAIL（各立 P1 缺陷）。 | 2026-10-17 G6：3 升 PASS。 | 2026-10-17 P0-1 简化版：Remote 家族 5 项升档（SYS-27 FAIL→PASS）。 | 2026-10-17 控件缺口补测：4 升 PASS。 | 2026-10-17 全量修复验证：7 项升 PASS（4 FAIL→PASS、3 PARTIAL→PASS）。 | 2026-10-17 剩余 PARTIAL 验证：3 升 PASS（G04-03/P04-07/X08），SYS-40 转产品裁决。 | 2026-10-17 SYS-40 按 Root 裁决（审计粒度=逻辑触发，接受为设计）升 PASS，并同步 PRODUCT §45/TEST_PLAN。 | 2026-10-18 最终部署验证：X16/G03-10/TABLE-TASKS-ERROR/P03-10/P09P11-12/P14P15-13 全部升 PASS；504 场景收口为 494 PASS / 0 FAIL / 0 PARTIAL / 10 BLOCKED（环境不可行）。",
+  "repair_blocked_note": "2026-10-14 环境不可行项从 gaps 移除并记为 BLOCKED：AR-31, INV-14, SYS-24, SYS-54, SYS-55；理由见 .e2e/runs/20260930-101945/repair/qa-resume-20261014-root/system-batch-plan-review-20261014.json | 2026-10-14 OIDC/SSO 类用例记为 BLOCKED 并从 gaps 移除：P01-08, P01-09, P01-10, X17",
+  "repair_fail_note": "2026-10-14 sys-b09：SYS-27 从 PASS 降为 FAIL（新增确认缺陷 E2E-20261014-REMOTE-CONDITION-CLOCK-SKEW，待修复范围 Review）。",
+  "verified_build": "dddee4f0-e2e-repair-20261018-final"
 }

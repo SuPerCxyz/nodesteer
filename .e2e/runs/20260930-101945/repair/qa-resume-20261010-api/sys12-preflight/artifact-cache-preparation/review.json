@@ -1,0 +1,99 @@
+{
+  "status": "DRAFT_FOR_ROOT_REVIEW_CONTROLLER_DI_WIRING",
+  "scope": "SYS12 ArtifactCache assignment-prefetch persistence; no deploy",
+  "expected_behavior": "Assigning an Artifact-backed Application enters the Agent DesiredState; Agent sync prefetch writes a verified ArtifactCache DB row and content file. Stopping A and starting B on the same owned DataDir preserves that cache and node identity.",
+  "static_basis": [
+    {
+      "path": "internal/hub/sync.go",
+      "lines": "153-207,232-312",
+      "evidence": "assigned Applications are included in DesiredState; artifact URL/SHA derived for Sync"
+    },
+    {
+      "path": "internal/hub/application.go",
+      "lines": "154-202",
+      "evidence": "Assign changes assignment desired state and notifies Sync"
+    },
+    {
+      "path": "internal/agent/agent.go",
+      "lines": "924-940",
+      "evidence": "applySync calls prefetchApplications after persistence; prefetch does not Deploy"
+    },
+    {
+      "path": "internal/agent/artifact.go",
+      "lines": "25-110",
+      "evidence": "cache Has checks SQLite+physical SHA; Prefetch downloads, verifies, atomically stores and registers"
+    },
+    {
+      "path": "internal/agent/store.go",
+      "lines": "118-125,458-475,537-545",
+      "evidence": "local application and artifact DB rows"
+    },
+    {
+      "path": "internal/hub/api/api.go",
+      "lines": "1471-1536,1569-1601,1641-1660",
+      "evidence": "Artifact upload/GET/DELETE, Application CRUD and assignment routes; no deploy endpoint is needed"
+    },
+    {
+      "path": "internal/hub/artifact.go",
+      "lines": "24-84,105-130",
+      "evidence": "upload returns SHA/size; delete removes storage, refuses while an App references it"
+    }
+  ],
+  "known_limits": [
+    "No runtime verification has been performed; default controller mode is DRAFT_NO_ACTION.",
+    "Artifact deployment/download and ManagedApp Unit creation are explicitly excluded; an empty App executions list and absent Unit file are required oracles.",
+    "No HostIntegration, Host Docker, ArtifactCache corruption, retry, or multi-Artifact behavior is claimed.",
+    "Existing Root-owned SYS-12 lifecycle/controller remain frozen and unchanged."
+  ],
+  "safety": [
+    "Only repair:18080; Native2 is used only for exact short-lived helper Tasks.",
+    "No Host path/mount/namespace/policy change, no Unit creation, no original Node/process/container/config/image/archive changes.",
+    "Private registration token is read only inside the remote helper and written only to an exact new owned 0600 config; it is never in command arguments, evidence, or output.",
+    "Every helper Execution must be terminal before exact helper Task DELETE/GET404; unresolved active helper blocks all further mutation.",
+    "Cleanup refuses unknown paths and removes only the exact nonce root/network/container IDs and the approved 32-byte cache SHA file."
+  ],
+  "remaining_for_root_review": [
+    "The old launch grant for nonce 5ef261ad32a0 is terminated and must not be reused. This attempt had no resource mutation and requires no recovery.",
+    "Root must review the new controller pin and dependency-injection smoke, then issue a new attempt grant before any runtime action.",
+    "Native1 ArtifactURL authority evidence remains scoped to the Hub epoch observed at 2026-10-12T14:56:37Z."
+  ],
+  "recovery_delta": {
+    "api_delete_reconciliation": "Recovery accepts only exact ledger-pinned GET 404 when collection proves neither ID nor nonce-owned name has reappeared; a GET 200 object still must pass the full identity guard before deletion.",
+    "runtime_delete_reconciliation": "Container and network deletes are followed by fresh immutable-ID and exact-name inspections regardless of CLI return; absence is committed to the owner ledger only after both exact probes prove missing. Existing objects are revalidated for full owner/policy identity before any retry; a reused name blocks.",
+    "root_cleanup_reconciliation": "Owned data/config children are validated and removed first while owner marker and resource ledger remain. The controller-pinned root dev/inode is returned at prepare. The resource ledger is removed before the owner marker; recovery accepts the owner-only state only when its children_removed flag is true, and accepts an empty residual directory only at the pinned nonce path/dev/inode/UID/mode. No recursive deletion; exact atomic-write temp names are the only additional allowed files and are removed only after marker binding validates."
+  },
+  "pinned_sources": {
+    "helper_path": "artifact_cache_lifecycle.py",
+    "helper_sha256": "e02c62d5875fb07b9d3e706c05c1e11bccb6a65b7a626768997866ef972f9d3a",
+    "controller_path": "artifact_cache_controller.py",
+    "controller_sha256": "e0696b795e0030f7c7bd064cef5818268889281c6af767e15d07394075dd28a4",
+    "resource_plan_sha256": "37d6eae4461cbd2752851d13b1e736851f38903ee664d3cd46587a174f3a9784",
+    "outer_controller_sha256": "0e213c45180eab1701dfc87aabc9b353d7025f909429f764bc1028b083e353a7",
+    "dependency_smoke_path": "dependency_injection_smoke.py",
+    "dependency_smoke_sha256": "455e4cf786bd53697381141811e13cdb028c6f4b0a4aed37ee2c416f36d66e43"
+  },
+  "artifact_url_authority_evidence": {
+    "source_path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/artifact-url-preflight/attempt01/final-summary.json",
+    "source_lines": "2-19,47-55",
+    "observed_at_utc": "2026-10-12T14:56:37Z",
+    "status": "READONLY_PROBE_SUCCESS_TASK_CLEANED",
+    "authority": "repair:18080",
+    "target": "Native1 node 91f44866-8a28-435e-bbda-2f2367126c00; exact existing assigned Application 804e6b14-eb84-4dda-90de-8bcab9586c4c",
+    "observations": {
+      "artifact_url_present": true,
+      "artifact_url_origin_strict_repair_18080": true,
+      "path_class": "artifact-download",
+      "raw_url_emitted": false,
+      "app_row_count": 1,
+      "helper_task_deleted_get_404": true,
+      "business_api_mutations": 0
+    },
+    "validity": "Resolves URL authority for the Hub epoch observed by this probe only; refresh if Hub epoch changes before execution."
+  },
+  "controller_dependency_fix": {
+    "change": "Pass the API instance explicitly into wait_synced and post_result and all normal/recovery call sites. Do not attach mutable hidden state to the frozen outer module.",
+    "failure_evidence": "artifact-cache-5ef261ad32a0-final-summary.json; only six read GETs; zero helper Task/Run or runtime mutation.",
+    "local_smoke": "dependency_injection_smoke.py verifies the actual frozen outer API/helper signatures, the injected fake API in wait_synced/post_result, and blocks every non-GET/out-of-scope call.",
+    "no_outer_source_change": true
+  }
+}

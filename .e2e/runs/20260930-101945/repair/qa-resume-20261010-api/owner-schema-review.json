@@ -1,0 +1,157 @@
+{
+  "captured_at_utc": "2026-10-10T11:05:42.723422+00:00",
+  "status": "LATEST_RUNTIME_IDENTITY_MISMATCH_CONFIRMED_INSPECTOR_PREP",
+  "scope": "Local source/evidence only. No remote API/Task/Run, no process control, no manifest/marker/credential values read or written.",
+  "current_native4_owner_manifest": {
+    "source_generator": ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/setup/native4_child_setup_runtime.py:371-389",
+    "schema_version": 1,
+    "field_names": [
+      "schema_version",
+      "owner_marker",
+      "directory",
+      "directory_dev",
+      "directory_ino",
+      "directory_uid",
+      "directory_mode",
+      "node_id",
+      "agent_id",
+      "registration_token_fingerprint",
+      "hub_endpoint",
+      "proxy",
+      "child",
+      "supervisor",
+      "config",
+      "binary",
+      "created_at_epoch"
+    ],
+    "field_names_nested": {
+      "hub_endpoint": [
+        "scheme",
+        "host",
+        "port",
+        "path"
+      ],
+      "proxy": [
+        "bind_ip",
+        "port",
+        "upstream_host",
+        "upstream_port",
+        "source_sha256"
+      ],
+      "child": [
+        "pid",
+        "starttime",
+        "uid",
+        "exe_path",
+        "exe_sha256",
+        "argv_owner_path_match"
+      ],
+      "supervisor": [
+        "pid",
+        "starttime",
+        "uid",
+        "exe_path",
+        "exe_sha256",
+        "argv_owner_path_match"
+      ],
+      "config": [
+        "path",
+        "mode",
+        "uid",
+        "readable_parseable_as_nobody",
+        "token_fingerprint"
+      ],
+      "binary": [
+        "source_path",
+        "source_sha256",
+        "copy_path",
+        "copy_sha256"
+      ]
+    },
+    "owner_nonce_field_present": false,
+    "marker_contract": "Setup creates a UUID marker, writes it to owned root/owner.marker, and stores the same value in manifest.owner_marker. Value omitted. SHA-256 fingerprint fields are present in the schema but values omitted.",
+    "safe_identity": {
+      "node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+      "agent_id": "agent-ab15a133-73cd-4025-8c97-f2ff37e000f5",
+      "directory": "/tmp/qa-resume-20261008-child-ciivjupc",
+      "directory_dev": 33,
+      "directory_inode": 135,
+      "directory_uid": 65534,
+      "directory_mode": "0700"
+    }
+  },
+  "latest_owner_pointer": {
+    "sha256": "c8142503fc467066265b67a1db641ec3274119961f65cdadcd92f2ba26a2e2ce",
+    "source": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/ui-native3/restart/manual-attempt01/restart-evidence.json:270-273",
+    "meaning": "The restart changed only manifest.child row; this is the latest recorded owner-manifest SHA. This turn did not read the physical remote manifest."
+  },
+  "successful_guard_crosscheck": {
+    "helper_source": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/auth-artifact/helper/agent_artifact_probe.py:127-173",
+    "observed_result": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/auth-artifact/agent-branch-execution-evidence.json",
+    "manifest_sha_argument": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/auth-artifact/helper/compile-check.json",
+    "guard_behavior": "Checks exact SHA, root dev/inode/UID/mode, node_id/agent_id, owner_marker against physical owner.marker, child pid/starttime/uid/exe SHA, config path/owner/mode, DB identity. It does not require owner_nonce.",
+    "result": "Previous authorized read-only helper returned owner_guard_passed=true with Agent download PASS."
+  },
+  "runtime_arm_diagnosis": {
+    "arm_exact_check": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/arm_control.py:223-229",
+    "caller_argument_flow": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/controller.py:179-200,295-305",
+    "watchdog_repeats_check": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/watchdog.py:30-40",
+    "false_schema_assumption": "Latest c814 SHA-passed replacement execution now observed owner_manifest_exact_identity_mismatch. Source schema and Runtime review identify the absent manifest.owner_nonce comparison as the incorrect identity term; the helper’s separate CLI --owner-nonce was not a Native4 manifest field.",
+    "likely_schema_confusion": "A different generic temporary-daemon schema in qa-resume-20261008-backend/env01_05_task_source.py:345-400 includes owner_nonce. It is not the current Native4 Agent owner-manifest schema, whose setup source is native4_child_setup_runtime.py.",
+    "watchdog_impact": "The source-only correction removed owner_nonce assumptions from arm/watchdog/controller CLI and retained owner_marker sidecar validation; no remote retry followed.",
+    "latest_source_review": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt02/replacement/owner-manifest-schema-review.json and owner-manifest-schema-check.json; current arm_control.py SHA is 1163ba2737c3dd7c434c0c44918117675509aae5338037b259e93a4d4a5bdd3c and checks owner_marker against owner.marker.",
+    "latest_source_refs": "Previous arm guard result is in case-result.json; Runtime source-only correction is recorded by attempt02/replacement/owner-manifest-schema-review.json and owner-manifest-schema-check.json. Current arm helper checks owner_marker against owner.marker."
+  },
+  "observed_attempt_boundary": {
+    "attempt": "qa-resume-20261010-runtime/pending-ui/case-result.json:16-23",
+    "actual_failure": "Historical first attempt used stale pre-restart SHA fc7ad… and failed at owner_manifest_sha_mismatch before parsing identity; preserve this as the earlier failure only.",
+    "input_diagnosis": "The replacement attempt below used latest recorded SHA c814… and passed the manifest hash guard; it then failed at exact owner identity because the executed schema check expected nonexistent owner_nonce.",
+    "interpretation": "The owner_nonce schema mismatch is now confirmed by latest runtime execution, while the earlier fc7 SHA mismatch remains a separate historical harness input failure."
+  },
+  "correct_ownership_invariants_for_root_review": [
+    "Use a freshly verified latest manifest SHA and verify root path/dev/inode/UID/GID/mode plus manifest regular-file owner/mode before parsing.",
+    "Require exact NodeID, AgentID, directory and directory dev/inode/UID, then verify manifest.owner_marker only by equality with the exact owned root/owner.marker; never output either value.",
+    "Require child PID/starttime/UID/executable SHA and config path/owner/mode plus independent DB device/inode/owner guards; refresh mutable process identity immediately before any future control.",
+    "Do not require owner_nonce in this Native4 manifest. Keep hold/task nonce separate from the physical ownership marker and retain exact physical/API readbacks."
+  ],
+  "execution_boundary": "Read-only local evidence/source review and local compile-only inspector preparation. No API/Task/Run, signal, controls mutation, file deletion, or Product/Runtime source edit by this agent.",
+  "latest_runtime_observation": {
+    "evidence_path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt02/replacement/case-result.json",
+    "captured_at_utc": "2026-10-10T10:53:04Z",
+    "execution_id": "1ac9f4a7-3fa3-458c-ba71-a874ade0310a",
+    "execution_status": "FAILED",
+    "manifest_sha256": "c8142503fc467066265b67a1db641ec3274119961f65cdadcd92f2ba26a2e2ce",
+    "sha_guard": "passed",
+    "safe_error": "owner_manifest_exact_identity_mismatch",
+    "task_id": "79bdf556-033c-46aa-88c9-ba62b5c880b1",
+    "hold_nonce": "5be5b250c113",
+    "task_delete_get404": true,
+    "p11_case_run_clicked": false,
+    "watchdog_started": false,
+    "controls_read_or_written": false,
+    "arm_evidence_readback": "not performed; no evidence file content or owner_marker value was emitted",
+    "schema_cause": "The executed helper compared manifest.owner_nonce to its separate CLI --owner-nonce. The current Native4 v1 schema lacks owner_nonce and has owner_marker; this is now a real post-SHA runtime identity failure, not only a predicted next guard."
+  },
+  "current_runtime_source_review": {
+    "evidence_path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt02/replacement/owner-manifest-schema-review.json",
+    "check_path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt02/replacement/owner-manifest-schema-check.json",
+    "source_sha256": {
+      "arm_control.py": "1163ba2737c3dd7c434c0c44918117675509aae5338037b259e93a4d4a5bdd3c",
+      "watchdog.py": "cadfa357ce19783824825589755f398590399e99cc8667df2bff3a4793ef0480",
+      "controller.py": "203b18e6c7bdfb1573259247a31d0e0559496658cd473931d3d3828e7a80c84b"
+    },
+    "owner_nonce_guard_removed": true,
+    "owner_marker_file_equality_guard_present": true,
+    "remote_task_or_run_after_source_review": false
+  },
+  "historical_attempts": [
+    {
+      "evidence_path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/case-result.json",
+      "execution_id": "4e1333ff-b277-4278-840f-b6b11abe3097",
+      "provided_sha256": "fc7ad2e2dbba5c00c95ed08419cfc62b6601da1d13a0dc6ded9d8d5b4a7131f3",
+      "status": "FAILED_AT_MANIFEST_SHA_GUARD",
+      "safe_error": "owner_manifest_sha_mismatch",
+      "interpretation": "Historical stale pre-restart SHA failure; preserved separately from the latest c814 SHA-passed identity mismatch."
+    }
+  ]
+}

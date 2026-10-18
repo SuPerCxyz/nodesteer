@@ -1,0 +1,85 @@
+{
+  "reviewed_at_utc": "2026-10-12 15:39:01 UTC",
+  "status": "LOCAL_SOURCE_READY_FOR_ROOT_SCOPE_REVIEW_NOT_E2E",
+  "external_actions": {
+    "api_calls": 0,
+    "api_mutations": 0,
+    "docker_actions": 0,
+    "task_creates": 0,
+    "run_posts": 0,
+    "browser": 0,
+    "protected_unit_or_cgroup_touched": 0
+  },
+  "frozen_candidate_sources": {
+    "payload": {
+      "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/retry_multistream.py",
+      "sha256": "a6aedafdcbd87e1e79223bc3a086a8cb52a6aa99d54c97a321cc452a0de2931c",
+      "bytes": 7951
+    },
+    "local_smoke": {
+      "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/offline_smoke.py",
+      "sha256": "ffaaabbfffe8ee35ad1a285c06b5ae5b706fa1306e25e83e70e6a13491fbfc24"
+    },
+    "readonly_verifier": {
+      "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/readonly_verifier.py",
+      "sha256": "b02e3d54b447b0d17aaa26e0d8a22821925c759bb361b03906db09efac371a66",
+      "compiled_locally": true,
+      "remote_execution": false
+    },
+    "offline_controller": {
+      "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch/sys34-40/offline_controller.py",
+      "sha256": "bb99e36824d1e5c3ea123aeadcd8f8e1d6c233119e4f007f87b74ca834df2d70",
+      "default": "DRAFT_NO_ACTION",
+      "claim": "Local pin/resource-contract/network-blocked smoke only; not the future live API/browser executor and not product E2E."
+    },
+    "batch_plan": {
+      "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch-plan-20261012.json",
+      "sha256": "524701815ab135d82069ea148df6688981931799fd06f70c9d2f0f97efd45ca0"
+    }
+  },
+  "contract_review": {
+    "task_parameter": "models.Parameter supports name/type/required; RunTask submits {params}; executionEnvironment exposes only NODESTEER_PARAM_<name>. Candidate declares one required non-secret string parameter qa_value; payload reads only NODESTEER_PARAM_qa_value, validates the expected QA nonce, and outputs length/SHA/match evidence without raw value or full environment.",
+    "source_refs": [
+      "internal/models/models.go:170-175",
+      "internal/hub/execution.go:66-104",
+      "internal/agent/agent.go:1580-1623",
+      "web/src/features/tasks/index.tsx:1385-1460"
+    ],
+    "state_guard": "Fixed nonce path only, O_EXCL/O_NOFOLLOW create, regular/current-uid/current-gid/0600/nlink1/small-size/exact-content guards, same dev+inode for update and unlink; path is not environment-overridable.",
+    "attempt_timing": "Each attempt-start is time.monotonic_ns captured at function entry and emitted for both streams; no retry-delay claim is made absent a confirmed timing contract.",
+    "verifier": "Native3 candidate IDs, root UID, exact Agent ancestor, proc+disk SHA, exact config argv path match, exact active Unit MainPID/cgroup and fixed marker absence; returns only allowlisted IDs/PID/startticks/hash/booleans, does not read config contents or environment. Must be freshly run before actual fixture operations.",
+    "implementation_line_refs": {
+      "payload_fixed_path_and_guard": "retry_multistream.py:11-15,36-86,95-165,168-208",
+      "payload_monotonic_and_parameter": "retry_multistream.py:168-204",
+      "verifier_exact_ancestor_and_binary": "readonly_verifier.py:35-96",
+      "verifier_exact_unit_and_marker": "readonly_verifier.py:99-153",
+      "task_run_params_ui": "web/src/features/tasks/index.tsx:1385-1460",
+      "hub_parameter_environment": "internal/hub/execution.go:66-104",
+      "agent_parameter_environment": "internal/agent/agent.go:1580-1623"
+    }
+  },
+  "local_validation": {
+    "python_compile": "PASS for payload, local smoke, readonly verifier and offline controller",
+    "payload_smoke": "PAYLOAD_LOCAL_SMOKE_PASS_NOT_E2E: attempts 23/23/0, each stdout/stderr 71680 bytes (plus final success marker); parameter length/SHA present in both streams without raw parameter; fixed temp state removed on attempt 3; wrong parameter, foreign content, invalid mode, symlink and hardlink rejected/preserved.",
+    "offline_controller_smoke": "OFFLINE_CONTROLLER_SMOKE_PASS_NOT_E2E; network calls/connects 0, API calls/mutations 0, Task creates 0, Run POSTs 0.",
+    "meaning": "Local harness checks only. No Agent retry, Hub ingestion, Audit, actual UI, execution status, or runtime filesystem behavior was exercised."
+  },
+  "candidate_budget": {
+    "script": 1,
+    "script_task": 1,
+    "required_task_parameter": 1,
+    "readonly_verifier_task": 1,
+    "actual_ui_business_run_posts": 1,
+    "readonly_verifier_run_posts": 2,
+    "payload_attempts_within_execution": 3,
+    "schedule": 0,
+    "fallback_cleanup_task_max_after_separate_root_review": 1,
+    "fallback_cleanup_run_max_after_separate_root_review": 1
+  },
+  "remaining_gates": [
+    "Root must approve the frozen candidate and separately grant actual fixture/API/UI activity.",
+    "Use fresh Native3 owner/API/process guards and fresh path-absent proof before any fixture creation.",
+    "The live create/run/log/audit/delete path remains unimplemented in this offline controller and has not been executed; Root must review the exact live driver/API orchestration before granting it.",
+    "SYS-40 timing remains partial unless a canonical retry-delay expectation is established; FL-05 remains partial without same-execution backlinks plus UI/log feedback."
+  ]
+}

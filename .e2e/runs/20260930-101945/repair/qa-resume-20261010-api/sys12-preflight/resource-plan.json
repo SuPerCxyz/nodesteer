@@ -1,0 +1,72 @@
+{
+  "status": "PROPOSED_NOT_EXECUTED_PENDING_ROOT_REVIEW",
+  "case_id": "SYS-12",
+  "scope": "Minimal noHost Docker persistence chain: one owned Script/Script Task and disabled Schedule; no App deployment, Artifact, Transfer, Host integration, policy change, or synthetic cache file.",
+  "resource_budget": {
+    "new_user": 0,
+    "new_node": 1,
+    "new_container_ids_sequential": 2,
+    "simultaneously_running_containers": 1,
+    "owned_data_root_or_volume": 1,
+    "owned_docker_network": 1,
+    "task": 1,
+    "normal_native2_helper_tasks_and_runs": 6,
+    "recovery_native2_helper_tasks_and_runs_max": 4,
+    "cumulative_native2_helper_tasks_and_runs_max": 10,
+    "business_runs_max": 1,
+    "disabled_schedule": 1,
+    "manual_execution": 1,
+    "new_app_artifact_transfer": 0,
+    "owned_script": 1
+  },
+  "candidate_naming": "Controller generates one fresh 12-hex nonce and derives NodeName, Script name, Task name, owner root, container A/B and bridge. It records baseline four Node IDs and health; immediately before the prepare helper Run it repeats Admin GET /api/nodes and requires the fresh NodeName absent and baseline IDs unchanged. Helper rechecks only exact Docker names/image before create.",
+  "preconditions": [
+    "Run reviewed read-only Native2 probes; actual image ID/owner label, architecture, entrypoint, rootfs TAR SHA and Agent binary SHA passed. The exact tar member /bin/sh is regular executable size129736 with measured SHA a6f559e00b69a4aa4d8cb607be18d9386c5aee55c509e2c075549dcf00e00fc7; the older proposal pin differed by one nibble (…a9d8… vs …a4d8…). Use the measured archive-member hash in a future source guard after Root review; do not rebuild/pull/change the image.",
+    "Use current repair connection authority :18080; verify exact original four Nodes and Native2 are online/synced. Controller records baseline IDs/health. Its callback repeats Admin GET for exact fresh NodeName immediately before prepare helper Run/start A; no business resource mutation intervenes.",
+    "Do not POST /api/nodes/enrollment: its generated config contains the shared registration token and preassigned AgentID. Instead, derive the fresh config on Native2 by reading only the already-owned original private config through its exact root/private/config guards; copy only hub_url and registration_token, insert a unique node_name, and omit agent_id/node_ip. The token value must never appear in Task source/params/output, Task database fields, logs, or evidence.",
+    "Place derived config under the new owned host bind root: private directory UID/GID65534 mode0700, file UID/GID65534 mode0600, mounted read-only to /run/nodesteer/agent.yaml so container user 65534 can read it. Never reuse, edit or mount the original config; never reuse its AgentID.",
+    "Create one owned data source UID/GID65534 mode0700 and mount only at /var/lib/nodesteer. Nonroot writeability remains an in-container runtime gate, not a preflight assertion."
+  ],
+  "first_hello_enrollment_source_path": {
+    "agent_config": "cmd/agent/main.go:24-45,85-95; helloFn uses configured NodeName and leaves AgentID empty when omitted (internal/agent/agent.go:191-208)",
+    "wire_hello": "registration token becomes RegistrationKey when no persisted AgentCredential exists (internal/agent/connection/manager.go:252-261)",
+    "hub_acceptance": "valid RegistrationKey with empty AgentID enters first-registration path; RegisterOrUpdate miss calls RegisterAgent/createNode, which generates fresh NodeID/AgentID/credential (internal/hub/gateway.go:343-386; internal/hub/node.go:163-201)",
+    "credential_persistence": "HELLO_ACK returns new identities/credential and Agent persists NodeID/AgentID/credential to its local DataDir (internal/hub/gateway.go:396-405; internal/agent/agent.go:380-400)",
+    "conclusion": "Source supports fresh automatic HELLO enrollment without Admin POST or returned secret in Task. Runtime acceptance and first-online API confirmation remain untested; stop if this path is rejected or existing NodeName collision is found."
+  },
+  "container_constraints": {
+    "image": "sha256:ecd4dd9f8300067ba2cba22e8c5a701f1984f054fa4476354ed4d58af544cd44",
+    "user": "65534:65534",
+    "capabilities": "drop ALL; add none",
+    "security": "read-only root filesystem, no-new-privileges, Docker default seccomp, private PID/network namespaces, no privileged mode, no devices",
+    "mounts": "only unique owned DataDir RW and private Agent config RO; no /host, host /proc or /sys, systemd tree, host PID/network, devices, or published ports",
+    "tmp": "optional private 16 MiB noexec,nosuid,nodev tmpfs at /tmp; Runner command path itself uses /bin/sh and does not require host tmpfs",
+    "network": "unique owner-labeled bridge with Docker-assigned dynamic IP; record actual address, no fixed-IP reservation"
+  },
+  "minimal_flow": [
+    "Controller verifies original four Nodes and Native2, records current Node IDs, and uses a fresh NodeName. After prepare helper Task readback and immediately before its Run, a second exact NodeName-unused GET must pass. Prepare creates one owner root/config/data, bridge and A; first HELLO with empty AgentID registers one new Node. Verify fresh NodeID/AgentID, docker mode, HostIntegration=false, online/synced.",
+    "Create one unique owned Script through POST /api/scripts with interpreter=shell, content `printf '<unique marker>'`, no environment/parameters/RunUser, timeout 30 and enabled=true. Use Admin GET/list to ensure its unique name is unused; GET the exact Script and verify ID/revision=1/SHA. Create one Script Task targeting only the new Node; run once and require Hub Execution SUCCESS/exit0, exact NodeID/TaskID/ScriptID/revision and bounded marker output.",
+    "Create and GET one valid disabled cron Schedule attached to the Script Task (0 0 1 1 *, execution_owner=agent, timezone UTC, hub_online_required, misfire skip). Require enabled=false; do not wait for or trigger a schedule execution.",
+    "Inspect A with SQLite query_only. Require quick_check exactly `ok`; verify exact identity NodeID/AgentID, DB dev+inode, Script row ID/revision/content byte count/content SHA/stored SHA, disabled Schedule and successful Execution journal with ScriptID/ScriptRevision. Before/after SQLite read, confirm DB path/fd dev+inode stability and exact Agent process PID/UID/cgroup/exe SHA plus open fd/root path matching that DB inode.",
+    "Stop/remove A by immutable ID. After A removal and before B starts, read the same local DataDir and persist a pre-B snapshot of identity, global_revision, Script/Schedule/Execution rows and DB dev+inode. Require quick_check=ok, identical DB file identity/owned rows and no global revision regression.",
+    "Start B directly on the same owned bridge with the same config/DataDir. Require a new immutable container ID/PID, UID65534, pinned Agent executable SHA/cgroup and state.db fd/container-root path matching the same DB dev+inode. Require identical NodeID/AgentID, Script/Schedule/Execution rows and DB inode; local revision cannot regress. Wait until Hub Node says online/synced, then require local global_revision >= that Node's latest synced revision. Helper Task create/delete and concurrent Web CRUD can advance Hub revision. This test does not claim offline/isolated startup capability.",
+    "Final inspect rechecks B process/DB proof and current synced revision, then stops B by exact immutable ID. DELETE exact Schedule, Script Task, Script, Node on :18080 and GET404 each; preserve Execution/Audit. After API 404s, cleanup-runtime recovers any missing daemon-commit IDs by exact nonce-derived names only after owner-label/image/full-policy/mount validation, removes exact containers/bridge, then cleanup-root removes exact owned root."
+  ],
+  "oracles_and_limits": {
+    "actual_data_dir_writable": "Not established by plan/image metadata. Require successful startup, SQLite writes/sync, execution journal creation and schedule upsert as runtime proof; otherwise stop and classify environment limitation.",
+    "persistence": "Hub Node state and local SQLite are independent oracles. Require quick_check=ok and hold DB dev/inode constant across A inspection, A stop/pre-B snapshot, B Agent fd-open proof and post-reconnect inspect. B exact immutable container PID/UID/exe SHA/cgroup plus state.db fd/root inode proves Agent opened the shared database. Compare NodeID/AgentID, Script/Schedule/Execution IDs/revisions/content SHA exactly; local revision cannot regress and after Node sync must be >= its latest global_revision. Legitimate Hub revision advances are allowed.",
+    "artifact_cache": "No Application, Artifact, or Transfer is created; physical ArtifactCache and App prefetch/deployment remain explicitly untested. Script DB cache verification does not generalize to ArtifactCache.",
+    "coverage_limit": "This chain validates only Script DB cache persistence. Physical ArtifactCache, Application prefetch/deployment, SYS-54..58 Host behavior, and full UI workflow remain untested; do not generalize Script DB evidence.",
+    "script_cache": "Agent applySync persists Scripts in SQLite `scripts` rows; executeTask/GetScript reads Content from SQLite. Verify local Script row ID/revision/content_bytes/content_sha256/stored_sha256 and execution journal ScriptID/ScriptRevision; verify the same row remains after B opens the same DataDir and reconnects. `DataDir/scripts` is only initialized as a directory in current source; no per-script file is materialized. This case validates Script DB cache only.",
+    "recovery": "Controller ledger records phase/resource IDs and cumulative helper-call counters. Failed-phase entrypoint is `sys12_outer_controller.py --execute --grant-id <Root grant> --recover-ledger <exact ledger path>`; it does not re-run business work or prepare. Recovery first reconciles each exact helper Task/Execution and requires a terminal Execution before Task deletion or any cleanup mutation. On timeout, it requests cancel only for the exact owned Execution and waits for terminal. If exact inactivity cannot be proven, it records OWNED_ACTIVE_HELPER_BLOCKED, preserves helper Task/resources, and stops all remote mutations. Budget is 6 normal helper Task/Run calls plus at most 4 recovery calls, 10 cumulative; no business Run is repeated. cleanup-runtime inspects only exact nonce-derived names and recovers an immutable ID only after owner label, pinned image, full container policy and exact mounts match; then cleanup proceeds or leaves unknown resources for Root review."
+  },
+  "lifecycle_source": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/lifecycle_source_proposal.py",
+  "one_root_controller_plan": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/one-root-controller-plan.json",
+  "never_touch": [
+    "Existing Host001 container, Host fixture Node, Host volume/network, imported image tag or Host Unit",
+    "Original four repair Nodes or primary :8080",
+    "Existing Users, Artifacts, Transfers, credentials, Docker policy, App/Unit state, or shared/global .e2e inventory"
+  ],
+  "controller": "sys12_outer_controller.py",
+  "outer_controller": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/sys12_outer_controller.py"
+}

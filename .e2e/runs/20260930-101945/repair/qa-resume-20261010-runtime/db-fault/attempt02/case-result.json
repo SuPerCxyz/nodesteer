@@ -1,0 +1,61 @@
+{
+  "attempt": "02",
+  "case": "INV-05 SQLite write-stage SQLITE_BUSY failure and normal recovery; bounded isolated slice only",
+  "status": "PARTIAL_UI_UNVERIFIED",
+  "target": {
+    "child_node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+    "agent_id": "agent-ab15a133-73cd-4025-8c97-f2ff37e000f5",
+    "parent_node_id": "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+  },
+  "fault": {
+    "mechanism": "parent Command Task held BEGIN IMMEDIATE for 12s with no SQL writes and finally ROLLBACK",
+    "v1_script_id": "20a79944-5581-494b-83d8-5b365738c1e4",
+    "v1_sha256": "e98aeaeb142dc9bdd405bb52811d1ddd1fa6139fa7a827abd32dcc6f902abdf9",
+    "v2_revision": 2,
+    "v2_sha256": "2145f8d114e17ca06d69e640e328662ca3ee370f17922909b1dc4e8477b94387",
+    "lock_time_local_revision": 1379,
+    "negative_ack": {
+      "ok": false,
+      "applied_rev": 0,
+      "captured": true
+    },
+    "old_sha_preserved_and_revision_unchanged_while_locked": true,
+    "agent_sqlite_locked_log_observed": true
+  },
+  "recovery_and_use": {
+    "normal_revision_recovery_online_synced": true,
+    "v2_local_db_sha_readback": true,
+    "execution_id": "29142a25-7fbe-4a54-b5e8-2c164581a58a",
+    "execution_status": "SUCCESS",
+    "marker_seen": true,
+    "execution_ui_status": "UNVERIFIED_AUTH_REQUIRED"
+  },
+  "cleanup": {
+    "script_get404": true,
+    "child_script_task_get404": true,
+    "lock_task_get404": true,
+    "cleanup_task_get404": true,
+    "marker_removed": true,
+    "local_script_task_schedule_rows_zero": true,
+    "db_quick_check": "ok",
+    "child_and_supervisor_fingerprints_unchanged": true,
+    "execution_history_preserved": true
+  },
+  "limits": [
+    "No CommitSync() call failure injected.",
+    "This does not claim full INV-05 PASS.",
+    "Execution UI not verified: isolated agent-browser reached /sign-in and no authorized QA login session was available; no credential was read or used.",
+    "AR-08 duplicate apply was not exercised."
+  ],
+  "evidence": [
+    "fixture-v1-evidence.json",
+    "child-runtime-readonly-evidence.json",
+    "sqlite-write-lock-fault-evidence.json",
+    "recovery-stage-01.json",
+    "run-execution-evidence.json",
+    "ui-auth-gate-evidence.json",
+    "cleanup-api-evidence.json",
+    "cleanup-tombstone-evidence.json",
+    "final-readback.json"
+  ]
+}

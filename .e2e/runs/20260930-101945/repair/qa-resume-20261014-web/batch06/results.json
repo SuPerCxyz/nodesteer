@@ -1,0 +1,675 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch06",
+  "title": "节点状态操作菜单、离线节点 set online、离线派发快速失败、分组联动与 Agent 离线执行同步",
+  "owner": "web",
+  "status": "COMPLETE_PENDING_ROOT_REVIEW",
+  "updated_at_utc": "2026-10-14T10:06:03Z",
+  "environment": {
+    "authority": "http://192.168.100.209:18080",
+    "authority_type": "repair",
+    "primary_8080_touched": false,
+    "browser": "agent-browser 0.32.4 (session qa1410b06, --allowed-domains 192.168.100.209)",
+    "owned_child_host": "192.168.100.206 (native-2)",
+    "agent_binary_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "nonce": "705d5f",
+    "protected_nodes_untouched_at_batch_guard": {
+      "native-1": {
+        "status": "online",
+        "sync_status": "synced"
+      },
+      "native-2": {
+        "status": "online",
+        "sync_status": "synced"
+      },
+      "native-3": {
+        "status": "online",
+        "sync_status": "synced"
+      },
+      "native-4": {
+        "status": "online",
+        "sync_status": "synced"
+      }
+    },
+    "protected_nodes_note": "batch final guard (10:06Z) recorded native-1..4 all online/synced; native-1 and native-3 went offline afterwards due to other concurrent batches — this batch never acted on any protected node"
+  },
+  "counts": {
+    "PASS": 5
+  },
+  "cases": [
+    {
+      "case_id": "P04-04",
+      "title": "操作菜单：online → maintenance；maintenance → online；set online（在 owned child 上执行）",
+      "canonical_before": "NOT_RUN (repair build not executed for this case; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "P04-04-UI-20261014-BATCH06",
+          "layer": "real-ui -> POST /api/nodes/{id} -> hub node status -> agent NODE_STATUS",
+          "status": "PASS",
+          "description": [
+            "Owned child row action menu in 节点 list: 维护 (online→maintenance), 恢复 (maintenance→online) and 设为在线 (maintenance→online) each issued a real POST /api/nodes/{id} that returned 200, and the hub node status followed the click.",
+            "UI readback after each click: status badge and the first menu item label switch between 在线+维护 and maintenance+恢复.",
+            "Hub-side effect of maintenance: a hub-owned one_time Schedule due while the node was paused produced a SKIPPED Execution with block_reason \"node paused\" instead of being dispatched; after 恢复 the same kind of Schedule produced a real SUCCESS Execution whose stdout carried the nonce marker.",
+            "Agent-side effect: with the node paused the agent-owned allow_offline one_time Schedule did not fire locally; it fired once after 恢复 (catch-up on the same slot)."
+          ],
+          "evidence": [
+            "evidence/phase3-p04-04-operation-menu.json",
+            "evidence/P0404-01-node-online-row.png",
+            "evidence/P0404-02-node-maintenance-row.png",
+            "evidence/P0404-03-node-resumed-row.png",
+            "evidence/P0404-04-node-set-online-row.png"
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The status badge for `maintenance` renders the raw untranslated string \"maintenance\" (StatusBadge has no zh label for it) — recorded as an observation, not a failure of the operation-menu assertion.",
+        "The agent-local pause behaviour was verified with an agent-owned allow_offline Schedule; the agent does not log the NODE_STATUS application, so the evidence is behavioural."
+      ],
+      "evidence": [
+        "P0404-01-node-online-row.png",
+        "P0404-02-node-maintenance-row.png",
+        "P0404-03-node-resumed-row.png",
+        "P0404-04-node-set-online-row.png",
+        "P0405-01-node-offline-row.png",
+        "P0405-02-node-set-online-row.png",
+        "P0608-01-node-detail-before-group-change.png",
+        "P0608-02-node-detail-after-group-add.png",
+        "P0608-03-node-detail-after-group-remove.png",
+        "P0608-04-group-task-run-empty-target.png",
+        "P1104-01-run-no-session-error.png",
+        "P1104-02-offline-node-run-error.png",
+        "P17P18-01-offline-execution-detail.png",
+        "final-cleanup-guard.json",
+        "phase0-guard.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-p04-04-operation-menu.json",
+        "phase4-p04-05-offline-set-online.json",
+        "phase5-p11-04-offline-node-dispatch.json",
+        "phase6-p06-08-group-change-sync.json",
+        "phase7-p17p18-14-offline-synced.json",
+        "phase8-cleanup.json",
+        "run-evidence.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-guard.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-w1410b06-705d5f-",
+        "child_node_id": "bf80d9a9-2adc-4aa9-a58e-8d56d254590a",
+        "child_agent_id": "agent-9d27f6a6-afc0-4abb-8e77-40101aed582f",
+        "script_id": "598fd8e1-7977-48b3-bcbf-1fa931b3ca2a",
+        "task_node_id": "f2065e40-45df-4372-a127-cd87d1be8900",
+        "task_group_id": "308bdf68-0cb5-4f33-b1be-442a1d08e808",
+        "group_id": "aa4db877-d886-4389-99eb-4b26f6fc6d08",
+        "schedules": {
+          "p0404_maintenance_skip": "2d5fc361-8f48-49a5-8716-412c2cbbe1b4",
+          "p0404_after_resume": "f5610257-43e9-4475-a745-b01dc12bb23c",
+          "p0404_agent_offline_sched": "6137b877-958d-481b-b124-8a146647e264",
+          "p0608_group_member_added": "d1e278dc-68ff-4aa6-8b8c-835040c9ac84",
+          "p17p18_offline_exec": "5ae5a81d-7bed-4562-96f5-3ffca2b050d0"
+        },
+        "executions": {
+          "p0404_paused_skip": "bf285560-87c3-45c1-8e03-7278f86968bf",
+          "p0404_after_resume": "b580f4df-aab1-41cd-8bed-b0e39b77ff3e",
+          "p1104_agent_offline": "482f1ae0-ddf1-4e9a-803c-c3fd2fb27ab6",
+          "p0608_group_dispatch": "616bd019-c902-4f62-b0d5-daf9ebdd2522",
+          "p17p18_offline": "dd12456f-0c38-4fdf-afe1-e80f73d9db38"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 21,
+        "ui_mutations": 0,
+        "child_process_starts": 4,
+        "child_process_stops": 4,
+        "node_enroll_posts": 1,
+        "schedules_created": 5,
+        "schedules_deleted": 5,
+        "tasks_created": 2,
+        "tasks_deleted": 2,
+        "groups_created": 1,
+        "groups_deleted": 1,
+        "scripts_created": 1,
+        "scripts_deleted": 1,
+        "node_status_posts": 0,
+        "browser_sessions": 1
+      }
+    },
+    {
+      "case_id": "P04-05",
+      "title": "offline 节点 set online（owned child 离线后经 UI 设为在线）",
+      "canonical_before": "NOT_RUN (repair build not executed for this case; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "P04-05-UI-20261014-BATCH06",
+          "layer": "real-ui -> POST /api/nodes/{id} {status:online} -> hub node status",
+          "status": "PASS",
+          "description": [
+            "The owned child Agent process was stopped, so the Hub marked the node offline through the real disconnect path (observed status trace online→offline) and the UI row badge became 离线.",
+            "The offline row action menu was opened in 节点 and 设为在线 was clicked: real POST /api/nodes/{id} {\"status\":\"online\"} → 200, hub node status=online, UI badge 在线.",
+            "After the owned child process was restarted (recorded in the P11-04 phase file, step \"recovery_after_set_online\"), the node converged back to online+synced, so the manual set-online did not break re-enrolment/reconnection."
+          ],
+          "evidence": [
+            "evidence/phase4-p04-05-offline-set-online.json",
+            "evidence/P0405-01-node-offline-row.png",
+            "evidence/P0405-02-node-set-online-row.png"
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Observation (not a case failure): the manual online state persists while no Agent session exists — nothing flips an online record back to offline without a disconnect/heartbeat event or a Hub start (see evidence \"stale_online_observation_after_12s\")."
+      ],
+      "evidence": [
+        "P0404-01-node-online-row.png",
+        "P0404-02-node-maintenance-row.png",
+        "P0404-03-node-resumed-row.png",
+        "P0404-04-node-set-online-row.png",
+        "P0405-01-node-offline-row.png",
+        "P0405-02-node-set-online-row.png",
+        "P0608-01-node-detail-before-group-change.png",
+        "P0608-02-node-detail-after-group-add.png",
+        "P0608-03-node-detail-after-group-remove.png",
+        "P0608-04-group-task-run-empty-target.png",
+        "P1104-01-run-no-session-error.png",
+        "P1104-02-offline-node-run-error.png",
+        "P17P18-01-offline-execution-detail.png",
+        "final-cleanup-guard.json",
+        "phase0-guard.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-p04-04-operation-menu.json",
+        "phase4-p04-05-offline-set-online.json",
+        "phase5-p11-04-offline-node-dispatch.json",
+        "phase6-p06-08-group-change-sync.json",
+        "phase7-p17p18-14-offline-synced.json",
+        "phase8-cleanup.json",
+        "run-evidence.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-guard.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-w1410b06-705d5f-",
+        "child_node_id": "bf80d9a9-2adc-4aa9-a58e-8d56d254590a",
+        "child_agent_id": "agent-9d27f6a6-afc0-4abb-8e77-40101aed582f",
+        "script_id": "598fd8e1-7977-48b3-bcbf-1fa931b3ca2a",
+        "task_node_id": "f2065e40-45df-4372-a127-cd87d1be8900",
+        "task_group_id": "308bdf68-0cb5-4f33-b1be-442a1d08e808",
+        "group_id": "aa4db877-d886-4389-99eb-4b26f6fc6d08",
+        "schedules": {
+          "p0404_maintenance_skip": "2d5fc361-8f48-49a5-8716-412c2cbbe1b4",
+          "p0404_after_resume": "f5610257-43e9-4475-a745-b01dc12bb23c",
+          "p0404_agent_offline_sched": "6137b877-958d-481b-b124-8a146647e264",
+          "p0608_group_member_added": "d1e278dc-68ff-4aa6-8b8c-835040c9ac84",
+          "p17p18_offline_exec": "5ae5a81d-7bed-4562-96f5-3ffca2b050d0"
+        },
+        "executions": {
+          "p0404_paused_skip": "bf285560-87c3-45c1-8e03-7278f86968bf",
+          "p0404_after_resume": "b580f4df-aab1-41cd-8bed-b0e39b77ff3e",
+          "p1104_agent_offline": "482f1ae0-ddf1-4e9a-803c-c3fd2fb27ab6",
+          "p0608_group_dispatch": "616bd019-c902-4f62-b0d5-daf9ebdd2522",
+          "p17p18_offline": "dd12456f-0c38-4fdf-afe1-e80f73d9db38"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 21,
+        "ui_mutations": 0,
+        "child_process_starts": 4,
+        "child_process_stops": 4,
+        "node_enroll_posts": 1,
+        "schedules_created": 5,
+        "schedules_deleted": 5,
+        "tasks_created": 2,
+        "tasks_deleted": 2,
+        "groups_created": 1,
+        "groups_deleted": 1,
+        "scripts_created": 1,
+        "scripts_deleted": 1,
+        "node_status_posts": 0,
+        "browser_sessions": 1
+      }
+    },
+    {
+      "case_id": "P11-04",
+      "title": "offline 节点不进入无限等待，返回明确 BLOCKED/错误",
+      "canonical_before": "NOT_RUN (repair build not executed for this case; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "P11-04-UI-20261014-BATCH06",
+          "layer": "real-ui run page -> POST /api/tasks/{id}/run -> hub dispatch gate",
+          "status": "PASS",
+          "description": [
+            "Genuinely offline node: clicking 立即运行 on the owned task returned an immediate HTTP 400 \"node <id> is not online (status=offline)\"; the UI showed that message as a toast and no PENDING Execution row was left behind — no unbounded wait.",
+            "Online record with no Agent session (state produced by P04-05): the run created one Execution that terminated immediately as FAILED with block_reason \"agent offline\" and the same message in the UI toast."
+          ],
+          "evidence": [
+            "evidence/phase5-p11-04-offline-node-dispatch.json",
+            "evidence/P1104-01-run-no-session-error.png",
+            "evidence/P1104-02-offline-node-run-error.png"
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The case text asks for \"BLOCKED/明确错误\"; the product surfaces this as an HTTP 4xx refusal (status gate) or a FAILED execution with block_reason, not an Execution state literally named BLOCKED. Both are immediate and explicit.",
+        "Only the script-task dispatch path was exercised (application deploy / file transfer / artifact prefetch gates were out of scope for this batch).",
+        "The error toasts were confirmed from the captured screenshots (vision), not by DOM text: the harness toast selector was wrong and the run-time toast_text field is empty. See evidence/assertion-reevaluation.json."
+      ],
+      "evidence": [
+        "P0404-01-node-online-row.png",
+        "P0404-02-node-maintenance-row.png",
+        "P0404-03-node-resumed-row.png",
+        "P0404-04-node-set-online-row.png",
+        "P0405-01-node-offline-row.png",
+        "P0405-02-node-set-online-row.png",
+        "P0608-01-node-detail-before-group-change.png",
+        "P0608-02-node-detail-after-group-add.png",
+        "P0608-03-node-detail-after-group-remove.png",
+        "P0608-04-group-task-run-empty-target.png",
+        "P1104-01-run-no-session-error.png",
+        "P1104-02-offline-node-run-error.png",
+        "P17P18-01-offline-execution-detail.png",
+        "final-cleanup-guard.json",
+        "phase0-guard.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-p04-04-operation-menu.json",
+        "phase4-p04-05-offline-set-online.json",
+        "phase5-p11-04-offline-node-dispatch.json",
+        "phase6-p06-08-group-change-sync.json",
+        "phase7-p17p18-14-offline-synced.json",
+        "phase8-cleanup.json",
+        "run-evidence.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-guard.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-w1410b06-705d5f-",
+        "child_node_id": "bf80d9a9-2adc-4aa9-a58e-8d56d254590a",
+        "child_agent_id": "agent-9d27f6a6-afc0-4abb-8e77-40101aed582f",
+        "script_id": "598fd8e1-7977-48b3-bcbf-1fa931b3ca2a",
+        "task_node_id": "f2065e40-45df-4372-a127-cd87d1be8900",
+        "task_group_id": "308bdf68-0cb5-4f33-b1be-442a1d08e808",
+        "group_id": "aa4db877-d886-4389-99eb-4b26f6fc6d08",
+        "schedules": {
+          "p0404_maintenance_skip": "2d5fc361-8f48-49a5-8716-412c2cbbe1b4",
+          "p0404_after_resume": "f5610257-43e9-4475-a745-b01dc12bb23c",
+          "p0404_agent_offline_sched": "6137b877-958d-481b-b124-8a146647e264",
+          "p0608_group_member_added": "d1e278dc-68ff-4aa6-8b8c-835040c9ac84",
+          "p17p18_offline_exec": "5ae5a81d-7bed-4562-96f5-3ffca2b050d0"
+        },
+        "executions": {
+          "p0404_paused_skip": "bf285560-87c3-45c1-8e03-7278f86968bf",
+          "p0404_after_resume": "b580f4df-aab1-41cd-8bed-b0e39b77ff3e",
+          "p1104_agent_offline": "482f1ae0-ddf1-4e9a-803c-c3fd2fb27ab6",
+          "p0608_group_dispatch": "616bd019-c902-4f62-b0d5-daf9ebdd2522",
+          "p17p18_offline": "dd12456f-0c38-4fdf-afe1-e80f73d9db38"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 21,
+        "ui_mutations": 0,
+        "child_process_starts": 4,
+        "child_process_stops": 4,
+        "node_enroll_posts": 1,
+        "schedules_created": 5,
+        "schedules_deleted": 5,
+        "tasks_created": 2,
+        "tasks_deleted": 2,
+        "groups_created": 1,
+        "groups_deleted": 1,
+        "scripts_created": 1,
+        "scripts_deleted": 1,
+        "node_status_posts": 0,
+        "browser_sessions": 1
+      },
+      "assertion_reevaluation": "evidence/assertion-reevaluation.json#P11-04"
+    },
+    {
+      "case_id": "P06-08",
+      "title": "Group 变化后 Task Target 和 Node Detail 任务列表同步",
+      "canonical_before": "NOT_RUN (repair build not executed for this case; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "P06-08-UI-20261014-BATCH06",
+          "layer": "real-ui group editor -> PUT /api/groups/{id} -> task target resolution -> real execution",
+          "status": "PASS",
+          "description": [
+            "Empty owned group (task target = that group): the node detail 任务 section listed only the node-targeted task; after adding the node to the group in the group editor UI (checkbox + 保存, real PUT /api/groups/{id}) the node detail 任务 section listed the group-targeted task too — the list follows group membership, not a snapshot.",
+            "Hub-side real effect: a hub-owned Schedule for the group-targeted task produced a real SUCCESS Execution on the newly added node (group → node resolution used the new membership).",
+            "Removing the node from the group in the same UI made the group task disappear from the node detail again and made a manual run of the group task fail with 400 \"no target nodes\", while the task target config itself (group_ids) stayed unchanged."
+          ],
+          "evidence": [
+            "evidence/phase6-p06-08-group-change-sync.json",
+            "evidence/P0608-01-node-detail-before-group-change.png",
+            "evidence/P0608-02-node-detail-after-group-add.png",
+            "evidence/P0608-03-node-detail-after-group-remove.png"
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Only one static group and one member node (the owned child) were used, so \"group grows\" and \"group shrinks\" were both observed on that single membership edge.",
+        "A label-type group (dynamic membership by node label) was not exercised in this batch.",
+        "The run-time whole-page-text proxy for the Node Detail task list was over-broad (the 执行 section renders the task name of the node's executions); the decision uses the section-scoped DOM read plus the overview screenshots. See evidence/assertion-reevaluation.json#P06-08."
+      ],
+      "evidence": [
+        "P0404-01-node-online-row.png",
+        "P0404-02-node-maintenance-row.png",
+        "P0404-03-node-resumed-row.png",
+        "P0404-04-node-set-online-row.png",
+        "P0405-01-node-offline-row.png",
+        "P0405-02-node-set-online-row.png",
+        "P0608-01-node-detail-before-group-change.png",
+        "P0608-02-node-detail-after-group-add.png",
+        "P0608-03-node-detail-after-group-remove.png",
+        "P0608-04-group-task-run-empty-target.png",
+        "P1104-01-run-no-session-error.png",
+        "P1104-02-offline-node-run-error.png",
+        "P17P18-01-offline-execution-detail.png",
+        "final-cleanup-guard.json",
+        "phase0-guard.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-p04-04-operation-menu.json",
+        "phase4-p04-05-offline-set-online.json",
+        "phase5-p11-04-offline-node-dispatch.json",
+        "phase6-p06-08-group-change-sync.json",
+        "phase7-p17p18-14-offline-synced.json",
+        "phase8-cleanup.json",
+        "run-evidence.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-guard.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-w1410b06-705d5f-",
+        "child_node_id": "bf80d9a9-2adc-4aa9-a58e-8d56d254590a",
+        "child_agent_id": "agent-9d27f6a6-afc0-4abb-8e77-40101aed582f",
+        "script_id": "598fd8e1-7977-48b3-bcbf-1fa931b3ca2a",
+        "task_node_id": "f2065e40-45df-4372-a127-cd87d1be8900",
+        "task_group_id": "308bdf68-0cb5-4f33-b1be-442a1d08e808",
+        "group_id": "aa4db877-d886-4389-99eb-4b26f6fc6d08",
+        "schedules": {
+          "p0404_maintenance_skip": "2d5fc361-8f48-49a5-8716-412c2cbbe1b4",
+          "p0404_after_resume": "f5610257-43e9-4475-a745-b01dc12bb23c",
+          "p0404_agent_offline_sched": "6137b877-958d-481b-b124-8a146647e264",
+          "p0608_group_member_added": "d1e278dc-68ff-4aa6-8b8c-835040c9ac84",
+          "p17p18_offline_exec": "5ae5a81d-7bed-4562-96f5-3ffca2b050d0"
+        },
+        "executions": {
+          "p0404_paused_skip": "bf285560-87c3-45c1-8e03-7278f86968bf",
+          "p0404_after_resume": "b580f4df-aab1-41cd-8bed-b0e39b77ff3e",
+          "p1104_agent_offline": "482f1ae0-ddf1-4e9a-803c-c3fd2fb27ab6",
+          "p0608_group_dispatch": "616bd019-c902-4f62-b0d5-daf9ebdd2522",
+          "p17p18_offline": "dd12456f-0c38-4fdf-afe1-e80f73d9db38"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 21,
+        "ui_mutations": 0,
+        "child_process_starts": 4,
+        "child_process_stops": 4,
+        "node_enroll_posts": 1,
+        "schedules_created": 5,
+        "schedules_deleted": 5,
+        "tasks_created": 2,
+        "tasks_deleted": 2,
+        "groups_created": 1,
+        "groups_deleted": 1,
+        "scripts_created": 1,
+        "scripts_deleted": 1,
+        "node_status_posts": 0,
+        "browser_sessions": 1
+      },
+      "assertion_reevaluation": "evidence/assertion-reevaluation.json#P06-08"
+    },
+    {
+      "case_id": "P17P18-14",
+      "title": "Agent Offline 执行 synced=false，恢复后幂等上传为 synced=true",
+      "canonical_before": "NOT_RUN (repair build not executed for this case; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "P17P18-14-20261014-BATCH06",
+          "layer": "owned child agent + frame proxy + agent sqlite journal + hub upsert",
+          "status": "PASS",
+          "description": [
+            "With the owned child Agent cut from the release Hub (harness frame proxy \"cut\", the agent process kept running), an agent-owned allow_offline one_time Schedule fired locally: the journal row had offline=true and synced=false and no Hub row existed yet.",
+            "After the link was restored the Execution was uploaded and the Hub created exactly one row (offline=true); the first EXECUTION_ACK was dropped so the journal stayed synced=false.",
+            "A real child Agent process restart re-uploaded the same Execution ID (>=2 EXECUTION_FINISHED uploads observed at the frame layer); the Hub still held exactly one row and the journal converged to synced=true."
+          ],
+          "evidence": [
+            "evidence/phase7-p17p18-14-offline-synced.json",
+            "evidence/P17P18-01-offline-execution-detail.png"
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "\"Offline\" was produced by cutting the owned child Agent link through the harness frame proxy; the protected Agents and the Hub were never stopped.",
+        "The dropped-ACK duplication is injected at the frame layer; the Hub upsert/dedup path itself is unmodified product code."
+      ],
+      "evidence": [
+        "P0404-01-node-online-row.png",
+        "P0404-02-node-maintenance-row.png",
+        "P0404-03-node-resumed-row.png",
+        "P0404-04-node-set-online-row.png",
+        "P0405-01-node-offline-row.png",
+        "P0405-02-node-set-online-row.png",
+        "P0608-01-node-detail-before-group-change.png",
+        "P0608-02-node-detail-after-group-add.png",
+        "P0608-03-node-detail-after-group-remove.png",
+        "P0608-04-group-task-run-empty-target.png",
+        "P1104-01-run-no-session-error.png",
+        "P1104-02-offline-node-run-error.png",
+        "P17P18-01-offline-execution-detail.png",
+        "final-cleanup-guard.json",
+        "phase0-guard.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-p04-04-operation-menu.json",
+        "phase4-p04-05-offline-set-online.json",
+        "phase5-p11-04-offline-node-dispatch.json",
+        "phase6-p06-08-group-change-sync.json",
+        "phase7-p17p18-14-offline-synced.json",
+        "phase8-cleanup.json",
+        "run-evidence.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-guard.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-w1410b06-705d5f-",
+        "child_node_id": "bf80d9a9-2adc-4aa9-a58e-8d56d254590a",
+        "child_agent_id": "agent-9d27f6a6-afc0-4abb-8e77-40101aed582f",
+        "script_id": "598fd8e1-7977-48b3-bcbf-1fa931b3ca2a",
+        "task_node_id": "f2065e40-45df-4372-a127-cd87d1be8900",
+        "task_group_id": "308bdf68-0cb5-4f33-b1be-442a1d08e808",
+        "group_id": "aa4db877-d886-4389-99eb-4b26f6fc6d08",
+        "schedules": {
+          "p0404_maintenance_skip": "2d5fc361-8f48-49a5-8716-412c2cbbe1b4",
+          "p0404_after_resume": "f5610257-43e9-4475-a745-b01dc12bb23c",
+          "p0404_agent_offline_sched": "6137b877-958d-481b-b124-8a146647e264",
+          "p0608_group_member_added": "d1e278dc-68ff-4aa6-8b8c-835040c9ac84",
+          "p17p18_offline_exec": "5ae5a81d-7bed-4562-96f5-3ffca2b050d0"
+        },
+        "executions": {
+          "p0404_paused_skip": "bf285560-87c3-45c1-8e03-7278f86968bf",
+          "p0404_after_resume": "b580f4df-aab1-41cd-8bed-b0e39b77ff3e",
+          "p1104_agent_offline": "482f1ae0-ddf1-4e9a-803c-c3fd2fb27ab6",
+          "p0608_group_dispatch": "616bd019-c902-4f62-b0d5-daf9ebdd2522",
+          "p17p18_offline": "dd12456f-0c38-4fdf-afe1-e80f73d9db38"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 21,
+        "ui_mutations": 0,
+        "child_process_starts": 4,
+        "child_process_stops": 4,
+        "node_enroll_posts": 1,
+        "schedules_created": 5,
+        "schedules_deleted": 5,
+        "tasks_created": 2,
+        "tasks_deleted": 2,
+        "groups_created": 1,
+        "groups_deleted": 1,
+        "scripts_created": 1,
+        "scripts_deleted": 1,
+        "node_status_posts": 0,
+        "browser_sessions": 1
+      }
+    }
+  ],
+  "server_writes": {
+    "summary": "all writes are owned fixtures created by this batch and deleted at the end",
+    "node_status_changes": "only the owned child node bf80d9a9-2adc-4aa9-a58e-8d56d254590a",
+    "protected_node_state_changes": 0,
+    "user_application_artifact_changes": 0,
+    "real_deploy": false,
+    "budget": {
+      "api_mutations": 21,
+      "ui_mutations": 0,
+      "child_process_starts": 4,
+      "child_process_stops": 4,
+      "node_enroll_posts": 1,
+      "schedules_created": 5,
+      "schedules_deleted": 5,
+      "tasks_created": 2,
+      "tasks_deleted": 2,
+      "groups_created": 1,
+      "groups_deleted": 1,
+      "scripts_created": 1,
+      "scripts_deleted": 1,
+      "node_status_posts": 0,
+      "browser_sessions": 1
+    },
+    "corrected_accounting": "see write_accounting"
+  },
+  "preserved_execution_history": [
+    {
+      "key": "p0404_paused_skip",
+      "id": "bf285560-87c3-45c1-8e03-7278f86968bf",
+      "note": "immutable Execution history produced by this batch"
+    },
+    {
+      "key": "p0404_after_resume",
+      "id": "b580f4df-aab1-41cd-8bed-b0e39b77ff3e",
+      "note": "immutable Execution history produced by this batch"
+    },
+    {
+      "key": "p1104_agent_offline",
+      "id": "482f1ae0-ddf1-4e9a-803c-c3fd2fb27ab6",
+      "note": "immutable Execution history produced by this batch"
+    },
+    {
+      "key": "p0608_group_dispatch",
+      "id": "616bd019-c902-4f62-b0d5-daf9ebdd2522",
+      "note": "immutable Execution history produced by this batch"
+    },
+    {
+      "key": "p17p18_offline",
+      "id": "dd12456f-0c38-4fdf-afe1-e80f73d9db38",
+      "note": "immutable Execution history produced by this batch"
+    }
+  ],
+  "final_cleanup_guard": {
+    "evidence": "final-cleanup-guard.json",
+    "clean": true,
+    "hub_leftover_clear": true,
+    "native2_owned_child_orphan": false,
+    "all_deleted_objects_get404": true,
+    "child_node_get_http": 404,
+    "post_counts": {
+      "nodes": 7,
+      "groups": 0,
+      "tasks": 3,
+      "scripts": 5,
+      "schedules": 0
+    }
+  },
+  "deviations": [],
+  "not_claimed": "No product source change, no Git delivery, no Archive, no protected node state change.",
+  "assertion_reevaluation": "evidence/assertion-reevaluation.json",
+  "observations": {
+    "evidence": "evidence/observations.json",
+    "ids": [
+      "OBS-B06-01",
+      "OBS-B06-02",
+      "OBS-B06-03",
+      "OBS-B06-04",
+      "OBS-B06-05",
+      "OBS-B06-06"
+    ]
+  },
+  "preserved_execution_history_readback": "evidence/preserved-executions-readback.json",
+  "write_accounting": {
+    "source": "Hub audit log (authoritative) + recorded call sites; the in-run budget counter did not increment for UI-driven mutations and the per-step network logs are cleared per action",
+    "endpoint": "http://192.168.100.209:18080 (repair only; primary :8080 never contacted)",
+    "audit_observed": {
+      "node_update_owned_child": 7,
+      "node_delete_owned_child": 1,
+      "group_create": 1,
+      "group_update_member_change": 2,
+      "group_delete": 1,
+      "note": "audit was filtered to this batch's own owned fixture ids only; unattributed audit rows belong to other concurrent batches and are excluded"
+    },
+    "owned_child_node_status_writes": {
+      "count": 7,
+      "route": "POST /api/nodes/{owned child id} {\"status\": online|maintenance}",
+      "routes_used": [
+        "UI 操作菜单 维护",
+        "UI 操作菜单 恢复",
+        "UI 操作菜单 设为在线"
+      ],
+      "protected_node_status_writes": 0,
+      "evidence": "evidence/phase4-p04-05-offline-set-online.json#node_audit_readback"
+    },
+    "ui_group_writes": {
+      "count": 2,
+      "route": "PUT /api/groups/{owned group id} (member add / member remove)"
+    },
+    "owned_task_run_attempts": {
+      "count": 4,
+      "route": "POST /api/tasks/{owned task id}/run",
+      "responses": "all 4xx; exactly one attempt (P11-04 variant A) left a FAILED Execution row, the other three left no Execution row"
+    },
+    "fixture_create_delete": {
+      "POST /api/nodes/enrollment": 1,
+      "POST /api/scripts": 1,
+      "DELETE /api/scripts/{id}": 1,
+      "POST /api/groups": 1,
+      "DELETE /api/groups/{id}": 1,
+      "POST /api/tasks": 2,
+      "DELETE /api/tasks/{id}": 2,
+      "POST /api/schedules": 5,
+      "DELETE /api/schedules/{id}": 5,
+      "DELETE /api/nodes/{owned child id}": 1
+    },
+    "not_performed": [
+      "User/Application/Artifact create or delete",
+      "real application deploy",
+      "Hub stop/start",
+      "protected Agent stop/start",
+      "product source change",
+      "Git operation",
+      "OpenSpec Archive"
+    ],
+    "immutable_history_left_behind": 5
+  },
+  "environment_interference": {
+    "observed": "native-3 offline from 10:09:47Z; native-1 offline at 10:18Z independent re-verification",
+    "attribution": "other concurrent batches (this batch performed zero operations against protected nodes)",
+    "evidence": [
+      "final-cleanup-guard.json",
+      "evidence/final-independent-reverification.json",
+      "evidence/observations.json#OBS-B06-05"
+    ]
+  }
+}

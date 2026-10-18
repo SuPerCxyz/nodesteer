@@ -1,0 +1,81 @@
+{
+  "review_id": "ROOT-FIXALL-VERIFY-20261017",
+  "reviewed_at": "2026-10-17T14:26:08.735848+00:00",
+  "reviewer": "main-agent(root)",
+  "status": "INTEGRATED",
+  "dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-fixall-verify",
+  "authorization_basis": "用户：全部修复 + 授权破坏性控件验证 + 遇问题自行判断最优解自动推进",
+  "build_transition": {
+    "label": "dddee4f0-e2e-repair-20261017-fixall",
+    "hub_sha": "1d8cc17e3aeeb5df…",
+    "agent_sha": "9702d2c7bd2174f1…",
+    "frontend": "npm run build（dist index sha 0053a663…，70 文件）；部署后 UI 首页与 13 个 /assets 引用与本地 dist 逐字节一致",
+    "backup": "*.bak-20261017-fixall（可回滚，未执行）"
+  },
+  "defect_verification": {
+    "ENVFILE（P1）": "已修复：unit 行 EnvironmentFile=-<path> 无引号；/proc/<pid>/environ 含配置键值；进程写出 env-out（附注：systemctl show -p Environment 不含 EnvironmentFile 键属 systemd 设计）",
+    "回滚误报（P2）": "已修复（见 P14P15-18）",
+    "assign/deploy 404（P2）": "已修复：404 application not found，响应体无 sql:/no rows",
+    "exit_code 0（P2）": "已修复",
+    "参数类型/空白用户名": "已修复：type=not-a-type→400 且定义未改写；纯空白用户名创建 400/登录 401",
+    "选择漂移（P1）": "已修复",
+    "四编辑器 pending（P2）": "已修复",
+    "Skip to Main（P3）": "已修复",
+    "窄屏溢出（P2）": "已修复",
+    "退出撤销会话（P1）": "已修复：UI 退出后旧 token /api/me→401 且本地 token 清空",
+    "CR-3": "已修复：真实 Agent 上构造四类行 → 首次重启 4 行落终态、活动集合清空；第二次重启零新增告警",
+    "传输 DELIVERING（P1）": "已修复（含说明）：通道不可用时目标保持可恢复 PENDING（不再静默悬挂）、非终态 409、重连 ResumeNode 完成交付、取消→CANCELED 释放；30 分钟看门狗未实网等待（阈值固定），引用 file_transfer_timeout_test.go 3 用例"
+  },
+  "destructive_controls": "7/7 PASS：①删除节点 ②删除脚本 ③删除应用（含 Agent 侧 unit/binary/config 清理）④删除发布包 ⑤撤销凭证（owned child→200+disabled）⑥取消传输（CANCELED）⑦移除应用节点分配（b 移除 a 保留）；全部 owned 对象、逐条 GET404",
+  "counts_before": {
+    "PASS": 477,
+    "FAIL": 8,
+    "PARTIAL": 9,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "counts_after": {
+    "PASS": 484,
+    "FAIL": 4,
+    "PARTIAL": 6,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "status_changes": [
+    [
+      "G04-01",
+      "FAIL",
+      "PASS"
+    ],
+    [
+      "G04-04",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P14P15-18",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P17P18-07",
+      "FAIL",
+      "PASS"
+    ],
+    [
+      "X14",
+      "FAIL",
+      "PASS"
+    ],
+    [
+      "X19",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "X20",
+      "FAIL",
+      "PASS"
+    ]
+  ]
+}

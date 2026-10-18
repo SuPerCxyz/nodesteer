@@ -1,0 +1,1311 @@
+{
+  "status": "completed_with_prefetch_failure",
+  "checks": {
+    "enrollment_urls_and_distinct_identities": "passed",
+    "https_artifact_upload_download": {
+      "status": "passed",
+      "artifact_id": "8a55b698-09ca-4446-907c-209dbf4f95cb",
+      "sha256": "4ffcc32b46c17b9cf73469c696f11a71270899053948e748af6d996b0803280a"
+    },
+    "agent_prefetch": {
+      "logs": [
+        "time=2026-10-01T01:12:23.796Z level=WARN msg=\"artifact prefetch failed\" id=8a55b698-09ca-4446-907c-209dbf4f95cb error=\"Get \\\"https://192.168.100.209:18444/api/artifacts/8a55b698-09ca-4446-907c-209dbf4f95cb/download\\\": tls: failed to verify certificate: x509: certificate signed by unknown authority\"",
+        "time=2026-10-01T01:12:23.813Z level=WARN msg=\"application artifact prefetch failed\" app=bb611c0f-51bc-46d7-ad32-8f0e28a8c52e error=\"Get \\\"https://192.168.100.209:18444/api/artifacts/8a55b698-09ca-4446-907c-209dbf4f95cb/download\\\": tls: failed to verify certificate: x509: certificate signed by unknown authority\""
+      ],
+      "cache_file_exists": false,
+      "temporary_file_exists": false,
+      "status": "failed",
+      "source": [
+        "internal/agent/artifact.go:82",
+        "internal/agent/util.go:45"
+      ],
+      "expected": "Agent tls_ca_file also permits HTTPS Artifact prefetch"
+    },
+    "self_target_api_boundary": {
+      "http_status": 200,
+      "source_equals_target": true,
+      "interpretation": "Observed API behavior; never used self as multi-target success evidence",
+      "transfer_id": "c14cc2cd-8b5e-4c61-9c2a-f5c3acbceb16"
+    },
+    "https_multi_target_relay": {
+      "status": "passed",
+      "transfer": {
+        "id": "3e83cc44-c9f3-453b-a806-59f922fa8f2a",
+        "source_node_id": "33c0ff00-97d8-437e-9fbe-bec61e15552e",
+        "source_path": "/var/lib/nodesteer/qa-20260930-101945-env-tls-full/source.bin",
+        "source_mode": 420,
+        "size": 28672,
+        "sha256": "bb43ee81ac824d347e55e5a6423e05adc28cab5600b17b3dcf450913615933b7",
+        "status": "SUCCESS",
+        "created_at": "2026-10-01T01:12:28.570218402Z",
+        "updated_at": "2026-10-01T01:12:28.625216781Z",
+        "targets": [
+          {
+            "transfer_id": "3e83cc44-c9f3-453b-a806-59f922fa8f2a",
+            "node_id": "29c93e7d-76f9-431c-ad71-635d06c57d1f",
+            "destination_path": "/var/lib/nodesteer/qa-20260930-101945-env-tls-full/target1.bin",
+            "status": "SUCCESS",
+            "updated_at": "2026-10-01T01:12:28.612362898Z"
+          },
+          {
+            "transfer_id": "3e83cc44-c9f3-453b-a806-59f922fa8f2a",
+            "node_id": "709abe39-46c4-4e1b-98b7-315252521984",
+            "destination_path": "/var/lib/nodesteer/qa-20260930-101945-env-tls-full/target2.bin",
+            "status": "SUCCESS",
+            "updated_at": "2026-10-01T01:12:28.621941995Z"
+          }
+        ]
+      },
+      "source_node_id": "33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "target_node_ids": [
+        "29c93e7d-76f9-431c-ad71-635d06c57d1f",
+        "709abe39-46c4-4e1b-98b7-315252521984"
+      ],
+      "source_sha256": "bb43ee81ac824d347e55e5a6423e05adc28cab5600b17b3dcf450913615933b7",
+      "actual_target_hashes": [
+        {
+          "node_id": "29c93e7d-76f9-431c-ad71-635d06c57d1f",
+          "ssh_exit_code": 0,
+          "sha256": "bb43ee81ac824d347e55e5a6423e05adc28cab5600b17b3dcf450913615933b7"
+        },
+        {
+          "node_id": "709abe39-46c4-4e1b-98b7-315252521984",
+          "ssh_exit_code": 0,
+          "sha256": "bb43ee81ac824d347e55e5a6423e05adc28cab5600b17b3dcf450913615933b7"
+        }
+      ]
+    }
+  },
+  "ledger": {
+    "apps": [
+      "bb611c0f-51bc-46d7-ad32-8f0e28a8c52e"
+    ],
+    "artifacts": [
+      "8a55b698-09ca-4446-907c-209dbf4f95cb"
+    ],
+    "tasks": [
+      "9315454c-9897-4c21-8975-7d1aae7dfbea",
+      "d4eb5a06-3eca-4c41-babe-3b638ae589f5"
+    ],
+    "transfers": [
+      "c14cc2cd-8b5e-4c61-9c2a-f5c3acbceb16",
+      "3e83cc44-c9f3-453b-a806-59f922fa8f2a"
+    ]
+  },
+  "setup": {
+    "proxy_name": "qa-20260930-101945-env-tls-full",
+    "proxy_id": "99f99aa6185a083355f8bfc4b81236a1cabcc90e9464de76476c2a1c5cf5b432",
+    "proxy_image": "nginx@sha256:0985e772fb9f729e6fa0980da05fca5d9c468e870eed43071545afa9d2e27d94",
+    "original_config_backup": "/root/qa-20260930-101945-env/config/restore-hub.yaml.before-tls-full",
+    "original_urls": {
+      "base_url": "http://192.168.100.209:18083",
+      "gateway_base_url": "http://192.168.100.209:18083"
+    },
+    "restore_container": "qa-20260930-101945-env-restore-hub"
+  },
+  "https_payload_access_log": [
+    "https POST /api/artifacts 200",
+    "https GET /api/artifacts/8a55b698-09ca-4446-907c-209dbf4f95cb/download 200",
+    "https POST /agent/transfers/3e83cc44-c9f3-453b-a806-59f922fa8f2a/upload 200",
+    "https GET /agent/transfers/3e83cc44-c9f3-453b-a806-59f922fa8f2a/download 200",
+    "https GET /agent/transfers/3e83cc44-c9f3-453b-a806-59f922fa8f2a/download 200"
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/login",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/nodes/enrollment",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/nodes/enrollment",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/nodes/enrollment",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/artifacts",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/artifacts/8a55b698-09ca-4446-907c-209dbf4f95cb/download",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/applications",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/applications/bb611c0f-51bc-46d7-ad32-8f0e28a8c52e/assign",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/applications/bb611c0f-51bc-46d7-ad32-8f0e28a8c52e/deploy",
+      "status": 400
+    },
+    {
+      "method": "POST",
+      "path": "/api/tasks",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/tasks/9315454c-9897-4c21-8975-7d1aae7dfbea/run",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/executions/d23d922d-ba98-4930-9ed2-4b0008753bf8",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/executions/d23d922d-ba98-4930-9ed2-4b0008753bf8",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/tasks",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/nodes/709abe39-46c4-4e1b-98b7-315252521984",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/tasks/d4eb5a06-3eca-4c41-babe-3b638ae589f5/run",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/executions/10e2b498-af09-4f76-b51b-0fbfa286869f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/executions/10e2b498-af09-4f76-b51b-0fbfa286869f",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/executions/f7e96241-0cf9-4156-8653-9ef3f05c5c9c",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/transfers",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/transfers/c14cc2cd-8b5e-4c61-9c2a-f5c3acbceb16",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/transfers",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/transfers/3e83cc44-c9f3-453b-a806-59f922fa8f2a",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/transfers/3e83cc44-c9f3-453b-a806-59f922fa8f2a",
+      "status": 200
+    }
+  ],
+  "nodes": [
+    {
+      "id": "33c0ff00-97d8-437e-9fbe-bec61e15552e",
+      "name": "qa-20260930-101945-env-tls-full-source",
+      "agent_id": "agent-8af25679-35ac-4b55-b23c-e8521ff21d63",
+      "docker_container": "qa-20260930-101945-env-tls-full-source",
+      "volume": "qa-20260930-101945-env-tls-full-sourcedata",
+      "container_id": "cc8a38d5bd023d38a8888723b0b36598365710f79c07ee7a175548137a6860bc"
+    },
+    {
+      "id": "29c93e7d-76f9-431c-ad71-635d06c57d1f",
+      "name": "qa-20260930-101945-env-tls-full-peer1",
+      "agent_id": "agent-51772f1a-dff4-432c-9992-74645f5d8b24",
+      "docker_container": "qa-20260930-101945-env-tls-full-peer1",
+      "volume": "qa-20260930-101945-env-tls-full-peer1data",
+      "container_id": "7d9a05b200f2bf2fe07ab98216a626c31bd48ee552aaf918867e3561d07259a3"
+    },
+    {
+      "id": "709abe39-46c4-4e1b-98b7-315252521984",
+      "name": "qa-20260930-101945-env-tls-full-peer2",
+      "agent_id": "agent-1744d89b-32c3-4f4f-b9a2-176eab49f60d",
+      "docker_container": "qa-20260930-101945-env-tls-full-peer2",
+      "volume": "qa-20260930-101945-env-tls-full-peer2data",
+      "container_id": "2abf029efe543074ae14ece7c32041d1a5b0721f09e7bb1e728d2e33c31361f8"
+    }
+  ]
+}

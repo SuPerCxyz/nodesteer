@@ -1,0 +1,62 @@
+{
+  "followup_delta": {
+    "at": "2026-10-12T15:55:54.143147+00:00",
+    "changes": [
+      "cache return schema parity",
+      "root_absent output schema parity",
+      "opt-in 30-second read-only Node window"
+    ],
+    "prior_attempt": "99bf1fabcfa5 retained; recovery and exact cleanup closed; inspect-b not run; summary remains partial",
+    "remote_actions": 0
+  },
+  "next_gate": "Await Root grant04 with the updated controller/helper/smoke/review pins; only then may the fixed read-only Node observation window be enabled during a fresh attempt.",
+  "repairs": [
+    "Controller initializes helper_results as a list; post_result validates the shape and verifies the real outer.run_helper append instead of adding a duplicate summary record.",
+    "Recovery result evidence is constrained to a direct child of controller HERE and read with lstat/O_NOFOLLOW/fstat device+inode+owner+mode+size checks.",
+    "Recovery stays RECOVERY_PARTIAL unless cleanup-runtime returns an explicitly accepted terminal shape and cleanup-root reports EXACT_OWNED_ROOT_REMOVED with root_absent and the API-404 gate.",
+    "Root cleanup accepts only same-filesystem, owned, mode-pinned, empty Agent initialization directories; artifacts is empty or contains only the exact approved 32-byte SHA file. All other entries, symlinks, changed directories and a still-present container ID are refused.",
+    "A active and stopped-pre-B cache return dictionaries now expose the same path_relative field; every exact root-removed output branch explicitly records root_absent=true.",
+    "Controller has an explicit opt-in 30-second, one-second-step, progress-file-only read-only window after the owned Node is online/synced and before artifact creation/upload; default remains disabled and recovery rejects the flag."
+  ],
+  "resource_actions": {
+    "api": 0,
+    "docker": 0,
+    "execution": 0,
+    "real_run": 0,
+    "task": 0,
+    "upload": 0
+  },
+  "scope": "artifact-cache-preparation only; no product source or remote actions",
+  "source_pins": {
+    "controller": {
+      "path": "artifact_cache_controller.py",
+      "relevant_lines": "99-110 (bounded progress observation window); 113-155 (strict single helper append/evidence guard); 173-184 (partial recovery initialization); 270-295 (recovery terminal cleanup status); 306-310 (explicit opt-in flag); 350-353 (normal result list initialization); 378-383 (Node sync, optional window before artifact creation)",
+      "sha256": "6951242bd01b397ca18f936cc2eee26c7588d0ecfdefe21d1c856d8f88bf8acc"
+    },
+    "fakeapi_smoke": {
+      "path": "artifact_cache_controller_fakeapi_smoke.py",
+      "sha256": "f890837c6ca5cfe7b366eb731a4bb93b98c1d0e01e084a59d30febd184b8c8db"
+    },
+    "lifecycle_helper": {
+      "path": "artifact_cache_lifecycle.py",
+      "relevant_lines": "572-579 (A/pre-B cache projection); 847-849 and 1016-1017 (all exact-root-removed branches carry root_absent=true)",
+      "sha256": "aec72e700afb910ecc4edc71a3c2f1435ea7a52630178be097e746b5431f566d"
+    }
+  },
+  "status": "LOCAL_QA_HARNESS_REPAIR_READY_FOR_ROOT_GRANT04_REVIEW",
+  "updated_at_utc": "2026-10-12T15:55:54.143147+00:00",
+  "verification": {
+    "actual_helper_AST_cache_keysets": "PASS: source AST asserts read_cache and read_cache_snapshot return exactly the same eight cache keys, including path_relative; FakeAPI fixture derives that projection from the checked source schema.",
+    "classification": "LOCAL_FAKEAPI_QA_HARNESS_SMOKE_NOT_E2E",
+    "cleanup_root_exact_absence_field": "PASS: local execution of the real lifecycle cleanup function reports EXACT_OWNED_ROOT_REMOVED with root_absent=true after root absence check.",
+    "cleanup_root_local_simulation": "PASS: initialized empty dirs and exact approved cache file removed; existing CID, nonempty dir, symlink and unknown data entry rejected",
+    "default_controller": "DRAFT_NO_ACTION; observation window opt-in flag absent by default.",
+    "fakeapi_evidence_reader": "PASS: exact owned file accepted; wrong mode, symlink and nested path rejected",
+    "fakeapi_main_normal": "PASS: all six real outer.run_helper Task/Execution/logs paths observed; no network/API client or upload used",
+    "fakeapi_recovery": "PASS: a SAFE_STOP root result leaves recovery partial; a later exact root result closes recovery without duplicate helper-result appends",
+    "observation_window": "PASS: local FakeAPI smoke confirms 30 one-second ticks and per-second progress nonce/NodeID/status; not invoked in a real run.",
+    "py_compile": "PASS for controller, helper and FakeAPI smoke",
+    "pyflakes": "PASS",
+    "ruff_F821": "PASS"
+  }
+}

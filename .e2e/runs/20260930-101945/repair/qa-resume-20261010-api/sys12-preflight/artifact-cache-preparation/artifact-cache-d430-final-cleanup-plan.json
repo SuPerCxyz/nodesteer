@@ -1,0 +1,43 @@
+{
+  "status": "DRAFT_FOR_ROOT_REVIEW_ONE_LAST_RECOVERY_HELPER",
+  "attempt_nonce": "d430d8074305",
+  "recovery_budget": {"normal_used": 1, "recovery_used": 3, "recovery_max": 4, "this_helper_calls": 1},
+  "frozen_sources": {
+    "final_cleanup_helper": "artifact_cache_d430_final_cleanup.py",
+    "final_cleanup_helper_sha256": "a201ef3470c620dbfd34fa2ef10b724425be9b48f72841e319430578802c35bf",
+    "negative_guard_smoke": "artifact_cache_d430_final_cleanup_smoke.py",
+    "negative_guard_smoke_sha256": "69352f26ba70e9e59068867aed280f0fa74f9a3b703e51286eefe50ad4e92ce7"
+  },
+  "exact_target": {
+    "root": "/opt/qa-resume-20261012-artcache-d430d8074305",
+    "root_dev": 65025,
+    "root_inode": 13447875,
+    "root_uid_mode": "0:0700",
+    "owner_nonce": "qa-resume-20261012-artcache-d430d8074305 / d430d8074305",
+    "node_id": "668cbe00-e1ea-4d51-9282-324fa2fc7a97",
+    "container_a_id": "12428f37b52c808188c89094d06142a878ebb12c879ce8b48a9b36077451ebe1",
+    "network_id": "33e6b0b0d8aefd7f37c7adf44547f09fe18c79979079d2721a097e7eee3b9b2a"
+  },
+  "fresh_guards": [
+    "Parent pre_run callback must freshly GET the exact owned Node and require HTTP404; helper input binds the same Node ID and code.",
+    "Recheck the original four protected Nodes online/synced in pre_run; frozen outer already verifies Native2 online/synced.",
+    "Read owner.json/resource-ledger.json O_NOFOLLOW, regular UID0:0 mode0600, and validate exact owner/nonce/image/root/dev/inode/network/container removal ledger.",
+    "Docker inspect exact A ID and A name, exact network ID and name; accept only exact not-found responses.",
+    "Preflight exact root/private/data entries and all file metadata before any unlink/rmdir; unknown name, inode, owner, mode, type, symlink or nonempty directory fails closed."
+  ],
+  "approved_filesystem_targets": [
+    {"path":"data/scripts","type":"empty directory","uid_gid_mode":"65534:65534/0755","dev_inode":"65025/13447899"},
+    {"path":"data/artifacts","type":"empty directory","uid_gid_mode":"65534:65534/0755","dev_inode":"65025/56340"},
+    {"path":"data/applications","type":"empty directory","uid_gid_mode":"65534:65534/0755","dev_inode":"65025/4732427"},
+    {"path":"data/executions","type":"empty directory","uid_gid_mode":"65534:65534/0755","dev_inode":"65025/8703458"},
+    {"path":"data/logs","type":"empty directory","uid_gid_mode":"65534:65534/0755","dev_inode":"65025/13447900"},
+    {"path":"data/tmp","type":"empty directory","uid_gid_mode":"65534:65534/0755","dev_inode":"65025/56341"},
+    {"path":"data/state.db","type":"regular file; contents never read","uid_gid_mode":"65534:65534/0644","dev_inode_size":"65025/4732428/86016"},
+    {"path":"private/agent.yaml","type":"regular file; contents never read","uid_gid_mode":"65534:65534/0600","metadata guard only"}
+  ],
+  "removal_order": ["six exact empty data directories", "exact state.db", "empty data directory", "private/agent.yaml", "empty private directory", "update marker/ledger to children_removed", "resource-ledger.json", "owner.json", "exact empty nonce root"],
+  "preserved": ["Execution/Audit history", "all original Nodes and Units", "all host/global Docker resources"],
+  "coverage": "This is cleanup only. ArtifactCache and A/B persistence were not tested; no Artifact/App was created.",
+  "local_negative_simulation": "Foreign UID, nonempty directory, symlink, and inode mismatch all reject; exact empty pinned directory accepts. No remote calls.",
+  "source_scope": "Only the owned artifact-cache-preparation directory; do not alter frozen lifecycle/controller/outer/product source."
+}

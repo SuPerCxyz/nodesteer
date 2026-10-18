@@ -1,0 +1,92 @@
+{
+  "updated_at_utc": "2026-10-10T15:30:26+00:00",
+  "purpose": "Read-only live UI/API batch for execution list/detail and authentication lifecycle; no business resource creation or mutation.",
+  "source_status": {
+    "feature_inventory": ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+    "counts": {
+      "PASS": 163,
+      "FAIL": 1,
+      "PARTIAL": 180,
+      "NOT_RUN": 160
+    },
+    "P11-02": "PASS (Root accepted the same-document status transition evidence).",
+    "P17P18-07": "FAIL; exit-zero repair confirmed after tests, pending unified fix per qa-resume-20261010-root/additional-defect-review.json",
+    "WEB-LIVE-LOG": "Root accepted the actual PENDING→RUNNING→SUCCESS same-page UI evidence as P11-02 PASS; do not add frame-event or empty-pre acceptance gates. The broader live-log review requires the actual final controls/watchdog release oracle, already independently captured by Recovery."
+  },
+  "scope": [
+    {
+      "case_ids": [
+        "P17P18-01"
+      ],
+      "budget": "0 business resources; 1 isolated browser session",
+      "path": "Execution list: inspect visible fields, pagination, search an actually empty q, record empty state and API response."
+    },
+    {
+      "case_ids": [
+        "P17P18-02"
+      ],
+      "budget": "0 business resources; reuse genuine existing execution/task/node IDs only",
+      "path": "Search by Execution ID, Task ID, Node ID, and Task name only when a live fixture exists; compare exact API query/result identities and UI rows."
+    },
+    {
+      "case_ids": [
+        "P17P18-03",
+        "P17P18-04"
+      ],
+      "budget": "0 business resources",
+      "path": "Sequentially select all 8 statuses and 3 trigger types; capture actual query values, API samples/totals, and UI row status/trigger. Mark states with no genuine sample as unavailable."
+    },
+    {
+      "case_ids": [
+        "P17P18-05"
+      ],
+      "budget": "0 business resources",
+      "path": "Capture URL/API query/row identity hashes before and after clearing q/status/trigger filters; verify filters actually clear and dataset changes accordingly."
+    },
+    {
+      "case_ids": [
+        "P17P18-08"
+      ],
+      "budget": "0 business resources",
+      "path": "Open a retained execution detail; verify metadata and logs together on one page/no tabs and compare shown fields to exact API response."
+    },
+    {
+      "case_ids": [
+        "P17P18-15"
+      ],
+      "budget": "0 business resources",
+      "path": "Compare actual Task and Script revision values between Execution API, linked Task/Script APIs, and visible detail UI; report fields not shown or deleted Task data as gaps."
+    },
+    {
+      "case_ids": [
+        "P17P18-10"
+      ],
+      "budget": "0 business resources",
+      "path": "Reuse reviewed actual clipboard exact-readback/denial and Follow scroll evidence; click Wrap only in an existing completed Execution if not already covered, recording DOM style/geometry whitelist."
+    },
+    {
+      "case_ids": [
+        "G-01-05"
+      ],
+      "budget": "one dedicated API session/token and one isolated browser profile; no business resource",
+      "path": "On the independent dedicated session, verify /me 200; API logout 200 then same-token /me 401; only then place a fixed invalid token in this profile, reload, capture the real UI /api/me 401, localStorage cleanup, and sign-in route. This is invalid-token behavior, not TTL."
+    }
+  ],
+  "corrections_to_prior_plan": {
+    "exit_zero": "CONFIRMED_REPAIR_AFTER_TEST_COMPLETION; not waiting for user review",
+    "P11-02": "PASS",
+    "counts": "163 PASS / 1 FAIL / 180 PARTIAL / 160 NOT_RUN",
+    "WEB_LIVE_LOG": "no frame-event or extra empty-pre gate; final controls/watchdog release belongs to the broader live-log evidence review."
+  },
+  "constraints": [
+    "repair:18080 only",
+    "no User/Task/Run/App/Node/Transfer/Script creation or updates",
+    "no product/global state writes",
+    "write only within this directory",
+    "dedicated browser profile under /tmp mode 0700; no shared session logout",
+    "store only method/path/status/count/hash and allowlisted UI fields; never persist credentials, token, raw request bodies, env, or task code"
+  ],
+  "acceptance": "Every tested filter is tied to a real UI action, captured URL/API query, returned sample/empty result, and matching UI identity/status. Detail and auth lifecycle have exact same-session or same-execution oracles. Missing dataset states and absent UI fields remain PARTIAL, not PASS.",
+  "phase": "PLAN_RECORDED",
+  "next_action": "No further browser interaction. Send read-only case mapping and cleanup limitation to Root; Root owns global status integration."
+}

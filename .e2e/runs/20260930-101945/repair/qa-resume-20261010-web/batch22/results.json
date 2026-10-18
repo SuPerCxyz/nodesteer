@@ -1,0 +1,97 @@
+{
+  "batch_id": "qa-resume-20261010-web-batch22-owned-readonly-nodedetail-settings",
+  "status": "COMPLETE_FOR_ROOT_REVIEW",
+  "updated_at_utc": "2026-10-12T14:21:00.345760+00:00",
+  "cases": [
+    {
+      "case_id": "P04-09",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P04-09-reuse.json",
+        "../batch19/evidence/TABLE-NODES-ERROR-failure.json",
+        "../batch19/evidence/TABLE-NODES-ERROR-retry-action.json"
+      ],
+      "actual": "Existing exact same-session GET /api/nodes failure, ErrorState, real Retry click and GET200/row recovery evidence satisfies this narrower canonical; no second fault was run.",
+      "remaining_dimensions": [],
+      "disposition": "Mapped existing live evidence; no rerun."
+    },
+    {
+      "case_id": "P05B-03",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P05B-03-inventory.json"
+      ],
+      "actual": "Fresh same-origin GET /api/nodes/{id} returned 200 and response.id matched the detail route. All six required OS/Kernel/CPU/Memory/Filesystem/Network fields matched API-derived display values in memory; only keys/types/array lengths/hashes were saved.",
+      "remaining_dimensions": []
+    },
+    {
+      "case_id": "P05B-04",
+      "status": "PARTIAL",
+      "evidence": [
+        "evidence/P05B-04-node3.json",
+        "evidence/P05B-04-capability-scan.json"
+      ],
+      "actual": "Scanned all five protected online Native Nodes with real GETs. All available capabilities were true and every visible UI entry matched Enabled; no Disabled value/UI sample exists.",
+      "remaining_dimensions": [
+        "No false capability existed in the five currently online Native Nodes; all visible API booleans were true. The Enabled UI states matched all API entries, but no honest disabled sample was available. No fixture or Agent capability was altered."
+      ]
+    },
+    {
+      "case_id": "P05B-09",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P05B-09.json"
+      ],
+      "actual": "Actual Managed Applications link on the Native3 detail was clicked and reached its matching existing application detail route; browser request log contained the detail GET 200. This evidence was captured before the later /api/me 401 was discovered; Root should review the event ordering before integration.",
+      "remaining_dimensions": []
+    },
+    {
+      "case_id": "P05B-10",
+      "status": "PARTIAL",
+      "evidence": [
+        "evidence/P05B-10.json"
+      ],
+      "actual": "The Node Execution table had 27 actual Execution detail links and zero live Task-name links because GET /api/tasks returned zero; all Execution links matched the actual executions API, and one real Execution link opened GET200 detail. No Task was created.",
+      "remaining_dimensions": [
+        "No live Task-name link existed to click; do not create a Task under the zero-resource budget. Actual Execution-detail links were clicked and API-validated."
+      ]
+    },
+    {
+      "case_id": "P05B-11",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P05B-11.json"
+      ],
+      "actual": "Browser Back returned from Execution Detail to Node Detail; clicking its unique actual Back anchor reached /agents with six rows, GET /api/nodes 200 and no alert.",
+      "remaining_dimensions": []
+    },
+    {
+      "case_id": "P21-01",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P21-01.json"
+      ],
+      "actual": "The real Settings Runtime/Appearance buttons switched the visible section both ways. Appearance showed the theme control; returning to Runtime restored its four inputs. No Save was clicked.",
+      "remaining_dimensions": []
+    },
+    {
+      "case_id": "P21-02",
+      "status": "PASS",
+      "evidence": [
+        "evidence/P21-02.json"
+      ],
+      "actual": "Actual GET /api/settings 200 returned four supported keys, each corresponding to a UI input whose value matched in memory. agent_gateway_base_url was absent from both API keys and UI inputs. Only key names, lengths and hashes were saved.",
+      "remaining_dimensions": []
+    }
+  ],
+  "counts": {
+    "PASS": 6,
+    "PARTIAL": 2,
+    "FAIL": 0,
+    "NOT_RUN": 0
+  },
+  "server_writes": 0,
+  "runs": 0,
+  "new_resources": 0,
+  "note": "P04-09 references existing batch19 actual Node error/retry evidence for mapping, without rerunning. Batch22 stops on profile auth 401; no login/POST is attempted. P05B-09 is based on the existing live same-session link and observed route plus request logger; Root should inspect time ordering."
+}

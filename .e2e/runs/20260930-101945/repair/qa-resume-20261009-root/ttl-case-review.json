@@ -1,0 +1,37 @@
+{
+  "reviewed_at": "2026-10-09T08:22:25.111965+00:00",
+  "defect_id": "BE-REMOTE-TTL-004",
+  "status": "PASS",
+  "model": "gpt-6-luna",
+  "executor": "/root/e2e_recovery (20261009 runtime) / /root/luna_backend_cases (20261008 negatives)",
+  "verified": [
+    "既有7负向状态任务BLOCKED及marker absent、local journal已留证据",
+    "新20261009 BLOCKED真实Execution UI显示后端block_reason",
+    "合法payload未改仅transport-delay500ms，request/response关联，Task SUCCESS",
+    "物理恢复marker SHA/mode0600/UID65534与local journal SUCCESS/synced匹配",
+    "真实成功Execution UI反馈与API/output一致，proxy controls清空"
+  ],
+  "canonical_remaining": {
+    "E2E-10": [
+      "Remote online属性正向/负向与真实断连状态UNKNOWN及恢复未全部运行；不能由last_execution/TTL代理故障泛化。"
+    ],
+    "SYS-29": [
+      "真实Agent/Hub断连后Remote fail-closed、缺失ObservedAt字段/未观察时间等独立适用维度仍待验证。"
+    ],
+    "INV-09": [
+      "真实离线/Hub断连后Remote查询UNKNOWN无业务效果及恢复仍待验证。"
+    ]
+  },
+  "evidence": [
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/ttl-recovery-summary.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/ttl-blocked-execution-ui.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/ttl-recovery-success-execution-ui.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/owned-process-ledger.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/preflight.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-REMOTE-TTL-004-checkpoint.json"
+  ],
+  "cleanup": "PASS_EXACT_IDS_AND_MARKERS",
+  "harness_errors_retained_separately": true,
+  "historical_negatives_are_not_new_20261009_runtime": true,
+  "clock_skew_limit": "有约150ms时钟偏差；控制组仅delay运输，未改response字段/宿主时钟；不代表真实离线/全部Remote属性。"
+}

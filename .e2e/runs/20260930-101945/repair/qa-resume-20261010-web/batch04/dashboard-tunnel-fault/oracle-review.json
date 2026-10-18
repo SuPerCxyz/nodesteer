@@ -1,0 +1,68 @@
+{
+  "reviewed_at_utc": "2026-10-10T11:06:53.939094+00:00",
+  "scope": "Read-only audit of this batch's stored browser oracle and relevant request/query source; no browser, tunnel, fixture, or service action.",
+  "status": "PARTIAL_NEEDS_VERIFICATION",
+  "corrected_claim": {
+    "prior_progress_claim": "Each of the five Dashboard APIs had four network failures while the loopback forward was stopped.",
+    "reviewed_conclusion": "The captured evidence does not directly prove application fetch rejection. It shows PerformanceResourceTiming entries with responseStatus=null and transferSize/encodedBodySize=0, plus listener count zero. Record these as unknown/zero-byte timing entries while the listener was absent; app rejection remains unverified.",
+    "error_state_retry": "Saved in-page observations show route `/`, main mounted, navigator.onLine=true, and no role=alert / Retry feedback. No user Retry click occurred. Record this as a needs-verification observation, not a product FAIL.",
+    "historical_evidence_preserved": true
+  },
+  "oracle_audit": {
+    "fault_observation_file": "fault-observation.json",
+    "fault_result_file": "fault-result.json",
+    "network_loading_failed_record_present": false,
+    "fetch_catch_rejection_record_present": false,
+    "error_text_or_net_error_code_present": false,
+    "request_initiator_or_call_stack_present": false,
+    "captured_urls": {
+      "same_origin_paths_only": true,
+      "basis": "The recorder added an API path only when URL origin equaled location.origin; it persisted only pathname, not the full URL or an initiator.",
+      "app_query_vs_helper_distinguished": false
+    },
+    "performance_timing_limit": "Null responseStatus and zero encoded/transfer sizes do not independently establish a rejected fetch.",
+    "record_consistency": "fault-observation.json (captured before forward restore) aggregates 4 unknown and 5 HTTP-200 timing entries per API; fault-result.json (captured after restore) contains a different cumulative timing aggregate. These recorder outputs are not reliable per-request failure oracles and do not carry absolute per-request timestamps."
+  },
+  "fault_window": {
+    "forward_stop_utc": "2026-10-10T10:56:20.562308+00:00",
+    "in_fault_observation_utc": "2026-10-10T10:56:49.015557+00:00",
+    "forward_restore_utc": "2026-10-10T10:57:07.062005+00:00",
+    "active_duration_seconds": 46.499697,
+    "authorized_max_seconds": 45,
+    "exceeded_by_seconds": 1.499697,
+    "individual_request_absolute_timestamps_available": false,
+    "note": "Persisted performance entries have monotonic start values but did not preserve performance.timeOrigin or per-event wall-clock timestamps."
+  },
+  "source_oracles": [
+    {
+      "fact": "API base is /api. authenticatedFetch awaits window.fetch without a catch; requestWithResponse throws ApiError only after an HTTP response with !ok. A fetch rejection would propagate, but no rejection was persisted.",
+      "ref": "web/src/lib/api.ts:24-62"
+    },
+    {
+      "fact": "Dashboard loadDashboard uses Promise.all for five GET APIs.",
+      "ref": "web/src/features/overview/index.tsx:53-61"
+    },
+    {
+      "fact": "Dashboard query refetchInterval is 15000 ms.",
+      "ref": "web/src/features/overview/index.tsx:95-101"
+    },
+    {
+      "fact": "ErrorState is rendered when query.isError or data is absent; its Retry button calls query.refetch.",
+      "ref": "web/src/features/overview/index.tsx:151-157"
+    },
+    {
+      "fact": "QueryClient retry callback disables retries in DEV; production stops after failureCount > 3, while no retryDelay is configured in this source.",
+      "ref": "web/src/main.tsx:24-50"
+    }
+  ],
+  "evidence_timestamps": {
+    "baseline": "dashboard-baseline.json",
+    "fault_start": "fault-start.json",
+    "fault_observation": "fault-observation.json",
+    "fault_result": "fault-result.json",
+    "tunnel_restore": "tunnel-restored.json",
+    "cleanup": "cleanup-final.json"
+  },
+  "no_product_verdict": true,
+  "no_product_source_changed": true
+}

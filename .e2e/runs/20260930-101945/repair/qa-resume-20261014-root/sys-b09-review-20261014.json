@@ -1,0 +1,128 @@
+{
+  "review_id": "ROOT-SYS-B09-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T08:58:20.802723+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "run_dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试、剩余分母全量推进",
+  "verdicts": [
+    {
+      "case_id": "SYS-18",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "自有 child Agent（同 SHA d55dc5cd）实测：心跳 6s 配置→[7.0,6.0,6.0,5.999,8.0]；运行期 SETTINGS→12s→[12.0]；RevisionCheck 9s→[9.0,8.0,9.0]；重连退避 4 次 [3.983,2.691,2.947,3.782]；真实 repair Agent 的 node last_seen 节拍 25–31s 与 30s 配置一致。",
+      "limitations": [
+        "规范未定义阈值，故只记录观测值",
+        "退避/jitter 由自有 child 在 loopback fake Hub 测得，非 repair Agent 对 repair Hub 的真实断开",
+        "periodicLoop 为 1s tick，含 ≤1s 量化误差"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase8-sys18-probe-summary.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase-sys18-owned-child-heartbeat-probe.raw.json"
+      ]
+    },
+    {
+      "case_id": "SYS-27",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "FAIL",
+      "confidence": "high（观测）/medium-high（机制）",
+      "reason": "Remote online 条件在本环境恒 Fail Closed：满足与不满足均 BLOCKED / block_reason=\"condition unknown: <nil>\"，4 个 repair native 节点全部复现（29–132ms）；受控实验（同二进制 + loopback fake Hub、同钟）证明 Agent 侧实现正确、门禁对时间戳新鲜度敏感：observed_at 在过去 1ms/1s → SUCCESS，在 0.5s 之后 → BLOCKED；实测 repair Hub 时钟领先 native Agent 约 0.14s。",
+      "limitations": [
+        "未主张修复方案与偏移阈值",
+        "last_execution 属性、在线状态切换过渡窗口未覆盖",
+        "0.14s 为本环境测量值"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase10-remote-condition-multinode.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase2d-remote-condition-mechanism.raw.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase2c-clock-offset.json"
+      ]
+    }
+  ],
+  "reverified_unchanged": [
+    {
+      "case_id": "SYS-23",
+      "status": "PASS",
+      "note": "disabled 26s(>2×period) 后 enable：skip 无补跑、run_once 精确补 1 次且 slot=created+2×10s，随后按边界正常触发。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase4-misfire.json"
+      ]
+    },
+    {
+      "case_id": "SYS-22",
+      "status": "PASS",
+      "note": "两 Schedule RunAt 完全相同：Hub 2 schedule→1 Execution、Agent 2 schedule→1 Execution，Agent 本地库按 task_id 仅 1 行且 idx_local_exec_slot 存在、quick_check ok。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase5-duplicate-trigger.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase12-hub-duplicate-slot-grouping.json"
+      ]
+    },
+    {
+      "case_id": "AR-17",
+      "status": "PASS",
+      "note": "同幂等 + 跨 ~104s/14 轮无第二条 Execution + 定义删除后历史仍 200 + 节点 synced 且 Agent 单元未重启。恢复（重启）维度未覆盖。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase5-duplicate-trigger.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase7-cleanup.json"
+      ]
+    },
+    {
+      "case_id": "SYS-26",
+      "status": "PASS",
+      "note": "AND 单层/嵌套的 true→SUCCESS、false→SKIPPED；求值错误（非法挂载点）→BLOCKED fail-closed；16 组错误结构全部 HTTP 400 且未创建、无执行。",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase2-conditions.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase3-reject-structures.json"
+      ]
+    }
+  ],
+  "new_defect": {
+    "id": "E2E-20261014-REMOTE-CONDITION-CLOCK-SKEW",
+    "priority": "P0",
+    "affected_case": "SYS-27",
+    "title": "Remote 条件新鲜度门禁用 Hub 时间戳对比 Agent 本地时钟，跨主机亚秒级时钟偏移导致条件恒 Fail Closed",
+    "status": "CONFIRMED_TEST_FAILURE_REPAIR_SCOPE_REVIEW_PENDING",
+    "source_change_authorized": false,
+    "source": [
+      "internal/agent/sync_validation.go:31-42",
+      "internal/agent/agent.go:1685-1725",
+      "internal/hub/gateway.go:594-617",
+      "internal/agent/agent.go:1023-1027"
+    ],
+    "evidence": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase10-remote-condition-multinode.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase2d-remote-condition-mechanism.raw.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09/evidence/phase2c-clock-offset.json"
+    ],
+    "measured_clock_offset": "hub 相对 native Agent +0.14s（本环境）",
+    "note": "按“先测试后统一修复”，仅记录不改产品源码"
+  },
+  "safety": {
+    "cleanup": "22/22 owned 定义 DELETE→GET404；自有 child Agent ×2 已停止、/tmp/qa-sysb09-* 沙箱已删除；无前缀残留",
+    "protected_untouched": "native-1..4 全 online/synced；native-2 MainPID 4311 与 native-4 MainPID 1481 未变；Hub 设置 30/45/1048576 前后一致",
+    "did_not_touch": [
+      ":8080 主部署",
+      "nodesteer-agent.service",
+      "repair Hub 未重启",
+      "产品源码 0 改动"
+    ]
+  },
+  "counts_before": {
+    "PASS": 231,
+    "FAIL": 4,
+    "PARTIAL": 163,
+    "NOT_RUN": 97,
+    "BLOCKED": 9
+  },
+  "counts_after": {
+    "PASS": 232,
+    "FAIL": 5,
+    "PARTIAL": 163,
+    "NOT_RUN": 95,
+    "BLOCKED": 9
+  },
+  "not_claimed": "未执行产品修复、Git 交付或 Archive",
+  "count_correction": "子 Agent 报的 canonical_before（SYS-18 PARTIAL / SYS-27 PASS）与台账不符：两者在权威台账中均为 NOT_RUN；已按 504 条状态重算修正。"
+}

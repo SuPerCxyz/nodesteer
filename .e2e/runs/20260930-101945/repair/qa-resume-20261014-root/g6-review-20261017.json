@@ -1,0 +1,73 @@
+{
+  "review_id": "ROOT-G6-REVIEW-20261017",
+  "reviewed_at": "2026-10-17T04:47:30.552640+00:00",
+  "reviewer": "main-agent(root)",
+  "status": "INTEGRATED",
+  "dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-g6",
+  "authorization_basis": "授权清单 G6（长窗 + 不可删 Transfer 历史）",
+  "verdicts": [
+    {
+      "case_id": "X18",
+      "canonical_after": "PASS",
+      "confidence": "高/中",
+      "reason": "双目标传输：远端目标 SUCCESS（物理 sha==源）+ 源节点目标 FAILED（ENOTDIR 可定位），聚合 FAILED 互不覆盖；retry?target_id= 与空 target_id 均只重启失败目标，已成功目标 sha+mtime 不变；陈旧 node_id Assign→500 且定义未回滚→重试成功→真实 deploy 可定位；浏览器复核换源裁剪 0 POST",
+      "limitations": [
+        "传输可靠性受 OBS-20261017-XFER-REMOTE-TARGET-STUCK 影响（本批 4 次尝试 2 次命中）"
+      ]
+    },
+    {
+      "case_id": "X12",
+      "canonical_after": "PASS",
+      "confidence": "高/中",
+      "reason": "标签目标两次真实执行（标签在 a→执行落 a；移到 b→落 b）；空目标 400 且 0 执行；重叠组 {a,b}+{a} 恰 2 条执行（去重）；offline/disabled/maintenance 手工运行各 400；maintenance+cron 真实 SKIPPED(node paused)；Capability 失配 400 lacks capability application_deploy；跨页缓存未收敛（重新挂载后一致）",
+      "limitations": []
+    },
+    {
+      "case_id": "X15",
+      "canonical_after": "PASS",
+      "confidence": "高/中",
+      "reason": "同一页面实例 2s 采样：运行中→成功；真实分片 13 片 seq0..12；二次执行 31 片独立；首次执行分片 sha 前后不变；终态 stdout/stderr 完整（含断线期尾部标记）；断线 16s 硬切→回 online/synced、执行 SUCCESS、结果补全；Follow/搜索/流过滤正确",
+      "limitations": [
+        "UI「等待中(PENDING)」行未捕获（<1s 离开 PENDING，快于 3s 轮询；PENDING 有 API 级证据，UI 行由 g23 的 P17P18-03 覆盖）",
+        "Copy 的剪贴板实际写入未证实：headless+非安全上下文下 navigator.clipboard 不存在、execCommand 返回 false，UI 如实提示「复制失败」；点击链路与反馈已验证"
+      ]
+    }
+  ],
+  "new_defect": "E2E-20261017-XFER-REMOTE-TARGET-STUCK-DELIVERING",
+  "new_observations": [
+    "OBS-20261017-XFER-API-NO-SELF-TRANSFER-CHECK",
+    "OBS-20261017-EXEC-DISABLED-BRANCH-UNREACHABLE"
+  ],
+  "cleanup": "oracle 两次均 ok=true：自有对象全 404、前缀残留空、proxy 端口 40137 释放、native-1 无 owned 进程/目录、4 节点 online/synced、两 healthz 200、DB quick_check ok；不可删历史：Transfer 8 条 + Execution 16 行",
+  "counts_before": {
+    "PASS": 470,
+    "FAIL": 8,
+    "PARTIAL": 16,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "counts_after": {
+    "PASS": 473,
+    "FAIL": 8,
+    "PARTIAL": 13,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "status_changes": [
+    [
+      "X12",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "X15",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "X18",
+      "PARTIAL",
+      "PASS"
+    ]
+  ]
+}

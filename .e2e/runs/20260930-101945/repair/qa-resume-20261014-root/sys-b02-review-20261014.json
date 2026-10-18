@@ -1,0 +1,68 @@
+{
+  "review_id": "ROOT-SYS-B02-REVIEW-20261014",
+  "reviewed_at": "2026-10-15T07:02:27.286354+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "run_dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b02",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试、剩余分母全量推进",
+  "verdicts": [
+    {
+      "case_id": "SYS-10",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "6 次真实变更，Hub 只读轮询器(2ms/18460 采样)测得提交可见 → 帧代理收到 CHANGE_NOTIFICATION 间隔 -9.7～-12.1ms（通知晚于提交），6/6 无违例；每次变更恰 1 帧；复制帧安全。"
+    },
+    {
+      "case_id": "INV-17",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "被拒变更（引用不存在 script → 400）revision 不变、change log +0、0 条相关通知；阳性对照：注入「已提交+100000」伪造通知被同一检测器判 VIOLATION。"
+    },
+    {
+      "case_id": "INV-03",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "时序三段齐全：Notify 链 0.034s；丢帧后 6s 仍 stale、经 REVISION_CHECK 13.9s 收敛；断链后 HELLO(local 2020)→HELLO_ACK(2021)→SYNC_REQUEST(since 2020) 5.5s 收敛。"
+    },
+    {
+      "case_id": "INV-04",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "丢失→仍收敛；重复→无副作用；过期通知→0 次 SYNC、状态不动；通知载荷仅 4 键无内容；未来 revision 收敛到 Hub 真实当前值。"
+    },
+    {
+      "case_id": "SYS-08",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "V1 依赖 SHA 损坏 → SYNC_ACK ok=false sha256 mismatch，Agent revision 停在 2021、无半同步行；V2 事务内失败（幻影 Script + 畸形 Task）→ ok=false，幻影脚本本地不存在、脚本数仍 3、revision 未前进。"
+    },
+    {
+      "case_id": "AR-16",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "恢复后 revision 前进(2025)且 SHA 一致；Hub vs Agent 6 对象 revision/SHA 全等；幂等重发计数不变；child 重启后 identity/revision/行全保留并回 online/synced；1 条 SUCCESS + 1 条 FAILED(exit 3) 真实终态。"
+    }
+  ],
+  "note": "本会话经历一次因环境事故中止（保护节点 unhealthy），修复后重跑成功；deviation=[]",
+  "counts_before": {
+    "PASS": 274,
+    "FAIL": 5,
+    "PARTIAL": 164,
+    "NOT_RUN": 52,
+    "BLOCKED": 9
+  },
+  "counts_after": {
+    "PASS": 287,
+    "FAIL": 5,
+    "PARTIAL": 165,
+    "NOT_RUN": 38,
+    "BLOCKED": 9
+  }
+}

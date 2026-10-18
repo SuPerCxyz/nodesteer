@@ -1,0 +1,1093 @@
+{
+  "batch_id": "p-sched",
+  "title": "Cron/owner 触发来源 / misfire / 取消与进程组清理",
+  "nonce": "43f0d1e2",
+  "owned_prefix": "qa-psched-43f0d1e2-",
+  "endpoint": "http://192.168.100.209:18080",
+  "node_used": {
+    "native-2": "192.168.100.206"
+  },
+  "executed_at_utc": "2026-10-15T08:12:52Z",
+  "cases": [
+    {
+      "case_id": "SYS-19",
+      "title": "Cron/Interval/One-Time 均由正确 owner 触发",
+      "canonical_before": "PARTIAL (repair ledger; remaining_dimensions unmet)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSCHED:SYS-19-owner-source",
+          "layer": "real-api + frame-wire + owned child Agent SQLite",
+          "status": "PASS",
+          "description": [
+            "Agent-owned Cron \"* * * * *\" fired 3 times from the owned child's local scheduler; the frame proxy recorded 0 hub->agent RUN_EXECUTION frames for that task (expected 0).",
+            "Hub-owned Cron fired 2 times, each preceded by a hub->agent RUN_EXECUTION frame for that task (2 dispatched), i.e. the Hub is the source.",
+            "One-Time schedule (Asia/Shanghai + UTC run_at) fired exactly once, on time."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Interval owner-source is covered by the existing schedule.interval.agent/hub evidence, not re-run in this batch.",
+        "on_start is a separate trigger path (owned by the Agent process start route), not part of this batch."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase3-owner-multislot.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase5-onetime-misfire.json",
+        "evidence/phase2-fixtures.json"
+      ],
+      "actual_resources": {
+        "node": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+        "host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-psched-43f0d1e2-a",
+        "schedules": {
+          "sc-agent-cron": "d19e2ff0-ab9d-47d0-b670-49c47a1bdffe",
+          "sc-hub-cron": "cf43b046-28d5-4eb3-9757-5e44768de2e2",
+          "sc-onetime-future": "0858b730-c743-4a32-85e4-ec1bb573ab54"
+        },
+        "tasks": {
+          "task-agent-cron": "9418da17-e715-4ae3-96dd-99510ea308d1",
+          "task-hub-cron": "aee20e4e-cce4-48f5-ab8a-fd3b0d6d4c61",
+          "task-onetime-future": "01ac2934-4845-4aa6-947d-13bfaa37565b"
+        },
+        "scripts": {
+          "script-marker": "38270c52-e452-4bd2-a3f1-6a468c5155a3"
+        },
+        "executions": {
+          "pg_timeout_native": "c12245a4-c921-4b00-8b5a-fd1bde1a6552",
+          "pg_cancel_native": "4cb1032d-fc46-4815-bc88-08e30ca4c4f5",
+          "retry": "65847951-af46-4291-82ae-597a9839448f",
+          "baduser": "7456d65e-f8a9-4fe0-8f74-cb6027cd088a"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 41,
+        "child_process_starts": 2,
+        "child_process_stops": 2
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "deleted_count": 17,
+        "nodes_deleted": [
+          {
+            "label": "a",
+            "id": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+            "delete_http": 200,
+            "get_http": 404,
+            "delete_body": {
+              "ok": "true"
+            }
+          }
+        ],
+        "child_removal_a": {
+          "signalled": [
+            70681
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "errors": [],
+        "oracle_clean": true,
+        "oracle_hub_leftover_clear": true,
+        "oracle_native2_orphan": false
+      }
+    },
+    {
+      "case_id": "SYS-20",
+      "title": "Agent-owned Schedule 不被 Hub 重复触发",
+      "canonical_before": "PARTIAL (repair ledger; remaining_dimensions unmet)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSCHED:SYS-20-no-double-trigger",
+          "layer": "real-api + frame-wire",
+          "status": "PASS",
+          "description": [
+            "Over the observed minutes every Agent-owned Cron slot produced exactly one execution ([{'minute': '2026-10-15T08:14', 'count': 1, 'execution_ids': ['b58342bf-29c6-44b9-b785-dcd13558452e'], 'statuses': ['SUCCESS'], 'scheduled_time': '2026-10-15T08:14:00Z', 'start_time': '2026-10-15T08:14:00.92745939Z', 'start_minus_slot_sec': 0.927459}, {'minute': '2026-10-15T08:15', 'count': 1, 'execution_ids': ['389f6295-994e-41f2-8cca-85c2e30eca8e'], 'statuses': ['SUCCESS'], 'scheduled_time': '2026-10-15T08:15:00Z', 'start_time': '2026-10-15T08:15:00.927194601Z', 'start_minus_slot_sec': 0.927194}, {'minute': '2026-10-15T08:16', 'count': 1, 'execution_ids': ['63bbf816-49b8-4cea-b4e0-f01603e40612'], 'statuses': ['SUCCESS'], 'scheduled_time': '2026-10-15T08:16:00Z', 'start_time': '2026-10-15T08:16:00.927189835Z', 'start_minus_slot_sec': 0.927189}]) with no duplicate; no hub->agent RUN_EXECUTION frame was seen for the Agent-owned task, so the Hub did not also fire it."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Observation window is a few minutes; a longer soak could catch rarer double-fire paths (none observed)."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase3-owner-multislot.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "node": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+        "host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-psched-43f0d1e2-a",
+        "schedules": {
+          "sc-agent-cron": "d19e2ff0-ab9d-47d0-b670-49c47a1bdffe"
+        },
+        "tasks": {
+          "task-agent-cron": "9418da17-e715-4ae3-96dd-99510ea308d1"
+        },
+        "scripts": {},
+        "executions": {
+          "pg_timeout_native": "c12245a4-c921-4b00-8b5a-fd1bde1a6552",
+          "pg_cancel_native": "4cb1032d-fc46-4815-bc88-08e30ca4c4f5",
+          "retry": "65847951-af46-4291-82ae-597a9839448f",
+          "baduser": "7456d65e-f8a9-4fe0-8f74-cb6027cd088a"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 41,
+        "child_process_starts": 2,
+        "child_process_stops": 2
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "deleted_count": 17,
+        "nodes_deleted": [
+          {
+            "label": "a",
+            "id": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+            "delete_http": 200,
+            "get_http": 404,
+            "delete_body": {
+              "ok": "true"
+            }
+          }
+        ],
+        "child_removal_a": {
+          "signalled": [
+            70681
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "errors": [],
+        "oracle_clean": true,
+        "oracle_hub_leftover_clear": true,
+        "oracle_native2_orphan": false
+      }
+    },
+    {
+      "case_id": "SYS-21",
+      "title": "Hub-owned Schedule 不由 Agent 本地触发",
+      "canonical_before": "PARTIAL (repair ledger; remaining_dimensions unmet)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSCHED:SYS-21-hub-source",
+          "layer": "real-api + frame-wire + owned child Agent SQLite",
+          "status": "PASS",
+          "description": [
+            "Every Hub-owned Cron execution (2 ids=['0f3a5e64-530a-4ddc-9e1a-ae3e7537747b', '7d0b2030-a5c3-4120-bf1b-0ae6c4d260c1']) correlates 1:1 with a hub->agent RUN_EXECUTION frame (2 dispatched); the child executed only what the Hub dispatched, with no extra locally-triggered execution."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The Agent-local cron table only ever holds execution_owner=agent schedules by design; this run confirms it behaviourally for the Hub-owned schedule over the observed slots."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase3-owner-multislot.json"
+      ],
+      "actual_resources": {
+        "node": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+        "host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-psched-43f0d1e2-a",
+        "schedules": {
+          "sc-hub-cron": "cf43b046-28d5-4eb3-9757-5e44768de2e2"
+        },
+        "tasks": {
+          "task-hub-cron": "aee20e4e-cce4-48f5-ab8a-fd3b0d6d4c61"
+        },
+        "scripts": {},
+        "executions": {
+          "pg_timeout_native": "c12245a4-c921-4b00-8b5a-fd1bde1a6552",
+          "pg_cancel_native": "4cb1032d-fc46-4815-bc88-08e30ca4c4f5",
+          "retry": "65847951-af46-4291-82ae-597a9839448f",
+          "baduser": "7456d65e-f8a9-4fe0-8f74-cb6027cd088a"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 41,
+        "child_process_starts": 2,
+        "child_process_stops": 2
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "deleted_count": 17,
+        "nodes_deleted": [
+          {
+            "label": "a",
+            "id": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+            "delete_http": 200,
+            "get_http": 404,
+            "delete_body": {
+              "ok": "true"
+            }
+          }
+        ],
+        "child_removal_a": {
+          "signalled": [
+            70681
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "errors": [],
+        "oracle_clean": true,
+        "oracle_hub_leftover_clear": true,
+        "oracle_native2_orphan": false
+      }
+    },
+    {
+      "case_id": "INV-06",
+      "title": "Agent-owned Schedule 只能由 Agent 触发",
+      "canonical_before": "PARTIAL (repair ledger; remaining_dimensions unmet)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSCHED:INV-06-agent-only",
+          "layer": "real-api + frame-wire",
+          "status": "PASS",
+          "description": [
+            "Agent-owned task produced 3 executions with zero hub->agent RUN_EXECUTION frames; the other-owner (Hub-owned) task produced 2 executions all dispatched by the Hub — the two source paths are disjoint."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase3-owner-multislot.json"
+      ],
+      "actual_resources": {
+        "node": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+        "host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-psched-43f0d1e2-a",
+        "schedules": {
+          "sc-agent-cron": "d19e2ff0-ab9d-47d0-b670-49c47a1bdffe",
+          "sc-hub-cron": "cf43b046-28d5-4eb3-9757-5e44768de2e2"
+        },
+        "tasks": {
+          "task-agent-cron": "9418da17-e715-4ae3-96dd-99510ea308d1",
+          "task-hub-cron": "aee20e4e-cce4-48f5-ab8a-fd3b0d6d4c61"
+        },
+        "scripts": {},
+        "executions": {
+          "pg_timeout_native": "c12245a4-c921-4b00-8b5a-fd1bde1a6552",
+          "pg_cancel_native": "4cb1032d-fc46-4815-bc88-08e30ca4c4f5",
+          "retry": "65847951-af46-4291-82ae-597a9839448f",
+          "baduser": "7456d65e-f8a9-4fe0-8f74-cb6027cd088a"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 41,
+        "child_process_starts": 2,
+        "child_process_stops": 2
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "deleted_count": 17,
+        "nodes_deleted": [
+          {
+            "label": "a",
+            "id": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+            "delete_http": 200,
+            "get_http": 404,
+            "delete_body": {
+              "ok": "true"
+            }
+          }
+        ],
+        "child_removal_a": {
+          "signalled": [
+            70681
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "errors": [],
+        "oracle_clean": true,
+        "oracle_hub_leftover_clear": true,
+        "oracle_native2_orphan": false
+      }
+    },
+    {
+      "case_id": "E2E-05",
+      "title": "Agent-owned Cron 跨分钟准点执行且 Hub 不双触发",
+      "canonical_before": "PARTIAL (repair ledger; remaining_dimensions unmet)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSCHED:E2E-05-multislot",
+          "layer": "real-api + frame-wire + owned child Agent SQLite",
+          "status": "PASS",
+          "description": [
+            "Agent-owned Cron crossed 3 distinct minute slots, each with exactly one SUCCESS execution; max (start_time - slot) latency 0.927459 s; zero Hub dispatch frames for the task."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Series length is bounded by runtime; no multi-hour soak."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase3-owner-multislot.json",
+        "evidence/phase2-fixtures.json"
+      ],
+      "actual_resources": {
+        "node": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+        "host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-psched-43f0d1e2-a",
+        "schedules": {
+          "sc-agent-cron": "d19e2ff0-ab9d-47d0-b670-49c47a1bdffe"
+        },
+        "tasks": {
+          "task-agent-cron": "9418da17-e715-4ae3-96dd-99510ea308d1"
+        },
+        "scripts": {},
+        "executions": {
+          "pg_timeout_native": "c12245a4-c921-4b00-8b5a-fd1bde1a6552",
+          "pg_cancel_native": "4cb1032d-fc46-4815-bc88-08e30ca4c4f5",
+          "retry": "65847951-af46-4291-82ae-597a9839448f",
+          "baduser": "7456d65e-f8a9-4fe0-8f74-cb6027cd088a"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 41,
+        "child_process_starts": 2,
+        "child_process_stops": 2
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "deleted_count": 17,
+        "nodes_deleted": [
+          {
+            "label": "a",
+            "id": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+            "delete_http": 200,
+            "get_http": 404,
+            "delete_body": {
+              "ok": "true"
+            }
+          }
+        ],
+        "child_removal_a": {
+          "signalled": [
+            70681
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "errors": [],
+        "oracle_clean": true,
+        "oracle_hub_leftover_clear": true,
+        "oracle_native2_orphan": false
+      }
+    },
+    {
+      "case_id": "E2E-06",
+      "title": "One-Time + Timezone + Misfire 未来/过去/补跑/跳过",
+      "canonical_before": "PARTIAL (repair ledger; remaining_dimensions unmet)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSCHED:E2E-06-misfire",
+          "layer": "real-api + owned child Agent SQLite",
+          "status": "PASS",
+          "description": [
+            "one_time + Asia/Shanghai + UTC run_at fired once, start-run_at delta 0.927214 s (no 8h timezone shift).",
+            "Missed past slot with misfire=skip produced 0 executions; misfire=run_once produced 1 catch-up execution."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "DST transition boundary not exercised (test ran outside a DST change)."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase5-onetime-misfire.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase9-recovery-idempotency.json"
+      ],
+      "actual_resources": {
+        "node": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+        "host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-psched-43f0d1e2-a",
+        "schedules": {
+          "sc-onetime-future": "0858b730-c743-4a32-85e4-ec1bb573ab54",
+          "sc-onetime-skip": "7b241db0-6730-4846-a60a-25ac6168fea7",
+          "sc-onetime-runonce": "22eb1e0d-b4f1-4f61-8c90-b7e3adc860d4"
+        },
+        "tasks": {
+          "task-onetime-future": "01ac2934-4845-4aa6-947d-13bfaa37565b",
+          "task-onetime-skip": "6e33c5fd-a1b1-4d72-a4f4-23468aec8566",
+          "task-onetime-runonce": "a2c6bae4-3bf7-43ba-9039-a196d22fcb7c"
+        },
+        "scripts": {},
+        "executions": {
+          "pg_timeout_native": "c12245a4-c921-4b00-8b5a-fd1bde1a6552",
+          "pg_cancel_native": "4cb1032d-fc46-4815-bc88-08e30ca4c4f5",
+          "retry": "65847951-af46-4291-82ae-597a9839448f",
+          "baduser": "7456d65e-f8a9-4fe0-8f74-cb6027cd088a"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 41,
+        "child_process_starts": 2,
+        "child_process_stops": 2
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "deleted_count": 17,
+        "nodes_deleted": [
+          {
+            "label": "a",
+            "id": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+            "delete_http": 200,
+            "get_http": 404,
+            "delete_body": {
+              "ok": "true"
+            }
+          }
+        ],
+        "child_removal_a": {
+          "signalled": [
+            70681
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "errors": [],
+        "oracle_clean": true,
+        "oracle_hub_leftover_clear": true,
+        "oracle_native2_orphan": false
+      }
+    },
+    {
+      "case_id": "E2E-07",
+      "title": "Schedule Disable → 禁用后不再产生新执行",
+      "canonical_before": "PARTIAL (repair ledger; remaining_dimensions unmet)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSCHED:E2E-07-disable-suppression",
+          "layer": "real-api + owned child Agent SQLite",
+          "status": "PASS",
+          "description": [
+            "Disabling the repeatable Agent-owned Cron (PUT enabled=false) read back disabled on the Hub and as enabled=0 in the child local schedule table; across a full subsequent minute boundary no new execution was produced (slots after disable instant: [])."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase4-disable-suppression.json"
+      ],
+      "actual_resources": {
+        "node": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+        "host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-psched-43f0d1e2-a",
+        "schedules": {
+          "sc-agent-cron": "d19e2ff0-ab9d-47d0-b670-49c47a1bdffe"
+        },
+        "tasks": {
+          "task-agent-cron": "9418da17-e715-4ae3-96dd-99510ea308d1"
+        },
+        "scripts": {},
+        "executions": {
+          "pg_timeout_native": "c12245a4-c921-4b00-8b5a-fd1bde1a6552",
+          "pg_cancel_native": "4cb1032d-fc46-4815-bc88-08e30ca4c4f5",
+          "retry": "65847951-af46-4291-82ae-597a9839448f",
+          "baduser": "7456d65e-f8a9-4fe0-8f74-cb6027cd088a"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 41,
+        "child_process_starts": 2,
+        "child_process_stops": 2
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "deleted_count": 17,
+        "nodes_deleted": [
+          {
+            "label": "a",
+            "id": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+            "delete_http": 200,
+            "get_http": 404,
+            "delete_body": {
+              "ok": "true"
+            }
+          }
+        ],
+        "child_removal_a": {
+          "signalled": [
+            70681
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "errors": [],
+        "oracle_clean": true,
+        "oracle_hub_leftover_clear": true,
+        "oracle_native2_orphan": false
+      }
+    },
+    {
+      "case_id": "SYS-38",
+      "title": "Timeout 发送 SIGTERM，再按 Grace Period SIGKILL",
+      "canonical_before": "PARTIAL (repair ledger; remaining_dimensions unmet)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSCHED:SYS-38-sigterm-then-sigkill",
+          "layer": "real-api + frame/proc ground-truth on the node",
+          "status": "PASS",
+          "description": [
+            "Timeout execution reached TIMED_OUT; the TERM-ignoring grandchild outlived the (TERM-killed) parent by 2.012679100036621 s, matching the fixed 2 s grace before SIGKILL in internal/agent/execution/runner.go killProcessGroup."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Grace period is hard-coded at 2 s with no configurable setting; measured indirectly from process death timestamps (50 ms sampling)."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase6-native-process-group.json",
+        "internal/agent/execution/runner.go:219-229"
+      ],
+      "actual_resources": {
+        "node": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+        "host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-psched-43f0d1e2-a",
+        "schedules": {},
+        "tasks": {
+          "task-pg-timeout": "e360462a-c766-42d8-8803-c5f5c01aeeb3"
+        },
+        "scripts": {},
+        "executions": {
+          "pg_timeout_native": "c12245a4-c921-4b00-8b5a-fd1bde1a6552",
+          "pg_cancel_native": "4cb1032d-fc46-4815-bc88-08e30ca4c4f5",
+          "retry": "65847951-af46-4291-82ae-597a9839448f",
+          "baduser": "7456d65e-f8a9-4fe0-8f74-cb6027cd088a"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 41,
+        "child_process_starts": 2,
+        "child_process_stops": 2
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "deleted_count": 17,
+        "nodes_deleted": [
+          {
+            "label": "a",
+            "id": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+            "delete_http": 200,
+            "get_http": 404,
+            "delete_body": {
+              "ok": "true"
+            }
+          }
+        ],
+        "child_removal_a": {
+          "signalled": [
+            70681
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "errors": [],
+        "oracle_clean": true,
+        "oracle_hub_leftover_clear": true,
+        "oracle_native2_orphan": false
+      }
+    },
+    {
+      "case_id": "SYS-39",
+      "title": "Cancel 清理整个进程组，不残留子进程",
+      "canonical_before": "PARTIAL (repair ledger; remaining_dimensions unmet)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSCHED:SYS-39-cancel-pgroup",
+          "layer": "real-api + proc ground-truth on the node",
+          "status": "PASS",
+          "description": [
+            "Cancel of a long-running command reached CANCELED; both the parent and the TERM-ignoring grandchild PID were gone afterwards and no marker process remained."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase6-native-process-group.json",
+        "internal/agent/execution/runner.go:219-229"
+      ],
+      "actual_resources": {
+        "node": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+        "host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-psched-43f0d1e2-a",
+        "schedules": {},
+        "tasks": {
+          "task-pg-cancel": "ae0cecf3-e6e7-411c-9afd-52817783d23f"
+        },
+        "scripts": {},
+        "executions": {
+          "pg_timeout_native": "c12245a4-c921-4b00-8b5a-fd1bde1a6552",
+          "pg_cancel_native": "4cb1032d-fc46-4815-bc88-08e30ca4c4f5",
+          "retry": "65847951-af46-4291-82ae-597a9839448f",
+          "baduser": "7456d65e-f8a9-4fe0-8f74-cb6027cd088a"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 41,
+        "child_process_starts": 2,
+        "child_process_stops": 2
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "deleted_count": 17,
+        "nodes_deleted": [
+          {
+            "label": "a",
+            "id": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+            "delete_http": 200,
+            "get_http": 404,
+            "delete_body": {
+              "ok": "true"
+            }
+          }
+        ],
+        "child_removal_a": {
+          "signalled": [
+            70681
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "errors": [],
+        "oracle_clean": true,
+        "oracle_hub_leftover_clear": true,
+        "oracle_native2_orphan": false
+      }
+    },
+    {
+      "case_id": "E2E-08",
+      "title": "Retry/Timeout/Cancel 次数、最终状态、进程组清理",
+      "canonical_before": "PARTIAL (repair ledger; remaining_dimensions unmet)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSCHED:E2E-08-retry-timeout-cancel",
+          "layer": "real-api + owned child Agent SQLite + node proc truth",
+          "status": "PASS",
+          "description": [
+            "retry=2 produced 3 real attempts in one logical execution; timeout and cancel reached their terminal states with the whole process group reaped."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Docker/Compose 进程组清理 = PARTIAL：产品不存在 docker/compose *任务执行* 形态（docker 仅为 Agent 自身部署模式，app_deploy 走 systemd unit），进程组清理路径与部署模式无关。见 evidence/phase8-docker-compose-assessment.json 与 phase6 运行时证据。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase7-retry-attempts.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase6-native-process-group.json",
+        "evidence/phase8-docker-compose-assessment.json"
+      ],
+      "actual_resources": {
+        "node": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+        "host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-psched-43f0d1e2-a",
+        "schedules": {},
+        "tasks": {
+          "task-pg-timeout": "e360462a-c766-42d8-8803-c5f5c01aeeb3",
+          "task-pg-cancel": "ae0cecf3-e6e7-411c-9afd-52817783d23f",
+          "task-retry": "a0a73248-a60f-4abe-93c4-f04317c58c59"
+        },
+        "scripts": {
+          "script-fail": "d73f4fe8-263e-4bcb-9d22-6171f5c942d4"
+        },
+        "executions": {
+          "pg_timeout_native": "c12245a4-c921-4b00-8b5a-fd1bde1a6552",
+          "pg_cancel_native": "4cb1032d-fc46-4815-bc88-08e30ca4c4f5",
+          "retry": "65847951-af46-4291-82ae-597a9839448f",
+          "baduser": "7456d65e-f8a9-4fe0-8f74-cb6027cd088a"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 41,
+        "child_process_starts": 2,
+        "child_process_stops": 2
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "deleted_count": 17,
+        "nodes_deleted": [
+          {
+            "label": "a",
+            "id": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+            "delete_http": 200,
+            "get_http": 404,
+            "delete_body": {
+              "ok": "true"
+            }
+          }
+        ],
+        "child_removal_a": {
+          "signalled": [
+            70681
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "errors": [],
+        "oracle_clean": true,
+        "oracle_hub_leftover_clear": true,
+        "oracle_native2_orphan": false
+      }
+    },
+    {
+      "case_id": "SYS-40",
+      "title": "Retry 次数、间隔、最终状态、每次日志和审计",
+      "canonical_before": "PARTIAL (repair ledger; remaining_dimensions unmet)",
+      "proposed_after": "PARTIAL",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSCHED:SYS-40-retry-observations",
+          "layer": "real-api + owned child Agent SQLite + Hub audit",
+          "status": "PASS_FOR_REVIEWED_DIMENSIONS",
+          "description": [
+            "retry=2 -> 3 real attempts, final FAILED exit_code=3, all attempts share one execution/log stream; per-attempt audit rows=1 (single execute audit row).",
+            "Attempt intervals are effectively immediate (attempt_timestamps=['2026-10-15T08:18:38.035703284Z', '2026-10-15T08:18:38.040785520Z', '2026-10-15T08:18:38.044515296Z'], gaps ~4 ms); no configured backoff exists in the retry loop, so intervals are observations only (no normative threshold).",
+            "Error boundary covered: a pre-exec failure (RunUser lookup in buildCmd) produced FAILED with a reason and NO retry (single execution), confirming the retry loop only retries exit-code failures."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "per-attempt 审计缺失：每次 attempt 没有独立审计行（仅一条 \"execute\" 审计），这是该用例 expected 中“审计”维度的未满足项，故维持 PARTIAL。",
+        "retry 间隔无产品规范阈值，仅作观测。",
+        "Docker/Compose 执行形态不存在（见 phase8 评估）。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase7-retry-attempts.json",
+        "evidence/phase7b-error-boundary.json",
+        "evidence/phase8-docker-compose-assessment.json"
+      ],
+      "actual_resources": {
+        "node": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+        "host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-psched-43f0d1e2-a",
+        "schedules": {},
+        "tasks": {
+          "task-retry": "a0a73248-a60f-4abe-93c4-f04317c58c59",
+          "task-baduser": "32aba5ed-2a6b-4bcd-b6e9-87e1412dc4ed"
+        },
+        "scripts": {
+          "script-fail": "d73f4fe8-263e-4bcb-9d22-6171f5c942d4",
+          "script-baduser": "c6bc2587-ad3f-434b-83d0-fc7bdf0cff1c"
+        },
+        "executions": {
+          "pg_timeout_native": "c12245a4-c921-4b00-8b5a-fd1bde1a6552",
+          "pg_cancel_native": "4cb1032d-fc46-4815-bc88-08e30ca4c4f5",
+          "retry": "65847951-af46-4291-82ae-597a9839448f",
+          "baduser": "7456d65e-f8a9-4fe0-8f74-cb6027cd088a"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 41,
+        "child_process_starts": 2,
+        "child_process_stops": 2
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "deleted_count": 17,
+        "nodes_deleted": [
+          {
+            "label": "a",
+            "id": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+            "delete_http": 200,
+            "get_http": 404,
+            "delete_body": {
+              "ok": "true"
+            }
+          }
+        ],
+        "child_removal_a": {
+          "signalled": [
+            70681
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "errors": [],
+        "oracle_clean": true,
+        "oracle_hub_leftover_clear": true,
+        "oracle_native2_orphan": false
+      }
+    },
+    {
+      "case_id": "AR-21",
+      "title": "Timeout；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "canonical_before": "PARTIAL (repair ledger; remaining_dimensions unmet)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSCHED:AR-21-timeout-recovery",
+          "layer": "real-api + owned child Agent restart + SQLite",
+          "status": "PASS",
+          "description": [
+            "After restarting the owned child Agent, the timeout execution remained TIMED_OUT (hub + local), the child re-synced to online/synced, and no retry execution was spawned."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Recovery exercised by restarting the owned child Agent only (Hub restart is out of scope for this batch)."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase9-recovery-idempotency.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase6-native-process-group.json"
+      ],
+      "actual_resources": {
+        "node": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+        "host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-psched-43f0d1e2-a",
+        "schedules": {},
+        "tasks": {
+          "task-pg-timeout": "e360462a-c766-42d8-8803-c5f5c01aeeb3"
+        },
+        "scripts": {},
+        "executions": {
+          "pg_timeout_native": "c12245a4-c921-4b00-8b5a-fd1bde1a6552",
+          "pg_cancel_native": "4cb1032d-fc46-4815-bc88-08e30ca4c4f5",
+          "retry": "65847951-af46-4291-82ae-597a9839448f",
+          "baduser": "7456d65e-f8a9-4fe0-8f74-cb6027cd088a"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 41,
+        "child_process_starts": 2,
+        "child_process_stops": 2
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "deleted_count": 17,
+        "nodes_deleted": [
+          {
+            "label": "a",
+            "id": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+            "delete_http": 200,
+            "get_http": 404,
+            "delete_body": {
+              "ok": "true"
+            }
+          }
+        ],
+        "child_removal_a": {
+          "signalled": [
+            70681
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "errors": [],
+        "oracle_clean": true,
+        "oracle_hub_leftover_clear": true,
+        "oracle_native2_orphan": false
+      }
+    },
+    {
+      "case_id": "AR-22",
+      "title": "Cancel；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "canonical_before": "PARTIAL (repair ledger; remaining_dimensions unmet)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSCHED:AR-22-cancel-recovery",
+          "layer": "real-api + owned child Agent restart + SQLite",
+          "status": "PASS",
+          "description": [
+            "After restart, the cancel execution remained CANCELED (not retried) and the local execution history persisted across the restart."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "One-time schedules did not re-fire after restart (slot idempotency) — see AR-23 evidence file."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase9-recovery-idempotency.json"
+      ],
+      "actual_resources": {
+        "node": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+        "host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-psched-43f0d1e2-a",
+        "schedules": {},
+        "tasks": {
+          "task-pg-cancel": "ae0cecf3-e6e7-411c-9afd-52817783d23f"
+        },
+        "scripts": {},
+        "executions": {
+          "pg_timeout_native": "c12245a4-c921-4b00-8b5a-fd1bde1a6552",
+          "pg_cancel_native": "4cb1032d-fc46-4815-bc88-08e30ca4c4f5",
+          "retry": "65847951-af46-4291-82ae-597a9839448f",
+          "baduser": "7456d65e-f8a9-4fe0-8f74-cb6027cd088a"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 41,
+        "child_process_starts": 2,
+        "child_process_stops": 2
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "deleted_count": 17,
+        "nodes_deleted": [
+          {
+            "label": "a",
+            "id": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+            "delete_http": 200,
+            "get_http": 404,
+            "delete_body": {
+              "ok": "true"
+            }
+          }
+        ],
+        "child_removal_a": {
+          "signalled": [
+            70681
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "errors": [],
+        "oracle_clean": true,
+        "oracle_hub_leftover_clear": true,
+        "oracle_native2_orphan": false
+      }
+    },
+    {
+      "case_id": "AR-23",
+      "title": "Process Group Cleanup；恢复后幂等、持久化、Desired State 一致",
+      "canonical_before": "PARTIAL (repair ledger; remaining_dimensions unmet)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSCHED:AR-23-pgroup-recovery",
+          "layer": "real-api + owned child Agent restart + node proc truth",
+          "status": "PASS",
+          "description": [
+            "Process-group cleanup verified for timeout and cancel (no leftovers), and after restarting the child Agent no one-time execution re-fired (before={'ot_future': 1, 'ot_runonce': 1, 'ot_skip': 0, 'pg_timeout_status': 'TIMED_OUT', 'pg_cancel_status': 'CANCELED'} after={'ot_future': 1, 'ot_runonce': 1, 'ot_skip': 0}) and the process-group executions persisted."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Docker/Compose 进程组清理 = PARTIAL（同 E2E-08/SYS-38）：无 docker/compose 任务执行形态；见 phase8 评估。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase9-recovery-idempotency.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sched/evidence/phase6-native-process-group.json",
+        "evidence/phase8-docker-compose-assessment.json"
+      ],
+      "actual_resources": {
+        "node": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+        "host": "192.168.100.206",
+        "child_root": "/var/lib/nodesteer-qa-psched-43f0d1e2-a",
+        "schedules": {},
+        "tasks": {
+          "task-pg-timeout": "e360462a-c766-42d8-8803-c5f5c01aeeb3",
+          "task-pg-cancel": "ae0cecf3-e6e7-411c-9afd-52817783d23f",
+          "task-onetime-runonce": "a2c6bae4-3bf7-43ba-9039-a196d22fcb7c"
+        },
+        "scripts": {},
+        "executions": {
+          "pg_timeout_native": "c12245a4-c921-4b00-8b5a-fd1bde1a6552",
+          "pg_cancel_native": "4cb1032d-fc46-4815-bc88-08e30ca4c4f5",
+          "retry": "65847951-af46-4291-82ae-597a9839448f",
+          "baduser": "7456d65e-f8a9-4fe0-8f74-cb6027cd088a"
+        }
+      },
+      "actual_budget": {
+        "api_mutations": 41,
+        "child_process_starts": 2,
+        "child_process_stops": 2
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "deleted_count": 17,
+        "nodes_deleted": [
+          {
+            "label": "a",
+            "id": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+            "delete_http": 200,
+            "get_http": 404,
+            "delete_body": {
+              "ok": "true"
+            }
+          }
+        ],
+        "child_removal_a": {
+          "signalled": [
+            70681
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "errors": [],
+        "oracle_clean": true,
+        "oracle_hub_leftover_clear": true,
+        "oracle_native2_orphan": false
+      }
+    }
+  ],
+  "actual_budget": {
+    "api_mutations": 41,
+    "child_process_starts": 2,
+    "child_process_stops": 2
+  },
+  "final_cleanup": {
+    "all_get_404": true,
+    "deleted_count": 17,
+    "nodes_deleted": [
+      {
+        "label": "a",
+        "id": "7a054b6b-c873-4a06-bd8f-dd0b94feed65",
+        "delete_http": 200,
+        "get_http": 404,
+        "delete_body": {
+          "ok": "true"
+        }
+      }
+    ],
+    "child_removal_a": {
+      "signalled": [
+        70681
+      ],
+      "remaining_processes": [],
+      "root_removed": true,
+      "root_exists_after": false
+    },
+    "errors": [],
+    "oracle_clean": true,
+    "oracle_hub_leftover_clear": true,
+    "oracle_native2_orphan": false
+  },
+  "deviations": [],
+  "harness_errors": []
+}

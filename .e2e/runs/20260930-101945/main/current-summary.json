@@ -1,0 +1,4981 @@
+{
+  "run_id": "20260930-101945",
+  "results": [
+    {
+      "case_id": "MAIN-USER-operator",
+      "title": "创建本轮专用角色账户",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:24+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/users"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-USER-viewer",
+      "title": "创建本轮专用角色账户",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:24+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/users"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-LOGIN-operator",
+      "title": "专用角色真实密码登录",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:24+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/login"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-LOGIN-viewer",
+      "title": "专用角色真实密码登录",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/login"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-PUBLIC-1",
+      "title": "公开接口无需会话",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/healthz"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-PUBLIC-2",
+      "title": "公开接口无需会话",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/readyz"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-PUBLIC-3",
+      "title": "公开接口无需会话",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/oidc/state"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-BINARY-HEAD",
+      "title": "公开 amd64 下载元数据",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": {
+        "size": "11260088",
+        "sha256": "43bf33d06e775bd6581f120a002d6d904de36de6c6d4e18eaef90f6862fb6998"
+      },
+      "request": {
+        "method": "HEAD",
+        "url": "http://192.168.100.209:8080/api/agent/binary?architecture=amd64"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-BINARY-SHA",
+      "title": "真实下载内容匹配 SHA256",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": {
+        "size": 11260088,
+        "sha256": "43bf33d06e775bd6581f120a002d6d904de36de6c6d4e18eaef90f6862fb6998",
+        "header_matches": true
+      },
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/agent/binary?architecture=amd64"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-BINARY-BADARCH",
+      "title": "非法架构明确拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 400,
+      "actual_http": 400,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/agent/binary?architecture=invalid"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-BINARY-METHOD",
+      "title": "公开下载拒绝写方法",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 405,
+      "actual_http": 405,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/agent/binary?architecture=amd64"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-OIDC-DISABLED",
+      "title": "未配置OIDC时登录入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 404,
+      "actual_http": 404,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/oidc/login"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-NOAUTH-01",
+      "title": "受保护接口无会话拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 401,
+      "actual_http": 401,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/me"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-administrator-01",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/me"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-operator-01",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/me"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-viewer-01",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/me"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-NOAUTH-02",
+      "title": "受保护接口无会话拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 401,
+      "actual_http": 401,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/nodes"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-administrator-02",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/nodes"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-operator-02",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/nodes"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-viewer-02",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/nodes"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-NOAUTH-03",
+      "title": "受保护接口无会话拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 401,
+      "actual_http": 401,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/groups"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-administrator-03",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/groups"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-operator-03",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/groups"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-viewer-03",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/groups"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-NOAUTH-04",
+      "title": "受保护接口无会话拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 401,
+      "actual_http": 401,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/scripts"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-administrator-04",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/scripts"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-operator-04",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/scripts"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-viewer-04",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/scripts"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-NOAUTH-05",
+      "title": "受保护接口无会话拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 401,
+      "actual_http": 401,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/tasks"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-administrator-05",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/tasks"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-operator-05",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/tasks"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-viewer-05",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/tasks"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-NOAUTH-06",
+      "title": "受保护接口无会话拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 401,
+      "actual_http": 401,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/schedules"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-administrator-06",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/schedules"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-operator-06",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/schedules"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-viewer-06",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/schedules"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-NOAUTH-07",
+      "title": "受保护接口无会话拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 401,
+      "actual_http": 401,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/applications"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-administrator-07",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/applications"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-operator-07",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/applications"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-viewer-07",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/applications"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-NOAUTH-08",
+      "title": "受保护接口无会话拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 401,
+      "actual_http": 401,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/artifacts"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-administrator-08",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/artifacts"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-operator-08",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/artifacts"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-viewer-08",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/artifacts"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-NOAUTH-09",
+      "title": "受保护接口无会话拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 401,
+      "actual_http": 401,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/executions"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-administrator-09",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/executions"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-operator-09",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/executions"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-viewer-09",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/executions"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-NOAUTH-10",
+      "title": "受保护接口无会话拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 401,
+      "actual_http": 401,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/transfers"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-administrator-10",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/transfers"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-operator-10",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/transfers"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-viewer-10",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/transfers"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-NOAUTH-11",
+      "title": "受保护接口无会话拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 401,
+      "actual_http": 401,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/audit"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-administrator-11",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/audit"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-operator-11",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/audit"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-viewer-11",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/audit"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-NOAUTH-12",
+      "title": "受保护接口无会话拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 401,
+      "actual_http": 401,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/settings"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-administrator-12",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/settings"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-operator-12",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/settings"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-viewer-12",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/settings"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-NOAUTH-13",
+      "title": "受保护接口无会话拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 401,
+      "actual_http": 401,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/users"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-administrator-13",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/users"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-operator-13",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/users"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-viewer-13",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/users"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-NOAUTH-14",
+      "title": "受保护接口无会话拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 401,
+      "actual_http": 401,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/metrics"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-administrator-14",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/metrics"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-operator-14",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/metrics"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-READ-viewer-14",
+      "title": "真实角色读取权限",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/metrics"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-WRITE-DENY-operator-01",
+      "title": "真实角色写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/scripts"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-WRITE-DENY-operator-02",
+      "title": "真实角色写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/tasks"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-WRITE-DENY-operator-03",
+      "title": "真实角色写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/groups"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-WRITE-DENY-operator-04",
+      "title": "真实角色写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/schedules"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-WRITE-DENY-operator-05",
+      "title": "真实角色写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/applications"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-WRITE-DENY-operator-06",
+      "title": "真实角色写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/users"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-WRITE-DENY-operator-07",
+      "title": "真实角色写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/transfers"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-WRITE-DENY-operator-08",
+      "title": "真实角色写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/nodes/enrollment"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-SETTINGS-DENY-operator",
+      "title": "真实角色设置写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "PUT",
+        "url": "http://192.168.100.209:8080/api/settings"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-WRITE-DENY-viewer-01",
+      "title": "真实角色写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/scripts"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-WRITE-DENY-viewer-02",
+      "title": "真实角色写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/tasks"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-WRITE-DENY-viewer-03",
+      "title": "真实角色写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/groups"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-WRITE-DENY-viewer-04",
+      "title": "真实角色写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/schedules"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-WRITE-DENY-viewer-05",
+      "title": "真实角色写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/applications"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-WRITE-DENY-viewer-06",
+      "title": "真实角色写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/users"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-WRITE-DENY-viewer-07",
+      "title": "真实角色写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/transfers"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-WRITE-DENY-viewer-08",
+      "title": "真实角色写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "POST",
+        "url": "http://192.168.100.209:8080/api/nodes/enrollment"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-SETTINGS-DENY-viewer",
+      "title": "真实角色设置写入口拒绝",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "PUT",
+        "url": "http://192.168.100.209:8080/api/settings"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-SETTING-INVALID-01",
+      "title": "设置非法值原子拒绝且旧值不变",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 400,
+      "actual_http": 400,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": {
+        "unchanged": true
+      },
+      "request": {
+        "method": "PUT",
+        "url": "http://192.168.100.209:8080/api/settings"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-SETTING-INVALID-02",
+      "title": "设置非法值原子拒绝且旧值不变",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 400,
+      "actual_http": 400,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": {
+        "unchanged": true
+      },
+      "request": {
+        "method": "PUT",
+        "url": "http://192.168.100.209:8080/api/settings"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-SETTING-INVALID-03",
+      "title": "设置非法值原子拒绝且旧值不变",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 400,
+      "actual_http": 400,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": {
+        "unchanged": true
+      },
+      "request": {
+        "method": "PUT",
+        "url": "http://192.168.100.209:8080/api/settings"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-SETTING-INVALID-04",
+      "title": "设置非法值原子拒绝且旧值不变",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 400,
+      "actual_http": 400,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": {
+        "unchanged": true
+      },
+      "request": {
+        "method": "PUT",
+        "url": "http://192.168.100.209:8080/api/settings"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-SETTING-INVALID-05",
+      "title": "设置非法值原子拒绝且旧值不变",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 400,
+      "actual_http": 400,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": {
+        "unchanged": true
+      },
+      "request": {
+        "method": "PUT",
+        "url": "http://192.168.100.209:8080/api/settings"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-SETTING-INVALID-06",
+      "title": "设置非法值原子拒绝且旧值不变",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 400,
+      "actual_http": 400,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": {
+        "unchanged": true
+      },
+      "request": {
+        "method": "PUT",
+        "url": "http://192.168.100.209:8080/api/settings"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-MISSING-tasks",
+      "title": "不存在对象读取",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 404,
+      "actual_http": 404,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/tasks/not-a-real-id"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-MISSING-scripts",
+      "title": "不存在对象读取",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 404,
+      "actual_http": 404,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/scripts/not-a-real-id"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-MISSING-applications",
+      "title": "不存在对象读取",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 404,
+      "actual_http": 404,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/applications/not-a-real-id"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-ROLE-PROMOTE",
+      "title": "专用viewer升为administrator",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "PUT",
+        "url": "http://192.168.100.209:8080/api/users/2574c14f-83db-4d1a-91dd-14dc5bb209d9"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-ROLE-OLDTOKEN-PROMOTE",
+      "title": "既有token实时获取升权",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/users"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-ROLE-RESTORE",
+      "title": "恢复专用viewer角色",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 200,
+      "actual_http": 200,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "PUT",
+        "url": "http://192.168.100.209:8080/api/users/2574c14f-83db-4d1a-91dd-14dc5bb209d9"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-ROLE-OLDTOKEN-DEMOTE",
+      "title": "既有token实时获取降权",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "expected_http": 403,
+      "actual_http": 403,
+      "time": "2026-09-30T10:27:25+0800",
+      "detail": null,
+      "request": {
+        "method": "GET",
+        "url": "http://192.168.100.209:8080/api/users"
+      },
+      "evidence": [
+        "main/api-results.json"
+      ]
+    },
+    {
+      "case_id": "MAIN-INVALID-BEARER-00",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-INVALID-BEARER-01",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-INVALID-BEARER-02",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-INVALID-BEARER-03",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-INVALID-BEARER-04",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-INVALID-BEARER-05",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-INVALID-BEARER-06",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-INVALID-BEARER-07",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-INVALID-BEARER-08",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-INVALID-BEARER-09",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-INVALID-BEARER-10",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-INVALID-BEARER-11",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-INVALID-BEARER-12",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-INVALID-BEARER-13",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-SESSION-VALID",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 200,
+      "expected_http": 200,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-SESSION-LOGOUT",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 200,
+      "expected_http": 200,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-REVOKED-BEARER-00",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-REVOKED-BEARER-01",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-REVOKED-BEARER-02",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-REVOKED-BEARER-03",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-REVOKED-BEARER-04",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-REVOKED-BEARER-05",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-REVOKED-BEARER-06",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-REVOKED-BEARER-07",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-REVOKED-BEARER-08",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-REVOKED-BEARER-09",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-REVOKED-BEARER-10",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-REVOKED-BEARER-11",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-REVOKED-BEARER-12",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-REVOKED-BEARER-13",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-MALFORMED-JSON-00",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 400,
+      "expected_http": 400,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-MALFORMED-JSON-01",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 400,
+      "expected_http": 400,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-MALFORMED-JSON-02",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 400,
+      "expected_http": 400,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-MALFORMED-JSON-03",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 400,
+      "expected_http": 400,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-MALFORMED-JSON-04",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 400,
+      "expected_http": 400,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-MALFORMED-JSON-05",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 400,
+      "expected_http": 400,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-MALFORMED-JSON-06",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 400,
+      "expected_http": 400,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-MALFORMED-JSON-07",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 400,
+      "expected_http": 400,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-DELETE-MISSING-00",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 200,
+      "expected_http": 200,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-DELETE-MISSING-01",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 200,
+      "expected_http": 200,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-DELETE-MISSING-02",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 200,
+      "expected_http": 200,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-DELETE-MISSING-03",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 200,
+      "expected_http": 200,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-DELETE-MISSING-04",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 200,
+      "expected_http": 200,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-ARTIFACT-NOAUTH",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-ARTIFACT-USER-operator",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 200,
+      "expected_http": 200,
+      "detail": {
+        "sha256": "87488da7edf12c727ff6c1e02542030b7344466f5940412de84852f38788a772"
+      }
+    },
+    {
+      "case_id": "MAIN-ARTIFACT-USER-viewer",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 200,
+      "expected_http": 200,
+      "detail": {
+        "sha256": "87488da7edf12c727ff6c1e02542030b7344466f5940412de84852f38788a772"
+      }
+    },
+    {
+      "case_id": "MAIN-ARTIFACT-REGISTRATION",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 200,
+      "expected_http": 200,
+      "detail": {
+        "content_matches": true
+      }
+    },
+    {
+      "case_id": "MAIN-ARTIFACT-CREDENTIAL",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 200,
+      "expected_http": 200,
+      "detail": {
+        "content_matches": true
+      }
+    },
+    {
+      "case_id": "MAIN-ARTIFACT-INVALID-AGENT",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-RELAY-USER-REJECTED",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-RELAY-REGISTRATION-REJECTED",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 401,
+      "expected_http": 401,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-RELAY-VALID-AGENT-MISSING",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 404,
+      "expected_http": 404,
+      "detail": {}
+    },
+    {
+      "case_id": "MAIN-ARTIFACT-EXACT-CLEANUP",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "actual_http": 200,
+      "expected_http": 200,
+      "detail": {
+        "artifact_id": "b1cb768e-2c4a-4928-9240-1e87372a5e7a"
+      }
+    },
+    {
+      "case_id": "MAIN-CONTRACT-001",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/nodes/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 404,
+      "actual_http": 404,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "node not found"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-002",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/groups/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 404,
+      "actual_http": 404,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "group not found"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-003",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/scripts/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 404,
+      "actual_http": 404,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "script not found"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-004",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/tasks/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 404,
+      "actual_http": 404,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "task not found"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-005",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/schedules/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 404,
+      "actual_http": 404,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "schedule not found"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-006",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/artifacts/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 404,
+      "actual_http": 404,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "artifact not found"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-007",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/applications/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 404,
+      "actual_http": 404,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "application not found"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-008",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/executions/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 404,
+      "actual_http": 404,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "execution not found"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-009",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/transfers/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 404,
+      "actual_http": 404,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "transfer not found"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-010",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "DELETE",
+      "path": "/api/nodes/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 404,
+      "actual_http": 404,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "node not found"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-011",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/nodes",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-012",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/groups",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-013",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/scripts",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-014",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/tasks",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-015",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/schedules",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-016",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/artifacts",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-017",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/applications",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-018",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/executions",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-019",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/transfers",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-020",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/users",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-021",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/groups/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-022",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/scripts/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-023",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/tasks/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-024",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/schedules/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-025",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/artifacts/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-026",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/applications/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-027",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PATCH",
+      "path": "/api/executions/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-028",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/users/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-029",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PUT",
+      "path": "/api/groups/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 400,
+      "actual_http": 400,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "invalid request"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-030",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PUT",
+      "path": "/api/scripts/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 400,
+      "actual_http": 400,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "invalid request"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-031",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PUT",
+      "path": "/api/tasks/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 400,
+      "actual_http": 400,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "invalid request"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-032",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PUT",
+      "path": "/api/schedules/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 400,
+      "actual_http": 400,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "invalid request"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-033",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PUT",
+      "path": "/api/applications/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 400,
+      "actual_http": 400,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "invalid request"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-034",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PUT",
+      "path": "/api/users/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 400,
+      "actual_http": 400,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "invalid request"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-035",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PUT",
+      "path": "/api/users/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21",
+      "expected_http": 400,
+      "actual_http": 400,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "role or password required"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-036",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "POST",
+      "path": "/api/nodes",
+      "expected_http": 400,
+      "actual_http": 400,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "invalid request"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-037",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "POST",
+      "path": "/api/nodes",
+      "expected_http": 400,
+      "actual_http": 400,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "id required"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-038",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PUT",
+      "path": "/api/nodes/811d72ef-75f8-47ba-84de-8cb1e6974315",
+      "expected_http": 400,
+      "actual_http": 400,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "invalid request"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-039",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "POST",
+      "path": "/api/nodes/upgrade",
+      "expected_http": 400,
+      "actual_http": 400,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "invalid request"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-040",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "PUT",
+      "path": "/api/settings",
+      "expected_http": 400,
+      "actual_http": 400,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "invalid request"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-041",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "POST",
+      "path": "/api/applications/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21/assign",
+      "expected_http": 400,
+      "actual_http": 400,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "invalid request"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-042",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "POST",
+      "path": "/api/applications/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21/deploy",
+      "expected_http": 400,
+      "actual_http": 400,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "invalid request"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-043",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "POST",
+      "path": "/api/executions/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21/logs",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-044",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/executions/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21/cancel",
+      "expected_http": 405,
+      "actual_http": 405,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "method not allowed"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-045",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/scripts/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21/revisions/not-a-revision",
+      "expected_http": 400,
+      "actual_http": 400,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "invalid revision"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-046",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/scripts/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21/revisions/1",
+      "expected_http": 404,
+      "actual_http": 404,
+      "response_kind": "error",
+      "shape_matches": true,
+      "error": "revision not found"
+    },
+    {
+      "case_id": "MAIN-CONTRACT-047",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/scripts/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21/revisions",
+      "expected_http": 200,
+      "actual_http": 200,
+      "response_kind": "empty-list",
+      "shape_matches": true,
+      "error": null
+    },
+    {
+      "case_id": "MAIN-CONTRACT-048",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/executions/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21/logs",
+      "expected_http": 200,
+      "actual_http": 200,
+      "response_kind": "empty-list",
+      "shape_matches": true,
+      "error": null
+    },
+    {
+      "case_id": "MAIN-CONTRACT-049",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/applications/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21/state",
+      "expected_http": 200,
+      "actual_http": 200,
+      "response_kind": "empty-list",
+      "shape_matches": true,
+      "error": null
+    },
+    {
+      "case_id": "MAIN-CONTRACT-050",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "method": "GET",
+      "path": "/api/applications/qa-20260930-101945-main-absent-6c83051f6f80472587fac6f476dfcf21/executions",
+      "expected_http": 200,
+      "actual_http": 200,
+      "response_kind": "empty-list",
+      "shape_matches": true,
+      "error": null
+    },
+    {
+      "case_id": "MAIN-RELAY-SOURCE-ERROR-TERMINAL",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "transfer_id": "945e1bd4-7517-4d19-8561-aa558129aef5",
+        "actual": {
+          "id": "945e1bd4-7517-4d19-8561-aa558129aef5",
+          "source_node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+          "source_path": "/tmp/qa-20260930-101945-main-relay-85e85973/absent-source",
+          "size": 0,
+          "status": "FAILED",
+          "error": "source upload failed: open /tmp/qa-20260930-101945-main-relay-85e85973/absent-source: no such file or directory",
+          "created_at": "2026-10-01T01:44:55.074697744Z",
+          "updated_at": "2026-10-01T01:44:55.089478012Z",
+          "targets": [
+            {
+              "transfer_id": "945e1bd4-7517-4d19-8561-aa558129aef5",
+              "node_id": "1c59cf12-97ef-412f-9a06-aea04e6423c1",
+              "destination_path": "/tmp/qa-20260930-101945-main-relay-85e85973/destination",
+              "status": "FAILED",
+              "error": "source upload failed: open /tmp/qa-20260930-101945-main-relay-85e85973/absent-source: no such file or directory",
+              "updated_at": "2026-10-01T01:44:55.103007882Z"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-WRONG-SOURCE",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 403,
+        "expected_http": 403,
+        "response": {
+          "error": "agent is not the transfer source"
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-SIZE-ABSENT",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 400,
+        "expected_http": 400,
+        "response": {
+          "error": "invalid file size"
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-SIZE-NEGATIVE",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 400,
+        "expected_http": 400,
+        "response": {
+          "error": "invalid file size"
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-SIZE-OVER-LIMIT",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 400,
+        "expected_http": 400,
+        "response": {
+          "error": "invalid file size"
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-SIZE-TEXT",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 400,
+        "expected_http": 400,
+        "response": {
+          "error": "invalid file size"
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-MODE-INVALID",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 400,
+        "expected_http": 400,
+        "response": {
+          "error": "invalid file mode"
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-RANGE-INVALID",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 400,
+        "expected_http": 400,
+        "response": {
+          "error": "invalid content range"
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-OFFSET-MISMATCH",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 409,
+        "expected_http": 409,
+        "response": {
+          "error": "upload offset mismatch",
+          "next_offset": 0
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-LENGTH-MISMATCH",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 400,
+        "expected_http": 400,
+        "response": {
+          "error": "content length mismatch"
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-PARTIAL-UPLOAD",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 409,
+        "expected_http": 409,
+        "response": {
+          "next_offset": 13,
+          "status": "UPLOADING"
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-PARTIAL-NOT-PUBLISHED",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "hub_files": {
+          "part_exists": true,
+          "part_size": 13,
+          "blob_exists": false
+        },
+        "transfer_status": "UPLOADING"
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-PARTIAL-DOWNLOAD-SOURCE",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 404
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-PARTIAL-DOWNLOAD-OTHER",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 404
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-PARTIAL-DOWNLOAD-TARGET",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 404
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-RESUME-UPLOAD",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 200,
+        "expected_http": 200,
+        "response": {
+          "sha256": "544bf7938ede6a0b714e32c4ed7fd2e86c027f9ab5288a45dbed351ebc0876bf",
+          "size": 60,
+          "status": "DELIVERING"
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-COMPLETED-METADATA",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "expected_sha256": "544bf7938ede6a0b714e32c4ed7fd2e86c027f9ab5288a45dbed351ebc0876bf",
+        "actual_sha256": "544bf7938ede6a0b714e32c4ed7fd2e86c027f9ab5288a45dbed351ebc0876bf",
+        "size": 60
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-DOWNLOAD-OWNER-SOURCE",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 403,
+        "bytes_match": null
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-DOWNLOAD-OWNER-OTHER",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 403,
+        "bytes_match": null
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-DOWNLOAD-OWNER-TARGET",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 200,
+        "bytes_match": true
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-UPLOAD-IDEMPOTENT",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_http": 200,
+        "expected_http": 200,
+        "response": {
+          "sha256": "544bf7938ede6a0b714e32c4ed7fd2e86c027f9ab5288a45dbed351ebc0876bf",
+          "size": 60,
+          "status": "FAILED"
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-DUPLICATE-PRESERVES-SHA",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "actual_sha256": "544bf7938ede6a0b714e32c4ed7fd2e86c027f9ab5288a45dbed351ebc0876bf"
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-NATIVE-SYMLINK-PROTECTION",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "target_result": [
+          {
+            "transfer_id": "945e1bd4-7517-4d19-8561-aa558129aef5",
+            "node_id": "1c59cf12-97ef-412f-9a06-aea04e6423c1",
+            "destination_path": "/tmp/qa-20260930-101945-main-relay-85e85973/destination",
+            "status": "FAILED",
+            "error": "destination is a symlink: /tmp/qa-20260930-101945-main-relay-85e85973/destination",
+            "updated_at": "2026-10-01T01:44:55.979940669Z"
+          }
+        ],
+        "destination": {
+          "is_symlink": true,
+          "old": "owned-old-file-44eb9826bddc4b3db52c795ff5fc9369",
+          "tmp": []
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-CANCEL-EXACT",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "transfer_id": "945e1bd4-7517-4d19-8561-aa558129aef5",
+        "actual_http": 200
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-HUB-BLOB-CLEANUP",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "transfer_id": "945e1bd4-7517-4d19-8561-aa558129aef5"
+      }
+    },
+    {
+      "case_id": "MAIN-RELAY-GUEST-CLEANUP",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "path": "/tmp/qa-20260930-101945-main-relay-85e85973"
+      }
+    },
+    {
+      "case_id": "MAIN-NATIVE-RESTART-ONSTART",
+      "classification": "REAL_API_AGENT",
+      "before": {
+        "agent_id": "agent-a5a3aca2-097a-4de1-b870-13e2c76d9612",
+        "counter": 1
+      },
+      "after": {
+        "agent_id": "agent-a5a3aca2-097a-4de1-b870-13e2c76d9612",
+        "counter": 2,
+        "status": "online",
+        "sync": "synced"
+      },
+      "status": "PASS"
+    },
+    {
+      "case_id": "MAIN-PHASE-PREPARING",
+      "classification": "REAL_API_AGENT",
+      "application_id": "d1e8e28c-6dfe-4b48-a4e8-c61aa9298850",
+      "unit": "qa-20260930-101945-main-phase-4f80bfcd.service",
+      "path": "/tmp/qa-20260930-101945-main/native/phase-4f80bfcd",
+      "status": "FAIL",
+      "baseline": {
+        "journal": [
+          [
+            "42a94772-aeb8-4e4e-b9f5-8e13703af4a6",
+            "DONE",
+            "",
+            "",
+            ""
+          ]
+        ],
+        "binary_exists": true,
+        "config_exists": true,
+        "unit_exists": true,
+        "unit_state": "active",
+        "binary_sha256": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2",
+        "config": "config-v1\n"
+      },
+      "execution_id": "02048baa-871e-488a-84de-1c8a456b3693",
+      "injection": {
+        "observed": true,
+        "target": "PREPARING",
+        "stopped_phase": "PREPARING",
+        "backup_present": [
+          false,
+          false,
+          false
+        ],
+        "deployment_id": "f151768f-fea2-41d3-8771-f55b3625e19e",
+        "agent_pid": 18988
+      },
+      "recovered": {
+        "journal": [
+          [
+            "f151768f-fea2-41d3-8771-f55b3625e19e",
+            "DONE",
+            "",
+            "",
+            ""
+          ],
+          [
+            "42a94772-aeb8-4e4e-b9f5-8e13703af4a6",
+            "DONE",
+            "",
+            "",
+            ""
+          ]
+        ],
+        "binary_exists": false,
+        "config_exists": false,
+        "unit_exists": false,
+        "unit_state": "failed"
+      },
+      "execution_terminal": {
+        "id": "02048baa-871e-488a-84de-1c8a456b3693",
+        "task_id": "d1e8e28c-6dfe-4b48-a4e8-c61aa9298850",
+        "task_revision": 2,
+        "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T06:46:23.577045198Z",
+        "end_time": "2026-09-30T06:46:28.826553056Z",
+        "status": "FAILED",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true,
+        "block_reason": "agent_restarted"
+      },
+      "reason": "崩溃后旧版本文件或服务未恢复"
+    },
+    {
+      "case_id": "MAIN-PHASE-REPLACED",
+      "classification": "REAL_API_AGENT",
+      "application_id": "7d84df7d-f9e8-4d15-b746-1df73355355d",
+      "unit": "qa-20260930-101945-main-phase-83449c34.service",
+      "path": "/tmp/qa-20260930-101945-main/native/phase-83449c34",
+      "status": "PASS",
+      "baseline": {
+        "journal": [
+          [
+            "19266097-0530-4f9e-944b-b2818bc0bdd6",
+            "DONE",
+            "",
+            "",
+            ""
+          ]
+        ],
+        "binary_exists": true,
+        "config_exists": true,
+        "unit_exists": true,
+        "unit_state": "active",
+        "binary_sha256": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2",
+        "config": "config-v1\n"
+      },
+      "execution_id": "9cbbf462-490a-4a40-a101-9b017df948b7",
+      "injection": {
+        "observed": true,
+        "target": "REPLACED",
+        "stopped_phase": "REPLACED",
+        "backup_present": [
+          true,
+          true,
+          true
+        ],
+        "deployment_id": "dfb895d7-33a6-43a4-b65d-820de7aa8528",
+        "agent_pid": 16291
+      },
+      "recovered": {
+        "journal": [
+          [
+            "dfb895d7-33a6-43a4-b65d-820de7aa8528",
+            "DONE",
+            "/var/lib/nodesteer/applications/backup-9893075a-5aa8-4f3c-bd0b-2a8ed05d5695",
+            "/var/lib/nodesteer/applications/backup-9893075a-5aa8-4f3c-bd0b-2a8ed05d5695.conf",
+            "/var/lib/nodesteer/applications/backup-9893075a-5aa8-4f3c-bd0b-2a8ed05d5695.unit"
+          ],
+          [
+            "19266097-0530-4f9e-944b-b2818bc0bdd6",
+            "DONE",
+            "",
+            "",
+            ""
+          ]
+        ],
+        "binary_exists": true,
+        "config_exists": true,
+        "unit_exists": true,
+        "unit_state": "active",
+        "binary_sha256": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2",
+        "config": "config-v1\n"
+      },
+      "execution_terminal": {
+        "id": "9cbbf462-490a-4a40-a101-9b017df948b7",
+        "task_id": "7d84df7d-f9e8-4d15-b746-1df73355355d",
+        "task_revision": 2,
+        "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T06:41:26.543048205Z",
+        "end_time": "2026-09-30T06:41:31.823327481Z",
+        "status": "FAILED",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true,
+        "block_reason": "agent_restarted"
+      },
+      "reason": "崩溃后恢复v1 Binary/Config/Unit和真实active服务"
+    },
+    {
+      "case_id": "MAIN-PHASE-STARTED",
+      "classification": "REAL_API_AGENT",
+      "application_id": "7d26538d-8e0d-4d76-8d45-619b6c7fe1ff",
+      "unit": "qa-20260930-101945-main-phase-8566412b.service",
+      "path": "/tmp/qa-20260930-101945-main/native/phase-8566412b",
+      "status": "PASS",
+      "baseline": {
+        "journal": [
+          [
+            "7e5f8c6e-d54e-45aa-b304-2c7822679094",
+            "DONE",
+            "",
+            "",
+            ""
+          ]
+        ],
+        "binary_exists": true,
+        "config_exists": true,
+        "unit_exists": true,
+        "unit_state": "active",
+        "binary_sha256": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2",
+        "config": "config-v1\n"
+      },
+      "execution_id": "89da76f2-8df1-40d4-adf9-00cb4e843dea",
+      "injection": {
+        "observed": true,
+        "target": "STARTED",
+        "stopped_phase": "STARTED",
+        "backup_present": [
+          true,
+          true,
+          true
+        ],
+        "deployment_id": "b408f56e-16a8-4662-bade-d774dc152171",
+        "agent_pid": 16918
+      },
+      "recovered": {
+        "journal": [
+          [
+            "b408f56e-16a8-4662-bade-d774dc152171",
+            "DONE",
+            "/var/lib/nodesteer/applications/backup-de7e901d-9658-45fc-8a4c-e3de49230577",
+            "/var/lib/nodesteer/applications/backup-de7e901d-9658-45fc-8a4c-e3de49230577.conf",
+            "/var/lib/nodesteer/applications/backup-de7e901d-9658-45fc-8a4c-e3de49230577.unit"
+          ],
+          [
+            "7e5f8c6e-d54e-45aa-b304-2c7822679094",
+            "DONE",
+            "",
+            "",
+            ""
+          ]
+        ],
+        "binary_exists": true,
+        "config_exists": true,
+        "unit_exists": true,
+        "unit_state": "active",
+        "binary_sha256": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2",
+        "config": "config-v1\n"
+      },
+      "execution_terminal": {
+        "id": "89da76f2-8df1-40d4-adf9-00cb4e843dea",
+        "task_id": "7d26538d-8e0d-4d76-8d45-619b6c7fe1ff",
+        "task_revision": 2,
+        "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T06:41:37.385660219Z",
+        "end_time": "2026-09-30T06:41:43.575324557Z",
+        "status": "FAILED",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true,
+        "block_reason": "agent_restarted"
+      },
+      "reason": "崩溃后恢复v1 Binary/Config/Unit和真实active服务"
+    },
+    {
+      "case_id": "MAIN-PHASE-VERIFYING",
+      "classification": "REAL_API_AGENT",
+      "application_id": "cc4d4770-050e-4a1b-8653-0a97de6528b4",
+      "unit": "qa-20260930-101945-main-phase-a7ad0fda.service",
+      "path": "/tmp/qa-20260930-101945-main/native/phase-a7ad0fda",
+      "status": "PASS",
+      "baseline": {
+        "journal": [
+          [
+            "f397f095-a369-40ce-a028-ba119a07f1cc",
+            "DONE",
+            "",
+            "",
+            ""
+          ]
+        ],
+        "binary_exists": true,
+        "config_exists": true,
+        "unit_exists": true,
+        "unit_state": "active",
+        "binary_sha256": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2",
+        "config": "config-v1\n"
+      },
+      "execution_id": "ccdc6824-e2cd-4062-87f4-70b479c95186",
+      "injection": {
+        "observed": true,
+        "target": "VERIFYING",
+        "stopped_phase": "VERIFYING",
+        "backup_present": [
+          true,
+          true,
+          true
+        ],
+        "deployment_id": "d37a1c8c-3073-49b2-80e3-478ab67cb409",
+        "agent_pid": 17592
+      },
+      "recovered": {
+        "journal": [
+          [
+            "d37a1c8c-3073-49b2-80e3-478ab67cb409",
+            "DONE",
+            "/var/lib/nodesteer/applications/backup-aa632df9-185a-4f14-8a89-52227146278f",
+            "/var/lib/nodesteer/applications/backup-aa632df9-185a-4f14-8a89-52227146278f.conf",
+            "/var/lib/nodesteer/applications/backup-aa632df9-185a-4f14-8a89-52227146278f.unit"
+          ],
+          [
+            "f397f095-a369-40ce-a028-ba119a07f1cc",
+            "DONE",
+            "",
+            "",
+            ""
+          ]
+        ],
+        "binary_exists": true,
+        "config_exists": true,
+        "unit_exists": true,
+        "unit_state": "active",
+        "binary_sha256": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2",
+        "config": "config-v1\n"
+      },
+      "execution_terminal": {
+        "id": "ccdc6824-e2cd-4062-87f4-70b479c95186",
+        "task_id": "cc4d4770-050e-4a1b-8653-0a97de6528b4",
+        "task_revision": 2,
+        "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T06:41:49.138964765Z",
+        "end_time": "2026-09-30T06:41:55.333276056Z",
+        "status": "FAILED",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true,
+        "block_reason": "agent_restarted"
+      },
+      "reason": "崩溃后恢复v1 Binary/Config/Unit和真实active服务"
+    },
+    {
+      "case_id": "MAIN-PHASE-ROLLING_BACK",
+      "classification": "REAL_API_AGENT",
+      "application_id": "89b64329-9195-4690-8064-334c19f2e924",
+      "unit": "qa-20260930-101945-main-phase-3b58dc59.service",
+      "path": "/tmp/qa-20260930-101945-main/native/phase-3b58dc59",
+      "status": "PASS",
+      "baseline": {
+        "journal": [
+          [
+            "9ea308c6-99d3-4ae8-bd02-18bd72a3d5b1",
+            "DONE",
+            "",
+            "",
+            ""
+          ]
+        ],
+        "binary_exists": true,
+        "config_exists": true,
+        "unit_exists": true,
+        "unit_state": "active",
+        "binary_sha256": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2",
+        "config": "config-v1\n"
+      },
+      "execution_id": "efda192a-29ce-4fa0-b0cb-85c34680bcbb",
+      "injection": {
+        "observed": true,
+        "target": "ROLLING_BACK",
+        "stopped_phase": "ROLLING_BACK",
+        "backup_present": [
+          true,
+          true,
+          true
+        ],
+        "deployment_id": "e0556c0f-ae88-4437-8167-e97662394a03",
+        "agent_pid": 18268
+      },
+      "recovered": {
+        "journal": [
+          [
+            "e0556c0f-ae88-4437-8167-e97662394a03",
+            "DONE",
+            "/var/lib/nodesteer/applications/backup-c89fed9a-ac38-4150-b05f-db8f5e1d7d42",
+            "/var/lib/nodesteer/applications/backup-c89fed9a-ac38-4150-b05f-db8f5e1d7d42.conf",
+            "/var/lib/nodesteer/applications/backup-c89fed9a-ac38-4150-b05f-db8f5e1d7d42.unit"
+          ],
+          [
+            "9ea308c6-99d3-4ae8-bd02-18bd72a3d5b1",
+            "DONE",
+            "",
+            "",
+            ""
+          ]
+        ],
+        "binary_exists": true,
+        "config_exists": true,
+        "unit_exists": true,
+        "unit_state": "active",
+        "binary_sha256": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2",
+        "config": "config-v1\n"
+      },
+      "execution_terminal": {
+        "id": "efda192a-29ce-4fa0-b0cb-85c34680bcbb",
+        "task_id": "89b64329-9195-4690-8064-334c19f2e924",
+        "task_revision": 2,
+        "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-09-30T06:42:33.14620421Z",
+        "end_time": "2026-09-30T06:42:41.329046098Z",
+        "status": "FAILED",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true,
+        "block_reason": "agent_restarted"
+      },
+      "reason": "崩溃后恢复v1 Binary/Config/Unit和真实active服务"
+    },
+    {
+      "case_id": "MAIN-PHASE-STOPPED",
+      "status": "BLOCKED",
+      "classification": "STATIC_LIMITATION",
+      "reason": "当前源码PhaseStopped只有声明没有写入；停止服务处于PREPARING，未伪造STOPPED阶段测试"
+    },
+    {
+      "case_id": "MAIN-OIDC-UI-administrator",
+      "classification": "REAL_UI_API",
+      "expected_role": "administrator",
+      "actual": {
+        "me": 200,
+        "nodes": 200,
+        "path": "/",
+        "role": "administrator",
+        "users": 200
+      },
+      "status": "PASS",
+      "evidence": [
+        "main/sso-administrator-dashboard.png"
+      ]
+    },
+    {
+      "case_id": "MAIN-OIDC-UI-operator",
+      "classification": "REAL_UI_API",
+      "expected_role": "operator",
+      "actual": {
+        "me": 200,
+        "nodes": 200,
+        "path": "/",
+        "role": "operator",
+        "users": 403
+      },
+      "status": "PASS",
+      "evidence": [
+        "main/sso-operator-dashboard.png"
+      ]
+    },
+    {
+      "case_id": "MAIN-OIDC-UI-viewer",
+      "classification": "REAL_UI_API",
+      "expected_role": "viewer",
+      "actual": {
+        "me": 200,
+        "nodes": 200,
+        "path": "/",
+        "role": "viewer",
+        "users": 403
+      },
+      "status": "PASS",
+      "evidence": [
+        "main/sso-viewer-dashboard.png"
+      ]
+    },
+    {
+      "case_id": "MAIN-OIDC-MODE-AND-STATE",
+      "classification": "REAL_API",
+      "actual": {
+        "mode": {
+          "enabled": true,
+          "local_fallback": false
+        },
+        "local_password_http": 403,
+        "invalid_callback_http": 302,
+        "invalid_callback_returns_error": true
+      },
+      "status": "PASS"
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-RUNTIME",
+      "original": {
+        "changelog_window": "5000",
+        "heartbeat_interval_sec": "30",
+        "max_log_bytes": "1048576",
+        "revision_check_interval_sec": "45"
+      },
+      "changed": {
+        "changelog_window": "5000",
+        "heartbeat_interval_sec": "3",
+        "max_log_bytes": "1048576",
+        "revision_check_interval_sec": "45"
+      },
+      "observed_heartbeats": {
+        "56765828-4896-492b-b562-64afdc0fb8d6": [
+          {
+            "observed_at": 1790735669.3727522,
+            "last_seen": "2026-09-30T10:34:26.898186626+08:00"
+          },
+          {
+            "observed_at": 1790735670.3796859,
+            "last_seen": "2026-09-30T10:34:29.89827614+08:00"
+          },
+          {
+            "observed_at": 1790735673.398218,
+            "last_seen": "2026-09-30T10:34:32.898901036+08:00"
+          },
+          {
+            "observed_at": 1790735675.9155178,
+            "last_seen": "2026-09-30T10:34:35.898505153+08:00"
+          },
+          {
+            "observed_at": 1790735678.9375753,
+            "last_seen": "2026-09-30T10:34:38.898303655+08:00"
+          },
+          {
+            "observed_at": 1790735682.967281,
+            "last_seen": "2026-09-30T10:34:42.898358463+08:00"
+          }
+        ],
+        "d77e2440-919f-4431-a488-733817dcd809": [
+          {
+            "observed_at": 1790735669.3727558,
+            "last_seen": "2026-09-30T10:34:25.866142503+08:00"
+          },
+          {
+            "observed_at": 1790735669.876189,
+            "last_seen": "2026-09-30T10:34:29.866635814+08:00"
+          },
+          {
+            "observed_at": 1790735672.895214,
+            "last_seen": "2026-09-30T10:34:32.866172089+08:00"
+          },
+          {
+            "observed_at": 1790735676.921832,
+            "last_seen": "2026-09-30T10:34:36.866094599+08:00"
+          },
+          {
+            "observed_at": 1790735679.9440558,
+            "last_seen": "2026-09-30T10:34:39.866166547+08:00"
+          },
+          {
+            "observed_at": 1790735682.9672832,
+            "last_seen": "2026-09-30T10:34:42.866202457+08:00"
+          }
+        ],
+        "811d72ef-75f8-47ba-84de-8cb1e6974315": [
+          {
+            "observed_at": 1790735669.3727572,
+            "last_seen": "2026-09-30T10:34:28.775456216+08:00"
+          },
+          {
+            "observed_at": 1790735671.8893888,
+            "last_seen": "2026-09-30T10:34:31.775511562+08:00"
+          },
+          {
+            "observed_at": 1790735674.9073398,
+            "last_seen": "2026-09-30T10:34:34.776004691+08:00"
+          },
+          {
+            "observed_at": 1790735677.928163,
+            "last_seen": "2026-09-30T10:34:37.775513945+08:00"
+          },
+          {
+            "observed_at": 1790735680.9514487,
+            "last_seen": "2026-09-30T10:34:40.775423728+08:00"
+          },
+          {
+            "observed_at": 1790735683.9751232,
+            "last_seen": "2026-09-30T10:34:43.775512602+08:00"
+          }
+        ],
+        "1c59cf12-97ef-412f-9a06-aea04e6423c1": [
+          {
+            "observed_at": 1790735669.372758,
+            "last_seen": "2026-09-30T10:34:28.763833838+08:00"
+          },
+          {
+            "observed_at": 1790735672.895216,
+            "last_seen": "2026-09-30T10:34:32.762889763+08:00"
+          },
+          {
+            "observed_at": 1790735676.9218338,
+            "last_seen": "2026-09-30T10:34:36.763444209+08:00"
+          },
+          {
+            "observed_at": 1790735680.9514503,
+            "last_seen": "2026-09-30T10:34:40.763510709+08:00"
+          }
+        ]
+      },
+      "intervals_sec": {
+        "56765828-4896-492b-b562-64afdc0fb8d6": [
+          3.00009,
+          3.000625,
+          2.999604,
+          2.999798,
+          4.000055
+        ],
+        "d77e2440-919f-4431-a488-733817dcd809": [
+          4.000493,
+          2.999537,
+          3.999922,
+          3.000072,
+          3.000036
+        ],
+        "811d72ef-75f8-47ba-84de-8cb1e6974315": [
+          3.000055,
+          3.000493,
+          2.999509,
+          2.99991,
+          3.000089
+        ],
+        "1c59cf12-97ef-412f-9a06-aea04e6423c1": [
+          3.999056,
+          4.000555,
+          4.000066
+        ]
+      },
+      "ui_request_http": 200,
+      "ui_feedback": "已保存",
+      "status": "PASS",
+      "restored": {
+        "changelog_window": "5000",
+        "heartbeat_interval_sec": "30",
+        "max_log_bytes": "1048576",
+        "revision_check_interval_sec": "45"
+      },
+      "restoration_ok": true,
+      "expected": "在线热更新后心跳显著从30秒改为3秒设置；允许源码jitterDuration与1秒periodicLoop的量化，观测区间2.5~5.5秒；所有节点均至少两个有效间隔。",
+      "harness_notes": [
+        "初次读取字段误用last_heartbeat；已改last_seen并重新实际采样",
+        "初次阈值未考虑Jitter和1秒tick；按当前源码和原始采样重新判定，不作为产品缺陷"
+      ]
+    },
+    {
+      "case_id": "MAIN-NATIVE-UPGRADE-UI",
+      "classification": "REAL_UI_API_AGENT",
+      "cancel_request_count": 0,
+      "node_ids": [
+        "d77e2440-919f-4431-a488-733817dcd809"
+      ],
+      "request_status": 200,
+      "execution_id": "a149199e-059c-4fe6-9b07-6e53bfa2e53d",
+      "terminal": {
+        "status": "SUCCESS",
+        "stdout": "agent binary replaced; service restarting",
+        "stderr": "",
+        "block_reason": null,
+        "exit_code": null
+      },
+      "node_after": {
+        "id": "d77e2440-919f-4431-a488-733817dcd809",
+        "status": "online",
+        "sync_status": "synced",
+        "agent_version": "dddee4f0"
+      },
+      "status": "PASS",
+      "harness_notes": "首次取消后查找toolbar未等待关闭动画；后来已独立重开并取消，等待关闭，确认无新增请求。",
+      "cancel_retest": {
+        "requests_before": 1,
+        "requests_after": 1,
+        "open_dialogs": 0,
+        "result": "PASS"
+      }
+    },
+    {
+      "case_id": "MAIN-CROSS-FILESYSTEM-ATOMIC",
+      "classification": "REAL_API_AGENT",
+      "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+      "path": "/run/qa-20260930-101945-main-cfs-91c7742b",
+      "unit": "qa-20260930-101945-main-cfs-91c7742b.service",
+      "status": "PASS",
+      "device_ids": [
+        64769,
+        26
+      ],
+      "deploy_execution": "6dc7b52a-e474-49ad-8f8d-7f1b3a0828c0",
+      "upgrade_execution": "e1d225a9-ab97-4e9a-a829-380bf91082a7",
+      "before": {
+        "journal": [
+          [
+            "f38c7297-5a31-430f-9e74-260818a93e0a",
+            "DONE",
+            "",
+            "",
+            ""
+          ]
+        ],
+        "binary_exists": true,
+        "config_exists": true,
+        "unit_exists": true,
+        "unit_state": "active",
+        "binary_sha256": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2",
+        "config": "cross-fs-v1\n"
+      },
+      "after": {
+        "journal": [
+          [
+            "6753d75a-d41c-4677-b00d-91fb322e7a9c",
+            "DONE",
+            "/var/lib/nodesteer/applications/backup-c5b57259-34e0-4633-825c-fd4e38fc59f9",
+            "/var/lib/nodesteer/applications/backup-c5b57259-34e0-4633-825c-fd4e38fc59f9.conf",
+            "/var/lib/nodesteer/applications/backup-c5b57259-34e0-4633-825c-fd4e38fc59f9.unit"
+          ],
+          [
+            "f38c7297-5a31-430f-9e74-260818a93e0a",
+            "DONE",
+            "",
+            "",
+            ""
+          ]
+        ],
+        "binary_exists": true,
+        "config_exists": true,
+        "unit_exists": true,
+        "unit_state": "active",
+        "binary_sha256": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2",
+        "config": "cross-fs-v2\n"
+      }
+    },
+    {
+      "case_id": "MAIN-NONMANAGED-UNIT-PROTECTION",
+      "classification": "REAL_API_AGENT",
+      "unit": "qa-20260930-101945-main-unregistered-9789b8d0.service",
+      "status": "PASS",
+      "before_pid": "20540",
+      "after_pid": "20540",
+      "execution_id": "26250fd8-639a-46be-9daa-ddf14ba4fd2b",
+      "terminal": "FAILED",
+      "error": "unit not registered: qa-20260930-101945-main-unregistered-9789b8d0.service (deploy first)",
+      "after_definition_delete": "active\nexists"
+    },
+    {
+      "case_id": "MAIN-CORRUPT-ARTIFACT-CACHE",
+      "classification": "REAL_API_AGENT",
+      "unit": "qa-20260930-101945-main-cache-9d4faa22.service",
+      "status": "PASS",
+      "declared_sha": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2",
+      "corrupted_sha": "b4b0b7db277b96a8c6d1aed9ab992387bae2b4ad738b4af564723ef6bd3336aa",
+      "cache_after_sha": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2",
+      "upgrade_execution": "5f2a0232-5849-4594-80d8-4a047f056ca5",
+      "terminal": "SUCCESS",
+      "error": null,
+      "actual": {
+        "journal": [
+          [
+            "349dbf56-ab1c-46ed-b839-24d20d4fb466",
+            "DONE",
+            "/var/lib/nodesteer/applications/backup-ed1b181a-f4fc-4357-a4e9-60d758f30dc9",
+            "/var/lib/nodesteer/applications/backup-ed1b181a-f4fc-4357-a4e9-60d758f30dc9.conf",
+            "/var/lib/nodesteer/applications/backup-ed1b181a-f4fc-4357-a4e9-60d758f30dc9.unit"
+          ],
+          [
+            "0332af6a-c4b9-49e1-a566-51cb6bbad8e2",
+            "DONE",
+            "",
+            "",
+            ""
+          ]
+        ],
+        "binary_exists": true,
+        "config_exists": true,
+        "unit_exists": true,
+        "unit_state": "active",
+        "binary_sha256": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2",
+        "config": "cache-v2\n"
+      }
+    },
+    {
+      "case_id": "MAIN-OIDC-IDP-DOWN-RECOVERY",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "during": {
+        "oidc_mode": {
+          "enabled": true,
+          "local_fallback": false
+        },
+        "local_password_http": 403,
+        "sso_click_exit": 0
+      },
+      "after": {
+        "discovery_http": 200
+      },
+      "limitation": "已实际验证SSO模式保持/本地密码拒绝及IdP服务恢复；首试点击后未等待浏览器网络失败就恢复IdP，不能据此把完整SSO失败反馈判PASS。",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/idp-recovery-result.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/idp-down-ui-results.json"
+      ],
+      "supersedes": "Root首次导航未等故障即恢复的PARTIAL记录；环境单元后续在Dex仍停时实际ERR_CONNECTION_REFUSED、无Token、local403，恢复后真实viewer UI登录me200。"
+    },
+    {
+      "case_id": "MAIN-NATIVE-PERMISSION",
+      "classification": "REAL_API_AGENT",
+      "status": "PASS",
+      "detail": {
+        "execution": {
+          "id": "d70ecb9a-08e1-474c-9414-da3fce0140fb",
+          "task_id": "646c306c-11da-4dd5-8b51-e2629190cc40",
+          "task_revision": 1,
+          "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "2026-10-01T04:29:12.14364229Z",
+          "end_time": "2026-10-01T04:29:12.153483815Z",
+          "status": "FAILED",
+          "exit_code": 1,
+          "stdout": "",
+          "stderr": "/bin/sh: line 1: /tmp/qa-20260930-101945-main-storage-f73f6729/private/permission: Permission denied\n",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": true
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-NATIVE-UNKNOWN-USER",
+      "classification": "REAL_API_AGENT",
+      "status": "PASS",
+      "detail": {
+        "execution": {
+          "id": "2e5913c1-b74b-47f2-90c3-3241e30083a5",
+          "task_id": "90f080b7-2323-4055-a0cb-e18812c69c3d",
+          "task_revision": 1,
+          "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "2026-10-01T04:29:12.865385924Z",
+          "end_time": "2026-10-01T04:29:12.870263468Z",
+          "status": "FAILED",
+          "exit_code": -1,
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": true,
+          "block_reason": "lookup run user \"qa-20260930-101945-main-storage-f73f6729\": user: unknown user qa-20260930-101945-main-storage-f73f6729"
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-NATIVE-STORAGE-DISK-FULL",
+      "classification": "REAL_API_AGENT",
+      "status": "PASS",
+      "detail": {
+        "execution_id": "03c30f76-9d4d-44d7-8cba-888f2e7583c1",
+        "execution_status": "FAILED",
+        "application_state": [
+          {
+            "application_id": "c692ce03-47e8-45e4-b0ed-ebb009c9101f",
+            "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+            "version": "v1",
+            "operation": "deploy",
+            "health": "unhealthy",
+            "error": "install binary failed: write /tmp/qa-20260930-101945-main-storage-f73f6729/disk-full/.tmp-3863721035: no space left on device",
+            "updated_at": "2026-10-01T04:29:14.719126121Z"
+          }
+        ],
+        "guest": {
+          "entries": [],
+          "agent": "active",
+          "unit_exists": false
+        },
+        "artifact_sha256": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2"
+      }
+    },
+    {
+      "case_id": "MAIN-NATIVE-STORAGE-READ-ONLY",
+      "classification": "REAL_API_AGENT",
+      "status": "PASS",
+      "detail": {
+        "execution_id": "35555465-338d-4c88-b635-1eaaffb01ffb",
+        "execution_status": "FAILED",
+        "application_state": [
+          {
+            "application_id": "a15fb950-489c-42e3-b6d6-27601c63e2ba",
+            "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+            "version": "v1",
+            "operation": "deploy",
+            "health": "unhealthy",
+            "error": "install binary failed: open /tmp/qa-20260930-101945-main-storage-f73f6729/read-only/.tmp-4108723033: read-only file system",
+            "updated_at": "2026-10-01T04:29:16.497917664Z"
+          }
+        ],
+        "guest": {
+          "entries": [],
+          "agent": "active",
+          "unit_exists": false
+        },
+        "artifact_sha256": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2"
+      }
+    },
+    {
+      "case_id": "MAIN-NATIVE-PATH-TRAVERSAL",
+      "classification": "REAL_API_GUEST",
+      "status": "PASS",
+      "detail": {
+        "http": 400,
+        "error": "binary_path: invalid application path",
+        "rejected_before_dispatch": true,
+        "guest_files_unchanged": true,
+        "definition_absent": true
+      }
+    },
+    {
+      "case_id": "MAIN-NATIVE-STORAGE-CLEANUP",
+      "classification": "REAL_API_AGENT",
+      "status": "PASS",
+      "detail": {
+        "resources": [
+          {
+            "kind": "tasks",
+            "id": "646c306c-11da-4dd5-8b51-e2629190cc40",
+            "status": "deleted"
+          },
+          {
+            "kind": "tasks",
+            "id": "90f080b7-2323-4055-a0cb-e18812c69c3d",
+            "status": "deleted"
+          },
+          {
+            "kind": "artifacts",
+            "id": "3ea2074f-ffd3-48fd-b315-efd0c7ac04a0",
+            "status": "deleted"
+          },
+          {
+            "kind": "applications",
+            "id": "c692ce03-47e8-45e4-b0ed-ebb009c9101f",
+            "status": "deleted"
+          },
+          {
+            "kind": "applications",
+            "id": "a15fb950-489c-42e3-b6d6-27601c63e2ba",
+            "status": "deleted"
+          }
+        ],
+        "native_status": "service checked active in each case"
+      }
+    },
+    {
+      "case_id": "MAIN-BACKUP-MISSING",
+      "classification": "REAL_API_AGENT",
+      "status": "PASS",
+      "baseline": {
+        "journal": [
+          [
+            "a1892c2a-8553-4919-8366-63839f5a4a51",
+            "DONE",
+            "",
+            "",
+            ""
+          ]
+        ],
+        "binary_exists": true,
+        "config_exists": true,
+        "unit_exists": true,
+        "unit_state": "active",
+        "binary_sha256": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2",
+        "config": "config-v1\n"
+      },
+      "injection": {
+        "observed": true,
+        "deployment_id": "7829260c-28b6-42f1-827d-09661f6da7c8",
+        "phase": "VERIFYING",
+        "removed_binary_backup": "/var/lib/nodesteer/applications/backup-b312e19e-01a2-4dc2-8877-c421dfaac6b3",
+        "config_backup": "/var/lib/nodesteer/applications/backup-b312e19e-01a2-4dc2-8877-c421dfaac6b3.conf",
+        "unit_backup": "/var/lib/nodesteer/applications/backup-b312e19e-01a2-4dc2-8877-c421dfaac6b3.unit",
+        "original_backup_sha256": "ec6d007d48ef11bc47ad3f372b4b20ff2f0d4e63867e7e4cc0f1b17b19fa88b2"
+      },
+      "execution": {
+        "id": "d63d8831-edcf-4f52-8dd7-31ff0cecb2c2",
+        "task_id": "b42b3759-1fc9-4f3e-a078-23e4599f7c93",
+        "task_revision": 2,
+        "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-10-01T04:34:17.491099014Z",
+        "end_time": "2026-10-01T12:34:35.185886465+08:00",
+        "status": "FAILED",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": false,
+        "block_reason": "health check failed; rolled back (rollback health check also failed)"
+      },
+      "application_states": [
+        {
+          "application_id": "b42b3759-1fc9-4f3e-a078-23e4599f7c93",
+          "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+          "version": "v2",
+          "operation": "upgrade",
+          "health": "unhealthy",
+          "error": "health check failed; rolled back (rollback health check also failed)",
+          "updated_at": "2026-10-01T04:34:35.181482726Z"
+        }
+      ],
+      "actual": {
+        "journal": [
+          [
+            "7829260c-28b6-42f1-827d-09661f6da7c8",
+            "DONE",
+            "/var/lib/nodesteer/applications/backup-b312e19e-01a2-4dc2-8877-c421dfaac6b3",
+            "/var/lib/nodesteer/applications/backup-b312e19e-01a2-4dc2-8877-c421dfaac6b3.conf",
+            "/var/lib/nodesteer/applications/backup-b312e19e-01a2-4dc2-8877-c421dfaac6b3.unit"
+          ],
+          [
+            "a1892c2a-8553-4919-8366-63839f5a4a51",
+            "DONE",
+            "",
+            "",
+            ""
+          ]
+        ],
+        "binary_exists": true,
+        "config_exists": true,
+        "unit_exists": true,
+        "unit_state": "inactive",
+        "binary_sha256": "bc70c906dcf5115490d23f0f142a40edeaaefebdaa6c93d512cf325aea21a366",
+        "config": "config-v1\n"
+      },
+      "limitation": "该例验证缺失备份不会误报SUCCESS/healthy；缺失备份无法恢复旧Binary，实际新Binary仍在，但Unit未active，记录真实物理状态。",
+      "cleanup": [
+        {
+          "kind": "artifacts",
+          "id": "f5f793b7-20a2-47e2-b378-2e305bd57eaf",
+          "status": "deleted"
+        },
+        {
+          "kind": "artifacts",
+          "id": "bcec91a0-8b24-4adc-aade-7c6e196d9bd6",
+          "status": "deleted"
+        },
+        {
+          "kind": "applications",
+          "id": "b42b3759-1fc9-4f3e-a078-23e4599f7c93",
+          "status": "deleted"
+        }
+      ]
+    },
+    {
+      "case_id": "MAIN-UPGRADE-MAINTENANCE",
+      "classification": "REAL_API_AGENT",
+      "status": "PASS",
+      "detail": {
+        "result": {
+          "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+          "execution_id": "e2e1ebe9-25b4-40c2-846a-5036b6fac188",
+          "status": "SKIPPED",
+          "block_reason": "node paused"
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-UPGRADE-DISABLED",
+      "classification": "REAL_API_AGENT",
+      "status": "PASS",
+      "detail": {
+        "result": {
+          "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+          "execution_id": "674aed3a-ea17-4eea-ae28-6e311db3362b",
+          "status": "SKIPPED",
+          "block_reason": "node paused"
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-UPGRADE-BATCH-AND-INFLIGHT-DEDUPE",
+      "classification": "REAL_API_AGENT",
+      "status": "PASS",
+      "detail": {
+        "first": [
+          {
+            "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+            "execution_id": "3a0c611d-d16f-4ecd-b6c1-a7ffeddd381d",
+            "status": "PENDING",
+            "dispatched": true
+          },
+          {
+            "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+            "execution_id": "cd0cceed-0b63-4874-b479-0389bdcdff56",
+            "status": "PENDING",
+            "dispatched": true
+          },
+          {
+            "node_id": "3e63700e-a0ef-4f47-8ebf-8efbaf645b77",
+            "execution_id": "10333ef4-ed6d-4c5b-88e4-6b6a6cf01282",
+            "status": "SKIPPED",
+            "block_reason": "self-upgrade unsupported for deployment mode docker"
+          }
+        ],
+        "duplicate": {
+          "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+          "execution_id": "cd0cceed-0b63-4874-b479-0389bdcdff56",
+          "status": "PENDING",
+          "deduplicated": true
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-UPGRADE-MIXED-NATIVE-DOCKER",
+      "classification": "REAL_API_AGENT",
+      "status": "PASS",
+      "detail": {
+        "executions": [
+          {
+            "id": "3a0c611d-d16f-4ecd-b6c1-a7ffeddd381d",
+            "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+            "status": "SUCCESS",
+            "block_reason": null
+          },
+          {
+            "id": "cd0cceed-0b63-4874-b479-0389bdcdff56",
+            "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+            "status": "SUCCESS",
+            "block_reason": null
+          },
+          {
+            "id": "10333ef4-ed6d-4c5b-88e4-6b6a6cf01282",
+            "node_id": "3e63700e-a0ef-4f47-8ebf-8efbaf645b77",
+            "status": "SKIPPED",
+            "block_reason": "self-upgrade unsupported for deployment mode docker"
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "MAIN-UPGRADE-IDENTITY-VERSION-SYNC",
+      "classification": "REAL_API_AGENT",
+      "status": "PASS",
+      "detail": {
+        "nodes": [
+          {
+            "id": "d77e2440-919f-4431-a488-733817dcd809",
+            "agent_id": "agent-1fbe0fa7-501a-49d6-8af8-6cdb6ec777f5",
+            "agent_version": "dddee4f0",
+            "status": "online",
+            "sync_status": "synced"
+          },
+          {
+            "id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+            "agent_id": "agent-a5a3aca2-097a-4de1-b870-13e2c76d9612",
+            "agent_version": "dddee4f0",
+            "status": "online",
+            "sync_status": "synced"
+          },
+          {
+            "id": "3e63700e-a0ef-4f47-8ebf-8efbaf645b77",
+            "agent_id": "agent-0689a566-8331-456c-a4e7-e2462302b5f4",
+            "agent_version": "dddee4f0",
+            "status": "online",
+            "sync_status": "synced"
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "MAIN-UPGRADE-PARTIAL-OFFLINE-FAILURE",
+      "classification": "REAL_API_AGENT",
+      "status": "PASS",
+      "detail": {
+        "results": [
+          {
+            "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+            "execution_id": "4f9f6e9a-24b9-4ac7-91fe-86e8329a0392",
+            "status": "PENDING",
+            "dispatched": true
+          },
+          {
+            "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+            "execution_id": "071cbe1f-120c-457a-b73d-098f2a6d27cf",
+            "status": "FAILED",
+            "block_reason": "node is not online (status=offline)"
+          },
+          {
+            "node_id": "3e63700e-a0ef-4f47-8ebf-8efbaf645b77",
+            "execution_id": "89c79e3b-c0b4-4e30-be97-c2fcd663b69e",
+            "status": "SKIPPED",
+            "block_reason": "self-upgrade unsupported for deployment mode docker"
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "MAIN-UPGRADE-INVALID-BATCH-ATOMIC",
+      "classification": "REAL_API_AGENT",
+      "status": "PASS",
+      "detail": {
+        "http": 400,
+        "new_execution_count": 0
+      }
+    },
+    {
+      "case_id": "MAIN-UPGRADE-EXACT-CLEANUP",
+      "classification": "REAL_API_AGENT",
+      "status": "PASS",
+      "detail": {
+        "cleanup": {
+          "container_removed": true,
+          "volume_removed": true,
+          "private_config_removed": true
+        },
+        "deleted_node_id": "3e63700e-a0ef-4f47-8ebf-8efbaf645b77"
+      }
+    },
+    {
+      "case_id": "MAIN-AGENT-OUTBOUND-SOCKETS",
+      "classification": "REAL_GUEST",
+      "status": "PASS",
+      "time": "2026-10-01T04:56:24.158111+00:00",
+      "nodes": [
+        {
+          "node_id": "56765828-4896-492b-b562-64afdc0fb8d6",
+          "name": "agent-1-clean",
+          "actual": {
+            "pid": 41440,
+            "sockets": [
+              {
+                "table": "tcp",
+                "local_raw": "CF64A8C0:D5EC",
+                "remote_raw": "D164A8C0:1F90",
+                "state": "01",
+                "remote_port": 8080
+              }
+            ],
+            "has_outbound_hub_connection": true,
+            "has_agent_tcp_listener": false
+          }
+        },
+        {
+          "node_id": "d77e2440-919f-4431-a488-733817dcd809",
+          "name": "e2e-20260930-101945-nodesteer-agent-2",
+          "actual": {
+            "pid": 314195,
+            "sockets": [
+              {
+                "table": "tcp",
+                "local_raw": "DE64A8C0:9D20",
+                "remote_raw": "D164A8C0:1F90",
+                "state": "01",
+                "remote_port": 8080
+              }
+            ],
+            "has_outbound_hub_connection": true,
+            "has_agent_tcp_listener": false
+          }
+        },
+        {
+          "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+          "name": "e2e-20260930-101945-nodesteer-agent-3",
+          "actual": {
+            "pid": 24684,
+            "sockets": [
+              {
+                "table": "tcp",
+                "local_raw": "CC64A8C0:B954",
+                "remote_raw": "D164A8C0:1F90",
+                "state": "01",
+                "remote_port": 8080
+              }
+            ],
+            "has_outbound_hub_connection": true,
+            "has_agent_tcp_listener": false
+          }
+        },
+        {
+          "node_id": "1c59cf12-97ef-412f-9a06-aea04e6423c1",
+          "name": "e2e-20260930-101945-nodesteer-agent-4",
+          "actual": {
+            "pid": 16703,
+            "sockets": [
+              {
+                "table": "tcp",
+                "local_raw": "F764A8C0:9180",
+                "remote_raw": "D164A8C0:1F90",
+                "state": "01",
+                "remote_port": 8080
+              }
+            ],
+            "has_outbound_hub_connection": true,
+            "has_agent_tcp_listener": false
+          }
+        }
+      ],
+      "limitation": "实际4 Native进程Socket验证；已移除Docker/Host代理以历史连接证据另行关联，不推定未测拓扑。"
+    },
+    {
+      "case_id": "MAIN-USER-EMPTY-PASSWORD-REJECT",
+      "classification": "REAL_API",
+      "status": "FAIL",
+      "detail": {
+        "http": 200,
+        "username": "qa-20260930-101945-main-contract-3352fd0f"
+      }
+    },
+    {
+      "case_id": "MAIN-USER-EMPTY-PASSWORD-LOGIN",
+      "classification": "REAL_API",
+      "status": "FAIL",
+      "detail": {
+        "http": 200,
+        "authenticated_me_http": 200
+      }
+    },
+    {
+      "case_id": "MAIN-USER-INVALID-ROLE-REJECT",
+      "classification": "REAL_API",
+      "status": "FAIL",
+      "detail": {
+        "http": 200,
+        "stored_role": "qa_invalid_role",
+        "expected_roles": [
+          "administrator",
+          "operator",
+          "viewer"
+        ]
+      }
+    },
+    {
+      "case_id": "MAIN-USER-VALIDATION-RESTORE",
+      "classification": "REAL_API",
+      "status": "PASS",
+      "detail": {
+        "empty_password_http": 401,
+        "valid_me_http": 200,
+        "final_role": "viewer",
+        "retained_user_id": "1ab58538-576d-4c75-8a1c-fac0eccb969c"
+      }
+    },
+    {
+      "case_id": "MAIN-PASSWORD-CHANGE-SESSION-SCOPE",
+      "classification": "REAL_API",
+      "user_id": "1ab58538-576d-4c75-8a1c-fac0eccb969c",
+      "scope": "仅main专属QA Viewer；密码最后恢复private原随机值，Role保持Viewer",
+      "change_http": 200,
+      "old_password_login_http": 401,
+      "new_password_login_http": 200,
+      "prior_session_http": 200,
+      "prior_session_role": "viewer",
+      "actual_session_policy": "密码修改影响后续密码验证；已签发旧会话仍有效",
+      "restoration": {
+        "original_random_password_http": 200,
+        "temporary_password_http": 401,
+        "role": "viewer"
+      },
+      "status": "PASS"
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-INVALID-heartbeat_interval_sec-not-a-number",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "key": "heartbeat_interval_sec",
+        "input": "not-a-number",
+        "http": 400,
+        "error": "heartbeat_interval_sec must be between 1 and 86400",
+        "ui_error_visible": true,
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-INVALID-heartbeat_interval_sec-0",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "key": "heartbeat_interval_sec",
+        "input": "0",
+        "http": 400,
+        "error": "heartbeat_interval_sec must be between 1 and 86400",
+        "ui_error_visible": true,
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-INVALID-heartbeat_interval_sec--1",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "key": "heartbeat_interval_sec",
+        "input": "-1",
+        "http": 400,
+        "error": "heartbeat_interval_sec must be between 1 and 86400",
+        "ui_error_visible": true,
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-INVALID-heartbeat_interval_sec-999999999999999999999999",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "key": "heartbeat_interval_sec",
+        "input": "999999999999999999999999",
+        "http": 400,
+        "error": "heartbeat_interval_sec must be between 1 and 86400",
+        "ui_error_visible": true,
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-INVALID-revision_check_interval_sec-not-a-number",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "key": "revision_check_interval_sec",
+        "input": "not-a-number",
+        "http": 400,
+        "error": "revision_check_interval_sec must be between 5 and 86400",
+        "ui_error_visible": true,
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-INVALID-revision_check_interval_sec-0",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "key": "revision_check_interval_sec",
+        "input": "0",
+        "http": 400,
+        "error": "revision_check_interval_sec must be between 5 and 86400",
+        "ui_error_visible": true,
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-INVALID-revision_check_interval_sec--1",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "key": "revision_check_interval_sec",
+        "input": "-1",
+        "http": 400,
+        "error": "revision_check_interval_sec must be between 5 and 86400",
+        "ui_error_visible": true,
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-INVALID-revision_check_interval_sec-999999999999999999999999",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "key": "revision_check_interval_sec",
+        "input": "999999999999999999999999",
+        "http": 400,
+        "error": "revision_check_interval_sec must be between 5 and 86400",
+        "ui_error_visible": true,
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-INVALID-changelog_window-not-a-number",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "key": "changelog_window",
+        "input": "not-a-number",
+        "http": 400,
+        "error": "changelog_window must be between 1 and 1000000000",
+        "ui_error_visible": true,
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-INVALID-changelog_window-0",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "key": "changelog_window",
+        "input": "0",
+        "http": 400,
+        "error": "changelog_window must be between 1 and 1000000000",
+        "ui_error_visible": true,
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-INVALID-changelog_window--1",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "key": "changelog_window",
+        "input": "-1",
+        "http": 400,
+        "error": "changelog_window must be between 1 and 1000000000",
+        "ui_error_visible": true,
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-INVALID-changelog_window-999999999999999999999999",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "key": "changelog_window",
+        "input": "999999999999999999999999",
+        "http": 400,
+        "error": "changelog_window must be between 1 and 1000000000",
+        "ui_error_visible": true,
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-INVALID-max_log_bytes-not-a-number",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "key": "max_log_bytes",
+        "input": "not-a-number",
+        "http": 400,
+        "error": "max_log_bytes must be between 1024 and 17179869184",
+        "ui_error_visible": true,
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-INVALID-max_log_bytes-0",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "key": "max_log_bytes",
+        "input": "0",
+        "http": 400,
+        "error": "max_log_bytes must be between 1024 and 17179869184",
+        "ui_error_visible": true,
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-INVALID-max_log_bytes--1",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "key": "max_log_bytes",
+        "input": "-1",
+        "http": 400,
+        "error": "max_log_bytes must be between 1024 and 17179869184",
+        "ui_error_visible": true,
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-INVALID-max_log_bytes-999999999999999999999999",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "key": "max_log_bytes",
+        "input": "999999999999999999999999",
+        "http": 400,
+        "error": "max_log_bytes must be between 1024 and 17179869184",
+        "ui_error_visible": true,
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-SAVE-REFRESH-0",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "success_feedback": true,
+        "api_original_unchanged": true,
+        "refreshed_values": [
+          "1048576",
+          "30",
+          "45",
+          "5000"
+        ]
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-SAVE-REFRESH-1",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "http": 200,
+        "success_feedback": true,
+        "api_original_unchanged": true,
+        "refreshed_values": [
+          "1048576",
+          "30",
+          "45",
+          "5000"
+        ]
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-PENDING-DUPLICATE",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "controlled_put_delay_ms": 1500,
+        "second_physical_click_after_ms": 100,
+        "disabledDuringRequest": true,
+        "events": [
+          {
+            "event": "PUT_request",
+            "time": 1790850579525
+          },
+          {
+            "event": "pending_sample",
+            "time": 1790850579626,
+            "disabled": true
+          },
+          {
+            "event": "PUT_response",
+            "time": 1790850581030,
+            "http": 200
+          }
+        ],
+        "clicks": [
+          {
+            "event": "button_click",
+            "time": 1790850579519,
+            "trusted": true,
+            "disabled": false
+          }
+        ],
+        "original_unchanged": true
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-FINAL-BASELINE",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "original": {
+          "changelog_window": "5000",
+          "heartbeat_interval_sec": "30",
+          "max_log_bytes": "1048576",
+          "revision_check_interval_sec": "45"
+        },
+        "actual": {
+          "changelog_window": "5000",
+          "heartbeat_interval_sec": "30",
+          "max_log_bytes": "1048576",
+          "revision_check_interval_sec": "45"
+        },
+        "gateway_key_added": false
+      }
+    },
+    {
+      "case_id": "MAIN-SETTINGS-UI-EDIT-PERSIST-RESTORE",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "original": {
+        "changelog_window": "5000",
+        "heartbeat_interval_sec": "30",
+        "max_log_bytes": "1048576",
+        "revision_check_interval_sec": "45"
+      },
+      "changed": {
+        "changelog_window": "5000",
+        "heartbeat_interval_sec": "31",
+        "max_log_bytes": "1048576",
+        "revision_check_interval_sec": "45"
+      },
+      "changed_after_reload": "31",
+      "api_changed": {
+        "changelog_window": "5000",
+        "heartbeat_interval_sec": "31",
+        "max_log_bytes": "1048576",
+        "revision_check_interval_sec": "45"
+      },
+      "restored_after_reload": "30",
+      "api_restored": {
+        "changelog_window": "5000",
+        "heartbeat_interval_sec": "30",
+        "max_log_bytes": "1048576",
+        "revision_check_interval_sec": "45"
+      }
+    },
+    {
+      "case_id": "MAIN-BUTTON-ACCESSIBLE-NAMES",
+      "classification": "REAL_UI_READONLY",
+      "status": "PASS",
+      "scope": "19基础列表/新建页现有可访问树按钮名称；详情/动态弹窗另由Web补验，不以此泛称所有控件完整",
+      "pages": [
+        {
+          "path": "/",
+          "actual_url": "/",
+          "accessible_button_count": 6,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/agents",
+          "actual_url": "/agents",
+          "accessible_button_count": 25,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/groups",
+          "actual_url": "/groups",
+          "accessible_button_count": 6,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/scripts",
+          "actual_url": "/scripts",
+          "accessible_button_count": 20,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/tasks",
+          "actual_url": "/tasks",
+          "accessible_button_count": 21,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/schedules",
+          "actual_url": "/schedules",
+          "accessible_button_count": 6,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/applications",
+          "actual_url": "/applications",
+          "accessible_button_count": 6,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/artifacts",
+          "actual_url": "/artifacts",
+          "accessible_button_count": 6,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/executions",
+          "actual_url": "/executions",
+          "accessible_button_count": 22,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/transfers",
+          "actual_url": "/transfers",
+          "accessible_button_count": 24,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/audit",
+          "actual_url": "/audit",
+          "accessible_button_count": 22,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/users",
+          "actual_url": "/users",
+          "accessible_button_count": 17,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/settings",
+          "actual_url": "/settings",
+          "accessible_button_count": 9,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/groups/new",
+          "actual_url": "/groups/new",
+          "accessible_button_count": 7,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/scripts/new",
+          "actual_url": "/scripts/new",
+          "accessible_button_count": 9,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/tasks/new",
+          "actual_url": "/tasks/new",
+          "accessible_button_count": 10,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/schedules/new",
+          "actual_url": "/schedules/new",
+          "accessible_button_count": 7,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/applications/new",
+          "actual_url": "/applications/new",
+          "accessible_button_count": 10,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        },
+        {
+          "path": "/artifacts/new",
+          "actual_url": "/artifacts/new",
+          "accessible_button_count": 8,
+          "unnamed_buttons": [],
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "case_id": "MAIN-LOGIN-PENDING-DUPLICATE",
+      "classification": "REAL_UI_API",
+      "status": "PASS",
+      "detail": {
+        "controlled_login_delay_ms": 1500,
+        "second_physical_click_after_ms": 100,
+        "pending_disabled": true,
+        "events": [
+          {
+            "event": "POST_login",
+            "time": 1790851485568
+          },
+          {
+            "event": "pending_sample",
+            "disabled": true,
+            "time": 1790851485670
+          }
+        ],
+        "login_http": 200,
+        "dashboard_path": "/",
+        "actor": {
+          "http": 200,
+          "role": "administrator"
+        }
+      }
+    },
+    {
+      "case_id": "MAIN-REMOTE-PHYSICAL-PEER-OFFLINE",
+      "classification": "REAL_API_AGENT",
+      "time": "2026-10-03T00:58:12.664047+00:00",
+      "status": "PASS",
+      "peer_node_id": "d77e2440-919f-4431-a488-733817dcd809",
+      "target_node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+      "task_id": "50020a03-9acd-4c21-a84e-bc60b00cef1d",
+      "baseline": {
+        "id": "d77e2440-919f-4431-a488-733817dcd809",
+        "status": "online",
+        "sync_status": "synced",
+        "agent_id": "agent-1fbe0fa7-501a-49d6-8af8-6cdb6ec777f5",
+        "agent_version": "dddee4f0",
+        "global_revision": 1208
+      },
+      "peer_service_before": "MainPID=314195\nActiveState=active",
+      "marker_before": "ABSENT",
+      "stop": "MainPID=0\nActiveState=inactive",
+      "physical_offline_peer": {
+        "id": "d77e2440-919f-4431-a488-733817dcd809",
+        "status": "offline",
+        "sync_status": "synced",
+        "agent_id": "agent-1fbe0fa7-501a-49d6-8af8-6cdb6ec777f5",
+        "agent_version": "dddee4f0",
+        "global_revision": 1208
+      },
+      "manual_run_http": 200,
+      "manual_run_response": [
+        {
+          "id": "dc043526-6f5f-476e-86e4-91098ec4650c",
+          "task_id": "50020a03-9acd-4c21-a84e-bc60b00cef1d",
+          "task_revision": 1,
+          "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+          "trigger_type": "manual",
+          "scheduled_time": "0001-01-01T00:00:00Z",
+          "start_time": "0001-01-01T00:00:00Z",
+          "end_time": "0001-01-01T00:00:00Z",
+          "status": "PENDING",
+          "stdout": "",
+          "stderr": "",
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "offline": false,
+          "synced": false
+        }
+      ],
+      "execution": {
+        "id": "dc043526-6f5f-476e-86e4-91098ec4650c",
+        "task_id": "50020a03-9acd-4c21-a84e-bc60b00cef1d",
+        "task_revision": 1,
+        "node_id": "811d72ef-75f8-47ba-84de-8cb1e6974315",
+        "trigger_type": "manual",
+        "scheduled_time": "0001-01-01T00:00:00Z",
+        "start_time": "2026-10-03T00:58:13.925434331Z",
+        "end_time": "2026-10-03T00:58:13.935123883Z",
+        "status": "SKIPPED",
+        "stdout": "",
+        "stderr": "",
+        "stdout_truncated": false,
+        "stderr_truncated": false,
+        "offline": false,
+        "synced": true,
+        "block_reason": "condition not satisfied"
+      },
+      "marker_after": "ABSENT",
+      "restore_service": "MainPID=397723\nActiveState=active",
+      "restored_peer": {
+        "id": "d77e2440-919f-4431-a488-733817dcd809",
+        "status": "online",
+        "sync_status": "synced",
+        "agent_id": "agent-1fbe0fa7-501a-49d6-8af8-6cdb6ec777f5",
+        "agent_version": "dddee4f0",
+        "global_revision": 1208
+      },
+      "owned_session_logout_http": 200
+    }
+  ],
+  "counts": {
+    "PASS": 285,
+    "FAIL": 4,
+    "BLOCKED": 1
+  }
+}

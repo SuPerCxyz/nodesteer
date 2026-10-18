@@ -1,0 +1,400 @@
+{
+  "batch_id": "qa-resume-20261014-api-p-api",
+  "owner": "api",
+  "generated_at_utc": "2026-10-15T09:05:00Z",
+  "authority": {
+    "repair_authority_readonly": "http://192.168.100.209:18080",
+    "isolated_instances": [
+      "http://192.168.100.209:18083 (main, session_ttl=24h, nonce papim803e7aad)",
+      "http://192.168.100.209:18084 (ttl, session_ttl=3s, nonce papitt20430508)"
+    ],
+    "binary": "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard",
+    "binary_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+    "version_parity_with_repair": "binary sha256 identical; index.html sha256 identical (612c23ba…); assets identical"
+  },
+  "cases": [
+    {
+      "case_id": "AUTH-MANAGEMENT",
+      "title": "受保护管理API无凭据/非法过期会话401、越权403，具体端点实际状态一致",
+      "owner": "api",
+      "priority": "P0",
+      "before_status": "PARTIAL",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "expected": "受保护管理API无凭据/非法过期会话401、越权403，具体端点实际状态一致",
+      "actual_before": "Users匿名401/invalidBearer四方法401维度补齐，无状态变化",
+      "verified_dimensions": [
+        {
+          "dimension": "其余 protected 端点的真实无凭据 401（28 个路径模板，GET）",
+          "result": "PASS",
+          "detail": "28/28 均 401，JSON 体 {\"error\":\"unauthorized\"}",
+          "evidence": "evidence/AUTH-MANAGEMENT-anon-invalid-revoked-matrix.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "非法 Bearer 会话 401",
+          "result": "PASS",
+          "detail": "28/28 均 401；withAuth 端点 error=invalid or expired session，withAgentOrUserAuth 下载端点 error=unauthorized",
+          "evidence": "evidence/AUTH-MANAGEMENT-anon-invalid-revoked-matrix.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "真实已撤销会话（/api/logout 后旧 token）401",
+          "result": "PASS",
+          "detail": "注销前 /api/me=200，注销后 28/28 端点 401",
+          "evidence": "evidence/AUTH-MANAGEMENT-anon-invalid-revoked-matrix.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "natural TTL 真实过期（session_ttl=3s 隔离实例）",
+          "result": "PASS",
+          "detail": "/api/me 过期前 200；等待 6s 后 28/28 端点 401；服务端 Authenticate 检测 Expires 后主动注销该 token",
+          "evidence": "evidence/AUTH-MANAGEMENT-expired-ttl-matrix.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "Operator/Viewer 真实越权 403（admin-only 写/管理端点）",
+          "result": "PASS",
+          "detail": "22 个写/管理端点 × 2 角色 = 44 条记录全部 403；Node 类端点使用真实存在的 Node（enrollment 创建）以避免 404 干扰；均为 mutation 前置拒绝",
+          "evidence": "evidence/AUTH-MANAGEMENT-role-write-matrix.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "canRun 策略端点边界（/api/tasks/{id}/run、/api/nodes/upgrade）",
+          "result": "PASS",
+          "detail": "operator 通过鉴权后 404(task not found)/400(node_ids required)；viewer 403 permission denied",
+          "evidence": "evidence/AUTH-MANAGEMENT-role-write-matrix.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "负向探测无副作用（用户数量/身份角色摘要不变）",
+          "result": "PASS",
+          "detail": "探测前 count=3 identity_role_sha256=5b908d97… 探测后完全一致",
+          "evidence": "evidence/AUTH-MANAGEMENT-state-invariance.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "CORS 预检不会绕过认证（OPTIONS）",
+          "result": "PASS",
+          "detail": "27 个端点 OPTIONS 均 204（无凭据），其余方法均 401",
+          "evidence": "evidence/API-CONTRACT-unauth-method-matrix.json",
+          "layer": "real-api"
+        }
+      ],
+      "residual_gaps": [
+        "越权 403 只存在于 admin-only 操作；只读端点对 operator/viewer 按设计返回 200，不属于 403 维度。",
+        "DELETE /api/nodes/{不存在id}：operator/viewer 得 404 而非 403（GetNode 先于权限检查），见 finding AUTHZ-NODE-EXISTENCE-ORACLE。"
+      ],
+      "evidence": [
+        "evidence/AUTH-MANAGEMENT-summary.json",
+        "evidence/AUTH-MANAGEMENT-anon-invalid-revoked-matrix.json",
+        "evidence/AUTH-MANAGEMENT-expired-ttl-matrix.json",
+        "evidence/AUTH-MANAGEMENT-role-write-matrix.json",
+        "evidence/AUTH-MANAGEMENT-state-invariance.json"
+      ]
+    },
+    {
+      "case_id": "AUTH-USERS",
+      "title": "Users GET/写仅administrator，operator/viewer均403",
+      "owner": "api",
+      "priority": "P0",
+      "before_status": "PARTIAL",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "expected": "Users GET/写仅administrator，operator/viewer均403",
+      "actual_before": "AdminGET200、invalidBearer四方法401、empty/invalidrolePOSTPUT400、itemGETDELETE405；数量/role摘要不变，未创建无delete可清的User",
+      "verified_dimensions": [
+        {
+          "dimension": "Admin 成功写入（POST 创建 operator/viewer）",
+          "result": "PASS",
+          "detail": "POST /api/users 两次均 200 并返回含 id/username/role 的对象；/api/users 数量 1→3",
+          "evidence": "evidence/AUTH-USERS-admin-write.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "Admin 成功改写 + 实际生效",
+          "result": "PASS",
+          "detail": "PUT role→operator 返回 200 {ok:true}，该用户旧 token 的 /api/me 立即变 operator（Authenticate 以 DB 当前角色为准）；PUT password→200，新密码重新登录 200 且 role=operator",
+          "evidence": "evidence/AUTH-USERS-admin-write.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "Operator/Viewer 对 Users 的 GET 与全部写操作真实 403",
+          "result": "PASS",
+          "detail": "GET/POST /api/users、PUT /api/users/{id}（改角色/改密码，含自身 id）、DELETE /api/users/{id} 共 10 条记录全部 403 {\"error\":\"permission denied\"}",
+          "evidence": "evidence/AUTH-USERS-role-matrix.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "方法边界与必填校验（Admin）",
+          "result": "PASS",
+          "detail": "GET/DELETE /api/users/{id} → 405；POST {} → 400 username and password required；PUT {} → 400 role or password required",
+          "evidence": "evidence/API-CONTRACT-admin-method-matrix.json, evidence/API-CONTRACT-required-fields.json",
+          "layer": "real-api"
+        }
+      ],
+      "residual_gaps": [
+        "产品无删除用户 API（DELETE 恒 405），因此“Admin 写入可回收”只能在可整体销毁的隔离实例上成立；共享 repair authority 上未创建任何用户。"
+      ],
+      "evidence": [
+        "evidence/AUTH-USERS-admin-write.json",
+        "evidence/AUTH-USERS-role-matrix.json",
+        "evidence/API-CONTRACT-admin-method-matrix.json",
+        "evidence/API-CONTRACT-required-fields.json"
+      ]
+    },
+    {
+      "case_id": "AUTH-RELAY",
+      "title": "Relay仅归属Agent上传/下载，其他Agent与用户会话不能冒充",
+      "owner": "api",
+      "priority": "P0",
+      "before_status": "PARTIAL",
+      "proposed_status": "PASS",
+      "confidence": "high",
+      "expected": "Relay仅归属Agent上传/下载，其他Agent与用户会话不能冒充",
+      "actual_before": "实际repair Gateway18080，匿名/无效Bearer/有效UserBearer/ownedAgentID+无效token4个GET download均401；Transfer与audit摘要未变。",
+      "verified_dimensions": [
+        {
+          "dimension": "真实归属 Agent 上传（源 Agent 经 /agent/transfers/{id}/upload）",
+          "result": "PASS",
+          "detail": "自建 owned Agent（同 repair 二进制、隔离实例上注册为 online）真实上传 524288B 源文件；Transfer create 200 → SUCCESS，size=524288",
+          "evidence": "evidence/AUTH-RELAY-transfer-roundtrip.json",
+          "layer": "real-api-agent"
+        },
+        {
+          "dimension": "物理源 size/SHA 与 Hub 暂存文件一致",
+          "result": "PASS",
+          "detail": "目标为 pending 节点时源上传后 Transfer=DELIVERING；Hub data_dir/file-transfers/{id}.blob 实际 size=524288、sha256 与源文件逐字节一致",
+          "evidence": "evidence/AUTH-RELAY-hub-staging-and-cleanup.json",
+          "layer": "real-api-agent"
+        },
+        {
+          "dimension": "真实归属 Agent 下载（目标 Agent 经 /agent/transfers/{id}/download）",
+          "result": "PASS",
+          "detail": "目标 Agent 下载到 /tmp/…/dst.bin，目标文件 size=524288 且 sha256 与源一致；target 状态 SUCCESS；Transfer 终态 SUCCESS。注意 roundtrip evidence 中 hub_blob.exists=false / hub_blob_sha_match=false 是“成功交付后已按设计清理暂存文件”的结果，Hub 侧物理文件证据见 staging 记录。",
+          "evidence": "evidence/AUTH-RELAY-transfer-roundtrip.json, evidence/AUTH-RELAY-hub-staging-and-cleanup.json",
+          "layer": "real-api-agent"
+        },
+        {
+          "dimension": "清理（成功交付后与 cancel 后均无残留）",
+          "result": "PASS",
+          "detail": "全目标成功后 cleanupFiles 移除 .blob（file-transfers 目录无 {id}.part/.blob）；cancel → 200 CANCELED 且 .blob 被移除，cleanup_verified=true",
+          "evidence": "evidence/AUTH-RELAY-transfer-roundtrip.json, evidence/AUTH-RELAY-hub-staging-and-cleanup.json",
+          "layer": "real-api-agent"
+        },
+        {
+          "dimension": "其他 Agent 不能冒充源（target Agent 上传）",
+          "result": "PASS",
+          "detail": "目标 Agent 凭证 POST /upload → 403 agent is not the transfer source",
+          "evidence": "evidence/AUTH-RELAY-impersonation-matrix.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "其他 Agent 不能冒充目标（source Agent 下载）",
+          "result": "PASS",
+          "detail": "源 Agent 凭证 GET /download → 403 agent is not a transfer target",
+          "evidence": "evidence/AUTH-RELAY-impersonation-matrix.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "用户会话不能冒充 Agent",
+          "result": "PASS",
+          "detail": "有效 Admin Bearer 访问 download → 401；把 Admin Bearer 当作 X-NodeSteer-Agent-Token 且带真实 agent_id → 401 invalid agent credential",
+          "evidence": "evidence/AUTH-RELAY-impersonation-matrix.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "匿名 / 错配 id+token / 缺 token / 方法边界 / 未知 transfer",
+          "result": "PASS",
+          "detail": "匿名 401；src agent_id+dst token 错配 401；仅 agent_id 无 token 401；GET /upload 与 POST /download 405；未知 transfer id 404；缺 action 段或未知 action 404",
+          "evidence": "evidence/AUTH-RELAY-impersonation-matrix.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "冒充尝试不改动既有 Transfer（只读历史）",
+          "result": "PASS",
+          "detail": "11 条负向请求后 Transfer 的 status/sha256 与探测前一致（unchanged=true）；未修改 repair authority 上任何历史 Transfer",
+          "evidence": "evidence/AUTH-RELAY-impersonation-matrix.json",
+          "layer": "real-api"
+        }
+      ],
+      "residual_gaps": [
+        "仅单目标成功路径；多目标部分失败 + retry/target_id 分支未执行。",
+        "隔离实例为单端口 HTTP（web_addr==gateway_addr），未覆盖 HTTPS/TLS Gateway 形态。",
+        "分片续传（Content-Range 断点、offset mismatch → 409 + next_offset）未执行。"
+      ],
+      "evidence": [
+        "evidence/AUTH-RELAY-summary.json",
+        "evidence/AUTH-RELAY-transfer-roundtrip.json",
+        "evidence/AUTH-RELAY-hub-staging-and-cleanup.json",
+        "evidence/AUTH-RELAY-impersonation-matrix.json"
+      ]
+    },
+    {
+      "case_id": "API-CONTRACT",
+      "title": "每端点错误JSON/必填/方法/成功响应结构与状态码按实际实现",
+      "owner": "api",
+      "priority": "P0",
+      "before_status": "PARTIAL",
+      "proposed_status": "PASS",
+      "confidence": "medium-high",
+      "expected": "每端点错误JSON/必填/方法/成功响应结构与状态码按实际实现",
+      "actual_before": "AdminGET200、invalidBearer四方法401、empty/invalidrolePOSTPUT400、itemGETDELETE405；数量/role摘要不变，未创建无delete可清的User",
+      "verified_dimensions": [
+        {
+          "dimension": "公共端点（无凭据）",
+          "result": "PASS",
+          "detail": "/healthz、/readyz → 200 文本 ok/ready；/api/oidc/state → 200 {enabled:false,local_fallback:true}；OIDC login/callback 未启用 → 404 {error:oidc not enabled}；/api/agent/binary 非法 arch → 400，amd64 Range 请求 → 206 Content-Range bytes 0-31/16805087",
+          "evidence": "evidence/API-CONTRACT-public-endpoints.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "未认证方法矩阵（27 端点 × 6 方法）",
+          "result": "PASS",
+          "detail": "非 OPTIONS 全部 401；OPTIONS 全部 204（CORS 预检绕过认证，属实现约定）",
+          "evidence": "evidence/API-CONTRACT-unauth-method-matrix.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "Admin 方法矩阵（12 集合 + 10 item + 4 单例）",
+          "result": "PASS",
+          "detail": "405 边界、404、空体 400、OPTIONS 204 全部记录；见 findings 中的 3 处无方法开关端点",
+          "evidence": "evidence/API-CONTRACT-admin-method-matrix.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "必填字段错误 JSON（24 条）",
+          "result": "PASS",
+          "detail": "统一 {\"error\":\"…\"}；含 nodes/groups/scripts/tasks/schedules/artifacts/applications/users/transfers/enrollment/login 分支",
+          "evidence": "evidence/API-CONTRACT-required-fields.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "成功 CRUD 全链路（真实创建→读取→更新→删除→再读 404）",
+          "result": "PASS",
+          "detail": "group/script/task/application/schedule 全部 OK；状态码序列 200,200,200,200,200,404",
+          "evidence": "evidence/API-CONTRACT-crud-selective.json, evidence/API-CONTRACT-schedule-crud.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "Artifact multipart 真实上传 + 下载 + 删除",
+          "result": "PASS",
+          "detail": "上传 200 返回 {id,name,version,architecture,filename,size,sha256,uploaded_at}；下载 200 content-length=6000 且 sha256 与上传内容一致；删除 200 {ok:true}",
+          "evidence": "evidence/API-CONTRACT-artifact-roundtrip.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "错误/成功响应结构与通用头一致性",
+          "result": "PASS",
+          "detail": "错误体恒为单键 error 对象；列表端点恒为 JSON 数组；CORS Allow-Origin *、Expose-Headers X-Total-Count",
+          "evidence": "evidence/API-CONTRACT-observations.json",
+          "layer": "real-api"
+        },
+        {
+          "dimension": "/api/logout 契约（一次性会话）",
+          "result": "PASS",
+          "detail": "GET /api/logout → 200 {ok:true} 且旧 token 立即 401（任何方法均注销）",
+          "evidence": "evidence/API-CONTRACT-logout.json",
+          "layer": "real-api"
+        }
+      ],
+      "residual_gaps": [
+        "OIDC 启用后的 login/callback 成功路径需真实 IdP，未覆盖。",
+        "本构建 /metrics → 404（metrics 未启用），启用态未覆盖。",
+        "可选参数分支未穷举：application health_check 各类型、artifact 多架构/重复版本、target/condition 除 label 外的 node/group/remote/and、list 端点 limit/offset 分页语义。",
+        "Agent 自升级请求/响应链路（/api/nodes/upgrade 成功态）未执行。"
+      ],
+      "evidence": [
+        "evidence/API-CONTRACT-summary.json",
+        "evidence/API-CONTRACT-public-endpoints.json",
+        "evidence/API-CONTRACT-unauth-method-matrix.json",
+        "evidence/API-CONTRACT-admin-method-matrix.json",
+        "evidence/API-CONTRACT-required-fields.json",
+        "evidence/API-CONTRACT-crud-selective.json",
+        "evidence/API-CONTRACT-schedule-crud.json",
+        "evidence/API-CONTRACT-artifact-roundtrip.json",
+        "evidence/API-CONTRACT-logout.json",
+        "evidence/API-CONTRACT-observations.json"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "AUTHZ-NODE-EXISTENCE-ORACLE",
+      "severity": "low",
+      "case": "AUTH-MANAGEMENT",
+      "detail": "handleNodeByID 先 GetNode 再做权限判断：operator/viewer 对不存在的 node id 执行 DELETE/POST 等得到 404 node not found，对存在的 node id 得到 403。未授权用户可据此枚举 node id 是否存在（信息泄露）。",
+      "evidence": "evidence/AUTH-MANAGEMENT-role-write-matrix.json"
+    },
+    {
+      "id": "CONTRACT-AUDIT-METHOD-200",
+      "severity": "low",
+      "case": "API-CONTRACT",
+      "detail": "handleAudit 无方法开关：GET/POST/PUT/DELETE/PATCH /api/audit 均 200 返回审计列表，而非 405。无实际写入副作用。",
+      "evidence": "evidence/API-CONTRACT-admin-method-matrix.json"
+    },
+    {
+      "id": "CONTRACT-ME-METRICS-METHOD-200",
+      "severity": "low",
+      "case": "API-CONTRACT",
+      "detail": "/api/me 与 /metrics 无方法开关，任意方法均返回 200（/metrics 未启用时 404）。",
+      "evidence": "evidence/API-CONTRACT-admin-method-matrix.json"
+    },
+    {
+      "id": "CONTRACT-LOGOUT-ANY-METHOD",
+      "severity": "low",
+      "case": "API-CONTRACT",
+      "detail": "/api/logout 无方法开关：GET 亦可注销当前会话并返回 200 {ok:true}，不符合 REST 语义（无方法边界）。",
+      "evidence": "evidence/API-CONTRACT-logout.json"
+    },
+    {
+      "id": "CONTRACT-GROUP-NAME-NOT-VALIDATED",
+      "severity": "medium",
+      "case": "API-CONTRACT",
+      "detail": "POST /api/groups 空体 → 200 且落库 name 为空（type 默认 static）；PUT /api/groups/{不存在的id} 空体 → 200 并 upsert 一条资源。与 scripts/tasks/applications（均要求 name）不一致，且与 group 名称存在 UNIQUE 约束组合后，第二次空名创建返回未归一化的 SQLite 约束错误。",
+      "evidence": "evidence/API-CONTRACT-required-fields.json, evidence/API-CONTRACT-admin-method-matrix.json"
+    },
+    {
+      "id": "CONTRACT-SQL-ERROR-LEAK",
+      "severity": "medium",
+      "case": "API-CONTRACT",
+      "detail": "PUT /api/schedules/{不存在id} 与 PUT /api/applications/{不存在id} 返回 400，body 直接暴露底层错误 \"sql: no rows in result set\"。",
+      "evidence": "evidence/API-CONTRACT-required-fields.json"
+    },
+    {
+      "id": "CONTRACT-TRANSFER-NONPOST-403",
+      "severity": "low",
+      "case": "API-CONTRACT",
+      "detail": "handleTransferByID 对非 POST/非单段 GET 统一返回 403 permission denied，导致方法不支持时是 403 而非 405。",
+      "evidence": "evidence/API-CONTRACT-admin-method-matrix.json"
+    },
+    {
+      "id": "CONTRACT-DELETE-IDEMPOTENT-200",
+      "severity": "low",
+      "case": "API-CONTRACT",
+      "detail": "对不存在 id 的 DELETE 在 groups/scripts/tasks/schedules/applications/artifacts 均返回 200 {ok:true}（幂等删除），而 GET 同类 id 返回 404，语义上可行但与 404 的边界不一致。",
+      "evidence": "evidence/API-CONTRACT-admin-method-matrix.json"
+    },
+    {
+      "id": "CONTRACT-SESSION-KEYS-CAMEL",
+      "severity": "low",
+      "case": "API-CONTRACT",
+      "detail": "auth.Session 缺 json tag：/api/me 与 /api/login 的 user 对象键为 Token/UserID/Username/Role/Expires（首字母大写），与其余端点的 snake_case 约定不一致。",
+      "evidence": "evidence/API-CONTRACT-observations.json"
+    },
+    {
+      "id": "CONTRACT-X-TOTAL-COUNT-PARTIAL",
+      "severity": "low",
+      "case": "API-CONTRACT",
+      "detail": "X-Total-Count 仅在 /api/executions 与 /api/audit 返回，其余列表端点缺省（但 CORS 统一 Expose 该头）。",
+      "evidence": "evidence/API-CONTRACT-observations.json"
+    }
+  ],
+  "harness_notes": [
+    "本批次无既有 owner=api E2E runner，按需编写 runners/*.py（instance_up/instance_down/probe_auth/probe_relay/probe_contract）并使用真实协议请求。",
+    "角色与用户维度全部在可整体销毁的隔离 Hub 实例（18083/18084）上完成；共享 repair authority 只做只读版本比对（binary/index.html SHA）。",
+    "自建 Agent 使用同 repair 发行版的 agent-static 二进制，以 setsid nohup 临时进程运行（无 systemd 单元、无开机自启），收尾已停止并删除配置/数据/日志。",
+    "probe_contract 早期版本把 /api/logout 放入 admin 方法矩阵，任意方法触发注销导致后续断言 401；已改为排除 /api/logout 并用一次性会话单独验证。",
+    "probe_auth 在重跑时通过 Admin PUT 重置既有同名用户口令后复用，避免制造重复 User（隔实例本就会整体销毁）。"
+  ]
+}

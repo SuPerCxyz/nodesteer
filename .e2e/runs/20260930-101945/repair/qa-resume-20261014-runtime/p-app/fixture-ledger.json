@@ -1,0 +1,604 @@
+{
+  "batch_id": "p-app",
+  "nonce": "f7821a1dbfb5",
+  "owned_prefix": "qa-papp-f7821a1dbfb5-",
+  "endpoint": "http://192.168.100.209:18080",
+  "native_host": "192.168.100.247",
+  "generated_at_utc": "2026-10-15T09:23:48Z",
+  "host_protection": {
+    "protected_units_never_touched": [
+      "nodesteer-agent-repair-20260930-101945-native-4.service",
+      "nodesteer-agent.service"
+    ],
+    "no_vm_restart": true,
+    "no_primary_8080_write": true,
+    "shared_host_note": "all owned children run as plain processes on native-4 under owned 0700 roots with owned 0600 configs; the protected repair/primary Agent units were only observed, never started/stopped/restarted"
+  },
+  "identity_isolation": {
+    "why": "the enrollment API reuses an existing node when its name OR ip matches an existing node (hub.NodeManager.findEnrollableNode); enrolling several children with the real host IP collapsed them onto one node identity in an earlier harness attempt",
+    "fix": "each owned child is enrolled with a distinct non-routable <name>.invalid identity",
+    "distinct_node_identities": true
+  },
+  "created": {
+    "children": [
+      {
+        "node_id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+        "agent_id": "agent-ae80a1d8-3b72-4bda-a8fb-d846c8ab484f",
+        "node_name": "qa-papp-f7821a1dbfb5-child-a",
+        "node_ip": "qa-papp-f7821a1dbfb5-child-a.invalid",
+        "root": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5",
+        "opt_root": "/opt/qa-papp-f7821a1dbfb5",
+        "data_dir": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data"
+      },
+      {
+        "node_id": "25a00e9c-1aaa-45e6-a8f9-6ffda348da33",
+        "agent_id": "agent-76971ed9-2dc1-4967-8074-619890673fa9",
+        "node_name": "qa-papp-f7821a1dbfb5-child-b",
+        "node_ip": "qa-papp-f7821a1dbfb5-child-b.invalid",
+        "root": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-b",
+        "opt_root": "/opt/qa-papp-f7821a1dbfb5-b",
+        "data_dir": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/data"
+      },
+      {
+        "node_id": "c9ab8755-8966-412c-9fd1-7d7a0ad9b827",
+        "agent_id": "agent-6bf4cccb-7416-49a8-bb21-37925dc41427",
+        "node_name": "qa-papp-f7821a1dbfb5-child-c",
+        "node_ip": "qa-papp-f7821a1dbfb5-child-c.invalid",
+        "root": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c",
+        "opt_root": "/opt/qa-papp-f7821a1dbfb5-c",
+        "data_dir": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/data"
+      }
+    ],
+    "applications": [
+      {
+        "role": "main",
+        "id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7"
+      },
+      {
+        "role": "unreg",
+        "id": "afacb0cf-54ae-45c2-939d-1413ca0a6186"
+      }
+    ],
+    "artifacts": [
+      {
+        "label": "A1",
+        "id": "5ab74dc8-a9e8-482d-8e4b-2492f1691cf9",
+        "sha256": "bde00aa2d166763fad79763dc11be3d18cb433ef8f24f0a4966c12f0ca635c55",
+        "size": 4194911,
+        "name": "qa-papp-f7821a1dbfb5-payload-a1",
+        "local_sha256_matches_hub": true,
+        "role": "good v1 (baseline install + rollback target)"
+      },
+      {
+        "label": "A2",
+        "id": "f3bd1218-54dc-4c39-af99-28d993649b8c",
+        "sha256": "ce835a17a36f9278473860966263eecbcb72838b36f50611a62eab4abfb500aa",
+        "size": 4194911,
+        "name": "qa-papp-f7821a1dbfb5-payload-a2",
+        "local_sha256_matches_hub": true,
+        "role": "good v2 (upgrade target)"
+      },
+      {
+        "label": "A3",
+        "id": "b26e398b-3702-4860-bc86-c617c6ee2ca8",
+        "sha256": "402ff7d53836cf52782f22ffea94e9ff9ccc2963bac9e9b731693e84a471c735",
+        "size": 4194383,
+        "name": "qa-papp-f7821a1dbfb5-payload-a3",
+        "local_sha256_matches_hub": true,
+        "role": "always-exit-1 (systemd health failure / failed upgrade)"
+      },
+      {
+        "label": "A4",
+        "id": "ce2361f7-9526-491c-853d-94ff9cd33140",
+        "sha256": "049861a96e8d1d1662b681ab282996c26e1627b12f72d0f478de538e04480770",
+        "size": 4194915,
+        "name": "qa-papp-f7821a1dbfb5-payload-a4",
+        "local_sha256_matches_hub": true,
+        "role": "good v1.5 (uncached artifact for the prefetch-failure branch)"
+      }
+    ],
+    "file_transfers": [
+      {
+        "label": "multi",
+        "transfer_id": "8ae56a22-63c9-488e-a9d7-292edc6a6a8a"
+      },
+      {
+        "label": "partial",
+        "transfer_id": "6043c4d6-aea8-49dd-a333-4e172466a085"
+      },
+      {
+        "label": "cancel",
+        "transfer_id": "bde72396-9608-48d1-a29a-fc2f4ea9e577"
+      }
+    ],
+    "owned_host_paths": {
+      "child_roots": [
+        "/var/lib/nodesteer-qa-papp-f7821a1dbfb5",
+        "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-b",
+        "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c"
+      ],
+      "app_opt_roots": [
+        "/opt/qa-papp-f7821a1dbfb5",
+        "/opt/qa-papp-f7821a1dbfb5-b",
+        "/opt/qa-papp-f7821a1dbfb5-c"
+      ],
+      "managed_unit": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+      "managed_binary": "/opt/qa-papp-f7821a1dbfb5/app/bin/app",
+      "managed_config": "/opt/qa-papp-f7821a1dbfb5/app/config/app.env",
+      "unregistered_app_unit": "nodesteer-qa-papp-f7821a1dbfb5-unreg.service",
+      "owned_foreign_probe_unit": "nodesteer-qa-papp-f7821a1dbfb5-foreign.service"
+    },
+    "owned_host_seams": {
+      "a": {
+        "chattr_minus_i_data": {
+          "action": "chattr_minus_i",
+          "path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications",
+          "result": {
+            "rc": 0,
+            "out": "",
+            "err": ""
+          },
+          "after": {
+            "lexists": true,
+            "is_dir": true,
+            "is_symlink": false,
+            "mode": "0o755",
+            "uid": 0,
+            "gid": 0,
+            "target": null,
+            "size": 8192
+          },
+          "mounts": [],
+          "lsattr": "---------------------- /var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/applications"
+        },
+        "chattr_minus_i_artifacts": {
+          "action": "chattr_minus_i",
+          "path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/artifacts",
+          "result": {
+            "rc": 0,
+            "out": "",
+            "err": ""
+          },
+          "after": {
+            "lexists": true,
+            "is_dir": true,
+            "is_symlink": false,
+            "mode": "0o755",
+            "uid": 0,
+            "gid": 0,
+            "target": null,
+            "size": 4096
+          },
+          "mounts": [],
+          "lsattr": "---------------------- /var/lib/nodesteer-qa-papp-f7821a1dbfb5/data/artifacts"
+        },
+        "chattr_minus_i_opt_bin": {
+          "action": "chattr_minus_i",
+          "path": "/opt/qa-papp-f7821a1dbfb5/app/bin",
+          "result": {
+            "rc": 0,
+            "out": "",
+            "err": ""
+          },
+          "after": {
+            "lexists": true,
+            "is_dir": true,
+            "is_symlink": false,
+            "mode": "0o755",
+            "uid": 0,
+            "gid": 0,
+            "target": null,
+            "size": 17
+          },
+          "mounts": [],
+          "lsattr": "---------------------- /opt/qa-papp-f7821a1dbfb5/app/bin"
+        },
+        "umount_dst_b": {
+          "action": "umount",
+          "path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/dst-multi",
+          "result": {
+            "rc": 32,
+            "out": "",
+            "err": "umount: /var/lib/nodesteer-qa-papp-f7821a1dbfb5/dst-multi: no mount point specified."
+          },
+          "after": {
+            "lexists": false
+          },
+          "mounts": [],
+          "lsattr": ""
+        },
+        "umount_dst_c": {
+          "action": "umount",
+          "path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5/dst-blocked",
+          "result": {
+            "rc": 32,
+            "out": "",
+            "err": "umount: /var/lib/nodesteer-qa-papp-f7821a1dbfb5/dst-blocked: no mount point specified."
+          },
+          "after": {
+            "lexists": false
+          },
+          "mounts": [],
+          "lsattr": ""
+        }
+      },
+      "b": {
+        "chattr_minus_i_data": {
+          "action": "chattr_minus_i",
+          "path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/data/applications",
+          "result": {
+            "rc": 0,
+            "out": "",
+            "err": ""
+          },
+          "after": {
+            "lexists": true,
+            "is_dir": true,
+            "is_symlink": false,
+            "mode": "0o755",
+            "uid": 0,
+            "gid": 0,
+            "target": null,
+            "size": 6
+          },
+          "mounts": [],
+          "lsattr": "---------------------- /var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/data/applications"
+        },
+        "chattr_minus_i_artifacts": {
+          "action": "chattr_minus_i",
+          "path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/data/artifacts",
+          "result": {
+            "rc": 0,
+            "out": "",
+            "err": ""
+          },
+          "after": {
+            "lexists": true,
+            "is_dir": true,
+            "is_symlink": false,
+            "mode": "0o755",
+            "uid": 0,
+            "gid": 0,
+            "target": null,
+            "size": 6
+          },
+          "mounts": [],
+          "lsattr": "---------------------- /var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/data/artifacts"
+        },
+        "chattr_minus_i_opt_bin": {
+          "action": "chattr_minus_i",
+          "path": "/opt/qa-papp-f7821a1dbfb5-b/app/bin",
+          "result": {
+            "rc": 1,
+            "out": "",
+            "err": "chattr: No such file or directory while trying to stat /opt/qa-papp-f7821a1dbfb5-b/app/bin"
+          },
+          "after": {
+            "lexists": false
+          },
+          "mounts": [],
+          "lsattr": ""
+        },
+        "umount_dst_b": {
+          "action": "umount",
+          "path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/dst-multi",
+          "result": {
+            "rc": 32,
+            "out": "",
+            "err": "umount: /var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/dst-multi: not mounted."
+          },
+          "after": {
+            "lexists": true,
+            "is_dir": true,
+            "is_symlink": false,
+            "mode": "0o755",
+            "uid": 0,
+            "gid": 0,
+            "target": null,
+            "size": 21
+          },
+          "mounts": [],
+          "lsattr": "---------------------- /var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/dst-multi"
+        },
+        "umount_dst_c": {
+          "action": "umount",
+          "path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/dst-blocked",
+          "result": {
+            "rc": 32,
+            "out": "",
+            "err": "umount: /var/lib/nodesteer-qa-papp-f7821a1dbfb5-b/dst-blocked: no mount point specified."
+          },
+          "after": {
+            "lexists": false
+          },
+          "mounts": [],
+          "lsattr": ""
+        }
+      },
+      "c": {
+        "chattr_minus_i_data": {
+          "action": "chattr_minus_i",
+          "path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/data/applications",
+          "result": {
+            "rc": 0,
+            "out": "",
+            "err": ""
+          },
+          "after": {
+            "lexists": true,
+            "is_dir": true,
+            "is_symlink": false,
+            "mode": "0o755",
+            "uid": 0,
+            "gid": 0,
+            "target": null,
+            "size": 6
+          },
+          "mounts": [],
+          "lsattr": "---------------------- /var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/data/applications"
+        },
+        "chattr_minus_i_artifacts": {
+          "action": "chattr_minus_i",
+          "path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/data/artifacts",
+          "result": {
+            "rc": 0,
+            "out": "",
+            "err": ""
+          },
+          "after": {
+            "lexists": true,
+            "is_dir": true,
+            "is_symlink": false,
+            "mode": "0o755",
+            "uid": 0,
+            "gid": 0,
+            "target": null,
+            "size": 6
+          },
+          "mounts": [],
+          "lsattr": "---------------------- /var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/data/artifacts"
+        },
+        "chattr_minus_i_opt_bin": {
+          "action": "chattr_minus_i",
+          "path": "/opt/qa-papp-f7821a1dbfb5-c/app/bin",
+          "result": {
+            "rc": 1,
+            "out": "",
+            "err": "chattr: No such file or directory while trying to stat /opt/qa-papp-f7821a1dbfb5-c/app/bin"
+          },
+          "after": {
+            "lexists": false
+          },
+          "mounts": [],
+          "lsattr": ""
+        },
+        "umount_dst_b": {
+          "action": "umount",
+          "path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-multi",
+          "result": {
+            "rc": 32,
+            "out": "",
+            "err": "umount: /var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-multi: not mounted."
+          },
+          "after": {
+            "lexists": true,
+            "is_dir": true,
+            "is_symlink": false,
+            "mode": "0o755",
+            "uid": 0,
+            "gid": 0,
+            "target": null,
+            "size": 21
+          },
+          "mounts": [],
+          "lsattr": "---------------------- /var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-multi"
+        },
+        "umount_dst_c": {
+          "action": "umount",
+          "path": "/var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-blocked",
+          "result": {
+            "rc": 32,
+            "out": "",
+            "err": "umount: /var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-blocked: not mounted."
+          },
+          "after": {
+            "lexists": true,
+            "is_dir": true,
+            "is_symlink": false,
+            "mode": "0o755",
+            "uid": 0,
+            "gid": 0,
+            "target": null,
+            "size": 21
+          },
+          "mounts": [],
+          "lsattr": "---------------------- /var/lib/nodesteer-qa-papp-f7821a1dbfb5-c/dst-blocked"
+        }
+      }
+    },
+    "temporary_host_units_created": [
+      {
+        "unit": "nodesteer-qa-papp-f7821a1dbfb5-foreign.service",
+        "purpose": "INV-12 unowned live unit rejection probe",
+        "removed": true
+      }
+    ]
+  },
+  "budget": {
+    "api_mutations": 87,
+    "artifact_uploads": 4,
+    "artifact_deletes": 4,
+    "app_creates": 2,
+    "app_updates": 26,
+    "app_deletes": 2,
+    "app_assigns": 2,
+    "deploys": 32,
+    "transfers": 3,
+    "transfer_retries": 1,
+    "transfer_cancels": 1,
+    "node_enroll_posts": 3,
+    "node_deletes": 3,
+    "child_process_starts": 10,
+    "child_process_stops": 3,
+    "child_process_kills": 0,
+    "host_seam_actions": 26,
+    "systemd_unit_writes": 1
+  },
+  "deleted": {
+    "hub_deletes": {
+      "a": {
+        "id": "877b261a-f4db-4045-9ef6-c5bc3e0448b4",
+        "attempt": 0,
+        "delete_http": 200,
+        "delete_body": {
+          "ok": "true"
+        },
+        "get_http": 404
+      },
+      "b": {
+        "id": "25a00e9c-1aaa-45e6-a8f9-6ffda348da33",
+        "attempt": 0,
+        "delete_http": 200,
+        "delete_body": {
+          "ok": "true"
+        },
+        "get_http": 404
+      },
+      "c": {
+        "id": "c9ab8755-8966-412c-9fd1-7d7a0ad9b827",
+        "attempt": 0,
+        "delete_http": 200,
+        "delete_body": {
+          "ok": "true"
+        },
+        "get_http": 404
+      }
+    },
+    "application_deletes": {
+      "main": 404,
+      "unreg": 404
+    },
+    "artifact_deletes": [
+      {
+        "label": "A1",
+        "id": "5ab74dc8-a9e8-482d-8e4b-2492f1691cf9",
+        "delete_http": 200,
+        "get_http": 404
+      },
+      {
+        "label": "A2",
+        "id": "f3bd1218-54dc-4c39-af99-28d993649b8c",
+        "delete_http": 200,
+        "get_http": 404
+      },
+      {
+        "label": "A3",
+        "id": "b26e398b-3702-4860-bc86-c617c6ee2ca8",
+        "delete_http": 200,
+        "get_http": 404
+      },
+      {
+        "label": "A4",
+        "id": "ce2361f7-9526-491c-853d-94ff9cd33140",
+        "delete_http": 200,
+        "get_http": 404
+      }
+    ],
+    "all_delete_gets_404": true
+  },
+  "cleanup_verification": {
+    "product_path_cleanup": {
+      "host_before_product_cleanup": {
+        "unit_registry": [
+          {
+            "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+            "unit_name": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+            "registered_at": "2026-10-15T09:22:03.073699673Z"
+          }
+        ],
+        "unit_file_lexists": true,
+        "binary_lexists": true,
+        "config_lexists": true,
+        "unit_state": {
+          "MainPID": "164718",
+          "NRestarts": "0",
+          "ExecMainStatus": "0",
+          "Id": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+          "LoadState": "loaded",
+          "ActiveState": "active",
+          "SubState": "running",
+          "FragmentPath": "/etc/systemd/system/nodesteer-qa-papp-f7821a1dbfb5-app.service",
+          "UnitFileState": "enabled"
+        }
+      },
+      "main": {
+        "delete_http": 200,
+        "delete_body": {
+          "ok": "true"
+        },
+        "agent_registry_before_cleanup": {
+          "unit_registry": [
+            {
+              "application_id": "ce2b6e1b-3a14-4d71-af80-a62445b011d7",
+              "unit_name": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+              "registered_at": "2026-10-15T09:22:03.073699673Z"
+            }
+          ],
+          "unit_file_lexists": true,
+          "binary_lexists": true,
+          "config_lexists": true,
+          "unit_state": {
+            "MainPID": "164718",
+            "NRestarts": "0",
+            "ExecMainStatus": "0",
+            "Id": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+            "LoadState": "loaded",
+            "ActiveState": "active",
+            "SubState": "running",
+            "FragmentPath": "/etc/systemd/system/nodesteer-qa-papp-f7821a1dbfb5-app.service",
+            "UnitFileState": "enabled"
+          }
+        }
+      },
+      "unreg": {
+        "delete_http": 200,
+        "delete_body": {
+          "ok": "true"
+        },
+        "agent_registry_before_cleanup": null
+      },
+      "host_after_product_cleanup": {
+        "unit_file_lexists": false,
+        "enable_symlink_lexists": false,
+        "binary_lexists": false,
+        "config_lexists": false,
+        "unit_registry": [],
+        "unit_state": {
+          "MainPID": "0",
+          "NRestarts": "0",
+          "ExecMainStatus": "0",
+          "Id": "nodesteer-qa-papp-f7821a1dbfb5-app.service",
+          "LoadState": "not-found",
+          "ActiveState": "inactive",
+          "SubState": "dead",
+          "FragmentPath": "",
+          "UnitFileState": ""
+        },
+        "binary_dir_entries": []
+      },
+      "product_cleanup_complete": true,
+      "get_after_delete_http": {
+        "main": 404,
+        "unreg": 404
+      }
+    },
+    "oracle_clean": true,
+    "native4_clean": true,
+    "etc_systemd_count_unchanged": true,
+    "counts_returned_to_baseline": true
+  },
+  "reusable_practices_untouched": [
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b11/",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b12/"
+  ]
+}

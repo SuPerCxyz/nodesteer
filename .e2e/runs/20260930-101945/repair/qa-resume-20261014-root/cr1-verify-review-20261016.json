@@ -1,0 +1,40 @@
+{
+  "review_id": "ROOT-CR1-DEPLOY-REVERIFY-20261016",
+  "reviewed_at": "2026-10-16T10:23:38.284226+00:00",
+  "reviewer": "main-agent(root)",
+  "status": "INTEGRATED",
+  "dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261016-cr1-verify",
+  "authorization_basis": "用户选择方案 A（收窄 superseded 谓词）并授权重建部署复跑",
+  "build_transition": {
+    "label": "dddee4f0-e2e-repair-20261016-cr1",
+    "hub_sha": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+    "agent_sha": "b15f6df540a63a8eb530ec837c57d4628ff7925822153a02d624f021a525ac4f",
+    "hub_unbundled_byte_identical_to_previous": true,
+    "reason": "CR-1 为纯 agent 侧改动（go list -deps ./cmd/hub 不含 internal/agent）",
+    "backup": "backup-20261016-cr1/*.bak-20261016-cr1（回滚命令已留，未执行）"
+  },
+  "cr1_closed": {
+    "direction_i": "成功部署仍被更晚成功部署取代（adv2 同 revision、adv 真实升级）→ 日志 superseded by a later successful deployment，原防护保留",
+    "direction_ii": "prepare_failed / rolled_back / 成因未知(kind=\"\") 的 DONE 均不再误跳过 → 三例均重放并收敛",
+    "control": "定义漂移(bm) 仍 binding mismatch; skip replay（未放松绑定防护）",
+    "tests": "单测 5 组 + 变异验证；build/vet/gofmt 全绿（Root 亲自复核）"
+  },
+  "legacy_row_audit": {
+    "finding": "native-2 有 12 条成因未知 DONE 行；候选对 6 对但绑定匹配 0 对；15 个 app_id 在 Hub 全 404（测试应用已删）",
+    "exploitability": "不可达：RecoverDeployments 在绑定校验前即 lacks application definition 跳过；两次重启共 17 条跳过、行相位前后完全一致",
+    "decision": "不清理（风险不可达，避免对已删除应用的行做无谓写）"
+  },
+  "ar32_family": "8/8 通过（AR-32/SYS-56/SYS-48/INV-11/SYS-51/E2E-13/AR-30/E2E-12）；均为此前已 PASS，本轮为强证据补强",
+  "limitations": [
+    "SYS-48 负向（永久失败健康检查）恢复后 journal 停留 ROLLBACK_FAILED —— 既有语义（回滚末尾复检同一健康检查），非 CR-1 引入",
+    "SYS-56 的 allowlist 维度在 repair 节点不可复现（未配置 HostPathAllowlist），只验证了 Hub 门禁 + Agent 非 clean 路径/symlink 门禁",
+    "本批 journal 行为惰性孤儿行（应用已删，无重放可能）"
+  ],
+  "counts_unchanged": {
+    "PASS": 469,
+    "FAIL": 6,
+    "PARTIAL": 19,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  }
+}

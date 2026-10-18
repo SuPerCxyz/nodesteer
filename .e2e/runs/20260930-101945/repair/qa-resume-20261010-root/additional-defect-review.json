@@ -1,0 +1,55 @@
+{
+  "status": "CONFIRMED_REPAIR_AFTER_TEST_COMPLETION",
+  "reviewed_at": "2026-10-10T02:34:40.713677+00:00",
+  "goal": "准确SUCCESS退出码0与真实UI退出撤销本次session",
+  "current_gaps": [
+    "Execution int omitempty导致SUCCESS0漏字段，UI显示-",
+    "SignOutDialog未请求logout，dedicated old token仍me200"
+  ],
+  "scope": [
+    "SUCCESS0 API/UI可见；未知/未执行仍-，非零保持现状",
+    "UI请求现有logout撤销本次session成功后清本地/navigate；请求期间防重复；网络/服务错误保留登录提示重试；401视已失效正常退出",
+    "定向边界/失败测试与Luna真实repair回归"
+  ],
+  "excluded": [
+    "schema/历史数据迁移",
+    "公共API扩展以外的新能力",
+    "其他会话撤销",
+    "Git/部署替换原primary"
+  ],
+  "execution_mapping": {
+    "root": "串行控制共享产品源/状态/整合；继承主会话能力",
+    "Luna": "复用现有gpt-6-luna会话执行具体回归，单槽位独占fixture/evidence目录；oldtoken401/未知码-/failure recovery行为oracle"
+  },
+  "new_feature_or_public_contract_confirmation_rule": "用户AGENTS.md第3节；原22/504已授权工作继续",
+  "observation": {
+    "id": "OBS-20261010-UI-LOGOUT-NOT-REVOKED",
+    "priority": "P2",
+    "title": "UI退出只清本地状态，旧服务端session令牌仍可访问/api/me",
+    "status": "CONFIRMED_REPAIR_AFTER_TESTS",
+    "source_change_authorized": true,
+    "original_22_denominator_unchanged": true,
+    "affected_cases": [],
+    "evidence": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261009-web/batch02/g01-06-isolated-contract-results.json"
+    ],
+    "source": [
+      "web/src/components/sign-out-dialog.tsx:19",
+      "web/src/stores/auth-store.ts:51",
+      "internal/hub/api/api.go:436"
+    ],
+    "actual": {
+      "dedicated_session": true,
+      "ui_logout_local_token_cleared": true,
+      "ui_logout_api_requests": 0,
+      "old_token_me_after_ui_logout": 200,
+      "direct_api_logout": 200,
+      "old_token_me_after_api_logout": 401
+    },
+    "contract_scope": "G-01-06仅/api/me与/api/logout API contract，已PASS；新增UI交互问题独立记录，不新增canonical分母。",
+    "reviewed_at": "2026-10-10T02:34:40.713677+00:00"
+  },
+  "confirmed_at": "2026-10-10T10:41:04.033615+00:00",
+  "confirmation": "用户：继续完成测试 然后统一修复；随后继续",
+  "repair_execution_gate": "先完成可执行测试并汇总环境限制，再统一产品修复"
+}

@@ -1,0 +1,90 @@
+{
+  "reviewed_at": "2026-10-10T02:52:40.213503+00:00",
+  "cases": [
+    {
+      "case_id": "SYS-01",
+      "status": "PARTIAL",
+      "accepted_repair_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/child-setup-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/child-setup-source.py",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/cleanup-api-preflight.json"
+      ],
+      "excluded_original_baseline_evidence": [],
+      "limits": [
+        "Does not independently test invalid/expired/revoked token or re-enrollment duplicate behavior.",
+        "Credential value is intentionally not exposed; evidence confirms secure storage flag and accepted connection, not raw value equality."
+      ]
+    },
+    {
+      "case_id": "SYS-02",
+      "status": "PARTIAL",
+      "accepted_repair_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/recreate-owned-child-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/armed-child-restart-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/positive-prune-oracle-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/cleanup-api-preflight.json"
+      ],
+      "excluded_original_baseline_evidence": [],
+      "limits": [
+        "No explicit heartbeat packet/counter capture was recorded; online/synced is the actual Hub status oracle.",
+        "This one Native-1 restart does not cover Docker/native other-host variants."
+      ]
+    },
+    {
+      "case_id": "AR-08",
+      "status": "PARTIAL",
+      "accepted_repair_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/v2-snapshot-prepare-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/armed-child-restart-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/negative-oracle-attempt02-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/release-good-snapshot-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/positive-prune-oracle-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/good-script-execution-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/good-v2-marker-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/good-script-execution-ui-evidence.json"
+      ],
+      "excluded_original_baseline_evidence": [],
+      "limits": [
+        "No separately injected duplicate/lost/reordered notification or schedule idempotency dimension; repeated ACKs do not by themselves prove all notification-fault variants."
+      ]
+    },
+    {
+      "case_id": "SYS-09",
+      "status": "PARTIAL",
+      "accepted_repair_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/hub-fixture-cleanup-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/final-cleanup-oracle-evidence.json"
+      ],
+      "excluded_original_baseline_evidence": [],
+      "limits": [
+        "This new cleanup stopped the QA Agent before Hub definition deletion; it does not demonstrate Tombstones consumed by a connected Agent.",
+        "No Schedule fixture/future-slot suppression was exercised in this cleanup; do not count offline API GET404 as Agent convergence."
+      ]
+    },
+    {
+      "case_id": "INV-02",
+      "status": "PARTIAL",
+      "accepted_repair_evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/armed-child-restart-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/child-proxy-connect-evidence.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/sha-prune/final-cleanup-oracle-evidence.json"
+      ],
+      "excluded_original_baseline_evidence": [
+        ".e2e/runs/20260930-101945/main/agent-outbound-sockets.json"
+      ],
+      "limits": [
+        "No child /proc socket or listener inventory was captured during this QA process lifetime; proxy HELLO alone does not prove absence of reverse listeners.",
+        "Canonical existing remaining gap covers Docker/Host topology process socket and reverse-listener checks."
+      ]
+    }
+  ],
+  "feature_counts": {
+    "PASS": 94,
+    "FAIL": 1,
+    "PARTIAL": 165,
+    "NOT_RUN": 244,
+    "BLOCKED": 0
+  },
+  "not_new_runtime_tests": true,
+  "baseline_not_counted_as_repair_pass": true
+}

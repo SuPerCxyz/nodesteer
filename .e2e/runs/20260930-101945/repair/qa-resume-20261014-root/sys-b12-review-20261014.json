@@ -1,0 +1,108 @@
+{
+  "review_id": "ROOT-SYS-B12-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T10:24:39.935273+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "run_dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b12",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试、剩余分母全量推进",
+  "verdicts": [
+    {
+      "case_id": "SYS-56",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "Hub 拒绝相对路径/含 .. /含 NUL 的 app 路径与传输目的地（全 400、0 新行、revision 不动）；Host Adapter 拒绝 //、/./、尾随 / 三个非 clean 绝对路径（FAILED invalid deployment path，无文件副作用）；symlink 目的地两条链路均被拒且 victim SHA 不变；allowlist 外路径 FAILED path is outside configured allowlist 且目录未创建，allowlist 内正对照 SUCCESS。"
+    },
+    {
+      "case_id": "SYS-57",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "目标在 owned tmpfs(dev 44) ≠ /tmp(dev 33)：96MiB 交付 SUCCESS、SHA 一致；采样抓到目标目录内 .nodesteer-transfer-* 增长且 Agent fd 指向目标目录；两项确定性 ENOSPC 证明（交付与部署的临时路径均在被写目标目录内），旧目标 SHA 不变、无残留。"
+    },
+    {
+      "case_id": "AR-32",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PARTIAL",
+      "confidence": "high",
+      "reason": "EPERM 真实（chattr +i → install binary failed: operation not permitted，无半成品）；释放后部署 SUCCESS、Desired==Actual、重复部署幂等。但重启后 binary 变为更早被拒 symlink 部署的备份内容、unit inactive → Desired≠Actual（见新缺陷 SYSB12-DEFECT-01）。"
+    },
+    {
+      "case_id": "AR-34",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "逃逸全部被拒且无副作用；合法交付 SUCCESS/SHA 一致；已 SUCCESS 传输 retry 保持 SUCCESS；重启后文件与记录仍在；无 .tmp/.nodesteer-transfer-* 残留。"
+    },
+    {
+      "case_id": "AR-35",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "跨 fs 原子成功（.tmp-* 同目录确定性证明）；容量不足不破坏既有目标；重复执行 SHA 一致、Desired==Actual（Hub 定义/Agent 本地定义/磁盘 SHA 三者相等）。"
+    },
+    {
+      "case_id": "SYS-58",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "非 native child（docker）上报 4 项 false；deploy/upgrade → HTTP 400 lacks capability application_deploy、0 Execution；客户机 executions/deployments/local_apps/unit_registry 全空、log 无 deploy。"
+    },
+    {
+      "case_id": "AR-33",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "同上 + 自升级落 SKIPPED（self-upgrade unsupported for deployment mode docker）不下发；能节点持续收敛（unit active、Desired==Actual）；故障节点重启后能力仍 false 且保持干净。"
+    },
+    {
+      "case_id": "INV-16",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "帧代理记录 DEPLOY_REQUEST=0、RUN_EXECUTION=0（仅 HELLO/SYNC/HEARTBEAT/CHANGE_NOTIFICATION）；Hub 无该节点 Execution；客户机无执行痕迹。"
+    }
+  ],
+  "new_defect": {
+    "id": "E2E-20261014-ROLLBACK-FAILED-STALE-BACKUP-RESTORE",
+    "priority": "P0",
+    "title": "回滚失败的被拒部署遗留 ROLLING_BACK 记录，Agent 重启恢复时把陈旧备份写到应用的当前 binary/config 路径，覆盖更新的成功安装并把 unit 留在 inactive",
+    "status": "CONFIRMED_TEST_FAILURE_REPAIR_SCOPE_REVIEW_PENDING",
+    "source_change_authorized": false,
+    "affected_cases": [
+      "AR-32",
+      "SYS-56"
+    ],
+    "recommended_owner_case": "INV-11",
+    "source": [
+      "internal/agent/application.go (failed() 仅 rollback 成功才推进 DONE)",
+      "internal/agent/application.go ApplicationManager.RecoverDeployments（用当前定义路径 + 陈旧 backup 组合回滚）"
+    ],
+    "actual": "陈旧行 22ce1540…（symlink 被拒产生）→ 重启前 SHA 60b4808f…/unit active → 重启后 SHA f601cb64…（=victim 内容）/unit inactive；再次部署即修复（一次性毒化）。symlink 目的地被 AtomicReplace 拒绝 ⇒ 其 rollback 亦必然失败 ⇒ 任何用户提交 symlink binary_path 都会留下毒行。",
+    "evidence": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b12/case-result.json"
+    ]
+  },
+  "new_observations": [
+    "OBS-20261014-PREFETCH-BEFORE-CAPABILITY-GATE",
+    "OBS-20261014-BLOCKED-AS-HTTP-400",
+    "OBS-20261014-FILE-DELIVERY-BYPASSES-HOST-FS-GATE",
+    "OBS-20261014-MIXED-BATCH-CAPABILITY-NON-ATOMIC"
+  ],
+  "cross_batch_note": "批次只使用 native-2；其 oracle（10:07:31Z）后 native-3 于 ~10:11Z offline，属并行批次，与本批无关",
+  "counts_before": {
+    "PASS": 262,
+    "FAIL": 5,
+    "PARTIAL": 163,
+    "NOT_RUN": 65,
+    "BLOCKED": 9
+  },
+  "counts_after": {
+    "PASS": 274,
+    "FAIL": 5,
+    "PARTIAL": 164,
+    "NOT_RUN": 52,
+    "BLOCKED": 9
+  }
+}

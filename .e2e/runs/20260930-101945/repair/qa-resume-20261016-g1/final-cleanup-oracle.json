@@ -1,0 +1,127 @@
+{
+ "batch_id": "qa-resume-20261016-g1",
+ "verified_at_utc": "2026-10-16T09:49:28Z",
+ "instance": {
+  "id": "nodesteer-qa-g1202610163692428a",
+  "nonce": "g1202610163692428a",
+  "port": 18085,
+  "data_dir": "/var/lib/nodesteer-qa-g1202610163692428a",
+  "config": "/etc/nodesteer/qa-g1202610163692428a.yaml",
+  "log": "/var/log/nodesteer-qa-g1202610163692428a.log",
+  "child_root": "/var/lib/nodesteer-qa-g1202610163692428a-child",
+  "tunnel_local_port": 38285,
+  "credential_file": "/tmp/opencode/g1-creds-g1202610163692428a.json",
+  "credentials_source": "instance-ledger.json + fixture-ledger.json（凭据文件已删除）"
+ },
+ "teardown_steps": [
+  "pkill -TERM -f qa-<nonce>（hub + owned child + runuser 父进程）",
+  "pkill -KILL -f qa-<nonce>（兜底）",
+  "rm -rf /var/lib/nodesteer-qa-g1202610163692428a（含 hub.db/hub.db-wal/artifacts/file-transfers）",
+  "rm -rf /var/lib/nodesteer-qa-g1202610163692428a-child（owned child 配置/数据/日志）",
+  "rm -f /etc/nodesteer/qa-g1202610163692428a.yaml /var/log/nodesteer-qa-g1202610163692428a.log",
+  "关闭本地隧道 -L 38285:127.0.0.1:18085",
+  "删除本地 0600 凭据文件 /tmp/opencode/g1-creds-g1202610163692428a.json（存在过=False）",
+  "关闭自有 agent-browser session 0 个（仅 qa-g1-<nonce>-*）"
+ ],
+ "app_unit_cleanup": {
+  "lines": [
+   "UNIT_FILE_EXISTS:no",
+   "UNIT_SYMLINK_EXISTS:0",
+   "UNIT_LOAD_STATE:LoadState=not-found",
+   "UNIT_ACTIVE_STATE:inactive",
+   "UNIT_ENABLED_STATE:not-found",
+   "REPAIR_AGENT_UNITS:0",
+   "REPAIR_AGENT_ACTIVE_LIST:"
+  ],
+  "repaired": "系统在 owned child 上按应用定义创建了 systemd 单元（nodesteer-qa-g1202610163692428a.service，由 P14P15-12 的真实 deploy 触发，enabled+activating）；收尾已 stop/disable/reset-failed 并删除单元与 wants 符号链接"
+ },
+ "pre_teardown_checks": {
+  "PGREP_BEFORE": "0",
+  "PORT_BEFORE": "0",
+  "REPAIR_PID_BEFORE": "153154",
+  "REPAIR_MD5_BEFORE": "adb7ee027805a5cb4ec56463b64c4f4d",
+  "DATA_DIR_SIZE_BEFORE": "",
+  "ETC_LIST_BEFORE": "hub-repair-20260930-101945.yaml,hub-repair-20260930-101945.yaml.pre-ttl-test,hub.yaml,nodesteer-hub-repair-20260930-101945-ttl-ui.yaml,"
+ },
+ "remote_checks": {
+  "PGREP_AFTER": "0",
+  "PORT_LISTEN_AFTER": "0",
+  "DATA_DIR_EXISTS": "no",
+  "CHILD_ROOT_EXISTS": "no",
+  "CONFIG_EXISTS": "no",
+  "LOG_EXISTS": "no",
+  "ETC_LEFTOVER": "0",
+  "ETC_RBAC_LEFTOVER": "0",
+  "VARLIB_LEFTOVER": "0",
+  "VARLOG_LEFTOVER": "0",
+  "TMP_LEFTOVER": "0",
+  "REPAIR_18080": "1",
+  "PRIMARY_8080": "1",
+  "REPAIR_PID_AFTER": "153154",
+  "REPAIR_MD5_AFTER": "adb7ee027805a5cb4ec56463b64c4f4d",
+  "PRIMARY_PID": "1251",
+  "AGENT_UNIT": "inactive",
+  "UNIT_NEW_1H": "0",
+  "UNIT_QA_MATCH": "0",
+  "REPAIR_TMP_NEW": "0"
+ },
+ "local_checks": {
+  "tunnel_process_left": "none",
+  "credential_file_left": false,
+  "own_browser_sessions_left": [],
+  "closed_sessions": []
+ },
+ "baseline_comparison": {
+  "before": {
+   "REPAIR_18080_LISTEN": "1",
+   "PRIMARY_8080_LISTEN": "1",
+   "REPAIR_PID": "153154",
+   "PRIMARY_PID": "1251",
+   "REPAIR_PID_CMDLINE": "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard --config /etc/nodesteer/hub-repair-20260930-101945.yaml",
+   "ETC_FILES": "hub-repair-20260930-101945.yaml,hub-repair-20260930-101945.yaml.pre-ttl-test,hub.yaml,nodesteer-hub-repair-20260930-101945-ttl-ui.yaml,",
+   "VARLIB_DIRS": "/var/lib/nodesteer-hub,/var/lib/nodesteer-hub-repair-20260930-101945,/var/lib/nodesteer-hub-repair-20260930-101945-ttl-ui,",
+   "AGENT_PROCS": "0",
+   "UNIT_NEW": "0"
+  },
+  "repair_pid_same": true,
+  "primary_pid_same": true,
+  "repair_config_md5_before": "adb7ee027805a5cb4ec56463b64c4f4d",
+  "repair_config_md5_after": "adb7ee027805a5cb4ec56463b64c4f4d",
+  "repair_config_hash_same": true
+ },
+ "zombie_check": {
+  "processes": "0",
+  "listening_port": "0",
+  "data_dir_exists": "no",
+  "child_root_exists": "no",
+  "config_exists": "no",
+  "log_exists": "no",
+  "etc_leftovers": "0",
+  "var_lib_leftovers": "0",
+  "var_log_leftovers": "0"
+ },
+ "collateral_assertions": {
+  "repair_18080_listening": true,
+  "primary_8080_listening": true,
+  "repair_pid_unchanged": true,
+  "primary_pid_unchanged": true,
+  "nodesteer_agent_service": "inactive",
+  "systemd_units_added_or_modified_3h_by_batch": "2（均为本批次应用部署产物，已清理）",
+  "systemd_units_matching_qa_g1_after_cleanup": "0",
+  "app_unit_file_exists_after_cleanup": "no",
+  "app_unit_load_state_after_cleanup": "LoadState=not-found",
+  "app_unit_active_state_after_cleanup": "inactive",
+  "app_unit_enabled_state_after_cleanup": "not-found",
+  "repair_agent_units_on_hub_host": "0",
+  "repair_agent_units_note": "repair native Agent 单元运行在 .204/.206/.222/.247，Hub 主机(.209)本应为 0；与基线一致",
+  "primary_agent_unit_state": "inactive",
+  "agent_processes_before": "0",
+  "repair_writes_by_this_batch": "none（全程仅对 :18080 做只读 GET/SHA 比对）",
+  "primary_8080_writes_by_this_batch": "none"
+ },
+ "result": "ISOLATED_INSTANCE_DESTROYED_AND_VERIFIED",
+ "verdict": {
+  "zero_residue": true,
+  "collateral_unaffected": true
+ }
+}

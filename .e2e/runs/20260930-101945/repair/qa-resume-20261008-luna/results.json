@@ -1,0 +1,70 @@
+{
+  "run_id": "repair-qa-resume-20261008-luna",
+  "executed_at": "2026-10-08",
+  "executor": "gpt-6-luna",
+  "authority": "http://192.168.100.209:18080",
+  "browser_session": "nodesteer-luna-20261008-2ca6673010a6",
+  "scope": "无需认证的登录页边界、未认证页面路由保护、未认证 API 401 和浏览器日志检查",
+  "result_status": "PARTIAL",
+  "cases": [
+    {
+      "id": "resume-login-page",
+      "status": "PASS",
+      "trigger": "打开 /sign-in，不提交凭据",
+      "request_and_state": "GET /sign-in 与页面资源返回 200；GET /api/oidc/state 返回 200；用户名、密码输入和登录按钮均渲染",
+      "ui_feedback": "登录表单显示中文标签；无提交时保持 /sign-in",
+      "evidence": ["sign-in-initial.png", "sign-in-initial.snapshot.txt", "sign-in-initial.network.txt", "sign-in-initial.console.txt", "sign-in-initial.errors.txt"],
+      "dimensions": ["登录入口", "表单渲染", "公开 OIDC 状态读取", "浏览器 console/errors"],
+      "limitations": ["没有测试有效或无效凭据登录"]
+    },
+    {
+      "id": "resume-login-empty-submit",
+      "status": "PASS",
+      "trigger": "在登录页不填写字段，点击登录",
+      "request_and_state": "客户端校验显示 Invalid input；网络记录未观察到 POST /api/login；页面仍处于登录路径",
+      "ui_feedback": "用户名和密码字段附近显示校验错误，没有发生认证尝试",
+      "evidence": ["sign-in-empty-submit.png", "sign-in-empty-submit.snapshot.txt", "sign-in-empty-submit.network.txt", "sign-in-empty-submit.url.txt"],
+      "dimensions": ["空表单边界", "请求抑制", "错误反馈"],
+      "limitations": ["未测试密码复杂度或服务端拒绝响应"]
+    },
+    {
+      "id": "resume-unauth-protected-routes",
+      "status": "PASS",
+      "trigger": "分别直接打开 /、/nodes、/scripts、/tasks、/executions、/applications、/users、/settings、/transfers、/tasks/new、/agents/unauthenticated-probe",
+      "request_and_state": "页面 document 由同一 authority 返回 200；前端将每个目标重定向到 /sign-in?redirect=<原路径>；没有携带凭据",
+      "ui_feedback": "最终显示登录表单；redirect query 保留了目标页面",
+      "evidence": ["protected-root.url.txt", "protected-nodes.url.txt", "protected-scripts.url.txt", "protected-tasks.url.txt", "protected-executions.url.txt", "protected-applications.url.txt", "protected-users.url.txt", "protected-settings.url.txt", "protected-transfers.url.txt", "protected-tasks-new.url.txt", "protected-agent-detail.url.txt", "protected-agent-detail.snapshot.txt", "protected-sign-in.png"],
+      "dimensions": ["公开入口", "核心受保护路由", "新建路由", "动态详情路由", "重定向目标保持"],
+      "limitations": ["此结果只验证未认证状态；不会覆盖已认证 /sign-in 行为"]
+    },
+    {
+      "id": "resume-unauth-api-401",
+      "status": "PASS",
+      "trigger": "在登录页以 credentials: omit 对 /api/me 和 /api/nodes 发 GET",
+      "request_and_state": "两项请求均返回 HTTP 401、application/json",
+      "ui_feedback": "探针不改变页面路由；没有认证态",
+      "evidence": ["api-unauth-probe.json", "api-unauth-probe.network.txt", "api-unauth-probe.console.txt", "api-unauth-probe.errors.txt"],
+      "dimensions": ["API 未认证拒绝", "只读请求", "浏览器 console/errors"],
+      "limitations": ["只检查两个代表性受保护 GET endpoint"]
+    }
+  ],
+  "environment": {
+    "healthz_http": 200,
+    "readyz_http": 200,
+    "primary_8080_touched": false,
+    "credentials_used": false,
+    "old_private_resume_directory_available": false,
+    "browser_console_messages": 0,
+    "browser_page_errors": 0
+  },
+  "remaining": [
+    "缺少独立 QA 凭据，本轮未尝试登录、未猜测密码，也未复用旧 Agent 凭据或身份。",
+    "登录后缺陷复测、Secret/live-log 与 Remote 状态用例及其正常/负向/恢复路径待新凭据和隔离运行时入口可用后续派。",
+    "本结果是本轮实时证据，不更新 504 场景分母，也不复用历史测试结果。"
+  ],
+  "resume_plan": [
+    "由环境入口提供新的、仅用于隔离 :18080 的 QA 凭据与私密目录。",
+    "用独占浏览器会话登录后先验证身份和隔离目标，再按 repair matrix 逐项执行授权的应用回归；逐项保存请求/状态、UI 反馈和证据。",
+    "保留本目录结果，另行写入后续独占运行目录或追加独立结果文件；不覆盖本轮证据。"
+  ]
+}

@@ -1,0 +1,292 @@
+{
+  "batch_id": "sys-b14",
+  "title": "FileTransfer：源/目标身份认证、大小与 SHA 校验、Hub staged blob 原子提升、Hub 重启后无半成品",
+  "nonce": "cda9ddb845cb",
+  "executed_at_utc": "2026-10-15T11:45:54Z",
+  "finished_at_utc": "2026-10-15T11:49:50Z",
+  "endpoint": "http://192.168.100.209:18080",
+  "cases": [
+    {
+      "case_id": "SYS-59",
+      "title": "SYS-59 源 Agent 身份认证、源节点只能上传",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-59",
+          "layer": "real Agent HTTP auth + real Transfer dispatch (owned child Agent, exact repair binary)",
+          "status": "PASS",
+          "description": [
+            "A real single-target transfer created on the Hub was uploaded by the source child Agent using its own real agent credential (X-NodeSteer-Agent-ID/Token) and completed to SUCCESS; the Hub recorded exactly the source size/sha256.",
+            "The source node could NOT download its own transfer: an authenticated GET /agent/transfers/<id>/download as the source returned 403 \"agent is not a transfer target\".",
+            "A non-source Agent could NOT upload: authenticated POST upload as the target node returned 403 \"agent is not the transfer source\".",
+            "Wrong/absent credentials were rejected: bogus token 401 \"invalid agent credential\", unknown agent-id 401, no headers 401 \"agent authentication required\", and a management bearer token on the Agent channel 401.",
+            "All negatives left the transfer row byte-identical (no side effect)."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [],
+      "evidence": [
+        "attempt01-harness-bug",
+        "attempt02-blob-ownership-harness-bug",
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase1-owned-children.json",
+        "phase2-main-transfer.json",
+        "phase3-auth-negatives.json",
+        "phase4-size-negatives.json",
+        "phase5-sha-negative-retry.json",
+        "phase6a-hub-restart.json",
+        "phase6b-hub-restart-sys66.json",
+        "phase7-settle.json",
+        "phase8-cleanup.json",
+        "run-stderr.log",
+        "run-stdout.log",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb14-cda9ddb845cb-",
+        "src_node_id": "58d085fa-b8cb-4508-ae48-8519f13bcc09",
+        "src_agent_id": "agent-4376b71b-a2ba-4395-9e6e-f2458d5c8e7d",
+        "tgt_node_id": "9a165ff3-dd02-46d8-9223-b0159b291ca7",
+        "tgt_agent_id": "agent-d8ec312e-4d5b-4998-8d5d-d2f0534f3589",
+        "transfers": {
+          "main": "15a4004a-55af-4261-8a5b-7590e001e42e",
+          "size": "3d1f2b1b-f5a5-4aef-b027-574ef7adfead",
+          "sha_retry": "881bf401-a559-4403-9a94-f7f3af7d5340",
+          "hub_restart": "0b4ac144-0109-4cdf-88c5-9d345487aeec"
+        },
+        "retained_transfer_history": [
+          "15a4004a-55af-4261-8a5b-7590e001e42e",
+          "3d1f2b1b-f5a5-4aef-b027-574ef7adfead",
+          "881bf401-a559-4403-9a94-f7f3af7d5340",
+          "0b4ac144-0109-4cdf-88c5-9d345487aeec"
+        ]
+      }
+    },
+    {
+      "case_id": "SYS-60",
+      "title": "SYS-60 目标 Agent 身份认证、目标只能下载自己的目标",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-60",
+          "layer": "real target Agent download auth + atomic replace (owned child Agent)",
+          "status": "PASS",
+          "description": [
+            "The target child Agent authenticated with its own credential and downloaded the delivery it was dispatched, producing the exact source size/sha256/mode on disk.",
+            "The target could NOT upload (it is not the source) -> 403 \"agent is not the transfer source\".",
+            "A node that is not a target of a transfer cannot download it -> 403 \"agent is not a transfer target\" (source-download negative).",
+            "Delivery is per-target: the transfer carries exactly one target row and the destination is replaced atomically (no temp left)."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [],
+      "evidence": [
+        "attempt01-harness-bug",
+        "attempt02-blob-ownership-harness-bug",
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase1-owned-children.json",
+        "phase2-main-transfer.json",
+        "phase3-auth-negatives.json",
+        "phase4-size-negatives.json",
+        "phase5-sha-negative-retry.json",
+        "phase6a-hub-restart.json",
+        "phase6b-hub-restart-sys66.json",
+        "phase7-settle.json",
+        "phase8-cleanup.json",
+        "run-stderr.log",
+        "run-stdout.log",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb14-cda9ddb845cb-",
+        "src_node_id": "58d085fa-b8cb-4508-ae48-8519f13bcc09",
+        "src_agent_id": "agent-4376b71b-a2ba-4395-9e6e-f2458d5c8e7d",
+        "tgt_node_id": "9a165ff3-dd02-46d8-9223-b0159b291ca7",
+        "tgt_agent_id": "agent-d8ec312e-4d5b-4998-8d5d-d2f0534f3589",
+        "transfers": {
+          "main": "15a4004a-55af-4261-8a5b-7590e001e42e",
+          "size": "3d1f2b1b-f5a5-4aef-b027-574ef7adfead",
+          "sha_retry": "881bf401-a559-4403-9a94-f7f3af7d5340",
+          "hub_restart": "0b4ac144-0109-4cdf-88c5-9d345487aeec"
+        },
+        "retained_transfer_history": [
+          "15a4004a-55af-4261-8a5b-7590e001e42e",
+          "3d1f2b1b-f5a5-4aef-b027-574ef7adfead",
+          "881bf401-a559-4403-9a94-f7f3af7d5340",
+          "0b4ac144-0109-4cdf-88c5-9d345487aeec"
+        ]
+      }
+    },
+    {
+      "case_id": "SYS-61",
+      "title": "SYS-61 大小校验、SHA256 校验、Hub staged blob 原子提升",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-61",
+          "layer": "real upload endpoint validation / Hub staging blob / target SHA verification",
+          "status": "PASS",
+          "description": [
+            "Size validation on the real Agent upload endpoint: non-numeric size 400, negative size 400, declared size vs Content-Length mismatch 400 \"content length mismatch\"; the correct upload returned 200 and the Hub recorded the exact payload sha256.",
+            "Hub staged-blob atomic promotion: while the transfer was staged and undelivered the Hub held <id>.blob (sha256 == source) and no <id>.part, i.e. the .part -> .blob rename happened atomically; after success both were cleaned.",
+            "SHA256 validation on the target: with the staged blob deliberately corrupted before delivery the target Agent's verifying reader rejected the payload, the target reported FAILED and no half/corrupt file was installed.",
+            "Restoring the blob and retrying the failed target produced SUCCESS with the exact source sha256/size."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [],
+      "evidence": [
+        "attempt01-harness-bug",
+        "attempt02-blob-ownership-harness-bug",
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase1-owned-children.json",
+        "phase2-main-transfer.json",
+        "phase3-auth-negatives.json",
+        "phase4-size-negatives.json",
+        "phase5-sha-negative-retry.json",
+        "phase6a-hub-restart.json",
+        "phase6b-hub-restart-sys66.json",
+        "phase7-settle.json",
+        "phase8-cleanup.json",
+        "run-stderr.log",
+        "run-stdout.log",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb14-cda9ddb845cb-",
+        "src_node_id": "58d085fa-b8cb-4508-ae48-8519f13bcc09",
+        "src_agent_id": "agent-4376b71b-a2ba-4395-9e6e-f2458d5c8e7d",
+        "tgt_node_id": "9a165ff3-dd02-46d8-9223-b0159b291ca7",
+        "tgt_agent_id": "agent-d8ec312e-4d5b-4998-8d5d-d2f0534f3589",
+        "transfers": {
+          "main": "15a4004a-55af-4261-8a5b-7590e001e42e",
+          "size": "3d1f2b1b-f5a5-4aef-b027-574ef7adfead",
+          "sha_retry": "881bf401-a559-4403-9a94-f7f3af7d5340",
+          "hub_restart": "0b4ac144-0109-4cdf-88c5-9d345487aeec"
+        },
+        "retained_transfer_history": [
+          "15a4004a-55af-4261-8a5b-7590e001e42e",
+          "3d1f2b1b-f5a5-4aef-b027-574ef7adfead",
+          "881bf401-a559-4403-9a94-f7f3af7d5340",
+          "0b4ac144-0109-4cdf-88c5-9d345487aeec"
+        ]
+      }
+    },
+    {
+      "case_id": "SYS-66",
+      "title": "SYS-66 Hub 重启、Agent 重连、目标离线后状态和文件不产生半成品",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-66",
+          "layer": "repair-Hub unit restart / sqlite persistence / owned child reconnect / offline target",
+          "status": "PASS",
+          "description": [
+            "The source uploaded and the Hub staged the blob while the target was offline; the transfer row (id/sha256/size) survived the ONE authorised repair-Hub restart unchanged.",
+            "While the target stayed offline no destination file and no temp file existed on the target node, both before and after the restart (no half product).",
+            "The source Agent reconnected by itself after the restart; when the target was brought back it reconnected, ResumeNode dispatched the delivery exactly once, and the target received the complete file with the exact source sha256/size/mode and no leftover temp.",
+            "After a settle window the transfer was terminal SUCCESS with a single target row: a Hub restart produced no duplicate delivery or duplicated target row."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The observed Hub outage is short (unit stop/start, ~1-3 s); a long outage beyond the Agent heartbeat timeout was not exercised.",
+        "The authority state was read from the Hub SQLite read-only copy and the REST API; the target verification failure was produced by corrupting the fixture's own staged blob (harness fault injection on the owned transfer only)."
+      ],
+      "evidence": [
+        "attempt01-harness-bug",
+        "attempt02-blob-ownership-harness-bug",
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase1-owned-children.json",
+        "phase2-main-transfer.json",
+        "phase3-auth-negatives.json",
+        "phase4-size-negatives.json",
+        "phase5-sha-negative-retry.json",
+        "phase6a-hub-restart.json",
+        "phase6b-hub-restart-sys66.json",
+        "phase7-settle.json",
+        "phase8-cleanup.json",
+        "run-stderr.log",
+        "run-stdout.log",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb14-cda9ddb845cb-",
+        "src_node_id": "58d085fa-b8cb-4508-ae48-8519f13bcc09",
+        "src_agent_id": "agent-4376b71b-a2ba-4395-9e6e-f2458d5c8e7d",
+        "tgt_node_id": "9a165ff3-dd02-46d8-9223-b0159b291ca7",
+        "tgt_agent_id": "agent-d8ec312e-4d5b-4998-8d5d-d2f0534f3589",
+        "transfers": {
+          "main": "15a4004a-55af-4261-8a5b-7590e001e42e",
+          "size": "3d1f2b1b-f5a5-4aef-b027-574ef7adfead",
+          "sha_retry": "881bf401-a559-4403-9a94-f7f3af7d5340",
+          "hub_restart": "0b4ac144-0109-4cdf-88c5-9d345487aeec"
+        },
+        "retained_transfer_history": [
+          "15a4004a-55af-4261-8a5b-7590e001e42e",
+          "3d1f2b1b-f5a5-4aef-b027-574ef7adfead",
+          "881bf401-a559-4403-9a94-f7f3af7d5340",
+          "0b4ac144-0109-4cdf-88c5-9d345487aeec"
+        ]
+      }
+    }
+  ],
+  "deviations": [],
+  "budget": {
+    "api_mutations": 9,
+    "node_enroll_posts": 2,
+    "transfers_created": 4,
+    "manual_uploads": 4,
+    "transfers_retried": 1,
+    "hub_restarts": 1,
+    "child_process_starts": 2,
+    "child_process_removals": 2
+  },
+  "final_cleanup_oracle_clean": true,
+  "harness_seams": {
+    "authority": "management and agent data-plane writes only to repair http://192.168.100.209:18080",
+    "hub_restart": "only nodesteer-hub-repair-20260930-101945.service was stopped/started once; nodesteer-hub.service (:8080) and all Agent units untouched",
+    "owned_children": "source on native-1 and target on native-2, exact repair Agent binary d55dc5cd..., each behind its own harness frame proxy on the operator host",
+    "credential_source": "each child's own store (identity.credential), never a protected Agent config",
+    "product_source_changes": 0,
+    "git_operations": 0,
+    "vms_restarted": 0
+  },
+  "post_run_addendum": {
+    "reported_run": "attempt03 (EXIT=0, oracle clean)",
+    "attempts": [
+      "evidence/attempt01-harness-bug/ : the first attempt aborted with a harness AttributeError (Run.wait_pred) before the Hub restart. No Hub restart and no half product; recorded and re-run.",
+      "evidence/attempt02-blob-ownership-harness-bug/ : the second attempt aborted in phase5 because the harness restored the corrupted staged blob with copy+os.replace, which handed the blob to uid 0; the Hub service (a different uid) then could not open it and the retry target reported \"download status 404\". This 404 was a HARNESS fault (artifact ownership), NOT a product defect: the SHA256 negative itself behaved correctly (target FAILED with \"sha256 mismatch\", no half file). The restore was changed to an in-place rewrite that preserves owner/mode and the batch was re-run completely."
+    ],
+    "hub_restarts_whole_batch": 3,
+    "note": "across all attempts only nodesteer-hub-repair-20260930-101945.service was ever stopped/started; the primary :8080 Hub (MainPID 1251) and every Agent unit kept their MainPID the whole time. No credential is persisted in any evidence file."
+  }
+}

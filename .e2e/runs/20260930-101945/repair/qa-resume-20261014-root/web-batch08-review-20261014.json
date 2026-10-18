@@ -1,0 +1,45 @@
+{
+  "review_id": "ROOT-WEB-BATCH08-REVIEW-20261014",
+  "reviewed_at": "2026-10-15T07:02:27.286354+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "batch": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch08",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试、剩余分母全量推进",
+  "verdicts": [
+    {
+      "case_id": "P07_P08-10",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "高",
+      "reason": "UI 建脚本(POST 200,r1) → UI「立即运行」确认框触发执行(native-4 SUCCESS + marker 物理落盘) → 删除确认框取消(两处，取消期间 DELETE 计数 0、GET 仍 200) → 确认删除(DELETE 200 + toast + 行消失 + GET 404) → Hub tombstones task r1963/script r1964 → native-4 受保护 Agent 的 state.db scripts/tasks 由 1/1 变 0/0（只读探针 pre/post）→ 历史 Execution 仍 200 且详情页正常渲染。反向：删除被任务引用的脚本 → 409 + 明确 toast。"
+    },
+    {
+      "case_id": "P14P15-17",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "中高",
+      "reason": "四个失败维度均真实 400 + 页面就地错误文案且未创建 Execution：Capability 缺失、节点离线、Agent 不可达(agent offline)、Artifact 不存在；附加：删除被应用引用的发布包 → 409。"
+    }
+  ],
+  "root_notes": [
+    "P14P15-17 的 Artifact 维度由 API PUT 构造悬空引用（产品守卫拒绝删除被引用发布包，纯 UI 不可达）；Root 接受该构造方式，理由：错误路径语义与 UI 触发一致，且该维度未产生副作用。",
+    "budget 偏差如实记录：owned Task 创建 3 次 > 给定上限 2（只读探针 pre/post 需两次瞬时 Task，均已删除）——Root 接受，不重跑。",
+    "Agent 不可达用「设为在线」制造 record online 但无会话，Root 接受为真实不可达语义。",
+    "harness 事件：收尾使用 agent-browser close --session qaweb1410b08 --all 连带关闭了并行 batch07 的会话（已披露）。"
+  ],
+  "counts_before": {
+    "PASS": 274,
+    "FAIL": 5,
+    "PARTIAL": 164,
+    "NOT_RUN": 52,
+    "BLOCKED": 9
+  },
+  "counts_after": {
+    "PASS": 287,
+    "FAIL": 5,
+    "PARTIAL": 165,
+    "NOT_RUN": 38,
+    "BLOCKED": 9
+  }
+}

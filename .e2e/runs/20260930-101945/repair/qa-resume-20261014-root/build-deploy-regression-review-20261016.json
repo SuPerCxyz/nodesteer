@@ -1,0 +1,239 @@
+{
+  "review_id": "ROOT-BUILD-DEPLOY-REGRESSION-REVIEW-20261016",
+  "reviewed_at": "2026-10-16T07:18:58.169250+00:00",
+  "reviewer": "main-agent(root)",
+  "status": "INTEGRATED",
+  "dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261016-verify",
+  "authorization_basis": "用户确认修复范围 C 并授权部署验证；「全力推进，不确定的记录到文件」",
+  "build_transition": {
+    "build_label": "dddee4f0-e2e-repair-20261016",
+    "hub_sha_old": "164ea4ac…13d6",
+    "hub_sha_new": "cd8b7f9d…120d",
+    "agent_sha_old": "d55dc5cd…3add",
+    "agent_sha_new": "b04383bf…913c",
+    "note": "repair 环境自 2026-10-16 起运行新构建；本批 25 条定向回归结论基于新构建；此前 479 条结论基于旧构建 dddee4f0-e2e-repair-20261004。未做全量重跑（按既定方案只做定向回归），此差异如实记录。",
+    "backup": "backup-20261016/*.bak-20261016（SHA 已核验，可回滚，未触发）",
+    "rollback_executed": false
+  },
+  "mixed_version": {
+    "new_hub_plus_old_agent": "online/synced 正常、版本正常上报；但 remote 条件仍 BLOCKED（旧 Agent 走绝对时间回退，受时钟偏移影响，与方案披露一致）",
+    "after_agent_upgrade": "同一 remote 条件立即 SUCCESS；4 节点仍 online/synced",
+    "conclusion": "混版本兼容成立（不报错、不破坏），时钟偏移问题随 Agent 升级消除"
+  },
+  "defect_fixes_verified": {
+    "P0-1": "SYS-27/28/30/26 与 INV-09 转 PASS；SYS-29/E2E-10 为 PASS_WITH_NOTES（TTL 过期不可构造）",
+    "P0-2": "AR-32/INV-11/SYS-51/E2E-13/AR-30/E2E-12/SYS-56 通过；SYS-48 未重跑（改动面未触及）",
+    "P1-3": "INV-05 PASS（真实 SQLITE_FULL 下不再 panic、事务不落盘、revision 不前进、恢复后补落）",
+    "P1-4": "P07_P08-11/04 与 API-CONTRACT PASS（262144B→200、262145B→400、-5→400、0→300）",
+    "P2-5": "P06-02/P09P11-10/API-CONTRACT PASS（空名 400、不存在 404、重名归一化）",
+    "P2-6": "API-CONTRACT/P12P13-02/P14P15-01 PASS（404 且无 sql: 原文）",
+    "P3-7": "API-CONTRACT/P19-05/FL-07 PASS（405+Allow；GET /api/logout 405 且未注销）"
+  },
+  "not_rerun": [
+    "SYS-48 健康检查矩阵",
+    "FL-07 取消→审计路径",
+    "INV-11/SYS-51 绑定匹配行的正向重放（仅单测覆盖）"
+  ],
+  "verdicts": [
+    {
+      "case_id": "P07_P08-11/API-CONTRACT",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "P06-02/P09P11-10/API-CONTRACT",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "API-CONTRACT/P12P13-02/P14P15-01",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "API-CONTRACT/P19-05/FL-07",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "metrics 端点实为 /metrics（无 /api 前缀）"
+    },
+    {
+      "case_id": "SYS-27",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "SYS-28",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "SYS-29",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "SYS-30",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "E2E-10",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "INV-09",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "SYS-26",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "INV-05(+SYS-11/E2E-16/SYS-02)",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "P09P11-10",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "P07_P08-04",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "P12P13-02",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "AR-32",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "SYS-51",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "INV-11",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "E2E-13",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "AR-30",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "E2E-12",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "SYS-56",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    },
+    {
+      "case_id": "DEPLOY-HEALTH",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": ""
+    }
+  ],
+  "counts_before": {
+    "PASS": 413,
+    "FAIL": 6,
+    "PARTIAL": 75,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "counts_after": {
+    "PASS": 422,
+    "FAIL": 4,
+    "PARTIAL": 68,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "status_changes": [
+    [
+      "P09P11-10",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "E2E-10",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "SYS-27",
+      "FAIL",
+      "PASS"
+    ],
+    [
+      "SYS-28",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "SYS-29",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "AR-32",
+      "FAIL",
+      "PASS"
+    ],
+    [
+      "INV-11",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P07_P08-11",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "INV-05",
+      "PARTIAL",
+      "PASS"
+    ]
+  ],
+  "composite_label_note": "回归结果中 5 行为复合标签（多用例共用一条证据），已按标签拆分逐条落账：P07_P08-11, INV-05"
+}

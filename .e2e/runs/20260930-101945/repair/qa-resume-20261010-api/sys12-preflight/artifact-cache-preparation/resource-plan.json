@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "status": "DRAFT_NO_ACTION",
+  "scope": "SYS12 ArtifactCache assignment-prefetch persistence slice only",
+  "authority": "repair API 192.168.100.209:18080; Native2 611c02a5-1859-4465-878b-d543b7f6fdec",
+  "resources": {
+    "new_docker_node": 1,
+    "new_owned_root": 1,
+    "new_owned_bridge": 1,
+    "containers": {"maximum_concurrent": 1, "sequential": ["A", "B"], "image_id": "sha256:ecd4dd9f8300067ba2cba22e8c5a701f1984f054fa4476354ed4d58af544cd44"},
+    "artifact": {"count": 1, "payload_bytes": 32, "content": "nonce-derived deterministic binary bytes", "delete_supported": true},
+    "managed_application": {"count": 1, "assigned_to_owned_node": true, "deploy_calls": 0, "app_execution_count_expected": 0},
+    "business_tasks_runs_schedules_scripts_users_transfers": 0,
+    "native2_helper_task_runs": {"normal_max": 6, "recovery_max": 4, "total_max": 10},
+    "other_docker_nodes_host_mounts_host_policy_changes": 0
+  },
+  "phases": [
+    {"helper": 1, "phase": "prepare", "purpose": "guard image/root/network; write owned private config/data; start A; fresh Node HELLO"},
+    {"api": "upload artifact", "purpose": "one exact 32-byte Artifact, capture only id/size/sha; verify GET metadata"},
+    {"api": "create + assign app", "purpose": "one unique un-deployed Application; assignment drives DesiredState Sync and Agent prefetch"},
+    {"helper": 2, "phase": "inspect-a", "purpose": "query-only DB row + physical cache bytes/SHA/UID/inode, exact Agent PID/exe/cgroup/open DB FD, no unit file"},
+    {"helper": 3, "phase": "recreate-b", "purpose": "stop/remove exact A; pre-B persisted DB/cache snapshot; start B on same owned bridge/DataDir"},
+    {"helper": 4, "phase": "inspect-b", "purpose": "B sync/open-FD proof; same Node/Agent/DB/cache/App assignment; revision non-regression; zero App executions/unit"},
+    {"api": "cleanup", "purpose": "unassign; exact DELETE App/Artifact/Node and GET 404"},
+    {"helper": 5, "phase": "cleanup-runtime", "purpose": "remove exact stopped A/B ids and exact owner bridge"},
+    {"helper": 6, "phase": "cleanup-root", "purpose": "after API 404 + runtime removal only: remove exact config/data and approved 32-byte cache SHA file; unknown path/symlink blocks"}
+  ],
+  "primary_oracles": [
+    "Assigned un-deployed App appears in local SQLite applications table with exact artifact id and revision.",
+    "SQLite artifacts row path is /var/lib/nodesteer/artifacts/<sha256>; target is regular non-symlink owned UID/GID 65534, exactly 32 bytes and SHA-valid.",
+    "File SHA/size/dev/inode, DB dev/inode, node_id/agent_id and App record match across A, A-stop/pre-B, and B.",
+    "Exact Agent PID is non-zombie UID 65534, cgroup matches container id, /proc/<pid>/exe SHA matches pinned Agent, and an open FD references the same state.db dev/inode.",
+    "B local global revision is >= pre-B and current synced Hub revision; no requirement that global revision remain unchanged.",
+    "Application executions endpoint is empty; local execution count for App is zero; exact container's systemd unit file is absent. No Deploy request is issued."
+  ],
+  "cleanup": {
+    "api_order": ["unassign owned App", "DELETE App and GET 404", "DELETE Artifact and GET 404", "DELETE owned Node and GET 404"],
+    "runtime_order": ["stop/remove exact owned container IDs only", "remove exact owned bridge ID and prove absent", "verify protected four Nodes online/synced"],
+    "root_rule": "Only approved cache artifact SHA file plus exact expected config/state.db/WAL/SHM may be removed. Any unknown entry, symlink, identity mismatch or active helper stops cleanup.",
+    "execution_audit": "Preserve helper Execution/Audit history; exact helper Task must be terminal before DELETE and GET 404."
+  },
+  "excluded_claims": ["Artifact deploy/download path", "ManagedApp Unit deployment/health", "Script cache", "HostIntegration", "Host Docker/policy safety", "Transfer/FileRelay"]
+}

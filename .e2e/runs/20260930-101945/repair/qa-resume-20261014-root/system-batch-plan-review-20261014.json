@@ -1,0 +1,85 @@
+{
+  "review_id": "ROOT-SYSTEM-BATCH-PLAN-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T08:02:58.680170+00:00",
+  "reviewer": "main-agent(root)",
+  "plan": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/system-batch-plan-20261014.json",
+  "status": "INTEGRATED",
+  "summary": {
+    "batched": 15,
+    "cases_batched": 74,
+    "marked_blocked": 5,
+    "pending_evidence_review": 5
+  },
+  "blocked_decisions": [
+    {
+      "case_id": "SYS-24",
+      "from_status": "NOT_RUN",
+      "to_status": "BLOCKED",
+      "reason": "baseline 已为 BLOCKED；Timezone/DST 边界需要在 repair 节点上真实变更宿主机时区/TZ 数据并等待真实 DST 跳变，而 4 台 VM(192.168.100.204/206/222/247) 的时钟与时区与原部署共享，本环境没有安全的时区/DST 注入 seam，也不允许用单元测试或 Mock 代替真实边界。",
+      "recommended_note": "如实保留 BLOCKED；如后续用户提供可独占的时区可变节点或明确授权改 TZ，再单独立项，不得用静态分析替代。"
+    },
+    {
+      "case_id": "SYS-54",
+      "from_status": "NOT_RUN",
+      "to_status": "BLOCKED",
+      "reason": "ContainerHostAdapter `/host` 映射与 Host Inventory 只能在 docker_host_integration 形态容器内验证；该容器的 host-root 身份校验依赖 /proc/1/root，在 docker-default AppArmor 下返回 Permission denied（FAIL-ENV-HOST-001 BLOCKED，nsenter rc=1）。对应 Host001 容器已为配额停止，且变更 AppArmor/安全策略需要用户或 Root 的额外授权，本环境不具备运行条件。",
+      "recommended_note": "host001-environment-blocker.json 已记录 3 caps + 默认 seccomp/NoNewPrivs 正确、AppArmor enforce；不得使用 privileged/unconfined 或追加 capability 绕过。"
+    },
+    {
+      "case_id": "SYS-55",
+      "from_status": "NOT_RUN",
+      "to_status": "BLOCKED",
+      "reason": "属于 FAIL-ENV-HOST-002（Docker Host Mount 缺失/只读/错误路径），当前 regression_status=NOT_RUN 且 runtime_evidence 为空；运行它需要与 Host001 同族的 Host Integration 容器（missing/wrong/readonly 挂载变体），而该 fixture 已停止且其 host-root 映射 oracle 在本环境不可访问。",
+      "recommended_note": "修好 FAIL-ENV-HOST-001 的环境门禁并取得安全变更授权后，再与 AR-31 一起单独立项。"
+    },
+    {
+      "case_id": "AR-31",
+      "from_status": "NOT_RUN",
+      "to_status": "BLOCKED",
+      "reason": "Docker Host Mount Missing，与 SYS-55 同属 FAIL-ENV-HOST-002；需要同一不可运行的 Host Integration 容器 fixture。",
+      "recommended_note": "与 SYS-55 绑定，不可拆分单独执行。"
+    },
+    {
+      "case_id": "INV-14",
+      "from_status": "NOT_RUN",
+      "to_status": "BLOCKED",
+      "reason": "Native/Docker 差异必须进入 Host Adapter：FAIL-ENV-HOST-001 的 inventory_case_ids 明确包含 INV-14，需要真实 Host Integration 容器来对比 Native 与 Docker Host Adapter 的差异，而该容器的 host-root 校验在 docker-default AppArmor 下不可用；若只用非 Host 的纯 docker 容器，则无法观测到容器 Host Adapter 的差异语义，属于用错误 fixture 代替。",
+      "recommended_note": "纯 docker 非 Host 容器只能证明 deployment_mode=docker 的行为，不能替代 Host Adapter 差异项。"
+    }
+  ],
+  "pending_evidence_review": [
+    "E2E-18",
+    "AR-04",
+    "INV-15",
+    "E2E-16",
+    "AR-26"
+  ],
+  "sequencing_constraints": [
+    "必须单独串行（会中断并行 UI/写批次）：sys-b01（重启 repair Hub）、sys-b06（Hub 断开窗口）、sys-b08（Hub Online Required 需要 Hub 不可用）、sys-b14 的 SYS-66 段（重启 repair Hub）。这些批次互相之间也不能并行。",
+    "Agent 二进制/单元级独占批次：sys-b15（X01 自升级）必须独占执行；sys-b07（重启 Agent）、sys-b09（短时停 Agent）、sys-b08（断连）不能与任何其他写同一节点的批次并行。",
+    "节点集合变更互斥：sys-b13（新建 Docker Node）与 sys-b12 的 Capability 门禁节点 fixture、sys-b14 的 source/target 选择互相影响，需串行且每次都重新登记节点集合与全局计数。",
+    "Artifact/Application 资源互斥：sys-b10 与 sys-b11 共用 Artifact/Application fixture，建议不同 hash 的 Artifact 或串行；不得删除共享 Artifact 7b8929ed-c880-46f1-90e6-a5e9c0dab096。",
+    "frame proxy 互斥：sys-b02、sys-b03、sys-b04 都需要帧级注入，若复用同一 proxy 实例必须串行，且任何 Hub 停机批次（sys-b01/b06/b08）期间不得运行它们。",
+    "原生低风险快速收益批次：sys-b05（幂等键）、sys-b09（调度/条件）、sys-b10（Artifact）可在环境稳定期并行于不同节点，建议优先作为第一批。",
+    "推荐执行顺序：1) sys-b05 与 sys-b09（不同 native 节点并行，低风险、无需改连接）；2) sys-b10；3) sys-b11；4) sys-b02；5) sys-b03；6) sys-b04；7) sys-b07；8) sys-b08；9) sys-b12；10) sys-b13；11) sys-b01；12) sys-b06；13) sys-b14；14) sys-b15（自升级，最后做，之后需恢复基线二进制）。",
+    "environment_infeasible 的 5 项（SYS-24、SYS-54、SYS-55、AR-31、INV-14）不要安排执行；保持如实 BLOCKED，不用 Mock/静态结论代替；其中 SYS-55+AR-31 需先解决 FAIL-ENV-HOST-001 的环境门禁与安全变更授权。",
+    "本清单之外的产品后规划能力（如 OIDC/SSO、ARM 架构等）不属于 system 归属的这 84 个 NOT_RUN，未纳入批次；如需覆盖应先按 PRODUCT.md 的一期/后续范围与需求确认单独立项。",
+    "所有批次执行前必须先做 fresh 只读 preflight（repair :18080 可达、4 个 native 节点 online/synced、Hub/Agent 二进制 SHA=164ea4ac…/d55dc5cd…、目标 fixture 路径不存在），任何不复用历史 PID/凭证。"
+  ],
+  "counts_before": {
+    "PASS": 216,
+    "FAIL": 4,
+    "PARTIAL": 158,
+    "NOT_RUN": 126,
+    "BLOCKED": 0
+  },
+  "counts_after": {
+    "PASS": 216,
+    "FAIL": 4,
+    "PARTIAL": 158,
+    "NOT_RUN": 121,
+    "BLOCKED": 5
+  },
+  "note": "环境不可行按项目惯例如实记为 BLOCKED 并保留理由；不用 Mock/静态检查代替运行验证。可复用证据须经独立复核后才可升级状态。",
+  "not_claimed": "未执行产品修复、Git 交付或 Archive"
+}

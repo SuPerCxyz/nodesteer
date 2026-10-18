@@ -1,0 +1,245 @@
+{
+  "config": {
+    "argv": [
+      "/usr/bin/node",
+      "/home/superc/code/nodesteer/web/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "e2e/playwright.config.ts",
+      "--reporter=json",
+      "--grep",
+      "GAP-12|GAP-13|GAP-14"
+    ],
+    "configFile": "/home/superc/code/nodesteer/web/e2e/playwright.config.ts",
+    "rootDir": "/home/superc/code/nodesteer/web/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/superc/code/nodesteer/web/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "gap-ui.spec.ts",
+      "file": "gap-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "GAP-12 自有offline节点明确错误和Node1条件BLOCKED反馈",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 100000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 30529,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"\u001b[7mBLOCK\u001b[27mED\"\u001b[39m\nReceived: \u001b[31m\"\u001b[7mSKIPP\u001b[27mED\"\u001b[39m\n\nCall Log:\n- Timeout 30000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"\u001b[7mBLOCK\u001b[27mED\"\u001b[39m\nReceived: \u001b[31m\"\u001b[7mSKIPP\u001b[27mED\"\u001b[39m\n\nCall Log:\n- Timeout 30000ms exceeded while waiting on the predicate\n    at /home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts:457:29",
+                    "location": {
+                      "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                      "column": 29,
+                      "line": 457
+                    },
+                    "snippet": "  455 |       execution = ((await apiRequest(page, `/api/executions?task_id=${task.id}&limit=20`)).body as typeof execution[])[0]\n  456 |       return execution?.status\n> 457 |     }, { timeout: 30_000 }).toBe('BLOCKED')\n      |                             ^\n  458 |     expect(execution!.block_reason).toBeTruthy(); expect(execution!.stdout || '').not.toContain(marker)\n  459 |     await page.goto('/executions/' + execution!.id); await expect(page.locator('main')).toContainText(execution!.block_reason)\n  460 |     await evidence('offline-node-condition-blocked', { task_id: task.id, synthetic_offline_node_id: nodeId, offline_status: offline.status(), offline_body: offlineBody, response_elapsed_ms: elapsed, offline_execution_count: 0, blocked_execution: execution, real_node_id: node1, condition_path_absent: true, no_command_marker: true, ui_block_reason_visible: true, daemon_changes: 'none' })"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                        "column": 29,
+                        "line": 457
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"\u001b[7mBLOCK\u001b[27mED\"\u001b[39m\nReceived: \u001b[31m\"\u001b[7mSKIPP\u001b[27mED\"\u001b[39m\n\nCall Log:\n- Timeout 30000ms exceeded while waiting on the predicate\n\n  455 |       execution = ((await apiRequest(page, `/api/executions?task_id=${task.id}&limit=20`)).body as typeof execution[])[0]\n  456 |       return execution?.status\n> 457 |     }, { timeout: 30_000 }).toBe('BLOCKED')\n      |                             ^\n  458 |     expect(execution!.block_reason).toBeTruthy(); expect(execution!.stdout || '').not.toContain(marker)\n  459 |     await page.goto('/executions/' + execution!.id); await expect(page.locator('main')).toContainText(execution!.block_reason)\n  460 |     await evidence('offline-node-condition-blocked', { task_id: task.id, synthetic_offline_node_id: nodeId, offline_status: offline.status(), offline_body: offlineBody, response_elapsed_ms: elapsed, offline_execution_count: 0, blocked_execution: execution, real_node_id: node1, condition_path_absent: true, no_command_marker: true, ui_block_reason_visible: true, daemon_changes: 'none' })\n    at /home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts:457:29"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-03T01:03:25.822Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts/gap-ui-GAP-12-自有offline节点明确错误和Node1条件BLOCKED反馈-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                    "column": 29,
+                    "line": 457
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e7bf0fd7afce34bc30c5-12c01eed6718470512e0",
+          "file": "gap-ui.spec.ts",
+          "line": 431,
+          "column": 1
+        },
+        {
+          "title": "GAP-13 TaskSchedule双页创建取消删除完整一致",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 80000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 6284,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('tr:has(a[href=\"/tasks/eab40129-ed59-4d52-bc7a-5807dd8cccb9\"])')\nExpected substring: \u001b[32m\"0 0 1 1 *\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('tr:has(a[href=\"/tasks/eab40129-ed59-4d52-bc7a-5807dd8cccb9\"])')\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('tr:has(a[href=\"/tasks/eab40129-ed59-4d52-bc7a-5807dd8cccb9\"])')\nExpected substring: \u001b[32m\"0 0 1 1 *\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('tr:has(a[href=\"/tasks/eab40129-ed59-4d52-bc7a-5807dd8cccb9\"])')\u001b[22m\n\n    at /home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts:472:86",
+                    "location": {
+                      "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                      "column": 86,
+                      "line": 472
+                    },
+                    "snippet": "  470 |     const id = await captureCreated(page, '/api/schedules', () => page.getByRole('button', { name: /^保存$/ }).click()); own.unshift('/api/schedules/' + id); await page.waitForURL(/\\/schedules$/)\n  471 |     await page.getByRole('textbox', { name: /搜索/ }).fill(task.name)\n> 472 |     let row = page.locator(`tr:has(a[href=\"/tasks/${task.id}\"])`); await expect(row).toContainText('0 0 1 1 *')\n      |                                                                                      ^\n  473 |     await page.goto('/tasks/' + task.id); await expect(page.locator(`a[href=\"/schedules/${id}\"]`)).toBeVisible()\n  474 |     await page.locator(`a[href=\"/schedules/${id}\"]`).click(); await page.waitForURL(new RegExp('/schedules/' + id + '$')); await expect(page.locator('main')).toContainText(task.name)\n  475 |     await page.goto('/schedules'); await page.getByRole('textbox', { name: /搜索/ }).fill(task.name); row = page.locator(`tr:has(a[href=\"/tasks/${task.id}\"])`)"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                        "column": 86,
+                        "line": 472
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('tr:has(a[href=\"/tasks/eab40129-ed59-4d52-bc7a-5807dd8cccb9\"])')\nExpected substring: \u001b[32m\"0 0 1 1 *\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('tr:has(a[href=\"/tasks/eab40129-ed59-4d52-bc7a-5807dd8cccb9\"])')\u001b[22m\n\n\n  470 |     const id = await captureCreated(page, '/api/schedules', () => page.getByRole('button', { name: /^保存$/ }).click()); own.unshift('/api/schedules/' + id); await page.waitForURL(/\\/schedules$/)\n  471 |     await page.getByRole('textbox', { name: /搜索/ }).fill(task.name)\n> 472 |     let row = page.locator(`tr:has(a[href=\"/tasks/${task.id}\"])`); await expect(row).toContainText('0 0 1 1 *')\n      |                                                                                      ^\n  473 |     await page.goto('/tasks/' + task.id); await expect(page.locator(`a[href=\"/schedules/${id}\"]`)).toBeVisible()\n  474 |     await page.locator(`a[href=\"/schedules/${id}\"]`).click(); await page.waitForURL(new RegExp('/schedules/' + id + '$')); await expect(page.locator('main')).toContainText(task.name)\n  475 |     await page.goto('/schedules'); await page.getByRole('textbox', { name: /搜索/ }).fill(task.name); row = page.locator(`tr:has(a[href=\"/tasks/${task.id}\"])`)\n    at /home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts:472:86"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-03T01:03:56.775Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts/gap-ui-GAP-13-TaskSchedule双页创建取消删除完整一致-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                    "column": 86,
+                    "line": 472
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e7bf0fd7afce34bc30c5-cff42be58d92e1be4c64",
+          "file": "gap-ui.spec.ts",
+          "line": 464,
+          "column": 1
+        },
+        {
+          "title": "GAP-14 Login与六类对象真实CRUD Audit逐事件",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 100000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2415,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-03T01:04:03.475Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e7bf0fd7afce34bc30c5-e9ed29da81594a88bfab",
+          "file": "gap-ui.spec.ts",
+          "line": 488,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-03T01:03:25.238Z",
+    "duration": 40749.753,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}

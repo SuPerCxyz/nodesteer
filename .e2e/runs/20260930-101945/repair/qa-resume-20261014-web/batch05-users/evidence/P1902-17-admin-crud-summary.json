@@ -1,0 +1,41 @@
+{
+  "case": "P19-02",
+  "scope": "admin full CRUD path via real Web UI (login + create/edit/delete for Script, Task, Schedule, Artifact, Application)",
+  "authority": "http://192.168.100.209:18081",
+  "browser_session": "qausers1410b05",
+  "operations": [
+    {
+      "resource": "Script",
+      "create": {"ui_path": "/scripts -> /scripts/new -> fill name+body -> 保存", "request": "POST /api/scripts 200", "effect": "redirect /scripts, row visible, api id=9786b3a9-f20e-4f66-a217-d07eaf6985ad"},
+      "modify": {"ui_path": "row 操作 -> 编辑 -> change body -> 保存", "request": "PUT /api/scripts/9786b3a9-... 200", "effect": "revision r1 -> r2, sha256 ce34cb01.. -> c5622068.., content changed"},
+      "delete": {"ui_path": "row 操作 -> 删除 -> confirm dialog 删除", "request": "DELETE /api/scripts/9786b3a9-... 200", "effect": "row removed; GET /api/scripts -> []"}
+    },
+    {
+      "resource": "Application",
+      "create": {"ui_path": "/applications/new -> name qa1410-app-5ece52a9 version 1.0.0 -> 保存", "request": "POST /api/applications 200", "effect": "redirect /applications/<id> id=ef7e2f3a-3277-4c48-b7b1-f2aedf0ed27e"},
+      "modify": {"ui_path": "row 操作 -> 编辑 -> name version -> 保存", "request": "PUT /api/applications/9930cc26-... 200", "effect": "name qa1410-app-fixture -> qa1410-app-fixture-edited, version 1.0.0 -> 2.0.0, revision r1 -> r2"},
+      "delete": {"ui_path": "row 操作 -> 删除 -> confirm", "request": "DELETE /api/applications/ef7e2f3a-... 200", "effect": "GET /api/applications -> []"}
+    },
+    {
+      "resource": "Artifact",
+      "create": {"ui_path": "/artifacts/new -> name+version+file(qa1410-artifact-5ece52a9.bin, 4096 B) -> 上传", "request": "POST /api/artifacts 200", "effect": "api id=c4776324-..., size=4096, sha256=d53344fd8d2d4991ea24583031267c247d6c2253c9382858668ada98b444dbcf == local sha256sum"},
+      "delete": {"ui_path": "row 操作 -> 删除 -> confirm", "request": "DELETE /api/artifacts/c4776324-... 200", "effect": "GET /api/artifacts -> []"}
+    },
+    {
+      "resource": "Task",
+      "create": {"ui_path": "/tasks/new -> name + command + 目标类型=标签 key=qa1410 value=5ece52a9 -> 保存", "request": "POST /api/tasks 200 (first attempt with node target and no node_ids -> 400 toast 'invalid task: node target requires node_ids')", "effect": "redirect /tasks, row visible, enabled=true"},
+      "modify": {"ui_path": "row 操作 -> 编辑 -> name + command -> 保存", "request": "PUT /api/tasks/7971160e-... 200", "effect": "name -> qa1410-task-ui-edited-5ece52a9, command -> echo edited-by-ui, revision r1 -> r2"},
+      "delete": {"ui_path": "row 操作 -> 删除 -> confirm", "request": "DELETE /api/tasks/68f5ea81-... 200", "effect": "tasks 2 -> 1"}
+    },
+    {
+      "resource": "Schedule",
+      "create": {"ui_path": "/schedules/new -> task select + cron */5 * * * * -> 保存", "request": "POST /api/schedules 200", "effect": "row visible, id=4a9206be-060b-4db1-9fed-1bd5c9dd3c14"},
+      "modify": {"ui_path": "row 操作 -> 编辑 -> cron expression -> 保存", "request": "PUT /api/schedules/5d15725e-... 200", "effect": "expression */9 * * * * -> */11 * * * *, revision r1 -> r2"},
+      "delete": {"ui_path": "row 操作 -> 删除 -> confirm dialog", "request": "DELETE /api/schedules/4a9206be-... 200", "effect": "GET /api/schedules -> []"}
+    }
+  ],
+  "notes": [
+    "Task/Schedule create require a resolvable target (node/group/label). This isolated instance has no enrolled agents, so the label target type was used via the real UI form.",
+    "All mutation requests above were captured from the browser session network log (evidence/P1902-18-mutation-requests.txt)."
+  ]
+}

@@ -1,0 +1,612 @@
+{
+  "batch_id": "sys-b04",
+  "title": "通知重复/乱序与 Change Log 窗口过期：以 Hub Current Desired State / Full Resync 收敛",
+  "nonce": "fe9f0eed4def",
+  "executed_at_utc": "2026-10-15T10:22:54Z",
+  "finished_at_utc": "2026-10-15T10:23:51Z",
+  "endpoint": "http://192.168.100.209:18080",
+  "cases": [
+    {
+      "case_id": "SYS-05",
+      "title": "SYS-05 通知重复/乱序：最终以 Hub Current Desired State 为准",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS_WITH_NOTES",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-05",
+          "layer": "owned child Agent + harness frame proxy (duplicate/defer/replay) + agent sqlite",
+          "status": "PASS",
+          "description": [
+            "Duplicated notification: the real CHANGE_NOTIFICATION for a script change was delivered twice; the Agent still ended exactly on the Hub revision and sha256, its applied revision never went backwards, and no extra Execution appeared.",
+            "Stale replay: an older CHANGE_NOTIFICATION was replayed twice after a newer change; the Agent did not regress and issued no sync request for it.",
+            "Real out-of-order delivery: the older notification was held by the proxy, the newer one was delivered, and only then was the older one released; the Agent stayed on the newer Hub state with a monotonic applied revision.",
+            "Conclusion: the Hub's Current Desired State decides the end state; duplicate or late notifications only ever cause (idempotent) extra syncs, never a rollback."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The seams act on the harness-owned frame proxy of the harness's own child Agent only; no product code and no protected Agent was touched."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase-frames.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-baseline-execution.json",
+        "phase4-sys05-ar11-duplicate-notification.json",
+        "phase5-sys05-ar12-out-of-order.json",
+        "phase6-tombstone-prune.json",
+        "phase7-sys07-ar14-window-boundary.json",
+        "phase8-ar15-persistence.json",
+        "phase9-idempotency.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb04-fe9f0eed4def-",
+        "child_node_id": "a13bcf15-4e68-440c-a477-3d5f5a004582",
+        "child_agent_id": "agent-94ae082b-86ab-4772-be91-018bc38b5bc8",
+        "script_id": "200d21ec-143d-4c29-b310-0070aa390966",
+        "task_id": "861f8162-c8ec-4af4-a08a-a289e5b86019",
+        "prune_fixtures": {
+          "script_id": "aad715be-395f-460b-a343-5569f412f15a",
+          "task_id": "34139307-adb1-47a4-a24d-960e0f3c6652"
+        },
+        "object_versions": {
+          "v1": {
+            "sha256": "01448e5c4da4c4bedaf0110af995e49b750c7ea8726a77f8043ac77fb83f8436",
+            "revision": 1
+          },
+          "v2": {
+            "sha256": "a77103556227517f56f299235cf67475c575a300180dc92d23a1e6845687af6d",
+            "revision": 2
+          },
+          "v3": {
+            "sha256": "065b1f0d25204bdee7fa440cd5b0362d2f1fcee630b1e707bf0eaa1049607f49",
+            "revision": 3
+          },
+          "v4": {
+            "sha256": "f4a96752bc1f07e9ca6a00a298c46b1173e5fc11b851b19bb5fad3e4e393c98a",
+            "revision": 4
+          },
+          "v5": {
+            "sha256": "fcc3bb56134388926d53df1932e784c22fb6dcd22e34ac306f6aefbe68fa06e0",
+            "revision": 5
+          }
+        },
+        "executions": {
+          "m1_baseline": "d07135ab-70a5-4d1c-af1a-21fd4442d5b1",
+          "m2_after_restart": "76ec8262-81b1-45eb-9903-b8f88ac69fd7"
+        },
+        "preserved_execution_history": [
+          "d07135ab-70a5-4d1c-af1a-21fd4442d5b1",
+          "76ec8262-81b1-45eb-9903-b8f88ac69fd7"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 16,
+        "hub_definition_creates": 4,
+        "hub_definition_deletes": 4,
+        "manual_run_posts": 2,
+        "node_enroll_posts": 1,
+        "child_process_starts": 4,
+        "child_process_stops": 4,
+        "proxy_injections": 2,
+        "owned_store_seam_writes": 2
+      },
+      "final_cleanup": {}
+    },
+    {
+      "case_id": "AR-11",
+      "title": "AR-11 Duplicate Notification；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS_WITH_NOTES",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-11",
+          "layer": "owned child Agent store / hub rows after a duplicated notification",
+          "status": "PASS",
+          "description": [
+            "One logical change + one duplicated notification produced exactly one object row on the Hub and on the Agent (same revision, same sha256).",
+            "Object counts, the Execution history and PRAGMA quick_check were unchanged by the duplicate.",
+            "Desired State and actual state agreed after the duplicate: the Agent script sha256/revision equalled the Hub's."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "\"Persistence\" covers the Agent local store and Hub rows across the duplicate/deferred seams and a real Agent process restart (see AR-15), not a Hub restart (that is sys-b01)."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase-frames.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-baseline-execution.json",
+        "phase4-sys05-ar11-duplicate-notification.json",
+        "phase5-sys05-ar12-out-of-order.json",
+        "phase6-tombstone-prune.json",
+        "phase7-sys07-ar14-window-boundary.json",
+        "phase8-ar15-persistence.json",
+        "phase9-idempotency.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb04-fe9f0eed4def-",
+        "child_node_id": "a13bcf15-4e68-440c-a477-3d5f5a004582",
+        "child_agent_id": "agent-94ae082b-86ab-4772-be91-018bc38b5bc8",
+        "script_id": "200d21ec-143d-4c29-b310-0070aa390966",
+        "task_id": "861f8162-c8ec-4af4-a08a-a289e5b86019",
+        "prune_fixtures": {
+          "script_id": "aad715be-395f-460b-a343-5569f412f15a",
+          "task_id": "34139307-adb1-47a4-a24d-960e0f3c6652"
+        },
+        "object_versions": {
+          "v1": {
+            "sha256": "01448e5c4da4c4bedaf0110af995e49b750c7ea8726a77f8043ac77fb83f8436",
+            "revision": 1
+          },
+          "v2": {
+            "sha256": "a77103556227517f56f299235cf67475c575a300180dc92d23a1e6845687af6d",
+            "revision": 2
+          },
+          "v3": {
+            "sha256": "065b1f0d25204bdee7fa440cd5b0362d2f1fcee630b1e707bf0eaa1049607f49",
+            "revision": 3
+          },
+          "v4": {
+            "sha256": "f4a96752bc1f07e9ca6a00a298c46b1173e5fc11b851b19bb5fad3e4e393c98a",
+            "revision": 4
+          },
+          "v5": {
+            "sha256": "fcc3bb56134388926d53df1932e784c22fb6dcd22e34ac306f6aefbe68fa06e0",
+            "revision": 5
+          }
+        },
+        "executions": {
+          "m1_baseline": "d07135ab-70a5-4d1c-af1a-21fd4442d5b1",
+          "m2_after_restart": "76ec8262-81b1-45eb-9903-b8f88ac69fd7"
+        },
+        "preserved_execution_history": [
+          "d07135ab-70a5-4d1c-af1a-21fd4442d5b1",
+          "76ec8262-81b1-45eb-9903-b8f88ac69fd7"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 16,
+        "hub_definition_creates": 4,
+        "hub_definition_deletes": 4,
+        "manual_run_posts": 2,
+        "node_enroll_posts": 1,
+        "child_process_starts": 4,
+        "child_process_stops": 4,
+        "proxy_injections": 2,
+        "owned_store_seam_writes": 2
+      },
+      "final_cleanup": {}
+    },
+    {
+      "case_id": "AR-12",
+      "title": "AR-12 Out-of-order Notification；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS_WITH_NOTES",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-12",
+          "layer": "owned child Agent + frame proxy deferred delivery + agent sqlite",
+          "status": "PASS",
+          "description": [
+            "The older notification was genuinely deferred on the wire and released only after the newer one: the recorded frame order shows the deferred R_old after the passed R_new.",
+            "After the late older notification the Agent stayed on the newer Hub state (monotonic applied revision, final sha256 = Hub newest) with no rollback and no half state.",
+            "A following real Agent process restart kept the same state: online/synced, non-full sync after restart, desired == actual, and a new manual Run still succeeded exactly once."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Out-of-order delivery was produced on the harness-owned child link; the Agent's real \"ignore a notification that is not newer than the local revision\" branch is the unmodified product path."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase-frames.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-baseline-execution.json",
+        "phase4-sys05-ar11-duplicate-notification.json",
+        "phase5-sys05-ar12-out-of-order.json",
+        "phase6-tombstone-prune.json",
+        "phase7-sys07-ar14-window-boundary.json",
+        "phase8-ar15-persistence.json",
+        "phase9-idempotency.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb04-fe9f0eed4def-",
+        "child_node_id": "a13bcf15-4e68-440c-a477-3d5f5a004582",
+        "child_agent_id": "agent-94ae082b-86ab-4772-be91-018bc38b5bc8",
+        "script_id": "200d21ec-143d-4c29-b310-0070aa390966",
+        "task_id": "861f8162-c8ec-4af4-a08a-a289e5b86019",
+        "prune_fixtures": {
+          "script_id": "aad715be-395f-460b-a343-5569f412f15a",
+          "task_id": "34139307-adb1-47a4-a24d-960e0f3c6652"
+        },
+        "object_versions": {
+          "v1": {
+            "sha256": "01448e5c4da4c4bedaf0110af995e49b750c7ea8726a77f8043ac77fb83f8436",
+            "revision": 1
+          },
+          "v2": {
+            "sha256": "a77103556227517f56f299235cf67475c575a300180dc92d23a1e6845687af6d",
+            "revision": 2
+          },
+          "v3": {
+            "sha256": "065b1f0d25204bdee7fa440cd5b0362d2f1fcee630b1e707bf0eaa1049607f49",
+            "revision": 3
+          },
+          "v4": {
+            "sha256": "f4a96752bc1f07e9ca6a00a298c46b1173e5fc11b851b19bb5fad3e4e393c98a",
+            "revision": 4
+          },
+          "v5": {
+            "sha256": "fcc3bb56134388926d53df1932e784c22fb6dcd22e34ac306f6aefbe68fa06e0",
+            "revision": 5
+          }
+        },
+        "executions": {
+          "m1_baseline": "d07135ab-70a5-4d1c-af1a-21fd4442d5b1",
+          "m2_after_restart": "76ec8262-81b1-45eb-9903-b8f88ac69fd7"
+        },
+        "preserved_execution_history": [
+          "d07135ab-70a5-4d1c-af1a-21fd4442d5b1",
+          "76ec8262-81b1-45eb-9903-b8f88ac69fd7"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 16,
+        "hub_definition_creates": 4,
+        "hub_definition_deletes": 4,
+        "manual_run_posts": 2,
+        "node_enroll_posts": 1,
+        "child_process_starts": 4,
+        "child_process_stops": 4,
+        "proxy_injections": 2,
+        "owned_store_seam_writes": 2
+      },
+      "final_cleanup": {}
+    },
+    {
+      "case_id": "SYS-07",
+      "title": "SYS-07 Change Log 窗口过期：触发 Full Resync",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "BLOCKED",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-07",
+          "layer": "hub SyncManager.BuildSyncResponse window branch (not reachable) / boundary arithmetic",
+          "status": "BLOCKED",
+          "description": [
+            "The branch is `since > 0 && (current - since) > changelog_window`. The repair Hub global revision is far below changelog_window (5000), so no Agent-side `since` can satisfy it: the largest revision that could ever be outside the window is (current - window - 1), which is <= 0 here.",
+            "Observed boundary with the owned child pushed to its most stale possible positive since (=1): the Hub answered full_resync=false with snapshot=true and the complete per-node desired object set.",
+            "Observed boundary with since=0: the `since > 0` guard short-circuits the window check entirely; the Hub still answered a complete snapshot with full_resync=false.",
+            "full_resync=true was therefore NOT observed. Reaching it would require either writing the global changelog_window setting or advancing the global revision by more than 5000 - both excluded by the batch constraints."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Seam: the harness stopped its OWN child Agent and set its OWN local store revision to 1 and then to 0 so the Agent really asked the Hub with the most stale possible `since`. The global changelog_window setting and the global revision sequence were never written.",
+        "Reported as BLOCKED rather than PASS: the trigger condition itself was not reproducible in this environment without forbidden changes. The equivalent recovery behaviour was verified through the complete-snapshot path (see AR-14/AR-15).",
+        "The boundary arithmetic is computed from the live Hub revision and the live setting recorded in evidence/phase7-sys07-ar14-window-boundary.json."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase-frames.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-baseline-execution.json",
+        "phase4-sys05-ar11-duplicate-notification.json",
+        "phase5-sys05-ar12-out-of-order.json",
+        "phase6-tombstone-prune.json",
+        "phase7-sys07-ar14-window-boundary.json",
+        "phase8-ar15-persistence.json",
+        "phase9-idempotency.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb04-fe9f0eed4def-",
+        "child_node_id": "a13bcf15-4e68-440c-a477-3d5f5a004582",
+        "child_agent_id": "agent-94ae082b-86ab-4772-be91-018bc38b5bc8",
+        "script_id": "200d21ec-143d-4c29-b310-0070aa390966",
+        "task_id": "861f8162-c8ec-4af4-a08a-a289e5b86019",
+        "prune_fixtures": {
+          "script_id": "aad715be-395f-460b-a343-5569f412f15a",
+          "task_id": "34139307-adb1-47a4-a24d-960e0f3c6652"
+        },
+        "object_versions": {
+          "v1": {
+            "sha256": "01448e5c4da4c4bedaf0110af995e49b750c7ea8726a77f8043ac77fb83f8436",
+            "revision": 1
+          },
+          "v2": {
+            "sha256": "a77103556227517f56f299235cf67475c575a300180dc92d23a1e6845687af6d",
+            "revision": 2
+          },
+          "v3": {
+            "sha256": "065b1f0d25204bdee7fa440cd5b0362d2f1fcee630b1e707bf0eaa1049607f49",
+            "revision": 3
+          },
+          "v4": {
+            "sha256": "f4a96752bc1f07e9ca6a00a298c46b1173e5fc11b851b19bb5fad3e4e393c98a",
+            "revision": 4
+          },
+          "v5": {
+            "sha256": "fcc3bb56134388926d53df1932e784c22fb6dcd22e34ac306f6aefbe68fa06e0",
+            "revision": 5
+          }
+        },
+        "executions": {
+          "m1_baseline": "d07135ab-70a5-4d1c-af1a-21fd4442d5b1",
+          "m2_after_restart": "76ec8262-81b1-45eb-9903-b8f88ac69fd7"
+        },
+        "preserved_execution_history": [
+          "d07135ab-70a5-4d1c-af1a-21fd4442d5b1",
+          "76ec8262-81b1-45eb-9903-b8f88ac69fd7"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 16,
+        "hub_definition_creates": 4,
+        "hub_definition_deletes": 4,
+        "manual_run_posts": 2,
+        "node_enroll_posts": 1,
+        "child_process_starts": 4,
+        "child_process_stops": 4,
+        "proxy_injections": 2,
+        "owned_store_seam_writes": 2
+      },
+      "final_cleanup": {}
+    },
+    {
+      "case_id": "AR-14",
+      "title": "AR-14 Change Log Window Expiry；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PARTIAL",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-14",
+          "layer": "window-expiry substitute (maximally stale since -> complete snapshot) + hub/agent rows",
+          "status": "PASS_WITH_NOTES",
+          "description": [
+            "A maximally stale owned Agent (local revision 1, then 0) was recovered twice and converged to the Hub's Current Desired State with the same sha256/revision; object counts did not grow and no duplicate rows appeared.",
+            "Deletion/prune behaviour was verified separately on the same store: a really deleted owned script+task was pruned on the connected Agent through the normal tombstone path (child and Hub counts agreed again).",
+            "The Hub rows and revision_changes were unchanged by the Agent side, and the settings (including changelog_window) were identical before and after.",
+            "The window-expiry trigger itself was not observed (see SYS-07); the recovery semantics were verified on the closest reachable equivalent, the complete desired snapshot."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Seam: the harness stopped its OWN child Agent and set its OWN local store revision to 1 and then to 0 so the Agent really asked the Hub with the most stale possible `since`. The global changelog_window setting and the global revision sequence were never written.",
+        "This case's expected end state (\"recovered, idempotent, persistent, desired == actual\") was verified, but through the complete-snapshot path rather than a full_resync=true response."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase-frames.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-baseline-execution.json",
+        "phase4-sys05-ar11-duplicate-notification.json",
+        "phase5-sys05-ar12-out-of-order.json",
+        "phase6-tombstone-prune.json",
+        "phase7-sys07-ar14-window-boundary.json",
+        "phase8-ar15-persistence.json",
+        "phase9-idempotency.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb04-fe9f0eed4def-",
+        "child_node_id": "a13bcf15-4e68-440c-a477-3d5f5a004582",
+        "child_agent_id": "agent-94ae082b-86ab-4772-be91-018bc38b5bc8",
+        "script_id": "200d21ec-143d-4c29-b310-0070aa390966",
+        "task_id": "861f8162-c8ec-4af4-a08a-a289e5b86019",
+        "prune_fixtures": {
+          "script_id": "aad715be-395f-460b-a343-5569f412f15a",
+          "task_id": "34139307-adb1-47a4-a24d-960e0f3c6652"
+        },
+        "object_versions": {
+          "v1": {
+            "sha256": "01448e5c4da4c4bedaf0110af995e49b750c7ea8726a77f8043ac77fb83f8436",
+            "revision": 1
+          },
+          "v2": {
+            "sha256": "a77103556227517f56f299235cf67475c575a300180dc92d23a1e6845687af6d",
+            "revision": 2
+          },
+          "v3": {
+            "sha256": "065b1f0d25204bdee7fa440cd5b0362d2f1fcee630b1e707bf0eaa1049607f49",
+            "revision": 3
+          },
+          "v4": {
+            "sha256": "f4a96752bc1f07e9ca6a00a298c46b1173e5fc11b851b19bb5fad3e4e393c98a",
+            "revision": 4
+          },
+          "v5": {
+            "sha256": "fcc3bb56134388926d53df1932e784c22fb6dcd22e34ac306f6aefbe68fa06e0",
+            "revision": 5
+          }
+        },
+        "executions": {
+          "m1_baseline": "d07135ab-70a5-4d1c-af1a-21fd4442d5b1",
+          "m2_after_restart": "76ec8262-81b1-45eb-9903-b8f88ac69fd7"
+        },
+        "preserved_execution_history": [
+          "d07135ab-70a5-4d1c-af1a-21fd4442d5b1",
+          "76ec8262-81b1-45eb-9903-b8f88ac69fd7"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 16,
+        "hub_definition_creates": 4,
+        "hub_definition_deletes": 4,
+        "manual_run_posts": 2,
+        "node_enroll_posts": 1,
+        "child_process_starts": 4,
+        "child_process_stops": 4,
+        "proxy_injections": 2,
+        "owned_store_seam_writes": 2
+      },
+      "final_cleanup": {}
+    },
+    {
+      "case_id": "AR-15",
+      "title": "AR-15 Full Resync；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PARTIAL",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-15",
+          "layer": "complete desired snapshot recovery (twice) + real Agent restart + execution journal",
+          "status": "PASS_WITH_NOTES",
+          "description": [
+            "Complete-snapshot recovery was exercised twice on the same owned Agent; the second recovery re-applied the same desired object set idempotently (object counts and row identities unchanged).",
+            "After the recovery the owned Agent was really restarted; on reconnect it performed a non-full sync, stayed online/synced, and desired == actual persisted.",
+            "A new manual Run after that restart produced exactly one SUCCESS Execution carrying the nonce marker, so the recovered Agent is fully functional and the journal was not duplicated."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Seam: the harness stopped its OWN child Agent and set its OWN local store revision to 1 and then to 0 so the Agent really asked the Hub with the most stale possible `since`. The global changelog_window setting and the global revision sequence were never written.",
+        "The full_resync=true flag was not observed (see SYS-07); what was verified is the Full-Resync-equivalent recovery semantics: complete desired snapshot delivery, idempotent re-application, persistence across a real Agent restart and no duplicate Execution.",
+        "The Hub Change Log prune timer (15 min) was not waited for: the window condition was approached from the Agent side instead."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase-frames.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-baseline-execution.json",
+        "phase4-sys05-ar11-duplicate-notification.json",
+        "phase5-sys05-ar12-out-of-order.json",
+        "phase6-tombstone-prune.json",
+        "phase7-sys07-ar14-window-boundary.json",
+        "phase8-ar15-persistence.json",
+        "phase9-idempotency.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb04-fe9f0eed4def-",
+        "child_node_id": "a13bcf15-4e68-440c-a477-3d5f5a004582",
+        "child_agent_id": "agent-94ae082b-86ab-4772-be91-018bc38b5bc8",
+        "script_id": "200d21ec-143d-4c29-b310-0070aa390966",
+        "task_id": "861f8162-c8ec-4af4-a08a-a289e5b86019",
+        "prune_fixtures": {
+          "script_id": "aad715be-395f-460b-a343-5569f412f15a",
+          "task_id": "34139307-adb1-47a4-a24d-960e0f3c6652"
+        },
+        "object_versions": {
+          "v1": {
+            "sha256": "01448e5c4da4c4bedaf0110af995e49b750c7ea8726a77f8043ac77fb83f8436",
+            "revision": 1
+          },
+          "v2": {
+            "sha256": "a77103556227517f56f299235cf67475c575a300180dc92d23a1e6845687af6d",
+            "revision": 2
+          },
+          "v3": {
+            "sha256": "065b1f0d25204bdee7fa440cd5b0362d2f1fcee630b1e707bf0eaa1049607f49",
+            "revision": 3
+          },
+          "v4": {
+            "sha256": "f4a96752bc1f07e9ca6a00a298c46b1173e5fc11b851b19bb5fad3e4e393c98a",
+            "revision": 4
+          },
+          "v5": {
+            "sha256": "fcc3bb56134388926d53df1932e784c22fb6dcd22e34ac306f6aefbe68fa06e0",
+            "revision": 5
+          }
+        },
+        "executions": {
+          "m1_baseline": "d07135ab-70a5-4d1c-af1a-21fd4442d5b1",
+          "m2_after_restart": "76ec8262-81b1-45eb-9903-b8f88ac69fd7"
+        },
+        "preserved_execution_history": [
+          "d07135ab-70a5-4d1c-af1a-21fd4442d5b1",
+          "76ec8262-81b1-45eb-9903-b8f88ac69fd7"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 16,
+        "hub_definition_creates": 4,
+        "hub_definition_deletes": 4,
+        "manual_run_posts": 2,
+        "node_enroll_posts": 1,
+        "child_process_starts": 4,
+        "child_process_stops": 4,
+        "proxy_injections": 2,
+        "owned_store_seam_writes": 2
+      },
+      "final_cleanup": {}
+    }
+  ],
+  "deviations": [],
+  "budget": {
+    "api_mutations": 16,
+    "hub_definition_creates": 4,
+    "hub_definition_deletes": 4,
+    "manual_run_posts": 2,
+    "node_enroll_posts": 1,
+    "child_process_starts": 4,
+    "child_process_stops": 4,
+    "proxy_injections": 2,
+    "owned_store_seam_writes": 2
+  },
+  "final_cleanup_oracle_clean": false,
+  "harness_seams": {
+    "authority": "management writes only to repair http://192.168.100.209:18080",
+    "owned_child": "one harness-owned child Agent on native-3 (exact repair Agent binary d55dc5cd...) behind a harness-owned frame proxy on 192.168.100.170",
+    "duplicate_notification": "the proxy delivered a real CHANGE_NOTIFICATION frame twice",
+    "out_of_order": "the proxy deferred a real CHANGE_NOTIFICATION and released it after a newer one; plus a synthetic replay of an older revision",
+    "window_expiry": "the owned child Agent was stopped and its OWN local store revision was set to 1 and then 0; the global changelog_window setting and the global revision sequence were never written. full_resync=true proved unreachable here",
+    "product_source_changes": 0,
+    "git_operations": 0,
+    "hub_restarts": 0,
+    "protected_agents_stopped": 0
+  }
+}

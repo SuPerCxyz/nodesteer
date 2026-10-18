@@ -1,0 +1,204 @@
+{
+  "created_at_utc": "2026-10-12T12:41:28Z",
+  "case_id": "P11-05 application-task-slice",
+  "status": "READ_ONLY_PLAN_REQUIRES_ROOT_REVIEW_BEFORE_FIXTURE_ACTION",
+  "purpose": "Run one genuine app_deploy Task through the Tasks UI on the isolated Native3 repair Node; distinguish it from Application detail's direct deploy endpoint. No resource or Run action was performed while preparing this plan.",
+  "candidate_target": {
+    "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+    "owner_guard_input_from_root": "Existing Native3 readonly probe identifies the repair Agent as UID 0 with the expected repair binary SHA. Re-read API Node identity and the live Agent PID/startticks/UID/exe SHA/cgroup immediately before mutations; current PID is not pinned by this plan.",
+    "protected": [
+      "Original four repair Nodes",
+      "Hub primary :8080",
+      "Existing read-only Application 804e…",
+      "all existing Node/Application/Host policy fields"
+    ]
+  },
+  "product_path_findings": {
+    "application_save": "ApplicationEditor saves the Application and assignment; AppManager.Create does not create a Task or deploy. An app_deploy Task must be explicitly created through Tasks UI. Application detail's Deploy button calls /api/applications/{id}/deploy directly and does not prove Task UI Run.",
+    "task_run": "Tasks UI supports type=app_deploy, Application selection, operation deploy, exact node target and Run confirmation. POST /api/tasks/{taskID}/run dispatches via AppManager.DeployTask, whose Execution.TaskID is the real Task ID and records that Task revision.",
+    "artifact_execution": "Hub Artifact is immutable with SHA256 metadata. Agent downloads over the Artifact HTTP endpoint, verifies the exact SHA, then installs bytes with mode 0755. A shebang shell sleeper is therefore an executable non-listening fixture; HealthCheck=systemd checks the service remains active.",
+    "prune_ack": "Application deletion creates a tombstone and notifies sync. Agent cleanup for an omitted/tombstoned Application stops/disables/removes only its registered Unit, binary/config and UnitRegistry row. Cleanup errors are logged but do not prevent SYNC_ACK, so ACK/revision alone cannot prove physical cleanup; pair it with exact host and local-state readback.",
+    "cache_cleanup": "The Agent ArtifactCache is content-addressed and has register/read paths but no product deletion method. Hub Artifact deletion does not establish removal of the Agent cache file/row; exact local-cache removal would be an extra owned-Agent state mutation requiring explicit Root review, or the cache must be recorded as a retained residual."
+  },
+  "fixture": {
+    "nonce": "b3ca14953c14",
+    "artifact": {
+      "count": 1,
+      "metadata": "unique QA name/version, architecture amd64, filename qa-sleeper.sh, capture returned ID/size/SHA256",
+      "payload_shape": "#!/bin/sh followed by exec /bin/sleep 3600; no network listener, file writes, environment secrets, or arguments",
+      "upload": "Use existing Artifact upload UI; verify returned metadata SHA equals the locally measured payload SHA before attaching it.",
+      "name": "qa-p11-05-app-b3ca14953c14-artifact",
+      "version": "v1",
+      "payload_path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/application-ui-run-b3ca14953c14/qa-sleeper.sh",
+      "payload_bytes": 56,
+      "payload_sha256": "37a674d655a6ac4111e488608d81d368364db8d8a13d4293d03e9f9eec8a7b8a",
+      "installed_mode_octal": "0755",
+      "payload_source": "#!/bin/sh; comment contains unique nonce; exec /bin/sleep 3600; no listener/file/environment secret"
+    },
+    "application": {
+      "count": 1,
+      "unique_name": "qa-p11-05-app-b3ca14953c14",
+      "artifact_id": "the newly uploaded Artifact only",
+      "binary_path": "/opt/nodesteer-qa-p11-05-b3ca14953c14/bin/sleeper",
+      "config_path": "empty; no config file is needed",
+      "unit_name": "nodesteer-qa-p11-05-b3ca14953c14.service",
+      "arguments_environment": "empty",
+      "health_check": {
+        "type": "systemd",
+        "target": "",
+        "timeout_seconds": 5,
+        "attempts": 3,
+        "interval_seconds": 2
+      },
+      "assignment": "only the candidate Native3 Node",
+      "application_root": "/opt/nodesteer-qa-p11-05-b3ca14953c14"
+    },
+    "application_task": {
+      "count": 1,
+      "type": "app_deploy",
+      "application_id": "the newly created Application only",
+      "operation": "deploy",
+      "target": "exactly the candidate Native3 Node",
+      "retry": 0,
+      "schedule": null,
+      "enabled": true,
+      "timeout_seconds": 60,
+      "creation": "explicit Tasks UI create; no automatic built-in task exists on Application save"
+    },
+    "readonly_owner_helper": {
+      "count": 1,
+      "type": "Command",
+      "runs": 3,
+      "retry": 0,
+      "schedule": null,
+      "purpose": "Three readonly parameterized phases: baseline proves the unique app root/bin, Unit file and UnitRegistry row absent; deployed checks exact App/UnitRegistry IDs, installed bytes SHA/mode 0755, exact systemd ExecStart, active/enabled Unit and MainPID/cgroup/UID with /proc/exe basename sleep and argv allowlist (never compare /proc/exe SHA to the shell Artifact SHA); cleanup checks App/UnitRegistry rows, Unit file, binary and every process in the exact Unit cgroup absent, and verifies the app root contains only an empty bin directory (or both directories are absent). It reports retained empty directories with dev/inode/UID/GID/mode/entry count; it never removes them. Each phase passes a merged Unit-file and systemd-status oracle.",
+      "source_path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/application-ui-run-b3ca14953c14/application_physical_probe.py",
+      "source_sha256": "abfc0b2a95c32cd6fbc3a4d2a367343c2df91729016c6d5cbeb8d11b3747d7d5",
+      "parameters": [
+        "QA_STAGE=baseline|deployed|cleanup",
+        "QA_APP_ID=<owned Application ID; empty for baseline>"
+      ],
+      "read_only": true,
+      "remote_filesystem_writes": false,
+      "database_discovery": "open descriptors of exact guarded repair Agent PID; read exact state.db using mode=ro/query_only, never inspect or print config contents"
+    },
+    "no_new": [
+      "Node",
+      "User",
+      "Script",
+      "Schedule",
+      "Host policy",
+      "Application Artifact transfer"
+    ],
+    "process_oracle": {
+      "artifact_file_sha256": "37a674d655a6ac4111e488608d81d368364db8d8a13d4293d03e9f9eec8a7b8a",
+      "artifact_mode_octal": "0755",
+      "systemd_execstart": "/opt/nodesteer-qa-p11-05-b3ca14953c14/bin/sleeper",
+      "proc_exe_expected_basename": "sleep",
+      "proc_exe_sha_not_compared_to_artifact_sha": true,
+      "proc_argv_allowlist": [
+        "/bin/sleep",
+        "3600"
+      ],
+      "systemd_unit": "nodesteer-qa-p11-05-b3ca14953c14.service",
+      "systemd_cgroup": "/system.slice/nodesteer-qa-p11-05-b3ca14953c14.service"
+    }
+  },
+  "workflow": [
+    {
+      "step": 1,
+      "action": "Fresh readonly preflight",
+      "checks": "Repair :18080 only; Node ID/AgentID/mode/online/synced; fresh Agent PID/startticks/UID/argv config-path-only/exe SHA/cgroup; original four Nodes healthy; existing Application 804e… unchanged; unique Artifact/Application/Task/Unit/path names absent; candidate app path and Unit absent; no active execution targets the candidate."
+    },
+    {
+      "step": 2,
+      "action": "Readonly baseline helper phase",
+      "checks": "Run the owned Command Task with QA_STAGE=baseline and empty QA_APP_ID. Verify unique app root and bin directories, binary, Unit file, exact UnitRegistry row and App row are absent; confirm Unit is not loaded/active and has no MainPID. Retain the helper Task for deployed and cleanup phases."
+    },
+    {
+      "step": 3,
+      "action": "Upload Artifact, create and assign Application",
+      "checks": "Upload the single payload; verify API Artifact ID/size/SHA equals local 56-byte SHA. Create the one App with exact unique paths and systemd health check; assign only the candidate Node. Wait for online/synced and read back App ID/revision/definition."
+    },
+    {
+      "step": 4,
+      "action": "Create explicit app_deploy Task from Tasks UI",
+      "checks": "Read back type, Task ID/revision, App ID, deploy operation, exact Node target, retry=0 and no Schedule. Application save does not create a built-in Task."
+    },
+    {
+      "step": 5,
+      "action": "One genuine Task UI Run with P11-03 observation",
+      "checks": "Open the Task Run page, verify target and confirmation. On the one Confirm click, CDP pauses only POST /api/tasks/<owned-task-id>/run for at most 500ms; record primary Run disabled and ConfirmDialog loading/disabled; assert exactly one matching POST then continue once. Capture returned Execution ID; require exact Task ID, Node ID and Task revision, API/UI SUCCESS, healthy App, and deployed helper proof of installed bytes SHA/mode, exact ExecStart, active Unit and allowlisted sleep process. Never log headers/body. A missed loading transition remains partial; do not repeat Run."
+    },
+    {
+      "step": 6,
+      "action": "Readonly deployed physical readback",
+      "checks": "Run the same helper Task with QA_STAGE=deployed and exact QA_APP_ID; verify local App and UnitRegistry identity/revision, exact installed binary SHA/mode 0755, Unit ExecStart, MainPID/startticks/UID/exe basename/argv/cgroup. Artifact SHA is for installed shell bytes; /proc/exe is sleep and must not be compared by SHA."
+    },
+    {
+      "step": 7,
+      "action": "Stop owned Application, then delete definitions and verify prune",
+      "checks": "Use the owned App detail stop operation once; require exact cleanup Execution SUCCESS and App stopped/Unit inactive. Delete app_deploy Task and GET 404, then delete App and GET 404. Wait for exact Node sync revision/ACK, but do not infer physical cleanup from ACK. Run helper QA_STAGE=cleanup with exact App ID and merged Unit-file/systemd readback; verify local App/UnitRegistry rows, Unit file/binary, MainPID and all processes in the owned Unit cgroup absent. Verify only the empty bin directory remains under the empty app root (or both directories are absent), and record each retained directory dev/inode/UID/GID/mode/entry count. Do not rmdir/rm."
+    },
+    {
+      "step": 8,
+      "action": "Artifact and helper cleanup",
+      "checks": "Delete the owned Hub Artifact and GET 404; delete the single readonly helper Task and GET 404; verify original four Nodes and candidate Node health. Preserve the unique non-sensitive Agent content-addressed cache per Root decision; do not edit cache or original Agent DB."
+    }
+  ],
+  "budget": {
+    "hub_artifacts": 1,
+    "managed_applications": 1,
+    "business_app_deploy_tasks": 1,
+    "business_app_deploy_task_ui_runs": 1,
+    "cleanup_application_stop_executions": 1,
+    "readonly_command_helper_tasks": 1,
+    "readonly_command_helper_runs": 3,
+    "scripts": 0,
+    "schedules": 0,
+    "nodes": 0,
+    "users": 0,
+    "host_policy_changes": 0,
+    "product_or_global_source_changes": 0
+  },
+  "cleanup_order_and_dependencies": [
+    "Owned Application direct stop operation → exact cleanup Execution SUCCESS → verify Unit inactive.",
+    "Delete app_deploy Task → GET 404; its reference otherwise blocks Application deletion.",
+    "Delete Application → GET 404 → wait for exact Node sync revision/ACK → helper cleanup-stage SQLite/Unit/file/process/cgroup physical readback; retain and record the two empty app directories, if present.",
+    "Delete Hub Artifact → GET 404; App reference must already be absent.",
+    "Delete readonly helper Task → GET 404; preserve Execution/Audit history and non-sensitive Agent ArtifactCache residue.",
+    "The two empty fixture directories are intentionally retained and recorded by exact path/dev/inode/UID/GID/mode/entry count; this result does not claim all directory paths are removed."
+  ],
+  "safety_and_failure_handling": {
+    "fresh_owner_guard": "Before each mutation verify current Node/Agent identity and PID startticks/UID/config path/exe SHA/cgroup; never signal/restart or modify the Agent/parent Unit. Use a unique app path and Unit; assert exact paths absent, no symlink and no preexisting registry row before deploy.",
+    "failure": "If Artifact hash, Application sync, Task readback, target guard, Execution identity, or health check fails, do not retry the deployment. Preserve the failed Execution; stop/rollback only the exact owned Unit/resources, retain logs without credentials, then follow exact Task→Application→Artifact cleanup guards.",
+    "review_gates": [
+      "Root must approve the exact app path, unit name, Artifact SHA, Native3 owner fingerprint and helper source before fixture creation.",
+      "Root must decide whether the Agent's unique SHA cache file/row is retained as expected cache residue or removed by a separately reviewed exact local cleanup mutation.",
+      "The helper is read-only. Empty fixture directory removal remains a separate mutation requiring Root review; no `rmdir`/`rm` is present in helper source."
+    ]
+  },
+  "source_refs": [
+    "docs/PRODUCT.md:989-1008,1073-1099,1135-1142",
+    "internal/models/models.go:178-210,373-421",
+    "internal/hub/application.go:43-67,99-135,267-312",
+    "internal/hub/definitions.go:194-254",
+    "internal/agent/application.go:297-347,395-472,513-591",
+    "internal/agent/agent.go:746-759,767-785,897-925",
+    "internal/agent/artifact.go:42-61,64-125",
+    "internal/hub/api/api.go:1324-1385,1567-1682",
+    "web/src/features/editors/index.tsx:923-1130,1635-1680",
+    "web/src/features/tasks/index.tsx:634-650,766-800,849-895,1414-1495",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/application-ui-run-b3ca14953c14/application_physical_probe.py"
+  ],
+  "review_limitations": [
+    "Static plan/helper preparation only; no Docker, API, browser, Task, Application, Artifact, Unit or Run action was executed.",
+    "The helper receives one merged Unit-file/systemd-status object in all phases. Cleanup verifies Unit/registry/binary/process absence and records the retained empty app root/bin directories; it does not remove them.",
+    "The unique non-sensitive Agent content-addressed cache remains intentionally retained; no cache or original Agent DB writes are performed."
+  ],
+  "updated_at_utc": "2026-10-12T13:26:31Z",
+  "additional_case_coverage": {
+    "P11-03": "CANDIDATE_SAME_UI_RUN_ONLY",
+    "acceptance": "During the one app_deploy Task Confirm click, CDP pauses only the exact POST /api/tasks/<owned-task-id>/run for at most 500ms. Capture primary Run disabled and ConfirmDialog loading/disabled; assert exactly one matching POST then continue it once. Store method/path/status/count only, never auth headers/body. If loading is missed, keep P11-03 partial; do not replay."
+  }
+}

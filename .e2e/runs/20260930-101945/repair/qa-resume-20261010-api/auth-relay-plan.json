@@ -1,0 +1,167 @@
+{
+  "case_id": "AUTH-RELAY",
+  "observed_at_utc": "2026-10-10T07:19:07.097368+00:00",
+  "status": "PLAN_ONLY_ROOT_REVIEW_REQUIRED",
+  "write_scope": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/auth-relay-plan.json",
+  "execution_this_batch": {
+    "api_writes": 0,
+    "tasks_created": 0,
+    "transfers_created": 0,
+    "process_or_proxy_control": 0
+  },
+  "management_endpoint": "repair Hub :18080; use private admin Bearer in memory only for authorized management GET/POST when later approved",
+  "relay_endpoint": "GET/POST /agent/transfers/{transfer_id}/{download|upload} at the live configured GatewayBaseURL; exact current URL/port and child HostPathAllowlist are runtime preflight unknowns, do not assume :18080",
+  "existing_transfers_live_read": {
+    "http_status": 200,
+    "count": 5,
+    "all_terminal": true,
+    "active_count": 0,
+    "records": [
+      {
+        "id": "256de7fe-c8df-4825-a7cb-651568b4ff34",
+        "source_node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+        "status": "SUCCESS",
+        "size": 16,
+        "sha256": "0c3f718f4453e07689077bbc3c212eb7948ca1f70115169decafa6b61d58b6f6",
+        "target_nodes": [
+          {
+            "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+            "status": "SUCCESS"
+          },
+          {
+            "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+            "status": "SUCCESS"
+          }
+        ]
+      },
+      {
+        "id": "26699d2b-e0ef-4612-96be-4e29f129993a",
+        "source_node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+        "status": "CANCELED",
+        "size": 0,
+        "sha256": null,
+        "target_nodes": [
+          {
+            "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+            "status": "CANCELED"
+          }
+        ]
+      },
+      {
+        "id": "ad63638f-190a-4fc3-9abf-d6d87851da5e",
+        "source_node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+        "status": "SUCCESS",
+        "size": 13,
+        "sha256": "8a9087745db96bfbe3c56de2088c1cdea6427d3af8047641618605be55f6678a",
+        "target_nodes": [
+          {
+            "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+            "status": "SUCCESS"
+          }
+        ]
+      },
+      {
+        "id": "9fe279e2-c6cf-4da8-9ad2-411a46f62fb7",
+        "source_node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+        "status": "CANCELED",
+        "size": 0,
+        "sha256": null,
+        "target_nodes": [
+          {
+            "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+            "status": "CANCELED"
+          }
+        ]
+      },
+      {
+        "id": "0c9c7bfb-f06c-498a-a873-3e1fdf2548ac",
+        "source_node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+        "status": "SUCCESS",
+        "size": 13,
+        "sha256": "8a9087745db96bfbe3c56de2088c1cdea6427d3af8047641618605be55f6678a",
+        "target_nodes": [
+          {
+            "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+            "status": "SUCCESS"
+          }
+        ]
+      }
+    ],
+    "ownership_note": "All five existing Transfers are sourced by original Native1 and target original Native2/Native3; owned child 15961ef7-81b4-43f3-80c8-1b6977ca2aea is not a source or target. Transfer 256de7fe-c8df-4825-a7cb-651568b4ff34 is a suitable successful-record negative probe."
+  },
+  "source_findings": {
+    "api_management_auth": "GET /api/transfers and GET /api/transfers/{id} sit behind withAuth(read), which requires a user Bearer session. POST /api/transfers additionally requires admin and creates a durable row, then dispatches to source Agent.",
+    "relay_auth_order": "Gateway routes /agent/transfers/* to FileTransferManager before websocket routing. Agent relay ignores user Bearer auth: it first requires X-NodeSteer-Agent-ID and X-NodeSteer-Agent-Token, then resolves AgentID and authenticates the credential, then checks action/method, then Transfer relation.",
+    "upload_relation": "After Agent authentication, POST upload loads Transfer and checks SourceNodeID before canceled/idempotent state, upload headers/body, part-file creation, or mutation. A valid non-source Agent therefore gets 403 without changing Transfer or relay files.",
+    "download_relation": "After Agent authentication, GET download loads Transfer and requires staged SHA before checking target membership. A staged Transfer requested by an Agent absent from non-canceled Targets gets 403 before opening blob; a non-staged Transfer would return 404 first.",
+    "positive_flow": "Create dispatches upload to SourceNode; verified upload stores byte size/SHA and dispatches GET download to Targets. Agent atomically replaces destination and verifies expected size/SHA; delivery result advances Transfer/Target to SUCCESS. Success cleanup removes Hub part/blob. Store exposes no DeleteFileTransfer operation; API has no DELETE transfer route."
+  },
+  "planned_matrix": [
+    {
+      "case": "relay-no-credentials",
+      "request": "GET /agent/transfers/256de7fe-c8df-4825-a7cb-651568b4ff34/download; no auth headers",
+      "expected": "401 JSON object with error; no body download; no Transfer/target/audit/file change"
+    },
+    {
+      "case": "relay-invalid-bearer",
+      "request": "GET same URL; Authorization: Bearer <invalid>, no Agent headers",
+      "expected": "401 JSON object with error; demonstrates user-session auth is not used by Agent relay"
+    },
+    {
+      "case": "relay-valid-user-session",
+      "request": "GET same URL; existing valid user Bearer only, no Agent headers",
+      "expected": "401 JSON object with error; valid user session cannot impersonate Agent"
+    },
+    {
+      "case": "relay-invalid-agent-token",
+      "request": "GET same URL; owned child AgentID plus invalid X-NodeSteer-Agent-Token",
+      "expected": "401 JSON object with error; no query token"
+    },
+    {
+      "case": "relay-valid-child-wrong-source",
+      "request": "POST /agent/transfers/256de7fe-c8df-4825-a7cb-651568b4ff34/upload; correct child credential, empty body, Content-Length 0",
+      "expected": "403 JSON source-relation error; source check precedes SHA-idempotent branch and body/file handling; exact Transfer metadata and relay storage unchanged"
+    },
+    {
+      "case": "relay-valid-child-wrong-target",
+      "request": "GET /agent/transfers/256de7fe-c8df-4825-a7cb-651568b4ff34/download; correct child credential",
+      "expected": "403 JSON target-relation error; child is absent from source and targets; no payload bytes returned"
+    }
+  ],
+  "positive_owned_fixture_plan": {
+    "budget": {
+      "new_node": 0,
+      "new_artifact": 0,
+      "new_transfer_rows": 1,
+      "transient_owned_child_command_tasks": 2
+    },
+    "fixture": "After runtime/owner/path preflight and Root approval, use only currently owned child 15961ef7-81b4-43f3-80c8-1b6977ca2aea as both source and sole target (Create does not reject source==target); unique nonce source/destination regular files under its exact owned root/data directory. Source helper writes deterministic small bytes, captures size/SHA and UID/dev/inode; destination must be absent before create. Do not use original repair Nodes, Native4 proxy/service controls, or shared paths.",
+    "operation": "Admin POST /api/transfers with source_node_id=owned child, source_path=exact nonce file, and one target for same owned child with exact nonce destination_path. Let the real Agent process upload and delivery notifications; poll GET /api/transfers/{id}. No manual credential in URL/CLI/logs.",
+    "business_oracle": "Transfer SUCCESS, target SUCCESS, API size/SHA match source; child destination is regular file owned by expected UID with exact size/SHA and source bytes; source and destination paths remain confined to owned root. Evidence includes source definition, API state/event timeline, file stat/hash and final API readback.",
+    "cleanup_and_retention": "Run exact owned child file cleanup helper for source and destination after physical/readback verification; verify both absent by unique paths and owner root guard. Hub success removes temporary part/blob by manager behavior. Transfer row has no DELETE API/store method and remains one retained SUCCESS history row; if flow fails, POST exact transfer cancel only to stop its own work, still retain resulting CANCELED row, clean only those two exact files, never delete through SQLite.",
+    "transient_tasks": "One exact-Node Command Task to create/verify source file and one exact-Node Command Task to hash/verify then remove only the exact source/destination paths; both unique nonce, retry 0, no schedule, command SHA/owner guards, one Run each, exact Task DELETE + GET404; execution history retained."
+  },
+  "credential_handling": "Reuse the previously reviewed remote owner-guarded credential-read pattern; credential remains only in remote helper memory and X-NodeSteer-Agent-Token header. No token in URL/query, Task command, stdout, workspace, or evidence. User Bearer remains memory-only for management API.",
+  "preflight_and_oracles": [
+    "Read live GatewayBaseURL/port and child HostPathAllowlist; confirm route endpoint and exact child root/dev/inode/UID/process/manifest identity fresh before any call or file operation.",
+    "GET /api/transfers and selected item before/after negative matrix; compare ID/count digest and full safe metadata, no audit changes; assert child NodeID absent from selected SourceNodeID/Targets.",
+    "For positive fixture, check no nonce path exists, source creation UID/type/hash, unique Transfer ID, target/status transitions and final file SHA/size; retain one approved Transfer row."
+  ],
+  "root_review_required": [
+    "Approve the single permanent Transfer row plus two temporary owned-child file operations/Command Tasks; no rollback can remove the row through supported API.",
+    "Confirm the currently shared owned child is released from Runtime preparation and that its actual path allowlist allows a nonce subdirectory under its owned data root.",
+    "Confirm actual GatewayBaseURL/port and that source==target positive fixture is acceptable for canonical AUTH-RELAY coverage."
+  ],
+  "static_source_refs": [
+    "internal/hub/api/api.go:140-141,970-1053",
+    "internal/hub/api/api.go:218-239",
+    "internal/hub/gateway.go:82-89",
+    "internal/hub/file_transfer.go:29-52,92-139,141-229,232-268,270-289,390-418,476-529,603-633",
+    "internal/agent/agent.go:1230-1296,1314-1340,1431-1446",
+    "internal/hub/node.go:153-160",
+    "internal/hubserver/hub.go:138-155,205-224,389-399",
+    "internal/store/store.go:79-85",
+    "internal/store/sqlite_file_transfers.go:11-39,41-75",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/not-found/summary.md:1-9"
+  ]
+}

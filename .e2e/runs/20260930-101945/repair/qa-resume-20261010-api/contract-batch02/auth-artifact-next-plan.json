@@ -1,0 +1,102 @@
+{
+  "created_at": "2026-10-10T07:00:04.359724+00:00",
+  "status": "PROPOSED_READ_ONLY_PLAN_NOT_EXECUTED",
+  "canonical_case": {
+    "id": "AUTH-ARTIFACT",
+    "inventory_status_at_review": "NOT_RUN",
+    "title": "Artifact download按user/registration token/Agent credential的实际允许路径验证"
+  },
+  "goal": "核对现存Artifact的用户会话、注册码和已owned Native4 Agent凭证下载矩阵；只读下载并校验真实bytes/SHA/size，不写Artifact、Node、文件、Host或配置。",
+  "target_artifact": {
+    "selection": "执行时先Admin GET /api/artifacts确认当前集合恰有一个；从实时只读列表取ID/size/sha256，只留安全白名单元数据。任何0或多于1、或GET/metadata状态异常则停给Root裁定。",
+    "current_count_evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/not-found/collections-before.json (1 Artifact)",
+    "do_not_reuse_deleted_artifact_id": "a64190ec-92a4-4407-b8c3-a0adcbee1d56 was deleted and its GET verified 404 in qa-resume-20261010-host-tls/cleanup-artifact-delete.json.",
+    "body_handling": "成功下载仅流式计算byte count与SHA-256；不写本地文件、不输出或保存artifact contents。"
+  },
+  "observed_auth_contract": {
+    "route": "GET /api/artifacts/{id}/download",
+    "user": "Authorization: Bearer <valid read-capable user session> is tried first.",
+    "registration_token": "Actual implementation accepts X-NodeSteer-Agent-Token or query agent_token. Use header only; never put token in URL. This token alone is global registration token and does not require Agent ID.",
+    "node_credential": "Requires both X-NodeSteer-Agent-ID and X-NodeSteer-Agent-Token; ID resolves existing Node and AuthenticateAgent checks stored credential.",
+    "unauthorized": "Absent/invalid credentials return 401 JSON {error:\"unauthorized\"}.",
+    "source_observation": "Comment mentions Authorization carrying registration token, but actual handler only falls back to X-NodeSteer-Agent-Token/query; do not infer or test unsupported Authorization format as an allowed path.",
+    "refs": [
+      "internal/hub/api/api.go:159-162",
+      "internal/hub/api/api.go:249-280",
+      "internal/hub/api/api.go:1542-1564",
+      "internal/hub/node.go:154-160"
+    ]
+  },
+  "proposed_matrix": [
+    {
+      "method": "GET",
+      "credentials": "none",
+      "expected": "401 JSON object with error key",
+      "side_effect": "none"
+    },
+    {
+      "method": "GET",
+      "credentials": "invalid Authorization: Bearer value",
+      "expected": "401 JSON object with error key",
+      "side_effect": "none"
+    },
+    {
+      "method": "GET",
+      "credentials": "existing private admin Bearer session",
+      "expected": "200 application/octet-stream; body bytes and SHA match Artifact metadata/headers",
+      "side_effect": "read-only download"
+    },
+    {
+      "method": "GET",
+      "credentials": "X-NodeSteer-Agent-Token from private registration credentials",
+      "expected": "200; bytes/Content-Length/X-Artifact-SHA256 all match",
+      "side_effect": "read-only download"
+    },
+    {
+      "method": "GET",
+      "credentials": "owned Native4 child NodeSteer-Agent-ID + Agent token, evaluated remotely only",
+      "expected": "200; remote helper emits only status/size/SHA summary",
+      "side_effect": "read-only download"
+    },
+    {
+      "method": "GET",
+      "credentials": "fresh random nonexistent Agent ID + the same valid child token",
+      "expected": "401; no actual Node credential is looked up or mutated",
+      "side_effect": "read-only authorization failure"
+    }
+  ],
+  "credential_sources_and_guards": {
+    "private_user_and_registration": "/tmp/nodesteer-e2e-resume-20261009-Qv9AYO/repair-connection.json and repair-credentials.json; both observed owner UID 1000, regular nonsymlink, mode 0600. Token values are not in this plan and must remain process-memory only.",
+    "candidate_owned_child": "Prior owner ledger `.e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/setup/owner-ledger.json` records Node 15961ef7-81b4-43f3-80c8-1b6977ca2aea, Agent agent-ab15a133-73cd-4025-8c97-f2ff37e000f5, remote owned directory `/tmp/qa-resume-20261008-child-ciivjupc`, UID 65534, and online/synced at that ledger timestamp. This is historical identity evidence only; do not reuse old PID/starttime. Parent helper must freshly prove current Node owner/status, exact Agent ID, directory realpath/dev/inode/UID/manifest and locate the credential-bearing config under that owned directory before use.",
+    "remote_secret_boundary": "Credential is read and used inside the parent helper on Native4; never returned in Task stdout, API response evidence, task parameters/command, argv, local files, or logs. Use only header fields; helper stdout allowlist is status, byte count, SHA, and guard booleans."
+  },
+  "execution_boundary_for_future_approval": {
+    "api_authority": "repair :18080 only; no primary :8080 writes.",
+    "fixture_budget": 0,
+    "owned_command_task_budget": 1,
+    "task_run": "At most one parent-owned read-only Command Task to request the remote Agent-credential download; unique QA name and exact owned-child target only. Compile/lint the helper locally and show source SHA, command SHA, redacted Task definition, and guards to Root before any Task creation.",
+    "cleanup": "Delete only that temporary Task after execution and verify GET 404; execution/audit history may remain. No Task creation or run in this planning turn.",
+    "operations_forbidden": [
+      "No Artifact POST/PUT/DELETE",
+      "No Node credential/state/label/status operation",
+      "No child process signal/restart/stop or config changes",
+      "No original repair Node management write",
+      "No query-string token",
+      "No source/global inventory mutation"
+    ]
+  },
+  "unknowns_and_stop_conditions": [
+    "The currently live Artifact exact ID/metadata was not read in this planning task; the previous TLS Artifact ID is confirmed deleted. Resolve through an authorized safe GET list at execution time.",
+    "The current child config path and credential location are not exposed in local owner evidence; remote owner helper must resolve it under the recorded owned directory and fail closed if current ownership/config cannot be proven.",
+    "Historical child PID/starttime and online/synced state are stale until fresh runtime proof. Do not signal or control the child.",
+    "If Artifact list cardinality/ownership is ambiguous or child owner guard fails, stop before agent credential request and report exact missing proof."
+  ],
+  "this_turn": {
+    "executed_auth_requests": false,
+    "created_task_or_fixture": false,
+    "changed_api_or_global_state": false,
+    "write_scope": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/contract-batch02/auth-artifact-next-plan.json"
+    ]
+  }
+}

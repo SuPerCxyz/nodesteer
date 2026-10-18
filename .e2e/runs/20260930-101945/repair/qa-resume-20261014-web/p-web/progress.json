@@ -1,0 +1,116 @@
+{
+  "batch_id": "qa-resume-20261014-web-p-web",
+  "owner": "web (P-WEB PARTIAL closure)",
+  "status": "COMPLETE_FOR_ROOT_REVIEW",
+  "phase": "RESULTS_SAVED_26PASS_60PARTIAL",
+  "updated_at_utc": "2026-10-15T08:20:00Z",
+  "session": "qapweb-d6dbf7af",
+  "authority": "http://192.168.100.209:18080",
+  "authority_type": "repair",
+  "primary_8080_management_writes": 0,
+  "nonce": "d6dbf7af",
+  "prefix": "qa-pweb-d6dbf7af",
+  "node_scope": "native-3 (192.168.100.222) only",
+  "requested_case_count": 86,
+  "delivered_case_count": 86,
+  "results": {
+    "PASS": [
+      "P02-01", "P03-07", "P04-01", "P04-03", "P05A-12", "P05B-04", "P06-05",
+      "P07_P08-01", "P07_P08-04", "P09P11-02", "P09P11-13", "P09P11-22",
+      "P12P13-02", "P12P13-04", "P14P15-02", "P14P15-04",
+      "P19-01", "P19-04", "P20-01", "P20-02", "P20-03", "P22-05",
+      "E2E-02", "X05", "X07", "G04-02"
+    ],
+    "PARTIAL": [
+      "P03-02", "P04-06", "P04-07", "P05B-08", "P05B-10", "P07_P08-11",
+      "P09P11-07", "P09P11-08", "P09P11-09", "P09P11-10", "P09P11-11", "P09P11-12",
+      "P09P11-15", "P09P11-16", "P09P11-17", "P11-08",
+      "P12P13-05", "P12P13-06", "P12P13-07", "P12P13-08",
+      "P14P15-06", "P14P15-07", "P14P15-08", "P14P15-09", "P14P15-12", "P14P15-13",
+      "P14P15-14", "P14P15-15", "P14P15-16", "P14P15-18",
+      "P16-02", "P16-04", "P17P18-03", "P17P18-04",
+      "P19-03", "P20-04", "P21-08", "P22-07", "P22-09", "P22-10",
+      "FL-02", "FL-03", "FL-04", "FL-10", "FL-11", "FL-12", "FL-15",
+      "E2E-15",
+      "X04", "X06", "X08", "X09", "X10", "X11", "X12", "X13", "X14", "X15", "X16", "X18"
+    ],
+    "FAIL": []
+  },
+  "per_case_status": "see results.json -> cases[] (canonical_before / proposed_after / confidence / covered_dimensions / remaining_or_limitations / evidence)",
+  "executed_real_operations": {
+    "ui_logins": 1,
+    "ui_sidebar_route_clicks": 12,
+    "ui_list_row_and_link_clicks": "~30",
+    "ui_dialog_confirm_cancel_cycles": 5,
+    "ui_form_fills": "~30",
+    "real_task_runs": 2,
+    "real_agent_enrollments": 2,
+    "ui_deletes_through_confirm_dialog": 5,
+    "api_fixture_calls": "~35",
+    "screenshots": 45
+  },
+  "server_writes": {
+    "resource_mutations": "2 owned child nodes, 4 owned scripts, 2 owned tasks, 1 owned schedule — all deleted",
+    "node_state_changes": "only the 2 owned child node records (never a protected node)",
+    "new_persistent_resources": 0,
+    "deleted_persistent_resources": 9,
+    "auth_audit_rows_created_by_this_batch": "login/auth/local plus owned-object DELETE rows"
+  },
+  "new_resources": 9,
+  "runs": 2,
+  "unverified_dimensions": [
+    "operator/viewer RBAC sessions (P04-06, P04-07 non-admin half, P14P15-12, P21-08): the product has no delete-user API, so a user created on the shared repair authority could not be cleaned up; not executed",
+    "user lifecycle (P20-04, E2E-15, FL-15): same reason",
+    "owned application + real deploy/upgrade/rollback (P14P15-06/07/08/09/13/14/15/16/18, FL-10, FL-11, X06 write half)",
+    "artifact upload dialog fields and boundaries (P16-02, P16-04)",
+    "transfer start / loading / multi-target aggregation (P22-07 loading, P22-09, P22-10, X18) — starting a transfer writes non-deletable history",
+    "controlled multi-session + label/group/assignment fixtures (X11, X12, X13, X14, X18)",
+    "PENDING status sample (P17P18-03) and system trigger sample (P17P18-04)",
+    "audit six-action coverage (P19-03) and secret-masking probes (X16)",
+    "schedule round-trip field trimming / invalid timezone -> on_start / DST (X10), interval save-side rejection (P12P13-04)",
+    "task conditions runtime semantics (P09P11-15/16/17, X11)"
+  ],
+  "notable_findings_for_root": [
+    {
+      "id": "PWEB-F-01",
+      "case": "P07_P08-11",
+      "what": "Script create accepted a 307200-byte content body and stored it (no size ceiling hit); a negative timeout (-5) was accepted and persisted via POST /api/scripts (HTTP 200, timeout=-5); timeout=0 also accepted.",
+      "impact": "the case's expected 'over-long content / timeout boundary' rejection was not observed; either the boundary is higher than 300 KiB or there is no server-side bound.",
+      "evidence": "evidence/P07_P08-04-11-script-lifecycle.json"
+    },
+    {
+      "id": "PWEB-F-02",
+      "case": "P12P13-04",
+      "what": "Interval 0 / -1 shows the inline message 间隔必须 ≥ 1 秒，无法预览。but the 保存 button stays enabled.",
+      "impact": "the guard is advisory; a client-side save-side guard may be missing. Not saved, so no write was attempted.",
+      "evidence": "evidence/P05B-04-X05-P12P13-schedule.json"
+    },
+    {
+      "id": "PWEB-F-03",
+      "case": "X05",
+      "what": "/schedules/new?task_id=<nonexistent> shows the same '由任务详情创建，任务已锁定。' banner but no explicit 'task not found' error text.",
+      "impact": "weak feedback on an invalid task_id deep link.",
+      "evidence": "evidence/X05-schedule-invalid-taskid.png"
+    },
+    {
+      "id": "PWEB-F-04",
+      "case": "P12P13-05",
+      "what": "A one-time schedule with a past 运行时间 (2020-01-01) produced no inline error and left 保存 enabled.",
+      "impact": "recorded as observed behaviour; not saved, so server-side behaviour is unknown.",
+      "evidence": "evidence/P05B-04-X05-P12P13-schedule.json"
+    }
+  ],
+  "token_saved": false,
+  "raw_credentials_in_evidence": false,
+  "product_source_modified": false,
+  "git_operations": "none",
+  "cleanup": {
+    "fixture_ledger": "fixture-ledger.json (status CLEANED)",
+    "cleanup_guard": "final-cleanup-guard.json (no_leftovers=true; counts before == counts after)",
+    "owned_get404_all": true,
+    "node_side_clean": true,
+    "non_deletable_executions": 3,
+    "browser_session_closed": "qapweb-d6dbf7af (close --session, no --all)"
+  },
+  "next_action": "Root: accept the 26 PASS; for the 60 PARTIAL decide which dimensions need an isolated disposable Hub instance (RBAC/user cases) or a full owned application deploy chain (P14P15-*/FL-10/FL-11) or a non-deletable-transfer budget (P22-07/09/10, X18)."
+}

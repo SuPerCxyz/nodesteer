@@ -1,0 +1,29 @@
+{
+  "reviewed_at": "2026-10-10T15:23:05.936581+00:00",
+  "status": "APPROVED_SINGLE_READONLY_NATIVE2_HELPER",
+  "scope": "existing504 SYS12 test preflight, no Docker resource mutations",
+  "source": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/native2_readonly_preflight.py",
+  "sha256": "53ecdaa900297673794a64b6091c95a87507826e89357def7ba604af5e1f5fc7",
+  "command_sha256": "b9187e9ac47e677d43aeec04932d753fed82e94b3b7debcb4d2dc102347b2209",
+  "budget": {
+    "parent_native2_tasks": 1,
+    "Runs": 1,
+    "retry": 0,
+    "timeout_seconds": 90
+  },
+  "target_node": "611c02a5-1859-4465-878b-d543b7f6fdec",
+  "operations": [
+    "exact pinned image inspect metadata allowlist, no Env values",
+    "exact own proposed resource name collisions only",
+    "guarded owned archive SHA-before-member hash/metadata, no extract",
+    "guarded original private config field presence only with O_NOFOLLOW/root-dir/file perms; no values"
+  ],
+  "forbidden": [
+    "docker create/start/stop/remove/pull/build/import/retag",
+    "signal/Unit operation",
+    "newNode/child/container/volume/network/config or oldHost mutation",
+    "printing creds/config/env/raw inspect output"
+  ],
+  "cleanup": "exact helperTask DELETE200/GET404; retain Execution/Audit",
+  "result_gates": "actual image ID/label/arch/entrypoint and archive/binary/shell checks; metadata cannot replace runtime DataDir/config permissions/recreate test"
+}

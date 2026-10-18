@@ -1,0 +1,111 @@
+{
+  "reviewed_at_utc": "2026-10-12T16:14:10Z",
+  "status": "LOCAL_PLAN_AND_READONLY_SOURCE_READY_FOR_ROOT_REVIEW_NOT_E2E",
+  "scope": "SYS-09 only; exact Native3 connected Agent. No live API, Task, Schedule, Execution, Browser, Unit or process action was performed.",
+  "canonical_current": {
+    "case_id": "SYS-09",
+    "repair_status": "PARTIAL",
+    "missing": [
+      "Connected Agent consumption of Script/Task/Schedule tombstones",
+      "Suppression of a future Agent-owned interval slot after applied revision"
+    ]
+  },
+  "existing_application_slice_review": {
+    "app_id": "aa4d4ad8-ad06-491b-8b62-ba556a703dbc",
+    "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/application-ui-run-b3ca14953c14/helper-cleanup-result.json",
+    "direct_observation": "Same Native3 repair Agent SHA and owner guard; local application and unit_registry rows empty; exact Unit and binary absent/inactive; existing Execution history retained. This covers only the prior Application slice, not this proposed Script/Task/Schedule batch.",
+    "limitations": "cache_residue_checked=false; no content-addressed Script cache or App cache absence claim."
+  },
+  "runtime_harness_sources": {
+    "readonly_probe.py": {
+      "sha256": "afc3f34d9e859e807953f885c0cdc2d86c673a7455abae72dab20e70641b6744",
+      "line_refs": {
+        "Agent_ancestor_UID_SHA_configpath_unit": "readonly_probe.py:35-135",
+        "unique_state_db_fd_and_file_identity": "readonly_probe.py:137-160",
+        "SQLite_mode_ro_query_only_quick_check": "readonly_probe.py:162-189",
+        "pre_name_and_probe_task_guard": "readonly_probe.py:191-205",
+        "exact_rows_and_preserved_execution": "readonly_probe.py:207-236",
+        "pre_post_revision_oracle": "readonly_probe.py:237-318",
+        "safe_parameter_allowlist_and_output": "readonly_probe.py:319-360"
+      }
+    },
+    "command_builder.py": {
+      "sha256": "810f52a0adfefe9abb98f916e8d9b6aece721483f54d522cc67c4775239b5932",
+      "command_bytes": 5797,
+      "command_sha256": "6b8c35583e4886d42adb59ad1b28e9956c1972b98e1625b4b95d2147e072a2e6",
+      "line_refs": "command_builder.py:1-55"
+    },
+    "offline_fakepipe_smoke.py": {
+      "sha256": "b52533b35e21935ff45ea887e76ecbb121fc111fbacb5ac570b5191ddcdcf5cd",
+      "line_refs": "offline_fakepipe_smoke.py:1-150"
+    },
+    "business_script.sh": {
+      "sha256": "f54330cc2b46c6e476ab43cce24042ed582f2a9cd8580d28bc1963745e2fda60",
+      "bytes": 55,
+      "line_refs": "business_script.sh:1-3"
+    },
+    "sys09-plan.json": {
+      "sha256": "525aba86495268e83ded4672bc5dc09c7d7d99d4bb2a9fbad4eadc58e22d5d30"
+    }
+  },
+  "product_source_contract_refs": {
+    "Hub schedule delete writes schedule tombstone and notifies sync": "internal/hub/schedule.go:148-184",
+    "Hub task delete refuses live schedule reference and writes Task tombstone": "internal/hub/definitions.go:352-388",
+    "Hub script delete refuses live Task reference and writes Script tombstone": "internal/hub/definitions.go:112-147",
+    "Agent applies tombstones, persists global revision, commits, reloads scheduler": "internal/agent/agent.go:735-925",
+    "Agent scheduler 1s tick, owner/online gate, interval and misfire behavior": "internal/agent/scheduler/scheduler.go:113-164,188-244; internal/agent/agent.go:175",
+    "Agent scheduler removes local schedule and last-fire state": "internal/agent/scheduler/scheduler.go:103-110",
+    "Agent creates same-ID scheduled Execution and records trigger/scheduled time": "internal/agent/agent.go:1531-1561",
+    "Hub creates same Execution from Agent terminal result if not preexisting": "internal/hub/execution.go:360-402",
+    "Native3 local state.db name and WAL mode": "internal/agent/store.go:42-65",
+    "Agent local Script/Task/Schedule definition tables and exact delete methods": "internal/agent/store.go:350-455",
+    "Agent local Execution rows are separate storage and retained after definition delete": "internal/agent/store.go:490-530; internal/agent/store.go:575-620"
+  },
+  "offline_validation": {
+    "status": "LOCAL_FAKEPIPE_SMOKE_PASS_NOT_E2E",
+    "python_compile": "PASS for probe, command builder, fakepipe smoke",
+    "embedded_source_compile": "PASS",
+    "fake_db": "preflight absent names; post exact Script/Task/Schedule rows removed; scheduled Execution preserved; stale revision and missing history safely rejected",
+    "probe_sqlite_mutations": 0,
+    "api_calls": 0,
+    "api_mutations": 0,
+    "task_creates": 0,
+    "run_posts": 0,
+    "remote_node_touched": false
+  },
+  "execution_budget": {
+    "new_script": 1,
+    "new_script_task": 1,
+    "agent_owned_interval_schedule": 1,
+    "readonly_probe_task": 1,
+    "readonly_probe_run_posts": 2,
+    "manual_business_run_posts": 0,
+    "expected_scheduled_execution_max": 1,
+    "definition_deletes": 4,
+    "other_objects": 0
+  },
+  "future_slot_window": {
+    "schedule_interval_seconds": 15,
+    "agent_scheduler_tick_seconds": 1,
+    "after_delete_wait_max_seconds": 60,
+    "poll_interval_seconds": 2,
+    "gate": "First prove target Node online+synced and global revision >= the final delete revision; then observe a complete 15s interval plus tick margin, while both fit the same 60s bound. Any additional scheduled Execution is recorded and leaves the one-execution plan nonpassing; never recreate or manually rerun."
+  },
+  "limitations_and_stop_conditions": [
+    "All runtime checks remain unexecuted until Root grants fixture creation and Runs.",
+    "The probe requires exactly one regular state.db descriptor from the exact Agent process; missing/ambiguous fd, identity mismatch, Unit drift, quick_check failure, or local revision lag is fail-closed.",
+    "No config contents, full argv/environment, credentials, raw definitions, or full logs are emitted.",
+    "No Script physical cache deletion is claimed; this batch tests local definition tombstones and schedule removal only.",
+    "The previous Application slice is evidence for that dimension only; no App is created/deleted here."
+  ],
+  "external_actions": {
+    "api_calls": 0,
+    "api_mutations": 0,
+    "tasks": 0,
+    "schedules": 0,
+    "runs": 0,
+    "docker": 0,
+    "signals": 0,
+    "unit_or_cgroup_changes": 0
+  }
+}

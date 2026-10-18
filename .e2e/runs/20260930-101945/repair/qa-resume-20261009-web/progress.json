@@ -1,0 +1,178 @@
+{
+  "run_id": "20260930-101945",
+  "executor": "gpt-6-luna",
+  "phase": "BATCH01_CLEANED_AND_SUMMARIZED",
+  "updated_at": "2026-10-09T16:37:38+08:00",
+  "plan_file": "prepare-case-plan.json",
+  "cases_planned": 12,
+  "cases_executed": 3,
+  "results": [
+    {
+      "canonical_ids": [
+        "P01-02"
+      ],
+      "status": "PASS",
+      "evidence": "p01-02-results.json",
+      "note": "错误登录401、具体invalid credentials、无token；authenticated session用于其他UI。"
+    },
+    {
+      "canonical_ids": [
+        "P01-03"
+      ],
+      "status": "PASS",
+      "evidence": [
+        "p01-03-fresh-results.json",
+        "p01-03-server-fields.json"
+      ],
+      "note": "三个fresh UI空值分支各自0 POST/Invalid input/no token；direct login API三种缺字段均401/no session。"
+    },
+    {
+      "canonical_ids": [
+        "X15",
+        "WEB-LIVE-LOG"
+      ],
+      "status": "PARTIAL",
+      "evidence": [
+        "first-execution.json",
+        "second-execution.json",
+        "third-execution.json",
+        "live-run-start.json",
+        "offline-recovery-start.json",
+        "filter-clear-recovery.json",
+        "offline-online-fetch.json"
+      ],
+      "note": "同页RUNNING→最终FAILED/exit1与API/UI终态日志、offline/online恢复和real GET fail/success已观测；attempt metadata没有暴露且secure clipboard精确读/真实denied尚未验证。"
+    },
+    {
+      "canonical_ids": [
+        "P17P18-10"
+      ],
+      "status": "PARTIAL",
+      "evidence": [
+        "clipboard-summary.json",
+        "cdp-context-clipboard-results.json"
+      ],
+      "note": "实际Copy按钮成功反馈已观测；精确clipboard read受当前browser权限阻拦，permission deny无法真正生效，细节见summary。"
+    }
+  ],
+  "current_gate": "本批Task精确删除并GET404，4条Execution历史保留；P01-02/P01-03/G02-09 PASS；X15/WEB-LIVE-LOG/P17P18-10/X16及未执行键盘/RBAC维度按summary保留PARTIAL/NOT_RUN。下一阶段按Root batch02独立目录执行。",
+  "browser_cli": {
+    "version": "0.32.4",
+    "core_skill_loaded": true,
+    "dogfood_skill_loaded": false,
+    "session_started": true,
+    "session": "qaweb20261009",
+    "allowed_domains": "192.168.100.209"
+  },
+  "cleanup": {
+    "created_ids": [
+      {
+        "type": "task",
+        "id": "4006d075-8c15-4d14-9cbc-8b63f5823131"
+      }
+    ],
+    "deleted_ids": [],
+    "retained_history_ids": [
+      {
+        "type": "execution",
+        "id": "cba06f0d-9b09-4ad5-97b6-e538ab46a8c1"
+      },
+      {
+        "type": "execution",
+        "id": "b448b9dc-edfa-4d9a-be11-6c9c80b981dc"
+      },
+      {
+        "type": "execution",
+        "id": "f3ba436f-e4ba-4253-b6b7-d17462934b31"
+      }
+    ],
+    "status": "PENDING"
+  },
+  "next_actions": [
+    "使用当前Administrator UI创建唯一Task；创建前检查target仅native-3、retry=1、无持久化命令副作用。",
+    "保存后用只读GET核实task ID/定义，手动Run并在Execution detail记录实时、attempt与terminal日志。",
+    "测试完成后精确删除Task并GET404。"
+  ],
+  "private_material": "只在进程内读取；未写入证据或输出值。",
+  "browser_security": {
+    "session": "qawebsecure20261009",
+    "allowed_domains": "192.168.100.209",
+    "exact_origin_secure_override": true,
+    "is_secure_context": true,
+    "navigator_clipboard_available": true,
+    "clipboard_written": false
+  },
+  "current_fixture": {
+    "type": "task",
+    "id": "4006d075-8c15-4d14-9cbc-8b63f5823131",
+    "name": "qa-web-20261009-live-failed-7956f386",
+    "target": "repair native-3",
+    "retry": 1,
+    "revision": 5,
+    "timeout_seconds": 120
+  },
+  "runner": {
+    "browser_online": false,
+    "api_status": "FAILED",
+    "ui_running": true,
+    "first_visible": true,
+    "second_visible": false,
+    "secure": true,
+    "read_permission_granted": true,
+    "write_permission_granted": true,
+    "exact_match": false,
+    "feedback": {
+      "failed": false,
+      "success": true
+    }
+  },
+  "browser_recovery": {
+    "same_page_no_reload": true,
+    "online_recovery_observed": false,
+    "offline_failure_count": 0,
+    "online_success_count": 79
+  },
+  "clipboard_results": {
+    "write_success_feedback": true,
+    "read_exact_verified": false,
+    "clipboard_read_permission": "denied",
+    "write_denial_enforced": false,
+    "evidence": "clipboard-summary.json"
+  },
+  "offline_recovery": {
+    "offline_api_terminal": true,
+    "browser_resumed_online": true,
+    "same_page_no_reload": true,
+    "search_cleared_by_real_keyboard": true,
+    "terminal_both_markers_visible": true,
+    "offline_http_failure_captured": false
+  },
+  "network_offline_online": {
+    "captured_at": "2026-10-09T16:29:45+08:00",
+    "execution_id": "5c5d8c3e-945f-4ca2-ab91-fd30cb8b5b9b",
+    "offline_browser_fetch": {
+      "errorType": "TypeError",
+      "online": false,
+      "requestFailed": true
+    },
+    "online_browser_fetch": {
+      "executionStatus": "FAILED",
+      "exitCode": 1,
+      "online": true,
+      "status": 200
+    },
+    "ui_after_restore": {
+      "failed": true,
+      "first": true,
+      "navCount": 1,
+      "online": true,
+      "path": "/executions/5c5d8c3e-945f-4ca2-ab91-fd30cb8b5b9b",
+      "search": "",
+      "second": true
+    },
+    "same_page_no_reload": true,
+    "actual_ui_screenshot": "reconnected-final-both-logs.png"
+  },
+  "batch01_summary": "batch01-summary.json",
+  "cleanup_complete": true
+}

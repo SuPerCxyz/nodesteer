@@ -1,0 +1,147 @@
+{
+  "config": {
+    "argv": [
+      "/usr/bin/node",
+      "/home/superc/code/nodesteer/web/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "e2e/playwright.config.ts",
+      "--reporter=json",
+      "--grep",
+      "SAFE-18"
+    ],
+    "configFile": "/home/superc/code/nodesteer/web/e2e/playwright.config.ts",
+    "rootDir": "/home/superc/code/nodesteer/web/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/superc/code/nodesteer/web/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "safe-ui.spec.ts",
+      "file": "safe-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "SAFE-18 Execution状态触发筛选URL/清空与Transfer目标草稿反向操作",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 3794,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m400\u001b[39m\nReceived: \u001b[31m200\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m400\u001b[39m\nReceived: \u001b[31m200\u001b[39m\n    at /home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts:591:57",
+                    "location": {
+                      "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                      "column": 57,
+                      "line": 591
+                    },
+                    "snippet": "  589 |   await combos.nth(0).click();await page.getByRole('option',{name:target.hostname,exact:true}).click()\n  590 |   const selfEnabled=await start.isEnabled(),response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/transfers'&&r.request().method()==='POST')\n> 591 |   await start.click();expect((await response).status()).toBe(400)\n      |                                                         ^\n  592 |   await expect(page.getByText(/source node cannot be a target|source.*target|源.*目标/i).last()).toBeVisible()\n  593 |   await evidence('execution-filter-transfer-draft',{statuses:checks,triggers_available:available,filters_cleared:true,source_excluded:true,add_required:true,remove_zero_post:true,source_change_self_start_enabled:selfEnabled,self_request_http:400,no_file_operation:true})\n  594 | })"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                        "column": 57,
+                        "line": 591
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m400\u001b[39m\nReceived: \u001b[31m200\u001b[39m\n\n  589 |   await combos.nth(0).click();await page.getByRole('option',{name:target.hostname,exact:true}).click()\n  590 |   const selfEnabled=await start.isEnabled(),response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/transfers'&&r.request().method()==='POST')\n> 591 |   await start.click();expect((await response).status()).toBe(400)\n      |                                                         ^\n  592 |   await expect(page.getByText(/source node cannot be a target|source.*target|源.*目标/i).last()).toBeVisible()\n  593 |   await evidence('execution-filter-transfer-draft',{statuses:checks,triggers_available:available,filters_cleared:true,source_excluded:true,add_required:true,remove_zero_post:true,source_change_self_start_enabled:selfEnabled,self_request_http:400,no_file_operation:true})\n  594 | })\n    at /home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts:591:57"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-01T04:50:27.990Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts/safe-ui-SAFE-18-Execution状态触发筛选URL-清空与Transfer目标草稿反向操作-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                    "column": 57,
+                    "line": 591
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "ddd7e7cf69376006a28d-f60f0a99023a6105d64b",
+          "file": "safe-ui.spec.ts",
+          "line": 566,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-01T04:50:27.387Z",
+    "duration": 4501.97,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

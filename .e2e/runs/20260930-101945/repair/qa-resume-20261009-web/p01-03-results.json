@@ -1,0 +1,35 @@
+{
+  "test_id": "P01-03",
+  "case_status": "PARTIAL",
+  "captured_at": "2026-10-09T16:07+08:00",
+  "authority": "repair :18080",
+  "method": "agent-browser 0.32.4; real form button click; network requests observed without capturing body; localStorage token existence checked only.",
+  "results": [
+    {
+      "username": "empty",
+      "password": "empty",
+      "login_post_count": 0,
+      "ui_validation": "Invalid input on both fields",
+      "token_present": false
+    },
+    {
+      "username": "nonempty synthetic",
+      "password": "empty",
+      "login_post_count": 0,
+      "ui_validation": "Invalid input remains on username field",
+      "token_present": false
+    },
+    {
+      "username": "empty",
+      "password": "nonempty synthetic",
+      "login_post_count": 1,
+      "login_http": 401,
+      "ui_feedback": "invalid credentials",
+      "token_present": false
+    }
+  ],
+  "oracle": "Actual page snapshot plus Network request log; POST /api/login=0 for first two, one 401 for username-empty case; localStorage token key absent in all states.",
+  "boundary": "Server correctly rejected incomplete username with 401, but the UI submitted instead of client-blocking it and returned generic credentials feedback; no token/session created. Keep PARTIAL pending canonical review of whether server rejection meets this dimension.",
+  "secrets_in_evidence": false,
+  "raw_request_bodies_saved": false
+}

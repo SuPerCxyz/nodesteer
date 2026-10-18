@@ -1,0 +1,93 @@
+{
+  "started_at": "2026-10-09T08:02:17.708087+00:00",
+  "authorization": "继续2026-10-04已确认的22缺陷及504场景隔离复测；用户2026-10-09要求具体测试委派Luna并及时落盘。",
+  "status": "RUNNING",
+  "scope_change": false,
+  "progress_file": ".e2e/runs/20260930-101945/repair/qa-resume-20261009-root/progress.json",
+  "private_connection_status": "RECOVERED",
+  "agents": {
+    "/root/e2e_recovery": {
+      "tool": "collaboration.followup_task",
+      "model": "gpt-6-luna",
+      "reasoning_effort": "high",
+      "fork_turns": "none",
+      "slot": 1,
+      "responsibility": "恢复repair连接，TTL UI/恢复，child重新纳管",
+      "write_scope": ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/",
+      "status": "RUNNING"
+    },
+    "/root/luna_web_cases": {
+      "tool": "collaboration.spawn_agent",
+      "model": "gpt-6-luna",
+      "reasoning_effort": "high",
+      "fork_turns": "none",
+      "slot": 2,
+      "responsibility": "WEB-LIVE-LOG与可独立web覆盖缺口",
+      "write_scope": ".e2e/runs/20260930-101945/repair/qa-resume-20261009-web/",
+      "status": "RUNNING"
+    },
+    "/root/luna_runtime_cases": {
+      "tool": "collaboration.spawn_agent",
+      "model": "gpt-6-luna",
+      "reasoning_effort": "high",
+      "fork_turns": "none",
+      "slot": 3,
+      "responsibility": "PREPARING崩溃/Host/TLS隔离方案和验收",
+      "write_scope": ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime",
+      "status": "NATIVE1_READONLY_PROBE_AUTHORIZED"
+    }
+  },
+  "constraints": [
+    "仅repair :18080及owned QA对象；primary :8080禁止管理写",
+    "保留原Hub、四repair Agent与备份",
+    "不Git/Archive/改AGENTS",
+    "本轮证据与旧基线分开；新ExitCode0缺陷确认待决"
+  ],
+  "tasks": {
+    "recover_connection": "PASS",
+    "ttl_ui_recovery": "PASS_REVIEWED",
+    "child_reenrollment": "FINAL_SUMMARY_READY_ROOT_REVIEW",
+    "web_live_logs": "BATCH01_REVIEWED_PARTIAL_COPY_FOLLOW_ATTEMPT",
+    "review_sha_atomicity": "PARTIAL_REVIEWED",
+    "integrate_canonical_results": "P01_02_PASS_SHA_INV05_PARTIAL_INTEGRATED",
+    "original_environment_final_health": "PENDING",
+    "runtime_fault_cases": "SOURCE_GATE_APPROVED_OWNED_CHILD_UNIT_RECREATE_THEN_P0_FAULT_RECOVERY",
+    "ttl_cleanup": "PASS_TASKS_GET404_8_EXACT_MARKERS_UNLINKED",
+    "source_changes_this_continuation": "NONE",
+    "web_batch02": "RUNNING_16_SPECIFIC_CANONICAL"
+  },
+  "historical_checkpoint_note": "TTL负例已实际执行，checkpoint更新晚于run-state，不重跑；owned PID需重新核验",
+  "updated_at": "2026-10-09T08:49:58.202098+00:00",
+  "preflight_evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261009-backend/preflight.json",
+  "memory_preference_storage": {
+    "status": "STORED",
+    "operation": "memory_store",
+    "evidence": "f07b5ca8af875d307f53481886299fff2021f59b546f9c8b1b2cecaf81f7a5b6",
+    "no_secrets": true
+  },
+  "agent_checkpoints": {
+    "backend": {
+      "status": "PASS",
+      "stage": "owned-process-dynamic-refresh-PASS",
+      "actual_at": "2026-10-09T08:13:36.276536+00:00",
+      "next_action": "Run only one fresh valid Remote condition recovery; validate response correlation, actual marker, local journal, UI SUCCESS, then precise resource cleanup."
+    },
+    "web": {
+      "phase": "OWNED_TASK_READY_TO_RUN",
+      "updated_at": "2026-10-09T16:11:00+08:00",
+      "next_actions": [
+        "使用当前Administrator UI创建唯一Task；创建前检查target仅native-3、retry=1、无持久化命令副作用。",
+        "保存后用只读GET核实task ID/定义，手动Run并在Execution detail记录实时、attempt与terminal日志。",
+        "测试完成后精确删除Task并GET404。"
+      ],
+      "cases_executed": 2
+    },
+    "runtime": {
+      "status": "HOST_TLS_RUNNER_REVIEW",
+      "current_phase": "READ_ONLY_DISCOVERY",
+      "updated_at": "2026-10-09T08:08:56Z",
+      "next_action": "Wait for parent review of a proposed unique read-only Command Task on Native-1 or Native-2. After approval, capture exact runtime owner fingerprint and paths; do not begin P0-002 fault injection until the independent child Agent/systemd target is proven and parent approves its exact IDs/cleanup. Host/TLS cases stay unrun unless isolated runners are proven."
+    }
+  },
+  "preparing_source_review": ".e2e/runs/20260930-101945/repair/qa-resume-20261009-root/preparing-source-review.json"
+}

@@ -1,0 +1,40 @@
+{
+  "updated_at": "2026-10-09T09:15:53Z",
+  "run_id": "20260930-101945",
+  "case_id": "E2E-20260930-101945-P0-002",
+  "status": "PASS_SPECIAL_PREPARING_CRASH_CONSERVATIVE_RECOVERY_BRANCH",
+  "scope_note": "Only this PREPARING crash-recovery branch is accepted; this does not close other P0 phases or claim Journal DONE/Application healthy.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "result": "NO_SIGNAL_SAFE_GUARD_REJECTED",
+      "reason": "Deployment had already advanced to STOPPED with backup fields populated before v1-unit guard; v2 normal deploy completed and v1 was restored. Not counted PASS."
+    },
+    {
+      "attempt": 2,
+      "result": "SIGKILL_SENT_AND_RECOVERY_OBSERVED_WITH_PRE_RESTART_DESIRED_VERSION_PUT",
+      "reason": "A manual desired-version PUT v1 at 2026-10-09T08:59:57Z preceded restart; retained as evidence but excluded as clean automatic desired-state recovery."
+    },
+    {
+      "attempt": 3,
+      "result": "CLEAN_FAULT_AND_RESTART_CHAIN_UNDER_UNCHANGED_DESIRED_V2_ATTEMPT3",
+      "deployment_id": "e3298145-23c7-4ee8-98b5-cf53b50e0345",
+      "deployment_execution_id": "2bb4e175-af11-471a-9c03-c01bd391a51a",
+      "child_restart_execution_id": "a6726a90-0323-4132-9f85-e9788b0d2fc2",
+      "desired_version_unchanged_after_fault": true,
+      "sigstop_and_sigkill": "Only exact owned child PID48271/startticks130215050/UID0/argv/exeSHA/cgroup; complete pre/frozen/final Journal+v1/cache guard; parent/baseline Agents untouched.",
+      "after_restart": "Same child identity/root/config online/synced at PID48271; Journal remains PREPARING with 3 backup fields empty; old v1 binary/config/unit SHA unchanged and managed Unit active; recovery log reports incomplete PREPARING aborted with files preserved/requires inspection; Hub and local Execution fail agent_restarted/synced; API/UI show unhealthy agent_restarted. This matches the conservative specified recovery branch and is not Journal DONE/healthy."
+    }
+  ],
+  "evidence_dir": "attempt03/",
+  "files": [
+    "attempt03/p0-preparing-fault-attempt03-evidence.json",
+    "attempt03/post-fault-oracle-evidence.json",
+    "attempt03/restart-after-fault-evidence.json",
+    "attempt03/post-restart-local-state-evidence.json",
+    "attempt03/post-restart-api-state-evidence.json",
+    "attempt03/recovery-log-marker-evidence.json",
+    "attempt03/post-restart-ui-evidence.json"
+  ],
+  "fixture_cleanup": "Deferred until second authorized QA scenario BE-SCRIPT-SHA-002 full snapshot prune completes."
+}

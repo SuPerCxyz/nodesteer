@@ -1,0 +1,791 @@
+{
+  "schema_version": 1,
+  "status": "ROOT_REVIEWED_AND_MERGED",
+  "review_type": "2026-10-08 Luna真实workflow证据逐维度验收审查",
+  "reviewed_at": "2026-10-08T07:48:00.433366+00:00",
+  "canonical_denominator": 504,
+  "defect_denominator": 22,
+  "new_concrete_tests_executed_by_reviewer": false,
+  "canonical_inventory_sha256_at_review": "16318801d45cca6b097f86426e20867c54bd3516097a38b52fe51786e6f09ddb",
+  "authority_url": "http://192.168.100.209:18080",
+  "case_recommendations": [
+    {
+      "case_id": "E2E-01",
+      "title": "Script → Script Task → Node → Run → Logs → Audit → SUCCESS、输出和审计完整",
+      "expected": "Script → Script Task → Node → Run → Logs → Audit → SUCCESS、输出和审计完整；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "同一Script Task关联Audit事件、资源ID/执行ID及浏览器Audit连续反馈仍缺；完整审计不能由其他API脚本用例替代。"
+      ],
+      "status": "PASS",
+      "actual": "同一f6d35801真实UI链：Static Group仅native-3→Script及Script Task引用该组→Run Now输入参数override/确认POST200→同Execution在native-3 SUCCESS输出参数和环境marker→Execution Logs UI→按同TaskID搜索Audit并看到execute/create；API Audit execute资源ID与同Task及记录ID一致。后续无关导航harness失败不撤销已完成独立链。",
+      "covered_dimensions": [
+        "Script/Task/组单节点关联创建和参数Run UI。",
+        "真实Agent效果与同Execution Logs反馈。",
+        "同Task Audit API+UI关联execute/create完整反馈。"
+      ],
+      "remaining_dimensions": [],
+      "resolved_previous_dimensions": [
+        "同一Script Task关联Audit事件、资源ID/执行ID及浏览器Audit连续反馈仍缺；完整审计不能由其他API脚本用例替代。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:106",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/audit-verification.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:121",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:159",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:190"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:9754",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:106",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/audit-verification.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:121",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:159",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:190"
+      ],
+      "test_ids": [
+        "E2E-01"
+      ],
+      "coverage_limits": [
+        "原run overallFAIL仍保留，发生在链完成后的Task页导航；不宣称整runner全部通过。"
+      ],
+      "mapping_origin": "2026-10-08 Luna真实workflow运行证据审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "E2E-03",
+      "title": "Script Task 参数/环境/用户/目录 → 客户机实际读取到正确值",
+      "expected": "Script Task 参数/环境/用户/目录 → 客户机实际读取到正确值；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "同Script参数覆盖、cwd/run_user真实消费及完整UI参数闭环"
+      ],
+      "status": "PARTIAL",
+      "actual": "同Script Task的真实UI参数override和Script环境值均被native-3进程读到，stdout及Logs显示同marker。设置working_dir=/tmp未执行pwd oracle，run_user默认未测试。",
+      "covered_dimensions": [
+        "同Task参数覆盖UI→真实进程→Logs。",
+        "同Script环境变量真实消费。"
+      ],
+      "remaining_dimensions": [
+        "同一流程working_dir的pwd/实际cwd oracle。",
+        "run_user实际消费者身份及expected用户oracle。"
+      ],
+      "resolved_previous_dimensions": [
+        "同Script参数覆盖和完整UI参数闭环已补足；cwd/run_user实际消费仍保留。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:106",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/audit-verification.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:121",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:159",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:190"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:9913",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:106",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/audit-verification.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:121",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:159",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:190"
+      ],
+      "test_ids": [
+        "E2E-03"
+      ],
+      "coverage_limits": [],
+      "mapping_origin": "2026-10-08 Luna真实workflow运行证据审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "E2E-06",
+      "title": "One-Time + Timezone + Misfire → 未来、过去、补跑/跳过符合策略",
+      "expected": "One-Time + Timezone + Misfire → 未来、过去、补跑/跳过符合策略；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "过去时刻/Timezone边界、Agent错过slot的SKIP/RUN_ONCE、UI闭环未完成。"
+      ],
+      "status": "PARTIAL",
+      "actual": "真实UI创建disabled Agent-owned One-Time，Asia/Shanghai未来run_at更新/enable后native-3产生schedule SUCCESS及marker，再disable/删除。补齐正常未来时刻UI链，但未测过去/错过slot与misfire。",
+      "covered_dimensions": [
+        "未来one_time/AsiaShanghai保存与真实SUCCESS/Logs。"
+      ],
+      "remaining_dimensions": [
+        "过去时刻、Timezone/DST边界。",
+        "Agent错过slot的SKIP/RUN_ONCE及对应恢复/UI反馈。"
+      ],
+      "resolved_previous_dimensions": [
+        "正常future One-Time UI闭环已补足。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:10023",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77"
+      ],
+      "test_ids": [
+        "E2E-06"
+      ],
+      "coverage_limits": [
+        "只观察到一个实际SUCCESS，不由首次匹配Execution推断全历史无重复。"
+      ],
+      "mapping_origin": "2026-10-08 Luna真实workflow运行证据审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "E2E-07",
+      "title": "Schedule Disable → 禁用后不再产生新执行",
+      "expected": "Schedule Disable → 禁用后不再产生新执行；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "previous_remaining_dimensions": [
+        "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+      ],
+      "status": "PARTIAL",
+      "actual": "真实Schedule UI enable/disable保存并API readback；成功one_time后disable；另2050安全future只证明字段持久化，未等候repeatable未来slot。",
+      "covered_dimensions": [
+        "Schedule enabled状态与UI/API持久变化。"
+      ],
+      "remaining_dimensions": [
+        "禁用后跨一个本会到达的repeatable未来slot，确认无新Execution/业务效果。"
+      ],
+      "resolved_previous_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:10070",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77"
+      ],
+      "test_ids": [
+        "E2E-07"
+      ],
+      "coverage_limits": [
+        "crosspage trigger_suppressed_future:true是字段命名过强，源码未等待2050slot或执行无新增断言，不能当实际抑制已验证。"
+      ],
+      "mapping_origin": "2026-10-08 Luna真实workflow运行证据审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P09P11-02",
+      "title": "Task 名称详情、编辑、立即运行入口。",
+      "expected": "Task 名称详情、编辑、立即运行入口。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Task name-to-detail/edit/Run entry clicks and correct target route identity remain."
+      ],
+      "status": "PARTIAL",
+      "actual": "focused Task列表名称链接到exact Task详情、编辑菜单保存名称/command，Run Now实际参数页及按钮可运行。当前Script Run路由由harness直接goto，未独立点击列表/详情立即运行入口。",
+      "covered_dimensions": [
+        "Task名字→详情以及编辑入口真实点击/持久化。",
+        "真实Run页及按钮执行。"
+      ],
+      "remaining_dimensions": [
+        "列表/详情立即运行入口链接实际点击及exact route identity。"
+      ],
+      "resolved_previous_dimensions": [
+        "名称→detail/edit维度已补足，Run入口链接点击保留。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:106",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/audit-verification.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:121",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:159",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:190",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:4262",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:106",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/audit-verification.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:121",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:159",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:190",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77"
+      ],
+      "test_ids": [
+        "TASK-SCHEDULE-FOCUSED",
+        "E2E-01"
+      ],
+      "coverage_limits": [],
+      "mapping_origin": "2026-10-08 Luna真实workflow运行证据审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P09P11-03",
+      "title": "启用/禁用，状态和按钮反转。",
+      "expected": "启用/禁用，状态和按钮反转。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PASS",
+      "previous_remaining_dimensions": [],
+      "status": "PASS",
+      "actual": "本轮独占Command Task经过列表menu禁用/启用，每次APIenabled对应反向操作；既有PASS保留。",
+      "covered_dimensions": [
+        "真实Task disable/enable与API反转。"
+      ],
+      "remaining_dimensions": [],
+      "resolved_previous_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:4304",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77"
+      ],
+      "test_ids": [
+        "TASK-SCHEDULE-FOCUSED"
+      ],
+      "coverage_limits": [],
+      "mapping_origin": "2026-10-08 Luna真实workflow运行证据审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P09P11-04",
+      "title": "删除确认框取消/确认。",
+      "expected": "删除确认框取消/确认。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PASS",
+      "previous_remaining_dimensions": [],
+      "status": "PASS",
+      "actual": "新followup保存exact native-3 singleton/noGroup/retry0/无内嵌Schedule定义；打开Task确认框Escape取消，0 DELETE/GET200、dialog关闭、row在且search能重新填；确认DELETE1/200、GET404、行移除及删除通知。",
+      "covered_dimensions": [
+        "Task删除取消零请求和完整页面恢复。",
+        "确认恰一DELETE及真实对象/UI删除。"
+      ],
+      "remaining_dimensions": [],
+      "resolved_previous_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-cancel-stage.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-result.json:1"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:4353",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-cancel-stage.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-result.json:1"
+      ],
+      "test_ids": [
+        "TASK-DELETE-COUNTER-FOLLOWUP"
+      ],
+      "coverage_limits": [
+        "snapshot schedule:null证明无内嵌legacy Schedule；不据此泛化全部external schedules接口。"
+      ],
+      "mapping_origin": "2026-10-08 Luna真实workflow运行证据审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P09P11-10",
+      "title": "Target group：单组、多组、去选组。",
+      "expected": "Target group：单组、多组、去选组。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "previous_remaining_dimensions": [
+        "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+      ],
+      "status": "PARTIAL",
+      "actual": "真实UI建立单Static Group仅native-3并作为Script Task单组target，真实执行落该节点。",
+      "covered_dimensions": [
+        "单组target与真实成员/Agent效果。"
+      ],
+      "remaining_dimensions": [
+        "多组target、去选组及其关联状态/执行反馈。"
+      ],
+      "resolved_previous_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:106",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/audit-verification.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:121",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:159",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:190"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:4654",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:106",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/audit-verification.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:121",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:159",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs:190"
+      ],
+      "test_ids": [
+        "E2E-01"
+      ],
+      "coverage_limits": [],
+      "mapping_origin": "2026-10-08 Luna真实workflow运行证据审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P12P13-02",
+      "title": "调度任务名链接、编辑、启用/禁用、删除确认。",
+      "expected": "调度任务名链接、编辑、启用/禁用、删除确认。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Schedule UI enabled/disabled toggle and all list/action states remain.",
+        "Actual Task-name link click from Schedule list/detail to correct Task remains; preserve separately proved edit values/delete zero-write dimensions."
+      ],
+      "status": "PARTIAL",
+      "actual": "Task详情exact Schedule href进入关联Task预选编辑页；future slot修改/enable/disable与API一致，delete cancel/confirm已过source门禁。Schedule列表Task名href实际/schedules/{id}，不是返回TaskDetail的链接。",
+      "covered_dimensions": [
+        "Task详情→Schedule编辑关联字段。",
+        "Schedule编辑/启用禁用、删除确认。"
+      ],
+      "remaining_dimensions": [
+        "Schedule列表的Task名称链接点击到其实际Schedule编辑目标、其他list/action states。",
+        "原remaining中的Task-name→Task-detail链接与现有UI不符；需Root同步该artifact解读，不能声称当前存在此回链。"
+      ],
+      "resolved_previous_dimensions": [
+        "Schedule UI enabled/disabled正常切换已测，不泛化all list/action states。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-partial-assertions.json:11",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:126",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/ledger-qa-resume-20261008-crosspage-5bebfff5.json:1"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:5381",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-partial-assertions.json:11",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:126",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/ledger-qa-resume-20261008-crosspage-5bebfff5.json:1"
+      ],
+      "test_ids": [
+        "TASK-SCHEDULE-FOCUSED",
+        "CROSSPAGE-DELETE"
+      ],
+      "coverage_limits": [
+        "ScheduleEditor任务控件为Select不是Task href；不把未存在的回链列为通过或新产品缺陷。"
+      ],
+      "mapping_origin": "2026-10-08 Luna真实workflow运行证据审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P12P13-05",
+      "title": "One-Time 未来时间、过去时间、时区、空 run_at。",
+      "expected": "One-Time 未来时间、过去时间、时区、空 run_at。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Past date and DST boundaries remain."
+      ],
+      "status": "PARTIAL",
+      "actual": "Asia/Shanghai未来one_time run_at保存/更新后真实Agent SUCCESS输出marker；保留既有空run_at/正常时区证据。",
+      "covered_dimensions": [
+        "正常future/AsiaShanghai实际触发与UI。"
+      ],
+      "remaining_dimensions": [
+        "Past date and DST boundaries remain."
+      ],
+      "resolved_previous_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:5562",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77"
+      ],
+      "test_ids": [
+        "TASK-SCHEDULE-FOCUSED"
+      ],
+      "coverage_limits": [
+        "Past date和DST边界仍未测。"
+      ],
+      "mapping_origin": "2026-10-08 Luna真实workflow运行证据审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P12P13-06",
+      "title": "Hub Owner 和 Agent Owner。",
+      "expected": "Hub Owner 和 Agent Owner。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Independent trigger-source/other-owner exclusion needed for actual owner correctness."
+      ],
+      "status": "PARTIAL",
+      "actual": "新Schedule owneragent保存并产出真实schedule Execution；未取Agent-only与Hub不触发的独立来源oracle，不能据字段推断所有Owner正确。",
+      "covered_dimensions": [
+        "Agent owner配置及实际schedule SUCCESS。"
+      ],
+      "remaining_dimensions": [
+        "Independent trigger-source/other-owner exclusion needed for actual owner correctness."
+      ],
+      "resolved_previous_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:5608",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77"
+      ],
+      "test_ids": [
+        "TASK-SCHEDULE-FOCUSED"
+      ],
+      "coverage_limits": [],
+      "mapping_origin": "2026-10-08 Luna真实workflow运行证据审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P12P13-11",
+      "title": "Task Detail 调度表与 Schedule List 一致。",
+      "expected": "Task Detail 调度表与 Schedule List 一致。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PASS",
+      "previous_remaining_dimensions": [],
+      "status": "PASS",
+      "actual": "新evidence Task详情exact Schedule href可见并进入该Schedule编辑页、关联Task名称一致；此前独立PASS中的List/删除后两处消失证据保持。",
+      "covered_dimensions": [
+        "本轮精确Task→Schedule存在/关联一致。"
+      ],
+      "remaining_dimensions": [],
+      "resolved_previous_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:5841",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77"
+      ],
+      "test_ids": [
+        "CROSSPAGE-DELETE"
+      ],
+      "coverage_limits": [
+        "本轮删除后Taskdetail导航未成功，link removal没有新验证；不能用本批替换原已独立验证删除联动证据。"
+      ],
+      "mapping_origin": "2026-10-08 Luna真实workflow运行证据审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "FL-06",
+      "title": "Task → Schedule → Task Detail/Schedule List → 调度两处一致，删除后两处消失",
+      "expected": "Task → Schedule → Task Detail/Schedule List → 调度两处一致，删除后两处消失；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PASS",
+      "previous_remaining_dimensions": [],
+      "status": "PASS",
+      "actual": "保留已有完整PASS；本轮补充从TaskDetail新建预选Schedule及exact Task/Schedule关联，再编辑/删除；新批未完成删除后Taskdetail link removal。",
+      "covered_dimensions": [
+        "新增TaskDetail→Schedule创建/编辑上下文与exact关联。"
+      ],
+      "remaining_dimensions": [],
+      "resolved_previous_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-partial-assertions.json:11",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:126",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/ledger-qa-resume-20261008-crosspage-5bebfff5.json:1"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:9246",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:96",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:133",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs:158",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:5",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:77",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-partial-assertions.json:11",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:126",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/ledger-qa-resume-20261008-crosspage-5bebfff5.json:1"
+      ],
+      "test_ids": [
+        "TASK-SCHEDULE-FOCUSED",
+        "CROSSPAGE-DELETE"
+      ],
+      "coverage_limits": [
+        "本轮后半link removal未验证，保留旧独立通过维度，不能说本轮整FL06重跑PASS。"
+      ],
+      "mapping_origin": "2026-10-08 Luna真实workflow运行证据审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "G04-02",
+      "title": "删除菜单必须打开确认框；取消不发送 DELETE，确认后才删除。",
+      "expected": "删除菜单必须打开确认框；取消不发送 DELETE，确认后才删除。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Node, Script, Application and other deletion branches not all covered here."
+      ],
+      "status": "PARTIAL",
+      "actual": "新Task Escape Cancel 0DELETE与Confirm1DELETE/GET404，以及Schedule取消/确认source门禁补证；其他资源删除分支仍缺。",
+      "covered_dimensions": [
+        "Task完整取消/确认计数与页面反馈。",
+        "Schedule0/1DELETE source门禁及精确HTTP结果。"
+      ],
+      "remaining_dimensions": [
+        "Node, Script, Application and other deletion branches not all covered here."
+      ],
+      "resolved_previous_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-cancel-stage.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-partial-assertions.json:11",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:126",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/ledger-qa-resume-20261008-crosspage-5bebfff5.json:1"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:1229",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-cancel-stage.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-partial-assertions.json:11",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs:126",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/ledger-qa-resume-20261008-crosspage-5bebfff5.json:1"
+      ],
+      "test_ids": [
+        "TASK-DELETE-COUNTER-FOLLOWUP",
+        "CROSSPAGE-DELETE"
+      ],
+      "coverage_limits": [
+        "Schedule原计数在内存未error-handler序列化，checkpoint+执行到deleted ledger的控制流可追溯，标明不是原始网络事件序列。"
+      ],
+      "mapping_origin": "2026-10-08 Luna真实workflow运行证据审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "G04-04",
+      "title": "Tab 键顺序、Enter 提交、Escape 关闭弹窗符合预期。",
+      "expected": "Tab 键顺序、Enter 提交、Escape 关闭弹窗符合预期。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Tab order, form Enter, focus return and all dialog keyboard branches remain."
+      ],
+      "status": "PARTIAL",
+      "actual": "Task删除确认框Escape关闭，未DELETE且对象/行保留，search可重新操作；其它键盘维度未泛化。",
+      "covered_dimensions": [
+        "Task删除对话框Escape关闭和页面可继续操作。"
+      ],
+      "remaining_dimensions": [
+        "Tab order, form Enter, focus return and all dialog keyboard branches remain."
+      ],
+      "resolved_previous_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-cancel-stage.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-result.json:1"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:1358",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-cancel-stage.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-result.json:1"
+      ],
+      "test_ids": [
+        "TASK-DELETE-COUNTER-FOLLOWUP"
+      ],
+      "coverage_limits": [
+        "自动focus return、Tab顺序、Enter提交和其它dialog键盘分支仍须测。"
+      ],
+      "mapping_origin": "2026-10-08 Luna真实workflow运行证据审查",
+      "review_recommendation_only": true
+    }
+  ],
+  "defect_recommendations": [],
+  "unchanged_cases": [
+    {
+      "case_id": "E2E-04",
+      "status": "NOT_RUN",
+      "reason": "本workflow batch未实际执行，保留全部已有独立状态/covered/remaining。",
+      "remaining_dimensions": [
+        "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+      ]
+    },
+    {
+      "case_id": "E2E-05",
+      "status": "PARTIAL",
+      "reason": "本workflow batch未实际执行，保留全部已有独立状态/covered/remaining。",
+      "remaining_dimensions": [
+        "Agent-only来源、跨多个Cron slot无Hub重复触发、UI关联反馈和重复触发幂等未完成。"
+      ]
+    }
+  ],
+  "visual_evidence_review": {
+    "files": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/execution-logs.png",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/task-audit.png"
+    ],
+    "actual": "两图均对应f6d35801：Execution 99081554-336e-47b7-bcec-110514997006 SUCCESS与参数|环境输出，Audit按980a7490-492f-47f0-82da-a6cf5330e481过滤且create/execute可见。",
+    "screenshot_iteration_limit": "generic图片名可能被后续run覆盖，仅使用实际已视觉核验的f6d35801身份。"
+  },
+  "cleanup_review": {
+    "original_batch_exact_ids": 25,
+    "original_all_get404_verified": true,
+    "followup_extra_task_id": "a10261bd-9ad8-4c9a-9861-018d9e40b3f7",
+    "followup_task_get404_verified": true,
+    "evidence": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cleanup-get404-verification.json:1",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/orphan-cleanup.json:1",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-definition.json:1",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-cancel-stage.json:1",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/cancel-counter-followup-qa-resume-20261008-cancel-5ada6e37-result.json:1"
+    ],
+    "boundary": "仅证明列入此workflow及counter的独占资源；不泛化整个repair环境全部cleanup。"
+  },
+  "harness_failures_not_product_defects": [
+    {
+      "run": "ec8657ee",
+      "reason": "Create response body read after hard navigation; orphan Group recovered by exact random name, ID recorded and deleted, GET 404."
+    },
+    {
+      "run": "3ba7721b",
+      "reason": "Run observer route had an extra /api path segment; actual UI Run still produced SUCCESS with both markers, exact Task ID was recovered, then resources cleaned."
+    },
+    {
+      "run": "59432ea2",
+      "reason": "Audit Task ID locator matched two rows in strict mode; later run changed locator to first exact match and UI Audit passed."
+    },
+    {
+      "run": "01955bd9",
+      "reason": "Authenticated Task page hard navigation waited for load and timed out after Run/Logs/Audit passed."
+    },
+    {
+      "run": "f235ae0f",
+      "reason": "Authenticated Task detail hard navigation timed out after Task edit/disable/enable passed."
+    },
+    {
+      "run": "f6d35801",
+      "reason": "Authenticated Task list hard navigation timed out after Run/Logs/Audit passed."
+    },
+    {
+      "run": "223a8f27",
+      "reason": "Runner incorrectly required a main landmark on Sign In; no resource was created."
+    },
+    {
+      "run": "a87978c3",
+      "reason": "Runner targeted a nonexistent Task Description field; Task was exact-ID deleted and GET 404 verified."
+    },
+    {
+      "run": "e265cfde",
+      "reason": "Schedule checkbox count was page-wide; cross-page links passed, exact resources were cleaned and GET 404 verified."
+    },
+    {
+      "run": "5bebfff5",
+      "reason": "Schedule link/update/cancel/delete gates passed; subsequent Task detail hard navigation timed out before link-removal and Task delete-cancel counter checks."
+    }
+  ],
+  "harness_failure_evidence": [
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f6d35801.json:142",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/workflow-results-qa-resume-20261008-workflow-f235ae0f.json:142",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json:120",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/navigation-diagnostic.json:1",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/navigation-diagnostic-2.json:1"
+  ],
+  "source_check_limits": [
+    "运行result证明已过独立门禁，但不把runner FAIL抹掉。",
+    "少数Task/Script全参数源未快照，未伪造或重构；实际stdout/关联ID/API读回与保留harness足以证明这里精确列出的UI/参数/环境/单组维度，不能补出cwd/run_user等未观测效果。",
+    "本批Schedule取消计数由checkpoint+source与deleted ledger控制流支持，raw事件计数内存未保存；Task followup0/1计数已独立序列化。"
+  ],
+  "mapping_limits": [
+    "不把单次one_time产出当offline Interval/Cron多slot/idempotency或禁用后未来slot抑制。",
+    "保留旧已通过证据，新局部harnessfail不倒退独立已验证case；标注本批未复验的具体维度。",
+    "504/22不变，summary局部id和run数不是分母。"
+  ],
+  "source_sha256": {
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-workflows.mjs": "2ced80179e964f1138504a7e7fbe60a4d8184235bd5b2596fd2f6e9196de9a03",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-task-schedule.mjs": "3c856e066ec24192e3a011c9aeeb23a7a20382a828acd6b357a7a11b5b7bf164",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/run-crosspage-delete.mjs": "c831e38cc0b7bb9f1e6e4e3262abeed38fcfc68c86b4074faf5f4f2e73b3a71e"
+  },
+  "no_global_count_update": true,
+  "root_merged_at": "2026-10-08T07:58:10.313331+00:00",
+  "root_state_changes": [
+    {
+      "case_id": "E2E-01",
+      "from": "PARTIAL",
+      "to": "PASS"
+    },
+    {
+      "case_id": "E2E-07",
+      "from": "NOT_RUN",
+      "to": "PARTIAL"
+    },
+    {
+      "case_id": "P09P11-10",
+      "from": "NOT_RUN",
+      "to": "PARTIAL"
+    }
+  ]
+}

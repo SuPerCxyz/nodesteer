@@ -1,0 +1,166 @@
+{
+  "status": "DEFECT_PATH_PASS_WITH_DIRECT_TLS_DEPLOY_FETCH_NOT_TESTED",
+  "actual_at": "2026-10-10T02:28:03Z",
+  "scope": {
+    "defect_id": "FAIL-ENV-TLS-001",
+    "target": "only newly enrolled TLS fixture child on repair Hub :18080",
+    "original_four_repair_nodes": "read-only healthy throughout; all online/synced after cleanup",
+    "product_source_changed": false
+  },
+  "fixture": {
+    "child_node_id": "6da3b777-29cf-4dca-821b-c26e8229c390",
+    "agent_id": "agent-37cf4330-b4b5-4aa5-9673-86b27ff77230",
+    "application_id": "78bb79b7-a4be-464c-baf0-546ea86408e0",
+    "artifact_id": "a64190ec-92a4-4407-b8c3-a0adcbee1d56",
+    "app_execution_id": "d6769b3d-4c39-4cea-a8f7-8aff17ba092b",
+    "expected_artifact_sha256": "472512a4e39ac47d64123faae1ae9de0df0fdc646de687b88fc1912eb86594f4",
+    "payload_bytes": 77
+  },
+  "tls_prefetch": {
+    "no_ca": {
+      "result": "TLS certificate verification failed (unknown authority)",
+      "handshake_failures_at_checkpoint": 2,
+      "http_requests": 0,
+      "cache_file_absent": true,
+      "sqlite_rows": 0,
+      "temporary_file_absent": true
+    },
+    "wrong_ca": {
+      "result": "TLS certificate verification failed (unknown authority)",
+      "same_unique_uncached_payload": true,
+      "cumulative_handshake_failures_at_checkpoint": 7,
+      "http_requests": 0,
+      "cache_file_absent": true,
+      "sqlite_rows": 0,
+      "temporary_file_absent": true
+    },
+    "correct_ca_recovery": {
+      "result": "PASS",
+      "same_payload_after_failures": true,
+      "observed_https_get": "/artifact/no-ca-1358f9a990bd",
+      "http_status": 200,
+      "response_bytes": 77,
+      "response_sha256": "472512a4e39ac47d64123faae1ae9de0df0fdc646de687b88fc1912eb86594f4",
+      "cache_file_sha256_matches": true,
+      "sqlite_rows": 1,
+      "temporary_file_absent": true
+    },
+    "bad_sha": {
+      "result": "PASS: rejected mismatched payload",
+      "expected_sha256": "46d37f5508021ac91ffb3e82d2a76d124ad28405c9e5cedbda9739c0bd783549",
+      "observed_body_sha256": "1519fe96b1aa65b04283dfc1c2b0a2e19ca6dfbb6009c2fbbb7b9cdee28b88bc",
+      "actual_http_gets": 3,
+      "cache_file_absent": true,
+      "sqlite_rows": 0,
+      "temporary_file_absent": true
+    },
+    "server_observation": {
+      "bind": "127.0.0.1",
+      "port": 35459,
+      "final_http_requests": 4,
+      "final_tls_handshake_failures": 9,
+      "meaning": "1 successful correct-CA prefetch plus 3 unique bad-SHA fetches; failed handshakes produced no HTTP request; no GET during later deploy"
+    }
+  },
+  "managed_app": {
+    "initial_environment_failure": {
+      "execution_id": "1122691f-d051-46cd-a823-916e86ab613d",
+      "status": "FAILED",
+      "block_reason": "install unit failed because /etc/systemd/system/<owned unit> was read-only; rollback failed",
+      "classification": "test-harness environment limitation from child ProtectSystem=strict; original ROLLING_BACK and absent backup sentinels retained, not product defect"
+    },
+    "approved_test_sandbox_adjustment": {
+      "only_unit": "nodesteer-qa-tls-1358f9a990bd-child.service",
+      "added_ReadWritePaths": "/etc/systemd/system (including multi-user.target.wants)",
+      "ProtectSystem": "strict",
+      "scope": "only owned TLS child; dynamic owner/manifest guards refreshed"
+    },
+    "recovery": {
+      "execution_id": "d6769b3d-4c39-4cea-a8f7-8aff17ba092b",
+      "status": "SUCCESS",
+      "application_state": "healthy",
+      "unit": "nodesteer-qa-tls-1358f9a990bd-app.service",
+      "unit_state": "enabled and active",
+      "cgroup_guard": "matched exact owned unit",
+      "binary_sha256": "472512a4e39ac47d64123faae1ae9de0df0fdc646de687b88fc1912eb86594f4",
+      "config_sha256": "68641b2c343bd63b7cd5d6f2c882427ab9e9a8716c0675749379cc4504a11e18",
+      "registry": "exact app unit present",
+      "local_journal": "failed execution recovered and final execution DONE; absent sentinels preserved",
+      "local_cache": "same SHA cache file and SQLite row 1; exact .tmp absent"
+    },
+    "artifact_url_constraint": {
+      "observed_after_artifact_id_update": "Agent synced Hub-derived HTTP URL http://192.168.100.209:18080/api/artifacts/a64190ec-92a4-4407-b8c3-a0adcbee1d56/download",
+      "deploy_source": "existing cache for same SHA",
+      "direct_TLS_deploy_fetch": "NOT_TESTED",
+      "reason": "successful HTTPS custom-URL prefetch occurred before ArtifactID upload; API then derived HTTP URL, and deployment was a cache hit with no subsequent loopback HTTPS GET"
+    },
+    "api_ui": {
+      "api_execution": "SUCCESS; app healthy; assignment only to owned fixture child",
+      "browser_evidence_file": "managed-app-ui.json",
+      "browser_write_actions": false,
+      "verified": "r3/artifact/owned child assignment, successful execution status/node, and prior backend EROFS block reason",
+      "display_limitation": "execution detail heading renders 未知任务 while status/node/block reason remain visible"
+    }
+  },
+  "cleanup": {
+    "status": "PASS",
+    "app_get_after_delete": 404,
+    "artifact_get_after_delete": 404,
+    "child_node_get_after_delete": 404,
+    "exact_owned_app_unit_and_symlink_binary_config_registry_removed": true,
+    "child_and_server_units_stopped_and_exact_unit_files_removed": true,
+    "loopback_listener_absent": true,
+    "owned_root": "/opt/qa-resume-20261009-host-tls-1358f9a990bd",
+    "owned_root_removed_after_dev_ino_uid_mode_nonce_marker_manifest_and_tree_guards": true,
+    "removed_tree_files": 19,
+    "removed_tree_directories": 11,
+    "task_cleanup": "22 created records had cleanup entries and exact DELETE/GET 404 evidence",
+    "history_preserved": {
+      "application_executions": 2,
+      "statuses": [
+        "FAILED",
+        "SUCCESS"
+      ],
+      "application_audit_events": 7,
+      "child_audit_events": 1
+    },
+    "original_four_nodes": "all online/synced after cleanup"
+  },
+  "harness_failures_retained": [
+    "initial start Task transient child_process_owner_guard; subsequent read-only owner/process probe found exact child active and online",
+    "app node-assignment response parser expected objects but API returned string IDs; corrected locally without duplicate create/assignment",
+    "first app-prune probe had incomplete owner object and stopped before remote action; corrected with complete owner record",
+    "first unit-stop helper referenced missing local key and stopped before remote action; corrected",
+    "one post-adjustment helper raised local KeyError after child change; read-only probe confirmed exact Unit/manifest/PID and recovery state"
+  ],
+  "host_preflight": {
+    "status": "read-only PASS",
+    "docker_version": "29.7.2",
+    "cached_images": 0,
+    "no_image_import_or_container_network_volume_created": true,
+    "future_host_case": "proposal pending Root approval"
+  },
+  "evidence_files": [
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/progress.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/tls-state-no-ca-after.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/tls-state-wrong-after.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/tls-state-correct-after.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/tls-state-bad-sha-after.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/managed-app-verified.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/managed-app-ui.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/application-deploy-api.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/application-deploy-retry-api.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/app-failure-state.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/adjust_owned_child_systemd_scope.py",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/approved-scope-recovery-verified.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/app-prune-verified.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/cleanup-app-delete.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/cleanup-artifact-delete.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/owned-units-stopped.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/cleanup-child-node-delete.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/cleanup-root-deleted.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/cleanup-task-audit.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host-image-readonly-preflight.json",
+    "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host-runtime-paths-preflight.json"
+  ]
+}

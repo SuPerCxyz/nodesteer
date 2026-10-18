@@ -1,0 +1,537 @@
+{
+  "schema_version": 1,
+  "status": "READY_FOR_ROOT_REVIEW_SHA_STAGE",
+  "reviewed_at": "2026-10-08T14:48:59.560249+00:00",
+  "review_scope": "仅已完成SHA core stage；不运行具体用例，不读后续TTL/REENROLL运行中partial，不写执行者case/中央状态/业务代码。",
+  "canonical_denominator": 504,
+  "defect_denominator": 22,
+  "new_concrete_tests_executed_by_reviewer": false,
+  "model_execution_audit_performed": false,
+  "model_boundary": "沿用Root已确认forknone gpt-6-luna实际执行配置；本review不另外检验或替换模型。",
+  "canonical_inventory_sha256_at_review": "0e3bf1e9af2a675edd91344f58c331a11ecb4f335efaf49ae44b1ba94a7d5149",
+  "case_recommendations": [
+    {
+      "case_id": "INV-05",
+      "title": "Agent Revision 成功落盘后才能前进。",
+      "expected": "Agent Revision 成功落盘后才能前进。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "previous_remaining_dimensions": [
+        "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+      ],
+      "status": "PARTIAL",
+      "actual": "坏Script SHA在整帧应用前拒绝：四组真实NACK，SQLite GlobalRevision692未前进且good/bad均v1；撤fault后两定义v2落盘并真实执行v2。",
+      "covered_dimensions": [
+        "唯一新child的坏SYNC_RESPONSE同帧含good/bad两Script v2，只bad content SHA变异且declared SHA不变。",
+        "同connection四组真实ACK okfalse/applied_rev0，error hash与badID sha mismatch文本独立重算一致。",
+        "稳定stop后baseline与fault local SQLite读回Revision均692，两Script完整v1定义/SHA保留，good未半同步。",
+        "owned good-v1业务文件/SHA保持；bad未执行文件不存在。",
+        "撤fault、同identity/data_dir owned child恢复两定义v2及合法SHA，真实ScriptRevision2 SUCCESS产生good-v2。"
+      ],
+      "remaining_dimensions": [
+        "恢复后exact GlobalRevision与成功commit时序尚未独立保存，本stage不由synced状态推断已采样。",
+        "本例以Script校验失败在事务开始前拒帧，不能泛化commit失败/其他对象依赖失败或全部落盘不变量。",
+        "ManagedApp pruned物理cleanup保护未测；本stage未审查新UI/最终清理证据。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-checkpoint.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-revision-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-frame-events.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-local-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-clear.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-file-oracle-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-good-recovery-run-execution.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/owned-process-ledger.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-good-task-8a4084bf69-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-bad-dependency-92c0e242-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/prepare_sha_fault.py:57",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/restore_sha_case.py:54",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/backend_cases.py:57",
+        "internal/agent/agent.go:735",
+        "internal/agent/sync_validation.go:14"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:15119",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-checkpoint.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-revision-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-frame-events.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-local-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-clear.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-file-oracle-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-good-recovery-run-execution.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/owned-process-ledger.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-good-task-8a4084bf69-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-bad-dependency-92c0e242-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/prepare_sha_fault.py:57",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/restore_sha_case.py:54",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/backend_cases.py:57",
+        "internal/agent/agent.go:735",
+        "internal/agent/sync_validation.go:14"
+      ],
+      "test_ids": [
+        "BE-SCRIPT-SHA-002-core-runtime"
+      ],
+      "mapping_origin": "2026-10-08真实SHA核心runtime stage审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "SYS-08",
+      "title": "SYS-08 Script/Task 依赖同步失败：事务回滚，Revision 不前进，无半同步。",
+      "expected": "SYS-08 Script/Task 依赖同步失败：事务回滚，Revision 不前进，无半同步。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "previous_remaining_dimensions": [
+        "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+      ],
+      "status": "PARTIAL",
+      "actual": "补足同帧坏Script SHA拒绝和另一good定义不半更新；Revision不前进，正常同步恢复后实际业务效果。",
+      "covered_dimensions": [
+        "唯一新child的坏SYNC_RESPONSE同帧含good/bad两Script v2，只bad content SHA变异且declared SHA不变。",
+        "同connection四组真实ACK okfalse/applied_rev0，error hash与badID sha mismatch文本独立重算一致。",
+        "稳定stop后baseline与fault local SQLite读回Revision均692，两Script完整v1定义/SHA保留，good未半同步。",
+        "owned good-v1业务文件/SHA保持；bad未执行文件不存在。",
+        "撤fault、同identity/data_dir owned child恢复两定义v2及合法SHA，真实ScriptRevision2 SUCCESS产生good-v2。"
+      ],
+      "remaining_dimensions": [
+        "validateSyncScripts在BeginSync之前拒绝，不是已运行的事务中失败ROLLBACK。",
+        "Task/其他依赖写入失败、事务rollback和恢复全部适用维度仍需独立运行。",
+        "本stageUI及最终cleanup未审查。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-checkpoint.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-revision-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-frame-events.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-local-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-clear.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-file-oracle-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-good-recovery-run-execution.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/owned-process-ledger.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-good-task-8a4084bf69-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-bad-dependency-92c0e242-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/prepare_sha_fault.py:57",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/restore_sha_case.py:54",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/backend_cases.py:57",
+        "internal/agent/agent.go:735",
+        "internal/agent/sync_validation.go:14"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:11444",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-checkpoint.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-revision-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-frame-events.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-local-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-clear.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-file-oracle-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-good-recovery-run-execution.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/owned-process-ledger.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-good-task-8a4084bf69-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-bad-dependency-92c0e242-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/prepare_sha_fault.py:57",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/restore_sha_case.py:54",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/backend_cases.py:57",
+        "internal/agent/agent.go:735",
+        "internal/agent/sync_validation.go:14"
+      ],
+      "test_ids": [
+        "BE-SCRIPT-SHA-002-core-runtime"
+      ],
+      "mapping_origin": "2026-10-08真实SHA核心runtime stage审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "AR-16",
+      "title": "Sync Dependency Failure；恢复后幂等、持久化、Desired State与实际状态一致",
+      "expected": "Sync Dependency Failure；恢复后幂等、持久化、Desired State与实际状态一致；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "NOT_RUN",
+      "previous_remaining_dimensions": [
+        "修复版全部适用维度待执行；旧版证据不能计入新版通过。"
+      ],
+      "status": "PARTIAL",
+      "actual": "Script SHA依赖异常被真实Agent拒帧，两个持久定义/v1文件保持；撤异常后v2持久化及实际效果恢复。",
+      "covered_dimensions": [
+        "唯一新child的坏SYNC_RESPONSE同帧含good/bad两Script v2，只bad content SHA变异且declared SHA不变。",
+        "同connection四组真实ACK okfalse/applied_rev0，error hash与badID sha mismatch文本独立重算一致。",
+        "稳定stop后baseline与fault local SQLite读回Revision均692，两Script完整v1定义/SHA保留，good未半同步。",
+        "owned good-v1业务文件/SHA保持；bad未执行文件不存在。",
+        "撤fault、同identity/data_dir owned child恢复两定义v2及合法SHA，真实ScriptRevision2 SUCCESS产生good-v2。"
+      ],
+      "remaining_dimensions": [
+        "重复恢复/幂等及其他依赖失败未充分覆盖。",
+        "全对象、FullSnapshot/FullResync、事务中失败或ManagedApp物理prune恢复未测。",
+        "本stage未审查UI及最终cleanup。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-checkpoint.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-revision-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-frame-events.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-local-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-clear.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-file-oracle-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-good-recovery-run-execution.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/owned-process-ledger.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-good-task-8a4084bf69-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-bad-dependency-92c0e242-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/prepare_sha_fault.py:57",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/restore_sha_case.py:54",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/backend_cases.py:57",
+        "internal/agent/agent.go:735",
+        "internal/agent/sync_validation.go:14"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:14738",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-checkpoint.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-revision-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-frame-events.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-local-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-clear.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-file-oracle-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-good-recovery-run-execution.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/owned-process-ledger.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-good-task-8a4084bf69-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-bad-dependency-92c0e242-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/prepare_sha_fault.py:57",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/restore_sha_case.py:54",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/backend_cases.py:57",
+        "internal/agent/agent.go:735",
+        "internal/agent/sync_validation.go:14"
+      ],
+      "test_ids": [
+        "BE-SCRIPT-SHA-002-core-runtime"
+      ],
+      "mapping_origin": "2026-10-08真实SHA核心runtime stage审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "SYS-11",
+      "title": "SYS-11 Native Agent 本地 SQLite/WAL、Identity、Revision、定义持久化。",
+      "expected": "SYS-11 Native Agent 本地 SQLite/WAL、Identity、Revision、定义持久化。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "新Journal记录/synced已核实；本地WAL、Identity、Revision、定义完整持久化及重启一致性未由普通命令用例证明。"
+      ],
+      "status": "PARTIAL",
+      "actual": "新native child的本地SQLite以ro模式证明Script定义和GlobalRevision保留、sameidentity进程重启后v2定义恢复并运行。",
+      "covered_dimensions": [
+        "唯一新child的坏SYNC_RESPONSE同帧含good/bad两Script v2，只bad content SHA变异且declared SHA不变。",
+        "同connection四组真实ACK okfalse/applied_rev0，error hash与badID sha mismatch文本独立重算一致。",
+        "稳定stop后baseline与fault local SQLite读回Revision均692，两Script完整v1定义/SHA保留，good未半同步。",
+        "owned good-v1业务文件/SHA保持；bad未执行文件不存在。",
+        "撤fault、同identity/data_dir owned child恢复两定义v2及合法SHA，真实ScriptRevision2 SUCCESS产生good-v2。"
+      ],
+      "remaining_dimensions": [
+        "WAL本体/完整Identity/所有定义和Journal/Cache的完整持久化及重启一致性仍未逐项验证。",
+        "本stage没有把新child身份源metadata替代全部物理VM/原Agent持久化验收。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-checkpoint.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-revision-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-frame-events.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-local-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-clear.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-file-oracle-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-good-recovery-run-execution.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/owned-process-ledger.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-good-task-8a4084bf69-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-bad-dependency-92c0e242-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/prepare_sha_fault.py:57",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/restore_sha_case.py:54",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/backend_cases.py:57",
+        "internal/agent/agent.go:735",
+        "internal/agent/sync_validation.go:14"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:11483",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-checkpoint.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-revision-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-frame-events.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-local-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-clear.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-file-oracle-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-good-recovery-run-execution.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/owned-process-ledger.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-good-task-8a4084bf69-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-bad-dependency-92c0e242-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/prepare_sha_fault.py:57",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/restore_sha_case.py:54",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/backend_cases.py:57",
+        "internal/agent/agent.go:735",
+        "internal/agent/sync_validation.go:14"
+      ],
+      "test_ids": [
+        "BE-SCRIPT-SHA-002-core-runtime"
+      ],
+      "mapping_origin": "2026-10-08真实SHA核心runtime stage审查",
+      "review_recommendation_only": true
+    }
+  ],
+  "defect_recommendations": [
+    {
+      "defect_id": "BE-SCRIPT-SHA-002",
+      "previous_status": "NOT_RUN",
+      "previous_remaining_dimensions": [],
+      "status": "PARTIAL",
+      "actual": "v1→坏同帧双Script/ACKfalse→Revision692与两v1定义/文件保持→撤fault后v2合法DB+真实SUCCESS+good-v2已验证；checkpointPASS只描述这个core stage。",
+      "covered_dimensions": [
+        "唯一新child的坏SYNC_RESPONSE同帧含good/bad两Script v2，只bad content SHA变异且declared SHA不变。",
+        "同connection四组真实ACK okfalse/applied_rev0，error hash与badID sha mismatch文本独立重算一致。",
+        "稳定stop后baseline与fault local SQLite读回Revision均692，两Script完整v1定义/SHA保留，good未半同步。",
+        "owned good-v1业务文件/SHA保持；bad未执行文件不存在。",
+        "撤fault、同identity/data_dir owned child恢复两定义v2及合法SHA，真实ScriptRevision2 SUCCESS产生good-v2。"
+      ],
+      "remaining_dimensions": [
+        "ManagedApp在坏snapshot/fullresync时pruned物理cleanup之前拒绝整帧的真实保护未测。",
+        "本stage未审查新Execution UI与最终精确fixture清理，不据最新checkpoint标签替代独立验收。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-checkpoint.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-revision-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-frame-events.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-local-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-clear.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-file-oracle-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-good-recovery-run-execution.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/owned-process-ledger.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-good-task-8a4084bf69-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-bad-dependency-92c0e242-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/prepare_sha_fault.py:57",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/restore_sha_case.py:54",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/backend_cases.py:57",
+        "internal/agent/agent.go:735",
+        "internal/agent/sync_validation.go:14"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/defect-regression-matrix.json:196",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-checkpoint.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-post-stop-revision-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-frame-events.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-local-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/sha-fault-clear.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-db-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-recovery-file-oracle-task-result.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-v2-good-recovery-run-execution.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/owned-process-ledger.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-good-task-8a4084bf69-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/qa-resume-20261008-scriptsha-bad-dependency-92c0e242-definition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v1-definition.json:7",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v2-definition.json:9",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/prepare_sha_fault.py:57",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/restore_sha_case.py:54",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/backend_cases.py:57",
+        "internal/agent/agent.go:735",
+        "internal/agent/sync_validation.go:14"
+      ],
+      "test_ids": [
+        "BE-SCRIPT-SHA-002-core-runtime"
+      ],
+      "review_recommendation_only": true
+    }
+  ],
+  "core_runtime_oracles": {
+    "baseline_and_fault_global_revision": 692,
+    "source_content_hash_checks": [
+      {
+        "script_id": "6d3f43cb-cdf1-4729-b3f1-53a3d69ab0b1",
+        "revision": 1,
+        "content_sha256_recomputed": "eb998ce6679953970409d0087c82bd65ef87a4a9b729c1ff9ba5fa5a342a52af",
+        "local_definition_matches": true,
+        "definition_ref": ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v1-definition.json:7"
+      },
+      {
+        "script_id": "92c0e242-0f67-4553-92e0-f7b8ffe675e4",
+        "revision": 1,
+        "content_sha256_recomputed": "6fc642bbe88e25c0b50647d787fb7f2816bc7d19609bda65ed758c1c9c30d331",
+        "local_definition_matches": true,
+        "definition_ref": ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v1-definition.json:7"
+      },
+      {
+        "script_id": "6d3f43cb-cdf1-4729-b3f1-53a3d69ab0b1",
+        "revision": 2,
+        "content_sha256_recomputed": "9bfe9769282662a01083fde2b860a8fe9e9eb7dd19baabc7dfea479a1f68ba5d",
+        "local_definition_matches": true,
+        "definition_ref": ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-good-v2-definition.json:9"
+      },
+      {
+        "script_id": "92c0e242-0f67-4553-92e0-f7b8ffe675e4",
+        "revision": 2,
+        "content_sha256_recomputed": "9cccd446cf21496866ee8e3a6385b4b313ac079b4e566d2473bc6a38e27a709b",
+        "local_definition_matches": true,
+        "definition_ref": ".e2e/runs/20260930-101945/repair/qa-resume-20261008-backend/cases/BE-SCRIPT-SHA-002-bad-v2-definition.json:9"
+      }
+    ],
+    "fault_ack_pairs": [
+      {
+        "connection": "1791448150139111676",
+        "frame_global_revision": 706,
+        "same_frame_script_ids": [
+          "6d3f43cb-cdf1-4729-b3f1-53a3d69ab0b1",
+          "92c0e242-0f67-4553-92e0-f7b8ffe675e4"
+        ],
+        "bad_declared_sha256": "9cccd446cf21496866ee8e3a6385b4b313ac079b4e566d2473bc6a38e27a709b",
+        "bad_received_content_sha256": "4ef60917e0bed00e07654d45f6b90a5ca061e5f50f6b18fda597ab979ff35b4c",
+        "ack_ok": false,
+        "ack_applied_rev": 0,
+        "ack_error_sha256": "9218fcd8637f5067affa03b3ef7d6a87ebd46fa7cfb866e5363cf00c02cc685c",
+        "ack_delay_ms": 1.027,
+        "full_resync": false
+      },
+      {
+        "connection": "1791448150139111676",
+        "frame_global_revision": 707,
+        "same_frame_script_ids": [
+          "6d3f43cb-cdf1-4729-b3f1-53a3d69ab0b1",
+          "92c0e242-0f67-4553-92e0-f7b8ffe675e4"
+        ],
+        "bad_declared_sha256": "9cccd446cf21496866ee8e3a6385b4b313ac079b4e566d2473bc6a38e27a709b",
+        "bad_received_content_sha256": "4ef60917e0bed00e07654d45f6b90a5ca061e5f50f6b18fda597ab979ff35b4c",
+        "ack_ok": false,
+        "ack_applied_rev": 0,
+        "ack_error_sha256": "9218fcd8637f5067affa03b3ef7d6a87ebd46fa7cfb866e5363cf00c02cc685c",
+        "ack_delay_ms": 0.966,
+        "full_resync": false
+      },
+      {
+        "connection": "1791448150139111676",
+        "frame_global_revision": 707,
+        "same_frame_script_ids": [
+          "6d3f43cb-cdf1-4729-b3f1-53a3d69ab0b1",
+          "92c0e242-0f67-4553-92e0-f7b8ffe675e4"
+        ],
+        "bad_declared_sha256": "9cccd446cf21496866ee8e3a6385b4b313ac079b4e566d2473bc6a38e27a709b",
+        "bad_received_content_sha256": "4ef60917e0bed00e07654d45f6b90a5ca061e5f50f6b18fda597ab979ff35b4c",
+        "ack_ok": false,
+        "ack_applied_rev": 0,
+        "ack_error_sha256": "9218fcd8637f5067affa03b3ef7d6a87ebd46fa7cfb866e5363cf00c02cc685c",
+        "ack_delay_ms": 0.791,
+        "full_resync": false
+      },
+      {
+        "connection": "1791448150139111676",
+        "frame_global_revision": 708,
+        "same_frame_script_ids": [
+          "6d3f43cb-cdf1-4729-b3f1-53a3d69ab0b1",
+          "92c0e242-0f67-4553-92e0-f7b8ffe675e4"
+        ],
+        "bad_declared_sha256": "9cccd446cf21496866ee8e3a6385b4b313ac079b4e566d2473bc6a38e27a709b",
+        "bad_received_content_sha256": "4ef60917e0bed00e07654d45f6b90a5ca061e5f50f6b18fda597ab979ff35b4c",
+        "ack_ok": false,
+        "ack_applied_rev": 0,
+        "ack_error_sha256": "9218fcd8637f5067affa03b3ef7d6a87ebd46fa7cfb866e5363cf00c02cc685c",
+        "ack_delay_ms": 1.465,
+        "full_resync": false
+      }
+    ],
+    "recovery_execution": {
+      "id": "b60efe6f-5685-4dbd-a58d-02d0b7c58ad3",
+      "node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+      "status": "SUCCESS",
+      "script_revision": 2,
+      "task_revision": 1
+    },
+    "recovery_file_output": {
+      "good": "good-v2",
+      "bad": null,
+      "injected": null
+    },
+    "recovery_exact_global_revision_observed": false
+  },
+  "ownership_snapshot": {
+    "node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+    "agent_id": "agent-ab15a133-73cd-4025-8c97-f2ff37e000f5",
+    "child": {
+      "pid": 44900,
+      "starttime": 123636154,
+      "uid": 65534,
+      "exe_path": "/tmp/qa-resume-20261008-child-ciivjupc/nodesteer-agent",
+      "exe_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+      "argv_owner_path_match": true
+    },
+    "supervisor": {
+      "pid": 44899,
+      "starttime": 123636134,
+      "uid": 65534,
+      "exe_path": "/usr/bin/python3.13",
+      "exe_sha256": "078fc5e8711442c8051d8c515a3f57bc1d22dcdb90e9b384af0c50916125b531",
+      "argv_owner_path_match": true
+    },
+    "proxy_port": 43799,
+    "proxy_source_sha256": "5ea1e826144b69976e272b8e16a902ba38c619cd7a5839ad9b5e72416f442ebc",
+    "owner_manifest_sha256": "9d4a505cd99fc6acd9ea342e2bbbc22e156ff2e89da163cbea92a9ca1c9abfff",
+    "as_of_review_evidence_only": true,
+    "child_processes_intentionally_retained_for_next_cases": true
+  },
+  "checkpoint_status_boundary": {
+    "latest_observed_label": "PASS_UI_COMPLETE",
+    "latest_observed_updated_at": "2026-10-08T14:40:00Z",
+    "labels_are_not_acceptance": "读取到PASS_UI_COMPLETE标签，但按本Root stage边界未读取或验收其UI/cleanup新summary；不自动升级复合defectPASS。"
+  },
+  "scope_limits": [
+    "同frame有两Script且bad变异由真实down frame→up NACK配对及DB验证；不能扩展所有对象或fullSnapshot。",
+    "source校验在事务开始前，不能把拒帧称实际ROLLBACK。",
+    "received content SHA独立等于printf injected-script-corruption，其本身不写injected.txt，故injected.txt不存在仅旁证，决定性负向oracle为NACK+SQLite定义+Revision。",
+    "v2合法同步已落两定义并实际goodTask消费；没有单独测exact恢复GlobalRevision，不描述其值。",
+    "definition.top-level source_sha256是backend_cases.py harnesshash（源码明确），不是Scriptcontent hash；本review分别重算payload.content并对比DB/API hash。",
+    "只核本批newchild /proc证据，不扩展为全部现有Agent运行SHA已验证；不以此替代最终4原Agent健康。"
+  ],
+  "cleanup_state": "SHA fixture/child整体cleanup未在本stage审查；不要把setup/helper任务清理等同完整case清理。",
+  "deferred_review": [
+    "Root新消息且TTL/REENROLL完整summaryready后再续审；不抢读运行中partial。",
+    "Root接管本文件后reviewer不并发修改；后续追加需重新明确独占写入边界。"
+  ],
+  "no_global_count_update": true,
+  "root_merged_at": null
+}

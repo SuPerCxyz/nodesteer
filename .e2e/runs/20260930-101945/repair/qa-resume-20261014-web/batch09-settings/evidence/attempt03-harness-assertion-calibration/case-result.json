@@ -1,0 +1,321 @@
+{
+  "batch_id": "batch09-settings",
+  "nonce": "f7549c600f26",
+  "owned_prefix": "qa-b09-f7549c600f26-",
+  "title": "Settings：修改/保存/校验/持久化/广播 与 Agent 运行时实际消费",
+  "executed_at_utc": "2026-10-15T12:55:49Z",
+  "finished_at_utc": "2026-10-15T12:59:52Z",
+  "endpoint": "http://192.168.100.209:18080",
+  "cases": [
+    {
+      "case_id": "P21-03",
+      "title": "修改、保存、成功提示、失败提示、重复保存。",
+      "canonical_before": "NOT_RUN",
+      "proposed_after": "PARTIAL",
+      "confidence": "low",
+      "dimensions": {
+        "modify_and_save_via_ui": true,
+        "success_toast_已保存": true,
+        "failure_toast_on_invalid_input": true,
+        "duplicate_save_no_side_effect": true
+      },
+      "evidence": [
+        "phase7-p21-04-invalid-inputs.json",
+        "phase8-p21-03-save-success-and-duplicate.json",
+        "phase9-p21-05-refresh-persistence.json",
+        "phase12-settings-after-and-restore-diff.json",
+        "settings-before.json",
+        "settings-after.json"
+      ],
+      "all_dimensions_pass": false,
+      "dimension_verdicts": {
+        "modify_and_save_via_ui": "PASS",
+        "success_toast_已保存": "PASS",
+        "failure_toast_on_invalid_input": "PASS",
+        "duplicate_save_no_side_effect": "PASS"
+      }
+    },
+    {
+      "case_id": "P21-04",
+      "title": "非法数字、0、负数、超大值、非法 Gateway URL。",
+      "canonical_before": "NOT_RUN",
+      "proposed_after": "PARTIAL",
+      "confidence": "low",
+      "dimensions": {
+        "non_numeric_rejected": true,
+        "zero_rejected": true,
+        "negative_rejected": true,
+        "oversized_rejected": true,
+        "below_minimum_rejected": true,
+        "invalid_gateway_url_rejected": true,
+        "no_partial_write_on_rejection": true
+      },
+      "evidence": [
+        "phase7-p21-04-invalid-inputs.json",
+        "settings-before.json",
+        "settings-after.json"
+      ],
+      "all_dimensions_pass": false,
+      "dimension_verdicts": {
+        "non_numeric_rejected": "PASS",
+        "zero_rejected": "PASS",
+        "negative_rejected": "PASS",
+        "oversized_rejected": "PASS",
+        "below_minimum_rejected": "PASS",
+        "invalid_gateway_url_rejected": "PASS",
+        "no_partial_write_on_rejection": "PASS"
+      }
+    },
+    {
+      "case_id": "P21-05",
+      "title": "保存后刷新持久化。",
+      "canonical_before": "NOT_RUN",
+      "proposed_after": "PARTIAL",
+      "confidence": "low",
+      "dimensions": {
+        "ui_field_values_survive_hard_reload": true,
+        "api_equals_hub_db_after_reload": true,
+        "values_survive_hub_read_back": true
+      },
+      "evidence": [
+        "phase9-p21-05-refresh-persistence.json",
+        "settings-before.json",
+        "settings-after.json"
+      ],
+      "all_dimensions_pass": false,
+      "dimension_verdicts": {
+        "ui_field_values_survive_hard_reload": "PASS",
+        "api_equals_hub_db_after_reload": "PASS",
+        "values_survive_hub_read_back": "PASS"
+      }
+    },
+    {
+      "case_id": "P21-06",
+      "title": "设置变更是否广播到在线 Agent。",
+      "canonical_before": "NOT_RUN",
+      "proposed_after": "PARTIAL",
+      "confidence": "low",
+      "dimensions": {
+        "settings_frame_actually_reaches_online_owned_agent": true,
+        "broadcast_payload_matches_saved_values": true,
+        "protected_agents_unharmed_by_broadcast": true
+      },
+      "evidence": [
+        "phase4-settings-broadcast-and-cadence.json"
+      ],
+      "all_dimensions_pass": false,
+      "dimension_verdicts": {
+        "settings_frame_actually_reaches_online_owned_agent": "PASS",
+        "broadcast_payload_matches_saved_values": "PASS",
+        "protected_agents_unharmed_by_broadcast": "PASS"
+      }
+    },
+    {
+      "case_id": "FL-16",
+      "title": "Settings Save → Agent Runtime → Agent 心跳/Revision/日志设置实际消费或明确不消费",
+      "canonical_before": "NOT_RUN (baseline was PARTIAL)",
+      "proposed_after": "PARTIAL",
+      "confidence": "low",
+      "dimensions": {
+        "heartbeat_setting_consumed_at_connect": true,
+        "revision_setting_consumed_at_connect": true,
+        "heartbeat_cadence_follows_saved_3s": false,
+        "revision_cadence_follows_saved_5s": true,
+        "max_log_bytes_truncates_real_output": true,
+        "max_log_bytes_effect_reverts_after_restore": true,
+        "heartbeat_cadence_reverts_after_restore": true
+      },
+      "evidence": [
+        "phase3-baseline-settings-consumption.json",
+        "phase4-settings-broadcast-and-cadence.json",
+        "phase6-max-log-bytes-truncation.json",
+        "phase10-post-restore-consumption.json",
+        "settings-before.json",
+        "settings-after.json",
+        "phase12-settings-after-and-restore-diff.json"
+      ],
+      "all_dimensions_pass": false,
+      "dimension_verdicts": {
+        "heartbeat_setting_consumed_at_connect": "PASS",
+        "revision_setting_consumed_at_connect": "PASS",
+        "heartbeat_cadence_follows_saved_3s": "FAIL",
+        "revision_cadence_follows_saved_5s": "PASS",
+        "max_log_bytes_truncates_real_output": "PASS",
+        "max_log_bytes_effect_reverts_after_restore": "PASS",
+        "heartbeat_cadence_reverts_after_restore": "PASS"
+      }
+    }
+  ],
+  "settings_snapshot": {
+    "before_file": "evidence/settings-before.json",
+    "after_file": "evidence/settings-after.json",
+    "diff_file": "evidence/phase12-settings-after-and-restore-diff.json",
+    "before_api_settings": {
+      "changelog_window": "5000",
+      "heartbeat_interval_sec": "30",
+      "max_log_bytes": "1048576",
+      "revision_check_interval_sec": "45"
+    },
+    "after_api_settings": null,
+    "restored": false,
+    "diff": {
+      "api_settings_equal": true,
+      "api_settings_before": {
+        "changelog_window": "5000",
+        "heartbeat_interval_sec": "30",
+        "max_log_bytes": "1048576",
+        "revision_check_interval_sec": "45"
+      },
+      "api_settings_after": {
+        "changelog_window": "5000",
+        "heartbeat_interval_sec": "30",
+        "max_log_bytes": "1048576",
+        "revision_check_interval_sec": "45"
+      },
+      "api_settings_delta": {},
+      "hub_db_settings_managed_equal": true,
+      "hub_db_settings_managed_before": {
+        "heartbeat_interval_sec": "30",
+        "revision_check_interval_sec": "45",
+        "changelog_window": "5000",
+        "max_log_bytes": "1048576",
+        "agent_gateway_base_url": null
+      },
+      "hub_db_settings_managed_after": {
+        "heartbeat_interval_sec": "30",
+        "revision_check_interval_sec": "45",
+        "changelog_window": "5000",
+        "max_log_bytes": "1048576",
+        "agent_gateway_base_url": null
+      },
+      "hub_db_settings_key_set_equal": false,
+      "config_file_sha256_before": "e594591f164b67d4974352c3b29eaa86eb8b67498c4f1af127d6c0c8131f6ade",
+      "config_file_sha256_after": "e594591f164b67d4974352c3b29eaa86eb8b67498c4f1af127d6c0c8131f6ade",
+      "config_file_unchanged": true,
+      "hub_unit_MainPID_unchanged": true,
+      "primary_hub_MainPID_unchanged": true,
+      "all_equal": false
+    }
+  },
+  "settings_modified_events": [
+    {
+      "at_utc": "2026-10-15T12:57:54Z",
+      "kind": "settings_put",
+      "request": {
+        "heartbeat_interval_sec": "3",
+        "revision_check_interval_sec": "5",
+        "max_log_bytes": "2048"
+      },
+      "observed_consumption": {
+        "settings_broadcast_frame": {
+          "at_utc": "2026-10-15T12:57:22Z",
+          "monotonic": 1792069042.0358584,
+          "payload": {
+            "heartbeat_sec": 3,
+            "revision_check_sec": 5,
+            "max_log_bytes": 2048
+          }
+        },
+        "heartbeat_cadence": {
+          "frame_type": "HEARTBEAT",
+          "direction": "agent_to_hub",
+          "frames_seen": 5,
+          "first_offset_sec": 14.053,
+          "last_offset_sec": 29.053,
+          "deltas_sec": [
+            4.001,
+            2.999,
+            4.0,
+            4.0
+          ],
+          "delta_min": 2.999,
+          "delta_max": 4.001,
+          "delta_mean": 3.75
+        },
+        "revision_cadence": {
+          "frame_type": "REVISION_CHECK",
+          "direction": "agent_to_hub",
+          "frames_seen": 4,
+          "first_offset_sec": 12.054,
+          "last_offset_sec": 28.053,
+          "deltas_sec": [
+            6.0,
+            4.999,
+            5.0
+          ],
+          "delta_min": 4.999,
+          "delta_max": 6.0,
+          "delta_mean": 5.333
+        }
+      }
+    },
+    {
+      "at_utc": "2026-10-15T12:57:59Z",
+      "kind": "max_log_bytes_consumption",
+      "observed_consumption": {
+        "hub_stdout_bytes": 2048,
+        "hub_stdout_truncated": true,
+        "script_raw_bytes": 20022
+      }
+    },
+    {
+      "at_utc": "2026-10-15T12:58:32Z",
+      "kind": "settings_restored_via_ui_save",
+      "request": {
+        "heartbeat_interval_sec": "30",
+        "revision_check_interval_sec": "45",
+        "changelog_window": "5000",
+        "max_log_bytes": "1048576"
+      },
+      "toasts": [
+        "已保存",
+        "已保存"
+      ]
+    },
+    {
+      "at_utc": "2026-10-15T12:59:31Z",
+      "kind": "consumption_after_restore",
+      "observed_consumption": {
+        "heartbeat_cadence": {
+          "frame_type": "HEARTBEAT",
+          "direction": "agent_to_hub",
+          "frames_seen": 1,
+          "first_offset_sec": 19.527,
+          "last_offset_sec": 19.527,
+          "deltas_sec": [],
+          "delta_min": null,
+          "delta_max": null,
+          "delta_mean": null
+        },
+        "full_log": {
+          "execution_id": "21ccd2cb-be51-45c8-83bf-9d11f069b5c3",
+          "status": "SUCCESS",
+          "stdout_bytes": 20022,
+          "stdout_truncated": false,
+          "marker_present": true,
+          "agent_local_stdout_bytes": 20022,
+          "expected_full_bytes": 20022
+        }
+      }
+    }
+  ],
+  "deviations": [],
+  "budget": {
+    "api_mutations": 20,
+    "settings_puts": 10,
+    "node_enroll_posts": 1,
+    "hub_definition_creates": 0,
+    "hub_definition_deletes": 2,
+    "manual_run_posts": 4,
+    "child_process_starts": 1,
+    "child_process_removals": 1,
+    "ui_sessions": 0,
+    "ui_saves": 9,
+    "hub_restarts": 0,
+    "vms_restarted": 0,
+    "product_source_changes": 0,
+    "git_operations": 0
+  },
+  "fatal": null,
+  "final_cleanup_oracle_clean": false
+}

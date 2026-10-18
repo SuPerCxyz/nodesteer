@@ -1,0 +1,451 @@
+{
+ "batch": "qa-resume-20261017-fixall-verify",
+ "build_label": "dddee4f0-e2e-repair-20261017-fixall",
+ "purpose": "Go 6 项 + Web 6 项 + CR-3 全部修复构建 + repair 环境部署（可回滚）",
+ "authority": "http://192.168.100.209:18080",
+ "started_at_utc": "2026-10-17T13:51:57Z",
+ "artifacts_local": {
+  "hub_bundled": {
+   "path": "/tmp/opencode/nodesteer-build-20261017-fixall/nodesteer-hub-static-fixall",
+   "sha256": "1d8cc17e3aeeb5df59026bc3881a6ff8b5a3e308617c931ac1f13d70a9cc230b",
+   "size": 55086747,
+   "previous_build_sha256": "029f3f4e5cdfe863a917557171c2672548d1b5773e516bf50eab56e1629e20ee",
+   "previous_build_size": 55057054,
+   "changed_vs_previous_build": true
+  },
+  "agent_amd64": {
+   "path": "/tmp/opencode/nodesteer-build-20261017-fixall/nodesteer-agent-static",
+   "sha256": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+   "size": 16847621,
+   "previous_build_sha256": "449af1d571daccce4264bda11e10d644f30c0db300f084c1f40a320b6bb2d256",
+   "previous_build_size": 16841929,
+   "changed_vs_previous_build": true
+  },
+  "agent_arm64": {
+   "path": "/tmp/opencode/nodesteer-build-20261017-fixall/nodesteer-agent-arm64",
+   "sha256": "297158e404ce4059319986c42021869153e9435d0b24c04242700dca4f8b7581",
+   "size": 16052370,
+   "previous_build_sha256": null,
+   "previous_build_size": null,
+   "changed_vs_previous_build": null
+  },
+  "hub_unbundled": {
+   "path": "/tmp/opencode/nodesteer-build-20261017-fixall/nodesteer-hub.unbundled",
+   "sha256": "a4437b7d1bdb3d5d5321428cd352717f6252fee534a9388e95d030d06fdd6b41",
+   "size": 22186699,
+   "previous_build_sha256": null,
+   "previous_build_size": null,
+   "changed_vs_previous_build": null
+  }
+ },
+ "web_build": {
+  "command": "cd web && npm run build   # tsc -b && vite build",
+  "dist_index_sha256": "0053a663ce0eb16aebf0d54d8001deb747870dfef1871c26e1d8698df3cb8ae8",
+  "dist_files": 70,
+  "manifest_note": "web-dist-manifest.txt（70 文件全量 sha256，构建目录内）",
+  "log": "web-build.log 尾行 WEB_BUILD_EXIT=0"
+ },
+ "pre_deploy": {
+  "hub_209": {
+   "unit": "nodesteer-hub-repair-20260930-101945.service",
+   "state": {
+    "ActiveState": "active",
+    "SubState": "running",
+    "UnitFileState": "disabled",
+    "MainPID": "231500"
+   },
+   "disk_sha256": "029f3f4e5cdfe863a917557171c2672548d1b5773e516bf50eab56e1629e20ee",
+   "healthz": "200",
+   "readyz": "200",
+   "node_version": "dddee4f0-e2e-repair-20261017-p01",
+   "main_pid": "231500",
+   "proc_exe": [
+    "029f3f4e5cdfe863a917557171c2672548d1b5773e516bf50eab56e1629e20ee",
+    "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard"
+   ]
+  },
+  "primary_hub_untouched": {
+   "unit": "nodesteer-hub.service",
+   "state": {
+    "ActiveState": "active",
+    "SubState": "running",
+    "UnitFileState": "enabled",
+    "MainPID": "1251"
+   }
+  },
+  "agents": {
+   "native-1": {
+    "unit": "nodesteer-agent-repair-20260930-101945-native-1.service",
+    "ip": "192.168.100.204",
+    "state": {
+     "MainPID": "61915",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "disabled"
+    },
+    "disk_sha256": "449af1d571daccce4264bda11e10d644f30c0db300f084c1f40a320b6bb2d256",
+    "proc_exe": [
+     "449af1d571daccce4264bda11e10d644f30c0db300f084c1f40a320b6bb2d256",
+     "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent"
+    ]
+   },
+   "native-2": {
+    "unit": "nodesteer-agent-repair-20260930-101945-native-2.service",
+    "ip": "192.168.100.206",
+    "state": {
+     "MainPID": "189326",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "disabled"
+    },
+    "disk_sha256": "449af1d571daccce4264bda11e10d644f30c0db300f084c1f40a320b6bb2d256",
+    "proc_exe": [
+     "449af1d571daccce4264bda11e10d644f30c0db300f084c1f40a320b6bb2d256",
+     "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent"
+    ]
+   },
+   "native-3": {
+    "unit": "nodesteer-agent-repair-20260930-101945-native-3.service",
+    "ip": "192.168.100.222",
+    "state": {
+     "MainPID": "184434",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "disabled"
+    },
+    "disk_sha256": "449af1d571daccce4264bda11e10d644f30c0db300f084c1f40a320b6bb2d256",
+    "proc_exe": [
+     "449af1d571daccce4264bda11e10d644f30c0db300f084c1f40a320b6bb2d256",
+     "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent"
+    ]
+   },
+   "native-4": {
+    "unit": "nodesteer-agent-repair-20260930-101945-native-4.service",
+    "ip": "192.168.100.247",
+    "state": {
+     "MainPID": "186837",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "disabled"
+    },
+    "disk_sha256": "449af1d571daccce4264bda11e10d644f30c0db300f084c1f40a320b6bb2d256",
+    "proc_exe": [
+     "449af1d571daccce4264bda11e10d644f30c0db300f084c1f40a320b6bb2d256",
+     "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent"
+    ]
+   }
+  },
+  "primary_agent_unit_snapshot": {
+   "note": "nodesteer-agent.service 未触碰",
+   "states": {
+    "native-1": {
+     "MainPID": "673",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "enabled"
+    },
+    "native-2": {
+     "MainPID": "731",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "enabled"
+    },
+    "native-3": {
+     "MainPID": "16919",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "enabled"
+    },
+    "native-4": {
+     "MainPID": "1002",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "enabled"
+    }
+   }
+  }
+ },
+ "backups": {
+  "hub": {
+   "path": "/opt/nodesteer-repair-20260930-101945/backup-20261017-fixall/nodesteer-hub-static-login-guard.bak-20261017-fixall",
+   "rc": 0,
+   "sha256": "029f3f4e5cdfe863a917557171c2672548d1b5773e516bf50eab56e1629e20ee",
+   "err": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+  },
+  "agents": {
+   "native-1": {
+    "path": "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent.bak-20261017-fixall",
+    "rc": 0,
+    "sha256": "449af1d571daccce4264bda11e10d644f30c0db300f084c1f40a320b6bb2d256",
+    "err": "Warning: Permanently added '192.168.100.204' (ED25519) to the list of known hosts.\n"
+   },
+   "native-2": {
+    "path": "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent.bak-20261017-fixall",
+    "rc": 0,
+    "sha256": "449af1d571daccce4264bda11e10d644f30c0db300f084c1f40a320b6bb2d256",
+    "err": "Warning: Permanently added '192.168.100.206' (ED25519) to the list of known hosts.\n"
+   },
+   "native-3": {
+    "path": "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent.bak-20261017-fixall",
+    "rc": 0,
+    "sha256": "449af1d571daccce4264bda11e10d644f30c0db300f084c1f40a320b6bb2d256",
+    "err": "Warning: Permanently added '192.168.100.222' (ED25519) to the list of known hosts.\n"
+   },
+   "native-4": {
+    "path": "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent.bak-20261017-fixall",
+    "rc": 0,
+    "sha256": "449af1d571daccce4264bda11e10d644f30c0db300f084c1f40a320b6bb2d256",
+    "err": "Warning: Permanently added '192.168.100.247' (ED25519) to the list of known hosts.\n"
+   }
+  }
+ },
+ "deployment": {
+  "hub": {
+   "install_rc": 0,
+   "out": "1d8cc17e3aeeb5df59026bc3881a6ff8b5a3e308617c931ac1f13d70a9cc230b  /opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard\nactive",
+   "err": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n",
+   "new_sha256": "1d8cc17e3aeeb5df59026bc3881a6ff8b5a3e308617c931ac1f13d70a9cc230b",
+   "state": {
+    "ActiveState": "active",
+    "SubState": "running",
+    "UnitFileState": "disabled",
+    "MainPID": "239892"
+   },
+   "main_pid": "239892",
+   "exe_sha256_after": [
+    "1d8cc17e3aeeb5df59026bc3881a6ff8b5a3e308617c931ac1f13d70a9cc230b",
+    "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard"
+   ],
+   "disk_sha256_after": "1d8cc17e3aeeb5df59026bc3881a6ff8b5a3e308617c931ac1f13d70a9cc230b",
+   "healthz": "200",
+   "readyz": "200",
+   "primary_hub_pid_after": "1251"
+  },
+  "agents": {
+   "native-1": {
+    "install_rc": 0,
+    "out": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf  /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent\nactive",
+    "err": "Warning: Permanently added '192.168.100.204' (ED25519) to the list of known hosts.\n",
+    "new_sha256": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+    "state": {
+     "MainPID": "64185",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "disabled"
+    },
+    "main_pid": "64185",
+    "exe_sha256_after": [
+     "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+     "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent"
+    ],
+    "disk_sha256_after": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf"
+   },
+   "native-2": {
+    "install_rc": 0,
+    "out": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf  /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent\nactive",
+    "err": "Warning: Permanently added '192.168.100.206' (ED25519) to the list of known hosts.\n",
+    "new_sha256": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+    "state": {
+     "MainPID": "194298",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "disabled"
+    },
+    "main_pid": "194298",
+    "exe_sha256_after": [
+     "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+     "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent"
+    ],
+    "disk_sha256_after": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf"
+   },
+   "native-3": {
+    "install_rc": 0,
+    "out": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf  /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent\nactive",
+    "err": "Warning: Permanently added '192.168.100.222' (ED25519) to the list of known hosts.\n",
+    "new_sha256": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+    "state": {
+     "MainPID": "189700",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "disabled"
+    },
+    "main_pid": "189700",
+    "exe_sha256_after": [
+     "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+     "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent"
+    ],
+    "disk_sha256_after": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf"
+   },
+   "native-4": {
+    "install_rc": 0,
+    "out": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf  /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent\nactive",
+    "err": "Warning: Permanently added '192.168.100.247' (ED25519) to the list of known hosts.\n",
+    "new_sha256": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+    "state": {
+     "MainPID": "187699",
+     "ActiveState": "active",
+     "SubState": "running",
+     "UnitFileState": "disabled"
+    },
+    "main_pid": "187699",
+    "exe_sha256_after": [
+     "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf",
+     "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent"
+    ],
+    "disk_sha256_after": "9702d2c7bd2174f1499ef8019b186544afbf4948cdd3bb08945f8b2b63f12adf"
+   }
+  }
+ },
+ "post_deploy": {
+  "at_utc": "2026-10-17T13:52:35Z",
+  "healthz": "200",
+  "readyz": "200",
+  "nodes": {
+   "qa-repair-20260930-101945-native-1": {
+    "status": "online",
+    "sync_status": "synced",
+    "agent_version": "dddee4f0-e2e-repair-20261017-fixall"
+   },
+   "qa-repair-20260930-101945-native-2": {
+    "status": "online",
+    "sync_status": "synced",
+    "agent_version": "dddee4f0-e2e-repair-20261017-fixall"
+   },
+   "qa-repair-20260930-101945-native-3": {
+    "status": "online",
+    "sync_status": "synced",
+    "agent_version": "dddee4f0-e2e-repair-20261017-fixall"
+   },
+   "qa-repair-20260930-101945-native-4": {
+    "status": "online",
+    "sync_status": "synced",
+    "agent_version": "dddee4f0-e2e-repair-20261017-fixall"
+   },
+   "qa-resume-20261008-native4-child-c5d48ea9-da08-4123-94fb-69b11abd59a7": {
+    "status": "offline",
+    "sync_status": "synced",
+    "agent_version": "dddee4f0-e2e-repair-20261004"
+   },
+   "qa-resume-20261010-host-f174890c3846-host001": {
+    "status": "online",
+    "sync_status": "synced",
+    "agent_version": "dddee4f0-e2e-repair-20261004"
+   }
+  },
+  "primary_hub_pid": "1251"
+ },
+ "ui_assets": {
+  "local_index_sha256": "0053a663ce0eb16aebf0d54d8001deb747870dfef1871c26e1d8698df3cb8ae8",
+  "served_index_sha256": "0053a663ce0eb16aebf0d54d8001deb747870dfef1871c26e1d8698df3cb8ae8",
+  "index_match": true,
+  "assets": {
+   "/assets/Match-Bp0GJMd6.js": {
+    "local": "96f9edfe14be2b3dd5a4aa044bcc8cac881c87b90302bf1b8e69d44171981af2",
+    "served": "96f9edfe14be2b3dd5a4aa044bcc8cac881c87b90302bf1b8e69d44171981af2",
+    "match": true
+   },
+   "/assets/QueryClientProvider-Yi7Sb9LQ.js": {
+    "local": "49a716a6d90c50aa55a17cf1db5de44d91f8ea995bbeb05bd14cb5d72758d50a",
+    "served": "49a716a6d90c50aa55a17cf1db5de44d91f8ea995bbeb05bd14cb5d72758d50a",
+    "match": true
+   },
+   "/assets/button-DSdLzg3P.js": {
+    "local": "5e505907ca8ff28e542c1efea9eaca71827a384b968d74021cbadf5e747d217e",
+    "served": "5e505907ca8ff28e542c1efea9eaca71827a384b968d74021cbadf5e747d217e",
+    "match": true
+   },
+   "/assets/index-CjgR4lcd.css": {
+    "local": "5ff3fdcda1ac67321561f2ab0bc8d9e78e363cdfd8f7572c240cab36dc1f0b13",
+    "served": "5ff3fdcda1ac67321561f2ab0bc8d9e78e363cdfd8f7572c240cab36dc1f0b13",
+    "match": true
+   },
+   "/assets/index-DFWk1HAU.js": {
+    "local": "351ca46682a2a05c51cd1973e8ee3606fb48ee65002cb0ed9d8d74d3b2354be7",
+    "served": "351ca46682a2a05c51cd1973e8ee3606fb48ee65002cb0ed9d8d74d3b2354be7",
+    "match": true
+   },
+   "/assets/matchContext-D_oNhIry.js": {
+    "local": "b589a83a0f2afcda30306f92c68d2809707c766af896b7914b5fb00d263d6394",
+    "served": "b589a83a0f2afcda30306f92c68d2809707c766af896b7914b5fb00d263d6394",
+    "match": true
+   },
+   "/assets/mutation-DITIwZXX.js": {
+    "local": "c418ae6e298ab5a91e2046b40da2de211283af639f53abc262bddd38a3f4e7ec",
+    "served": "c418ae6e298ab5a91e2046b40da2de211283af639f53abc262bddd38a3f4e7ec",
+    "match": true
+   },
+   "/assets/navigation-pDL39Jhi.js": {
+    "local": "c9ecc36424bc62ecee8aa283c0908ab089b7125f3258f4f6a96f998141dd5159",
+    "served": "c9ecc36424bc62ecee8aa283c0908ab089b7125f3258f4f6a96f998141dd5159",
+    "match": true
+   },
+   "/assets/route-BcFqaOGz.js": {
+    "local": "a500cfb7b2f955c9a9f1b25b5ac900ca4caa87718d3fc305296d7bf9b201845b",
+    "served": "a500cfb7b2f955c9a9f1b25b5ac900ca4caa87718d3fc305296d7bf9b201845b",
+    "match": true
+   },
+   "/assets/schemas-YL2EgIdt.js": {
+    "local": "635644e5f6de7da5b5183e2213269ba386134a9f3c8eca3d1c63c767d47f6fbb",
+    "served": "635644e5f6de7da5b5183e2213269ba386134a9f3c8eca3d1c63c767d47f6fbb",
+    "match": true
+   },
+   "/assets/shim-wAY9LwA-.js": {
+    "local": "c2bafe681826e5ccfa4734989864028c9ad8d757d612bcff2d48c2210c9cb3b2",
+    "served": "c2bafe681826e5ccfa4734989864028c9ad8d757d612bcff2d48c2210c9cb3b2",
+    "match": true
+   },
+   "/assets/theme-provider-B8jyB8sG.js": {
+    "local": "11e26cb6ae62f80a85556885c357595d355d895ea157872a2d45c43285479b45",
+    "served": "11e26cb6ae62f80a85556885c357595d355d895ea157872a2d45c43285479b45",
+    "match": true
+   },
+   "/assets/useStore-GbGhe7zF.js": {
+    "local": "94248195723901d47030dc37c225a33667eeac1f82e6d86bc576de4f69c4d038",
+    "served": "94248195723901d47030dc37c225a33667eeac1f82e6d86bc576de4f69c4d038",
+    "match": true
+   }
+  },
+  "all_assets_match": true
+ },
+ "build_commands": [
+  "cd web && npm run build   # tsc -b && vite build",
+  "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -o /tmp/opencode/nodesteer-build-20261017-fixall/nodesteer-hub.unbundled ./cmd/hub",
+  "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -ldflags '-X main.version=dddee4f0-e2e-repair-20261017-fixall' -o /tmp/opencode/nodesteer-build-20261017-fixall/nodesteer-agent-static ./cmd/agent",
+  "CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -buildvcs=false -ldflags '-X main.version=dddee4f0-e2e-repair-20261017-fixall' -o /tmp/opencode/nodesteer-build-20261017-fixall/nodesteer-agent-arm64 ./cmd/agent",
+  "sh packaging/bundle-agent.sh /tmp/opencode/nodesteer-build-20261017-fixall/nodesteer-hub-static-fixall /tmp/opencode/nodesteer-build-20261017-fixall/nodesteer-hub.unbundled amd64 /tmp/opencode/nodesteer-build-20261017-fixall/nodesteer-agent-static arm64 /tmp/opencode/nodesteer-build-20261017-fixall/nodesteer-agent-arm64"
+ ],
+ "preflight": {
+  "ssh_hub_ok": true
+ },
+ "upload": {
+  "hub": {
+   "scp_rc": 0,
+   "err": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts.\n"
+  },
+  "native-1": {
+   "scp_rc": 0,
+   "err": "Warning: Permanently added '192.168.100.204' (ED25519) to the list of known hosts.\n"
+  },
+  "native-2": {
+   "scp_rc": 0,
+   "err": "Warning: Permanently added '192.168.100.206' (ED25519) to the list of known hosts.\n"
+  },
+  "native-3": {
+   "scp_rc": 0,
+   "err": "Warning: Permanently added '192.168.100.222' (ED25519) to the list of known hosts.\n"
+  },
+  "native-4": {
+   "scp_rc": 0,
+   "err": "Warning: Permanently added '192.168.100.247' (ED25519) to the list of known hosts.\n"
+  }
+ },
+ "rollback": {
+  "method": "install 备份回原路径并重启对应 repair 单元（不触碰 :8080 主 Hub 与 nodesteer-agent.service）",
+  "commands": [
+   "install -o root -g root -m 0755 /opt/nodesteer-repair-20260930-101945/backup-20261017-fixall/nodesteer-hub-static-login-guard.bak-20261017-fixall /opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard && systemctl restart nodesteer-hub-repair-20260930-101945.service",
+   "install -o root -g root -m 0755 /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent.bak-20261017-fixall /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent && systemctl restart <agent unit>"
+  ],
+  "not_executed": true
+ },
+ "finished_at_utc": "2026-10-17T13:52:38Z"
+}

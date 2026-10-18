@@ -1,0 +1,22 @@
+{
+  "started_at": "2026-10-10T06:06:00Z",
+  "updated_at": "2026-10-10T06:09:56.052833+00:00",
+  "status": "PARTIAL",
+  "stage": "public-and-safe-user-negative-checks-complete",
+  "authorization": "Root delegated this exact API batch; only AUTH-PUBLIC read-only routes and Admin Users GET have run so far. Root adjudication: do not create/deletion-inaccessible User; use only public reads and fail-before-write negative User probes.",
+  "next_action": "Return endpoint matrix and exact remaining AUTH-USERS dimensions to Root; global inventory integration remains Root-owned.",
+  "evidence": [
+    "auth-public-live.json",
+    "auth-users-admin-read.json",
+    "user-route-static-review.json"
+  ],
+  "host_resources": "stopped and untouched",
+  "secrets": "none written to evidence; bearer/token never printed or persisted here",
+  "external_writes": "no user/resource writes; only safe validation/auth negative API calls",
+  "coverage": {
+    "AUTH-PUBLIC": "PARTIAL: unauthenticated healthz/readyz, OIDC state/disabled login/callback branch, and public AgentBinary GET/hash verified; active OIDC callback success intentionally not exercised without IdP.",
+    "AUTH-USERS": "PARTIAL: existing Admin GET 200; missing/invalid bearer GET/POST/PUT/DELETE 401; Admin blank/invalid POST and empty/invalid PUT 400, unsupported item GET/DELETE 405; Users count and identity/role digest unchanged. Operator/Viewer real 403 and successful Admin create/update remain untested.",
+    "API-CONTRACT": "PARTIAL: only listed endpoint status, error JSON shape, binary checksum, and no-write state invariance are evidenced."
+  },
+  "completion_note": "No dedicated login/session created in this batch, so no logout call was needed. Original private admin bearer was read-only for Users GET and negative fail-before-write requests."
+}

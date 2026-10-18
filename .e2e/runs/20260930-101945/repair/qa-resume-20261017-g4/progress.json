@@ -1,0 +1,70 @@
+{
+  "batch_id": "qa-resume-20261017-g4",
+  "nonce": "74acdeb973df",
+  "phase": "done",
+  "updated_at_utc": "2026-10-17T04:22:27Z",
+  "authority": "http://192.168.100.209:18080",
+  "target_node_vm": "repair native-4 (192.168.100.247) docker (exclusive window)",
+  "cases": [
+    "E2E-18",
+    "AR-04"
+  ],
+  "phases": [
+    {
+      "phase": "preflight",
+      "status": "PREFLIGHT_OK",
+      "detail": "native-4 docker baseline captured; 4 protected nodes online/synced; pinned image absent on native-4 and present on native-2"
+    },
+    {
+      "phase": "image-load",
+      "status": "IMAGE_LOADED",
+      "detail": "read-only save stream native-2 → native-4; digest verified; agent binary sha256 d55dc5cd… verified"
+    },
+    {
+      "phase": "setup",
+      "status": "SETUP_OK",
+      "detail": "owned root/network/volume/compose stack + artifact/application/script/task; node online/synced; artifact cache populated"
+    },
+    {
+      "phase": "run-readback",
+      "status": "E1_SUCCESS_AND_READBACK",
+      "detail": "execution f5249cb8-8c7e-496f-88ea-f384eab28621 SUCCESS; identity/revision/journal/cache + UI readback verified (20 checks)"
+    },
+    {
+      "phase": "recreate-r1",
+      "status": "RECREATE_R1_PASS",
+      "detail": "docker compose up -d --force-recreate: new container, same volume/DB inode, all four dimensions preserved (17 checks)"
+    },
+    {
+      "phase": "recovery-r2",
+      "status": "RECOVERY_R2_PASS",
+      "detail": "docker compose down (volume kept) + 2 hub changes + up -d: recovery, gap accounting, desired-state reconciliation (23 checks)"
+    },
+    {
+      "phase": "idempotency",
+      "status": "IDEMPOTENCY_PASS",
+      "detail": "extra sync cycles + second real execution: no duplicates, exactly one new execution (20 checks)"
+    },
+    {
+      "phase": "ui-after",
+      "status": "UI_AFTER_PASS",
+      "detail": "post-recreate UI readback: identity/revision/journal/managed application (8 checks)"
+    },
+    {
+      "phase": "cleanup",
+      "status": "CLEANUP_OK",
+      "detail": "all owned hub objects GET-404, docker baseline restored exactly, pinned image removed, leftovers clear"
+    }
+  ],
+  "final_cleanup": {
+    "hub_leftover_clear": true,
+    "baseline_restored": {
+      "images_equal": true,
+      "containers_equal": true,
+      "volumes_equal": true,
+      "networks_equal": true
+    },
+    "protected_nodes_online_synced": true,
+    "pinned_image_removed": true
+  }
+}

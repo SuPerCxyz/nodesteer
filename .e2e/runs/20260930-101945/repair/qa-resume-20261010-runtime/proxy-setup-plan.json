@@ -1,0 +1,77 @@
+{
+  "case_id": "BE-SCRIPT-SHA-002",
+  "updated_at": "2026-10-10T01:35:54Z",
+  "status": "PLAN_READY_ROOT_REVIEW_ONLY_NO_CONFIG_CHANGE_NO_PROXY_STARTED",
+  "scenario": "Full desired-state SYNC_RESPONSE Snapshot=true (FullResync may be false), containing two owned Script v2 revisions and omitting the one owned managed App after it is unassigned from this child.",
+  "current_constraints_evidence": "read-only-api-preflight.json and native1-owned-child-preflight.json; changelog_window=5000, Hub node revision and Agent local revision are recorded; do not alter setting or flood revisions. BuildSyncResponse normal path returns Snapshot=true with all desired objects; Agent gates physical cleanup on Snapshot || FullResync.",
+  "native1_owned_child": {
+    "host_node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+    "child_node_id": "c77b8a84-8085-4ea8-8532-de171761854b",
+    "agent_id": "agent-426aa507-af4c-4005-858f-ce497d2fc67d",
+    "owner_nonce": "870358cd92ee",
+    "agent_unit": "nodesteer-qa-e2e-20261009-p0-002-native1-870358cd92ee.service",
+    "agent_root": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee",
+    "config": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/agent.yaml",
+    "agent_binary": "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent",
+    "agent_binary_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "current_pid": 49688,
+    "current_startticks": 136179722,
+    "current_uid": 0,
+    "runtime_max": "1h",
+    "app_id": "2e4fecee-afc8-43a8-9d93-dd36cfc10bf9",
+    "app_unit": "nodesteer-qa-e2e-20261009-p0-002-app-870358cd92ee.service",
+    "v1_binary_sha256": "35d10e1ef6728c5b46555efac91c605c0f1eb7edfe217f3724ae25a0dffb9d1c",
+    "v1_config_sha256": "5d24742791cf5f34c6b128ce01b7b4f5ee2516508e47731653abbf92c6190b34",
+    "v1_unit_sha256": "6f0bb711bdeb0d88ad738824209c652928d28ada6cb104f46fe87114edcd7ffa"
+  },
+  "proxy": {
+    "unit_name": "nodesteer-qa-e2e-20261010-p0-002-sha-prune-proxy-870358cd92ee.service",
+    "unit_mode": "unique transient systemd-run service; Restart=no; KillMode=control-group; RuntimeMaxSec=3600; User/Group=65534; NoNewPrivileges=yes; no capabilities",
+    "remote_root": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee-sha-prune-proxy-870358cd92ee",
+    "remote_root_mode_owner": "0700 uid=gid=65534; exact owner-manifest nonce+NodeID+AgentID+Unit; no symlinks",
+    "listen": "127.0.0.1:0; ephemeral loopback-only listener; ready metadata records selected port",
+    "upstream": "ws://192.168.100.209:18080/ only; Management API remains direct repair :18080",
+    "source": "sha-prune/ws-frame-proxy/main.go (planned, not created)",
+    "implementation": "small Go helper using existing pinned github.com/coder/websocket v1.8.15; CGO_ENABLED=0 linux/amd64; GOCACHE restricted to new sha-prune build-cache and GOPROXY=off; Python websocket packages absent on Native-1, no installation or repo source changes",
+    "config_file": "controls.json in proxy root; no registration/config secrets; event records only envelope type/id/revision/flags/object IDs and SHA summaries, never raw frame or Script contents"
+  },
+  "only_child_config_change": {
+    "path": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/agent.yaml",
+    "key": "hub_url only",
+    "new_value_shape": "ws://127.0.0.1:<proxy-ready-port>/",
+    "mode_uid": "0600:0",
+    "method": "atomic same-directory rewrite preserving all other key/value pairs in memory; neither read/emit/copy registration credential; restore original direct Hub URL from private in-memory value during cleanup"
+  },
+  "pretest_setup_after_authorization": [
+    "Real deploy owned App v1 to re-establish healthy baseline and verify v1 physical Binary/Config/Unit/active service. Current App desired v2-attempt3 and health state is unhealthy after P0; do not use this status as SHA baseline.",
+    "Create exact owned good/bad Script v1 definitions and retry0/no-schedule Command Tasks targeting only child; run success and verify separate marker files under child QA root.",
+    "Start the proxy and capture ready port; only then owner-guard stop/restart the exact child and point config hub_url to loopback. Verify same Node/Agent/root/binary; proxy never sees/exposes token.",
+    "Stop the exact child under fresh owner fingerprint before changing desired objects so intermediate Script/App notifications cannot reach it. Update both Scripts to valid v2 content/SHA and remove only this child from the owned App assignment; keep this App object and other Hub state unchanged.",
+    "Restart same child through proxy. Filter one downlink SYNC_RESPONSE only if Snapshot=true, Apps omits exact App ID, and Scripts include exact good+bad IDs at expected v2 revisions; FullResync is recorded (expected false under current window) but not required. Corrupt only bad Script data.content with deterministic marker while leaving declared sha256 and all other frame fields/objects unchanged; one-shot only.",
+    "Capture SYNC_ACK ok=false/applied_rev=0 and before/after bad frame local DB revision/scripts/App row plus App files/Unit active; proxy holds next exact valid matching Snapshot until a guarded control-file release.",
+    "After physical oracle says old state intact, release the held valid Snapshot; verify ACK ok, desired local revision, Script v2 DB SHAs, pruned App DB row, v1 Binary/Config/Unit files absent and App Unit not-found, plus good Script real Execution SUCCESS and UI detail feedback."
+  ],
+  "guards_before_any_stop_or_signal": [
+    "fresh Node API/owner.json exact NodeID/AgentID/nonce/root/unit/config path/binary SHA",
+    "Unit MainPID + startticks + UID + exact argv private config + proc exe SHA + exact ControlGroup on each process action",
+    "proxy Unit exact LoadState=not-found before start; Proxy Root absent or exact own nonce/source manifest; loopback bind and fixed upstream allowlist",
+    "App v1 file+Unit hashes/active and real App API state healthy immediately before desired-state mutations",
+    "all Scripts/tasks target only the owned child and unique names; retry=0, schedule absent, bounded timeout",
+    "no shared changelog_window, Hub/global config, primary:8080, other Nodes, native3/native4 or product source writes"
+  ],
+  "cleanup_after_root_approval": [
+    "Capture final evidence first. Stop same child and proxy only after fresh fingerprints. Restore config to original direct Hub URL in memory without recording secrets; restart child only if needed for orderly cleanup.",
+    "Remove only owned Scripts/Tasks/App assignment, exact App and three QA Artifacts; verify exact GET404. Remove exact child Node only after no app assignment/tasks/transfers remain.",
+    "Remove transient proxy Unit and exact unique proxy root; delete exact child Agent/App units and exact QA root only with owner guards. Verify original Native-1 baseline PID24684 and repair PID33342/startticks/SHA active, original four Nodes online/synced, artifacts/Node/App/Units/root exact absence."
+  ],
+  "not_executed": [
+    "No App PUT/deploy for SHA baseline yet",
+    "No Script/Task creation for sha-prune yet",
+    "No proxy source/binary written or compiled",
+    "No proxy Unit/root created or started",
+    "No child config contents read or modified",
+    "No unit stop/start after authorized expired-child recreation",
+    "No global setting/revision churn"
+  ],
+  "approval_request": "Review this exact target/root/Unit/config mutation and frame/correlation guards; authorize only after plan review. If the FullResync flag itself is required, current changelog_window=5000 and revision≈1042 make it unreachable safely; this proposal tests real complete Snapshot=true/FullResync=false, which triggers identical prune guard. Root previously confirmed Snapshot=true satisfies this case."
+}

@@ -1,0 +1,97 @@
+{
+  "review_id": "ROOT-WEB-BATCH03-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T08:45:22.987026+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "batch": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch03",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试、剩余分母全量推进",
+  "verdicts": [
+    {
+      "case_id": "FL-09",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "分配节点卡片仅 native-1 勾选；Agent Detail 与 Node Detail（同组件）均列出该应用的托管应用；native-3 显示「暂无托管应用」；6 节点×1 应用 API 双向比对 0 不一致。",
+      "remaining": [
+        "分配写路径（勾选节点→保存→POST /assign）未执行，会改动非 owned 的既有 Application，超出本批授权（另批收口）"
+      ]
+    },
+    {
+      "case_id": "FL-13",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "UI 建传输 POST 200 → UPLOADING→DELIVERING→target SUCCESS；源文件/Hub staging/目标文件三者 SHA 全等（6edf3c97…，25165824 B），UI 显示成功。",
+      "remaining": []
+    },
+    {
+      "case_id": "P22-12",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PARTIAL",
+      "confidence": "high",
+      "reason": "DELIVERING→取消实测：菜单「取消传输」无确认弹窗（当前产品设计）→ POST /cancel 200 → CANCELED、非 SUCCESS 目标归一 CANCELED、Hub staging 清空、终态行无空菜单。",
+      "remaining": [
+        "PENDING 与 UPLOADING 状态下的取消未执行（本批 owned Transfer 上限已用满）。"
+      ]
+    },
+    {
+      "case_id": "TABLE-ARTIFACTS-PAGE",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "首/末页与上下页启用禁用、pageSize 10→20→reload 保持→10（localStorage）、末页删除 owned 行后 2→1 行（含确认弹窗）。",
+      "remaining": []
+    },
+    {
+      "case_id": "TABLE-ARTIFACTS-SORT",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "名称（字符）与大小（数值）升/降/清排序，aria-sort 正确。",
+      "remaining": []
+    },
+    {
+      "case_id": "TABLE-USERS-PAGE",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PARTIAL",
+      "confidence": "high",
+      "reason": "8 用户单页、导航全禁用；pageSize 20 持久化（reload 保持）已验证。",
+      "remaining": [
+        "多页遍历与末页数据变化需 ≥11 用户；创建持久化账号属需单独授权的动作（沿用既有的持久化用户夹具审批，仍 PENDING）。"
+      ]
+    }
+  ],
+  "safety": {
+    "credential_scan": "CLEAN（含 repair registration token 全量扫描；令牌仅在侦察期终端回显，未进入任何证据文件）",
+    "server_writes": "POST /api/transfers ×2、cancel ×1、POST /api/artifacts ×11、DELETE /api/artifacts ×11；无 User/Node/Application/Script 增删，无节点状态变更，无 Run/deploy",
+    "cleanup": "11 个 owned Artifact 全部删除并逐条 GET404；native-1/native-3 owned 文件目录已删除；Hub staging 已空；2 条 owned Transfer 因无 DELETE 端点按历史保留（transfers 5→7）",
+    "node_side_owned_removed": true
+  },
+  "security_incident": {
+    "id": "SEC-20261014-REGTOKEN-TERMINAL-ECHO",
+    "detail": "侦察期在 native 节点 cat agent 配置时，repair registration token 被打印到终端回显；已核验证据目录无该令牌（扫描 CLEAN），但建议轮换。",
+    "impact": "令牌未落盘仓库/证据；实际暴露面限于本会话终端。",
+    "recommended_action": "按需轮换 repair Hub 注册令牌（需部署配置变更 + 服务重启，属需用户授权动作，未执行）。"
+  },
+  "pending_root_decisions": [
+    "REQ-B03-01 P22-12 PENDING/UPLOADING 取消（可再批 ≤2 owned Transfer）",
+    "REQ-B03-02 TABLE-USERS-PAGE 多页（需持久化账号授权，沿用既有 PENDING 审批）",
+    "REQ-B03-03 FL-09 分配写路径（需 owned Application 的 assign/unassign）"
+  ],
+  "counts_before": {
+    "PASS": 227,
+    "FAIL": 4,
+    "PARTIAL": 161,
+    "NOT_RUN": 103,
+    "BLOCKED": 9
+  },
+  "counts_after": {
+    "PASS": 231,
+    "FAIL": 4,
+    "PARTIAL": 163,
+    "NOT_RUN": 97,
+    "BLOCKED": 9
+  },
+  "not_claimed": "未执行产品修复、Git 交付或 Archive"
+}

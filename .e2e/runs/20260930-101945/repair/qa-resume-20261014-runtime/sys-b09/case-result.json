@@ -1,0 +1,976 @@
+{
+  "batch_id": "sys-b09",
+  "title": "Agent 本地调度与条件引擎：Misfire、重复触发、心跳/退避参数、条件结构与 Remote online",
+  "run_dir": "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b09",
+  "executed_at_utc": "2026-10-14T08:33:32Z",
+  "finalized_at_utc": "2026-10-14T08:56:06Z",
+  "authority": "http://192.168.100.209:18080",
+  "nonce": "qa-sysb09-7f31ac2e",
+  "target_nodes": {
+    "native-1": {
+      "id": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "hostname": "qa-repair-20260930-101945-native-1",
+      "status": "online",
+      "sync_status": "synced",
+      "global_revision": 1712,
+      "agent_id": "agent-d21d5e7d-0ff0-4355-b8de-4889dc865343",
+      "agent_version": "dddee4f0-e2e-repair-20261004"
+    },
+    "native-3": {
+      "id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+      "hostname": "qa-repair-20260930-101945-native-3",
+      "status": "online",
+      "sync_status": "synced",
+      "global_revision": 1712,
+      "agent_id": "agent-bb005487-7d84-418c-b598-f93d8b0c86a0",
+      "agent_version": "dddee4f0-e2e-repair-20261004"
+    },
+    "native-4": {
+      "id": "03cb50cc-eab6-4afd-bbe0-f73c4e326773",
+      "hostname": "qa-repair-20260930-101945-native-4",
+      "status": "online",
+      "sync_status": "synced",
+      "global_revision": 1712,
+      "agent_id": "agent-bbd350f8-69f9-4406-923c-4f9c335e6962",
+      "agent_version": "dddee4f0-e2e-repair-20261004"
+    },
+    "native-2": {
+      "id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+      "hostname": "qa-repair-20260930-101945-native-2",
+      "status": "online",
+      "sync_status": "synced",
+      "global_revision": 1712,
+      "agent_id": "agent-ef905092-34f1-4850-b0c9-445e6e87ff97",
+      "agent_version": "dddee4f0-e2e-repair-20261004"
+    }
+  },
+  "cases": [
+    {
+      "case_id": "SYS-23",
+      "canonical_before": "PASS (authoritative inventory baseline_status)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "dimension": "Misfire `skip`：错过的 slot 不补跑",
+          "status": "PASS",
+          "detail": {
+            "disabled_window_sec": 26.0,
+            "interval_sec": 10,
+            "backfill_executions": [],
+            "post_enable_executions": [
+              {
+                "id": "a4fd6784-cc77-458d-ba68-15bb114c7619",
+                "status": "SUCCESS",
+                "scheduled_time": "2026-10-14T08:34:24Z",
+                "stdout": "QA:qa-sysb09-7f31ac2e:MAIN"
+              },
+              {
+                "id": "48238b0b-34e5-43af-92f9-fb38b7e2b4c5",
+                "status": "SUCCESS",
+                "scheduled_time": "2026-10-14T08:34:14Z",
+                "stdout": "QA:qa-sysb09-7f31ac2e:MAIN"
+              },
+              {
+                "id": "5e8062b3-f0d0-40d7-aec0-12cc40fa5fad",
+                "status": "SUCCESS",
+                "scheduled_time": "2026-10-14T08:34:04Z",
+                "stdout": "QA:qa-sysb09-7f31ac2e:MAIN"
+              }
+            ]
+          }
+        },
+        {
+          "dimension": "Misfire `run_once`：只补跑一次，且补的是最近一次错过的 slot",
+          "status": "PASS",
+          "detail": {
+            "disabled_window_sec": 26.0,
+            "expected_slot_utc": "2026-10-14T08:33:54Z",
+            "backfill_executions": [
+              {
+                "id": "49300177-7ade-4053-9354-81b8f3bc42ac",
+                "status": "SUCCESS",
+                "scheduled_time": "2026-10-14T08:33:54Z",
+                "stdout": "QA:qa-sysb09-7f31ac2e:MAIN"
+              }
+            ],
+            "post_enable_executions": [
+              {
+                "id": "ef5a7cab-40d9-4713-b67d-c844f2557461",
+                "status": "SUCCESS",
+                "scheduled_time": "2026-10-14T08:34:20Z",
+                "stdout": "QA:qa-sysb09-7f31ac2e:MAIN"
+              },
+              {
+                "id": "2245bd1c-2923-44e9-a5d4-b4f5a323d90e",
+                "status": "SUCCESS",
+                "scheduled_time": "2026-10-14T08:34:10Z",
+                "stdout": "QA:qa-sysb09-7f31ac2e:MAIN"
+              },
+              {
+                "id": "49300177-7ade-4053-9354-81b8f3bc42ac",
+                "status": "SUCCESS",
+                "scheduled_time": "2026-10-14T08:33:54Z",
+                "stdout": "QA:qa-sysb09-7f31ac2e:MAIN"
+              }
+            ]
+          }
+        },
+        {
+          "dimension": "触发真实生效（Agent 侧 Execution trigger_type=schedule，stdout 命中 nonce 标记）",
+          "status": "PASS"
+        }
+      ],
+      "remaining_or_limitations": [
+        "“Agent 不可用”以「调度被禁用期间 slot 到期」这一等价不可调度窗口构造；本批未停用/重启任何 repair Agent。",
+        "未构造 Hub 长时间不可达（hub_online_required 门禁）导致的 misfire：需要 Hub 停机窗口，属其它批次串行范围。",
+        "仅覆盖 interval 型 misfire；cron 型 skip/run_once 未覆盖。"
+      ],
+      "evidence": [
+        "evidence/phase4-misfire.json",
+        "evidence/phase1-fixtures.json"
+      ],
+      "actual_resources": {
+        "skip_schedule_id": "1e22cdb7-3219-4d6f-aa8e-c28ba446b5ae",
+        "runonce_schedule_id": "8ad373c0-ed10-4dc2-a0b8-2281373b48ff",
+        "skip_task_id": "1cba1614-ee7d-41a1-b1b8-e1c55ad63932",
+        "runonce_task_id": "2d26fe53-47cf-4f2e-b7e6-deb5324ff5c3",
+        "executions": {
+          "skip": [
+            "a4fd6784-cc77-458d-ba68-15bb114c7619",
+            "48238b0b-34e5-43af-92f9-fb38b7e2b4c5",
+            "5e8062b3-f0d0-40d7-aec0-12cc40fa5fad"
+          ],
+          "runonce": [
+            "ef5a7cab-40d9-4713-b67d-c844f2557461",
+            "2245bd1c-2923-44e9-a5d4-b4f5a323d90e",
+            "49300177-7ade-4053-9354-81b8f3bc42ac"
+          ]
+        }
+      },
+      "actual_budget": {
+        "schedule_creates": 2,
+        "schedule_enable_puts": 2,
+        "disabled_window_sec": 26.0,
+        "observe_sec": 26,
+        "interval_sec": 10
+      },
+      "final_cleanup": {
+        "all_exact_404": true
+      }
+    },
+    {
+      "case_id": "SYS-22",
+      "canonical_before": "PASS (authoritative inventory baseline_status)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "dimension": "Hub 执行路径：同一 Task+Node+Scheduled Time 的重复触发只产生 1 条 Execution",
+          "status": "PASS",
+          "detail": {
+            "duplicate_schedule_ids": [
+              "1ce599f4-2edb-4e0e-b092-6b22dd28da82",
+              "3bec00f9-80f4-43d4-bdbd-e3ffeac295ce"
+            ],
+            "identical_run_at_utc": "2026-10-14T08:33:24Z",
+            "execution_count": 1,
+            "executions": [
+              {
+                "id": "34c94cc1-a516-4091-8a25-1e1472380db1",
+                "scheduled_time": "2026-10-14T08:33:24Z",
+                "status": "SUCCESS",
+                "trigger_type": "schedule",
+                "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+                "stdout": "QA:qa-sysb09-7f31ac2e:MAIN"
+              }
+            ],
+            "single_execution_for_slot": true
+          }
+        },
+        {
+          "dimension": "Agent 本地执行路径：同一 Task+Node+Scheduled Time 的重复触发只产生 1 条 Execution",
+          "status": "PASS",
+          "detail": {
+            "duplicate_schedule_ids": [
+              "8cae44e9-242b-4d6e-908b-5f953791d3d1",
+              "9a4fb634-2aee-4077-87a0-e72ec3c39300"
+            ],
+            "identical_run_at_utc": "2026-10-14T08:34:14Z",
+            "execution_count": 1,
+            "executions": [
+              {
+                "id": "b9d88add-392d-487b-a9d7-c2ddfcc492f4",
+                "scheduled_time": "2026-10-14T08:34:14Z",
+                "status": "SUCCESS",
+                "trigger_type": "schedule",
+                "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+                "stdout": "QA:qa-sysb09-7f31ac2e:MAIN"
+              }
+            ],
+            "single_execution_for_slot": true
+          }
+        },
+        {
+          "dimension": "独立于产品 API 的 Agent 本地库复核：slot 唯一索引存在且该 slot 精确 1 行",
+          "status": "PASS",
+          "detail": {
+            "slot_unique_index_present": true,
+            "row_count": 1,
+            "rows": [
+              [
+                "b9d88add-392d-487b-a9d7-c2ddfcc492f4",
+                "4205d429-65f2-405c-a51b-a5a8175a02ff",
+                "611c02a5-1859-4465-878b-d543b7f6fdec",
+                "schedule",
+                "2026-10-14T08:34:14Z",
+                "SUCCESS",
+                "761c5050-05f6-4049-a193-19a7e36734c6"
+              ]
+            ],
+            "expected_slot": "2026-10-14T08:34:14Z",
+            "quick_check": "ok",
+            "agent_identity": {
+              "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+              "agent_id": "agent-ef905092-34f1-4850-b0c9-445e6e87ff97",
+              "credential": "cred-ec42a4ac-5cc9-4fb3-b9a1-e47f9bbbc8d4"
+            }
+          }
+        },
+        {
+          "dimension": "Hub 侧按 slot 分组的执行数（保留历史复核）",
+          "status": "PASS",
+          "detail": {
+            "expected_slot": "2026-10-14T08:33:24Z",
+            "slot_to_execution_ids": {
+              "2026-10-14T08:33:24": [
+                "34c94cc1-a516-4091-8a25-1e1472380db1"
+              ]
+            },
+            "single_execution_for_slot": true
+          }
+        }
+      ],
+      "remaining_or_limitations": [
+        "未在 Hub/Agent 重启后的恢复窗口复核 slot 幂等（本批不重启 Hub，也不停 repair Agent）。"
+      ],
+      "evidence": [
+        "evidence/phase5-duplicate-trigger.json",
+        "evidence/phase11-agent-db-readback-retry.json",
+        "evidence/phase12-hub-duplicate-slot-grouping.json"
+      ],
+      "actual_resources": {
+        "hub_duplicate_schedule_ids": [
+          "1ce599f4-2edb-4e0e-b092-6b22dd28da82",
+          "3bec00f9-80f4-43d4-bdbd-e3ffeac295ce"
+        ],
+        "agent_duplicate_schedule_ids": [
+          "8cae44e9-242b-4d6e-908b-5f953791d3d1",
+          "9a4fb634-2aee-4077-87a0-e72ec3c39300"
+        ],
+        "dup_hub_task_id": "00bb5c33-98b6-4c55-a2be-15437a6182b6",
+        "dup_agent_task_id": "4205d429-65f2-405c-a51b-a5a8175a02ff",
+        "hub_execution_ids": [
+          "34c94cc1-a516-4091-8a25-1e1472380db1"
+        ],
+        "agent_execution_ids": [
+          "b9d88add-392d-487b-a9d7-c2ddfcc492f4"
+        ]
+      },
+      "actual_budget": {
+        "identical_run_at_hub_utc": "2026-10-14T08:33:24Z",
+        "identical_run_at_agent_utc": "2026-10-14T08:34:14Z",
+        "observe_window_sec": 104.207
+      },
+      "final_cleanup": {
+        "all_exact_404": true
+      }
+    },
+    {
+      "case_id": "AR-17",
+      "canonical_before": "PASS (authoritative inventory baseline_status)",
+      "proposed_after": "PASS_WITH_NOTES",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "dimension": "Duplicate Schedule Trigger 幂等：两条仅 Schedule 对象不同、RunAt/Slot 完全相同的触发 → 1 条 Execution（Hub-owned 与 Agent-owned 两条路径）",
+          "status": "PASS",
+          "detail": {
+            "hub": {
+              "duplicate_schedule_ids": [
+                "1ce599f4-2edb-4e0e-b092-6b22dd28da82",
+                "3bec00f9-80f4-43d4-bdbd-e3ffeac295ce"
+              ],
+              "identical_run_at_utc": "2026-10-14T08:33:24Z",
+              "execution_count": 1,
+              "executions": [
+                {
+                  "id": "34c94cc1-a516-4091-8a25-1e1472380db1",
+                  "scheduled_time": "2026-10-14T08:33:24Z",
+                  "status": "SUCCESS",
+                  "trigger_type": "schedule",
+                  "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+                  "stdout": "QA:qa-sysb09-7f31ac2e:MAIN"
+                }
+              ],
+              "single_execution_for_slot": true
+            },
+            "agent": {
+              "duplicate_schedule_ids": [
+                "8cae44e9-242b-4d6e-908b-5f953791d3d1",
+                "9a4fb634-2aee-4077-87a0-e72ec3c39300"
+              ],
+              "identical_run_at_utc": "2026-10-14T08:34:14Z",
+              "execution_count": 1,
+              "executions": [
+                {
+                  "id": "b9d88add-392d-487b-a9d7-c2ddfcc492f4",
+                  "scheduled_time": "2026-10-14T08:34:14Z",
+                  "status": "SUCCESS",
+                  "trigger_type": "schedule",
+                  "node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+                  "stdout": "QA:qa-sysb09-7f31ac2e:MAIN"
+                }
+              ],
+              "single_execution_for_slot": true
+            },
+            "agent_local_db": {
+              "row_count": 1,
+              "rows": [
+                [
+                  "b9d88add-392d-487b-a9d7-c2ddfcc492f4",
+                  "4205d429-65f2-405c-a51b-a5a8175a02ff",
+                  "611c02a5-1859-4465-878b-d543b7f6fdec",
+                  "schedule",
+                  "2026-10-14T08:34:14Z",
+                  "SUCCESS",
+                  "761c5050-05f6-4049-a193-19a7e36734c6"
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "dimension": "幂等窗口：跨 Hub 调度 tick 与 ~100s 多轮观测不产生第二条 Execution",
+          "status": "PASS",
+          "detail": {
+            "observed_window_sec": 104.207,
+            "poll_count": 14
+          }
+        },
+        {
+          "dimension": "持久化：定义（Schedule/Task/Script）全部删除后执行历史仍可 GET 200",
+          "status": "PASS",
+          "detail": {
+            "hub_dup_slot": {
+              "http": 200,
+              "status": "SUCCESS",
+              "trigger_type": "schedule",
+              "scheduled_time": "2026-10-14T08:33:24Z"
+            },
+            "agent_dup_slot": {
+              "http": 200,
+              "status": "SUCCESS",
+              "trigger_type": "schedule",
+              "scheduled_time": "2026-10-14T08:34:14Z"
+            },
+            "skip_first": {
+              "http": 200,
+              "status": "SUCCESS",
+              "trigger_type": "schedule",
+              "scheduled_time": "2026-10-14T08:34:24Z"
+            },
+            "runonce_backfill": {
+              "http": 200,
+              "status": "SUCCESS",
+              "trigger_type": "schedule",
+              "scheduled_time": "2026-10-14T08:34:20Z"
+            }
+          }
+        },
+        {
+          "dimension": "Desired State 与实际状态一致：节点 revision/sync_status 收敛、Agent 单元未重启、Agent 本地 quick_check=ok",
+          "status": "PASS",
+          "detail": {
+            "agent_unit_restarted": false,
+            "agent_mainpid_pre": "4311",
+            "agent_mainpid_now": "4311",
+            "agent_ExecMainStartTimestamp": "Wed 2026-10-14 15:36:04 CST",
+            "local_global_revision": 1771,
+            "quick_check": "ok"
+          }
+        }
+      ],
+      "remaining_or_limitations": [
+        "“恢复后”（Hub/Agent 重启后的恢复框架）幂等本批未复核：批次约束不重启 repair Hub、不停 4 个 protected repair Agent。",
+        "未复核恢复窗口内的 tombstone 重放路径（由 SYS-09 批次单独覆盖）。"
+      ],
+      "evidence": [
+        "evidence/phase5-duplicate-trigger.json",
+        "evidence/phase11-agent-db-readback-retry.json",
+        "evidence/phase12-hub-duplicate-slot-grouping.json",
+        "evidence/phase7-cleanup.json"
+      ],
+      "actual_resources": {
+        "execution_ids": {
+          "hub": [
+            "34c94cc1-a516-4091-8a25-1e1472380db1"
+          ],
+          "agent": [
+            "b9d88add-392d-487b-a9d7-c2ddfcc492f4"
+          ]
+        },
+        "agent_local_db_rows": [
+          [
+            "b9d88add-392d-487b-a9d7-c2ddfcc492f4",
+            "4205d429-65f2-405c-a51b-a5a8175a02ff",
+            "611c02a5-1859-4465-878b-d543b7f6fdec",
+            "schedule",
+            "2026-10-14T08:34:14Z",
+            "SUCCESS",
+            "761c5050-05f6-4049-a193-19a7e36734c6"
+          ]
+        ]
+      },
+      "actual_budget": {
+        "observe_window_sec": 104.207,
+        "hub_tick_followup_sec": 50
+      },
+      "final_cleanup": {
+        "all_exact_404": true
+      }
+    },
+    {
+      "case_id": "SYS-26",
+      "canonical_before": "PASS (authoritative inventory baseline_status)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "dimension": "AND 与多层（嵌套 AND）结构真实求值：true → 执行，false → SKIPPED（不执行、无 stdout）",
+          "status": "PASS",
+          "detail": {
+            "and-true": {
+              "expected": "SUCCESS",
+              "actual": "SUCCESS",
+              "block_reason": null
+            },
+            "and-false": {
+              "expected": "SKIPPED",
+              "actual": "SKIPPED",
+              "block_reason": "condition not satisfied"
+            },
+            "and-nested-true": {
+              "expected": "SUCCESS",
+              "actual": "SUCCESS",
+              "block_reason": null
+            },
+            "and-nested-false": {
+              "expected": "SKIPPED",
+              "actual": "SKIPPED",
+              "block_reason": "condition not satisfied"
+            },
+            "and-unknown": {
+              "expected": "BLOCKED",
+              "actual": "BLOCKED",
+              "block_reason": "condition unknown: no such file or directory"
+            }
+          }
+        },
+        {
+          "dimension": "条件求值失败/未知 → Fail Closed（BLOCKED，不执行；disk_usage 非法挂载点触发求值错误）",
+          "status": "PASS",
+          "detail": {
+            "actual": "BLOCKED",
+            "block_reason": "condition unknown: no such file or directory"
+          }
+        },
+        {
+          "dimension": "错误/非法条件结构被 Hub 拒绝且不产生执行（16 组结构）",
+          "status": "PASS",
+          "detail": {
+            "rejected": 16,
+            "total": 16,
+            "groups": [
+              "and-empty",
+              "command-missing",
+              "cpu-nonnumeric",
+              "file-missing-path",
+              "local-bad-operator",
+              "local-missing",
+              "port-invalid",
+              "remote-bad-operator",
+              "remote-bad-property",
+              "remote-last-exec-missing-task",
+              "remote-missing",
+              "remote-no-node",
+              "remote-node-missing",
+              "remote-online-bogus-value",
+              "unknown-metric",
+              "unknown-type"
+            ],
+            "unexpectedly_created": []
+          }
+        },
+        {
+          "dimension": "AND 组合中的 remote 子条件（组合结构求值）",
+          "status": "FAIL",
+          "detail": {
+            "actual": "BLOCKED",
+            "attributed_to": "SYS-27 remote online 缺陷（见 SYS-27 根因）"
+          }
+        }
+      ],
+      "remaining_or_limitations": [
+        "Agent 侧 local 条件 metric 未知时的 UNKNOWN 分支（engine.evalLocal default）无法经 Hub 校验路径触达，未覆盖。",
+        "remote 子条件在 AND 中的“满足”路径因 SYS-27 的 remote 缺陷无法观测（组合结构本身已在本地条件上验证）。"
+      ],
+      "evidence": [
+        "evidence/phase2-conditions.json",
+        "evidence/phase3-reject-structures.json"
+      ],
+      "actual_resources": {
+        "condition_tasks": {
+          "and-true": "fc267caa-6413-4822-9a81-bda1b8b66986",
+          "and-false": "43f4499c-8bf4-41aa-afea-61f9d175ff3d",
+          "and-nested-true": "4a947c62-d934-458d-988e-80e65e207928",
+          "and-nested-false": "59627338-f5e3-46ad-8654-943ab72280b2",
+          "and-unknown": "661a4193-7adc-47de-a05a-8d81e01892d4"
+        },
+        "condition_executions": {
+          "and-true": "51754742-57e7-44a3-9ad5-56d869fcbac5",
+          "and-false": "49ce7b16-f237-4122-95b5-5033d56ca8e4",
+          "and-nested-true": "52b1a7de-1404-4e21-8669-4e1975c21a57",
+          "and-nested-false": "ab20960d-ceb5-48e3-89ef-78fb66185a79",
+          "and-unknown": "6128f83e-3a5b-4853-8f1a-b14fcb5afb68",
+          "remote-online-sat": "bbc37554-139d-44bf-901c-d8251787d5ca",
+          "remote-online-unsat": "16b9a9ab-a9a1-497a-8424-cc03b8c8b30a",
+          "remote-offline-sat": "9c4439fb-1056-42d8-ac54-9fabe2631426",
+          "and-remote-local": "83a52b25-ee9b-4790-9c92-8ad72f129912"
+        },
+        "control_task_id": "c1190fc3-0827-4bb5-b521-795dffbfa2cf",
+        "control_execution_id": "b5cbba66-9d03-49fe-9770-dd7503bd3ab0"
+      },
+      "actual_budget": {
+        "manual_runs": 10,
+        "rejected_create_attempts": 16
+      },
+      "final_cleanup": {
+        "all_exact_404": true
+      }
+    },
+    {
+      "case_id": "SYS-27",
+      "canonical_before": "PASS (authoritative inventory baseline_status)",
+      "proposed_after": "FAIL",
+      "confidence": "high (observation) / medium-high (mechanism)",
+      "failure_summary": "Remote online 条件在修复版环境中永远 Fail Closed：满足与不满足都得到 BLOCKED / block_reason=\"condition unknown: <nil>\"，无法产生真实执行效果。4 个 repair native 节点全部复现；Agent 侧逻辑本身经受控实验证明是正确实现。",
+      "covered_dimensions": [
+        {
+          "dimension": "Remote online 满足（远端节点 online）→ 条件成立并真实执行",
+          "status": "FAIL",
+          "detail": {
+            "expected": "SUCCESS",
+            "actual": "BLOCKED",
+            "block_reason": "condition unknown: <nil>",
+            "execution_id": "bbc37554-139d-44bf-901c-d8251787d5ca"
+          }
+        },
+        {
+          "dimension": "Remote online 不满足（远端节点 offline）→ SKIPPED（条件已求值但不成立）",
+          "status": "FAIL",
+          "detail": {
+            "expected": "SKIPPED",
+            "actual": "BLOCKED",
+            "note": "由于 fail-closed，未满足与“未知”无法区分（都返回 BLOCKED）"
+          }
+        },
+        {
+          "dimension": "Remote online 反向取值（== offline）→ 成立",
+          "status": "FAIL",
+          "detail": {
+            "expected": "SUCCESS",
+            "actual": "BLOCKED"
+          }
+        },
+        {
+          "dimension": "缺陷扩散：4 个 repair native 节点执行同一 remote 条件任务",
+          "status": "FAIL",
+          "detail": {
+            "native-1": {
+              "execution_id": "50fa7909-e2a4-46f3-b521-73a3c28ed346",
+              "status": "BLOCKED",
+              "block_reason": "condition unknown: <nil>",
+              "stdout": "",
+              "trigger_type": "manual",
+              "elapsed_s": 0.0859,
+              "condition_expected": "SUCCESS (remote node online)"
+            },
+            "native-2": {
+              "execution_id": "dc1d7089-2445-4344-825a-bd4cf884af6a",
+              "status": "BLOCKED",
+              "block_reason": "condition unknown: <nil>",
+              "stdout": "",
+              "trigger_type": "manual",
+              "elapsed_s": 0.0469,
+              "condition_expected": "SUCCESS (remote node online)"
+            },
+            "native-3": {
+              "execution_id": "903b0465-49fc-41b5-92eb-1bdfb316b4ef",
+              "status": "BLOCKED",
+              "block_reason": "condition unknown: <nil>",
+              "stdout": "",
+              "trigger_type": "manual",
+              "elapsed_s": 0.0561,
+              "condition_expected": "SUCCESS (remote node online)"
+            },
+            "native-4": {
+              "execution_id": "065bd819-1280-43ca-a773-3c97a64aea71",
+              "status": "BLOCKED",
+              "block_reason": "condition unknown: <nil>",
+              "stdout": "",
+              "trigger_type": "manual",
+              "elapsed_s": 0.02,
+              "condition_expected": "SUCCESS (remote node online)"
+            }
+          }
+        },
+        {
+          "dimension": "Agent 侧 remote 条件实现正确性（受控 loopback fake Hub + 同一 Agent 二进制）",
+          "status": "PASS",
+          "detail": {
+            "cases": {
+              "observed_1ms_past_online": {
+                "block_reason": null,
+                "elapsed_s": 0.003,
+                "expected": "SUCCESS",
+                "status": "SUCCESS",
+                "stdout": "QA_REMOTE_OK"
+              },
+              "observed_1s_past_online": {
+                "block_reason": null,
+                "elapsed_s": 0.006,
+                "expected": "SUCCESS",
+                "status": "SUCCESS",
+                "stdout": "QA_REMOTE_OK"
+              },
+              "observed_1s_past_unknown": {
+                "block_reason": "condition unknown: <nil>",
+                "elapsed_s": 0.001,
+                "expected": "BLOCKED",
+                "status": "BLOCKED",
+                "stdout": ""
+              },
+              "observed_500ms_future_online": {
+                "block_reason": "condition unknown: <nil>",
+                "elapsed_s": 0.001,
+                "expected": "BLOCKED",
+                "status": "BLOCKED",
+                "stdout": ""
+              }
+            },
+            "remote_state_req_observed": true,
+            "child_agent_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add"
+          }
+        },
+        {
+          "dimension": "根因：Hub 与 Agent 的时钟偏移导致 Agent 侧新鲜度门禁拒绝 Hub 时间戳",
+          "status": "PASS",
+          "detail": {
+            "relative_to_hub_clock_seconds_positive_means_host_ahead": {
+              "hub": 0.0,
+              "native-1": -0.141198,
+              "native-2": -0.139586,
+              "native-3": -0.140341,
+              "native-4": -0.140186
+            },
+            "agent_gate": "internal/agent/sync_validation.go:31-42 validRemoteState: observed.After(now) → false(UNKNOWN) → BLOCKED",
+            "hub_source": "internal/hub/gateway.go:594-617 resolveRemoteState: observedAt=Hub time.Now()",
+            "controlled_proof": {
+              "observed_1ms_past": "SUCCESS",
+              "observed_1s_past": "SUCCESS",
+              "observed_500ms_future": "BLOCKED",
+              "observed_1s_past_unknown_value": "BLOCKED"
+            }
+          }
+        }
+      ],
+      "remaining_or_limitations": [
+        "未验证“远端节点在线状态发生切换”的过渡窗口（只验证稳定 online/offline 两态，且均被 fail-closed 掩盖）。",
+        "时钟偏移量（Hub 领先 4 个 Agent 约 0.14s）为本环境测量值；产品缺陷在于该跨主机时间比较本身对偏移敏感，未主张修复方向（不在本批范围，且不得改产品源码）。",
+        "last_execution 属性的远程条件未覆盖。"
+      ],
+      "evidence": [
+        "evidence/phase2-conditions.json",
+        "evidence/phase10-remote-condition-multinode.json",
+        "evidence/phase2c-clock-offset.json",
+        "evidence/phase2d-remote-condition-mechanism.raw.json"
+      ],
+      "actual_resources": {
+        "remote_tasks": {
+          "remote-online-sat": "9035b88b-0246-4ab8-b4a1-3807c29471da",
+          "remote-online-unsat": "d49a62ae-786b-4662-97c9-8f7f5096cef1",
+          "remote-offline-sat": "43cedac9-c321-4c7d-82bd-97a3ac3a9448",
+          "and-remote-local": "19ff1020-34ee-4149-b72d-a746bd4de2b2"
+        },
+        "remote_executions": {
+          "remote-online-sat": "bbc37554-139d-44bf-901c-d8251787d5ca",
+          "remote-online-unsat": "16b9a9ab-a9a1-497a-8424-cc03b8c8b30a",
+          "remote-offline-sat": "9c4439fb-1056-42d8-ac54-9fabe2631426",
+          "and-remote-local": "83a52b25-ee9b-4790-9c92-8ad72f129912"
+        },
+        "followup_multinode_task": null,
+        "followup_executions": {
+          "native-1": "50fa7909-e2a4-46f3-b521-73a3c28ed346",
+          "native-2": "dc1d7089-2445-4344-825a-bd4cf884af6a",
+          "native-3": "903b0465-49fc-41b5-92eb-1bdfb316b4ef",
+          "native-4": "065bd819-1280-43ca-a773-3c97a64aea71"
+        }
+      },
+      "actual_budget": {
+        "manual_runs_primary": 4,
+        "manual_runs_followup": 4,
+        "controlled_mechanism_cases": 4
+      },
+      "final_cleanup": {
+        "all_exact_404": true
+      }
+    },
+    {
+      "case_id": "SYS-18",
+      "canonical_before": "PARTIAL (authoritative inventory baseline_status)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "dimension": "心跳周期与 ±20% Jitter：真实 Agent 二进制按配置周期发送 HEARTBEAT，运行期 SETTINGS 生效",
+          "status": "PASS",
+          "detail": {
+            "configured_heartbeat_sec": 6,
+            "heartbeat_samples_pre_change_s": [
+              7.0,
+              6.0,
+              6.0,
+              5.999,
+              8.0
+            ],
+            "observed_heartbeat_pre_change": {
+              "min": 5.999,
+              "max": 8.0,
+              "mean": 6.6,
+              "count": 5
+            },
+            "runtime_change": {
+              "heartbeat_sec": 12,
+              "revision_check_sec": 15
+            },
+            "heartbeat_samples_post_change_s": [
+              12.0
+            ],
+            "observed_heartbeat_post_change": {
+              "min": 12.0,
+              "max": 12.0,
+              "mean": 12.0,
+              "count": 1
+            }
+          }
+        },
+        {
+          "dimension": "Revision Check 周期与 Jitter",
+          "status": "PASS",
+          "detail": {
+            "configured_revision_check_sec": 9,
+            "revision_check_samples_s": [
+              9.0,
+              8.0,
+              9.0
+            ],
+            "observed_revision_check": {
+              "min": 8.0,
+              "max": 9.0,
+              "mean": 8.667,
+              "count": 3
+            }
+          }
+        },
+        {
+          "dimension": "重连退避：对端断开后的重连间隔（默认 2s + 0~2s jitter）",
+          "status": "PASS",
+          "detail": {
+            "reconnect_backoff_samples_s": [
+              3.983,
+              2.691,
+              2.947,
+              3.782
+            ],
+            "observed_reconnect_backoff": {
+              "min": 2.691,
+              "max": 3.983,
+              "mean": 3.351,
+              "count": 4
+            }
+          }
+        },
+        {
+          "dimension": "Hub 侧配置值与真实 repair Agent 实测节拍一致性（node last_seen 采样）",
+          "status": "PASS",
+          "detail": {
+            "hub_settings": {
+              "heartbeat_interval_sec": "30",
+              "revision_check_interval_sec": "45",
+              "max_log_bytes": "1048576"
+            },
+            "observed": {
+              "native-1": {
+                "distinct_last_seen_samples": 3,
+                "observed_deltas_s": [
+                  25.0,
+                  27.0
+                ],
+                "configured_heartbeat_sec": 30
+              },
+              "native-3": {
+                "distinct_last_seen_samples": 3,
+                "observed_deltas_s": [
+                  30.0,
+                  31.0
+                ],
+                "configured_heartbeat_sec": 30
+              },
+              "native-4": {
+                "distinct_last_seen_samples": 4,
+                "observed_deltas_s": [
+                  27.001,
+                  24.999,
+                  25.001
+                ],
+                "configured_heartbeat_sec": 30
+              },
+              "native-2": {
+                "distinct_last_seen_samples": 3,
+                "observed_deltas_s": [
+                  25.0,
+                  25.001
+                ],
+                "configured_heartbeat_sec": 30
+              }
+            }
+          }
+        }
+      ],
+      "remaining_or_limitations": [
+        "规范未定义心跳/退避的通过阈值：本用例只记录配置值与实测观测值，不对规范未定义的阈值作断言。",
+        "退避与 Jitter 由自有 child Agent（同一二进制 SHA）在自有 loopback fake Hub 上测得，不是 repair Agent 对 repair Hub 的真实断开重连。",
+        "periodicLoop 为 1s tick，实测含 ≤1s 量化误差，观测值可能略高于 ±20% 上界。",
+        "真实 repair Agent 的 last_seen 采样窗口内只有 2-3 个节拍样本（30s 周期），样本量有限。"
+      ],
+      "evidence": [
+        "evidence/phase-sys18-owned-child-heartbeat-probe.raw.json",
+        "evidence/phase8-sys18-probe-summary.json",
+        "evidence/phase5-duplicate-trigger.json"
+      ],
+      "actual_resources": {
+        "owned_child_agent": {
+          "binary": "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent",
+          "sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+          "node": "native-4",
+          "port": 19445
+        },
+        "process_cleanup": {
+          "alive_after": false,
+          "pid": 2110,
+          "sigterm_exit": 0
+        }
+      },
+      "actual_budget": {
+        "probe_run_sec": 115,
+        "drops": 4,
+        "heartbeat_samples_before_change": 5
+      },
+      "final_cleanup": {
+        "owned_child_agent_stopped": true,
+        "sandbox_removed": true,
+        "all_exact_404": true
+      }
+    }
+  ],
+  "case_index": {
+    "SYS-23": {
+      "canonical_before": "PASS (authoritative inventory baseline_status)",
+      "proposed_after": "PASS",
+      "confidence": "high"
+    },
+    "SYS-22": {
+      "canonical_before": "PASS (authoritative inventory baseline_status)",
+      "proposed_after": "PASS",
+      "confidence": "high"
+    },
+    "AR-17": {
+      "canonical_before": "PASS (authoritative inventory baseline_status)",
+      "proposed_after": "PASS_WITH_NOTES",
+      "confidence": "medium"
+    },
+    "SYS-26": {
+      "canonical_before": "PASS (authoritative inventory baseline_status)",
+      "proposed_after": "PASS",
+      "confidence": "high"
+    },
+    "SYS-27": {
+      "canonical_before": "PASS (authoritative inventory baseline_status)",
+      "proposed_after": "FAIL",
+      "confidence": "high (observation) / medium-high (mechanism)"
+    },
+    "SYS-18": {
+      "canonical_before": "PARTIAL (authoritative inventory baseline_status)",
+      "proposed_after": "PASS",
+      "confidence": "high"
+    }
+  },
+  "defects_found": [
+    {
+      "id": "QA-SYSB09-REMOTE-CONDITION-CLOCK-SKEW",
+      "case_ids": [
+        "SYS-27",
+        "SYS-26(and+remote 组合)"
+      ],
+      "severity": "high (P0 用例的满足路径完全不可用)",
+      "summary": "Remote online 条件恒 Fail Closed：Hub 侧返回的 observed_at 使用 Hub 时钟，Agent 侧 validRemoteState 以本地时钟判断 observed.After(now) 并要求 age<TTL，因此只要 Hub 时钟领先 Agent 时钟（本环境约 +0.14s），所有 remote 条件都被判为 UNKNOWN → BLOCKED。",
+      "reproduction": [
+        "evidence/phase2-conditions.json",
+        "evidence/phase10-remote-condition-multinode.json"
+      ],
+      "isolated_agent_proof": "evidence/phase2d-remote-condition-mechanism.raw.json",
+      "environment_measurement": "evidence/phase2c-clock-offset.json",
+      "code_references": [
+        "internal/agent/sync_validation.go:31-42",
+        "internal/agent/agent.go:1685-1725",
+        "internal/agent/agent.go:1023-1027",
+        "internal/hub/gateway.go:594-617"
+      ],
+      "not_claimed": "未修改任何产品源码；未主张具体修复方案。"
+    }
+  ],
+  "safety": {
+    "management_writes_only_repair_18080": true,
+    "primary_8080_management_writes": 0,
+    "repair_hub_restart": false,
+    "protected_repair_agents_stopped_or_restarted": false,
+    "nodesteer_agent_service_touched": false,
+    "hub_settings_modified": false,
+    "product_source_modified": false,
+    "owned_child_agent_processes": "2 (native-4, loopback fake Hub only, no repair Hub contact), both stopped and sandboxes removed"
+  },
+  "deviations": [
+    "harness #1: 首次 Agent 本地库只读复核脚本因 SQL 引号被外壳/格式串破坏而报 incomplete input，已用 phase11 修正后重跑（结论只取修正后的 readback）。",
+    "harness #2: remote_condition_probe.py v1 的阻塞式帧读取在网络静默期卡住，导致 2 个用例超时（探针侧假象，非产品行为）；已用 v2 非阻塞读取重做并全部符合预期。"
+  ],
+  "harness_errors": [],
+  "verdicts": {
+    "SYS-23": "PASS",
+    "SYS-22": "PASS",
+    "AR-17": "PASS_WITH_NOTES",
+    "SYS-26": "PASS",
+    "SYS-27": "FAIL",
+    "SYS-18": "PASS"
+  }
+}

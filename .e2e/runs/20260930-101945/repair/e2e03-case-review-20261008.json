@@ -1,0 +1,380 @@
+{
+  "schema_version": 1,
+  "status": "ROOT_REVIEWED_AND_MERGED",
+  "review_type": "E2E03残余runtime验收与ExitCode定点只读根因审查",
+  "reviewed_at": "2026-10-08T08:13:31.317301+00:00",
+  "authority_url": "http://192.168.100.209:18080",
+  "canonical_denominator": 504,
+  "defect_denominator": 22,
+  "new_concrete_tests_executed_by_reviewer": false,
+  "no_global_count_update": true,
+  "canonical_inventory_sha256_at_review": "5194c6c399c1ec200e3febef930f666813c5e98bd7486bab4493869da2868e93",
+  "case_recommendations": [
+    {
+      "case_id": "E2E-03",
+      "title": "Script Task 参数/环境/用户/目录 → 客户机实际读取到正确值",
+      "expected": "Script Task 参数/环境/用户/目录 → 客户机实际读取到正确值；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "同一流程working_dir的pwd/实际cwd oracle。",
+        "run_user实际消费者身份及expected用户oracle。"
+      ],
+      "status": "PASS",
+      "actual": "首次Run前保留source/SHA、Script/Task完整GET定义与expected oracle；真实UI Task Run参数override→native-3 SUCCESS→同Execution stdout和Logs：shell/Python cwd均/tmp，uid均65534且username均nobody，参数覆盖两个默认值、Script环境marker实际消费；同Task Audit API/UI execute/create一致。两probe及Task/Script精确GET404。",
+      "covered_dimensions": [
+        "同Script Task参数override及环境实际消费，UI Run/Logs/Audit完整关联。",
+        "工作目录由shell pwd和Python os.getcwd双oracle实际/tmp。",
+        "既有非root nobody由shell id与Python os.getuid/pwd双oracle实际65534；与Agent默认root预检区分。",
+        "source c4411d…与API SHA一致，单节点/无Group/retry0/无内嵌Schedule，定义/预期首次Run前留存。"
+      ],
+      "remaining_dimensions": [],
+      "resolved_previous_dimensions": [
+        "同一流程working_dir的pwd/实际cwd oracle。",
+        "run_user实际消费者身份及expected用户oracle。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/preflight.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/metadata.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/pre-run-state.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/script-api-readback.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/task-api-readback.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/expected-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/api-execution-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/ui-logs-check.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/ui-run-logs-audit.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/cleanup.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/script.sh:3",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/script.sh:8",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/setup-definition.mjs:87",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/capture-oracle.mjs:30"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:10370",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/preflight.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/metadata.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/pre-run-state.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/script-api-readback.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/task-api-readback.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/expected-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/api-execution-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/ui-logs-check.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/ui-run-logs-audit.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/cleanup.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/script.sh:3",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/script.sh:8",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/setup-definition.mjs:87",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/capture-oracle.mjs:30"
+      ],
+      "test_ids": [
+        "E2E03-RUNTIME-20261008-7f3a1d2b"
+      ],
+      "coverage_limits": [
+        "创建/预备用API seed，不增加Script/Task UI创建表单覆盖。",
+        "不泛化其他RunUser、权限失败、cwd不存在/不可访问、所有参数类型或OfflinePolicy；这些不是本case已确认残余正常消费要求。",
+        "独立ExitCode0缺失观察不掩盖，也不阻断本case参数/环境/用户/目录已验证范围。"
+      ],
+      "mapping_origin": "2026-10-08 Luna真实运行证据独立审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P07_P08-04",
+      "title": "名称、描述、内容、Working Directory、Run User、Timeout、Enabled。",
+      "expected": "名称、描述、内容、Working Directory、Run User、Timeout、Enabled。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Description、Timeout、Enabled UI字段及边界；保存cwd/run_user不等于真实消费",
+        "Other Description/cwd/runUser/Timeout boundaries remain unless already independently proved; toggles do not prove all field consumers."
+      ],
+      "status": "PARTIAL",
+      "actual": "补足Script working_dir和run_user在真实Script Task中的消费：Task run_user空时继承Script nobody，进程 cwd/tmp uid65534真实反馈。其它Script编辑器字段/边界仍未全验。",
+      "covered_dimensions": [
+        "Script working_dir/run_user正常实际消费者行为。"
+      ],
+      "remaining_dimensions": [
+        "Description/Timeout/Enabled UI字段及其边界保持未测。",
+        "其他Description/cwd/runUser/Timeout及权限错误边界仍需相应独立证据。"
+      ],
+      "resolved_previous_dimensions": [
+        "原“保存cwd/run_user不等于真实消费”缺口已由双oracle补足。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/preflight.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/metadata.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/pre-run-state.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/script-api-readback.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/task-api-readback.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/expected-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/api-execution-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/ui-logs-check.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/ui-run-logs-audit.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/cleanup.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/script.sh:3",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/script.sh:8",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/setup-definition.mjs:87",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/capture-oracle.mjs:30"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:3994",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/preflight.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/metadata.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/pre-run-state.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/script-api-readback.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/task-api-readback.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/expected-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/api-execution-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/ui-logs-check.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/ui-run-logs-audit.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/cleanup.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/script.sh:3",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/script.sh:8",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/setup-definition.mjs:87",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/capture-oracle.mjs:30"
+      ],
+      "test_ids": [
+        "E2E03-RUNTIME-20261008-7f3a1d2b"
+      ],
+      "coverage_limits": [
+        "本轮API seed定义，不声称Script编辑器已逐字段操作。"
+      ],
+      "mapping_origin": "2026-10-08 Luna真实运行证据独立审查",
+      "review_recommendation_only": true
+    },
+    {
+      "case_id": "P09P11-13",
+      "title": "Timeout、Retry、Run User、Enabled、Offline Policy。",
+      "expected": "Timeout、Retry、Run User、Enabled、Offline Policy。；适用用户操作、Hub/Agent实际效果与UI反馈一致，失败/反向路径无额外副作用。",
+      "previous_canonical_status_at_review": "PARTIAL",
+      "previous_remaining_dimensions": [
+        "Run User/Offline Policy actual consumer behavior and numeric/error boundaries remain."
+      ],
+      "status": "PARTIAL",
+      "actual": "Task Command预检显式run_user=nobody真实uid65534；正式Script Task run_user空继承Script nobody，同非root消费者已验证。保留Timeout/Retry/Enabled既有通过维度，OfflinePolicy及数值/错误边界仍缺。",
+      "covered_dimensions": [
+        "Task run_user=nobody正常Command消费与Script fallback继承消费。"
+      ],
+      "remaining_dimensions": [
+        "OfflinePolicy实际消费/离线恢复行为。",
+        "数值/错误边界及其他RunUser/权限失败保持未测。"
+      ],
+      "resolved_previous_dimensions": [
+        "RunUser正常实际消费新增真实证据，不泛化所有用户/错误分支。"
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/preflight.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/metadata.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/pre-run-state.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/script-api-readback.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/task-api-readback.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/expected-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/api-execution-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/ui-logs-check.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/ui-run-logs-audit.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/cleanup.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/script.sh:3",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/script.sh:8",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/setup-definition.mjs:87",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/capture-oracle.mjs:30"
+      ],
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/feature-inventory.json:4964",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/preflight.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/metadata.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/pre-run-state.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/script-api-readback.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/task-api-readback.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/definition/expected-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/api-execution-oracle.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/ui-logs-check.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/ui-run-logs-audit.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/cleanup.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/script.sh:3",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/source/script.sh:8",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/setup-definition.mjs:87",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/capture-oracle.mjs:30"
+      ],
+      "test_ids": [
+        "E2E03-RUNTIME-20261008-7f3a1d2b"
+      ],
+      "coverage_limits": [],
+      "mapping_origin": "2026-10-08 Luna真实运行证据独立审查",
+      "review_recommendation_only": true
+    }
+  ],
+  "defect_recommendations": [],
+  "independent_product_observations": [
+    {
+      "observation_id": "OBS-20261008-EXECUTION-ZERO-EXIT-CODE",
+      "classification": "CONFIRMED_INDEPENDENT_PRODUCT_BUG_CANDIDATE_FOR_ROOT_REVIEW",
+      "suggested_priority": "P2",
+      "old_defect_denominator_change": false,
+      "source_change_authorized_or_executed": false,
+      "conclusion": "本条真实SUCCESS的已知正常退出码0在API序列化被omitempty丢失，UI显示未知“-”；不是本SUCCESS的正确未知值。",
+      "confirmed_runtime_facts": [
+        "Execution337898e9-4037-48d7-bc48-d3015d6db180 statusSUCCESS且真实脚本/进程stdout正常；API读取Object.hasOwn(exit_code)=false。",
+        "对应Execution截图SUCCESS且退出码“-”，为可感知错误。"
+      ],
+      "code_backed_inference": [
+        "source链runner正常成功设置0→protocol不省0→Hub及Store保留int0→模型JSON omitempty隐藏0→UI缺省“-”；本次未直接读取Hub/AgentDB对应row，因此该条row值0属于有证据的源码推导，不描述为已运行DB核验。",
+        "相同model用于List/Detail，所有值0的字段都有相同序列化问题；本次直接运行观测是Detail，不伪称新增List复测。"
+      ],
+      "requirements": [
+        "docs/PRODUCT.md:826 Execution一期记录ExitCode。",
+        "docs/PRODUCT.md:1268 Execution Web UI包含ExitCode。"
+      ],
+      "impact": [
+        "成功执行的退出码0丢失，用户和API调用方无法区分合法0与缺失/未知；影响ExecutionList/Detail共享响应。",
+        "不影响该E2E03进程cwd/uid/参数/environment实际消费的验收。"
+      ],
+      "undecided_or_unverified": [
+        "未执行非0成功/失败、PENDING/RUNNING、SKIPPED/BLOCKED的新增运行矩阵，不能自动统一这些状态的unknown语义。",
+        "schema当前int default0不能独立区分未执行/unknown和合法0；只取消omitempty并全状态输出0可能把未知状态伪装成已知成功退出。",
+        "若拟扩展为所有状态可空exitCode/shared type/schema，需要单独明确更大contract/迁移范围，不属本次建议最小修复。"
+      ],
+      "minimal_proposed_scope_for_requirement_review": {
+        "goal": "已完成真实执行的合法0在Execution API List/Detail可表达、UI显示0；未执行/无结果仍显示未知。",
+        "proposed_behavior": [
+          "修复已确认SUCCESS且存有0的API序列化：exit_code应为数字0，非0结果保持原值。",
+          "API/UI保留未执行/未知状态的“-”语义，避免直接在所有状态默认补0或仅在UI由SUCCESS猜0。",
+          "不改历史记录、不迁移schema、不新增依赖；优先限定现有Execution序列化规则及必要未完成状态渲染。"
+        ],
+        "exclusions": [
+          "全状态exitCode可空模型重设计",
+          "历史数据回写",
+          "其他Execution metadata/时间字段问题",
+          "与22原缺陷矩阵混算"
+        ],
+        "material_risk": "Execution公共响应在合法0时新增已有可选字段，属于contract行为修正；需Root Requirement Review明确确认后实施。",
+        "validation": [
+          "有意义的API序列化/真实store回归：SUCCESS0明确出现、非0保留、未执行unknown不伪0。",
+          "已授权测试环境重新部署修复版本后Luna真实UI Run→API exit_code0→Execution列表/详情显示0，至少一条非0失败对照。",
+          "不以当前readonly源码trace当修复验证。"
+        ]
+      },
+      "source_trace": [
+        {
+          "stage": "Runner",
+          "finding": "正常cmd.Wait无错误时Result.ExitCode=0、StatusSUCCESS。",
+          "source_refs": [
+            "internal/agent/execution/runner.go:165"
+          ]
+        },
+        {
+          "stage": "Agent persistence/report",
+          "finding": "finishExecution赋值ex.ExitCode并在ExecutionFinishedPayload保留；Script RunUser fallback和WorkingDir也实际传runner。",
+          "source_refs": [
+            "internal/agent/agent.go:1141",
+            "internal/agent/agent.go:1152",
+            "internal/agent/agent.go:1187",
+            "internal/agent/agent.go:1596",
+            "internal/agent/execution/runner.go:194",
+            "internal/agent/execution/runner.go:203"
+          ]
+        },
+        {
+          "stage": "Protocol",
+          "finding": "ExecutionFinishedPayload ExitCode字段没有omitempty，0会进入Agent→Hub协议。",
+          "source_refs": [
+            "internal/protocol/protocol.go:208"
+          ]
+        },
+        {
+          "stage": "Hub/store",
+          "finding": "MarkFinished赋p.ExitCode并UpdateExecution；SQL写e.ExitCode、scan读&e.ExitCode，schema是NOT NULL int default0。",
+          "source_refs": [
+            "internal/hub/gateway.go:531",
+            "internal/hub/execution.go:413",
+            "internal/hub/execution.go:439",
+            "internal/store/sqlite_executions.go:35",
+            "internal/store/sqlite_executions.go:60",
+            "internal/store/migrate.go:228"
+          ]
+        },
+        {
+          "stage": "API serialization",
+          "finding": "List/Detail直接writeJSON(models.Execution)；json.ExitCode tag omitempty会在int0时移除字段，是确认的序列化根因。",
+          "source_refs": [
+            "internal/models/models.go:306",
+            "internal/hub/api/api.go:292",
+            "internal/hub/api/api.go:1791",
+            "internal/hub/api/api.go:1848"
+          ]
+        },
+        {
+          "stage": "UI",
+          "finding": "List row.exit_code??dash、Detail exec.exit_code??dash；缺失0被展示为未知dash。该真实SUCCESS截图exitcard为dash。",
+          "source_refs": [
+            "web/src/features/executions/index.tsx:240",
+            "web/src/features/executions/index.tsx:420",
+            "web/src/features/executions/index.tsx:508"
+          ]
+        }
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/api-execution-oracle.json:38",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/final.json:48"
+      ],
+      "visual_evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/execution-logs-ui.png",
+      "related_canonical_cases": [
+        "P17P18-07",
+        "API-CONTRACT"
+      ],
+      "metadata_full_pass_blocked": true,
+      "reporting_instruction": "先保留为独立新增观察供Root确认scope；不得修改源码或自动把22旧缺陷分母改为23。"
+    }
+  ],
+  "fixture_integrity": {
+    "source_sha256_verified": "c4411d44d420bc833b91ae18911a6df1a5f97868527895b42aaa7371687398fb",
+    "source_content_matches_api": true,
+    "source_revision": 1,
+    "task_revision": 1,
+    "task_id": "6d56546a-463d-4832-8e2d-c7ac5c3f50d8",
+    "script_id": "3be6cae5-7e66-4102-8037-12e8d3316d38",
+    "execution_id": "337898e9-4037-48d7-bc48-d3015d6db180",
+    "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+    "non_root_runtime_oracle": {
+      "uid": 65534,
+      "username": "nobody",
+      "cwd": "/tmp",
+      "independent_sources": [
+        "shell pwd/id",
+        "Python os.getcwd/os.getuid/pwd"
+      ]
+    },
+    "pre_run_artifact_mtimes_utc": {
+      "source/script.sh": "2026-10-08T07:56:06.094763+00:00",
+      "definition/expected-oracle.json": "2026-10-08T07:56:06.094763+00:00",
+      "definition/pre-run-state.json": "2026-10-08T07:56:06.326766+00:00",
+      "definition/script-api-readback.json": "2026-10-08T07:56:06.251765+00:00",
+      "definition/task-api-readback.json": "2026-10-08T07:56:06.325765+00:00"
+    },
+    "ordering_evidence": "setup-definition持久source/expected/API GET/pre-run-state后READY_FOR_UI_RUN；artifact mtime07:56:06早于截图Execution开始07:56:53。"
+  },
+  "cleanup_review": {
+    "probe_tasks_get404": 2,
+    "runtime_task_script_get404": 2,
+    "all_exact_resources_clean": true,
+    "evidence": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/preflight.json:134",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261008-workflows/e2e03-runtime-20261008-7f3a1d2b/result/cleanup.json:1"
+    ]
+  },
+  "verification_limits": [
+    "API seed不算本轮UI Create。",
+    "process当前UID和cwd是实际业务oracle，配置值相同不是唯一依据。",
+    "ExitCode观察未修复、未添加原22缺陷matrix，也未扩展本轮原已授权实施范围。"
+  ],
+  "root_merged_at": "2026-10-08T08:24:17.303456+00:00",
+  "root_state_changes": [
+    {
+      "case_id": "E2E-03",
+      "from": "PARTIAL",
+      "to": "PASS"
+    },
+    {
+      "case_id": "P17P18-07",
+      "from": "NOT_RUN",
+      "to": "FAIL",
+      "reason": "new independent confirmed exit code zero UI/API defect, outside original22"
+    }
+  ]
+}

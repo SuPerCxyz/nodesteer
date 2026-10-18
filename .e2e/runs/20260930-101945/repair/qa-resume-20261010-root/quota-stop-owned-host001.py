@@ -1,0 +1,29 @@
+import hashlib,json,shlex,time
+from pathlib import Path
+from urllib.error import HTTPError
+from urllib.parse import urlsplit
+from urllib.request import ProxyHandler,Request,build_opener
+H=Path(__file__).resolve().parent;priv=json.loads(Path('/tmp/nodesteer-e2e-resume-20261009-Qv9AYO/repair-connection.json').read_text());base=priv['hub_url'].rstrip('/');token=priv['token'];op=build_opener(ProxyHandler({}));PARENT='611c02a5-1859-4465-878b-d543b7f6fdec';CHILD='15961ef7-81b4-43f3-80c8-1b6977ca2aea';AGENT='agent-ab15a133-73cd-4025-8c97-f2ff37e000f5';ROOT='/tmp/qa-resume-20261008-child-ciivjupc';AGENTSHA='d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add';SUPSHA='078fc5e8711442c8051d8c515a3f57bc1d22dcdb90e9b384af0c50916125b531';CHILDSHA=AGENTSHA
+if urlsplit(base).port!=18080:raise SystemExit('repair endpoint guard failed')
+def api(m,p,b=None,allowed=(200,)):
+ h={'Authorization':'Bearer '+token};d=None
+ if b is not None:d=json.dumps(b).encode();h['Content-Type']='application/json'
+ try:
+  with op.open(Request(base+p,data=d,headers=h,method=m),timeout=15) as r:s,x=r.status,r.read()
+ except HTTPError as e:s,x=e.code,e.read()
+ if s not in allowed:raise RuntimeError(f'{m} {p} HTTP {s}')
+ return json.loads(x) if x else None
+src="import json,hashlib,os,stat,subprocess\nfrom pathlib import Path\nCID='fc2a37d3e7219370ed837b828ddac76916389ce8a076041ec0d5b9591b07bbe2'\nNAME='/qa-resume-20261010-host-f174890c3846-host001'\nOWNER='qa-resume-20261010-host-f174890c3846'\nIMAGE='sha256:ecd4dd9f8300067ba2cba22e8c5a701f1984f054fa4476354ed4d58af544cd44'\nSHA='d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add'\nROOT=Path('/opt/qa-resume-20261010-host-f174890c3846')\ndef inspect():\n r=subprocess.run(['docker','container','inspect',CID],capture_output=True,text=True,timeout=10)\n if r.returncode:raise RuntimeError('exact owned container inspect failed')\n return json.loads(r.stdout)[0]\ndef sha(p):\n h=hashlib.sha256()\n with open(p,'rb') as f:\n  for b in iter(lambda:f.read(1048576),b''):h.update(b)\n return h.hexdigest()\ns=ROOT.lstat()\nassert not ROOT.is_symlink() and (s.st_dev,s.st_ino,s.st_uid,stat.S_IMODE(s.st_mode))==(65025,70286,0,0o700)\nc=inspect();assert c['Id']==CID and c['Name']==NAME and c['Image']==IMAGE\nlabels=c['Config']['Labels'];assert labels['nodesteer.e2e.owner']==OWNER and labels['nodesteer-e2e-run']==OWNER and labels['nodesteer.e2e.role']=='host001'\nassert c['Config']['User']=='0:0' and c['HostConfig']['RestartPolicy']['Name']=='no' and not c['HostConfig']['Privileged']\nassert not Path('/etc/systemd/system/nodesteer-qa-host-f174890c3846-app.service').exists()\nwas_running=c['State']['Running'];process=None\nif was_running:\n pid=c['State']['Pid'];q=Path('/proc')/str(pid);raw=(q/'stat').read_text();ticks=int(raw[raw.rfind(')')+2:].split()[19]);uid=int(next(s for s in (q/'status').read_text().splitlines() if s.startswith('Uid:')).split()[1]);argv=[x.decode() for x in (q/'cmdline').read_bytes().split(b'\\0') if x]\n assert pid==731062 and ticks==136645572 and uid==0 and sha(q/'exe')==SHA\n assert argv==['/opt/nodesteer/nodesteer-agent','--config','/run/nodesteer/agent.yaml'] and CID in (q/'cgroup').read_text()\n process={'pid':pid,'startticks':ticks,'uid':uid,'exe_sha256':SHA}\n again=inspect();assert again['State']['Pid']==pid and again['State']['Running']\n stop=subprocess.run(['docker','container','stop','--time','10',CID],capture_output=True,text=True,timeout=30)\n if stop.returncode:raise RuntimeError('owned container stop failed')\nafter=inspect();assert not after['State']['Running'] and after['State']['Pid']==0\nassert after['Id']==CID and after['Config']['Labels']['nodesteer.e2e.owner']==OWNER\nprint(json.dumps({'status':'OWNED_HOST001_STOPPED_FOR_QUOTA_HANDOFF','container_id':CID,'owner':OWNER,'was_running':was_running,'guarded_process':process,'running_after':False,'pid_after':0,'container_image_root_volume_bridge_retained':True,'policy_or_config_changed':False,'host_app_unit_absent':True,'private_values_emitted':False}))"
+cmd='python3 -c '+shlex.quote(src);name='qa-root-20261010-quota-stop-owned-host001-f174890c3846';task=api('POST','/api/tasks',{'name':name,'type':'command','command':cmd,'target':{'type':'node','node_ids':[PARENT]},'parameters':[],'timeout':60,'retry':0,'offline_policy':'hub_online_required','enabled':True},(200,201));tid=task['id'];e={'task_id':tid,'task_name':name,'target_parent_node_id':PARENT,'source_sha256':hashlib.sha256(src.encode()).hexdigest(),'command_sha256':hashlib.sha256(cmd.encode()).hexdigest(),'retry':0,'schedule_present':False,'timeout':60,'scope':'guarded exact owned Host001 container stop for quota handoff; no original service/config/policy/storage removal'}
+try:
+ rd=api('GET','/api/tasks/'+tid);assert hashlib.sha256(rd.get('command','').encode()).hexdigest()==e['command_sha256'];x=api('POST','/api/tasks/'+tid+'/run',{'params':{}},(200,201));eid=x[0]['id'];end=time.monotonic()+55;fin=None
+ while time.monotonic()<end:
+  fin=api('GET','/api/executions/'+eid)
+  if fin.get('status') in {'SUCCESS','FAILED','BLOCKED','TIMED_OUT','CANCELED'}:break
+  time.sleep(.5)
+ out=fin.get('stdout') or '';e.update({'execution_id':eid,'execution_status':fin.get('status'),'execution_node_id':fin.get('node_id'),'stdout_sha256':hashlib.sha256(out.encode()).hexdigest(),'stdout_json':json.loads(out) if out else None,'stderr_bytes':len((fin.get('stderr') or '').encode())})
+finally:
+ e['task_delete_status']=api('DELETE','/api/tasks/'+tid,None,(200,204))
+ try:api('GET','/api/tasks/'+tid,None,(404,));e['task_get_after_status']=404
+ except Exception:e['task_get_after_status']='not-404'
+(H/'quota-host001-stop-evidence.json').write_text(json.dumps(e,ensure_ascii=False,indent=2)+'\n');print(json.dumps({'status':e.get('execution_status'),'task_deleted_404':e.get('task_get_after_status')==404,'remote':e.get('stdout_json')},ensure_ascii=False))

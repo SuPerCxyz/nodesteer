@@ -1,0 +1,182 @@
+{
+  "run_id": "20260930-101945",
+  "batch_id": "web-20261009-02",
+  "executor": "gpt-6-luna",
+  "role": "资深Web QA，真实agent-browser UI/API read-only验收",
+  "created_at": "2026-10-09",
+  "authority": "http://192.168.100.209:18080",
+  "case_limit": 30,
+  "planned_canonical_count": 16,
+  "source_of_truth": [
+    ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+    ".e2e/run-state.json",
+    ".e2e/coverage.json",
+    ".e2e/failures.json",
+    ".e2e/test-data.json",
+    "web/e2e/tests/p01-login.spec.ts",
+    "web/e2e/tests/p02-layout.spec.ts",
+    "web/e2e/tests/p04-nodes.spec.ts",
+    "web/e2e/tests/p23-detail-layout.spec.ts",
+    "web/e2e/tests/safe-ui.spec.ts"
+  ],
+  "execution_rules": {
+    "browser": "Reuse qawebsecure20261009; always --allowed-domains 192.168.100.209 and exact repair-origin secure override; keep online except explicit viewport/UI tests.",
+    "authority": "repair :18080 only; never use primary :8080 for management writes.",
+    "data": "read-only existing QA rows and native-3 only. No enrollment command generation that can create a non-deletable Node; no Node state changes; no User creation; one isolated browser logout session may revoke only its own login session, never shared connection bearer.",
+    "evidence": "Save only sanitized statuses, booleans, field lengths and screenshots without credentials, token, Authorization/Cookie, Registration Token, or synthetic secret values."
+  },
+  "cases": [
+    {
+      "canonical_id": "G-01-06",
+      "inventory_title": "/api/me、/api/logout → 返回正确用户和会话失效结果",
+      "required": [
+        "New isolated browser session logs in through real Sign-in UI using authorized existing Administrator credentials; GET /api/me is 200 and identifies administrator without saving username/token.",
+        "Profile logout confirmation sends one real POST /api/logout; browser token becomes absent, route reaches /sign-in; same session token GET /api/me after logout is rejected."
+      ],
+      "method": "agent-browser independent session + read-only API checks; capture the just-created UI token in process memory only for post-logout status verification; never revoke repair-connection bearer.",
+      "resources": "No backend resource creation; logout only isolated browser session."
+    },
+    {
+      "canonical_id": "G02-03",
+      "inventory_title": "Profile 菜单进入 Settings。",
+      "required": [
+        "Open Profile menu from authenticated page and click Settings; verify exact route/heading and browser back returns to prior route."
+      ],
+      "method": "Real sidebar/profile UI click and URL/heading oracle.",
+      "resources": "No business writes."
+    },
+    {
+      "canonical_id": "G02-06",
+      "inventory_title": "桌面端 Sidebar 折叠/展开，页面布局不溢出。",
+      "required": [
+        "At 1440x900 collapse then expand Sidebar; record state change, main bounds, document scrollWidth<=clientWidth."
+      ],
+      "method": "Real toggle click at desktop viewport; capture geometry and screenshot.",
+      "resources": "No business writes."
+    },
+    {
+      "canonical_id": "G02-07",
+      "inventory_title": "移动端 Sidebar 打开/关闭，点击导航后自动关闭。",
+      "required": [
+        "At 390x844 open mobile Sidebar, click Tasks, verify /tasks and menu closes; test Escape close/focus if supported."
+      ],
+      "method": "Real click and keyboard; observe menu state, route, overflow.",
+      "resources": "No business writes."
+    },
+    {
+      "canonical_id": "G04-06",
+      "inventory_title": "1366×768、1440×900、移动宽度验证无横向溢出和遮挡。",
+      "required": [
+        "On Dashboard, Agents and native-3 detail measure at 1366x768, 1440x900, and 390x844; no document horizontal overflow or primary-control overlap."
+      ],
+      "method": "Browser viewport + bounding boxes/scrollWidth/clientWidth + screenshots.",
+      "resources": "No writes."
+    },
+    {
+      "canonical_id": "P02-03",
+      "inventory_title": "Sidebar 桌面/移动端操作。",
+      "required": [
+        "Repeat desktop collapse/expand and mobile open/close/navigation behaviors as P02-03’s own applicable dimensions; active route and final state are visible."
+      ],
+      "method": "Same real UI interactions as G02-06/07 with separately mapped result dimensions.",
+      "resources": "No writes."
+    },
+    {
+      "canonical_id": "P04-02",
+      "inventory_title": "/nodes 和 /agents 均可访问，链接统一到 canonical /agents。",
+      "required": [
+        "Open /nodes directly and verify final URL canonical /agents; directly open /agents; click a Node sidebar/link if visible and verify canonical route."
+      ],
+      "method": "Real address-bar navigation and sidebar link; inspect URL/heading and GET status.",
+      "resources": "No writes."
+    },
+    {
+      "canonical_id": "P04-08",
+      "inventory_title": "列表搜索、无结果、刷新、分页。",
+      "required": [
+        "Search native-3 hostname shows matching row; search synthetic absent name shows No Results; clear/reset restores rows; reload retains unfiltered results.",
+        "Set page size 5 and test next/previous only if live dataset yields >5 rows; otherwise record pagination dimension PARTIAL."
+      ],
+      "method": "Real search input/select/buttons; compare read-only GET /api/nodes result and UI.",
+      "resources": "Only existing rows, including repair native-3; no update/delete."
+    },
+    {
+      "canonical_id": "P05A-01",
+      "inventory_title": "打开/关闭弹窗。",
+      "required": [
+        "Open Add Node dialog and close via Cancel/X/Escape; reopen; no enrollment POST."
+      ],
+      "method": "Real click/keyboard and browser network request count.",
+      "resources": "No submission or Node creation."
+    },
+    {
+      "canonical_id": "P05A-02",
+      "inventory_title": "节点名称、节点地址、Hub 地址必填校验。",
+      "required": [
+        "Observe required indicators and blank-state validation feedback; only click Generate when UI reports it disabled or guarantees zero request. If enabling it could create a pending Node, do not click and leave submission dimension PARTIAL."
+      ],
+      "method": "Inspect live form controls and network; use empty values only.",
+      "resources": "Do not create any Node."
+    },
+    {
+      "canonical_id": "P05A-04",
+      "inventory_title": "节点地址 IPv4、IPv6、DNS、非法地址。",
+      "required": [
+        "Fill synthetic IPv4/IPv6/DNS and invalid address values, blur and record client validation state. Do not Generate a valid enrollment command because it creates persistent pending Node. Valid address generation and server result remain PARTIAL."
+      ],
+      "method": "Real UI input/blur; no POST; record only value class/type, never synthetic values.",
+      "resources": "No Node creation."
+    },
+    {
+      "canonical_id": "P05A-08",
+      "inventory_title": "Native、docker run、docker compose Tab 内容正确。",
+      "required": [
+        "Inspect each available tab label and visible pre-generation guidance without calling enrollment. Generated command content requiring persisted enrollment remains PARTIAL."
+      ],
+      "method": "Real tab click/read visible labels/content.",
+      "resources": "No enrollment POST or Node creation."
+    },
+    {
+      "canonical_id": "P05A-13",
+      "inventory_title": "关闭后重新打开，确认表单、命令和错误状态符合产品定义。",
+      "required": [
+        "Type non-sensitive test text and, if client-only, create a validation error without Generate; close/reopen and verify reset. No command generation."
+      ],
+      "method": "Real form input/close/reopen and browser state checks.",
+      "resources": "No Node creation."
+    },
+    {
+      "canonical_id": "P05B-01",
+      "inventory_title": "Node Detail 单页各分区：Overview、Inventory、Capability、Labels、Tasks、Schedules、Applications、Executions；不要求不存在的 Tab。",
+      "required": [
+        "Open repair native-3 detail and verify exactly visible required page sections on one page; scroll sections; no unsupported tabs expected."
+      ],
+      "method": "Direct route and rendered headings/sections; GET backing Node data only.",
+      "resources": "Read-only repair native-3."
+    },
+    {
+      "canonical_id": "P05B-02",
+      "inventory_title": "Node ID、Agent ID、IP、OS、Version、Arch、Mode、Revision、Sync、Last Seen。",
+      "required": [
+        "Read each visible field on native-3 detail and compare to GET /api/nodes/{id}; report only equality booleans plus non-secret enums."
+      ],
+      "method": "Browser text + independent GET; mask IP/IDs in evidence unless needed to prove identity.",
+      "resources": "Read-only repair native-3."
+    },
+    {
+      "canonical_id": "P01-07",
+      "inventory_title": "OIDC disabled 时 SSO 按钮不显示。",
+      "required": [
+        "Read actual /api/oidc/state config. Only if enabled=false, open sign-in and verify no SSO button; if enabled=true, do not modify global config and keep scenario environment-limited."
+      ],
+      "method": "Unauthenticated read-only GET + real sign-in UI.",
+      "resources": "No global OIDC settings change; no mock."
+    }
+  ],
+  "deferred_dimensions": [
+    "Enrollment valid address generation and generated command content require persistent Node creation; remain PARTIAL.",
+    "OIDC UI check is only applicable if actual config disabled.",
+    "Any list pagination beyond available rows remains PARTIAL.",
+    "No role credential paths are sought or read; reuse current Administrator session only for UI-read paths."
+  ]
+}

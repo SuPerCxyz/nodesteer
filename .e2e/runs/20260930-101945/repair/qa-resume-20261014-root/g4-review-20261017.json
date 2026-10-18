@@ -1,0 +1,58 @@
+{
+  "review_id": "ROOT-G4-REVIEW-20261017",
+  "reviewed_at": "2026-10-17T04:26:24.329585+00:00",
+  "reviewer": "main-agent(root)",
+  "status": "INTEGRATED",
+  "dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261017-g4",
+  "authorization_basis": "授权清单 G4（Docker/Compose 独占窗口）；用户要求全部开跑",
+  "verdicts": [
+    {
+      "case_id": "E2E-18",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "compose force-recreate 后 Identity/Revision/Journal/Cache 四项全保（容器 ID 变更、卷与 DB dev/inode 不变）；compose down（保留卷）+2 个 Hub 变更 + up -d 恢复后重执行成功；UI 读回 r3616/已同步/docker 模式；attempt02 Journal 显式采纳",
+      "limitations": [
+        "核心维度证据不可独立重演（dev/inode、容器 ID 依赖批次自身证据；UI 已视觉复核）",
+        "Docker 形态跑 pinned 旧 Agent 构建 d55dc5cd…/…20261004，非 cr1 修复版（G4 授权排除）"
+      ]
+    },
+    {
+      "case_id": "AR-04",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "3 次容器重建 0 新增执行/0 重复行；额外 2 次真实 sync 周期无重复；故障窗内 Hub 水位 +2 与恢复后对账一致；1573/1575 解释为采样顺序伪差异（对象级 revision+sha 相等才是判据）",
+      "limitations": [
+        "仅覆盖手动触发，调度派生重复窗不在此批（属 G2/G3/G6）",
+        "该 Agent application_deploy=false，未跑应用部署执行"
+      ]
+    }
+  ],
+  "independent_reverification": "重试会话对既有产物做只读复核：30 项检查 29 通过，1 项差异（多出 3 个节点）完整归因于并发 G6 批次；交叉核对 7 项一致；未重跑以避免重复 20 分钟独占窗口并与 G6/G8/G9 抢 native-4",
+  "cleanup": "native-4 容器/卷/网络 0（仅基线 bridge/host/none）、/opt/qa-* 不存在、qa-g4 进程 0、镜像仅剩基线；Hub 五类集合 qa-g4 前缀命中 0；不可删留存：6 条 Execution + 17 条 audit 行",
+  "counts_before": {
+    "PASS": 469,
+    "FAIL": 6,
+    "PARTIAL": 19,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "counts_after": {
+    "PASS": 471,
+    "FAIL": 6,
+    "PARTIAL": 17,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "status_changes": [
+    [
+      "E2E-18",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "AR-04",
+      "PARTIAL",
+      "PASS"
+    ]
+  ]
+}

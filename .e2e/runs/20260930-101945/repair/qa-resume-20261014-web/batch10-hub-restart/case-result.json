@@ -1,0 +1,175 @@
+{
+  "batch_id": "batch10-hub-restart",
+  "title": "File Relay 多目标：成功/失败/重试/取消/Hub 重启 与 目标离线恢复（含 UI 反馈）",
+  "nonce": "81187a896616",
+  "executed_at_utc": "2026-10-15T11:58:34Z",
+  "finished_at_utc": "2026-10-15T12:01:45Z",
+  "endpoint": "http://192.168.100.209:18080",
+  "cases": [
+    {
+      "case_id": "E2E-14",
+      "title": "File Relay 多目标 → 成功、失败、重试、取消、Hub 重启均正确",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PARTIAL excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-WEB:E2E-14",
+          "layer": "multi-target File Relay over the real product data path + Hub restart",
+          "status": "PASS",
+          "description": [
+            "Multi-target SUCCESS/FAILURE isolation: a two-target transfer where one target succeeded (exact source size/sha256/mode on disk) and the other failed (symlink destination rejected by the native host adapter) reached overall FAILED without blocking the good target.",
+            "RETRY: the failed target was retried individually (POST /api/transfers/<id>/retry?target_id=<node>) to SUCCESS with the exact source sha256.",
+            "CANCEL: a staged transfer whose target was offline was canceled -> terminal CANCELED, no destination file and the Hub staged blob/part cleaned.",
+            "HUB RESTART: the transfer staged while the target was offline survived the authorised repair-Hub restart and completed after reconnect with no half product.",
+            "UI readback: the /transfers page lists the owned rows and the rendered per-target statuses agree with the API (multi-target row 成功 with tgt_a 成功 + tgt_b 成功; cancel row 已取消)."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The multi-target transfer uses the same source Agent for every target and a symlink destination as the deterministic failure; no cross-source case is included.",
+        "One Hub restart was performed (the single authorised repair unit)."
+      ],
+      "evidence": [
+        "UI-transfers-owned.png",
+        "UI-transfers-table.png",
+        "attempt01-ui-assertion-bug",
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase1-owned-children.json",
+        "phase2-multitarget-success-failure.json",
+        "phase3-retry-single-target.json",
+        "phase4-cancel.json",
+        "phase5a-hub-restart.json",
+        "phase5b-hub-restart-recovery.json",
+        "phase6-ui-readback.json",
+        "phase7-settle.json",
+        "phase8-cleanup.json",
+        "run-stderr.log",
+        "run-stdout.log",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-b10-81187a896616-",
+        "src_node_id": "931cf93c-ade2-460e-a3b5-3d94ae04ad93",
+        "src_agent_id": "agent-7d2d4cf3-e04b-4a1d-ada2-6c4fe756bede",
+        "tgt_a_node_id": "cdb70182-3c59-4f8b-82ec-e357a95f2a83",
+        "tgt_a_agent_id": "agent-58e613f7-e186-4953-897c-935bf249fccf",
+        "tgt_b_node_id": "a5ef28c7-1048-4aa9-8bc7-5fb7e221be90",
+        "tgt_b_agent_id": "agent-4170b60c-ca9b-4a35-8d6f-dfd4eb74c462",
+        "transfers": {
+          "multi_target": "1631e256-3084-46fd-8015-3f7e01239f5a",
+          "canceled": "89141bbb-7f6b-4915-ae17-943f7e49df22",
+          "hub_restart": "ade13b72-1ec8-4a23-b3bf-c356ccd69deb"
+        },
+        "retained_transfer_history": [
+          "1631e256-3084-46fd-8015-3f7e01239f5a",
+          "89141bbb-7f6b-4915-ae17-943f7e49df22",
+          "ade13b72-1ec8-4a23-b3bf-c356ccd69deb"
+        ]
+      }
+    },
+    {
+      "case_id": "P22-15",
+      "title": "Hub 重启、Agent 重连、目标离线后的传输恢复",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PARTIAL excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-WEB:P22-15",
+          "layer": "repair-Hub restart / Agent reconnect / offline target / UI feedback",
+          "status": "PASS",
+          "description": [
+            "The source uploaded and the Hub staged the blob while the target was offline; the transfer row survived the ONE authorised repair-Hub restart unchanged.",
+            "The source Agent reconnected by itself after the restart; the target reconnected when brought back and ResumeNode delivered exactly once.",
+            "No destination file or temp file existed on the target while it was offline (before and after the restart), and the final file matched the exact source size/sha256/mode with the Hub staging cleaned.",
+            "All 4 protected repair nodes plus the primary :8080 Hub and every Agent kept their MainPIDs; only the repair-Hub MainPID changed, and /healthz, /readyz returned 200.",
+            "UI feedback is consistent with the API state for the owned transfers."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The Hub outage observed is short (unit stop/start, ~1-3 s); a long outage beyond the Agent heartbeat timeout was not exercised.",
+        "The UI stage is a read-only readback of the transfers table; no transfer was created or acted on from the UI."
+      ],
+      "evidence": [
+        "UI-transfers-owned.png",
+        "UI-transfers-table.png",
+        "attempt01-ui-assertion-bug",
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase1-owned-children.json",
+        "phase2-multitarget-success-failure.json",
+        "phase3-retry-single-target.json",
+        "phase4-cancel.json",
+        "phase5a-hub-restart.json",
+        "phase5b-hub-restart-recovery.json",
+        "phase6-ui-readback.json",
+        "phase7-settle.json",
+        "phase8-cleanup.json",
+        "run-stderr.log",
+        "run-stdout.log",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-b10-81187a896616-",
+        "src_node_id": "931cf93c-ade2-460e-a3b5-3d94ae04ad93",
+        "src_agent_id": "agent-7d2d4cf3-e04b-4a1d-ada2-6c4fe756bede",
+        "tgt_a_node_id": "cdb70182-3c59-4f8b-82ec-e357a95f2a83",
+        "tgt_a_agent_id": "agent-58e613f7-e186-4953-897c-935bf249fccf",
+        "tgt_b_node_id": "a5ef28c7-1048-4aa9-8bc7-5fb7e221be90",
+        "tgt_b_agent_id": "agent-4170b60c-ca9b-4a35-8d6f-dfd4eb74c462",
+        "transfers": {
+          "multi_target": "1631e256-3084-46fd-8015-3f7e01239f5a",
+          "canceled": "89141bbb-7f6b-4915-ae17-943f7e49df22",
+          "hub_restart": "ade13b72-1ec8-4a23-b3bf-c356ccd69deb"
+        },
+        "retained_transfer_history": [
+          "1631e256-3084-46fd-8015-3f7e01239f5a",
+          "89141bbb-7f6b-4915-ae17-943f7e49df22",
+          "ade13b72-1ec8-4a23-b3bf-c356ccd69deb"
+        ]
+      }
+    }
+  ],
+  "deviations": [],
+  "budget": {
+    "api_mutations": 11,
+    "node_enroll_posts": 3,
+    "transfers_created": 3,
+    "transfers_retried": 1,
+    "transfers_canceled": 1,
+    "hub_restarts": 1,
+    "child_process_starts": 3,
+    "child_process_removals": 3,
+    "ui_sessions": 1
+  },
+  "final_cleanup_oracle_clean": true,
+  "harness_seams": {
+    "authority": "management and agent data-plane writes only to repair http://192.168.100.209:18080",
+    "hub_restart": "only nodesteer-hub-repair-20260930-101945.service was stopped/started once; nodesteer-hub.service (:8080) and all Agent units untouched",
+    "owned_children": "source on native-1, targets on native-2/native-3, exact repair Agent binary d55dc5cd..., each behind its own harness frame proxy",
+    "ui": "agent-browser read-only session on the repair UI; no UI writes",
+    "credential_source": "each child's own store (identity.credential), never a protected Agent config",
+    "product_source_changes": 0,
+    "git_operations": 0,
+    "vms_restarted": 0
+  },
+  "post_run_addendum": {
+    "reported_run": "attempt02 (EXIT=0, oracle clean, new nonce 81187a896616)",
+    "attempts": [
+      "evidence/attempt01-ui-assertion-bug/ : the first attempt produced correct UI data but its UI assertion was mis-specified - it looked for the transfer UUID in the rows, which the transfers table never renders. The owned row was in fact present with the correct rendered statuses (src-multi.bin -> 成功, tgt_a 成功 tgt_b 成功; src-cancel.bin -> 已取消). The assertion was corrected to match the rendered columns and the case verdict was coupled to the UI result, then the batch was re-run with a fresh nonce."
+    ],
+    "hub_restarts_whole_batch": 2,
+    "note": "across all attempts only nodesteer-hub-repair-20260930-101945.service was ever stopped/started; the primary :8080 Hub (MainPID 1251) and every Agent unit kept their MainPID the whole time. No credential is persisted in any evidence file."
+  }
+}

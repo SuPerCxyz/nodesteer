@@ -1,0 +1,491 @@
+{
+  "batch_id": "sys-b08",
+  "title": "离线自治与在线门禁：Allow Offline 继续执行、Hub Online Required 不执行、Agent-owned 调度离线触发",
+  "nonce": "fc0350484850",
+  "executed_at_utc": "2026-10-15T11:07:47Z",
+  "finished_at_utc": "2026-10-15T11:07:59Z",
+  "endpoint": "http://192.168.100.209:18080",
+  "cases": [
+    {
+      "case_id": "SYS-13",
+      "title": "SYS-13 Agent 断网时 Allow Offline 调度继续执行",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PARTIAL",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-13",
+          "layer": "agent-local scheduler / real Hub link cut (own frame proxy) / node effect files",
+          "status": "PARTIAL",
+          "description": [
+            "An agent-owned interval Schedule (interval_sec=5, execution_owner=agent, offline_policy=allow_offline) was created on the repair Hub and synced to the owned child Agent.",
+            "While the Hub link was cut the Agent process stayed alive and its local scheduler kept firing: None new execution(s) appeared in the Agent store with offline=1 and trigger_type=schedule, and the node effect file grew by the same amount.",
+            "The business effect is real: the script appended one line per fire to the harness-owned effect file on the node while the Hub was unreachable (the Hub had no new Execution rows for that time window).",
+            "After the link was restored the offline executions were uploaded (synced=1) and the schedule kept firing normally."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The Hub link was cut on the harness-owned frame proxy (the Agent process deliberately stayed alive so the local scheduler could be exercised); no protected service and no Hub unit was stopped in this batch."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase1-owned-child.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb08-fc0350484850-",
+        "child_node_id": "8e07a763-1ee0-4629-a11d-750a679ab5f0",
+        "child_agent_id": "agent-09ce169b-08f4-4785-a8f9-9f67a8351bbd",
+        "script_id": "a41d8378-3b02-4464-8bb3-ca843e70ec5c",
+        "task_allow_id": "1dfb5989-c0ad-4984-b70f-5bb10a63042f",
+        "task_required_id": "67aa7ef8-722c-4b79-84be-d80fc50b9533",
+        "schedule_allow_id": "22c897eb-2925-43f7-9f4c-ca624b3d299b",
+        "schedule_required_id": "ab31f67f-6c22-441a-833d-46ba999837ee"
+      },
+      "actual_budget": {
+        "api_mutations": 12,
+        "hub_definition_creates": 5,
+        "hub_definition_deletes": 5,
+        "manual_run_posts": 0,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1,
+        "hub_stop_events": 0,
+        "hub_start_events": 0,
+        "proxy_cut_events": 0
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "schedule",
+            "id": "22c897eb-2925-43f7-9f4c-ca624b3d299b",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "schedule",
+            "id": "ab31f67f-6c22-441a-833d-46ba999837ee",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "1dfb5989-c0ad-4984-b70f-5bb10a63042f",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "67aa7ef8-722c-4b79-84be-d80fc50b9533",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "a41d8378-3b02-4464-8bb3-ca843e70ec5c",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "at_utc": "2026-10-15T11:07:55Z",
+        "effect_files": {
+          "still_exists": {
+            "/var/lib/nodesteer-qa-sysb08-fc0350484850/effects/allow.txt": false,
+            "/var/lib/nodesteer-qa-sysb08-fc0350484850/effects/required.txt": false
+          }
+        },
+        "node_child_removal": {
+          "signalled": [
+            78388
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "8e07a763-1ee0-4629-a11d-750a679ab5f0",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "SYS-14",
+      "title": "SYS-14 Hub Online Required 在 Hub 不可用时不执行",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PARTIAL",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-14",
+          "layer": "agent-local scheduler offline gate / node effect files / agent log",
+          "status": "PARTIAL",
+          "description": [
+            "A second agent-owned interval Schedule with the same shape but offline_policy=hub_online_required was synced to the same Agent, and it fired while the link was up (positive control on the same object).",
+            "During the identical offline window its execution count stayed exactly at the pre-cut value: no new journal row, no new Execution, and zero new lines in its node effect file - so the task really did not execute on the client machine.",
+            "The Agent log for the offline window contains no \"schedule trigger\" line for that schedule, while it does contain them for the allow_offline schedule: the gate is the offline policy, not a broken schedule.",
+            "After the link was restored the hub_online_required schedule fired again - proving it was suppressed by the offline gate and not permanently disabled."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The \"no execution\" side is evidenced by three independent readings (Agent store, node effect file, agent log) plus the post-recovery positive control on the same schedule."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase1-owned-child.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb08-fc0350484850-",
+        "child_node_id": "8e07a763-1ee0-4629-a11d-750a679ab5f0",
+        "child_agent_id": "agent-09ce169b-08f4-4785-a8f9-9f67a8351bbd",
+        "script_id": "a41d8378-3b02-4464-8bb3-ca843e70ec5c",
+        "task_allow_id": "1dfb5989-c0ad-4984-b70f-5bb10a63042f",
+        "task_required_id": "67aa7ef8-722c-4b79-84be-d80fc50b9533",
+        "schedule_allow_id": "22c897eb-2925-43f7-9f4c-ca624b3d299b",
+        "schedule_required_id": "ab31f67f-6c22-441a-833d-46ba999837ee"
+      },
+      "actual_budget": {
+        "api_mutations": 12,
+        "hub_definition_creates": 5,
+        "hub_definition_deletes": 5,
+        "manual_run_posts": 0,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1,
+        "hub_stop_events": 0,
+        "hub_start_events": 0,
+        "proxy_cut_events": 0
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "schedule",
+            "id": "22c897eb-2925-43f7-9f4c-ca624b3d299b",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "schedule",
+            "id": "ab31f67f-6c22-441a-833d-46ba999837ee",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "1dfb5989-c0ad-4984-b70f-5bb10a63042f",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "67aa7ef8-722c-4b79-84be-d80fc50b9533",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "a41d8378-3b02-4464-8bb3-ca843e70ec5c",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "at_utc": "2026-10-15T11:07:55Z",
+        "effect_files": {
+          "still_exists": {
+            "/var/lib/nodesteer-qa-sysb08-fc0350484850/effects/allow.txt": false,
+            "/var/lib/nodesteer-qa-sysb08-fc0350484850/effects/required.txt": false
+          }
+        },
+        "node_child_removal": {
+          "signalled": [
+            78388
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "8e07a763-1ee0-4629-a11d-750a679ab5f0",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "AR-18",
+      "title": "AR-18 Offline Scheduled Execution；恢复后幂等、持久化、Desired State与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PARTIAL",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-18",
+          "layer": "offline agent-owned schedule -> hub upload idempotency / persistence / desired==actual",
+          "status": "PARTIAL",
+          "description": [
+            "Offline scheduled executions were produced by a real agent-owned interval schedule during two separate offline windows and uploaded after each recovery.",
+            "Idempotency: for every scheduled slot there is exactly one Agent-local row and exactly one Hub row; the local and Hub execution ID sets are identical and each offline execution carries byte-identical stdout (content SHA256 match) and the same terminal status.",
+            "Persistence: the Hub revision did not decrease, the owned script/task/schedule rows were still present after recovery with matching revisions, and PRAGMA quick_check was ok on both sides.",
+            "Desired State == actual state after recovery: the Hub script sha256 matches the Agent-local copy, the task revisions and schedule revisions match on both sides, and the schedules continued to fire without replaying old slots."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Two offline windows were used (32s and 22s) so that both the first upload and a repeat recovery path were covered."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase1-owned-child.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb08-fc0350484850-",
+        "child_node_id": "8e07a763-1ee0-4629-a11d-750a679ab5f0",
+        "child_agent_id": "agent-09ce169b-08f4-4785-a8f9-9f67a8351bbd",
+        "script_id": "a41d8378-3b02-4464-8bb3-ca843e70ec5c",
+        "task_allow_id": "1dfb5989-c0ad-4984-b70f-5bb10a63042f",
+        "task_required_id": "67aa7ef8-722c-4b79-84be-d80fc50b9533",
+        "schedule_allow_id": "22c897eb-2925-43f7-9f4c-ca624b3d299b",
+        "schedule_required_id": "ab31f67f-6c22-441a-833d-46ba999837ee"
+      },
+      "actual_budget": {
+        "api_mutations": 12,
+        "hub_definition_creates": 5,
+        "hub_definition_deletes": 5,
+        "manual_run_posts": 0,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1,
+        "hub_stop_events": 0,
+        "hub_start_events": 0,
+        "proxy_cut_events": 0
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "schedule",
+            "id": "22c897eb-2925-43f7-9f4c-ca624b3d299b",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "schedule",
+            "id": "ab31f67f-6c22-441a-833d-46ba999837ee",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "1dfb5989-c0ad-4984-b70f-5bb10a63042f",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "67aa7ef8-722c-4b79-84be-d80fc50b9533",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "a41d8378-3b02-4464-8bb3-ca843e70ec5c",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "at_utc": "2026-10-15T11:07:55Z",
+        "effect_files": {
+          "still_exists": {
+            "/var/lib/nodesteer-qa-sysb08-fc0350484850/effects/allow.txt": false,
+            "/var/lib/nodesteer-qa-sysb08-fc0350484850/effects/required.txt": false
+          }
+        },
+        "node_child_removal": {
+          "signalled": [
+            78388
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "8e07a763-1ee0-4629-a11d-750a679ab5f0",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "E2E-04",
+      "title": "E2E-04 Agent-owned Interval Offline → 离线继续执行，恢复后无重复",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PARTIAL",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:E2E-04",
+          "layer": "agent-owned interval schedule / offline continuation / duplicate-free recovery",
+          "status": "PARTIAL",
+          "description": [
+            "The Agent-owned interval schedule continued to execute while the Agent had no Hub connection (None new offline executions in the first window, 0 lines added to the node effect file), i.e. offline autonomy is real and not a Hub-side replay.",
+            "After recovery there was no duplicate: every slot exists exactly once locally and once on the Hub, the ID sets match, and the same holds after a second offline/online cycle.",
+            "No catch-up replay happened after recovery: later slots were produced by the live schedule, old slots were not re-executed, and the Hub row count equals the number of distinct slots.",
+            "The user-visible feedback is consistent with the effect on the node: the Hub shows exactly the executions the Agent journal recorded, with the offline flag set for the ones produced while disconnected."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "\"No duplicate\" is asserted at slot granularity (task_id + node_id + scheduled_time), which is the product idempotency key for scheduled executions."
+      ],
+      "evidence": [
+        "final-cleanup-oracle.json",
+        "phase0-guard.json",
+        "phase1-owned-child.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb08-fc0350484850-",
+        "child_node_id": "8e07a763-1ee0-4629-a11d-750a679ab5f0",
+        "child_agent_id": "agent-09ce169b-08f4-4785-a8f9-9f67a8351bbd",
+        "script_id": "a41d8378-3b02-4464-8bb3-ca843e70ec5c",
+        "task_allow_id": "1dfb5989-c0ad-4984-b70f-5bb10a63042f",
+        "task_required_id": "67aa7ef8-722c-4b79-84be-d80fc50b9533",
+        "schedule_allow_id": "22c897eb-2925-43f7-9f4c-ca624b3d299b",
+        "schedule_required_id": "ab31f67f-6c22-441a-833d-46ba999837ee"
+      },
+      "actual_budget": {
+        "api_mutations": 12,
+        "hub_definition_creates": 5,
+        "hub_definition_deletes": 5,
+        "manual_run_posts": 0,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1,
+        "hub_stop_events": 0,
+        "hub_start_events": 0,
+        "proxy_cut_events": 0
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "schedule",
+            "id": "22c897eb-2925-43f7-9f4c-ca624b3d299b",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "schedule",
+            "id": "ab31f67f-6c22-441a-833d-46ba999837ee",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "1dfb5989-c0ad-4984-b70f-5bb10a63042f",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "67aa7ef8-722c-4b79-84be-d80fc50b9533",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "a41d8378-3b02-4464-8bb3-ca843e70ec5c",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "at_utc": "2026-10-15T11:07:55Z",
+        "effect_files": {
+          "still_exists": {
+            "/var/lib/nodesteer-qa-sysb08-fc0350484850/effects/allow.txt": false,
+            "/var/lib/nodesteer-qa-sysb08-fc0350484850/effects/required.txt": false
+          }
+        },
+        "node_child_removal": {
+          "signalled": [
+            78388
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "8e07a763-1ee0-4629-a11d-750a679ab5f0",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    }
+  ],
+  "deviations": [
+    "HARNESS_ERROR:child_sql_failed: Warning: Permanently added '192.168.100.222' (ED25519) to the list of known hosts.\nTraceback (most recent call last):\n  File \"<stdin>\", line 4, in <module>\nsqlite3.OperationalError: no such column: task_id\n"
+  ],
+  "budget": {
+    "api_mutations": 12,
+    "hub_definition_creates": 5,
+    "hub_definition_deletes": 5,
+    "manual_run_posts": 0,
+    "node_enroll_posts": 1,
+    "child_process_starts": 1,
+    "child_process_stops": 1,
+    "hub_stop_events": 0,
+    "hub_start_events": 0,
+    "proxy_cut_events": 0
+  },
+  "final_cleanup_oracle_clean": true,
+  "harness_seams": {
+    "authority": "management writes only to repair http://192.168.100.209:18080",
+    "hub_outage": "cut of the owned child Agent link on the harness-owned frame proxy (proxy mode=cut); the repair Hub was NOT restarted in this batch (0 hub stop/start events)",
+    "owned_child": "one harness-owned child Agent on native-3 (exact repair Agent binary d55dc5cd...) behind a harness-owned frame proxy on 192.168.100.170",
+    "offline_autonomy": "the Agent process intentionally stayed alive so its local scheduler was exercised offline",
+    "product_source_changes": 0,
+    "git_operations": 0,
+    "vms_restarted": 0
+  }
+}

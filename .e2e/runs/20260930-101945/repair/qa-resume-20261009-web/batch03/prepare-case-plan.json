@@ -1,0 +1,106 @@
+{
+  "batch_id": "web-20261009-03",
+  "executor": "gpt-6-luna",
+  "created_at": "2026-10-09T17:19:04+08:00",
+  "canonical_cases": [
+    "P04-08",
+    "P05A-01",
+    "P05A-02",
+    "P05A-03",
+    "P05A-04",
+    "P05A-05",
+    "P05A-06",
+    "P05A-07",
+    "P05A-08",
+    "P05A-09",
+    "P05A-12",
+    "P05A-13"
+  ],
+  "cases": [
+    {
+      "canonical_id": "P04-08",
+      "target": ">=11 current Nodes; search/no-results/reset/reload, set page size 10, use actual Next/Previous; compare UI row counts and GET /api/nodes count."
+    },
+    {
+      "canonical_id": "P05A-01",
+      "target": "Open enrollment form, fill safe local draft, cancel via X/Close, reopen; separately Escape and backdrop close; verify modal closed and no enrollment POST or Node count delta."
+    },
+    {
+      "canonical_id": "P05A-02",
+      "target": "Three UI required-field branches (all empty / missing name / missing address / missing Hub as feasible): native validation and 0 POST; direct API empty/missing fields return 400, zero Node count delta."
+    },
+    {
+      "canonical_id": "P05A-03",
+      "target": "UI invalid name character and 129 chars produce 400/no Node; 128-char valid unique name reuses fixture0 for one real successful enrollment."
+    },
+    {
+      "canonical_id": "P05A-04",
+      "target": "Real UI valid IPv4/IPv6/DNS submissions use 3 owned fixtures; invalid address submits but API returns 400 and creates no Node."
+    },
+    {
+      "canonical_id": "P05A-05",
+      "target": "UI unsupported scheme (ftp) and invalid/missing host exercise native/API rejection before creation; successful primary enrollment uses valid https Hub URL; no global settings change."
+    },
+    {
+      "canonical_id": "P05A-06",
+      "target": "For the first real valid UI submission, clear network events and assert exactly one POST /api/nodes/enrollment, response 200; independent GET identifies the exact owned Node."
+    },
+    {
+      "canonical_id": "P05A-07",
+      "target": "Immediately sample real mutation pending UI/button disabled state during actual POST; if timing misses, preserve PARTIAL (no mock/route delay)."
+    },
+    {
+      "canonical_id": "P05A-08",
+      "target": "On the actual generated response, click Native/docker run/docker compose tabs; record selected tab, text length/hash and required-field booleans only; no raw command text/screenshots."
+    },
+    {
+      "canonical_id": "P05A-09",
+      "target": "In memory assert expected Hub URL form, registration token, node name, address, Agent ID and deployment mode per each command; persist only booleans/length/hash; never print/store command or secret."
+    },
+    {
+      "canonical_id": "P05A-12",
+      "target": "GET each owned node after POST; assert pending status and assigned Node ID/Agent ID; no Agent HELLO, startup, or original Node change."
+    },
+    {
+      "canonical_id": "P05A-13",
+      "target": "After generated state, close by Cancel/Esc/backdrop; reopen and verify fields/commands/error state reset; no extra enrollment POST."
+    }
+  ],
+  "fixture_plan": [
+    {
+      "purpose": "ipv4-valid-length128-and-command-primary",
+      "ip": "127.70.10.91",
+      "name_length": 128,
+      "name": "qa-web-20261009-7e8512-len128-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    {
+      "purpose": "ipv6-valid",
+      "name": "qa-web-20261009-7e8512-ipv6",
+      "ip": "2001:db8:70::92"
+    },
+    {
+      "purpose": "dns-valid",
+      "name": "qa-web-20261009-7e8512-dns",
+      "ip": "qa-web-7e8512-dns.example.test"
+    },
+    {
+      "purpose": "pagination-4",
+      "name": "qa-web-20261009-7e8512-page4",
+      "ip": "127.70.10.94"
+    },
+    {
+      "purpose": "pagination-5",
+      "name": "qa-web-20261009-7e8512-page5",
+      "ip": "2001:db8:70::95"
+    },
+    {
+      "purpose": "pagination-6",
+      "name": "qa-web-20261009-7e8512-page6",
+      "ip": "qa-web-7e8512-page6.example.test"
+    }
+  ],
+  "fixture_limit": 6,
+  "cleanup": "Finally DELETE every exact Node ID created by this batch; verify GET /api/nodes/{id}=404. Preserve enrollment response secrets only in memory. Do not delete any existing ID.",
+  "planned_side_effects": "Only six possible owned pending Nodes via the real Add Node UI, all with unique QA hostname/IP. API validation-negative cases must not create Nodes. No Agent start, no edits to existing Nodes, no global OIDC/settings changes.",
+  "status": "PREPARED"
+}

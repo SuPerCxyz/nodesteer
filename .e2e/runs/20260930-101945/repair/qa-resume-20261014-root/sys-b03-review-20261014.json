@@ -1,0 +1,73 @@
+{
+  "review_id": "ROOT-SYS-B03-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T09:42:37.032646+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "run_dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/sys-b03",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试、剩余分母全量推进；并发上限 5",
+  "verdicts": [
+    {
+      "case_id": "SYS-04",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "丢弃自有对象通知（global_rev=1849）后 child 本地仍 1848，37.2s 后经 Revision Check 收敛；收敛前最后一帧为 REVISION_CHECK_ACK，SYNC_REQUEST.since=1848、full_resync=false、applied_rev=1849；child script sha 与 Hub 一致。",
+      "limitations": [
+        "One connectivity scenario (link up, single dropped notification). Duplicated or reordered notifications on a live link are covered under AR-10."
+      ]
+    },
+    {
+      "case_id": "AR-10",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "丢弃 task 通知(1869) + 停 child(→offline) + 离线改 script(rev4) + 重启重连 SYNC_REQUEST(since=1868)→1870；Desired==实际；store 跨重启持久；复制通知后仍单行；二次重启后 Task Execution=1、Hub Execution=1。",
+      "limitations": [
+        "\"Offline\" was produced by stopping only the owned child process; the protected repair Agents and the Hub were never stopped."
+      ]
+    },
+    {
+      "case_id": "SYS-06",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "3 个 Desired State 变更通知全丢弃，lag 1859→1862；恰 1 次 SYNC_REQUEST(since=1859)；SYNC_RESPONSE(global_rev=1868, snapshot=true, full_resync=false)；child 回读 script sha 与 task1/task2 revision 与 Hub 一致。",
+      "limitations": [
+        "The Hub sync response is a complete node-scoped Desired State snapshot with tombstones filtered by `since` (not a per-object delta); the incremental property verified here is the since-based request plus idempotent full upsert with pruning. Because other batches advance the global revision concurrently, assertions are on the owned objects and on since=local, not on a global revision count."
+      ]
+    },
+    {
+      "case_id": "AR-13",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "2 变更通知丢弃，lag 1875→1877 经 Revision Check 收敛；重启后 online/synced、状态一致、Execution 仍=1。",
+      "limitations": [
+        "The lag window is bounded by the Hub-pushed revision_check_interval_sec (45s in this environment); measured convergence times are recorded."
+      ]
+    }
+  ],
+  "verified_independently_by_root": {
+    "live_residue_check": "Hub 无 qa-sysb03 残留（scripts/tasks/nodes 均无匹配）",
+    "native3_cleanup": "owned 沙箱 /var/lib/nodesteer-qa-sysb03-ab0d99a2f96f 不存在、无相关进程",
+    "deviations": [],
+    "oracle_clean": true
+  },
+  "cross_batch_note": "Hub 全局计数（scripts 6 / tasks 4 / nodes 8）含其他并行批次 fixture，非本批残留；本批断言均基于自有对象与相对读数",
+  "counts_before": {
+    "PASS": 250,
+    "FAIL": 5,
+    "PARTIAL": 163,
+    "NOT_RUN": 77,
+    "BLOCKED": 9
+  },
+  "not_claimed": "未执行产品修复、Git 交付或 Archive",
+  "counts_after": {
+    "PASS": 254,
+    "FAIL": 5,
+    "PARTIAL": 163,
+    "NOT_RUN": 73,
+    "BLOCKED": 9
+  }
+}

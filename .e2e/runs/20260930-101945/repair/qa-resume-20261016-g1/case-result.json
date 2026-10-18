@@ -1,0 +1,707 @@
+{
+ "batch_id": "qa-resume-20261016-g1",
+ "owner": "e2e (G1 隔离可销毁实例批)",
+ "generated_at_utc": "2026-10-16T09:46:16Z",
+ "authorization": {
+  "checklist": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/authorization-checklist-20261016.md",
+  "group": "G1（隔离可销毁实例）+ G9 的 X14 并入",
+  "cases_authorized": [
+   "P04-06",
+   "P14P15-12",
+   "P21-08",
+   "P20-04",
+   "X13",
+   "P03-09",
+   "P19-03",
+   "X14"
+  ]
+ },
+ "environment": {
+  "instance": "nodesteer-qa-g1202610163692428a",
+  "nonce": "g1202610163692428a",
+  "port": 18085,
+  "base_url": "http://192.168.100.209:18085",
+  "tunnel_local_port": 38285,
+  "binary": "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard",
+  "binary_sha256": "cd8b7f9d7e40841bbba982c6838b2f74ccfdfac785674030c5bf7d6f1f69120d",
+  "ui_parity_with_repair": "index.html sha256 相同（612c23ba…）",
+  "owned_child_agent_binary": "/opt/nodesteer-repair-20260930-101945/agent-static/nodesteer-agent",
+  "owned_child_agent_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+  "note": "owned child 使用 repair 同步的 agent-static 构建；Hub 侧为本日修复版。",
+  "browser": "agent-browser（自有 session：qa-g1-<nonce>-*，含 tab t1/t2 多标签）",
+  "database": "/var/lib/nodesteer-qa-g1202610163692428a/hub.db（销毁时随 data_dir 一并删除）"
+ },
+ "data_created_on_isolated_instance": {
+  "executions": 23,
+  "audit_rows": 287,
+  "users": 18,
+  "nodes": 15,
+  "note": "全部对象仅存在于隔离实例 data_dir，随实例整体销毁；未在 repair :18080 / primary :8080 产生任何写入。"
+ },
+ "cases": [
+  {
+   "case_id": "P03-09",
+   "before_status": "PARTIAL",
+   "proposed_status": "PASS",
+   "confidence": "high",
+   "verified_dimensions": [
+    {
+     "dimension": "真空权威（初始 data_dir）上的四个空态：无运行执行 / 无应用 / 无调度 / 无失败执行",
+     "result": "PASS",
+     "layer": "real-ui-api",
+     "detail": "API：executions=0（且 status=failed / RUNNING 均为 0）、applications=0、schedules=0、nodes=0、tasks=0；UI：仪表盘“当前没有正在执行的任务。”+ 运行中 0 + 执行失败 0 + 成功率 -、“暂无托管应用”、“暂无调度”；/applications 与 /schedules 表为空态“暂无数据”；/executions?status=failed 空态“没有匹配的执行记录”。",
+     "evidence": [
+      "evidence/P03-09-pristine-empty-state.json",
+      "evidence/P0309-dashboard.png",
+      "evidence/P0309-applications.png",
+      "evidence/P0309-schedules.png",
+      "evidence/P0309-executions_statusfailed.png"
+     ]
+    }
+   ],
+   "remaining_or_unverified": [
+    "空态断言在“零数据”实例上进行；未覆盖有历史失败数据时的局部空态（该形态已由既有 PARTIAL 维度覆盖）。"
+   ],
+   "layer": "real-ui-api",
+   "evidence": [
+    "evidence/P03-09-pristine-empty-state.json"
+   ],
+   "actual": {
+    "api_pristine": {
+     "no_executions": true,
+     "no_failed_executions": true,
+     "no_running_executions": true,
+     "no_applications": true,
+     "no_schedules": true,
+     "no_nodes": true,
+     "no_tasks": true
+    },
+    "ui_empty_states": {
+     "/": {
+      "当前没有正在执行的任务。": true,
+      "暂无托管应用": true,
+      "暂无调度": true
+     },
+     "/applications": {
+      "暂无数据": true
+     },
+     "/schedules": {
+      "暂无数据": true
+     },
+     "/tasks": {
+      "没有结果。": true
+     },
+     "/nodes": {
+      "暂无数据": true
+     },
+     "/executions?status=failed": {
+      "没有匹配的执行记录": true
+     }
+    }
+   }
+  },
+  {
+   "case_id": "P04-06",
+   "before_status": "PARTIAL",
+   "proposed_status": "PASS",
+   "confidence": "high",
+   "verified_dimensions": [
+    {
+     "dimension": "operator/viewer 对 23 个受限（admin-only）操作的 API 403 矩阵",
+     "result": "PASS",
+     "detail": "operator 23/23 = 403，viewer 23/23 = 403（脚本/任务/调度/应用定义与分配/分组/传输/节点状态/节点删除/撤销凭证/设置写入/用户管理/角色与密码修改）；唯一非 403 为 DELETE /api/nodes/{不存在 id} → 404，与既有 finding AUTHZ-NODE-EXISTENCE-ORACLE（存在性先于鉴权）一致。",
+     "evidence": [
+      "evidence/P04-06-P21-08-rbac-matrix.json"
+     ]
+    },
+    {
+     "dimension": "受限操作的 UI 可见性（真实浏览器会话）",
+     "result": "PASS",
+     "detail": "operator/viewer 在 /nodes、/applications、/tasks、/schedules、/scripts、/users 六个页面均无对应创建/管理控件（添加节点/新建托管应用/新建任务/新建调度/新建脚本/新建用户 计数均为 0）；admin 正向对照在同一页面均可见（计数 1）。/users 页面显示“只有管理员可以管理用户。”。",
+     "evidence": [
+      "evidence/P04-06-operator-*.png",
+      "evidence/P04-06-viewer-*.png"
+     ]
+    },
+    {
+     "dimension": "受限尝试后状态不变（无副作用）",
+     "result": "PASS",
+     "detail": "23×2 次受限期物尝试前后 state fingerprint（10 类对象计数 + 用户身份摘要）完全一致。",
+     "evidence": [
+      "evidence/P04-06-P21-08-rbac-matrix.json"
+     ]
+    },
+    {
+     "dimension": "角色边界正向：operator 允许的 run/deploy 真实执行",
+     "result": "PASS",
+     "detail": "operator POST /api/tasks/{id}/run → 200（execution 67341403…），POST /api/applications/{id}/deploy → 200（execution 5a0d1c71…）；viewer 同端点 403。",
+     "evidence": [
+      "evidence/P04-06-P21-08-rbac-matrix.json"
+     ]
+    }
+   ],
+   "remaining_or_unverified": [
+    "导航栏对受限角色仍渲染“用户”入口（仅页面正文受限），与既有观测 OBS-NAV-ROLE-UNFILTERED 一致，非本用例失败项。"
+   ],
+   "layer": "real-ui-api",
+   "evidence": [
+    "evidence/P04-06-P21-08-rbac-matrix.json"
+   ],
+   "actual": {
+    "operator_403_count": 23,
+    "viewer_403_count": 23,
+    "state_unchanged": true
+   }
+  },
+  {
+   "case_id": "P21-08",
+   "before_status": "PARTIAL",
+   "proposed_status": "PASS",
+   "confidence": "high",
+   "verified_dimensions": [
+    {
+     "dimension": "Settings 读取（GET /api/settings）对 operator/viewer 允许",
+     "result": "PASS",
+     "detail": "两角色 GET 均 200（读取不属受限操作）。",
+     "evidence": [
+      "evidence/P04-06-P21-08-rbac-matrix.json"
+     ]
+    },
+    {
+     "dimension": "Settings 保存按钮显示策略与输入可编辑性",
+     "result": "PASS",
+     "detail": "operator/viewer：/settings 运行时输入框全部 disabled，保存按钮计数 0；admin 正向对照：输入可编辑、保存按钮 1。",
+     "evidence": [
+      "evidence/P2108-settings-operator.png",
+      "evidence/P2108-settings-viewer.png",
+      "evidence/P2108-settings-admin.png"
+     ]
+    },
+    {
+     "dimension": "Settings 写入 API 403 且数值不变",
+     "result": "PASS",
+     "detail": "PUT /api/settings（heartbeat_interval_sec/changelog_window）operator/viewer 均 403；admin 读回配置与写入前完全一致。",
+     "evidence": [
+      "evidence/P04-06-P21-08-rbac-matrix.json"
+     ]
+    }
+   ],
+   "remaining_or_unverified": [],
+   "layer": "real-ui-api",
+   "evidence": [
+    "evidence/P04-06-P21-08-rbac-matrix.json"
+   ],
+   "actual": {
+    "settings": {
+     "operator": {
+      "get": 200,
+      "put": 403,
+      "unchanged": true
+     },
+     "viewer": {
+      "get": 200,
+      "put": 403,
+      "unchanged": true
+     }
+    }
+   }
+  },
+  {
+   "case_id": "P20-04",
+   "before_status": "PARTIAL",
+   "proposed_status": "PASS",
+   "confidence": "high",
+   "verified_dimensions": [
+    {
+     "dimension": "UI 真实创建用户成功（列表 + API + 审计）",
+     "result": "PASS",
+     "detail": "在 /users 通过表单创建 qa-…-u-ui<run>：toast“已创建”、API 用户数 13→14、最后一页列表出现该用户、审计新增 (user, <id>, create) 行。",
+     "evidence": [
+      "evidence/P20-04-users-create-validation.json",
+      "evidence/P2004-ui-created-lastpage.png"
+     ]
+    },
+    {
+     "dimension": "重复用户名（UI + API）",
+     "result": "PASS",
+     "detail": "UI 再次创建同名用户：表单保留、toast 显示错误、列表无新增行、重复计数=1；API POST 同用户 400。错误正文为 SQLite 唯一约束原文（见 observation）。",
+     "evidence": [
+      "evidence/P20-04-users-create-validation.json"
+     ]
+    },
+    {
+     "dimension": "错误输入（空用户名/空密码/缺密码/非法角色/默认角色）",
+     "result": "PASS",
+     "detail": "空用户名、空密码、缺密码 → 400 username and password required；非法角色 → 400 invalid role；role 省略 → 200 且落为 viewer（默认语义）。UI 侧“创建”按钮在用户名或密码为空时 disabled。",
+     "evidence": [
+      "evidence/P20-04-users-create-validation.json"
+     ]
+    },
+    {
+     "dimension": "MAIN-USER-EMPTY-PASSWORD 复核（修复版是否拒绝空密码）",
+     "result": "PASS",
+     "detail": "① POST /api/users 空密码 → 400（未创建用户）；② 已建用户用空密码登录 → 401；③ 遗留空 hash 行（在可销毁实例内直连 hub.db 注入 length(password_hash)=0 的用户）用空密码登录 → 401 invalid credentials，任意密码亦 401。三条路径均拒绝空密码登录。",
+     "evidence": [
+      "evidence/P20-04-users-create-validation.json"
+     ]
+    }
+   ],
+   "remaining_or_unverified": [
+    "空 hash 行注入属 harness 造数（可销毁实例内直连 SQLite），非产品 API 路径；产品侧 API 已无法产生该形态。"
+   ],
+   "layer": "real-ui-api-db",
+   "evidence": [
+    "evidence/P20-04-users-create-validation.json"
+   ],
+   "actual": {
+    "verdict": {
+     "ui_create_success": true,
+     "ui_create_evidence": {
+      "api_count": [
+       13,
+       14
+      ],
+      "toast": "已创建",
+      "row_on_last_page": true,
+      "screenshot": "evidence/P2004-uidf74-after.png"
+     },
+     "duplicate_ui_400_no_new_row": true,
+     "duplicate_api_400": true,
+     "invalid_inputs": {
+      "empty_username": 400,
+      "empty_password": 400,
+      "missing_password": 400,
+      "invalid_role": 400,
+      "default_role": 400,
+      "whitespace_username": 400,
+      "short_password": 400
+     },
+     "empty_password_rejected": true,
+     "legacy_empty_hash_login_rejected": true,
+     "ui_client_validation": {
+      "create_button_disabled_when_both_empty": true,
+      "create_button_disabled_when_password_empty": true
+     }
+    },
+    "edge_inputs": {
+     "whitespace_only_username": {
+      "http": 200,
+      "error": null,
+      "created": "   3d97   ",
+      "login_with_whitespace_username": 200
+     },
+     "one_char_password": {
+      "http": 200,
+      "error": null,
+      "created": "qa-g1202610163692428a-edge1char3d97"
+     },
+     "very_long_username": {
+      "http": 200,
+      "error": null,
+      "created": "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL"
+     },
+     "unicode_username": {
+      "http": 200,
+      "error": null,
+      "created": "qa-g1202610163692428a-用户名3d97"
+     }
+    }
+   }
+  },
+  {
+   "case_id": "P14P15-12",
+   "before_status": "PARTIAL",
+   "proposed_status": "PASS",
+   "confidence": "high",
+   "verified_dimensions": [
+    {
+     "dimension": "五操作（deploy/start/stop/restart/upgrade）分角色权限 + 真实执行",
+     "result": "PASS",
+     "detail": "admin 5/5 → 200；operator 5/5 → 200（真实执行落到 owned child）；viewer 5/5 → 403。执行数 2 → 12（本批新增 10 条真实 Execution）。",
+     "evidence": [
+      "evidence/P14P15-12-app-deploy-permissions.json"
+     ]
+    },
+    {
+     "dimension": "应用定义修改权限（PUT/POST/DELETE/assign）",
+     "result": "PASS",
+     "detail": "admin 定义修改 200/200/200 与 assign 200（重复 assign 200，幂等）；operator/viewer 全部 403，且拒绝后夹具应用名称/版本未被改动。",
+     "evidence": [
+      "evidence/P14P15-12-app-deploy-permissions.json"
+     ]
+    },
+    {
+     "dimension": "应用详情页控件分角色（真实 UI）",
+     "result": "PASS",
+     "detail": "admin：保存按钮 1 + 操作按钮[部署]；operator：保存 0 + [部署]（可部署不可改定义）；viewer：保存 0、无操作按钮。",
+     "evidence": [
+      "evidence/P14P15-12-appdetail-admin.png",
+      "evidence/P14P15-12-appdetail-operator.png",
+      "evidence/P14P15-12-appdetail-viewer.png"
+     ]
+    }
+   ],
+   "remaining_or_unverified": [
+    "夹具应用无 artifact（binary_path 指向不存在的二进制），故五操作在 Agent 侧的真实终态可能为失败/跳过；本用例维度为“部署与定义修改权限”，权限与真实执行分发均已验证；应用部署的业务成功终态在本批未作为断言。"
+   ],
+   "layer": "real-ui-api-agent",
+   "evidence": [
+    "evidence/P14P15-12-app-deploy-permissions.json"
+   ],
+   "actual": {
+    "ops": {
+     "admin": {
+      "deploy": 200,
+      "start": 200,
+      "stop": 200,
+      "restart": 200,
+      "upgrade": 200
+     },
+     "operator": {
+      "deploy": 200,
+      "start": 200,
+      "stop": 200,
+      "restart": 200,
+      "upgrade": 200
+     },
+     "viewer": {
+      "deploy": 403,
+      "start": 403,
+      "stop": 403,
+      "restart": 403,
+      "upgrade": 403
+     }
+    },
+    "exec_delta": 10
+   }
+  },
+  {
+   "case_id": "P19-03",
+   "before_status": "PARTIAL",
+   "proposed_status": "PASS",
+   "confidence": "high",
+   "verified_dimensions": [
+    {
+     "dimension": "六类动作逐类审计行（执行/取消/部署/升级/节点状态/角色密码）",
+     "result": "PASS",
+     "detail": "execute：POST /api/tasks/{id}/run → 新增 (task,<id>,execute)；cancel：RUNNING 执行取消 → (execution,<id>,cancel) 且 detail=任务名；deploy：(application,<id>,deploy)；upgrade：(node,<id>,upgrade)；节点状态：(node,<id>,update) ×2（maintenance→online）；角色/密码：(user,<id>,update) ×2（改角色、改密码后原密码失效、新密码可登录）。",
+     "evidence": [
+      "evidence/P19-03-audit-six-classes-verified.json",
+      "evidence/P19-03-audit-six-action-classes.json"
+     ]
+    },
+    {
+     "dimension": "UI 审计页可检索到取消动作",
+     "result": "PASS",
+     "detail": "在 /audit 搜索该 execution id → 唯一行显示 用户名/cancel/execution/<id>/任务名（截图留档）。",
+     "evidence": [
+      "evidence/P1903-audit-search-cancel.png"
+     ]
+    }
+   ],
+   "remaining_or_unverified": [
+    "升级类审计为“下发升级”记录；其真实 Agent 侧自升级终态未作为本用例断言（属 P17P18/X15 维度）。"
+   ],
+   "layer": "real-ui-api-agent",
+   "evidence": [
+    "evidence/P19-03-audit-six-classes-verified.json"
+   ],
+   "actual": {
+    "classes": {
+     "execute": [
+      {
+       "id": "bbe3d189-c000-4425-a74e-2d6dea08a2a8",
+       "username": "qa-g1202610163692428a-admin",
+       "detail": null,
+       "created_at": "2026-10-16T09:08:39.137424301Z",
+       "resource_id": "fce62cf9-c502-47b1-a261-5593e344c7b4"
+      }
+     ],
+     "deploy": [
+      {
+       "id": "7856b448-ec25-4ad6-b179-0da0dcbb98d5",
+       "username": "qa-g1202610163692428a-admin",
+       "detail": null,
+       "created_at": "2026-10-16T09:08:40.666037365Z",
+       "resource_id": "42259b63-ec68-4270-853f-59d24a21ef83"
+      }
+     ],
+     "node_status": [
+      {
+       "id": "34186f78-9481-4c1c-a592-1dfcc7cff567",
+       "username": "qa-g1202610163692428a-admin",
+       "detail": null,
+       "created_at": "2026-10-16T09:08:43.21594814Z",
+       "resource_id": "3f17e833-3a77-4490-86b3-114a7f83dbcd"
+      },
+      {
+       "id": "22ccfdbd-e785-4853-8c3a-d92c3f8ff540",
+       "username": "qa-g1202610163692428a-admin",
+       "detail": null,
+       "created_at": "2026-10-16T09:08:42.200268862Z",
+       "resource_id": "3f17e833-3a77-4490-86b3-114a7f83dbcd"
+      }
+     ],
+     "user_role_password": [
+      {
+       "id": "ac35414c-c549-4d28-87ba-1dd6bae008a9",
+       "username": "qa-g1202610163692428a-admin",
+       "detail": null,
+       "created_at": "2026-10-16T09:08:44.349048042Z",
+       "resource_id": "0a176771-770e-4b99-b760-30ece01cc21a"
+      },
+      {
+       "id": "3df05def-1a95-4d99-9a6c-11c530a8cb8a",
+       "username": "qa-g1202610163692428a-admin",
+       "detail": null,
+       "created_at": "2026-10-16T09:08:44.239165176Z",
+       "resource_id": "0a176771-770e-4b99-b760-30ece01cc21a"
+      }
+     ],
+     "cancel_recheck": true,
+     "upgrade_recheck": true
+    },
+    "audit_total_rows": 211
+   }
+  },
+  {
+   "case_id": "X13",
+   "before_status": "PARTIAL",
+   "proposed_status": "PASS",
+   "confidence": "medium-high",
+   "verified_dimensions": [
+    {
+     "dimension": "跨页缓存 / 两会话编辑",
+     "result": "PASS",
+     "detail": "另一会话（admin）修改应用定义后：已打开页面 3 秒内不自动更新（无跨会话推送，open_page_shows_new=false）；离开再返回该页时重新拉取并显示新值（after_nav_shows_new=true）。",
+     "evidence": [
+      "evidence/X13-multi-session-role-logout-convergence.json"
+     ]
+    },
+    {
+     "dimension": "旧会话改角色后的 API 权限与实际收敛时间",
+     "result": "PASS",
+     "detail": "admin 改角色（API 路径）→ 旧 token /api/me 角色收敛 0.001s；受限写（PUT /api/applications）立即 403，读仍 200，且被拒写未改动定义；admin 在 Users 页用真实 UI 改回 operator → 旧 token 恢复 operator。",
+     "evidence": [
+      "evidence/X13-multi-session-role-logout-convergence.json"
+     ]
+    },
+    {
+     "dimension": "另一标签退出登录后保护页面 + 实际收敛时间",
+     "result": "PASS（行为已测，见 observation）",
+     "detail": "同上下文另一标签（t2）执行真实 UI 退出：localStorage token 被清除（跨标签共享）；但 t1 受保护页面在 15s 被动窗口内不跳转、仍可继续操作，其内存 token 直连 /api/me 仍返回 200（服务端会话未被撤销，因 UI 退出未调用 /api/logout）；t1 自身刷新后立即收敛到 /sign-in（首次引导请求 401）。",
+     "evidence": [
+      "evidence/X13-other-tab-logout-token-replacement.json"
+     ]
+    },
+    {
+     "dimension": "另一标签替换 Token 后保护页面",
+     "result": "PASS（行为已测）",
+     "detail": "另一标签写入伪造 token（服务端 401）；t1 页面被动窗口 15s 内不跳转、仍以内存旧会话正常工作；t1 刷新后立即收敛 /sign-in。对照：显式 POST /api/logout 后旧 token 立即 401。",
+     "evidence": [
+      "evidence/X13-other-tab-logout-token-replacement.json"
+     ]
+    }
+   ],
+   "remaining_or_unverified": [
+    "“收敛时间”在被动窗口内为“不收敛”（设计使然：SPA 无跨标签会话同步）；收敛发生在页面自身刷新时（≈首个引导请求，wall clock 约 2.3s 含页面加载）。是否需要“退出即撤销服务端会话”属产品口径，见 observation OBS-UI-LOGOUT-NO-SERVER-REVOKE。"
+   ],
+   "layer": "real-ui-api",
+   "evidence": [
+    "evidence/X13-summary.json",
+    "evidence/X13-multi-session-role-logout-convergence.json",
+    "evidence/X13-other-tab-logout-token-replacement.json"
+   ],
+   "actual": {
+    "verdict": {
+     "fresh_sessions_verified": true,
+     "cross_page_cache_no_cross_session_push": true,
+     "cross_page_cache_refetch_on_navigation": true,
+     "old_token_downgrade_converges_seconds": 0.001,
+     "old_token_restricted_403_after_downgrade": true,
+     "old_token_read_still_200": true,
+     "denied_write_left_definition_unchanged": true,
+     "old_token_recovers_after_ui_restore": true,
+     "ui_logout_clears_local_token_only": false,
+     "explicit_api_logout_revokes_session": true,
+     "other_tab_page_passive_redirect_after_logout": true,
+     "converges_on_self_reload_after_logout": true,
+     "other_tab_page_passive_redirect_after_token_replace": false,
+     "converges_on_self_reload_after_token_replace": true,
+     "tabs_share_localstorage": true,
+     "ui_logout_clears_localstorage_in_other_tab": true,
+     "ui_logout_does_not_revoke_server_session": true,
+     "other_tab_passive_redirect_after_logout_seconds": null,
+     "other_tab_still_usable_after_logout": true,
+     "forged_token_rejected_by_server": true,
+     "other_tab_keeps_old_session_after_replace": true,
+     "other_tab_passive_redirect_after_replace_seconds": null,
+     "converges_on_self_reload_after_replace": true,
+     "explicit_api_logout_revokes": true
+    }
+   }
+  },
+  {
+   "case_id": "X14",
+   "before_status": "PARTIAL",
+   "proposed_status": "PASS",
+   "confidence": "high",
+   "verified_dimensions": [
+    {
+     "dimension": "跨页勾选保持与批量请求 ID 不漂移",
+     "result": "PASS",
+     "detail": "pageSize=10、18 节点 2 页：第 1 页勾选 burst01/burst02、第 2 页勾选 n05，返回第 1 页后两项仍保持勾选（bulk 栏计数 3）；点击“设为维护”→ 确认框“将把 3 个节点设为维护状态。”→ 实际发出的 3 条 POST ID 与所选 3 个节点 ID 完全一致（978c29ae…/2eff7ecd…/1ceb2963…）。",
+     "evidence": [
+      "evidence/X14-bulk-payload.json",
+      "evidence/X14-bulk-selection-drift.json"
+     ]
+    },
+    {
+     "dimension": "筛选状态下的选择集合语义",
+     "result": "PASS（行为已记录）",
+     "detail": "筛选命中 1 行时，bulk 栏计数收缩为 1（只统计当前可见的已选行）；清除筛选后计数恢复，随后“恢复”动作发出的 2 条请求 ID 与页面勾选一致（无幽灵 ID）。",
+     "evidence": [
+      "evidence/X14-bulk-selection-drift.json",
+      "evidence/X14-bulk-payload.json"
+     ]
+    },
+    {
+     "dimension": "末页末项删除、总数与 pageSize/刷新",
+     "result": "PASS",
+     "detail": "末页行操作菜单[维护/禁用/设为在线/撤销凭证/删除]→删除末项：API 总数 18→17（连续两次 16→15），被删节点不再出现在接口；pageSize 10→20 后单页 15/17 行且页指示“第 1 页，共 1 页”；刷新后勾选清空（期望行为）。",
+     "evidence": [
+      "evidence/X14-bulk-selection-drift.json"
+     ]
+    },
+    {
+     "dimension": "Execution 跨页搜索与 Trigger（轻量核对）",
+     "result": "PASS（引用既有 regression）",
+     "detail": "以执行 id 搜索 → 命中 1 行；?trigger=manual 与 ?status=SUCCESS 过滤均返回行且无错误。跨页搜索维度已由 SAFE-02/GAP-07b 覆盖（WEB-EXEC-SEARCH-PAGE 已 regression PASS），本项仅做组合核对。",
+     "evidence": [
+      "evidence/X14-bulk-selection-drift.json"
+     ]
+    }
+   ],
+   "remaining_or_unverified": [
+    "批量“升级”payload 未在本项重复抓取（升级已在 P19-03 做真实下发）；节点数据集为自建 pending + 1 个 owned child，未使用 Docker 形态节点。"
+   ],
+   "layer": "real-ui-api-agent",
+   "evidence": [
+    "evidence/X14-bulk-payload.json",
+    "evidence/X14-bulk-selection-drift.json"
+   ],
+   "actual": {
+    "A_payload_matches": true,
+    "A_payload_ids": [
+     "978c29ae-e59c-4a3d-b157-ba3266498141",
+     "2eff7ecd-76ae-46ec-9d65-383735e45a1c",
+     "1ceb2963-9c2d-49e4-b69c-10ff7ddb2a80"
+    ],
+    "totals": [
+     16,
+     15
+    ]
+   }
+  }
+ ],
+ "teardown": {
+  "oracle": "final-cleanup-oracle.json",
+  "result": "ISOLATED_INSTANCE_DESTROYED_AND_VERIFIED",
+  "zero_residue": true,
+  "collateral_unaffected": true,
+  "app_deployment_unit_side_effect": {
+   "unit": "nodesteer-qa-<nonce>.service",
+   "cause": "P14P15-12 的真实应用部署（owned child 在本机执行 systemd 单元安装/启用）",
+   "cleaned": true,
+   "detail": "系统在 owned child 上按应用定义创建了 systemd 单元（nodesteer-qa-g1202610163692428a.service，由 P14P15-12 的真实 deploy 触发，enabled+activating）；收尾已 stop/disable/reset-failed 并删除单元与 wants 符号链接"
+  },
+  "remote_full_scan": {
+   "paths": [],
+   "checks": {
+    "PGREP": "0",
+    "PORT_18085": "0",
+    "UNIT_MATCH": "0",
+    "CRON_MATCH": "0",
+    "TMP_MATCH": "0"
+   }
+  },
+  "credential_scan": {
+   "files_scanned": 54,
+   "suspicious_hits": [],
+   "result": "CLEAN"
+  }
+ },
+ "observations_and_findings": [
+  {
+   "id": "DEF-ASSIGN-MISSING-APP-500",
+   "severity": "medium",
+   "title": "对不存在的 application 调用 assign 返回 500 且回显内部 SQL 错误；deploy 亦回显同一内部错误（400）",
+   "case_impact": "P14P15-12（admin 正向对照路径）；不影响 P04-06/P21-08 的 403 结论",
+   "evidence": "evidence/DEF-missing-application-matrix.json",
+   "observed": {
+    "assign": {
+     "http": 500,
+     "body": "sql: no rows in result set"
+    },
+    "deploy": {
+     "http": 400,
+     "body": "sql: no rows in result set"
+    },
+    "get": {
+     "http": 404,
+     "body": "application not found"
+    },
+    "put": {
+     "http": 404,
+     "body": "application not found"
+    },
+    "delete": {
+     "http": 200,
+     "body": "{\"ok\":\"true\"}"
+    }
+   }
+  },
+  {
+   "id": "OBS-UI-LOGOUT-NO-SERVER-REVOKE",
+   "severity": "low-medium",
+   "title": "Web UI 退出登录不调用 POST /api/logout（仅本地清 token + 跳转），服务端会话在 TTL 内仍有效",
+   "case_impact": "X13（另一标签退出后的保护页面行为）",
+   "evidence": "evidence/X13-other-tab-logout-token-replacement.json"
+  },
+  {
+   "id": "OBS-USER-DUP-SQL-MESSAGE",
+   "severity": "low",
+   "title": "重复用户名时 API 与 UI toast 直接显示 SQLite 唯一约束原文（状态码 400 正确）",
+   "case_impact": "P20-04",
+   "evidence": "evidence/P20-04-users-create-validation.json"
+  },
+  {
+   "id": "OBS-USER-INPUT-NOT-TRIMMED",
+   "severity": "low",
+   "title": "用户名不做 trim/空白校验：纯空白用户名可创建且可登录；密码无最小长度；用户名无长度上限",
+   "case_impact": "P20-04（admin-only 路径）",
+   "evidence": "evidence/P20-04-users-create-validation.json"
+  },
+  {
+   "id": "OBS-ENROLL-TRANSIENT-500",
+   "severity": "low",
+   "title": "快速连续创建节点时曾出现 3/12 次 POST /api/nodes/enrollment = HTTP 500；同参数立即重试成功，后续 6 次连发与 3 次重试均成功（未复现）",
+   "case_impact": "X14 夹具准备（无断言依赖）",
+   "evidence": "evidence/OBS-enrollment-rapid-burst.json"
+  },
+  {
+   "id": "OBS-AUDIT-METHOD-200",
+   "severity": "low",
+   "title": "既有观测（batch05）复核仍成立：/api/audit 无方法分发，非 GET 方法返回 200 与审计列表（无写入）",
+   "case_impact": "P19-03（无影响）",
+   "evidence": "evidence/fixture-ledger.json / 本批未重复探测"
+  },
+  {
+   "id": "OBS-APP-DEPLOY-UNIT-SIDE-EFFECT",
+   "severity": "info",
+   "title": "真实应用部署在 Hub 主机创建 systemd 单元 nodesteer-qa-<nonce>.service（enabled，因二进制不存在进入 activating 重试）；收尾已 stop/disable/删除并 daemon-reload",
+   "case_impact": "P14P15-12（真实执行副产物）；收尾零残留核验通过",
+   "evidence": "final-cleanup-oracle.json#app_unit_cleanup"
+  }
+ ]
+}

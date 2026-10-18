@@ -1,0 +1,65 @@
+{
+  "review_id": "ROOT-WEB-BATCH06-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T10:24:39.935273+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "batch": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch06",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试、剩余分母全量推进",
+  "verdicts": [
+    {
+      "case_id": "P04-04",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "UI 行菜单「维护/恢复/设为在线」→ POST /api/nodes/{owned} 200 → Hub 状态/徽标/菜单同步；维护期调度产出 SKIPPED+node paused，恢复后同型调度真实 SUCCESS；暂停期本地 allow_offline 调度不触发、恢复后补跑一次。"
+    },
+    {
+      "case_id": "P04-05",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "owned child 停机 → 断开路径置 offline；UI「设为在线」→ 200 → online；重启后收敛 online+synced。并记录观察：手工设为在线后无会话也长期显示在线（MarkOffline 仅由网关断开回调触发）。"
+    },
+    {
+      "case_id": "P11-04",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "真离线时 UI 立即运行 → 立即 HTTP 400 `node … is not online (status=offline)`，零新增执行行；在线无会话 → 400 且留 FAILED+block_reason=agent offline；两处 toast 有截图。"
+    },
+    {
+      "case_id": "P06-08",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "分组编辑勾选/取消 → PUT /api/groups/{id} 200 ×2；Node Detail 任务区 [node-task]→[group-task,node-task]→[node-task]，概览分组同步；group target 真实派发 SUCCESS；移除成员后手动运行 400 no target nodes。"
+    },
+    {
+      "case_id": "P17P18-14",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "断链期间 Agent 本地执行 offline=true/synced=false（Hub 404）→ 恢复上传 Hub 单行；丢弃首个 ACK 后重启，帧层观测 2 次上传 → Hub 仍单行、journal 收敛 synced=true；UI 显示离线 是/已同步 是。"
+    }
+  ],
+  "root_notes": [
+    "全部节点状态写只作用于自建 owned child（审计核对 7 次，protected 节点 0 次）",
+    "两处断言的判据经重推导（P11-04 toast 容器取错、P06-08 用整页文本过宽），重推导记录见 batch06/evidence/assertion-reevaluation.json，未重跑操作",
+    "批次窗口内 native-3/native-1 曾 offline，发生在本批收尾之后，Root 已单独记录环境事故"
+  ],
+  "counts_before": {
+    "PASS": 262,
+    "FAIL": 5,
+    "PARTIAL": 163,
+    "NOT_RUN": 65,
+    "BLOCKED": 9
+  },
+  "counts_after": {
+    "PASS": 274,
+    "FAIL": 5,
+    "PARTIAL": 164,
+    "NOT_RUN": 52,
+    "BLOCKED": 9
+  }
+}

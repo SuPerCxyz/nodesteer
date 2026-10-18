@@ -1,0 +1,3028 @@
+{
+  "batch_id": "sys-b12",
+  "title": "Host Adapter 路径守卫、跨文件系统原子替换、权限拒绝与 Capability 前置门禁",
+  "nonce": "530b8e2c5b77",
+  "owned_prefix": "qa-sysb12-530b8e2c5b77-",
+  "endpoint": "http://192.168.100.209:18080",
+  "executed_at_utc": "2026-10-14T10:06:10Z",
+  "finished_at_utc": "2026-10-14T10:07:31Z",
+  "environment": {
+    "authority": "http://192.168.100.209:18080 (repair, only managed write endpoint)",
+    "native2": "192.168.100.206 (only node used by this batch)",
+    "owned_children": {
+      "child-a": {
+        "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+        "deployment_mode": "native",
+        "root": "/var/lib/nodesteer-qa-sysb12-530b8e2c5b77",
+        "routing": "direct to hub :18080"
+      },
+      "child-b": {
+        "node_id": "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889",
+        "deployment_mode": "docker",
+        "root": "/var/lib/nodesteer-qa-sysb12-530b8e2c5b77-b",
+        "host_path_allowlist": [
+          "/opt/qa-sysb12-530b8e2c5b77"
+        ],
+        "routing": "workstation 192.168.100.170 recording frame proxy -> hub :18080"
+      }
+    },
+    "agent_binary_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "protected_nodes_online_synced_at_guard": {
+      "native-1": {
+        "id": "91f44866-8a28-435e-bbda-2f2367126c00",
+        "status": "online",
+        "sync_status": "synced",
+        "global_revision": 1935,
+        "deployment_mode": "native",
+        "capabilities": {
+          "agent_upgrade": true,
+          "application_deploy": true,
+          "host_filesystem": true,
+          "local_scheduler": true,
+          "managed_systemd": true,
+          "offline_execution": true,
+          "script": true
+        }
+      },
+      "native-2": {
+        "id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+        "status": "online",
+        "sync_status": "synced",
+        "global_revision": 1935,
+        "deployment_mode": "native",
+        "capabilities": {
+          "agent_upgrade": true,
+          "application_deploy": true,
+          "host_filesystem": true,
+          "local_scheduler": true,
+          "managed_systemd": true,
+          "offline_execution": true,
+          "script": true
+        }
+      },
+      "native-3": {
+        "id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+        "status": "online",
+        "sync_status": "synced",
+        "global_revision": 1935,
+        "deployment_mode": "native",
+        "capabilities": {
+          "agent_upgrade": true,
+          "application_deploy": true,
+          "host_filesystem": true,
+          "local_scheduler": true,
+          "managed_systemd": true,
+          "offline_execution": true,
+          "script": true
+        }
+      },
+      "native-4": {
+        "id": "03cb50cc-eab6-4afd-bbe0-f73c4e326773",
+        "status": "online",
+        "sync_status": "synced",
+        "global_revision": 1935,
+        "deployment_mode": "native",
+        "capabilities": {
+          "agent_upgrade": true,
+          "application_deploy": true,
+          "host_filesystem": true,
+          "local_scheduler": true,
+          "managed_systemd": true,
+          "offline_execution": true,
+          "script": true
+        }
+      }
+    },
+    "env_facts": {
+      "root_fstype_dev": {
+        "root": 65025,
+        "tmp": 33,
+        "opt": 65025
+      },
+      "tmp_is_separate_mount": true,
+      "note": "target dirs under /opt live on the xfs root device; /tmp is a tmpfs mount on a different device, so a target under /opt is cross-filesystem relative to the default os.TempDir()."
+    }
+  },
+  "cases": [
+    {
+      "case_id": "SYS-56",
+      "title": "SYS-56 `../`、绝对路径、Symlink Escape、Allowlist。",
+      "canonical_before": "NOT_RUN",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        "相对路径（application binary_path/config_path）：Hub 400 \"invalid application path\"，无新行、revision 不前进",
+        "含 `..` 的绝对路径：Hub 400，无新行",
+        "路径含 NUL：Hub 400",
+        "Hub 接受但 Host Adapter 拒绝的非 clean 绝对路径（`//`、`/./`、尾随 `/`）：deploy Execution FAILED，block_reason 含 \"invalid deployment path\"/\"invalid absolute path\"，目标路径无任何文件副作用",
+        "symlink 目的地（Host Adapter 部署路径）：AtomicReplace 拒绝 \"destination is a symlink\"，逃生目标文件 SHA 不变、symlink 仍是 symlink",
+        "symlink 目的地（文件交付路径）：AtomicReplaceReader 拒绝 \"destination is a symlink\"，victim 文件 SHA 不变",
+        "文件交付目的地相对路径 / `..` 穿越 / 空：Hub 400（\"absolute path required\" / \"path traversal is not allowed\"），无传输行创建",
+        "Allowlist（非 native owned child + host_path_allowlist=/opt/qa-sysb12-<nonce>）：allowlist 外 clean 绝对路径交付 FAILED \"path is outside configured allowlist\" 且目录未创建；allowlist 内正对照 SUCCESS 且 SHA 一致",
+        "正向对照：合法路径交付/安装真实落盘且 SHA 一致"
+      ],
+      "remaining_or_limitations": [
+        "ContainerHostAdapter 的 host-root（/host + /proc/1/root）与容器 allowlist 分支在本环境不可运行：Host Integration 容器形态被 AppArmor/nsenter 阻塞（FAIL-ENV-HOST-001/002，与本批 SYS-54/SYS-55/AR-31/INV-14 同一环境门禁）。本批只覆盖 NativeHostAdapter 与 API 层可观测部分，容器 Host Adapter 的 symlink-escape/host-root 校验未验证。",
+        "NativeHostAdapter 没有 allowlist 概念（host root 为 \"/\"）；allowlist 维度由 Agent 文件交付路径守卫（host_path_allowlist）验证，而非 native 适配器本身。",
+        "symlink 逃逸的中间目录（非最后一段）在 native 模式下按设计不拦截（host root 为 \"/\"），本批只验证“目的地本身是 symlink”被拒。",
+        "拒绝本身不产生宿主机副作用（victim SHA 不变），但该次部署的 rollback 也会被同一 symlink 检查拒绝，于是部署日志永久停留在 ROLLING_BACK（见 defects[0]）；这是拒绝路径的后续影响，不是本用例的通过条件失败。"
+      ],
+      "defect_ref": "SYSB12-DEFECT-01",
+      "evidence": [
+        "phase4-hub-path-guard.json",
+        "phase5-agent-path-guard.json",
+        "phase6-transfer-path-guard.json",
+        "phase7-allowlist.json"
+      ],
+      "actual_resources": {
+        "app_id": "a8879252-75b0-49e3-8daa-46989da18491",
+        "artifact_id": "9e7e15ec-be3b-4d52-86a3-21fa157e9a70",
+        "owned_escape_victim_dir": "/tmp/qa-sysb12-530b8e2c5b77-escape"
+      },
+      "probe": {
+        "hub_definition_guard": [
+          {
+            "label": "relative_binary_path",
+            "patched": {
+              "binary_path": "opt/rel/bin/app"
+            },
+            "http": 400,
+            "error": "binary_path: invalid application path",
+            "created_row_ids": [],
+            "created": false
+          },
+          {
+            "label": "dotdot_binary_path",
+            "patched": {
+              "binary_path": "/opt/qa-sysb12-530b8e2c5b77/a/../bin/app"
+            },
+            "http": 400,
+            "error": "binary_path: invalid application path",
+            "created_row_ids": [],
+            "created": false
+          },
+          {
+            "label": "non_ascii_nul_binary_path",
+            "patched": {
+              "binary_path": "/opt/qa-sysb12-530b8e2c5b77/a\u0000b"
+            },
+            "http": 400,
+            "error": "binary_path: invalid application path",
+            "created_row_ids": [],
+            "created": false
+          },
+          {
+            "label": "relative_config_path",
+            "patched": {
+              "config_path": "etc/rel.conf"
+            },
+            "http": 400,
+            "error": "config_path: invalid application path",
+            "created_row_ids": [],
+            "created": false
+          },
+          {
+            "label": "dotdot_config_path",
+            "patched": {
+              "config_path": "/opt/qa-sysb12-530b8e2c5b77/x/../../etc/passwd"
+            },
+            "http": 400,
+            "error": "config_path: invalid application path",
+            "created_row_ids": [],
+            "created": false
+          },
+          {
+            "label": "PUT_relative_binary_path",
+            "patched": {
+              "binary_path": "opt/rel/bin/app"
+            },
+            "http": 400,
+            "error": "binary_path: invalid application path"
+          },
+          {
+            "label": "PUT_dotdot_binary_path",
+            "patched": {
+              "binary_path": "/opt/qa-sysb12-530b8e2c5b77/a/../bin/app"
+            },
+            "http": 400,
+            "error": "binary_path: invalid application path"
+          }
+        ],
+        "hub_transfer_guard": [
+          {
+            "label": "relative_destination",
+            "destination_path": "opt/rel/out.bin",
+            "http": 400,
+            "error": "destination path: absolute path required"
+          },
+          {
+            "label": "relative_with_dotdot",
+            "destination_path": "../out.bin",
+            "http": 400,
+            "error": "destination path: absolute path required"
+          },
+          {
+            "label": "dotdot_traversal",
+            "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/../../etc/out.bin",
+            "http": 400,
+            "error": "destination path: path traversal is not allowed"
+          },
+          {
+            "label": "empty_destination",
+            "destination_path": "",
+            "http": 400,
+            "error": "destination path: absolute path required"
+          }
+        ],
+        "app_revision_unchanged": {
+          "before": 1,
+          "after": 1,
+          "equal": true
+        },
+        "non_clean_absolute": [
+          {
+            "label": "nonclean_double_slash",
+            "binary_path": "/opt/qa-sysb12-530b8e2c5b77//app/bin/app",
+            "put_http": 200,
+            "deploy_http": 200,
+            "execution": {
+              "id": "9d1a6be1-2a56-4016-87c9-def1de1ced0b",
+              "task_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+              "status": "FAILED",
+              "trigger_type": "manual",
+              "start_time": "2026-10-14T10:06:20.757962637Z",
+              "end_time": "2026-10-14T18:06:20.937898265+08:00",
+              "block_reason": "invalid deployment path: invalid absolute path: /opt/qa-sysb12-530b8e2c5b77//app/bin/app"
+            },
+            "agent_rejected_with_validate_path": true,
+            "target_lexists": false,
+            "target_is_dir": null,
+            "target_dir_entries": [],
+            "no_new_file_created": true
+          },
+          {
+            "label": "nonclean_dot_segment",
+            "binary_path": "/opt/qa-sysb12-530b8e2c5b77/./app/bin/app",
+            "put_http": 200,
+            "deploy_http": 200,
+            "execution": {
+              "id": "1cc49f9e-6217-4cce-ac8b-d646538ea751",
+              "task_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+              "status": "FAILED",
+              "trigger_type": "manual",
+              "start_time": "2026-10-14T10:06:22.142324954Z",
+              "end_time": "2026-10-14T18:06:22.317092776+08:00",
+              "block_reason": "invalid deployment path: invalid absolute path: /opt/qa-sysb12-530b8e2c5b77/./app/bin/app"
+            },
+            "agent_rejected_with_validate_path": true,
+            "target_lexists": false,
+            "target_is_dir": null,
+            "target_dir_entries": [],
+            "no_new_file_created": true
+          },
+          {
+            "label": "nonclean_trailing_slash",
+            "binary_path": "/opt/qa-sysb12-530b8e2c5b77/app/bin/",
+            "put_http": 200,
+            "deploy_http": 200,
+            "execution": {
+              "id": "b8acaa48-9a87-494d-acb6-09649ecf2b3d",
+              "task_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+              "status": "FAILED",
+              "trigger_type": "manual",
+              "start_time": "2026-10-14T10:06:23.52713155Z",
+              "end_time": "2026-10-14T18:06:23.693627244+08:00",
+              "block_reason": "invalid deployment path: invalid absolute path: /opt/qa-sysb12-530b8e2c5b77/app/bin/"
+            },
+            "agent_rejected_with_validate_path": true,
+            "target_lexists": true,
+            "target_is_dir": true,
+            "target_dir_entries": [],
+            "no_new_file_created": true
+          }
+        ],
+        "symlink_escape": {
+          "label": "symlink_destination",
+          "execution": {
+            "id": "ca27424a-4ad0-4dd4-920c-72d3ce989205",
+            "task_id": "a8879252-75b0-49e3-8daa-46989da18491",
+            "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+            "status": "FAILED",
+            "trigger_type": "manual",
+            "start_time": "2026-10-14T10:06:25.653649734Z",
+            "end_time": "2026-10-14T18:06:26.122766594+08:00",
+            "block_reason": "install binary failed: destination is a symlink: /opt/qa-sysb12-530b8e2c5b77/escape/bin/app; rollback failed"
+          },
+          "victim_unchanged": true,
+          "symlink_still_symlink": true,
+          "host_adapter_refused_symlink": true
+        },
+        "transfer_guard_cases": [
+          {
+            "label": "nonclean_double_slash_destination",
+            "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst//out.bin",
+            "final_status": "FAILED",
+            "target_status": "FAILED",
+            "target_error": "destination path: invalid absolute path: /opt/qa-sysb12-530b8e2c5b77/dst//out.bin"
+          },
+          {
+            "label": "symlink_destination",
+            "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/link.bin",
+            "final_status": "FAILED",
+            "target_status": "FAILED",
+            "target_error": "destination is a symlink: /opt/qa-sysb12-530b8e2c5b77/dst/link.bin"
+          },
+          {
+            "label": "positive_control_clean_path",
+            "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/ok.bin",
+            "final_status": "SUCCESS",
+            "target_status": "SUCCESS",
+            "target_error": null
+          }
+        ],
+        "allowlist_cases": [
+          {
+            "label": "outside_allowlist_destination",
+            "destination_path": "/etc/qa-sysb12-530b8e2c5b77/evil.txt",
+            "final_status": "FAILED",
+            "target_status": "FAILED",
+            "target_error": "destination path: path is outside configured allowlist: /etc/qa-sysb12-530b8e2c5b77/evil.txt"
+          },
+          {
+            "label": "inside_allowlist_positive_control",
+            "destination_path": "/opt/qa-sysb12-530b8e2c5b77/allow/ok.txt",
+            "final_status": "SUCCESS",
+            "target_status": "SUCCESS",
+            "target_error": null
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "SYS-57",
+      "title": "SYS-57 跨文件系统临时文件和 Atomic Replace。",
+      "canonical_before": "NOT_RUN",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        "目标目录位于 owned tmpfs（与 /tmp 不同 device）：96 MiB 文件交付 SUCCESS，落盘 SHA == 源 SHA",
+        "采样证明临时文件出现在目标目录内（.nodesteer-transfer-*），且 Agent 进程在目标目录内持有打开的 fd",
+        "原子性：目标文件名在任何采样点都不是部分大小（要么不存在，要么完整大小）；完成后无 .tmp 残留",
+        "确定性同文件系统证明（文件交付路径）：目标 mount 预置 32 MiB 目标 + 56 MiB tmpfs 容量不足以同时容纳旧目标与临时文件 → 交付以 \"no space left on device\" 失败，且旧目标 SHA 不变",
+        "确定性同文件系统证明（应用部署 AtomicReplace 路径）：2 MiB tmpfs + 预置 1.5 MiB 旧二进制 → 部署以 ENOSPC 失败且旧二进制 SHA 不变、无临时文件残留（若临时文件在 /tmp 侧则应为 EXDEV）",
+        "应用部署 AtomicReplace（同一 owned tmpfs mount 内）：binary SHA == artifact SHA、unit active、无部分文件、无 .tmp 残留"
+      ],
+      "remaining_or_limitations": [
+        "采样是竞态观测（无 strace/inotifywait 可用），因此同目录临时文件另有 2 项确定性容量证据（文件交付 + 应用部署）与 rename-成功（无 EXDEV）证据相互印证。",
+        "本用例不覆盖容器 Host Adapter 的 /host 跨挂载 rename（环境阻塞，同 SYS-54）。"
+      ],
+      "evidence": [
+        "phase10-cross-fs-atomic-replace.json"
+      ],
+      "actual_resources": {
+        "owned_mount": "/opt/qa-sysb12-530b8e2c5b77/xfs",
+        "transfer_id": "ba8087d5-c020-42f8-85fc-d8a89bac1ed3",
+        "enospc_transfer_id": "a814a98f-fbf4-4c9a-b754-d43ac5d8906f",
+        "xapp_id": "501db824-4cb7-4699-ae8f-149c07560771"
+      },
+      "probe": {
+        "cross_fs_premise": {
+          "target_dir": "/opt/qa-sysb12-530b8e2c5b77/xfs",
+          "target_dir_device": 44,
+          "tmp_device": 33,
+          "root_device": 65025,
+          "target_is_different_fs_from_tmp": true,
+          "mounts": [
+            "tmpfs /opt/qa-sysb12-530b8e2c5b77/xfs tmpfs rw,relatime,size=262144k,mode=755,inode64 0 0"
+          ],
+          "statvfs": {
+            "bsize": 4096,
+            "frsize": 4096,
+            "blocks": 65536,
+            "bfree": 65536,
+            "bavail": 65536
+          }
+        },
+        "transfer": {
+          "create_http": 200,
+          "transfer_id": "ba8087d5-c020-42f8-85fc-d8a89bac1ed3",
+          "final_status": "SUCCESS",
+          "error": null,
+          "sha256": "856a14b2107cf9f4a9eadff4788a1150a34f2449c6d5d31052b85c4747599e38",
+          "sha_matches_source": true,
+          "tmp_leftovers": []
+        },
+        "sampler": {
+          "rc": 0,
+          "result": {
+            "sampler_pid": 25708,
+            "alive": false,
+            "script_path": "/opt/qa-sysb12-530b8e2c5b77/xfs/dst.samples.py",
+            "out_path": "/opt/qa-sysb12-530b8e2c5b77/xfs/dst.samples"
+          },
+          "stop": {
+            "signalled": [
+              25709
+            ],
+            "remaining": []
+          },
+          "row_count": 37,
+          "temp_in_target_dir_samples": [
+            {
+              "at": 1791972411.7405,
+              "name": ".nodesteer-transfer-945393155",
+              "size": 654584
+            },
+            {
+              "at": 1791972411.7572,
+              "name": ".nodesteer-transfer-945393155",
+              "size": 3800312
+            },
+            {
+              "at": 1791972411.7741,
+              "name": ".nodesteer-transfer-945393155",
+              "size": 6847736
+            },
+            {
+              "at": 1791972411.791,
+              "name": ".nodesteer-transfer-945393155",
+              "size": 10026232
+            },
+            {
+              "at": 1791972411.8073,
+              "name": ".nodesteer-transfer-945393155",
+              "size": 13237496
+            },
+            {
+              "at": 1791972411.8239,
+              "name": ".nodesteer-transfer-945393155",
+              "size": 16415992
+            }
+          ],
+          "partial_target_samples": [],
+          "agent_open_fds_in_target_dir": [
+            ".nodesteer-transfer-945393155"
+          ]
+        },
+        "same_dir_temp_evidence": {
+          "temp_file_observed_in_target_dir": true,
+          "agent_fd_open_in_target_dir": true,
+          "no_partial_target_ever_observed": true,
+          "no_tmp_leftover": true,
+          "conclusion": "rename of the temp file to the destination succeeded inside a mount that is a different filesystem from /tmp, which is only possible when the temp file is created in the target directory itself"
+        },
+        "enospc": {
+          "create_http": 200,
+          "final_status": "FAILED",
+          "error": null,
+          "target_error": "write /opt/qa-sysb12-530b8e2c5b77/xfs/full/.nodesteer-transfer-1594964154: no space left on device",
+          "reason": "write /opt/qa-sysb12-530b8e2c5b77/xfs/full/.nodesteer-transfer-1594964154: no space left on device",
+          "error_is_enospc": true,
+          "target_unchanged": true,
+          "tmp_leftovers": [],
+          "proves_temp_is_in_target_fs": true,
+          "mount": {
+            "tmpfs_size": "56m",
+            "rc": 0
+          }
+        },
+        "app_deploy_enospc": {
+          "deploy_http": 200,
+          "execution": {
+            "id": "4429a7f1-d287-4ff0-9582-c6267e88b583",
+            "task_id": "501db824-4cb7-4699-ae8f-149c07560771",
+            "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+            "status": "FAILED",
+            "trigger_type": "manual",
+            "start_time": "2026-10-14T10:07:00.595005715Z",
+            "end_time": "2026-10-14T18:07:01.225388602+08:00",
+            "block_reason": "install binary failed: write /opt/qa-sysb12-530b8e2c5b77/xfs/xapp/bin/.tmp-307860122: no space left on device; rollback failed"
+          },
+          "reason": "install binary failed: write /opt/qa-sysb12-530b8e2c5b77/xfs/xapp/bin/.tmp-307860122: no space left on device; rollback failed",
+          "reason_is_enospc": true,
+          "binary_unchanged": true,
+          "tmp_in_target_dir_samples": [],
+          "tmp_leftovers": [],
+          "proves_temp_in_target_fs": true,
+          "mount": "tmpfs size=2m"
+        },
+        "app_deploy": {
+          "deploy_http": 200,
+          "execution": {
+            "id": "9ba416a1-8958-4ec5-aa16-80d3d618048b",
+            "task_id": "501db824-4cb7-4699-ae8f-149c07560771",
+            "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+            "status": "SUCCESS",
+            "trigger_type": "manual",
+            "start_time": "2026-10-14T10:07:04.249536559Z",
+            "end_time": "2026-10-14T18:07:05.827093578+08:00",
+            "block_reason": null
+          },
+          "binary_matches_artifact": true,
+          "unit_active": "active",
+          "tmp_in_target_dir_samples": [],
+          "agent_fd_open_in_target_dir": [],
+          "partial_target_samples": [],
+          "tmp_leftovers": [],
+          "atomic_replace_ok": true,
+          "same_dir_temp_evidence": false
+        },
+        "same_dir_temp_proof": {
+          "transfer_enospc_temp_path": "/opt/qa-sysb12-530b8e2c5b77/xfs/full/.nodesteer-transfer-1594964154",
+          "transfer_temp_path_dir_is_target_dir": true,
+          "deploy_enospc_temp_path": "/opt/qa-sysb12-530b8e2c5b77/xfs/xapp/bin/.tmp-307860122",
+          "deploy_temp_path_dir_is_target_dir": true,
+          "note": "the kernel error message contains the exact temp path the product tried to create; that path lives in the target directory, which is direct evidence of co-located temp creation (independent of the race-based sampler)"
+        }
+      }
+    },
+    {
+      "case_id": "AR-32",
+      "title": "Host Adapter Permission Denied；恢复后幂等、持久化、Desired State与实际状态一致",
+      "canonical_before": "NOT_RUN",
+      "proposed_after": "PARTIAL",
+      "confidence": "high",
+      "verdict_basis": "权限拒绝、无半成品、释放后恢复部署、Desired==Actual 与重复部署幂等均 PASS；但“重启后持久化 / Desired State 与实际状态一致”这一维度在本轮真实复现失败（见 defects[0]），因此整案不判 PASS。失败由更早一次被拒绝且回滚失败的部署遗留的 ROLLING_BACK 记录触发，而非 AR-32 自身的 EPERM 流程。",
+      "covered_dimensions": [
+        "权限拒绝：owned bin 目录 chattr +i 后部署以真实内核 EPERM 失败，Execution FAILED 且 block_reason 明确（operation not permitted）",
+        "失败不留半成品：binary/config/unit 均不存在，部署日志给出 ROLLING_BACK→DONE，node state 记录失败",
+        "恢复：释放权限 seam 后同一产品路径部署 SUCCESS，binary SHA == artifact SHA、unit active、unit_registry 注册",
+        "Desired State == 实际状态（恢复后立即）：Hub 定义版本/路径 == Agent 本地定义 == 磁盘 SHA",
+        "幂等：恢复后重复部署得到相同 SHA、同一 unit，无重复 unit/多余执行",
+        "重启持久化：FAIL（见 defects[0]）——owned Agent 重启后二进制被陈旧备份覆盖（SHA 变为被拒绝部署的备份内容）、unit 变为 inactive，Desired State != 实际状态，直到再次部署才修复"
+      ],
+      "remaining_or_limitations": [
+        "native owned Agent 以 root 运行，DAC 模式位无法造成拒绝，因此权限拒绝 seam 使用 chattr +i（真实 EPERM），而不是“其他 uid 属主/只读目录”的 EACCES；这与 sys-b11 SYS-52 的权限 seam 一致。",
+        "只覆盖 application_deploy 路径的 Host Adapter 写权限拒绝；文件交付路径的同类拒绝由 SYS-57 的 ENOSPC 分支覆盖（不同 errno）。",
+        "重启持久化维度失败的直接触发者是更早的 SYS-56 symlink 拒绝场景遗留记录；单独执行 AR-32（无该遗留记录）时该维度未单独复测。"
+      ],
+      "defect_ref": "SYSB12-DEFECT-01",
+      "evidence": [
+        "phase8-ar32-permission-denied.json",
+        "phase5-agent-path-guard.json"
+      ],
+      "actual_resources": {
+        "app_id": "a8879252-75b0-49e3-8daa-46989da18491",
+        "unit": "qa-sysb12-530b8e2c5b77-app.service",
+        "binary": "/opt/qa-sysb12-530b8e2c5b77/app/bin/app"
+      },
+      "probe": {
+        "seam": {
+          "action": "chattr +i on owned bin dir",
+          "path": "/opt/qa-sysb12-530b8e2c5b77/app/bin",
+          "lsattr_before": "---------------------- /opt/qa-sysb12-530b8e2c5b77/app/bin",
+          "chattr_rc": 0,
+          "lsattr_after_set": "----i----------------- /opt/qa-sysb12-530b8e2c5b77/app/bin",
+          "note": "the owned Agent runs as root, so DAC mode bits cannot deny it; immutable (EPERM) is the real kernel-level denial seam"
+        },
+        "denied_execution": {
+          "id": "fb43f95e-4e9e-41af-b79c-fdfca3a710fa",
+          "task_id": "a8879252-75b0-49e3-8daa-46989da18491",
+          "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+          "status": "FAILED",
+          "trigger_type": "manual",
+          "start_time": "2026-10-14T10:06:30.98201458Z",
+          "end_time": "2026-10-14T18:06:31.488383238+08:00",
+          "block_reason": "install binary failed: open /opt/qa-sysb12-530b8e2c5b77/app/bin/.tmp-685914644: operation not permitted"
+        },
+        "denied_reason_matches_eperm": true,
+        "no_partial_file": true,
+        "host_after_denial": {
+          "binary": {
+            "lexists": false,
+            "exists": false
+          },
+          "config": {
+            "lexists": false,
+            "exists": false
+          },
+          "unit_file": {
+            "lexists": false,
+            "exists": false
+          },
+          "unit_state": {
+            "MainPID": "0",
+            "Id": "qa-sysb12-530b8e2c5b77-app.service",
+            "LoadState": "not-found",
+            "ActiveState": "inactive",
+            "SubState": "dead",
+            "FragmentPath": "",
+            "UnitFileState": ""
+          },
+          "journal_rows": [
+            {
+              "id": "1939badb-69f1-4f32-9643-e7ca705d272c",
+              "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "from_version": "1.0",
+              "to_version": "1.0",
+              "phase": "DONE",
+              "backup_path": "absent:",
+              "started_at": "2026-10-14T10:06:30.989855713Z",
+              "updated_at": "2026-10-14T10:06:31.328240205Z"
+            },
+            {
+              "id": "22ce1540-fcb4-471b-a3c5-77552d91b5bc",
+              "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "from_version": "1.0",
+              "to_version": "1.0",
+              "phase": "ROLLING_BACK",
+              "backup_path": "/var/lib/nodesteer-qa-sysb12-530b8e2c5b77/data/applications/backup-53faa62e-0183-40f8-b7d2-1cbc0f22d276.binary",
+              "started_at": "2026-10-14T10:06:25.657433042Z",
+              "updated_at": "2026-10-14T10:06:25.689257612Z"
+            },
+            {
+              "id": "9f91d25f-aefe-40e8-98e1-621539970851",
+              "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "from_version": "1.0",
+              "to_version": "1.0",
+              "phase": "DONE",
+              "backup_path": "",
+              "started_at": "2026-10-14T10:06:23.53191996Z",
+              "updated_at": "2026-10-14T10:06:23.539834385Z"
+            },
+            {
+              "id": "121e35ab-7a4f-40cd-8aa6-70337db01338",
+              "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "from_version": "1.0",
+              "to_version": "1.0",
+              "phase": "DONE",
+              "backup_path": "",
+              "started_at": "2026-10-14T10:06:22.147810918Z",
+              "updated_at": "2026-10-14T10:06:22.157566203Z"
+            },
+            {
+              "id": "8fd81c28-e52f-42f9-ab08-91cd3a610882",
+              "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "from_version": "1.0",
+              "to_version": "1.0",
+              "phase": "DONE",
+              "backup_path": "",
+              "started_at": "2026-10-14T10:06:20.766273571Z",
+              "updated_at": "2026-10-14T10:06:20.775816566Z"
+            }
+          ],
+          "unit_registry": []
+        },
+        "recovery_execution": {
+          "id": "686654a1-a37a-405b-93ba-3d912cfa78d4",
+          "task_id": "a8879252-75b0-49e3-8daa-46989da18491",
+          "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+          "status": "SUCCESS",
+          "trigger_type": "manual",
+          "start_time": "2026-10-14T10:06:32.013457474Z",
+          "end_time": "2026-10-14T18:06:33.393682773+08:00",
+          "block_reason": null
+        },
+        "host_after_recovery": {
+          "binary": {
+            "lexists": true,
+            "exists": true,
+            "is_symlink": false,
+            "is_dir": false,
+            "mode": "0o755",
+            "size": 1048652,
+            "dev": 65025,
+            "sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16"
+          },
+          "config": {
+            "lexists": true,
+            "exists": true,
+            "is_symlink": false,
+            "is_dir": false,
+            "mode": "0o644",
+            "size": 16,
+            "dev": 65025,
+            "sha256": "9e94c912a842ea72ead332eae8c015fb84a9954d8b3608e1d90286a22f74fc85"
+          },
+          "unit_file": {
+            "lexists": true,
+            "exists": true,
+            "is_symlink": false,
+            "is_dir": false,
+            "mode": "0o644",
+            "size": 366,
+            "dev": 65025,
+            "sha256": "39ddccc1e53c0d921c43e55c570743c72987e79abf705bfb4c0b00976b05f9ee"
+          },
+          "enable_symlink": {
+            "lexists": true,
+            "exists": true,
+            "is_symlink": true,
+            "is_dir": false,
+            "mode": "0o777",
+            "size": 54,
+            "dev": 65025,
+            "target": "/etc/systemd/system/qa-sysb12-530b8e2c5b77-app.service"
+          },
+          "unit_state": {
+            "MainPID": "25342",
+            "Id": "qa-sysb12-530b8e2c5b77-app.service",
+            "LoadState": "loaded",
+            "ActiveState": "active",
+            "SubState": "running",
+            "FragmentPath": "/etc/systemd/system/qa-sysb12-530b8e2c5b77-app.service",
+            "UnitFileState": "enabled"
+          },
+          "unit_registry": [
+            {
+              "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "unit_name": "qa-sysb12-530b8e2c5b77-app.service"
+            }
+          ],
+          "journal_rows": [
+            {
+              "id": "3d1f0f16-4742-4bc9-a1b0-b8ef721789ff",
+              "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "from_version": "1.0",
+              "to_version": "1.0",
+              "phase": "DONE",
+              "backup_path": "absent:",
+              "started_at": "2026-10-14T10:06:32.018957143Z",
+              "updated_at": "2026-10-14T10:06:33.23545023Z"
+            },
+            {
+              "id": "1939badb-69f1-4f32-9643-e7ca705d272c",
+              "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "from_version": "1.0",
+              "to_version": "1.0",
+              "phase": "DONE",
+              "backup_path": "absent:",
+              "started_at": "2026-10-14T10:06:30.989855713Z",
+              "updated_at": "2026-10-14T10:06:31.328240205Z"
+            },
+            {
+              "id": "22ce1540-fcb4-471b-a3c5-77552d91b5bc",
+              "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "from_version": "1.0",
+              "to_version": "1.0",
+              "phase": "ROLLING_BACK",
+              "backup_path": "/var/lib/nodesteer-qa-sysb12-530b8e2c5b77/data/applications/backup-53faa62e-0183-40f8-b7d2-1cbc0f22d276.binary",
+              "started_at": "2026-10-14T10:06:25.657433042Z",
+              "updated_at": "2026-10-14T10:06:25.689257612Z"
+            },
+            {
+              "id": "9f91d25f-aefe-40e8-98e1-621539970851",
+              "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "from_version": "1.0",
+              "to_version": "1.0",
+              "phase": "DONE",
+              "backup_path": "",
+              "started_at": "2026-10-14T10:06:23.53191996Z",
+              "updated_at": "2026-10-14T10:06:23.539834385Z"
+            },
+            {
+              "id": "121e35ab-7a4f-40cd-8aa6-70337db01338",
+              "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "from_version": "1.0",
+              "to_version": "1.0",
+              "phase": "DONE",
+              "backup_path": "",
+              "started_at": "2026-10-14T10:06:22.147810918Z",
+              "updated_at": "2026-10-14T10:06:22.157566203Z"
+            },
+            {
+              "id": "8fd81c28-e52f-42f9-ab08-91cd3a610882",
+              "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "from_version": "1.0",
+              "to_version": "1.0",
+              "phase": "DONE",
+              "backup_path": "",
+              "started_at": "2026-10-14T10:06:20.766273571Z",
+              "updated_at": "2026-10-14T10:06:20.775816566Z"
+            }
+          ]
+        },
+        "binary_matches_artifact": true,
+        "unit_active": true,
+        "desired_equals_actual": {
+          "app_id": "a8879252-75b0-49e3-8daa-46989da18491",
+          "hub_version": "1.0",
+          "hub_binary_path": "/opt/qa-sysb12-530b8e2c5b77/app/bin/app",
+          "agent_definition_version": "1.0",
+          "agent_definition_binary_path": "/opt/qa-sysb12-530b8e2c5b77/app/bin/app",
+          "disk_binary_sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+          "expected_artifact_sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+          "equal": true
+        },
+        "host_after_restart": {
+          "binary_sha256": "f601cb6446e61cb8e428b45ace7d4ac77d592755a177a29e9b56ace2f98b7ae5",
+          "unit_active": "inactive",
+          "unit_registry": [
+            {
+              "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "unit_name": "qa-sysb12-530b8e2c5b77-app.service"
+            }
+          ],
+          "journal_rows": 6,
+          "db_quick_check": "ok",
+          "local_apps": 1
+        },
+        "persisted": false,
+        "idempotent_redeploy": {
+          "http": 200,
+          "execution": {
+            "id": "256cc07f-7129-4305-ba81-7396cb1346c7",
+            "task_id": "a8879252-75b0-49e3-8daa-46989da18491",
+            "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+            "status": "SUCCESS",
+            "trigger_type": "manual",
+            "start_time": "2026-10-14T10:06:38.829497459Z",
+            "end_time": "2026-10-14T18:06:40.259466317+08:00",
+            "block_reason": null
+          },
+          "binary_sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+          "unit_active": "active",
+          "unit_count_owned": [
+            "qa-sysb12-530b8e2c5b77-app.service                                                                                 loaded    active   running   NodeSteer managed application a8879252-75b0-49e3-8daa-46989da18491"
+          ],
+          "journal_rows": 7
+        }
+      }
+    },
+    {
+      "case_id": "AR-34",
+      "title": "Path Escape；恢复后幂等、持久化、Desired State与实际状态一致",
+      "canonical_before": "NOT_RUN",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        "逃逸请求被拒绝且无副作用（Hub 层与 Agent Host Adapter 层，部署路径与文件交付路径）",
+        "恢复：同一产品路径的合法交付 SUCCESS，落盘 SHA == 源 SHA",
+        "幂等：已 SUCCESS 的传输 retry 保持 SUCCESS（不重复交付、不回退）",
+        "持久化：owned Agent 重启后目标文件仍在且 SHA 不变，Hub 传输记录仍为 SUCCESS",
+        "无临时文件残留（目标目录与 allowlist 目录均无 .tmp/.nodesteer-transfer-*）"
+      ],
+      "remaining_or_limitations": [
+        "“Desired State == 实际状态”在文件交付路径上没有独立的 desired-state 对象，因此该维度以应用部署链路（AR-32/AR-35）的证据承载，本用例只验证交付的持久化与幂等。"
+      ],
+      "evidence": [
+        "phase4-hub-path-guard.json",
+        "phase6-transfer-path-guard.json",
+        "phase9-ar34-recovery.json"
+      ],
+      "actual_resources": {
+        "transfer_id": "f4001d13-9c24-4ffd-9c3d-a51fe83d1b4a"
+      },
+      "probe": {
+        "delivery": {
+          "create_http": 200,
+          "transfer_id": "f4001d13-9c24-4ffd-9c3d-a51fe83d1b4a",
+          "final_status": "SUCCESS",
+          "target_status": null
+        },
+        "delivery_ok": true,
+        "retry": {
+          "http": 200,
+          "body": {
+            "id": "f4001d13-9c24-4ffd-9c3d-a51fe83d1b4a",
+            "source_node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+            "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/recovery.bin",
+            "source_mode": 420,
+            "size": 24,
+            "sha256": "b77eb1405fd12d39a862731dbd036288a0048a2e0b04d112b34de13d175257f6",
+            "status": "SUCCESS",
+            "created_at": "2026-10-14T10:06:41.07949408Z",
+            "updated_at": "2026-10-14T10:06:41.140736833Z",
+            "targets": [
+              {
+                "transfer_id": "f4001d13-9c24-4ffd-9c3d-a51fe83d1b4a",
+                "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+                "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/recovery.bin",
+                "mode": 420,
+                "status": "SUCCESS",
+                "updated_at": "2026-10-14T10:06:41.135921821Z"
+              }
+            ]
+          },
+          "status_after_retry": "SUCCESS",
+          "target_after_retry": {
+            "transfer_id": "f4001d13-9c24-4ffd-9c3d-a51fe83d1b4a",
+            "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+            "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/recovery.bin",
+            "mode": 420,
+            "status": "SUCCESS",
+            "updated_at": "2026-10-14T10:06:41.135921821Z"
+          }
+        },
+        "retry_idempotent": true,
+        "file_after_restart": {
+          "/opt/qa-sysb12-530b8e2c5b77/dst/recovery.bin": {
+            "lexists": true,
+            "exists": true,
+            "is_symlink": false,
+            "is_dir": false,
+            "mode": "0o644",
+            "size": 24,
+            "uid": 0,
+            "dev": 65025,
+            "mtime": 1791972400.9648318,
+            "sha256": "b77eb1405fd12d39a862731dbd036288a0048a2e0b04d112b34de13d175257f6"
+          },
+          "/opt/qa-sysb12-530b8e2c5b77/dst/ok.bin": {
+            "lexists": true,
+            "exists": true,
+            "is_symlink": false,
+            "is_dir": false,
+            "mode": "0o644",
+            "size": 24,
+            "uid": 0,
+            "dev": 65025,
+            "mtime": 1791972388.7407796,
+            "sha256": "4ca175f66bb0e1c9512cb373fc81fd5831dc5287e8edde87f2c6eaf22443281d"
+          }
+        },
+        "transfer_record_after_restart": {
+          "status": "SUCCESS",
+          "target": {
+            "transfer_id": "f4001d13-9c24-4ffd-9c3d-a51fe83d1b4a",
+            "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+            "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/recovery.bin",
+            "mode": 420,
+            "status": "SUCCESS",
+            "updated_at": "2026-10-14T10:06:41.135921821Z"
+          }
+        },
+        "persisted": true,
+        "no_tmp_leftovers": {
+          "/opt/qa-sysb12-530b8e2c5b77/dst": [],
+          "/opt/qa-sysb12-530b8e2c5b77/allow": []
+        }
+      }
+    },
+    {
+      "case_id": "AR-35",
+      "title": "Cross-filesystem Rename；恢复后幂等、持久化、Desired State与实际状态一致",
+      "canonical_before": "NOT_RUN",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        "跨文件系统 rename 在真实部署链路（AtomicReplace 与 AtomicReplaceReader）中原子成功，无部分文件",
+        "失败路径（目标 mount 容量不足）不破坏既有目标文件：旧目标 SHA 保持不变，无临时文件残留（文件交付与应用部署两条链路各一次）",
+        "恢复与幂等：交付/部署在同一产品路径上重复执行得到相同内容 SHA；SUCCESS 传输的 retry 不回退也不再交付",
+        "持久化：owned Agent 重启后二进制 SHA、unit active、unit_registry、SQLite 状态库完好",
+        "Desired State == 实际状态：Hub Application 定义（版本/路径）== Agent 本地定义 == 磁盘二进制 SHA"
+      ],
+      "remaining_or_limitations": [
+        "Desired State 收敛判断基于 Hub 定义/Agent 本地定义/磁盘 SHA 三者一致；跨文件系统场景没有独立的“部分重命名”注入 seam。",
+        "跨挂载 rename 的 EXDEV 反事实只通过 ENOSPC 判别实验间接体现（未构造真实 EXDEV 失败注入）。",
+        "本轮“重启持久化”这一维度的可用观测被 defects[0]（陈旧 ROLLING_BACK 记录重放）污染：app-main 重启后的持久化证据不可用；本用例的持久化结论改由文件交付重启证据（phase9）与全部操作后 unit active + Desired==Actual（phase11）承载，xapp（跨文件系统安装）本身未做大重启复测（其 tmpfs 目标在收尾时卸载）。"
+      ],
+      "evidence": [
+        "phase10-cross-fs-atomic-replace.json",
+        "phase9-ar34-recovery.json",
+        "phase8-ar32-permission-denied.json",
+        "phase11-capability-gate.json"
+      ],
+      "actual_resources": {
+        "owned_mount": "/opt/qa-sysb12-530b8e2c5b77/xfs",
+        "xapp_binary": "/opt/qa-sysb12-530b8e2c5b77/xfs/xapp/bin/app"
+      },
+      "probe": {
+        "atomic_success": {
+          "temp_file_observed_in_target_dir": true,
+          "agent_fd_open_in_target_dir": true,
+          "no_partial_target_ever_observed": true,
+          "no_tmp_leftover": true,
+          "conclusion": "rename of the temp file to the destination succeeded inside a mount that is a different filesystem from /tmp, which is only possible when the temp file is created in the target directory itself"
+        },
+        "enospc_preserves_target": true,
+        "enospc_preserves_target_deploy_path": true,
+        "same_dir_temp_proof": {
+          "transfer_enospc_temp_path": "/opt/qa-sysb12-530b8e2c5b77/xfs/full/.nodesteer-transfer-1594964154",
+          "transfer_temp_path_dir_is_target_dir": true,
+          "deploy_enospc_temp_path": "/opt/qa-sysb12-530b8e2c5b77/xfs/xapp/bin/.tmp-307860122",
+          "deploy_temp_path_dir_is_target_dir": true,
+          "note": "the kernel error message contains the exact temp path the product tried to create; that path lives in the target directory, which is direct evidence of co-located temp creation (independent of the race-based sampler)"
+        },
+        "app_deploy": {
+          "app_id": "501db824-4cb7-4699-ae8f-149c07560771",
+          "hub_version": "1.0",
+          "hub_binary_path": "/opt/qa-sysb12-530b8e2c5b77/xfs/xapp/bin/app",
+          "agent_definition_version": "1.0",
+          "agent_definition_binary_path": "/opt/qa-sysb12-530b8e2c5b77/xfs/xapp/bin/app",
+          "disk_binary_sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+          "expected_artifact_sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+          "equal": true
+        },
+        "restart_persistence": {
+          "binary_sha256": "f601cb6446e61cb8e428b45ace7d4ac77d592755a177a29e9b56ace2f98b7ae5",
+          "unit_active": "inactive",
+          "unit_registry": [
+            {
+              "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "unit_name": "qa-sysb12-530b8e2c5b77-app.service"
+            }
+          ],
+          "journal_rows": 6,
+          "db_quick_check": "ok",
+          "local_apps": 1
+        },
+        "transfer_retry_idempotent": {
+          "http": 200,
+          "body": {
+            "id": "f4001d13-9c24-4ffd-9c3d-a51fe83d1b4a",
+            "source_node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+            "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/recovery.bin",
+            "source_mode": 420,
+            "size": 24,
+            "sha256": "b77eb1405fd12d39a862731dbd036288a0048a2e0b04d112b34de13d175257f6",
+            "status": "SUCCESS",
+            "created_at": "2026-10-14T10:06:41.07949408Z",
+            "updated_at": "2026-10-14T10:06:41.140736833Z",
+            "targets": [
+              {
+                "transfer_id": "f4001d13-9c24-4ffd-9c3d-a51fe83d1b4a",
+                "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+                "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/recovery.bin",
+                "mode": 420,
+                "status": "SUCCESS",
+                "updated_at": "2026-10-14T10:06:41.135921821Z"
+              }
+            ]
+          },
+          "status_after_retry": "SUCCESS",
+          "target_after_retry": {
+            "transfer_id": "f4001d13-9c24-4ffd-9c3d-a51fe83d1b4a",
+            "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+            "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/recovery.bin",
+            "mode": 420,
+            "status": "SUCCESS",
+            "updated_at": "2026-10-14T10:06:41.135921821Z"
+          }
+        }
+      }
+    },
+    {
+      "case_id": "SYS-58",
+      "title": "SYS-58 Capability 缺失时在下发前 BLOCKED，不到客户机执行。",
+      "canonical_before": "NOT_RUN",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        "非 native owned child（deployment_mode=docker）上报 application_deploy/host_filesystem/managed_systemd/agent_upgrade 全 false",
+        "application deploy 到该节点：Hub 在创建 Execution 之前拒绝（HTTP 400 \"node ... lacks capability application_deploy\"），app 执行列表零新增、该节点零 execution",
+        "application upgrade 到该节点：同样在创建 Execution 之前拒绝",
+        "客户机无执行痕迹：owned Agent SQLite executions/deployments/unit_registry/local_apps 全空，/etc/systemd/system 无相关 unit",
+        "记录帧代理证明 Hub→该节点方向没有 DEPLOY_REQUEST/RUN_EXECUTION 等 Host Operation 帧"
+      ],
+      "remaining_or_limitations": [
+        "产品实现形式是“拒绝创建 Execution（HTTP 400）”，而不是创建一条 BLOCKED 状态的 Execution；语义上等同 PRODUCT.md/AGENTS 要求的“Hub 下发前校验、BLOCKED、不能等执行后才失败”。已作为实现形态观察记录，不计为用例失败。",
+        "自升级门禁走 deployment_mode 分支（Execution 终态 SKIPPED），与 Capability 映射是两条独立门禁，二者都未下发到客户机。",
+        "观察（非失败）：AppManager.Deploy 在校验 Capability 之前先对整批 node_ids 调用 ArtifactManager.PrefetchToNodes，因此不可能力节点仍会收到 ARTIFACT_PREFETCH 帧并把制品写入本地缓存；Managed Host Operation（DEPLOY_REQUEST）始终未下发。"
+      ],
+      "evidence": [
+        "phase2-owned-child-b.json",
+        "phase11-capability-gate.json"
+      ],
+      "actual_resources": {
+        "node_b_id": "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889"
+      },
+      "probe": {
+        "node_b_capabilities": {
+          "agent_upgrade": false,
+          "application_deploy": false,
+          "host_filesystem": false,
+          "local_scheduler": true,
+          "managed_systemd": false,
+          "offline_execution": true,
+          "script": true
+        },
+        "capability_false_for": [
+          "agent_upgrade",
+          "application_deploy",
+          "host_filesystem",
+          "managed_systemd"
+        ],
+        "deploy_to_non_native": {
+          "http": 400,
+          "body": {
+            "error": "node 26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889 lacks capability application_deploy"
+          },
+          "error_text": "node 26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889 lacks capability application_deploy",
+          "executions_delta": 0,
+          "executions_for_node_b": [],
+          "hub_executions_for_app_total": 7
+        },
+        "upgrade_to_non_native": {
+          "http": 400,
+          "body": {
+            "error": "node 26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889 lacks capability application_deploy"
+          },
+          "error_text": "node 26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889 lacks capability application_deploy"
+        },
+        "executions_for_node_b_total": [],
+        "child_b_agent_state_after": {
+          "execution_count": 0,
+          "executions": [],
+          "deployments": [],
+          "local_apps": [],
+          "unit_registry": [],
+          "artifact_rows": [
+            {
+              "sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+              "path": "/var/lib/nodesteer-qa-sysb12-530b8e2c5b77-b/data/artifacts/60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16"
+            }
+          ],
+          "db_quick_check": "ok"
+        },
+        "proxy_after": {
+          "port": 33555,
+          "upstream": "ws://192.168.100.209:18080",
+          "frame_counts": {
+            "hub_to_agent": {
+              "HELLO_ACK": 2,
+              "SYNC_RESPONSE": 15,
+              "HEARTBEAT_ACK": 3,
+              "REVISION_CHECK_ACK": 2,
+              "CHANGE_NOTIFICATION": 13,
+              "FILE_UPLOAD_REQUEST": 2,
+              "FILE_DELIVERY_REQUEST": 2,
+              "ARTIFACT_PREFETCH": 4
+            },
+            "agent_to_hub": {
+              "HELLO": 2,
+              "SYNC_REQUEST": 15,
+              "INVENTORY": 2,
+              "SYNC_ACK": 15,
+              "HEARTBEAT": 3,
+              "REVISION_CHECK": 2,
+              "FILE_UPLOAD_RESULT": 2,
+              "FILE_DELIVERY_RESULT": 2
+            }
+          },
+          "host_op_frames_hub_to_agent": [
+            {
+              "type": "FILE_UPLOAD_REQUEST",
+              "at_utc": "2026-10-14T10:06:29Z",
+              "envelope_id": null
+            },
+            {
+              "type": "FILE_DELIVERY_REQUEST",
+              "at_utc": "2026-10-14T10:06:29Z",
+              "envelope_id": null
+            },
+            {
+              "type": "FILE_UPLOAD_REQUEST",
+              "at_utc": "2026-10-14T10:06:29Z",
+              "envelope_id": null
+            },
+            {
+              "type": "FILE_DELIVERY_REQUEST",
+              "at_utc": "2026-10-14T10:06:29Z",
+              "envelope_id": null
+            },
+            {
+              "type": "ARTIFACT_PREFETCH",
+              "at_utc": "2026-10-14T10:07:07Z",
+              "envelope_id": null,
+              "app_id": "9e7e15ec-be3b-4d52-86a3-21fa157e9a70",
+              "operation": null
+            },
+            {
+              "type": "ARTIFACT_PREFETCH",
+              "at_utc": "2026-10-14T10:07:10Z",
+              "envelope_id": null,
+              "app_id": "9e7e15ec-be3b-4d52-86a3-21fa157e9a70",
+              "operation": null
+            },
+            {
+              "type": "ARTIFACT_PREFETCH",
+              "at_utc": "2026-10-14T10:07:13Z",
+              "envelope_id": null,
+              "app_id": "9e7e15ec-be3b-4d52-86a3-21fa157e9a70",
+              "operation": null
+            },
+            {
+              "type": "ARTIFACT_PREFETCH",
+              "at_utc": "2026-10-14T10:07:13Z",
+              "envelope_id": null,
+              "app_id": "9e7e15ec-be3b-4d52-86a3-21fa157e9a70",
+              "operation": null
+            }
+          ],
+          "connection_events": [
+            {
+              "event": "proxy_listening",
+              "at_utc": "2026-10-14T10:06:14Z",
+              "port": 33555,
+              "upstream": "ws://192.168.100.209:18080"
+            },
+            {
+              "event": "connection_open",
+              "at_utc": "2026-10-14T10:06:15Z",
+              "port": 33555
+            },
+            {
+              "event": "host_op_frame_hub_to_agent",
+              "at_utc": "2026-10-14T10:06:29Z",
+              "type": "FILE_UPLOAD_REQUEST",
+              "envelope_id": null
+            },
+            {
+              "event": "host_op_frame_hub_to_agent",
+              "at_utc": "2026-10-14T10:06:29Z",
+              "type": "FILE_DELIVERY_REQUEST",
+              "envelope_id": null
+            },
+            {
+              "event": "host_op_frame_hub_to_agent",
+              "at_utc": "2026-10-14T10:06:29Z",
+              "type": "FILE_UPLOAD_REQUEST",
+              "envelope_id": null
+            },
+            {
+              "event": "host_op_frame_hub_to_agent",
+              "at_utc": "2026-10-14T10:06:29Z",
+              "type": "FILE_DELIVERY_REQUEST",
+              "envelope_id": null
+            },
+            {
+              "event": "host_op_frame_hub_to_agent",
+              "at_utc": "2026-10-14T10:07:07Z",
+              "type": "ARTIFACT_PREFETCH",
+              "envelope_id": null,
+              "app_id": "9e7e15ec-be3b-4d52-86a3-21fa157e9a70",
+              "operation": null
+            },
+            {
+              "event": "host_op_frame_hub_to_agent",
+              "at_utc": "2026-10-14T10:07:10Z",
+              "type": "ARTIFACT_PREFETCH",
+              "envelope_id": null,
+              "app_id": "9e7e15ec-be3b-4d52-86a3-21fa157e9a70",
+              "operation": null
+            },
+            {
+              "event": "host_op_frame_hub_to_agent",
+              "at_utc": "2026-10-14T10:07:13Z",
+              "type": "ARTIFACT_PREFETCH",
+              "envelope_id": null,
+              "app_id": "9e7e15ec-be3b-4d52-86a3-21fa157e9a70",
+              "operation": null
+            },
+            {
+              "event": "host_op_frame_hub_to_agent",
+              "at_utc": "2026-10-14T10:07:13Z",
+              "type": "ARTIFACT_PREFETCH",
+              "envelope_id": null,
+              "app_id": "9e7e15ec-be3b-4d52-86a3-21fa157e9a70",
+              "operation": null
+            },
+            {
+              "event": "relay_error",
+              "at_utc": "2026-10-14T10:07:20Z",
+              "error": "ConnectionClosedError"
+            },
+            {
+              "event": "connection_closed",
+              "at_utc": "2026-10-14T10:07:20Z",
+              "port": 33555
+            },
+            {
+              "event": "connection_open",
+              "at_utc": "2026-10-14T10:07:23Z",
+              "port": 33555
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case_id": "AR-33",
+      "title": "Capability Mismatch；恢复后幂等、持久化、Desired State与实际状态一致",
+      "canonical_before": "NOT_RUN",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        "Capability 不匹配的节点被拒绝且不被下发（部署与升级两种操作）",
+        "自升级请求到非 native 节点：Hub 落 SKIPPED 终态并说明 self-upgrade unsupported for deployment mode docker，不向客户机下发",
+        "恢复：具备 Capability 的 native 节点仍在同一应用上收敛（unit active、Desired == Actual）",
+        "故障节点保持干净：重启后仍无 execution/deployment/local application，能力上报持续为 false（持久化）"
+      ],
+      "remaining_or_limitations": [
+        "混合批次（[capable, non-capable]）中 Hub 返回 400，但可能力节点已按 per-node 语义在下发前完成校验并通过；这是产品的逐节点语义（请求整体非原子），作为观察记录，不计为用例失败。"
+      ],
+      "evidence": [
+        "phase11-capability-gate.json"
+      ],
+      "actual_resources": {
+        "node_a_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+        "node_b_id": "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889"
+      },
+      "probe": {
+        "self_upgrade_to_non_native": {
+          "http": 200,
+          "body": [
+            {
+              "node_id": "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889",
+              "execution_id": "8ff17c99-cd9a-4248-8ebb-51d7e77f8146",
+              "status": "SKIPPED",
+              "block_reason": "self-upgrade unsupported for deployment mode docker"
+            }
+          ]
+        },
+        "mixed_batch_noncapable_first": {
+          "http": 400,
+          "body": {
+            "error": "node 26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889 lacks capability application_deploy"
+          },
+          "executions_delta": 0
+        },
+        "mixed_batch_capable_first": {
+          "http": 400,
+          "body": {
+            "error": "node 26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889 lacks capability application_deploy"
+          },
+          "executions_created": 1,
+          "note": "per-node check: the capable node is dispatched, the non-capable node is refused in the same request; the API still returns HTTP 400"
+        },
+        "ar33_recovery": {
+          "capable_node_executions": 8,
+          "capable_node_last_execution": {
+            "id": "9d1a6be1-2a56-4016-87c9-def1de1ced0b",
+            "task_id": "a8879252-75b0-49e3-8daa-46989da18491",
+            "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+            "status": "FAILED",
+            "trigger_type": "manual",
+            "start_time": "2026-10-14T10:06:20.757962637Z",
+            "end_time": "2026-10-14T18:06:20.937898265+08:00",
+            "block_reason": "invalid deployment path: invalid absolute path: /opt/qa-sysb12-530b8e2c5b77//app/bin/app"
+          },
+          "capable_node_last_success_execution": {
+            "id": "686654a1-a37a-405b-93ba-3d912cfa78d4",
+            "task_id": "a8879252-75b0-49e3-8daa-46989da18491",
+            "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+            "status": "SUCCESS",
+            "trigger_type": "manual",
+            "start_time": "2026-10-14T10:06:32.013457474Z",
+            "end_time": "2026-10-14T18:06:33.393682773+08:00",
+            "block_reason": null
+          },
+          "capable_node_unit_active": "active",
+          "capable_node_binary_sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+          "desired_equals_actual": {
+            "app_id": "a8879252-75b0-49e3-8daa-46989da18491",
+            "hub_version": "1.0",
+            "hub_binary_path": "/opt/qa-sysb12-530b8e2c5b77/app/bin/app",
+            "agent_definition_version": "1.0",
+            "agent_definition_binary_path": "/opt/qa-sysb12-530b8e2c5b77/app/bin/app",
+            "disk_binary_sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+            "expected_artifact_sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+            "equal": true
+          },
+          "non_capable_node_still_clean": true
+        },
+        "node_b_after_restart": {
+          "status": "online",
+          "sync_status": "synced",
+          "deployment_mode": "docker",
+          "capabilities": {
+            "agent_upgrade": false,
+            "application_deploy": false,
+            "host_filesystem": false,
+            "local_scheduler": true,
+            "managed_systemd": false,
+            "offline_execution": true,
+            "script": true
+          }
+        },
+        "child_b_agent_state_after_restart": {
+          "execution_count": 0,
+          "deployments": [],
+          "local_apps": [],
+          "artifact_rows": [
+            {
+              "sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+              "path": "/var/lib/nodesteer-qa-sysb12-530b8e2c5b77-b/data/artifacts/60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16"
+            }
+          ],
+          "identity": {
+            "agent_id": "agent-580a9f2d-bfeb-4326-babd-7f3c255c5e2e",
+            "node_id": "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889"
+          }
+        }
+      }
+    },
+    {
+      "case_id": "INV-16",
+      "title": "Capability 不匹配不得下发 Host Operation。",
+      "canonical_before": "NOT_RUN",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        "Host Operation 帧级证据：child-b 全程经记录帧代理接入，Hub→该节点方向 0 个 DEPLOY_REQUEST / RUN_EXECUTION / ARTIFACT_PREFETCH / FILE_*_REQUEST 帧",
+        "Hub 侧执行记录：该节点无任何 Execution，应用执行列表中无 node_id == child-b 的记录",
+        "客户机侧无痕迹：owned Agent 状态库无 execution/deployment 行，/etc/systemd/system 无相关 unit，无相关进程副作用",
+        "混合批次中不可能力节点同样不下发（只有具备 Capability 的节点被派发）"
+      ],
+      "remaining_or_limitations": [
+        "帧级证据来自 owned child-b 的会话（经本地记录代理）；其他节点的下发不在本用例范围。",
+        "ARTIFACT_PREFETCH 帧会在 Capability 校验前发往请求中列出的所有节点（含不可能力节点），只写 Agent 制品缓存，不构成 Managed Host Operation；已作为观察记录（附客户机缓存行证据），不影响本不变量判定。",
+        "child-b 会话上出现的 FILE_UPLOAD_REQUEST/FILE_DELIVERY_REQUEST 属于 SYS-56 allowlist 用例中刻意让 child-b 同时作为源和目标的文件交付（非 Managed Host Operation 帧）。"
+      ],
+      "evidence": [
+        "phase11-capability-gate.json"
+      ],
+      "actual_resources": {
+        "node_b_id": "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889",
+        "frame_proxy_port": 33555
+      },
+      "probe": {
+        "inv16_frame_analysis": {
+          "hub_to_agent_frame_types_total": {
+            "HELLO_ACK": 2,
+            "SYNC_RESPONSE": 15,
+            "HEARTBEAT_ACK": 3,
+            "REVISION_CHECK_ACK": 2,
+            "CHANGE_NOTIFICATION": 13,
+            "FILE_UPLOAD_REQUEST": 2,
+            "FILE_DELIVERY_REQUEST": 2,
+            "ARTIFACT_PREFETCH": 4
+          },
+          "host_op_candidates": {
+            "FILE_UPLOAD_REQUEST": 2,
+            "FILE_DELIVERY_REQUEST": 2,
+            "ARTIFACT_PREFETCH": 4
+          },
+          "deploy_request_count": 0,
+          "run_execution_count": 0,
+          "no_managed_host_operation_dispatched": true,
+          "file_frames_explained": "FILE_UPLOAD_REQUEST/FILE_DELIVERY_REQUEST seen on the child-b session belong to the deliberate SYS-56 allowlist file-transfer tests, where child-b is both source and target (phase7); the file-delivery path is intentionally not gated by application_deploy because in docker mode the write lands in the container filesystem, not on a managed host. Recorded as an observation for Root review.",
+          "artifact_prefetch_observation": "ARTIFACT_PREFETCH frames reached the non-capable node because AppManager.Deploy calls ArtifactManager.PrefetchToNodes for the whole requested node list before the per-node Capability check. The prefetch only populates the Agent artifact cache; no Host Operation (DEPLOY_REQUEST) was dispatched. Recorded as an observation, not a case failure; the client-side artifact cache rows below are the only trace."
+        },
+        "executions_for_node_b_total": [],
+        "child_b_agent_state_after": {
+          "execution_count": 0,
+          "executions": [],
+          "deployments": [],
+          "local_apps": [],
+          "unit_registry": [],
+          "artifact_rows": [
+            {
+              "sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+              "path": "/var/lib/nodesteer-qa-sysb12-530b8e2c5b77-b/data/artifacts/60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16"
+            }
+          ],
+          "db_quick_check": "ok"
+        },
+        "child_b_host_probe": {
+          "etc_systemd_owned": {},
+          "mounts": []
+        },
+        "child_b_unit_dir_probe": {
+          "etc_systemd_owned": [
+            "qa-sysb12-530b8e2c5b77-app.service",
+            "qa-sysb12-530b8e2c5b77-xapp.service"
+          ],
+          "owned_units": [
+            "opt-qa\\x2dsysb12\\x2d530b8e2c5b77-xfs.mount                                                                         loaded    active   mounted   /opt/qa-sysb12-530b8e2c5b77/xfs",
+            "qa-sysb12-530b8e2c5b77-app.service                                                                                 loaded    active   running   NodeSteer managed application a8879252-75b0-49e3-8daa-46989da18491",
+            "qa-sysb12-530b8e2c5b77-xapp.service                                                                                loaded    active   running   NodeSteer managed application 501db824-4cb7-4699-ae8f-149c07560771"
+          ]
+        },
+        "child_b_log_hits": {
+          "log_size": 464,
+          "keyword_hits": [],
+          "deploy_lines": []
+        },
+        "inv16_no_host_op_frame_to_non_capable_node": true
+      }
+    }
+  ],
+  "defects": [
+    {
+      "id": "SYSB12-DEFECT-01",
+      "severity": "P0",
+      "case_ids": [
+        "AR-32",
+        "SYS-56"
+      ],
+      "recommended_owner_case": "INV-11 (Managed Application 必须存在恢复路径，baseline PARTIAL/FAIL)",
+      "title": "回滚失败的被拒部署遗留 ROLLING_BACK 记录，Agent 重启恢复时把陈旧备份写到应用的“当前”binary/config 路径，覆盖更新的成功安装并把 unit 留在 inactive",
+      "mechanism": [
+        "1) 部署被拒且其 rollback 也失败时（symlink 目的地被 AtomicReplace 拒绝 → rollback 用同一路径再次被拒），application.go 的 failed() 闭包只在 rollback 成功时才把日志推进到 DONE，于是该 deployment 行永久停留在 ROLLING_BACK。",
+        "2) Agent 重启时 ApplicationManager.RecoverDeployments 遍历「活动部署」，但它从**当前**应用定义取 BinaryPath/ConfigPath/UnitName，再与该行保存的 backup 路径组合执行 rollback。",
+        "3) 若应用定义在该行产生后已变化（本例：后续成功部署指向同一 binary 路径），陈旧 backup 会被写进当前 binary 路径；且当该行的 backup_unit_path 为 absent 时 rollback 不重启服务，unit 停留在 inactive。",
+        "4) 结果：Hub Desired State（version 1.0 / artifact A1）与实际状态（陈旧备份内容 + unit inactive）不一致，直到下一次部署才修复；该行被消费后（DONE）不再重复，属一次性毒化。"
+      ],
+      "code_references": [
+        "internal/agent/application.go:failed() closure (rollback failure keeps ROLLING_BACK)",
+        "internal/agent/application.go:RecoverDeployments (uses current app definition paths)",
+        "internal/agent/application.go:rollback (skips StartService when backup_unit_path == absent)",
+        "internal/agent/host/native.go:AtomicReplace (refuses symlink destination)"
+      ],
+      "evidence": {
+        "stale_journal_row": {
+          "id": "22ce1540-fcb4-471b-a3c5-77552d91b5bc",
+          "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+          "from_version": "1.0",
+          "to_version": "1.0",
+          "phase": "ROLLING_BACK",
+          "backup_path": "/var/lib/nodesteer-qa-sysb12-530b8e2c5b77/data/applications/backup-53faa62e-0183-40f8-b7d2-1cbc0f22d276.binary",
+          "started_at": "2026-10-14T10:06:25.657433042Z",
+          "updated_at": "2026-10-14T10:06:25.689257612Z"
+        },
+        "execution_that_created_it": {
+          "id": "ca27424a-4ad0-4dd4-920c-72d3ce989205",
+          "task_id": "a8879252-75b0-49e3-8daa-46989da18491",
+          "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+          "status": "FAILED",
+          "trigger_type": "manual",
+          "start_time": "2026-10-14T10:06:25.653649734Z",
+          "end_time": "2026-10-14T18:06:26.122766594+08:00",
+          "block_reason": "install binary failed: destination is a symlink: /opt/qa-sysb12-530b8e2c5b77/escape/bin/app; rollback failed"
+        },
+        "journal_before_restart": [
+          {
+            "id": "3d1f0f16-4742-4bc9-a1b0-b8ef721789ff",
+            "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+            "from_version": "1.0",
+            "to_version": "1.0",
+            "phase": "DONE",
+            "backup_path": "absent:",
+            "started_at": "2026-10-14T10:06:32.018957143Z",
+            "updated_at": "2026-10-14T10:06:33.23545023Z"
+          },
+          {
+            "id": "1939badb-69f1-4f32-9643-e7ca705d272c",
+            "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+            "from_version": "1.0",
+            "to_version": "1.0",
+            "phase": "DONE",
+            "backup_path": "absent:",
+            "started_at": "2026-10-14T10:06:30.989855713Z",
+            "updated_at": "2026-10-14T10:06:31.328240205Z"
+          },
+          {
+            "id": "22ce1540-fcb4-471b-a3c5-77552d91b5bc",
+            "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+            "from_version": "1.0",
+            "to_version": "1.0",
+            "phase": "ROLLING_BACK",
+            "backup_path": "/var/lib/nodesteer-qa-sysb12-530b8e2c5b77/data/applications/backup-53faa62e-0183-40f8-b7d2-1cbc0f22d276.binary",
+            "started_at": "2026-10-14T10:06:25.657433042Z",
+            "updated_at": "2026-10-14T10:06:25.689257612Z"
+          },
+          {
+            "id": "9f91d25f-aefe-40e8-98e1-621539970851",
+            "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+            "from_version": "1.0",
+            "to_version": "1.0",
+            "phase": "DONE",
+            "backup_path": "",
+            "started_at": "2026-10-14T10:06:23.53191996Z",
+            "updated_at": "2026-10-14T10:06:23.539834385Z"
+          },
+          {
+            "id": "121e35ab-7a4f-40cd-8aa6-70337db01338",
+            "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+            "from_version": "1.0",
+            "to_version": "1.0",
+            "phase": "DONE",
+            "backup_path": "",
+            "started_at": "2026-10-14T10:06:22.147810918Z",
+            "updated_at": "2026-10-14T10:06:22.157566203Z"
+          },
+          {
+            "id": "8fd81c28-e52f-42f9-ab08-91cd3a610882",
+            "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+            "from_version": "1.0",
+            "to_version": "1.0",
+            "phase": "DONE",
+            "backup_path": "",
+            "started_at": "2026-10-14T10:06:20.766273571Z",
+            "updated_at": "2026-10-14T10:06:20.775816566Z"
+          }
+        ],
+        "before_restart": {
+          "binary_sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+          "unit_active": "active"
+        },
+        "after_restart": {
+          "binary_sha256": "f601cb6446e61cb8e428b45ace7d4ac77d592755a177a29e9b56ace2f98b7ae5",
+          "unit_active": "inactive",
+          "unit_registry": [
+            {
+              "application_id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "unit_name": "qa-sysb12-530b8e2c5b77-app.service"
+            }
+          ],
+          "journal_rows": 6,
+          "db_quick_check": "ok",
+          "local_apps": 1
+        },
+        "expected_binary_sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+        "sha_restored_after_restart": "f601cb6446e61cb8e428b45ace7d4ac77d592755a177a29e9b56ace2f98b7ae5",
+        "restored_content_is_symlink_victim": true,
+        "recovery_after_redeploy": {
+          "http": 200,
+          "execution": {
+            "id": "256cc07f-7129-4305-ba81-7396cb1346c7",
+            "task_id": "a8879252-75b0-49e3-8daa-46989da18491",
+            "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+            "status": "SUCCESS",
+            "trigger_type": "manual",
+            "start_time": "2026-10-14T10:06:38.829497459Z",
+            "end_time": "2026-10-14T18:06:40.259466317+08:00",
+            "block_reason": null
+          },
+          "binary_sha256": "60b4808f729516bfcb7f19b5afe8705e6f5a520889f8a093d756e2a2f0bb5b16",
+          "unit_active": "active",
+          "unit_count_owned": [
+            "qa-sysb12-530b8e2c5b77-app.service                                                                                 loaded    active   running   NodeSteer managed application a8879252-75b0-49e3-8daa-46989da18491"
+          ],
+          "journal_rows": 7
+        }
+      },
+      "repro": "owned native Agent + 一个 application；先提交 binary_path 指向自有 symlink 的部署（被拒且回滚也失败）→ 再执行一次成功部署 → 重启 owned Agent → 观察 binary 内容被陈旧备份覆盖、unit inactive；证据文件 evidence/phase5-agent-path-guard.json 与 evidence/phase8-ar32-permission-denied.json",
+      "not_claimed": "未做产品修复；未改动产品源码。"
+    }
+  ],
+  "observations": [
+    {
+      "id": "SYSB12-OBS-01",
+      "case_ids": [
+        "SYS-58",
+        "AR-33",
+        "INV-16"
+      ],
+      "topic": "Artifact prefetch 先于 Capability 门禁下发",
+      "detail": "AppManager.Deploy 在逐节点 Capability 校验之前，先对请求中的全部 node_ids 调用 ArtifactManager.PrefetchToNodes，因此不可能力节点也会收到 ARTIFACT_PREFETCH 帧并把制品写入本地缓存（owned child-b 重启后缓存行仍在）。Managed Host Operation（DEPLOY_REQUEST）始终未下发，故不影响 INV-16 判定；但“下发前 BLOCKED”在制品预取这一层并不完全成立。",
+      "evidence": [
+        "evidence/phase11-capability-gate.json"
+      ]
+    },
+    {
+      "id": "SYSB12-OBS-02",
+      "case_ids": [
+        "SYS-58",
+        "INV-16"
+      ],
+      "topic": "Capability 不匹配的实现形态是“拒绝创建 Execution”而非 BLOCKED 状态行",
+      "detail": "Hub 在创建 Execution 之前返回 HTTP 400（node ... lacks capability application_deploy），因此不存在 BLOCKED 状态的 Execution 记录；语义上满足“下发前校验、不能等执行后才失败”，但与文档术语 BLOCKED 存在表达差异。",
+      "evidence": [
+        "evidence/phase11-capability-gate.json"
+      ]
+    },
+    {
+      "id": "SYSB12-OBS-03",
+      "case_ids": [
+        "SYS-56",
+        "INV-16"
+      ],
+      "topic": "文件交付路径不受 host_filesystem/application_deploy Capability 门禁",
+      "detail": "deployment_mode=docker（host_filesystem=false）的节点仍可接收文件交付写入 /opt/... 路径（allowlist 内正对照 SUCCESS）。纯 docker 形态下该写入落在容器文件系统，不等于宿主机操作，因此本批不判为缺陷；仅记录为 Capability 边界观察。",
+      "evidence": [
+        "evidence/phase7-allowlist.json"
+      ]
+    },
+    {
+      "id": "SYSB12-OBS-04",
+      "case_ids": [
+        "AR-33",
+        "INV-16"
+      ],
+      "topic": "混合节点批次逐节点语义（请求非原子）",
+      "detail": "node_ids=[capable, non-capable] 时 Hub 返回 HTTP 400，但可能力节点已按 per-node 语义创建并下发执行；node_ids=[non-capable, capable] 时首个节点即报错，不创建任何 Execution。调用方看到的都是 400，但副作用不同。",
+      "evidence": [
+        "evidence/phase11-capability-gate.json"
+      ]
+    }
+  ],
+  "verdict_summary": {
+    "PASS": 7,
+    "PARTIAL": 1
+  },
+  "run_actual_budget": {
+    "api_mutations": 59,
+    "artifact_uploads": 1,
+    "artifact_deletes": 1,
+    "app_creates": 2,
+    "app_updates": 11,
+    "app_deletes": 2,
+    "app_assigns": 2,
+    "deploys": 13,
+    "transfers": 12,
+    "transfer_retries": 1,
+    "node_enroll_posts": 2,
+    "node_deletes": 2,
+    "node_upgrades": 1,
+    "child_process_starts": 5,
+    "child_process_stops": 3,
+    "host_seam_actions": 31,
+    "mounts": 5
+  },
+  "phase_failures": [],
+  "final_cleanup": {
+    "oracle": {
+      "at_utc": "2026-10-14T10:07:31Z",
+      "owned_prefix": "qa-sysb12-530b8e2c5b77-",
+      "protected_nodes_after": {
+        "native-1": {
+          "status": "online",
+          "sync_status": "synced"
+        },
+        "native-2": {
+          "status": "online",
+          "sync_status": "synced"
+        },
+        "native-3": {
+          "status": "online",
+          "sync_status": "synced"
+        },
+        "native-4": {
+          "status": "online",
+          "sync_status": "synced"
+        }
+      },
+      "protected_nodes_online_synced": true,
+      "hub_leftover_owned_fixtures": {
+        "artifacts": [],
+        "applications": [],
+        "nodes": []
+      },
+      "hub_leftover_clear": true,
+      "hub_transfer_records_owned_paths": [
+        {
+          "id": "a814a98f-fbf4-4c9a-b754-d43ac5d8906f",
+          "status": "FAILED",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/mid.bin",
+          "targets": [
+            {
+              "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/xfs/full/target.bin",
+              "status": "FAILED"
+            }
+          ]
+        },
+        {
+          "id": "ba8087d5-c020-42f8-85fc-d8a89bac1ed3",
+          "status": "SUCCESS",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/big.bin",
+          "targets": [
+            {
+              "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/xfs/dst/big.bin",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "id": "f4001d13-9c24-4ffd-9c3d-a51fe83d1b4a",
+          "status": "SUCCESS",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/recovery.bin",
+          "targets": [
+            {
+              "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/recovery.bin",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "id": "a8c4e8b2-3580-46db-9796-75c5f84d48a3",
+          "status": "SUCCESS",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin",
+          "targets": [
+            {
+              "node_id": "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/allow/ok.txt",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "id": "394e2f1e-e826-4cfb-858d-8d6e2786fdb0",
+          "status": "FAILED",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin",
+          "targets": [
+            {
+              "node_id": "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889",
+              "destination_path": "/etc/qa-sysb12-530b8e2c5b77/evil.txt",
+              "status": "FAILED"
+            }
+          ]
+        },
+        {
+          "id": "2c305843-081d-4567-b044-336faa05201d",
+          "status": "SUCCESS",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin",
+          "targets": [
+            {
+              "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/ok.bin",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "id": "d331b6b2-91e7-4857-a714-4946cf48c5a1",
+          "status": "FAILED",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin",
+          "targets": [
+            {
+              "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/link.bin",
+              "status": "FAILED"
+            }
+          ]
+        },
+        {
+          "id": "77f8a12b-2110-41c1-903b-6d1322ae6025",
+          "status": "FAILED",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin",
+          "targets": [
+            {
+              "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst//out.bin",
+              "status": "FAILED"
+            }
+          ]
+        },
+        {
+          "id": "018b8a54-0bca-4aaa-89c9-e5edb35b8ac5",
+          "status": "FAILED",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/mid.bin",
+          "targets": [
+            {
+              "node_id": "295ce407-9161-40dd-a33c-9b90b32ec87c",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/xfs/full/target.bin",
+              "status": "FAILED"
+            }
+          ]
+        },
+        {
+          "id": "a05c4178-77f3-4d81-bf68-2a827836ba66",
+          "status": "SUCCESS",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/big.bin",
+          "targets": [
+            {
+              "node_id": "295ce407-9161-40dd-a33c-9b90b32ec87c",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/xfs/dst/big.bin",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "id": "8a9585e6-c31a-459b-8dbe-e8bfb323e333",
+          "status": "SUCCESS",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/recovery.bin",
+          "targets": [
+            {
+              "node_id": "295ce407-9161-40dd-a33c-9b90b32ec87c",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/recovery.bin",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "id": "6336017f-c42e-4325-849c-f2fe301d8193",
+          "status": "SUCCESS",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin",
+          "targets": [
+            {
+              "node_id": "ea5efeb0-22fa-4e50-bc2e-e4a05e04e149",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/allow/ok.txt",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "id": "1b61c2c7-4882-4878-954a-6c69bd81955c",
+          "status": "FAILED",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin",
+          "targets": [
+            {
+              "node_id": "ea5efeb0-22fa-4e50-bc2e-e4a05e04e149",
+              "destination_path": "/etc/qa-sysb12-530b8e2c5b77/evil.txt",
+              "status": "FAILED"
+            }
+          ]
+        },
+        {
+          "id": "ee840c2c-7411-415a-b5cb-29fc8fff4640",
+          "status": "SUCCESS",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin",
+          "targets": [
+            {
+              "node_id": "295ce407-9161-40dd-a33c-9b90b32ec87c",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/ok.bin",
+              "status": "SUCCESS"
+            }
+          ]
+        },
+        {
+          "id": "395bc50e-3ea4-48f7-a50f-f1c26b159cad",
+          "status": "FAILED",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin",
+          "targets": [
+            {
+              "node_id": "295ce407-9161-40dd-a33c-9b90b32ec87c",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/link.bin",
+              "status": "FAILED"
+            }
+          ]
+        },
+        {
+          "id": "559b33da-1bfa-409a-a1b4-50d4ff47ba42",
+          "status": "FAILED",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin",
+          "targets": [
+            {
+              "node_id": "295ce407-9161-40dd-a33c-9b90b32ec87c",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst//out.bin",
+              "status": "FAILED"
+            }
+          ]
+        },
+        {
+          "id": "62316f01-31c2-492e-aa5e-acd94b46e7af",
+          "status": "FAILED",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin",
+          "targets": [
+            {
+              "node_id": "04a0a111-2957-47ae-b4e2-c0617045ab53",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/allow/ok.txt",
+              "status": "FAILED"
+            }
+          ]
+        },
+        {
+          "id": "f0f80afc-63b3-4999-8df3-398a1ab305d8",
+          "status": "FAILED",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin",
+          "targets": [
+            {
+              "node_id": "04a0a111-2957-47ae-b4e2-c0617045ab53",
+              "destination_path": "/etc/qa-sysb12-530b8e2c5b77/evil.txt",
+              "status": "FAILED"
+            }
+          ]
+        },
+        {
+          "id": "41dcf132-3721-4922-9d26-0e784b0c5bbb",
+          "status": "FAILED",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin",
+          "targets": [
+            {
+              "node_id": "04a0a111-2957-47ae-b4e2-c0617045ab53",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/ok.bin",
+              "status": "FAILED"
+            }
+          ]
+        },
+        {
+          "id": "09bdbe22-ec39-4684-aef7-4a951cb6be90",
+          "status": "FAILED",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin",
+          "targets": [
+            {
+              "node_id": "04a0a111-2957-47ae-b4e2-c0617045ab53",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/link.bin",
+              "status": "FAILED"
+            }
+          ]
+        },
+        {
+          "id": "be63270c-8324-4adc-b16f-410f01ace3d8",
+          "status": "FAILED",
+          "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin",
+          "targets": [
+            {
+              "node_id": "04a0a111-2957-47ae-b4e2-c0617045ab53",
+              "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst//out.bin",
+              "status": "FAILED"
+            }
+          ]
+        }
+      ],
+      "hub_transfer_records_note": "/api/transfers exposes create/retry/cancel but no delete; the owned transfer records therefore remain in the Hub DB and are listed here verbatim (blobs are removed by the product after SUCCESS)",
+      "native2_host_after": {
+        "owned_units": [],
+        "etc_systemd_owned_leftovers": [],
+        "etc_systemd_owned_wants": [],
+        "owned_mounts": [],
+        "root_exists": false,
+        "opt_root_exists": false,
+        "child_config_exists": false,
+        "agent_process_table": [
+          "731 /usr/local/bin/nodesteer-agent --config /etc/nodesteer/agent.yaml",
+          "3246 /opt/nodesteer/nodesteer-agent --config /run/nodesteer/agent.yaml",
+          "4311 /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent --config /etc/nodesteer/repair-20260930-101945/native-2.yaml"
+        ],
+        "owned_child_processes": [],
+        "agent_binary_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+        "primary_agent_unit": {
+          "MainPID": "731",
+          "Id": "nodesteer-agent.service",
+          "LoadState": "loaded",
+          "ActiveState": "active",
+          "SubState": "running",
+          "FragmentPath": "/etc/systemd/system/nodesteer-agent.service",
+          "UnitFileState": "enabled"
+        },
+        "repair_agent_unit": {
+          "MainPID": "4311",
+          "Id": "nodesteer-agent-repair-20260930-101945-native-2.service",
+          "LoadState": "loaded",
+          "ActiveState": "active",
+          "SubState": "running",
+          "FragmentPath": "/etc/systemd/system/nodesteer-agent-repair-20260930-101945-native-2.service",
+          "UnitFileState": "disabled"
+        },
+        "etc_systemd_total": 22,
+        "opt_entries": [
+          "containerd",
+          "nodesteer-repair-20260930-101945",
+          "qa-resume-20261010-host-f174890c3846"
+        ],
+        "tmp_owned_entries": [],
+        "etc_owned_entries": [],
+        "filesystem_devs": {
+          "root": 65025,
+          "tmp": 33,
+          "opt": 65025
+        },
+        "mem_kib": {
+          "MemTotal": 870232,
+          "MemAvailable": 393584
+        }
+      },
+      "native2_clean": true,
+      "agent_binary_unchanged": true,
+      "protected_units_after": {
+        "primary": "active",
+        "repair": "active"
+      },
+      "sandbox_cleanup": {
+        "samples": "owned sampler processes stopped and files removed",
+        "frame_proxy": "stopped; port released",
+        "mounts": "owned tmpfs unmounted"
+      },
+      "cleanup_phase_summary": {
+        "product_path_uninstall": {
+          "owned_apps": [
+            {
+              "id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "name": "qa-sysb12-530b8e2c5b77-app"
+            },
+            {
+              "id": "501db824-4cb7-4699-ae8f-149c07560771",
+              "name": "qa-sysb12-530b8e2c5b77-xapp"
+            }
+          ],
+          "delete_qa-sysb12-530b8e2c5b77-app": {
+            "id": "a8879252-75b0-49e3-8daa-46989da18491",
+            "delete_http": 200,
+            "delete_body": {
+              "ok": "true"
+            }
+          },
+          "delete_qa-sysb12-530b8e2c5b77-xapp": {
+            "id": "501db824-4cb7-4699-ae8f-149c07560771",
+            "delete_http": 200,
+            "delete_body": {
+              "ok": "true"
+            }
+          },
+          "host_after_product_cleanup": {
+            "unit_file_lexists": false,
+            "binary_lexists": false,
+            "config_lexists": false,
+            "enable_symlink_lexists": false,
+            "unit_registry": [],
+            "unit_state": {
+              "MainPID": "0",
+              "Id": "qa-sysb12-530b8e2c5b77-app.service",
+              "LoadState": "not-found",
+              "ActiveState": "inactive",
+              "SubState": "dead",
+              "FragmentPath": "",
+              "UnitFileState": ""
+            },
+            "local_apps": []
+          },
+          "product_cleanup_complete": true,
+          "get_after_delete_http": 404
+        },
+        "host_unit_residue_sweep": {
+          "action": "cmd",
+          "path": "/opt/qa-sysb12-530b8e2c5b77",
+          "extra": {
+            "argv": [
+              "bash",
+              "-lc",
+              "for u in qa-sysb12-530b8e2c5b77-app.service qa-sysb12-530b8e2c5b77-xapp.service; do systemctl stop $u 2>/dev/null; systemctl disable $u 2>/dev/null; systemctl reset-failed $u 2>/dev/null; rm -f /etc/systemd/system/$u; rm -f /etc/systemd/system/multi-user.target.wants/$u; done; systemctl daemon-reload"
+            ]
+          },
+          "at_utc": "2026-10-14T10:07:28Z",
+          "result": {
+            "rc": 0,
+            "out": "",
+            "err": ""
+          },
+          "after": {
+            "lexists": true,
+            "is_dir": true,
+            "is_symlink": false,
+            "target": null
+          }
+        },
+        "host_dirs_removal": {
+          "rm_/opt/qa-sysb12-530b8e2c5b77/xfs": {
+            "action": "rm_rf",
+            "path": "/opt/qa-sysb12-530b8e2c5b77/xfs",
+            "extra": {},
+            "at_utc": "2026-10-14T10:07:29Z",
+            "result": {
+              "ok": true
+            },
+            "after": {
+              "lexists": false,
+              "is_dir": false,
+              "is_symlink": false,
+              "target": null
+            }
+          },
+          "rm_/tmp/qa-sysb12-530b8e2c5b77-escape": {
+            "action": "rm_rf",
+            "path": "/tmp/qa-sysb12-530b8e2c5b77-escape",
+            "extra": {},
+            "at_utc": "2026-10-14T10:07:29Z",
+            "result": {
+              "ok": true
+            },
+            "after": {
+              "lexists": false,
+              "is_dir": false,
+              "is_symlink": false,
+              "target": null
+            }
+          },
+          "rm_etc_owned": {
+            "action": "rm_rf",
+            "path": "/etc/qa-sysb12-530b8e2c5b77",
+            "extra": {},
+            "at_utc": "2026-10-14T10:07:29Z",
+            "result": {
+              "ok": true
+            },
+            "after": {
+              "lexists": false,
+              "is_dir": false,
+              "is_symlink": false,
+              "target": null
+            }
+          },
+          "rm_sampler_files": {
+            "action": "rm_rf",
+            "path": "/opt/qa-sysb12-530b8e2c5b77/xfs/dst.samples",
+            "extra": {},
+            "at_utc": "2026-10-14T10:07:29Z",
+            "result": {
+              "ok": true
+            },
+            "after": {
+              "lexists": false,
+              "is_dir": false,
+              "is_symlink": false,
+              "target": null
+            }
+          }
+        },
+        "release_owned_seams": {
+          "chattr_minus_bin": {
+            "action": "chattr_minus",
+            "path": "/opt/qa-sysb12-530b8e2c5b77/app/bin",
+            "extra": {},
+            "at_utc": "2026-10-14T10:07:25Z",
+            "result": {
+              "rc": 0,
+              "out": "",
+              "err": ""
+            },
+            "after": {
+              "lexists": true,
+              "is_dir": true,
+              "is_symlink": false,
+              "target": null
+            }
+          },
+          "chattr_minus_opt": {
+            "action": "chattr_minus",
+            "path": "/opt/qa-sysb12-530b8e2c5b77",
+            "extra": {},
+            "at_utc": "2026-10-14T10:07:25Z",
+            "result": {
+              "rc": 0,
+              "out": "",
+              "err": ""
+            },
+            "after": {
+              "lexists": true,
+              "is_dir": true,
+              "is_symlink": false,
+              "target": null
+            }
+          },
+          "umount_xfs": {
+            "action": "umount",
+            "path": "/opt/qa-sysb12-530b8e2c5b77/xfs",
+            "extra": {},
+            "at_utc": "2026-10-14T10:07:25Z",
+            "result": {
+              "rc": 0,
+              "out": "",
+              "err": ""
+            },
+            "after": {
+              "lexists": true,
+              "is_dir": true,
+              "is_symlink": false,
+              "target": null
+            }
+          },
+          "lsattr_bin": {
+            "action": "lsattr",
+            "path": "/opt/qa-sysb12-530b8e2c5b77/app/bin",
+            "extra": {},
+            "at_utc": "2026-10-14T10:07:26Z",
+            "result": {
+              "rc": 0,
+              "out": "---------------------- /opt/qa-sysb12-530b8e2c5b77/app/bin",
+              "err": ""
+            },
+            "after": {
+              "lexists": true,
+              "is_dir": true,
+              "is_symlink": false,
+              "target": null
+            }
+          },
+          "mounts": [],
+          "mounts_b": []
+        },
+        "owned_child_removal": {
+          "child_b": {
+            "mount_before": [],
+            "agent_signalled": [
+              26696
+            ],
+            "agent_remaining": [],
+            "root_removed": true,
+            "opt_removed": true,
+            "mounts_after": [],
+            "units_after": []
+          },
+          "child_a": {
+            "mount_before": [],
+            "agent_signalled": [
+              25625
+            ],
+            "agent_remaining": [],
+            "root_removed": true,
+            "opt_removed": true,
+            "mounts_after": [],
+            "units_after": []
+          }
+        },
+        "artifact_deletes": [
+          {
+            "label": "A1",
+            "id": "9e7e15ec-be3b-4d52-86a3-21fa157e9a70",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "node_deletes": {
+          "a": {
+            "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+            "delete_http": 200,
+            "delete_body": {
+              "ok": "true"
+            },
+            "get_http": 404
+          },
+          "b": {
+            "node_id": "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889",
+            "delete_http": 200,
+            "delete_body": {
+              "ok": "true"
+            },
+            "get_http": 404
+          }
+        },
+        "frame_proxy_stop": {
+          "stopped": true
+        },
+        "errors": []
+      },
+      "independent_re_verification": {
+        "at_utc": "2026-10-14T10:23:31Z",
+        "nonce": "530b8e2c5b77",
+        "owned_prefix": "qa-sysb12-530b8e2c5b77-",
+        "hub": {
+          "owned_nodes_present": [],
+          "owned_apps_present": [],
+          "owned_artifacts_present": [],
+          "created_ids_probed": {
+            "app": [
+              "a8879252-75b0-49e3-8daa-46989da18491",
+              "501db824-4cb7-4699-ae8f-149c07560771"
+            ],
+            "artifact": [
+              "9e7e15ec-be3b-4d52-86a3-21fa157e9a70"
+            ],
+            "node": [
+              "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+              "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889"
+            ]
+          },
+          "get_404_probe": {
+            "a8879252-75b0-49e3-8daa-46989da18491": 404,
+            "501db824-4cb7-4699-ae8f-149c07560771": 404,
+            "9e7e15ec-be3b-4d52-86a3-21fa157e9a70": 404,
+            "a70e9042-a4a8-47b0-a228-c8ad4127fcc7": 404,
+            "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889": 404
+          },
+          "counts_after": {
+            "nodes": 7,
+            "applications": 2,
+            "artifacts": 2
+          },
+          "owned_transfers": [
+            {
+              "id": "a814a98f-fbf4-4c9a-b754-d43ac5d8906f",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/mid.bin"
+            },
+            {
+              "id": "ba8087d5-c020-42f8-85fc-d8a89bac1ed3",
+              "status": "SUCCESS",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/big.bin"
+            },
+            {
+              "id": "f4001d13-9c24-4ffd-9c3d-a51fe83d1b4a",
+              "status": "SUCCESS",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/recovery.bin"
+            },
+            {
+              "id": "a8c4e8b2-3580-46db-9796-75c5f84d48a3",
+              "status": "SUCCESS",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin"
+            },
+            {
+              "id": "394e2f1e-e826-4cfb-858d-8d6e2786fdb0",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin"
+            },
+            {
+              "id": "2c305843-081d-4567-b044-336faa05201d",
+              "status": "SUCCESS",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin"
+            },
+            {
+              "id": "d331b6b2-91e7-4857-a714-4946cf48c5a1",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin"
+            },
+            {
+              "id": "77f8a12b-2110-41c1-903b-6d1322ae6025",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin"
+            },
+            {
+              "id": "018b8a54-0bca-4aaa-89c9-e5edb35b8ac5",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/mid.bin"
+            },
+            {
+              "id": "a05c4178-77f3-4d81-bf68-2a827836ba66",
+              "status": "SUCCESS",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/big.bin"
+            },
+            {
+              "id": "8a9585e6-c31a-459b-8dbe-e8bfb323e333",
+              "status": "SUCCESS",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/recovery.bin"
+            },
+            {
+              "id": "6336017f-c42e-4325-849c-f2fe301d8193",
+              "status": "SUCCESS",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin"
+            },
+            {
+              "id": "1b61c2c7-4882-4878-954a-6c69bd81955c",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin"
+            },
+            {
+              "id": "ee840c2c-7411-415a-b5cb-29fc8fff4640",
+              "status": "SUCCESS",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin"
+            },
+            {
+              "id": "395bc50e-3ea4-48f7-a50f-f1c26b159cad",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin"
+            },
+            {
+              "id": "559b33da-1bfa-409a-a1b4-50d4ff47ba42",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin"
+            },
+            {
+              "id": "62316f01-31c2-492e-aa5e-acd94b46e7af",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin"
+            },
+            {
+              "id": "f0f80afc-63b3-4999-8df3-398a1ab305d8",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin"
+            },
+            {
+              "id": "41dcf132-3721-4922-9d26-0e784b0c5bbb",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin"
+            },
+            {
+              "id": "09bdbe22-ec39-4684-aef7-4a951cb6be90",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin"
+            },
+            {
+              "id": "be63270c-8324-4adc-b16f-410f01ace3d8",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin"
+            }
+          ],
+          "owned_transfers_canonical": [
+            {
+              "id": "a814a98f-fbf4-4c9a-b754-d43ac5d8906f",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/mid.bin",
+              "targets": [
+                {
+                  "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+                  "destination_path": "/opt/qa-sysb12-530b8e2c5b77/xfs/full/target.bin",
+                  "status": "FAILED",
+                  "error": "write /opt/qa-sysb12-530b8e2c5b77/xfs/full/.nodesteer-transfer-1594964154: no space left on device"
+                }
+              ]
+            },
+            {
+              "id": "ba8087d5-c020-42f8-85fc-d8a89bac1ed3",
+              "status": "SUCCESS",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/big.bin",
+              "targets": [
+                {
+                  "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+                  "destination_path": "/opt/qa-sysb12-530b8e2c5b77/xfs/dst/big.bin",
+                  "status": "SUCCESS",
+                  "error": null
+                }
+              ]
+            },
+            {
+              "id": "f4001d13-9c24-4ffd-9c3d-a51fe83d1b4a",
+              "status": "SUCCESS",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/recovery.bin",
+              "targets": [
+                {
+                  "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+                  "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/recovery.bin",
+                  "status": "SUCCESS",
+                  "error": null
+                }
+              ]
+            },
+            {
+              "id": "a8c4e8b2-3580-46db-9796-75c5f84d48a3",
+              "status": "SUCCESS",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin",
+              "targets": [
+                {
+                  "node_id": "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889",
+                  "destination_path": "/opt/qa-sysb12-530b8e2c5b77/allow/ok.txt",
+                  "status": "SUCCESS",
+                  "error": null
+                }
+              ]
+            },
+            {
+              "id": "394e2f1e-e826-4cfb-858d-8d6e2786fdb0",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin",
+              "targets": [
+                {
+                  "node_id": "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889",
+                  "destination_path": "/etc/qa-sysb12-530b8e2c5b77/evil.txt",
+                  "status": "FAILED",
+                  "error": "destination path: path is outside configured allowlist: /etc/qa-sysb12-530b8e2c5b77/evil.txt"
+                }
+              ]
+            },
+            {
+              "id": "2c305843-081d-4567-b044-336faa05201d",
+              "status": "SUCCESS",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin",
+              "targets": [
+                {
+                  "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+                  "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/ok.bin",
+                  "status": "SUCCESS",
+                  "error": null
+                }
+              ]
+            },
+            {
+              "id": "d331b6b2-91e7-4857-a714-4946cf48c5a1",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin",
+              "targets": [
+                {
+                  "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+                  "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst/link.bin",
+                  "status": "FAILED",
+                  "error": "destination is a symlink: /opt/qa-sysb12-530b8e2c5b77/dst/link.bin"
+                }
+              ]
+            },
+            {
+              "id": "77f8a12b-2110-41c1-903b-6d1322ae6025",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin",
+              "targets": [
+                {
+                  "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+                  "destination_path": "/opt/qa-sysb12-530b8e2c5b77/dst//out.bin",
+                  "status": "FAILED",
+                  "error": "destination path: invalid absolute path: /opt/qa-sysb12-530b8e2c5b77/dst//out.bin"
+                }
+              ]
+            }
+          ],
+          "owned_transfers_from_superseded_attempts": [
+            {
+              "id": "018b8a54-0bca-4aaa-89c9-e5edb35b8ac5",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/mid.bin"
+            },
+            {
+              "id": "a05c4178-77f3-4d81-bf68-2a827836ba66",
+              "status": "SUCCESS",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/big.bin"
+            },
+            {
+              "id": "8a9585e6-c31a-459b-8dbe-e8bfb323e333",
+              "status": "SUCCESS",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/recovery.bin"
+            },
+            {
+              "id": "6336017f-c42e-4325-849c-f2fe301d8193",
+              "status": "SUCCESS",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin"
+            },
+            {
+              "id": "1b61c2c7-4882-4878-954a-6c69bd81955c",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin"
+            },
+            {
+              "id": "ee840c2c-7411-415a-b5cb-29fc8fff4640",
+              "status": "SUCCESS",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin"
+            },
+            {
+              "id": "395bc50e-3ea4-48f7-a50f-f1c26b159cad",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin"
+            },
+            {
+              "id": "559b33da-1bfa-409a-a1b4-50d4ff47ba42",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin"
+            },
+            {
+              "id": "62316f01-31c2-492e-aa5e-acd94b46e7af",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin"
+            },
+            {
+              "id": "f0f80afc-63b3-4999-8df3-398a1ab305d8",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/allow-src.bin"
+            },
+            {
+              "id": "41dcf132-3721-4922-9d26-0e784b0c5bbb",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin"
+            },
+            {
+              "id": "09bdbe22-ec39-4684-aef7-4a951cb6be90",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin"
+            },
+            {
+              "id": "be63270c-8324-4adc-b16f-410f01ace3d8",
+              "status": "FAILED",
+              "source_path": "/opt/qa-sysb12-530b8e2c5b77/src/small.bin"
+            }
+          ],
+          "transfer_records_note": "/api/transfers 无删除接口（只有 retry/cancel）；owned 传输记录保留在 Hub DB 是本批唯一无法删除的产品侧记录，所有引用路径（/opt/qa-sysb12-530b8e2c5b77/...）已随 owned 目录删除。其中一部分来自本次 harness 的非 canonical 尝试（attempt01-03），已单独分组。"
+        },
+        "host": {
+          "native2_baseline": {
+            "owned_units": [],
+            "etc_systemd_owned_leftovers": [],
+            "etc_systemd_owned_wants": [],
+            "owned_mounts": [],
+            "root_exists": false,
+            "opt_root_exists": false,
+            "child_config_exists": false,
+            "agent_process_table": [
+              "731 /usr/local/bin/nodesteer-agent --config /etc/nodesteer/agent.yaml",
+              "3246 /opt/nodesteer/nodesteer-agent --config /run/nodesteer/agent.yaml",
+              "4311 /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent --config /etc/nodesteer/repair-20260930-101945/native-2.yaml"
+            ],
+            "owned_child_processes": [],
+            "agent_binary_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+            "primary_agent_unit": {
+              "MainPID": "731",
+              "Id": "nodesteer-agent.service",
+              "LoadState": "loaded",
+              "ActiveState": "active",
+              "SubState": "running",
+              "FragmentPath": "/etc/systemd/system/nodesteer-agent.service",
+              "UnitFileState": "enabled"
+            },
+            "repair_agent_unit": {
+              "MainPID": "4311",
+              "Id": "nodesteer-agent-repair-20260930-101945-native-2.service",
+              "LoadState": "loaded",
+              "ActiveState": "active",
+              "SubState": "running",
+              "FragmentPath": "/etc/systemd/system/nodesteer-agent-repair-20260930-101945-native-2.service",
+              "UnitFileState": "disabled"
+            },
+            "etc_systemd_total": 22,
+            "opt_entries": [
+              "containerd",
+              "nodesteer-repair-20260930-101945",
+              "qa-resume-20261010-host-f174890c3846"
+            ],
+            "tmp_owned_entries": [],
+            "etc_owned_entries": [],
+            "filesystem_devs": {
+              "root": 65025,
+              "tmp": 33,
+              "opt": 65025
+            },
+            "mem_kib": {
+              "MemTotal": 870232,
+              "MemAvailable": 401184
+            }
+          },
+          "native2_residue_clear": true,
+          "owned_mounts_after": [],
+          "sampler_processes": "[]",
+          "agent_binary_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+          "agent_binary_unchanged": true,
+          "protected_units": {
+            "primary": "active",
+            "repair": "active"
+          }
+        },
+        "authority": {
+          "healthz_http": 200,
+          "note": "repair Hub :18080 was never stopped/restarted by this batch; only API calls were made"
+        },
+        "local_harness": {
+          "residual_processes": [
+            "\u001b[34m",
+            "___       __    ______                                 ________                 __________            ______       ",
+            "__ |     / /_______  /__________________ ________      ___  __/_____     ______ ___(_)_  /_______________  /_______",
+            "__ | /| / /_  _ \\_  /_  ___/  __ \\_  __ `__ \\  _ \\     __  /  _  __ \\    _  __ `/_  /_  __/  __ \\  __ \\_  /__  ___/",
+            "__ |/ |/ / /  __/  / / /__ / /_/ /  / / / / /  __/     _  /   / /_/ /    / /_/ /_  / / /_ / /_/ / /_/ /  / _(__  ) ",
+            "____/|__/  \\___//_/  \\___/ \\____//_/ /_/ /_/\\___/      /_/    \\____/     \\__,_/ /_/  \\__/ \\____/\\____//_/  /____/  ",
+            "\u001b[0m",
+            "2448240 bash -lc pgrep -af \"run_sysb12|frame_proxy\" || true"
+          ],
+          "python_listeners_seen": [
+            "\u001b[34m",
+            "___       __    ______                                 ________                 __________            ______",
+            "__ |     / /_______  /__________________ ________      ___  __/_____     ______ ___(_)_  /_______________  /_______",
+            "__ | /| / /_  _ \\_  /_  ___/  __ \\_  __ `__ \\  _ \\     __  /  _  __ \\    _  __ `/_  /_  __/  __ \\  __ \\_  /__  ___/",
+            "__ |/ |/ / /  __/  / / /__ / /_/ /  / / / / /  __/     _  /   / /_/ /    / /_/ /_  / / /_ / /_/ / /_/ /  / _(__  )",
+            "____/|__/  \\___//_/  \\___/ \\____//_/ /_/ /_/\\___/      /_/    \\____/     \\__,_/ /_/  \\__/ \\____/\\____//_/  /____/",
+            "\u001b[0m",
+            "LISTEN 0      5          127.0.0.1:18901      0.0.0.0:*    users:((\"python3\",pid=415813,fd=3))",
+            "LISTEN 0      5          127.0.0.1:18903      0.0.0.0:*    users:((\"python3\",pid=427328,fd=3))",
+            "LISTEN 0      5          127.0.0.1:18902      0.0.0.0:*    users:((\"python3\",pid=415198,fd=3))"
+          ],
+          "note": "the 127.0.0.1:189xx listeners belong to an unrelated project (iris fake-ai-provider), not to this batch; the sys-b12 recording proxy ran on an ephemeral 0.0.0.0 port and its process has exited"
+        },
+        "final_clean": true
+      },
+      "method": "产品路径清理为主（删除 Hub Application → tombstone → Agent CleanupApplication 停/禁 unit、删 unit/binary/config、清 unit_registry），owned 主机 seam 全部显式释放（chattr -i、umount owned tmpfs、删除 owned symlink/目录），两个 owned child Agent 停止并删除自有 root；随后独立复核 Hub 404 与 native-2 残留。"
+    },
+    "cleanup_phase": {
+      "at_utc": "2026-10-14T10:07:25Z",
+      "steps": {
+        "release_owned_seams": {
+          "chattr_minus_bin": {
+            "action": "chattr_minus",
+            "path": "/opt/qa-sysb12-530b8e2c5b77/app/bin",
+            "extra": {},
+            "at_utc": "2026-10-14T10:07:25Z",
+            "result": {
+              "rc": 0,
+              "out": "",
+              "err": ""
+            },
+            "after": {
+              "lexists": true,
+              "is_dir": true,
+              "is_symlink": false,
+              "target": null
+            }
+          },
+          "chattr_minus_opt": {
+            "action": "chattr_minus",
+            "path": "/opt/qa-sysb12-530b8e2c5b77",
+            "extra": {},
+            "at_utc": "2026-10-14T10:07:25Z",
+            "result": {
+              "rc": 0,
+              "out": "",
+              "err": ""
+            },
+            "after": {
+              "lexists": true,
+              "is_dir": true,
+              "is_symlink": false,
+              "target": null
+            }
+          },
+          "umount_xfs": {
+            "action": "umount",
+            "path": "/opt/qa-sysb12-530b8e2c5b77/xfs",
+            "extra": {},
+            "at_utc": "2026-10-14T10:07:25Z",
+            "result": {
+              "rc": 0,
+              "out": "",
+              "err": ""
+            },
+            "after": {
+              "lexists": true,
+              "is_dir": true,
+              "is_symlink": false,
+              "target": null
+            }
+          },
+          "lsattr_bin": {
+            "action": "lsattr",
+            "path": "/opt/qa-sysb12-530b8e2c5b77/app/bin",
+            "extra": {},
+            "at_utc": "2026-10-14T10:07:26Z",
+            "result": {
+              "rc": 0,
+              "out": "---------------------- /opt/qa-sysb12-530b8e2c5b77/app/bin",
+              "err": ""
+            },
+            "after": {
+              "lexists": true,
+              "is_dir": true,
+              "is_symlink": false,
+              "target": null
+            }
+          },
+          "mounts": [],
+          "mounts_b": []
+        },
+        "product_uninstall": {
+          "owned_apps": [
+            {
+              "id": "a8879252-75b0-49e3-8daa-46989da18491",
+              "name": "qa-sysb12-530b8e2c5b77-app"
+            },
+            {
+              "id": "501db824-4cb7-4699-ae8f-149c07560771",
+              "name": "qa-sysb12-530b8e2c5b77-xapp"
+            }
+          ],
+          "delete_qa-sysb12-530b8e2c5b77-app": {
+            "id": "a8879252-75b0-49e3-8daa-46989da18491",
+            "delete_http": 200,
+            "delete_body": {
+              "ok": "true"
+            }
+          },
+          "delete_qa-sysb12-530b8e2c5b77-xapp": {
+            "id": "501db824-4cb7-4699-ae8f-149c07560771",
+            "delete_http": 200,
+            "delete_body": {
+              "ok": "true"
+            }
+          },
+          "host_after_product_cleanup": {
+            "unit_file_lexists": false,
+            "binary_lexists": false,
+            "config_lexists": false,
+            "enable_symlink_lexists": false,
+            "unit_registry": [],
+            "unit_state": {
+              "MainPID": "0",
+              "Id": "qa-sysb12-530b8e2c5b77-app.service",
+              "LoadState": "not-found",
+              "ActiveState": "inactive",
+              "SubState": "dead",
+              "FragmentPath": "",
+              "UnitFileState": ""
+            },
+            "local_apps": []
+          },
+          "product_cleanup_complete": true,
+          "get_after_delete_http": 404
+        },
+        "host_unit_residue_sweep": {
+          "action": "cmd",
+          "path": "/opt/qa-sysb12-530b8e2c5b77",
+          "extra": {
+            "argv": [
+              "bash",
+              "-lc",
+              "for u in qa-sysb12-530b8e2c5b77-app.service qa-sysb12-530b8e2c5b77-xapp.service; do systemctl stop $u 2>/dev/null; systemctl disable $u 2>/dev/null; systemctl reset-failed $u 2>/dev/null; rm -f /etc/systemd/system/$u; rm -f /etc/systemd/system/multi-user.target.wants/$u; done; systemctl daemon-reload"
+            ]
+          },
+          "at_utc": "2026-10-14T10:07:28Z",
+          "result": {
+            "rc": 0,
+            "out": "",
+            "err": ""
+          },
+          "after": {
+            "lexists": true,
+            "is_dir": true,
+            "is_symlink": false,
+            "target": null
+          }
+        },
+        "host_dirs_removal": {
+          "rm_/opt/qa-sysb12-530b8e2c5b77/xfs": {
+            "action": "rm_rf",
+            "path": "/opt/qa-sysb12-530b8e2c5b77/xfs",
+            "extra": {},
+            "at_utc": "2026-10-14T10:07:29Z",
+            "result": {
+              "ok": true
+            },
+            "after": {
+              "lexists": false,
+              "is_dir": false,
+              "is_symlink": false,
+              "target": null
+            }
+          },
+          "rm_/tmp/qa-sysb12-530b8e2c5b77-escape": {
+            "action": "rm_rf",
+            "path": "/tmp/qa-sysb12-530b8e2c5b77-escape",
+            "extra": {},
+            "at_utc": "2026-10-14T10:07:29Z",
+            "result": {
+              "ok": true
+            },
+            "after": {
+              "lexists": false,
+              "is_dir": false,
+              "is_symlink": false,
+              "target": null
+            }
+          },
+          "rm_etc_owned": {
+            "action": "rm_rf",
+            "path": "/etc/qa-sysb12-530b8e2c5b77",
+            "extra": {},
+            "at_utc": "2026-10-14T10:07:29Z",
+            "result": {
+              "ok": true
+            },
+            "after": {
+              "lexists": false,
+              "is_dir": false,
+              "is_symlink": false,
+              "target": null
+            }
+          },
+          "rm_sampler_files": {
+            "action": "rm_rf",
+            "path": "/opt/qa-sysb12-530b8e2c5b77/xfs/dst.samples",
+            "extra": {},
+            "at_utc": "2026-10-14T10:07:29Z",
+            "result": {
+              "ok": true
+            },
+            "after": {
+              "lexists": false,
+              "is_dir": false,
+              "is_symlink": false,
+              "target": null
+            }
+          }
+        },
+        "owned_child_removal": {
+          "child_b": {
+            "mount_before": [],
+            "agent_signalled": [
+              26696
+            ],
+            "agent_remaining": [],
+            "root_removed": true,
+            "opt_removed": true,
+            "mounts_after": [],
+            "units_after": []
+          },
+          "child_a": {
+            "mount_before": [],
+            "agent_signalled": [
+              25625
+            ],
+            "agent_remaining": [],
+            "root_removed": true,
+            "opt_removed": true,
+            "mounts_after": [],
+            "units_after": []
+          }
+        },
+        "artifact_deletes": [
+          {
+            "label": "A1",
+            "id": "9e7e15ec-be3b-4d52-86a3-21fa157e9a70",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "node_deletes": {
+          "a": {
+            "node_id": "a70e9042-a4a8-47b0-a228-c8ad4127fcc7",
+            "delete_http": 200,
+            "delete_body": {
+              "ok": "true"
+            },
+            "get_http": 404
+          },
+          "b": {
+            "node_id": "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889",
+            "delete_http": 200,
+            "delete_body": {
+              "ok": "true"
+            },
+            "get_http": 404
+          }
+        },
+        "frame_proxy_stop": {
+          "stopped": true
+        }
+      },
+      "errors": [],
+      "get_http_by_id": {
+        "a8879252-75b0-49e3-8daa-46989da18491": null,
+        "501db824-4cb7-4699-ae8f-149c07560771": null,
+        "9e7e15ec-be3b-4d52-86a3-21fa157e9a70": 404,
+        "a70e9042-a4a8-47b0-a228-c8ad4127fcc7": 404,
+        "26a0ec46-d5c9-40cb-bf83-b3ed0ee7b889": 404
+      },
+      "budget": {
+        "api_mutations": 59,
+        "artifact_uploads": 1,
+        "artifact_deletes": 1,
+        "app_creates": 2,
+        "app_updates": 11,
+        "app_deletes": 2,
+        "app_assigns": 2,
+        "deploys": 13,
+        "transfers": 12,
+        "transfer_retries": 1,
+        "node_enroll_posts": 2,
+        "node_deletes": 2,
+        "node_upgrades": 1,
+        "child_process_starts": 5,
+        "child_process_stops": 3,
+        "host_seam_actions": 31,
+        "mounts": 5
+      }
+    }
+  },
+  "harness_failures_retained": [
+    "attempt01（非 canonical，仅保留 rescue-cleanup.json）：两个 owned child 使用同一 node_ip（192.168.100.206），Hub PrepareEnrollment 按 hostname OR ip 复用节点，第二个 child 重新纳管了第一个 child 的节点记录并重新签发凭证，该次运行的传输/执行证据无效（\"invalid agent credential\"）。修复：按 nonce 派生唯一 node_ip（<hostname>.invalid 约定），并在 _enroll 中加入 fail-closed 冲突检测。",
+    "attempt02（非 canonical，evidence 未保留）：recording frame proxy 误绑 127.0.0.1，native-2 上的 owned child-b 无法连接，phase2 以 owned_child_b_did_not_reach_online 中止；清理阶段正常执行（无残留）。修复：proxy 绑定 0.0.0.0，并在启动 child 前从 native-2 做 TCP 可达性预检。",
+    "attempt03（非 canonical，evidence 未保留）：hostapi 的 finfo 对目录目标抛 IsADirectoryError（尾随斜杠 binary_path 探针），且 cleanup 汇总时对缺少 get_http 的删除记录取键报 KeyError。修复：探针对目录返回目录信息，cleanup 使用 .get()。",
+    "canonical = attempt04（本目录 run-evidence.json / evidence/*.json）：phase_failures 为空，清理与独立复核全部通过。"
+  ],
+  "global_counts_note": "批次结束时 Hub 节点/应用/制品总数受并行 sys-b02/b03/b07 批次影响，不用于判定残留；残留判定只按 qa-sysb12 前缀核查。"
+}

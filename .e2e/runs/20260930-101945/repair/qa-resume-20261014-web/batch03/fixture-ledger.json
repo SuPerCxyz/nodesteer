@@ -1,0 +1,273 @@
+{
+ "batch_id": "qa-resume-20261014-web-batch03",
+ "authority": "http://192.168.100.209:18080",
+ "authority_type": "repair",
+ "nonce": "69bdbd0f",
+ "naming_prefix": "qa-w1410b03-69bdbd0f",
+ "created_at_utc": "2026-10-14T08:33:20.668918+00:00",
+ "authorization": {
+  "granted": "<=2 owned FileTransfer (FL-13/P22-12); <=12 owned Artifact for pagination cases; source owned temp file; targets limited to owned paths on repair nodes",
+  "not_created": [
+   "User",
+   "Node",
+   "Application",
+   "Script",
+   "Task",
+   "Schedule",
+   "Group"
+  ],
+  "node_state_changes": 0,
+  "runs_triggered": 0,
+  "deploys_triggered": 0,
+  "notes": [
+   "Artifacts created: 11 owned (<=12 cap). 10 vs 11: the 11th was added so the LAST page (pageSize 10) contained an owned row, enabling a real 'last-page data change' test by deleting that owned row.",
+   "Transfers: exactly 2 owned (== cap). The first transfer's docker host-integration target rejected /tmp via host allowlist, so the second transfer was used for the FL-13 delivered-file proof; P22-12 cancel was executed on the first transfer."
+  ]
+ },
+ "counts": {
+  "baseline": {
+   "nodes": 6,
+   "applications": 1,
+   "tasks": 0,
+   "schedules": 0,
+   "artifacts": 1,
+   "scripts": 2,
+   "groups": 0,
+   "users": 8,
+   "transfers": 5
+  },
+  "after_writes": null,
+  "after_cleanup": {
+   "nodes": 6,
+   "applications": 1,
+   "tasks": 0,
+   "schedules": 0,
+   "artifacts": 1,
+   "scripts": 2,
+   "groups": 0,
+   "users": 8,
+   "transfers": 7
+  }
+ },
+ "objects": {
+  "transfers": [
+   {
+    "id": "08dc8196-4f7e-4fc3-a6f2-6e678523da0f",
+    "status": "CANCELED",
+    "role": "P22-12 DELIVERING->cancel (also exercised host-allowlist failure)",
+    "deletable": false
+   },
+   {
+    "id": "08195116-ea50-42fa-b132-b39346bc812e",
+    "status": "SUCCESS",
+    "role": "FL-13 create->deliver->SHA proof",
+    "deletable": false
+   }
+  ],
+  "artifacts": [
+   {
+    "id": "d5aae606-3187-499a-9175-56c352ab2497",
+    "name": "qa-w1410b03-69bdbd0f-art-01"
+   },
+   {
+    "id": "299c52f9-23d8-4a7d-b5e8-11f5e3fed26a",
+    "name": "qa-w1410b03-69bdbd0f-art-02"
+   },
+   {
+    "id": "49836aa0-9007-4486-88ce-e4d74828b70a",
+    "name": "qa-w1410b03-69bdbd0f-art-03"
+   },
+   {
+    "id": "1f4a3880-959f-4024-94e6-7149de61b7f5",
+    "name": "qa-w1410b03-69bdbd0f-art-04"
+   },
+   {
+    "id": "d3133918-241a-4c3a-a14d-ac39e96b9c8d",
+    "name": "qa-w1410b03-69bdbd0f-art-05"
+   },
+   {
+    "id": "124aa7c3-fd01-4a16-ae38-bdc5e9407574",
+    "name": "qa-w1410b03-69bdbd0f-art-06"
+   },
+   {
+    "id": "cd29e4fa-9e8a-4d58-b9b5-4a0f56968b9e",
+    "name": "qa-w1410b03-69bdbd0f-art-07"
+   },
+   {
+    "id": "27d9b2f1-fb89-4815-b724-e28f01782bc2",
+    "name": "qa-w1410b03-69bdbd0f-art-08"
+   },
+   {
+    "id": "f8fa5634-bd96-49f8-9274-cb39215b3817",
+    "name": "qa-w1410b03-69bdbd0f-art-09"
+   },
+   {
+    "id": "1a3a315e-c502-449c-b42a-2b5ab1d87a91",
+    "name": "qa-w1410b03-69bdbd0f-art-10"
+   },
+   {
+    "id": "25665cd6-7896-4518-9c5f-29e8d40e2788",
+    "name": "qa-w1410b03-69bdbd0f-art-11"
+   }
+  ],
+  "nodes_used": [
+   {
+    "id": "91f44866-8a28-435e-bbda-2f2367126c00",
+    "hostname": "native-1",
+    "role": "transfer source (owned file)",
+    "state_changed": false
+   },
+   {
+    "id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+    "hostname": "native-3",
+    "role": "FL-13 delivery target (owned path)",
+    "state_changed": false
+   },
+   {
+    "id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+    "hostname": "native4-child (offline)",
+    "role": "offline target kept transfer DELIVERING",
+    "state_changed": false
+   },
+   {
+    "id": "f6a79d23-2410-450c-ac39-64dd70c9daa1",
+    "hostname": "host001 (docker_host_integration)",
+    "role": "attempted target; rejected by host allowlist",
+    "state_changed": false
+   }
+  ]
+ },
+ "server_write_requests": [
+  {
+   "method": "POST",
+   "path": "/api/artifacts",
+   "http": 200,
+   "id": "d5aae606-3187-499a-9175-56c352ab2497",
+   "name": "qa-w1410b03-69bdbd0f-art-01"
+  },
+  {
+   "method": "POST",
+   "path": "/api/artifacts",
+   "http": 200,
+   "id": "299c52f9-23d8-4a7d-b5e8-11f5e3fed26a",
+   "name": "qa-w1410b03-69bdbd0f-art-02"
+  },
+  {
+   "method": "POST",
+   "path": "/api/artifacts",
+   "http": 200,
+   "id": "49836aa0-9007-4486-88ce-e4d74828b70a",
+   "name": "qa-w1410b03-69bdbd0f-art-03"
+  },
+  {
+   "method": "POST",
+   "path": "/api/artifacts",
+   "http": 200,
+   "id": "1f4a3880-959f-4024-94e6-7149de61b7f5",
+   "name": "qa-w1410b03-69bdbd0f-art-04"
+  },
+  {
+   "method": "POST",
+   "path": "/api/artifacts",
+   "http": 200,
+   "id": "d3133918-241a-4c3a-a14d-ac39e96b9c8d",
+   "name": "qa-w1410b03-69bdbd0f-art-05"
+  },
+  {
+   "method": "POST",
+   "path": "/api/artifacts",
+   "http": 200,
+   "id": "124aa7c3-fd01-4a16-ae38-bdc5e9407574",
+   "name": "qa-w1410b03-69bdbd0f-art-06"
+  },
+  {
+   "method": "POST",
+   "path": "/api/artifacts",
+   "http": 200,
+   "id": "cd29e4fa-9e8a-4d58-b9b5-4a0f56968b9e",
+   "name": "qa-w1410b03-69bdbd0f-art-07"
+  },
+  {
+   "method": "POST",
+   "path": "/api/artifacts",
+   "http": 200,
+   "id": "27d9b2f1-fb89-4815-b724-e28f01782bc2",
+   "name": "qa-w1410b03-69bdbd0f-art-08"
+  },
+  {
+   "method": "POST",
+   "path": "/api/artifacts",
+   "http": 200,
+   "id": "f8fa5634-bd96-49f8-9274-cb39215b3817",
+   "name": "qa-w1410b03-69bdbd0f-art-09"
+  },
+  {
+   "method": "POST",
+   "path": "/api/artifacts",
+   "http": 200,
+   "id": "1a3a315e-c502-449c-b42a-2b5ab1d87a91",
+   "name": "qa-w1410b03-69bdbd0f-art-10"
+  },
+  {
+   "method": "POST",
+   "path": "/api/artifacts",
+   "http": 200,
+   "id": "25665cd6-7896-4518-9c5f-29e8d40e2788",
+   "name": "qa-w1410b03-69bdbd0f-art-11"
+  },
+  {
+   "method": "POST",
+   "path": "/api/transfers",
+   "http": 200,
+   "id": "08dc8196-4f7e-4fc3-a6f2-6e678523da0f"
+  },
+  {
+   "method": "POST",
+   "path": "/api/transfers",
+   "http": 200,
+   "id": "08195116-ea50-42fa-b132-b39346bc812e"
+  },
+  {
+   "method": "POST",
+   "path": "/api/transfers/08dc8196-4f7e-4fc3-a6f2-6e678523da0f/cancel",
+   "http": 200,
+   "id": "08dc8196-4f7e-4fc3-a6f2-6e678523da0f"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/artifacts/d5aae606-3187-499a-9175-56c352ab2497",
+   "http": 200,
+   "note": "deleted via UI during last-page-change test"
+  }
+ ],
+ "server_write_summary": {
+  "transfer_create": 2,
+  "transfer_cancel": 1,
+  "artifact_upload": 11,
+  "artifact_delete": 11
+ },
+ "cleanup": {
+  "executed": true,
+  "artifacts": {
+   "total": 11,
+   "all_get404_verified": true,
+   "artifact": "evidence/cleanup-artifacts-get404.json"
+  },
+  "node_files": {
+   "native-1": "/tmp/qa-w1410b03-69bdbd0f removed (rm -rf, ls exit=2)",
+   "native-3": "/tmp/qa-w1410b03-69bdbd0f removed (rm -rf, ls exit=2)"
+  },
+  "hub_staging": "/var/lib/nodesteer-hub-repair-20260930-101945/file-transfers/ empty",
+  "transfers": {
+   "deletable": false,
+   "reason": "no DELETE /api/transfers endpoint exists (internal/hub/api/api.go handlers: create/list/get/retry/cancel only); terminal transfer records persist as history by design",
+   "final_states": {
+    "08dc8196...": "CANCELED",
+    "08195116...": "SUCCESS"
+   }
+  }
+ },
+ "read_only_observations": {
+  "parallel_batch": "a concurrent sys-b05 batch is creating tasks/schedules/executions on the same hub; a new node option 'qa-sysb05-b98b3ee95fba-probe' appeared during the transfer form test. Global task/schedule counts are therefore NOT used as acceptance criteria."
+ }
+}

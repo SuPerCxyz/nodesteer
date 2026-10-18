@@ -1,0 +1,187 @@
+{
+  "created_at_utc": "2026-10-10T15:17:45.291235+00:00",
+  "author": "gpt-6-luna web QA",
+  "status": "APPROVED_NOT_EXECUTED",
+  "scope": "Minimal owned fixture proposal for remaining ROUTE/TABLE gaps only; no fixture creation in this plan.",
+  "current_observations": {
+    "groups": {
+      "count": 0,
+      "empty_page_has_toolbar_or_table": false,
+      "supported_when_populated": [
+        "search",
+        "sorting",
+        "column visibility/persistence",
+        "client pagination"
+      ]
+    },
+    "tasks": {
+      "count": 0,
+      "empty_page_has_table_controls": true,
+      "supported_when_populated": [
+        "search",
+        "sorting",
+        "column visibility/persistence",
+        "client pagination"
+      ]
+    },
+    "schedules": {
+      "count": 0,
+      "empty_page_has_toolbar_or_table": false,
+      "supported_when_populated": [
+        "search",
+        "sorting",
+        "column visibility/persistence",
+        "client pagination"
+      ]
+    },
+    "scripts": {
+      "current_owned_visible_count": 2,
+      "minimum_page_size": 10,
+      "create_for_11_row_paging": 9
+    },
+    "users_artifacts_applications": {
+      "no_artificial_paging_fixtures": "Do not create Users, Artifacts, Applications, or Transfers merely to populate tables."
+    }
+  },
+  "fixtures": [
+    {
+      "type": "static Group",
+      "count": 1,
+      "purpose": [
+        "ROUTE-09 valid detail/reload/history/recovery",
+        "GROUPS search hit/no-hit/reset",
+        "GROUPS column visibility persistence"
+      ],
+      "safe_definition": {
+        "name": "unique qa-web nonce",
+        "type": "static",
+        "members": [],
+        "description": "non-sensitive QA marker"
+      },
+      "scope_protection": "No Node members; no existing Node labels or native child references; verify Group name uniqueness before UI save.",
+      "cleanup": {
+        "preferred": "use owned Group row UI delete/confirm",
+        "exact_api_fallback": "DELETE /api/groups/{owned_group_id} -> 200, then GET /api/groups/{same_id} -> 404"
+      },
+      "limitations": "One Group cannot prove bidirectional sort order or page transition; TABLE-GROUPS-SORT remains PARTIAL without at least 2 Groups and TABLE-GROUPS-PAGE needs at least 11 Groups at pageSize 10."
+    },
+    {
+      "type": "Command Task",
+      "count": 1,
+      "purpose": [
+        "ROUTE-15/16/17 valid detail/edit/run-page navigation without Run",
+        "TASKS search positive hit/reset",
+        "ROUTE-21 Schedule preselection",
+        "Schedule fixture parent"
+      ],
+      "safe_definition": {
+        "type": "command",
+        "name": "unique qa-web nonce",
+        "command": "echo with non-sensitive marker only",
+        "enabled": false,
+        "timeout": 300,
+        "retry": 0,
+        "target": {
+          "type": "label",
+          "label_key": "unique qa-web nonce",
+          "label_value": "unmatched marker"
+        },
+        "parameters": []
+      },
+      "scope_protection": "Use unique label selector and verify no current node has that key; do not target/change native Node IDs. Never click Run and never create Execution.",
+      "cleanup": {
+        "dependency_order": "delete owned Schedule first, then owned Task",
+        "exact_api_fallback": "DELETE /api/tasks/{owned_task_id} -> 200, then GET /api/tasks/{same_id} -> 404"
+      },
+      "limitations": "One Task is insufficient for sorting order/pagination; TABLE-TASKS-PAGE remains PARTIAL unless at least 11 Tasks exist. Error cases require a separate actual network-failure test."
+    },
+    {
+      "type": "disabled Schedule",
+      "count": 1,
+      "purpose": [
+        "ROUTE-22 valid detail/refresh/history",
+        "SCHEDULES search hit/reset and column persistence",
+        "Schedule linkage boundary"
+      ],
+      "safe_definition": {
+        "task_id": "owned disabled Task ID",
+        "type": "on_start",
+        "enabled": false,
+        "execution_owner": "agent",
+        "offline_policy": "allow_offline",
+        "misfire_policy": "run_once"
+      },
+      "scope_protection": "Create disabled and linked only to owned disabled Task; on_start has no wall-clock trigger; never enable or run Task.",
+      "cleanup": {
+        "dependency_order": "delete Schedule before Task",
+        "exact_api_fallback": "DELETE /api/schedules/{owned_schedule_id} -> 200, then GET /api/schedules/{same_id} -> 404"
+      },
+      "limitations": "One Schedule cannot prove sorting order or page transition; TABLE-SCHEDULES-PAGE remains PARTIAL unless at least 11 Schedules exist."
+    },
+    {
+      "type": "Script rows for pagination",
+      "count": 9,
+      "concurrent_total": 11,
+      "purpose": [
+        "TABLE-SCRIPTS-PAGE actual next/previous/first/last at pageSize 10",
+        "stable search and sort with multiple rows"
+      ],
+      "safe_definition": {
+        "names": "nine distinct nonce-prefixed names; compare against current list before saving",
+        "content": "short deterministic echo marker only",
+        "enabled": false,
+        "interpreter": "shell",
+        "environment": {}
+      },
+      "scope_protection": "Existing 2 owned Scripts are read-only; no Script is attached to Task; do not execute scripts. Capture each UI POST status/response ID, bind exact GET /api/scripts/{id} status200 immediately, ledger ID before assertions.",
+      "cleanup": {
+        "exact_api_fallback": "for each of the 9 created IDs only: DELETE /api/scripts/{owned_id} -> 200, then GET /api/scripts/{same_id} -> 404",
+        "retention": "revision/tombstone/audit history may remain; never delete or edit the existing 2 Scripts"
+      },
+      "reason": "The UI minimum page size is 10. Existing 2 plus 9 new rows gives 11; page 2 should contain one owned row."
+    }
+  ],
+  "cleanup_order": [
+    "Delete the 11 owned disabled Schedules and verify each same-ID GET404.",
+    "Delete the 11 owned disabled Tasks and verify each same-ID GET404.",
+    "Delete the 11 owned static empty Groups and verify each same-ID GET404.",
+    "Delete only the 9 new owned Scripts and verify each same-ID GET404; preserve the original 2.",
+    "Read-only verify original Nodes/Agents remain healthy and repair endpoint reachable."
+  ],
+  "permanent_side_effects_to_expect": "Creates/deletes advance global desired-state revisions and leave audit/tombstone or revision history even after exact object DELETE/GET404. Root must account for these records separately from object cleanup.",
+  "not_included": [
+    "No new User, Transfer, Artifact, Application, Node, Agent, or Task execution.",
+    "No product source/global inventory edits."
+  ],
+  "source_refs": {
+    "group_ui": "web/src/features/editors/index.tsx:756-881 (static type/member defaults, empty members, UI save); web/src/features/catalog/index.tsx:1389-1519 (Groups uses ListLayout, searchPlaceholder/storageKey).",
+    "group_api": "internal/hub/api/api.go:1058-1125; internal/hub/node.go:278-352 (Group create/delete; delete refuses a Task reference).",
+    "task_ui": "web/src/features/tasks/index.tsx:526-650,1046-1052 (command default, label target path, disabled checkbox, POST save).",
+    "task_model_validation": "internal/models/models.go:179-228; internal/hub/validation.go:45-68,181-215 (Command requires command; unique label_key is valid without Node IDs).",
+    "task_api": "internal/hub/api/api.go:1235-1330; internal/hub/definitions.go:280-385 (create/delete; Task delete refuses a Schedule reference).",
+    "schedule_ui": "web/src/features/editors/index.tsx:74-146,215-230,350-366 (task_id required, on_start option, enabled toggle, POST save).",
+    "schedule_api": "internal/hub/api/api.go:1395-1470; internal/hub/schedule.go:39-83,148-176; internal/hub/validation.go:161-195 (Schedule create/delete and on_start validation).",
+    "script_ui": "web/src/features/editors/index.tsx:382-435,572-578; web/src/features/catalog/index.tsx:1190-1220 (Script UI save/list/delete).",
+    "script_api": "internal/hub/api/api.go:1130-1245; internal/hub/definitions.go:34-78,112-151 (Script create/delete; deletion refuses Task references).",
+    "pagination": "web/src/features/shared/data-table.tsx:138-203; web/src/features/catalog/index.tsx:2277-2357 (DataTable/ListLayout controls; page size defaults/minimum options via shared pagination control)."
+  },
+  "root_review": "qa-resume-20261010-root/web-minimal-fixtures-review.json",
+  "approved_budget": {
+    "static_groups": 11,
+    "disabled_command_tasks": 11,
+    "disabled_on_start_schedules": 11,
+    "new_disabled_unattached_scripts": 9,
+    "existing_scripts_preserved": 2,
+    "max_concurrent_owned_fixtures": 11,
+    "task_runs": 0,
+    "users": 0,
+    "nodes": 0,
+    "agents": 0,
+    "applications": 0,
+    "artifacts": 0,
+    "transfers": 0
+  },
+  "concurrency_guard": "Runtime and Recovery may temporarily add their separately owned Script/Task/Execution rows. Filter exact unique nonce-owned rows and compare current list count separately; do not attribute external transient rows to this fixture set.",
+  "fixture_creation_policy": "First item of each type via UI and bind POST response ID to immediate exact GET; remaining authorized fixtures may use API. Register each created ID immediately; never retry a failed POST. No execution or schedule activation.",
+  "updated_at_utc": "2026-10-10T15:43:28.310792+00:00"
+}

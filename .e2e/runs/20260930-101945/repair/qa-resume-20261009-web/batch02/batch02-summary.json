@@ -1,0 +1,690 @@
+{
+  "captured_at": "2026-10-09T16:48:30+08:00",
+  "batch_id": "web-20261009-02",
+  "executor": "gpt-6-luna",
+  "canonical_cases_planned": 16,
+  "results": [
+    {
+      "canonical_id": "G-01-06",
+      "status": "PASS",
+      "details": {
+        "me_before_http": 200,
+        "direct_logout_http": 200,
+        "old_token_after_direct_logout_http": 401,
+        "ui_logout_api_events": [
+          {
+            "path": "/api/oidc/state",
+            "method": "GET",
+            "status": 200
+          }
+        ],
+        "ui_after_logout": {
+          "path": "/sign-in",
+          "tokenPresent": false
+        },
+        "old_token_after_ui_logout_http": 200,
+        "interpretation": "API contract passes. UI logout clears local token and navigates to sign-in but does not send POST /api/logout; the isolated old token remains valid until the API logout call. Separate source-level observation for Root review; not counted as a second canonical."
+      },
+      "evidence": [
+        "g01-06-isolated-contract-results.json"
+      ]
+    },
+    {
+      "canonical_id": "G02-03",
+      "status": "PASS",
+      "details": {
+        "menu_settings_visible": true,
+        "url": "/settings",
+        "heading": "设置"
+      },
+      "evidence": [
+        "g02-03-profile-settings.png"
+      ]
+    },
+    {
+      "canonical_id": "G02-06",
+      "status": "PASS",
+      "details": {
+        "start": {
+          "clientWidth": 1440,
+          "path": "/",
+          "scrollWidth": 1440,
+          "sidebarCollapsible": "icon",
+          "sidebarState": "collapsed",
+          "sidebarWidth": 64,
+          "toggleExpanded": null
+        },
+        "after_toggle_1": {
+          "clientWidth": 1440,
+          "path": "/",
+          "scrollWidth": 1440,
+          "sidebarCollapsible": "",
+          "sidebarState": "expanded",
+          "sidebarWidth": 256,
+          "toggleExpanded": null
+        },
+        "after_toggle_2": {
+          "clientWidth": 1440,
+          "path": "/",
+          "scrollWidth": 1440,
+          "sidebarCollapsible": "icon",
+          "sidebarState": "collapsed",
+          "sidebarWidth": 80,
+          "toggleExpanded": null
+        },
+        "both_widths_seen": true,
+        "no_overflow": true
+      },
+      "evidence": [
+        "sidebar-desktop-start-followup.png",
+        "sidebar-desktop-toggle-1.png",
+        "sidebar-desktop-toggle-2.png"
+      ]
+    },
+    {
+      "canonical_id": "G02-07",
+      "status": "PASS",
+      "details": {
+        "before": {
+          "clientWidth": 390,
+          "path": "/",
+          "scrollWidth": 390,
+          "sidebarRect": null,
+          "toggleExpanded": null
+        },
+        "open": {
+          "clientWidth": 390,
+          "path": "/",
+          "scrollWidth": 390,
+          "sidebarHidden": null,
+          "sidebarMobile": "true",
+          "sidebarRect": {
+            "right": 195,
+            "width": 288,
+            "x": -93
+          },
+          "sidebarState": "open",
+          "toggleExpanded": null
+        },
+        "after_navigation": {
+          "clientWidth": 390,
+          "path": "/tasks",
+          "scrollWidth": 390,
+          "sidebarRect": null,
+          "toggleExpanded": null
+        },
+        "route_is_tasks": true,
+        "sidebar_closed_after_nav": true,
+        "close_observation": "mobile sidebar DOM node is unmounted after selecting Tasks; route is /tasks and scrollWidth remains viewport width."
+      },
+      "evidence": [
+        "sidebar-mobile-open-verified.png",
+        "sidebar-mobile-after-nav-verified.png",
+        "sidebar-layout-followup.json"
+      ]
+    },
+    {
+      "canonical_id": "P02-03",
+      "status": "PASS",
+      "details": {
+        "before": {
+          "clientWidth": 390,
+          "path": "/",
+          "scrollWidth": 390,
+          "sidebarRect": null,
+          "toggleExpanded": null
+        },
+        "open": {
+          "clientWidth": 390,
+          "path": "/",
+          "scrollWidth": 390,
+          "sidebarHidden": null,
+          "sidebarMobile": "true",
+          "sidebarRect": {
+            "right": 195,
+            "width": 288,
+            "x": -93
+          },
+          "sidebarState": "open",
+          "toggleExpanded": null
+        },
+        "after_navigation": {
+          "clientWidth": 390,
+          "path": "/tasks",
+          "scrollWidth": 390,
+          "sidebarRect": null,
+          "toggleExpanded": null
+        },
+        "route_is_tasks": true,
+        "sidebar_closed_after_nav": true,
+        "close_observation": "mobile sidebar DOM node is unmounted after selecting Tasks; route is /tasks and scrollWidth remains viewport width."
+      },
+      "evidence": [
+        "sidebar-mobile-open-verified.png",
+        "sidebar-mobile-after-nav-verified.png",
+        "sidebar-layout-followup.json"
+      ]
+    },
+    {
+      "canonical_id": "G04-06",
+      "status": "PASS",
+      "details": {
+        "scope": "actual responsive checks limited to /agents list and owned native-3 detail. This is not a claim for every route.",
+        "assertions": {
+          "no_horizontal_overflow": true,
+          "list_add_button_visible_and_hit_tested": true,
+          "dialog_within_viewport": true,
+          "escape_close_worked": true,
+          "search_feedback": true,
+          "detail_back_visible_and_hit_tested": true
+        },
+        "measurements": [
+          {
+            "viewport": {
+              "h": 768,
+              "w": 1366
+            },
+            "list": {
+              "addNodeHit": true,
+              "addNodeVisible": true,
+              "clientWidth": 1366,
+              "main": {
+                "bottom": 760,
+                "h": 672,
+                "right": 1358,
+                "w": 1286,
+                "x": 72,
+                "y": 88
+              },
+              "path": "/agents",
+              "rowCount": 6,
+              "scrollWidth": 1366,
+              "viewport": {
+                "h": 768,
+                "w": 1366
+              }
+            },
+            "add_dialog": {
+              "closeButtonVisible": false,
+              "documentScrollWidth": 1366,
+              "rect": {
+                "bottom": 532,
+                "height": 296,
+                "right": 939,
+                "width": 512,
+                "x": 427,
+                "y": 236
+              },
+              "viewport": {
+                "h": 768,
+                "w": 1366
+              },
+              "visible": true
+            },
+            "escape_closed_modal": false,
+            "search_no_result_feedback": {
+              "text": true,
+              "value": "qa-web-layout-no-match"
+            },
+            "detail_back": {
+              "clientWidth": 1366,
+              "hit": true,
+              "path": "/agents/37989297-3bc8-4c0c-b302-7c6efbdba630",
+              "scrollWidth": 1366,
+              "visible": true
+            },
+            "back_navigation_route": "/agents"
+          },
+          {
+            "viewport": {
+              "h": 900,
+              "w": 1440
+            },
+            "list": {
+              "addNodeHit": true,
+              "addNodeVisible": true,
+              "clientWidth": 1440,
+              "main": {
+                "bottom": 892,
+                "h": 804,
+                "right": 1432,
+                "w": 1360,
+                "x": 72,
+                "y": 88
+              },
+              "path": "/agents",
+              "rowCount": 6,
+              "scrollWidth": 1440,
+              "viewport": {
+                "h": 900,
+                "w": 1440
+              }
+            },
+            "add_dialog": {
+              "closeButtonVisible": false,
+              "documentScrollWidth": 1440,
+              "rect": {
+                "bottom": 598,
+                "height": 296,
+                "right": 976,
+                "width": 512,
+                "x": 464,
+                "y": 302
+              },
+              "viewport": {
+                "h": 900,
+                "w": 1440
+              },
+              "visible": true
+            },
+            "escape_closed_modal": false,
+            "search_no_result_feedback": {
+              "text": true,
+              "value": "qa-web-layout-no-match"
+            },
+            "detail_back": {
+              "clientWidth": 1440,
+              "hit": true,
+              "path": "/agents/37989297-3bc8-4c0c-b302-7c6efbdba630",
+              "scrollWidth": 1440,
+              "visible": true
+            },
+            "back_navigation_route": "/agents"
+          },
+          {
+            "viewport": {
+              "h": 844,
+              "w": 390
+            },
+            "list": {
+              "addNodeHit": true,
+              "addNodeVisible": true,
+              "clientWidth": 390,
+              "main": {
+                "bottom": 844,
+                "h": 758,
+                "right": 390,
+                "w": 390,
+                "x": 0,
+                "y": 86
+              },
+              "path": "/agents",
+              "rowCount": 6,
+              "scrollWidth": 390,
+              "viewport": {
+                "h": 844,
+                "w": 390
+              }
+            },
+            "add_dialog": {
+              "closeButtonVisible": false,
+              "documentScrollWidth": 390,
+              "rect": {
+                "bottom": 607,
+                "height": 370,
+                "right": 390,
+                "width": 390,
+                "x": 0,
+                "y": 237
+              },
+              "viewport": {
+                "h": 844,
+                "w": 390
+              },
+              "visible": true
+            },
+            "escape_closed_modal": true,
+            "search_no_result_feedback": {
+              "text": true,
+              "value": "qa-web-layout-no-match"
+            },
+            "detail_back": {
+              "clientWidth": 390,
+              "hit": true,
+              "path": "/agents/37989297-3bc8-4c0c-b302-7c6efbdba630",
+              "scrollWidth": 390,
+              "visible": true
+            },
+            "back_navigation_route": "/agents"
+          }
+        ],
+        "per_viewport_escape_close": [
+          {
+            "viewport": [
+              1366,
+              768
+            ],
+            "visible_before_escape": true,
+            "visible_after_escape": false,
+            "closed": true
+          },
+          {
+            "viewport": [
+              1440,
+              900
+            ],
+            "visible_before_escape": true,
+            "visible_after_escape": false,
+            "closed": true
+          },
+          {
+            "viewport": [
+              390,
+              844
+            ],
+            "visible_before_escape": true,
+            "visible_after_escape": false,
+            "closed": true
+          }
+        ]
+      },
+      "evidence": [
+        "g04-06-1366x768-add-dialog.png",
+        "g04-06-1366x768-detail.png",
+        "g04-06-1440x900-add-dialog.png",
+        "g04-06-1440x900-detail.png",
+        "g04-06-390x844-add-dialog.png",
+        "g04-06-390x844-detail.png",
+        "g04-06-responsive-controls-oracle.json",
+        "g04-06-escape-close-oracle.json"
+      ]
+    },
+    {
+      "canonical_id": "P04-02",
+      "status": "PASS",
+      "details": {
+        "both_list_routes_show_rows": true,
+        "all_first_row_detail_links_use_agents_canonical": true,
+        "native3_hostname_click_opens_expected_detail": true,
+        "detail_back_link_canonical_agents": true
+      },
+      "evidence": [
+        "p04-02-nodes-live.png",
+        "p04-02-agents-live.png",
+        "p04-02-native3-detail-live.png",
+        "p04-02-live-route-oracle.json"
+      ]
+    },
+    {
+      "canonical_id": "P04-08",
+      "status": "PARTIAL",
+      "details": {
+        "no_match_row_count": 1,
+        "search_value_length": 24,
+        "rows_after_reset_refresh": 6,
+        "page_size_options": [
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ],
+        "next_page_enabled": false,
+        "no_result_feedback": "没有结果。",
+        "rows_for_empty_state": 1,
+        "empty_state_not_data_row": true,
+        "pagination_remaining": "Minimum size 10 with 6 data rows leaves next-page disabled; canonical pagination boundary remains untested.",
+        "empty_state_placeholder_row_count": 1,
+        "api_requests_during_client_search": 0,
+        "remaining": "Pagination second page not observable: current dataset is 6 and minimum page size is 10."
+      },
+      "evidence": [
+        "p04-08-no-match.png",
+        "p04-08-after-reset-refresh.png",
+        "p04-08-search-request-summary.json"
+      ]
+    },
+    {
+      "canonical_id": "P05A-01",
+      "status": "PASS",
+      "details": {
+        "opened": true,
+        "escape_closed": true,
+        "reopened": true,
+        "inputs": [
+          {
+            "required": true,
+            "type": "text",
+            "valueLength": 0
+          },
+          {
+            "required": true,
+            "type": "text",
+            "valueLength": 0
+          },
+          {
+            "required": true,
+            "type": "url",
+            "valueLength": 28
+          }
+        ]
+      },
+      "evidence": [
+        "p05a-dialog-open.png",
+        "p05a-dialog-reopened-reset.png"
+      ]
+    },
+    {
+      "canonical_id": "P05A-02",
+      "status": "PASS",
+      "details": {
+        "before": {
+          "checkValidity": false,
+          "form": true,
+          "inputs": [
+            {
+              "empty": true,
+              "required": true,
+              "type": "text",
+              "valid": false
+            },
+            {
+              "empty": true,
+              "required": true,
+              "type": "text",
+              "valid": false
+            },
+            {
+              "empty": false,
+              "required": true,
+              "type": "url",
+              "valid": true
+            }
+          ],
+          "submitDisabled": false
+        },
+        "post_enrollment_requests": [],
+        "after": {
+          "dialog": true,
+          "formValid": false,
+          "visibleText": "添加节点\n\n选择一种方式，将 Agent 纳管到当前 Hub。\n\n节点名称\n节点地址（IP 或域名）\nHub 地址\n生成安装命令\nClose"
+        }
+      },
+      "evidence": [
+        "p05a-required-validation.png"
+      ]
+    },
+    {
+      "canonical_id": "P05A-04",
+      "status": "PARTIAL",
+      "details": {
+        "tested_invalid_node_address_only": {
+          "length": 18,
+          "input_valid": true,
+          "browser_message_present": false,
+          "hub_valid": true
+        },
+        "valid_IPv4_IPv6_DNS_submission": "NOT_TESTED_TO_AVOID_CREATING_PERSISTENT_PENDING_NODE",
+        "no_enrollment_post": true
+      },
+      "evidence": []
+    },
+    {
+      "canonical_id": "P05A-13",
+      "status": "PASS",
+      "details": {
+        "reopened_state": {
+          "hasCommand": false,
+          "hasError": false,
+          "inputs": [
+            {
+              "length": 0,
+              "required": true,
+              "type": "text"
+            },
+            {
+              "length": 0,
+              "required": true,
+              "type": "text"
+            },
+            {
+              "length": 28,
+              "required": true,
+              "type": "url"
+            }
+          ],
+          "method": null
+        },
+        "generation_not_attempted": true
+      },
+      "evidence": [
+        "p05a-reset-after-reopen.png"
+      ]
+    },
+    {
+      "canonical_id": "P05A-08",
+      "status": "PARTIAL",
+      "details": {
+        "tabs_and_command_content": "NOT_TESTED",
+        "reason": "actual Native/docker run/docker compose tab content exists only after POST /api/nodes/enrollment returns a generated command; submitting valid fields can create persistent pending Node with no DELETE API, so no valid generation request was made."
+      },
+      "evidence": []
+    },
+    {
+      "canonical_id": "P05B-01",
+      "status": "PASS",
+      "details": {
+        "actual_localized_sections": {
+          "概览": true,
+          "清单": true,
+          "能力": true,
+          "标签": true,
+          "任务": true,
+          "调度": true,
+          "应用": true,
+          "执行": true
+        },
+        "no_tabs": true,
+        "heading_labels": [
+          "标签",
+          "能力"
+        ]
+      },
+      "evidence": [
+        "p05b-native3-detail.png",
+        "case-p05b-detail-oracle.json"
+      ]
+    },
+    {
+      "canonical_id": "P05B-02",
+      "status": "PASS",
+      "details": {
+        "api_http": 200,
+        "fields": {
+          "id": {
+            "api_field_present": true,
+            "label_visible": true,
+            "display_value_matches_or_is_rendered": true,
+            "value_sha256": "a8fd2c68748a8bf2b136e2f2b4306a8134e21a679d3cadefbdd37cde986bd34f"
+          },
+          "agent_id": {
+            "api_field_present": true,
+            "label_visible": true,
+            "display_value_matches_or_is_rendered": true,
+            "value_sha256": "3fa3d6a30fd84a240b8b625419b65e9c7b7d1849589068fd44b252186b3134b2"
+          },
+          "ip": {
+            "api_field_present": true,
+            "label_visible": true,
+            "display_value_matches_or_is_rendered": true,
+            "value_sha256": "94f3d252ba6476d4ef460c0ed137890a172c0b88fadb4daf797c83b3efae35dc"
+          },
+          "os": {
+            "api_field_present": true,
+            "label_visible": true,
+            "display_value_matches_or_is_rendered": true,
+            "value_sha256": "4af461203a20c6ef1c41c850cdf341da7f4a070d1c861c7897bcbf47ff46a379"
+          },
+          "agent_version": {
+            "api_field_present": true,
+            "label_visible": true,
+            "display_value_matches_or_is_rendered": true,
+            "value_sha256": "584fd0ecb62298d1e778606db5f14248bdf80b16265fb3d0fb585c0cac7d6d6b"
+          },
+          "arch": {
+            "api_field_present": true,
+            "label_visible": true,
+            "display_value_matches_or_is_rendered": true,
+            "value_sha256": "5861314d7fccb39c2192173240eab44fa35ca66426201ca2acd0630a6258dd51"
+          },
+          "deployment_mode": {
+            "api_field_present": true,
+            "label_visible": true,
+            "display_value_matches_or_is_rendered": true,
+            "value_sha256": "bef32d2c315a289576f2a6828d27edb16bb316a4d85c271f2d794045f3ea668d"
+          },
+          "global_revision": {
+            "api_field_present": true,
+            "label_visible": true,
+            "display_value_matches_or_is_rendered": true,
+            "value_sha256": "51cfe39433c33d8144a4d4663e3834ca238ce78c5e38335c96a9301c5960ac0e"
+          },
+          "sync_status": {
+            "api_field_present": true,
+            "label_visible": true,
+            "display_value_matches_or_is_rendered": true,
+            "value_sha256": "490eaa1b7c04c46221b1a6d90905a578be05012cfb5f5606c782377299552a20"
+          },
+          "last_seen": {
+            "api_field_present": true,
+            "label_visible": true,
+            "display_value_matches_or_is_rendered": true,
+            "value_sha256": "31eaa704263dc2a6d08f2a334b74a305021fa0079fe8ac5df45b7831100ae136"
+          }
+        }
+      },
+      "evidence": [
+        "p05b-native3-detail.png",
+        "case-p05b-detail-oracle.json"
+      ]
+    },
+    {
+      "canonical_id": "P01-07",
+      "status": "PASS",
+      "details": {
+        "oidc_state_http": 200,
+        "enabled": false,
+        "sso_cta_visible": false,
+        "local_login_visible": true
+      },
+      "evidence": [
+        "p01-07-oidc-disabled-sign-in.png"
+      ]
+    }
+  ],
+  "owned_created_ids": [],
+  "owned_deleted_ids": [],
+  "persistent_node_generation_attempted": false,
+  "oidc_global_changed": false,
+  "main_session_online": true,
+  "main_session_url": "/agents",
+  "private_auth_saved": false,
+  "next_batch_plan": [
+    "P05A-08 with a disposable owned Node enrollment fixture only after a cleanup/DELETE-capable scheme is authorized or documented",
+    "P05A-04 valid IPv4/IPv6/DNS outcomes with disposable owned enrollment fixture",
+    "G-01-06 UI signout server invalidation defect review",
+    "X16 revision/audit/error/default-input runtime coverage",
+    "WEB-LIVE-LOG remaining attempt metadata/PENDING and real clipboard exact read/denied feedback"
+  ],
+  "followup_evidence": "sidebar-layout-followup.json; coverage-followup.py supplemental exact checks."
+}

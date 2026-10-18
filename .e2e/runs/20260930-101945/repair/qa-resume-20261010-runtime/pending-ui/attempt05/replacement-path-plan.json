@@ -1,0 +1,50 @@
+{
+  "captured_at_utc": "2026-10-10T11:39:28Z",
+  "status": "LOCAL_PLAN_ONLY_WAITING_ROOT_REVIEW",
+  "existing_child_task": {
+    "id": "4c980795-ccf2-4e3b-9541-2d4e720ef69f",
+    "name": "qa-resume-20261010-pending-ui-f1505de3ce01",
+    "marker": "QA_PENDING_UI_f1505de3ce01",
+    "command_sha256": "47be23a0327f99bb7ae49b342f807db5b8a721ece511507b2f07ae1892e7eb69",
+    "preserve_task_definition": true,
+    "no_new_child_task": true
+  },
+  "next_hold_nonce": "fresh unique 12-hex, must differ from f1505de3ce01",
+  "required_local_harness_changes": {
+    "controller.py": "Require marker fullmatch QA_PENDING_UI_<12hex>, task_name suffix equals marker nonce; separately require hold_nonce 12-hex (remove marker==hold_nonce assumption).",
+    "arm_control.py": "Require marker/task_name match same Task marker; hold_nonce remains independent 12-32hex and exact-bound to task ID in controls/evidence.",
+    "ui_driver.py": "Require marker/task name bind to child Task; hold_nonce is independent exact proof/control nonce; check_hold_proof still matches exact task ID/new nonce."
+  },
+  "strict_guards_retained": [
+    "Task API/DB exact ID/name/type/command/target/retry/timeout/no-schedule",
+    "owner root/manifest owner_marker/config/DB inode/process UID/PID/startticks/exeSHA/cgroup/parent Unit",
+    "controls empty CAS and 8-second independent watchdog with exact task ID+new nonce",
+    "unique filenames and O_EXCL for new watchdog sidecars, arm evidence, local proof/UI screenshots"
+  ],
+  "unique_artifacts": {
+    "local_prepared_proof": "prepared-proof-retry-<newnonce>.json",
+    "local_controller_evidence": "controller-evidence-retry-<newnonce>.json",
+    "local_hold_proof": "hold-proof-<newnonce>.json",
+    "local_ui_evidence": "ui-evidence-<newnonce>.json",
+    "local_screenshots": [
+      "pending-execution-<newnonce>.png",
+      "success-execution-<newnonce>.png"
+    ],
+    "remote": [
+      "arm-evidence-<newnonce>.json",
+      "watchdog-ready-<newnonce>.json",
+      "watchdog-lock-<newnonce>.lock",
+      "watchdog-arm-<newnonce>.json",
+      "watchdog-result-<newnonce>.json"
+    ]
+  },
+  "fixed_remote_source": "Reuse /tmp/qa-resume-20261008-child-ciivjupc/qa-pending-ui-watchdog.py only after strict same-owner/mode/SHA verification; otherwise fail closed. No unlink/overwrite.",
+  "sequence": [
+    "Root reviews changed source SHAs and approves one replacement helper (child Task budget already consumed).",
+    "Fresh API guard and reprepare exact same Task in unique new proof path; browser UI_READY.",
+    "Fresh remote owner/process/DB/control guard; arm with new nonce.",
+    "Only if HOLD_ARMED, click real UI Run once and capture same-ID PENDING/RUNNING/terminal+marker.",
+    "Finally same-token401/profile cleanup; preserve idle Task on every preRun failure; delete exact Task only after actual Run terminal/no active execution."
+  ],
+  "current_no_action": true
+}

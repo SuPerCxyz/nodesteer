@@ -1,0 +1,105 @@
+{
+  "containers": [
+    {
+      "name": "qa-20260930-101945-env-tls-agent",
+      "suffix": "tls-agent",
+      "container_id": "169080c03f731a24378681afc4c294f4cccb3f164331cb85df41053d8f1d65c6",
+      "volume": "qa-20260930-101945-env-tls-agentdata"
+    },
+    {
+      "name": "qa-20260930-101945-env-enroll-docker",
+      "suffix": "enroll-docker",
+      "container_id": "4b3fff788672c878d17a2d0dc7ff682b2984f0a7cb003b3e577ca446ba2c5bae",
+      "volume": "qa-20260930-101945-env-enroll-dockerdata"
+    },
+    {
+      "name": "qa-20260930-101945-env-enroll-compose",
+      "suffix": "enroll-compose",
+      "container_id": "02ee8cf2f94618fc63165cc18c16d679708c8059af21e3d9558bfbe7c10a1de5",
+      "volume": "qa-20260930-101945-env-enroll-composedata"
+    },
+    {
+      "name": "qa-20260930-101945-env-hostint-agent",
+      "container_id": "c2ec3ac28757600dd2c92153664a67d8a2fff209cff4c5bce37491ea43997091",
+      "volume": "qa-20260930-101945-env-hostintdata",
+      "unit": "qa-20260930-101945-env-hostint.service",
+      "host": "192.168.100.247",
+      "host_paths": [
+        "/opt/qa-20260930-101945-env",
+        "/etc/systemd/system/qa-20260930-101945-env-hostint.service"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "suffix": "tls-agent",
+      "name": "qa-20260930-101945-env-tls-agent",
+      "node_ip": "qa-20260930-101945-env-tls-agent.example.test",
+      "node_id": "2c5f0157-4990-4c6a-833b-fca85c90a82d",
+      "agent_id": "agent-c17b1882-5d70-4c3b-902b-a711b30cff68",
+      "verification": {
+        "status": "online",
+        "sync_status": "synced",
+        "mode": "docker",
+        "version": "dddee4f0",
+        "id_preserved": true,
+        "name_matches": true
+      }
+    },
+    {
+      "suffix": "enroll-docker",
+      "name": "qa-20260930-101945-env-enroll-docker",
+      "node_ip": "qa-20260930-101945-env-enroll-docker.example.test",
+      "node_id": "560a9232-0b15-46c7-9783-4edba87dc401",
+      "agent_id": "agent-2dee25e8-c24f-4e01-8440-cb0523115c99",
+      "verification": {
+        "status": "online",
+        "sync_status": "synced",
+        "mode": "docker",
+        "version": "dddee4f0",
+        "id_preserved": true,
+        "name_matches": true
+      }
+    },
+    {
+      "suffix": "enroll-compose",
+      "name": "qa-20260930-101945-env-enroll-compose",
+      "node_ip": "qa-20260930-101945-env-enroll-compose.example.test",
+      "node_id": "3f434b5b-832f-4bf4-8ec6-e96c568e07a6",
+      "agent_id": "agent-2a99889f-70d1-4463-bef7-9d84a679ac22",
+      "verification": {
+        "status": "online",
+        "sync_status": "synced",
+        "mode": "docker",
+        "version": "dddee4f0",
+        "id_preserved": true,
+        "name_matches": true
+      }
+    },
+    {
+      "suffix": "hostint-agent",
+      "name": "qa-20260930-101945-env-hostint-agent",
+      "node_id": "544a2988-59fe-4efe-9bfd-538af11e632f",
+      "agent_id": "agent-ea19a9c1-5a2d-4142-b3d0-ae4dc75d5ac3",
+      "verification": {
+        "id_preserved": true,
+        "status": "online",
+        "sync_status": "synced",
+        "mode": "docker_host_integration",
+        "version": "dddee4f0"
+      }
+    }
+  ],
+  "setup_error_corrected": [
+    {
+      "state": "corrected_setup_error",
+      "description": "Using the same host node_ip for multiple containers reused core pending identity. Removed only owned extras and recreated with unique DNS node_ip. Core node/container/volume not deleted."
+    }
+  ],
+  "command_adjustments": [
+    "Use unique DNS node_ip for each Docker instance",
+    "Unique container, volume and project names",
+    "Use tested dddee4f0 Agent image",
+    "Move registration secrets to private env-file/Compose file"
+  ]
+}

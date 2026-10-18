@@ -1,0 +1,50 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch04",
+  "authority": "http://192.168.100.209:18080",
+  "authority_type": "repair",
+  "primary_8080_touched": false,
+  "nonce": "89fe789d",
+  "phase": "COMPLETE_FOR_ROOT_REVIEW",
+  "updated_at_utc": "2026-10-14T09:26:00Z",
+  "steps": [
+    {"name": "read-only ledger + reference batches + product code recon (P22-12/FL-09/P11-07/P11-08/P22-08/P22-09)", "status": "done"},
+    {"name": "baseline snapshot (counts, node ids, owned-object inventory)", "status": "done", "result": "7 nodes / 1 app / 0 tasks / 4 artifacts / 7 transfers / 0 owned objects"},
+    {"name": "FL-09 assign write path: owned Application via UI -> native-3 -> save/assign", "status": "done", "result": "PASS"},
+    {"name": "FL-09 cross-view consistency (assign card / Agent Detail / Node Detail / API)", "status": "done", "result": "PASS, 0 mismatches"},
+    {"name": "FL-09 unassign write path + empty state + owned Application delete + GET404", "status": "done", "result": "PASS"},
+    {"name": "P11-07/P11-08 fixture: owned command task targeting native-1+native-3 via UI", "status": "done"},
+    {"name": "manual run #1 via UI (confirm dialog) -> 2 executions, 1 per node", "status": "done", "result": "PASS"},
+    {"name": "manual run #2 via UI (identical request) -> 2 fresh UUIDs", "status": "done", "result": "PASS for the new-intent half; duplicate-delivery idempotency not runtime-triggerable -> PARTIAL"},
+    {"name": "P22-12 PENDING -> cancel via row menu (offline source)", "status": "done", "result": "PASS"},
+    {"name": "P22-12 UPLOADING -> cancel via row menu (300 MiB source, 20 ms server polling)", "status": "done", "result": "PASS (issued while UPLOADING)"},
+    {"name": "P22-09 multi-target transfer (native-3 / host001 / offline) per-target states + aggregate", "status": "done", "result": "PARTIAL (aggregate FAILED branch not exercised: 4-transfer cap)"},
+    {"name": "P22-12 DELIVERING -> cancel (mixed transfer) + SUCCESS target preserved", "status": "done", "result": "PASS"},
+    {"name": "P22-08 successful transfer + form reset capture + delivered file sha256 verification", "status": "done", "result": "PASS"},
+    {"name": "fixture cleanup: node files removed, owned task deleted (UI), owned application deleted (UI), GET404 checks", "status": "done"},
+    {"name": "final guard snapshot vs baseline + owned-object sweep + hub staging check", "status": "done"}
+  ],
+  "case_status": {
+    "P22-12": {"before": "PARTIAL", "proposed_after": "PASS"},
+    "FL-09": {"before": "PASS", "proposed_after": "PASS", "note": "closes the batch03 remaining dimension (assign write path)"},
+    "P11-07": {"before": "NOT_RUN", "proposed_after": "PASS"},
+    "P11-08": {"before": "NOT_RUN", "proposed_after": "PARTIAL"},
+    "P22-08": {"before": "NOT_RUN", "proposed_after": "PASS"},
+    "P22-09": {"before": "NOT_RUN", "proposed_after": "PARTIAL"}
+  },
+  "counts": {"PASS": 4, "PARTIAL": 2, "FAIL": 0, "NOT_RUN": 0},
+  "outputs": ["results.json", "progress.json", "fixture-ledger.json", "final-cleanup-guard.json", "terminal", "evidence/"],
+  "open_decisions_for_root": [
+    {
+      "id": "REQ-B04-01",
+      "question": "May one more owned transfer (5th) be authorized so P22-09 can also exercise the aggregate FAILED branch (all targets terminal with a failure -> aggregate FAILED)? Suggested fixture: source native-1 -> single target host001 with a non-allowlisted destination path, which fails fast and writes nothing.",
+      "impact": "P22-09 would move from PARTIAL to PASS; the 5th record would remain as terminal transfer history."
+    },
+    {
+      "id": "REQ-B04-02",
+      "question": "For P11-08's idempotency half (same Execution ID/Key repeated delivery/upload): is a protocol-level duplicate-frame injector authorized, or is the code-level corroboration (agent journal early-return, hub MarkFinished terminal early-return, UpsertFromAgent no-regression, schedule slot dedupe) accepted as sufficient?",
+      "impact": "P11-08 would move from PARTIAL to PASS only with a runtime duplicate-delivery trigger."
+    }
+  ],
+  "parallel_batch": "sys-b09 (schedule/heartbeat/condition) and sys-b10 (artifact cache) ran on the same hub; nodes -1 / artifacts -3 deltas in the batch window belong to them (and a third actor), not to batch04. Acceptance assertions were scoped to qa-w1410b04-89fe789d-* objects only.",
+  "reuse_notes": "runner scripts kept under runners/: b04.py (snapshot/owned inventory), form_transfer.py (UI form driver), poll_transfers.py (20 ms status timeline), cancel_row_transfer.js (row 操作 -> 取消传输 UI sequence), run_cancel_flow.sh / run_observe_cancel.sh / run_submit_observe.sh (flow drivers), fl09_api.py, fetch_transfers.py, fetch_executions.py."
+}

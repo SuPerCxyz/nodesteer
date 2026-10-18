@@ -1,0 +1,167 @@
+{
+ "run_id": "20260930-101945",
+ "batch": "qa-resume-20261016-verify",
+ "created_at_utc": "2026-10-16T07:05:00Z",
+ "purpose": "修复版构建 + repair 环境部署 + 定向回归验证",
+ "build": {
+  "build_label": "dddee4f0-e2e-repair-20261016",
+  "baseline_git_head": "dddee4f0-chore: archive web-list-table-alignment change and sync specs",
+  "source_state": "patched workspace (7 条缺陷修复，未提交), web/dist 与上一版 build-manifest.web_index_sha256 一致 612c23ba…",
+  "go_version": "go1.26.8 linux/amd64",
+  "build_commands": [
+   "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -o /tmp/opencode/nodesteer-build-20261016/nodesteer-hub.unbundled ./cmd/hub",
+   "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -ldflags '-X main.version=dddee4f0-e2e-repair-20261016' -o /tmp/opencode/nodesteer-build-20261016/nodesteer-agent-static ./cmd/agent",
+   "CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -buildvcs=false -ldflags '-X main.version=dddee4f0-e2e-repair-20261016' -o /tmp/opencode/nodesteer-build-20261016/nodesteer-agent-arm64 ./cmd/agent",
+   "sh packaging/bundle-agent.sh /tmp/opencode/nodesteer-build-20261016/nodesteer-hub-static-login-guard /tmp/opencode/nodesteer-build-20261016/nodesteer-hub.unbundled amd64 /tmp/opencode/nodesteer-build-20261016/nodesteer-agent-static arm64 /tmp/opencode/nodesteer-build-20261016/nodesteer-agent-arm64"
+  ],
+  "artifacts": {
+   "hub_bundled": {
+    "name": "nodesteer-hub-static-login-guard",
+    "path": "/tmp/opencode/nodesteer-build-20261016/nodesteer-hub-static-login-guard",
+    "sha256": "cd8b7f9d7e40841bbba982c6838b2f74ccfdfac785674030c5bf7d6f1f69120d",
+    "size": 55057222,
+    "elf": "ELF 64-bit LSB executable, x86-64, statically linked, with debug_info, not stripped",
+    "shape": "unbundled hub (22164222B) + NODESTEER_AGENT_BUNDLE_V1 amd64 + arm64 payloads"
+   },
+   "agent_amd64": {
+    "name": "nodesteer-agent-static",
+    "path": "/tmp/opencode/nodesteer-build-20261016/nodesteer-agent-static",
+    "sha256": "b04383bf83013d61c804f68590d9956395b73ee4e0e4a8494e6a2b756101913c",
+    "size": 16842225,
+    "elf": "ELF 64-bit LSB executable, x86-64, statically linked, with debug_info, not stripped"
+   },
+   "agent_arm64": {
+    "name": "nodesteer-agent-arm64",
+    "path": "/tmp/opencode/nodesteer-build-20261016/nodesteer-agent-arm64",
+    "sha256": "5e1dd7b725d6fe6fa5d90cdf50e3732aeb1363582d29d900be5fa6474958fda6",
+    "size": 16050718
+   }
+  },
+  "local_smoke": {
+   "command": "nodesteer-hub-static-login-guard --config /tmp/opencode/nodesteer-smoke/hub.yaml (:28080)",
+   "result": "healthz=200 readyz=200, 无 'load bundled agent payloads failed' 警告"
+  }
+ },
+ "pre_deploy": {
+  "hub_209": {
+   "unit": "nodesteer-hub-repair-20260930-101945.service",
+   "active": "active/running",
+   "main_pid": 105460,
+   "binary": "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard",
+   "sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+   "healthz": 200,
+   "readyz": 200
+  },
+  "agents": {
+   "native-1": {
+    "ip": "192.168.100.204",
+    "pid": 1494,
+    "sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add"
+   },
+   "native-2": {
+    "ip": "192.168.100.206",
+    "pid": 4311,
+    "sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add"
+   },
+   "native-3": {
+    "ip": "192.168.100.222",
+    "pid": 16918,
+    "sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add"
+   },
+   "native-4": {
+    "ip": "192.168.100.247",
+    "pid": 1481,
+    "sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add"
+   }
+  },
+  "primary_untouched": {
+   "unit": "nodesteer-hub.service",
+   "main_pid": 1251
+  }
+ },
+ "backup_20261016": {
+  "hub": {
+   "path": "/opt/nodesteer-repair-20260930-101945/backup-20261016/nodesteer-hub-static-login-guard.bak-20261016",
+   "sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6"
+  },
+  "agent": {
+   "paths": "/opt/nodesteer-repair-20260930-101945/backup-20261016/nodesteer-agent.bak-20261016 (4 台: .204/.206/.222/.247)",
+   "sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add"
+  }
+ },
+ "deployment": {
+  "hub": {
+   "target": "192.168.100.209:/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard",
+   "new_sha256": "cd8b7f9d7e40841bbba982c6838b2f74ccfdfac785674030c5bf7d6f1f69120d",
+   "restarted": true,
+   "new_pid": 153154
+  },
+  "agents_mixed_version_window": {
+   "native-1": {
+    "new_sha256": "b04383bf83013d61c804f68590d9956395b73ee4e0e4a8494e6a2b756101913c",
+    "restarted": true,
+    "new_pid": 36834
+   },
+   "native-2": {
+    "new_sha256": "b04383bf83013d61c804f68590d9956395b73ee4e0e4a8494e6a2b756101913c",
+    "restarted": true,
+    "new_pid": 117686
+   },
+   "native-3": {
+    "new_sha256": "b04383bf83013d61c804f68590d9956395b73ee4e0e4a8494e6a2b756101913c",
+    "restarted": true,
+    "new_pid": 127519
+   },
+   "native-4": {
+    "sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "pid_during_window": 1481,
+    "note": "混版本窗口期间保持旧 Agent（新 Hub 下 online/synced）；窗口于 15:14 CST 关闭"
+   }
+  },
+  "untouched": [
+   "nodesteer-hub.service (:8080)",
+   "nodesteer-agent.service",
+   "VM 未重启"
+  ],
+  "post_deploy_health": {
+   "healthz": 200,
+   "readyz": 200,
+   "nodes": {
+    "native-1": "online/synced",
+    "native-2": "online/synced",
+    "native-3": "online/synced",
+    "native-4": "online/synced（旧 Agent d55dc5cd + 新 Hub cd8b7f9d）"
+   },
+   "global_revision": 2736,
+   "units_snapshot": "evidence/postdeploy-processes.txt（hub 153154 + native-1/2/3 新 agent + native-4 旧 agent）"
+  },
+  "mixed_version_conclusion": "新 Hub 对旧 Agent 兼容：native-4 旧 Agent 在新 Hub 下保持 online/synced（后续在 P0-1 以 remote 条件任务做功能级验证）",
+  "native4_upgrade": {
+   "at_utc": "2026-10-16T07:14:30Z",
+   "new_sha256": "b04383bf83013d61c804f68590d9956395b73ee4e0e4a8494e6a2b756101913c",
+   "restarted": true,
+   "new_pid": 175810,
+   "post_upgrade_node": "online/synced, agent_version=dddee4f0-e2e-repair-20261016",
+   "post_upgrade_remote_condition_check": "SUCCESS（旧 Agent 时为 BLOCKED）"
+  }
+ },
+ "rollback": {
+  "method": "将 backup-20261016 下 .bak-20261016 覆盖回原路径并重启对应 repair 单元",
+  "commands": [
+   "scp backup 回位：install -o root -g root -m 0755 /opt/nodesteer-repair-20260930-101945/backup-20261016/nodesteer-hub-static-login-guard.bak-20261016 /opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard",
+   "install -o root -g root -m 0755 /opt/nodesteer-repair-20260930-101945/backup-20261016/nodesteer-agent.bak-20261016 /opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent （逐台）",
+   "systemctl restart nodesteer-hub-repair-20260930-101945.service",
+   "systemctl restart nodesteer-agent-repair-20260930-101945-native-N.service"
+  ],
+  "rollback_executed": false
+ },
+ "mixed_version_conclusion": "新 Hub + 旧 Agent 兼容性：连接/心跳/同步 online/synced 正常（native-4）；但 remote 条件由旧 Agent 执行时仍 BLOCKED（旧 observed_at 绝对时间回退路径受跨主机时钟影响，属设计预期且方案文档已注明“旧 Agent 未升级前仍受偏移影响”）；升级 native-4 到新 Agent 后，同一 remote 条件立即 SUCCESS——证明升级即修复，无灰度期功能回归。",
+ "final_health": {
+  "at_utc": "2026-10-16T07:16:44Z",
+  "healthz_readyz_18080": "200 200",
+  "primary_8080_healthz": "200",
+  "primary_hub_pid": "1251（全程未重启）",
+  "nodes": "native-1/2/3/4 全部 online/synced, agent_version=dddee4f0-e2e-repair-20261016",
+  "residue": "hub 前缀 fixtures 0；native-1/2/4 自有主机目录/进程/挂载 0；evidence/final-residue-sweep.json"
+ }
+}

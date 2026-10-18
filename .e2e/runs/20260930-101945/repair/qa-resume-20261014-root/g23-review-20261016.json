@@ -1,0 +1,97 @@
+{
+  "review_id": "ROOT-G23-REVIEW-20261016",
+  "reviewed_at": "2026-10-16T09:44:39.475426+00:00",
+  "reviewer": "main-agent(root)",
+  "status": "INTEGRATED",
+  "dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g23",
+  "verified_build": "dddee4f0-e2e-repair-20261016",
+  "authorization_basis": "授权清单 G2+G3（用户要求全力推进）",
+  "verdicts": [
+    {
+      "case_id": "P11-08",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "proxy 真注入重复 RUN_EXECUTION 与重复 EXECUTION_FINISHED；Hub 对同一执行 ACK 2 次仍只 1 行 SUCCESS、child journal 1 行、marker 只执行 1 次；第二次 Manual Run 新 UUID→2 行"
+    },
+    {
+      "case_id": "AR-08",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "真丢 CHANGE_NOTIFICATION→19.2s 经 revision-check 收敛；真重复→0.35s 幂等收敛；回放陈旧帧→忽略无回退；9 script/9 task/7 schedule Desired==实际；停机重启后无丢/无重复"
+    },
+    {
+      "case_id": "P17P18-03",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "用 held 帧制造窗口：采到真实 PENDING 行与真实 RUNNING 行，终态 SUCCESS、marker 1 次；8 个状态选择器全部 200"
+    },
+    {
+      "case_id": "P12P13-06",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "同 child 两个 * * * * *：hub-owner 每 id 都出现在 hub→agent RUN_EXECUTION 帧；agent-owner RUN_EXECUTION 帧为 0、由 agent 自身上报 FINISHED；两者每 slot 唯一"
+    },
+    {
+      "case_id": "P12P13-07",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "四象限：在线两策略均触发；断链期 allow_offline 3 次（offline=1/synced=0）、hub_online_required 0 次；恢复后 3 条离线行上传、required 对 3 个漏 slot 仅 1 次补偿"
+    },
+    {
+      "case_id": "P12P13-08",
+      "canonical_after": "PASS",
+      "confidence": "high",
+      "reason": "真 SIGTERM 停机跨 3 slot + 真重启：run_once 恰好 1 次补偿（slot 落在停机窗内）、skip 0 次补偿并恢复常态；Hub 侧可见同一补偿行"
+    }
+  ],
+  "new_observations": [
+    "OBS-20261016-G23-RECONNECT-WINDOW"
+  ],
+  "cleanup": "oracle ok=true：25 夹具 + 1 node 逐条 404；child 进程与 root 已清；proxy 端口释放；4 protected 节点 online/synced；两 healthz 200；DB quick_check ok；不可删历史：新增 25 条 Execution",
+  "counts_before": {
+    "PASS": 455,
+    "FAIL": 6,
+    "PARTIAL": 33,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "counts_after": {
+    "PASS": 461,
+    "FAIL": 6,
+    "PARTIAL": 27,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "status_changes": [
+    [
+      "P11-08",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P12P13-06",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P12P13-07",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P12P13-08",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P17P18-03",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "AR-08",
+      "PARTIAL",
+      "PASS"
+    ]
+  ]
+}

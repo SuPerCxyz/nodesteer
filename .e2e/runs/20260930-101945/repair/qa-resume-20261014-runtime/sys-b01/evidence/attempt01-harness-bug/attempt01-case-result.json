@@ -1,0 +1,414 @@
+{
+  "batch_id": "sys-b01",
+  "title": "Hub 重启：Agent 自动重连、Session/Desired State 重建与权威源收敛",
+  "nonce": "a2630efc1488",
+  "executed_at_utc": "2026-10-15T10:06:00Z",
+  "finished_at_utc": "2026-10-15T10:06:42Z",
+  "endpoint": "http://192.168.100.209:18080",
+  "cases": [
+    {
+      "case_id": "SYS-03",
+      "title": "SYS-03 Hub 重启：Agent 自动重连、Session 重建、Desired State 不丢",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PARTIAL",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-03",
+          "layer": "hub unit restart / hub sqlite / gateway sessions / 4 protected repair Agents",
+          "status": "PARTIAL",
+          "description": [
+            "`systemctl stop/start nodesteer-hub-repair-20260930-101945.service` on 192.168.100.209: caller-visible /healthz and /readyz stopped answering (outage observed from the operator workstation), MainPID changed, and the binary sha256 stayed 164ea4ac...",
+            "All 4 protected repair Agents went through orphan-online reset at Hub start and reconnected by themselves to online/synced with global_revision >= the revision of a Desired State change committed just before the restart (timeline sampled every 1s).",
+            "Hub persistence survived: revision_sequence stayed >= the pre-restart revision, the owned script/task rows and their revision_changes rows were still present after the restart, PRAGMA quick_check = ok, and the owned child Agent reconciled exactly the one logical change with no duplicate Execution."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [],
+      "evidence": [
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase0-untouched-units.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-pre-restart-execution.json",
+        "phase4-desired-state-change.json",
+        "phase5-hub-restart.json",
+        "phase6-proxy-frames.json",
+        "phase8-cleanup.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb01-a2630efc1488-",
+        "child_node_id": "c537aa81-4afa-4c3b-b882-380cceacbf30",
+        "child_agent_id": "agent-40f1e8e0-0516-46c1-9997-08d1070b8338",
+        "script_id": "01a40db1-25f3-44f7-9f5e-4184b28cf354",
+        "task_id": "b99996d1-2640-4276-833d-74e9908225e9",
+        "target_node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+        "executions": {
+          "pre_restart_target_node": "be08b5b3-9f22-42d3-aa58-ae8a1fb0da49"
+        },
+        "preserved_execution_history": [
+          "be08b5b3-9f22-42d3-aa58-ae8a1fb0da49"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 8,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 1,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 0,
+        "hub_restarts": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "b99996d1-2640-4276-833d-74e9908225e9",
+            "delete_http": 401,
+            "get_http": 401
+          },
+          {
+            "kind": "script",
+            "id": "01a40db1-25f3-44f7-9f5e-4184b28cf354",
+            "delete_http": 401,
+            "get_http": 401
+          }
+        ],
+        "errors": [
+          "child_remove:child_remove_failed: Warning: Permanently added '192.168.100.204' (ED25519) to the list of known hosts.\n  File \"<stdin>\", line 11\n    exe=os.readlink('/proc/%%d/exe'%%pid)\n                                    ^\nSyntaxError: invalid syntax\n",
+          "child_node_delete_not_404:401/401"
+        ],
+        "native1_child_removal": {
+          "error": "child_remove_failed: Warning: Permanently added '192.168.100.204' (ED25519) to the list of known hosts.\n  File \"<stdin>\", line 11\n    exe=os.readlink('/proc/%%d/exe'%%pid)\n                                    ^\nSyntaxError: invalid syntax\n"
+        },
+        "child_node": {
+          "id": "c537aa81-4afa-4c3b-b882-380cceacbf30",
+          "delete_http": 401,
+          "get_http": 401,
+          "delete_body": {
+            "error": "invalid or expired session"
+          }
+        },
+        "all_get_404": false
+      }
+    },
+    {
+      "case_id": "SYS-17",
+      "title": "SYS-17 Agent 重连前不宣告 READY，完成 Reconciliation 后再 READY",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PARTIAL",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-17",
+          "layer": "owned child Agent ready gate / harness frame proxy / hub execution dispatch",
+          "status": "PARTIAL",
+          "description": [
+            "Reconnect order on the wire: HELLO -> HELLO_ACK -> SYNC_REQUEST -> SYNC_RESPONSE -> SYNC_ACK; the harness held the Hub->Agent SYNC_RESPONSE(s) so the Reconciliation window stayed open.",
+            "While the reply was withheld the owned child was online on the Hub but its applied revision was still the pre-restart one and its local store still held the old script sha: no READY.",
+            "A real manual Run dispatched in that window produced a real BLOCKED Execution whose block_reason is the Agent's own \"agent not ready (reconciling)\" gate - the business-level proof that READY was not claimed.",
+            "After the reply was released the Agent applied the sync (SYNC_ACK applied_rev = Hub revision), its reported revision caught up, and the next manual Run returned SUCCESS with the nonce marker."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "READY is an internal Agent state; it was observed through its product-level effects (rejected dispatch in the Reconciliation window, accepted dispatch after it) and the Hub-visible applied revision, not by reading Agent memory.",
+        "The Reconciliation window was widened by holding SYNC_RESPONSE frames on the harness's own frame proxy for its own child Agent; no product code and no protected Agent was changed."
+      ],
+      "evidence": [
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase0-untouched-units.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-pre-restart-execution.json",
+        "phase4-desired-state-change.json",
+        "phase5-hub-restart.json",
+        "phase6-proxy-frames.json",
+        "phase8-cleanup.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb01-a2630efc1488-",
+        "child_node_id": "c537aa81-4afa-4c3b-b882-380cceacbf30",
+        "child_agent_id": "agent-40f1e8e0-0516-46c1-9997-08d1070b8338",
+        "script_id": "01a40db1-25f3-44f7-9f5e-4184b28cf354",
+        "task_id": "b99996d1-2640-4276-833d-74e9908225e9",
+        "target_node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+        "executions": {
+          "pre_restart_target_node": "be08b5b3-9f22-42d3-aa58-ae8a1fb0da49"
+        },
+        "preserved_execution_history": [
+          "be08b5b3-9f22-42d3-aa58-ae8a1fb0da49"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 8,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 1,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 0,
+        "hub_restarts": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "b99996d1-2640-4276-833d-74e9908225e9",
+            "delete_http": 401,
+            "get_http": 401
+          },
+          {
+            "kind": "script",
+            "id": "01a40db1-25f3-44f7-9f5e-4184b28cf354",
+            "delete_http": 401,
+            "get_http": 401
+          }
+        ],
+        "errors": [
+          "child_remove:child_remove_failed: Warning: Permanently added '192.168.100.204' (ED25519) to the list of known hosts.\n  File \"<stdin>\", line 11\n    exe=os.readlink('/proc/%%d/exe'%%pid)\n                                    ^\nSyntaxError: invalid syntax\n",
+          "child_node_delete_not_404:401/401"
+        ],
+        "native1_child_removal": {
+          "error": "child_remove_failed: Warning: Permanently added '192.168.100.204' (ED25519) to the list of known hosts.\n  File \"<stdin>\", line 11\n    exe=os.readlink('/proc/%%d/exe'%%pid)\n                                    ^\nSyntaxError: invalid syntax\n"
+        },
+        "child_node": {
+          "id": "c537aa81-4afa-4c3b-b882-380cceacbf30",
+          "delete_http": 401,
+          "get_http": 401,
+          "delete_body": {
+            "error": "invalid or expired session"
+          }
+        },
+        "all_get_404": false
+      }
+    },
+    {
+      "case_id": "INV-01",
+      "title": "INV-01 Hub 是 Desired State 唯一权威源",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PARTIAL",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:INV-01",
+          "layer": "hub script authority / owned child store / hub restart persistence",
+          "status": "PARTIAL",
+          "description": [
+            "The operator changed the script on the Hub while the owned child was cut from the Hub; the child kept its stale copy and its old local revision, i.e. the Agent never became the source of the value.",
+            "After the restart the Hub still served exactly the operator-written object (same sha256/revision) and the Agent converged to it on reconnection - Hub -> Agent only.",
+            "Hub rows and revision_changes were unchanged by the Agent side across the restart; no Agent-originated Desired State write path was observed in the frame ledger."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Authority was exercised through the script (Desired State) object path; the Execution/Journal upload path is a separate direction of the protocol and was out of scope for this invariant."
+      ],
+      "evidence": [
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase0-untouched-units.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-pre-restart-execution.json",
+        "phase4-desired-state-change.json",
+        "phase5-hub-restart.json",
+        "phase6-proxy-frames.json",
+        "phase8-cleanup.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb01-a2630efc1488-",
+        "child_node_id": "c537aa81-4afa-4c3b-b882-380cceacbf30",
+        "child_agent_id": "agent-40f1e8e0-0516-46c1-9997-08d1070b8338",
+        "script_id": "01a40db1-25f3-44f7-9f5e-4184b28cf354",
+        "task_id": "b99996d1-2640-4276-833d-74e9908225e9",
+        "target_node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+        "executions": {
+          "pre_restart_target_node": "be08b5b3-9f22-42d3-aa58-ae8a1fb0da49"
+        },
+        "preserved_execution_history": [
+          "be08b5b3-9f22-42d3-aa58-ae8a1fb0da49"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 8,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 1,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 0,
+        "hub_restarts": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "b99996d1-2640-4276-833d-74e9908225e9",
+            "delete_http": 401,
+            "get_http": 401
+          },
+          {
+            "kind": "script",
+            "id": "01a40db1-25f3-44f7-9f5e-4184b28cf354",
+            "delete_http": 401,
+            "get_http": 401
+          }
+        ],
+        "errors": [
+          "child_remove:child_remove_failed: Warning: Permanently added '192.168.100.204' (ED25519) to the list of known hosts.\n  File \"<stdin>\", line 11\n    exe=os.readlink('/proc/%%d/exe'%%pid)\n                                    ^\nSyntaxError: invalid syntax\n",
+          "child_node_delete_not_404:401/401"
+        ],
+        "native1_child_removal": {
+          "error": "child_remove_failed: Warning: Permanently added '192.168.100.204' (ED25519) to the list of known hosts.\n  File \"<stdin>\", line 11\n    exe=os.readlink('/proc/%%d/exe'%%pid)\n                                    ^\nSyntaxError: invalid syntax\n"
+        },
+        "child_node": {
+          "id": "c537aa81-4afa-4c3b-b882-380cceacbf30",
+          "delete_http": 401,
+          "get_http": 401,
+          "delete_body": {
+            "error": "invalid or expired session"
+          }
+        },
+        "all_get_404": false
+      }
+    },
+    {
+      "case_id": "AR-01",
+      "title": "AR-01 Hub Restart；恢复后幂等、持久化、Desired State 与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS_WITH_NOTES",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-01",
+          "layer": "hub restart / real executions on a protected repair node / idempotency",
+          "status": "PARTIAL",
+          "description": [
+            "Real execution before the restart on protected native-2: terminal SUCCESS, stdout carried the nonce pre marker, exactly one Hub row.",
+            "Real execution after the restart on the same protected node: terminal SUCCESS, stdout carried the nonce post marker, exactly one Hub row - the restart did not lose or duplicate work.",
+            "After a settle window the Task had exactly 2 Executions on the target node and 2 on the owned child (one BLOCKED during Reconciliation, one SUCCESS after it): no duplicated Execution and no half state.",
+            "Desired State and actual state agreed after the restart: the Hub script sha256/revision were the operator-written values and both the protected node and the owned child had applied them."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Hub restart was performed once, on the single authorised repair unit; the primary :8080 Hub and every Agent service kept their original MainPIDs (recorded read-only before and after)."
+      ],
+      "evidence": [
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase0-untouched-units.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-pre-restart-execution.json",
+        "phase4-desired-state-change.json",
+        "phase5-hub-restart.json",
+        "phase6-proxy-frames.json",
+        "phase8-cleanup.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb01-a2630efc1488-",
+        "child_node_id": "c537aa81-4afa-4c3b-b882-380cceacbf30",
+        "child_agent_id": "agent-40f1e8e0-0516-46c1-9997-08d1070b8338",
+        "script_id": "01a40db1-25f3-44f7-9f5e-4184b28cf354",
+        "task_id": "b99996d1-2640-4276-833d-74e9908225e9",
+        "target_node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+        "executions": {
+          "pre_restart_target_node": "be08b5b3-9f22-42d3-aa58-ae8a1fb0da49"
+        },
+        "preserved_execution_history": [
+          "be08b5b3-9f22-42d3-aa58-ae8a1fb0da49"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 8,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 1,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 0,
+        "hub_restarts": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "b99996d1-2640-4276-833d-74e9908225e9",
+            "delete_http": 401,
+            "get_http": 401
+          },
+          {
+            "kind": "script",
+            "id": "01a40db1-25f3-44f7-9f5e-4184b28cf354",
+            "delete_http": 401,
+            "get_http": 401
+          }
+        ],
+        "errors": [
+          "child_remove:child_remove_failed: Warning: Permanently added '192.168.100.204' (ED25519) to the list of known hosts.\n  File \"<stdin>\", line 11\n    exe=os.readlink('/proc/%%d/exe'%%pid)\n                                    ^\nSyntaxError: invalid syntax\n",
+          "child_node_delete_not_404:401/401"
+        ],
+        "native1_child_removal": {
+          "error": "child_remove_failed: Warning: Permanently added '192.168.100.204' (ED25519) to the list of known hosts.\n  File \"<stdin>\", line 11\n    exe=os.readlink('/proc/%%d/exe'%%pid)\n                                    ^\nSyntaxError: invalid syntax\n"
+        },
+        "child_node": {
+          "id": "c537aa81-4afa-4c3b-b882-380cceacbf30",
+          "delete_http": 401,
+          "get_http": 401,
+          "delete_body": {
+            "error": "invalid or expired session"
+          }
+        },
+        "all_get_404": false
+      }
+    }
+  ],
+  "deviations": [
+    "HARNESS_ERROR:get_/api/nodes_http_401"
+  ],
+  "budget": {
+    "api_mutations": 8,
+    "hub_definition_creates": 2,
+    "hub_definition_deletes": 2,
+    "manual_run_posts": 1,
+    "node_enroll_posts": 1,
+    "child_process_starts": 1,
+    "child_process_stops": 0,
+    "hub_restarts": 1
+  },
+  "final_cleanup_oracle_clean": false,
+  "harness_seams": {
+    "authority": "management writes only to repair http://192.168.100.209:18080",
+    "hub_restart": "only nodesteer-hub-repair-20260930-101945.service was stopped/started once; nodesteer-hub.service (:8080) and all Agent units untouched",
+    "owned_child": "one harness-owned child Agent on native-1 (exact repair Agent binary d55dc5cd...) behind a harness-owned frame proxy on 192.168.100.170",
+    "ready_gate": "SYNC_RESPONSE frames were held on the harness frame proxy so the Reconciliation window could be observed and exercised by a real manual Run",
+    "product_source_changes": 0,
+    "git_operations": 0,
+    "vms_restarted": 0
+  }
+}

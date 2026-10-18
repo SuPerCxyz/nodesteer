@@ -1,0 +1,738 @@
+{
+  "batch_id": "p-sysmisc",
+  "title": "system 零散 PARTIAL 收口：enrollment/HELLO/heartbeat/persistence/sockets/commit-failure/UI",
+  "nonce": "a8fd4885",
+  "owned_prefix": "qa-psm-a8fd4885-",
+  "endpoint": "http://192.168.100.209:18080 (repair authority; primary :8080 not written)",
+  "node_used": {
+    "native-1": "192.168.100.204"
+  },
+  "executed_at_utc": "2026-10-15T09:04:09Z",
+  "finished_at_utc": "2026-10-15T09:06:31Z",
+  "cases": [
+    {
+      "case_id": "E2E-16",
+      "title": "Native Enrollment → pending → HELLO → online/synced",
+      "canonical_before": "PARTIAL (pending phase unobserved, HELLO/heartbeat wire evidence missing, UI feedback unverified)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSYSMISC:E2E-16-pending-hello-ui",
+          "layer": "real-api + frame-wire + real SPA",
+          "status": "PASS",
+          "description": [
+            "Enrollment created the node pending (Hub REST status=pending, sync_status=pending) before any Agent contact; after the owned child Agent HELLO the node moved to online/synced (state transition observed with timestamps).",
+            "Frame proxy recorded the ordered wire sequence HELLO -> HELLO_ACK(accepted=true) -> SYNC_REQUEST -> INVENTORY -> SYNC_RESPONSE -> SYNC_ACK -> HEARTBEAT -> HEARTBEAT_ACK -> REVISION_CHECK -> REVISION_CHECK_ACK.",
+            "Repair Web UI showed the fresh node as 等待中 while pending and 在线 after HELLO (screenshots), matching the API state.",
+            "Reverse path (invalid registration token) leaves the node pending and is covered under SYS-01."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/evidence/phase1-enrollment-pending-a.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/evidence/phase2-hello-online-a.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/evidence/phase10-ui-feedback-u.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/evidence/ui-node-pending.png",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/evidence/ui-node-online.png"
+      ],
+      "actual_resources": {
+        "node_a": "a599212a-c4d8-4738-a418-0f5f040b9493",
+        "agent_a": "agent-9c70340c-d09f-43ba-8147-f0b40c0df82b",
+        "ui_node": "c73c4be7-eb2d-4d0b-8846-45594a58998a",
+        "child_root": "/var/lib/nodesteer-qa-psm-a8fd4885-a"
+      },
+      "frame_counts_pending_window": {
+        "HELLO": 1,
+        "HELLO_ACK": 1,
+        "SYNC_REQUEST": 10,
+        "INVENTORY": 1,
+        "SYNC_RESPONSE": 10,
+        "SYNC_ACK": 10,
+        "CHANGE_NOTIFICATION": 12,
+        "HEARTBEAT": 3,
+        "HEARTBEAT_ACK": 3,
+        "REVISION_CHECK": 2,
+        "REVISION_CHECK_ACK": 2
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "hub_prefix_leftover_clear": true,
+        "native1_clean": true,
+        "native1_roots_removed": {
+          "a": true,
+          "b": true,
+          "c": true
+        },
+        "native1_owned_processes_after": [],
+        "native1_tmpfs_mounts_after": [],
+        "operator_proxy_ports_released": true,
+        "protected_nodes_online_synced": true,
+        "healthz": {
+          "repair_18080": 200,
+          "primary_8080": 200
+        },
+        "hub_db_quick_check": "ok",
+        "deleted_fixtures": [
+          {
+            "kind": "schedule",
+            "id": "01c201bc-7d2b-4536-a9f6-a8b7cdfbc232",
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "d762ca05-3d43-4ed6-a0c4-0b6efa5e7f96",
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "a5602e59-91de-47d3-8259-6bc50ef52120",
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "69ec4989-85ca-4ff5-a002-7c3524e3faed",
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "f859f368-fe69-4761-ac3e-94b74fd4a587",
+            "get_http": 404
+          }
+        ],
+        "ui_subrun_node": {
+          "id": "c73c4be7-eb2d-4d0b-8846-45594a58998a",
+          "delete_http": 200,
+          "get_http": 404
+        },
+        "defensive_sweep": {
+          "killed": [],
+          "remaining": [],
+          "roots_removed": [],
+          "roots_exists_after": []
+        },
+        "independent_verifier": "evidence/phase12-independent-cleanup-verification.json"
+      }
+    },
+    {
+      "case_id": "SYS-01",
+      "title": "Agent 首次注册：Registration Token、Stable Agent ID、Credential、Node 记录",
+      "canonical_before": "PARTIAL (no independent invalid/expired/revoked token or re-enrollment duplicate test)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSYSMISC:SYS-01-token-credential-reenroll",
+          "layer": "real-api + frame-wire + Hub DB",
+          "status": "PASS",
+          "description": [
+            "Invalid registration token: HELLO_ACK accepted=false message=\"invalid registration token\"; the node stayed pending (never online).",
+            "Re-enrollment with the same node_name/node_ip reuses the exact Node ID and Agent ID and creates no duplicate node row (owned node count stayed 2).",
+            "Valid registration token: HELLO_ACK accepted=true; node online/synced.",
+            "Revoked credential: POST /api/nodes/{id}/revoke-credential -> node status disabled; on restart the Agent presented the now-revoked credential and got HELLO_ACK accepted=false \"invalid credential\"; it then fell back to the registration token which the Hub also refused while revoked, so it could not re-register.",
+            "Re-enrollment clears the revoked flag; the Agent reconnected with the registration token, was accepted (HELLO_ACK accepted=true) and returned to online/synced with the same Node ID / Agent ID."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "No product-level token expiry exists: the registration token and the per-node credential are static server-side values with no TTL (internal/hub/gateway.go:351, internal/hub/node.go:154-161), so an \"expired token\" case is N/A rather than untested.",
+        "The credential value is intentionally never exported; the evidence proves accept/reject plus local secure storage (0600 config, identity row present), not raw value equality."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/evidence/phase7-sys01-tokens-b.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/evidence/phase0-guard.json"
+      ],
+      "actual_resources": {
+        "node_b": "5dbd9f0f-dbe9-4fed-9e52-b891bf4dcd4b",
+        "agent_b": "agent-de1b5d4b-e10a-4a1d-a836-58cbde85a1cc",
+        "child_root": "/var/lib/nodesteer-qa-psm-a8fd4885-b"
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "hub_prefix_leftover_clear": true,
+        "native1_clean": true,
+        "native1_roots_removed": {
+          "a": true,
+          "b": true,
+          "c": true
+        },
+        "native1_owned_processes_after": [],
+        "native1_tmpfs_mounts_after": [],
+        "operator_proxy_ports_released": true,
+        "protected_nodes_online_synced": true,
+        "healthz": {
+          "repair_18080": 200,
+          "primary_8080": 200
+        },
+        "hub_db_quick_check": "ok",
+        "deleted_fixtures": [
+          {
+            "kind": "schedule",
+            "id": "01c201bc-7d2b-4536-a9f6-a8b7cdfbc232",
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "d762ca05-3d43-4ed6-a0c4-0b6efa5e7f96",
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "a5602e59-91de-47d3-8259-6bc50ef52120",
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "69ec4989-85ca-4ff5-a002-7c3524e3faed",
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "f859f368-fe69-4761-ac3e-94b74fd4a587",
+            "get_http": 404
+          }
+        ],
+        "ui_subrun_node": {
+          "id": "c73c4be7-eb2d-4d0b-8846-45594a58998a",
+          "delete_http": 200,
+          "get_http": 404
+        },
+        "defensive_sweep": {
+          "killed": [],
+          "remaining": [],
+          "roots_removed": [],
+          "roots_exists_after": []
+        },
+        "independent_verifier": "evidence/phase12-independent-cleanup-verification.json"
+      }
+    },
+    {
+      "case_id": "SYS-02",
+      "title": "已注册 Agent 重启：HELLO、Heartbeat、online/synced、ID 不变",
+      "canonical_before": "PARTIAL (no explicit HELLO/Heartbeat message or count evidence)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSYSMISC:SYS-02-hello-heartbeat-restart",
+          "layer": "real-api + frame-wire + owned child restart",
+          "status": "PASS",
+          "description": [
+            "Same binary/config child Agent was SIGTERM-stopped and restarted; it produced a second HELLO and returned to online/synced with the identical Node ID and Agent ID.",
+            "Frame proxy counted actual control messages (not last_seen): HELLO=1, HELLO_ACK(accepted)=1, HEARTBEAT=3, HEARTBEAT_ACK=3, REVISION_CHECK=2, REVISION_CHECK_ACK=2 over a 72 s window, plus a second HELLO after the restart.",
+            "Hub heartbeat/revision handlers drive the observed HEARTBEAT_ACK / REVISION_CHECK_ACK replies (internal/hub/gateway.go:426-478)."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Only the native deployment form is exercised; Docker / docker_host_integration restart variants are not (out of scope for this batch)."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/evidence/phase2-hello-online-a.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/evidence/phase4-heartbeat-window-a.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/evidence/phase6-restart-persistence-a.json"
+      ],
+      "actual_resources": {
+        "node_a": "a599212a-c4d8-4738-a418-0f5f040b9493"
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "hub_prefix_leftover_clear": true,
+        "native1_clean": true,
+        "native1_roots_removed": {
+          "a": true,
+          "b": true,
+          "c": true
+        },
+        "native1_owned_processes_after": [],
+        "native1_tmpfs_mounts_after": [],
+        "operator_proxy_ports_released": true,
+        "protected_nodes_online_synced": true,
+        "healthz": {
+          "repair_18080": 200,
+          "primary_8080": 200
+        },
+        "hub_db_quick_check": "ok",
+        "deleted_fixtures": [
+          {
+            "kind": "schedule",
+            "id": "01c201bc-7d2b-4536-a9f6-a8b7cdfbc232",
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "d762ca05-3d43-4ed6-a0c4-0b6efa5e7f96",
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "a5602e59-91de-47d3-8259-6bc50ef52120",
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "69ec4989-85ca-4ff5-a002-7c3524e3faed",
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "f859f368-fe69-4761-ac3e-94b74fd4a587",
+            "get_http": 404
+          }
+        ],
+        "ui_subrun_node": {
+          "id": "c73c4be7-eb2d-4d0b-8846-45594a58998a",
+          "delete_http": 200,
+          "get_http": 404
+        },
+        "defensive_sweep": {
+          "killed": [],
+          "remaining": [],
+          "roots_removed": [],
+          "roots_exists_after": []
+        },
+        "independent_verifier": "evidence/phase12-independent-cleanup-verification.json"
+      }
+    },
+    {
+      "case_id": "SYS-11",
+      "title": "Native Agent 本地 SQLite/WAL、Identity、Revision、定义持久化",
+      "canonical_before": "PARTIAL (local WAL/Identity/Revision/definition persistence and restart consistency not proven)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSYSMISC:SYS-11-local-persistence-restart",
+          "layer": "real owned child Agent SQLite + restart",
+          "status": "PASS",
+          "description": [
+            "Local store is real SQLite in WAL mode (PRAGMA journal_mode=wal, state.db-wal/-shm present, quick_check=ok).",
+            "Identity rows (node_id, agent_id, credential) are present; script/task/schedule definitions synced from the Hub are stored locally with their revisions.",
+            "After a full child restart the same identity, the persisted global_revision (not reset) and the same script/task/schedule rows (id, revision, sha256) were read back, with a second HELLO and online/synced."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The sync-transaction failure path of the same store is defective and is reported under INV-05; SYS-11 persistence itself is intact."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/evidence/phase5-local-state-and-sockets-a.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/evidence/phase6-restart-persistence-a.json",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/evidence/phase3-fixtures.json"
+      ],
+      "actual_resources": {
+        "node_a": "a599212a-c4d8-4738-a418-0f5f040b9493"
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "hub_prefix_leftover_clear": true,
+        "native1_clean": true,
+        "native1_roots_removed": {
+          "a": true,
+          "b": true,
+          "c": true
+        },
+        "native1_owned_processes_after": [],
+        "native1_tmpfs_mounts_after": [],
+        "operator_proxy_ports_released": true,
+        "protected_nodes_online_synced": true,
+        "healthz": {
+          "repair_18080": 200,
+          "primary_8080": 200
+        },
+        "hub_db_quick_check": "ok",
+        "deleted_fixtures": [
+          {
+            "kind": "schedule",
+            "id": "01c201bc-7d2b-4536-a9f6-a8b7cdfbc232",
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "d762ca05-3d43-4ed6-a0c4-0b6efa5e7f96",
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "a5602e59-91de-47d3-8259-6bc50ef52120",
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "69ec4989-85ca-4ff5-a002-7c3524e3faed",
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "f859f368-fe69-4761-ac3e-94b74fd4a587",
+            "get_http": 404
+          }
+        ],
+        "ui_subrun_node": {
+          "id": "c73c4be7-eb2d-4d0b-8846-45594a58998a",
+          "delete_http": 200,
+          "get_http": 404
+        },
+        "defensive_sweep": {
+          "killed": [],
+          "remaining": [],
+          "roots_removed": [],
+          "roots_exists_after": []
+        },
+        "independent_verifier": "evidence/phase12-independent-cleanup-verification.json"
+      }
+    },
+    {
+      "case_id": "INV-02",
+      "title": "Agent 主动连接 Hub",
+      "canonical_before": "PARTIAL (no /proc socket or listener inventory for a QA-owned child)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSYSMISC:INV-02-proc-sockets",
+          "layer": "node /proc ground truth on the owned child",
+          "status": "PASS",
+          "description": [
+            "Sampled /proc/<pid>/fd socket inodes of the owned child Agent and mapped them to /proc/net/tcp: exactly one ESTABLISHED outbound socket to the operator proxy port (0x9301 = 37633).",
+            "The child owned zero LISTEN sockets, so there is no reverse listener; the Agent only dials out.",
+            "ss -tanp filtered by the child pid confirmed the same single outbound connection."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Captured for the native owned child only; Docker/host topology socket checks remain owned by their own cases."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/evidence/phase5-local-state-and-sockets-a.json"
+      ],
+      "actual_resources": {
+        "node_a": "a599212a-c4d8-4738-a418-0f5f040b9493"
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "hub_prefix_leftover_clear": true,
+        "native1_clean": true,
+        "native1_roots_removed": {
+          "a": true,
+          "b": true,
+          "c": true
+        },
+        "native1_owned_processes_after": [],
+        "native1_tmpfs_mounts_after": [],
+        "operator_proxy_ports_released": true,
+        "protected_nodes_online_synced": true,
+        "healthz": {
+          "repair_18080": 200,
+          "primary_8080": 200
+        },
+        "hub_db_quick_check": "ok",
+        "deleted_fixtures": [
+          {
+            "kind": "schedule",
+            "id": "01c201bc-7d2b-4536-a9f6-a8b7cdfbc232",
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "d762ca05-3d43-4ed6-a0c4-0b6efa5e7f96",
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "a5602e59-91de-47d3-8259-6bc50ef52120",
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "69ec4989-85ca-4ff5-a002-7c3524e3faed",
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "f859f368-fe69-4761-ac3e-94b74fd4a587",
+            "get_http": 404
+          }
+        ],
+        "ui_subrun_node": {
+          "id": "c73c4be7-eb2d-4d0b-8846-45594a58998a",
+          "delete_http": 200,
+          "get_http": 404
+        },
+        "defensive_sweep": {
+          "killed": [],
+          "remaining": [],
+          "roots_removed": [],
+          "roots_exists_after": []
+        },
+        "independent_verifier": "evidence/phase12-independent-cleanup-verification.json"
+      }
+    },
+    {
+      "case_id": "INV-05",
+      "title": "Agent Revision 成功落盘后才能前进（CommitSync 失败路径）",
+      "canonical_before": "PARTIAL (CommitSync own failure path not tested)",
+      "proposed_after": "PARTIAL",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSYSMISC:INV-05-commitsync-failure",
+          "layer": "real owned child Agent + injected non-BUSY storage failure",
+          "status": "PARTIAL",
+          "description": [
+            "Injected a real non-BUSY failure by running the owned child data dir on a size-limited tmpfs and delivering an oversized script, so the sync write transaction hit SQLITE_FULL.",
+            "Observed: the sync transaction did NOT persist (the oversized script never appeared locally), and the failing commit took the CommitSync error branch (internal/agent/agent.go:917-919).",
+            "DEFECT: on that CommitSync error the Agent fatally panics with \"fatal error: sync: unlock of unlocked mutex\" (internal/agent/store.go:258 via the deferred RollbackSync at internal/agent/agent.go:800), because CommitSync already unlocked and cleared tx and RollbackSync unlocks again. The Agent process died (pid gone) instead of rolling back and reporting a failed ACK.",
+            "Recovery: after freeing space and restarting the owned child, sync succeeded, the previously failing script was persisted and the revision advanced — local state was not left half-applied."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The invariant \"revision only advances after successful persistence\" holds for the failing transaction (nothing persisted), but the required graceful failure semantics do NOT hold: any CommitSync error crashes the Agent. Reported as defect psm-INV05-commit-failure-double-unlock."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/evidence/phase8-inv05-commit-failure-c.json"
+      ],
+      "defect": {
+        "id": "psm-INV05-commit-failure-double-unlock",
+        "summary": "CommitSync error path double-unlocks the local store mutex: applySync defers RollbackSync after CommitSync has already unlocked and cleared tx, so any CommitSync error (here an injected SQLITE_FULL) panics the Agent with \"fatal error: sync: unlock of unlocked mutex\".",
+        "code_refs": [
+          "internal/agent/store.go:244-265",
+          "internal/agent/agent.go:794-802",
+          "internal/agent/agent.go:917-919"
+        ]
+      },
+      "actual_resources": {
+        "node_c": "6d8fc2f2-25e8-4fa0-97cb-348cad83051f",
+        "child_root": "/var/lib/nodesteer-qa-psm-a8fd4885-c"
+      },
+      "final_cleanup": {
+        "all_get_404": true,
+        "hub_prefix_leftover_clear": true,
+        "native1_clean": true,
+        "native1_roots_removed": {
+          "a": true,
+          "b": true,
+          "c": true
+        },
+        "native1_owned_processes_after": [],
+        "native1_tmpfs_mounts_after": [],
+        "operator_proxy_ports_released": true,
+        "protected_nodes_online_synced": true,
+        "healthz": {
+          "repair_18080": 200,
+          "primary_8080": 200
+        },
+        "hub_db_quick_check": "ok",
+        "deleted_fixtures": [
+          {
+            "kind": "schedule",
+            "id": "01c201bc-7d2b-4536-a9f6-a8b7cdfbc232",
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "d762ca05-3d43-4ed6-a0c4-0b6efa5e7f96",
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "a5602e59-91de-47d3-8259-6bc50ef52120",
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "69ec4989-85ca-4ff5-a002-7c3524e3faed",
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "f859f368-fe69-4761-ac3e-94b74fd4a587",
+            "get_http": 404
+          }
+        ],
+        "ui_subrun_node": {
+          "id": "c73c4be7-eb2d-4d0b-8846-45594a58998a",
+          "delete_http": 200,
+          "get_http": 404
+        },
+        "defensive_sweep": {
+          "killed": [],
+          "remaining": [],
+          "roots_removed": [],
+          "roots_exists_after": []
+        },
+        "independent_verifier": "evidence/phase12-independent-cleanup-verification.json"
+      }
+    },
+    {
+      "case_id": "E2E-18",
+      "title": "Docker Recreate → Identity/Revision/Journal/Cache 不丢",
+      "canonical_before": "PARTIAL (Journal dimension not covered in the cited evidence; attempt02 not referenced)",
+      "proposed_after": "PARTIAL",
+      "confidence": "medium",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-PSYSMISC:E2E-18-journal-adoption",
+          "layer": "evidence reuse (same-case SYS-12 attempt02) reviewed",
+          "status": "PASS_FOR_REVIEWED_DIMENSIONS",
+          "description": [
+            "Journal semantics: the same-case SYS-12 attempt02 summary records local SQLite execution-journal rows surviving a container recreate (execution_journal_status=SUCCESS, exit_code=0, script_revision=1, rows_unchanged_across_a_b=true) together with same node/agent identity and monotonic revisions; explicitly adopted here.",
+            "Identity/Revision/Cache remain as previously reviewed from attempt04."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Docker/Compose recreate cannot be independently reproduced in this batch: it needs an exclusive batch and a docker-host deployment form, and the repair Hub must not be restarted.",
+        "Compose-form recreate and the post-restart online/synced UI readback remain uncovered, so the case stays PARTIAL."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261014-runtime/p-sysmisc/evidence/phase9-e2e18-adopt-attempt02.json"
+      ],
+      "adopted_source_files": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/sys12-b9e47f16deb9-final-summary.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/artifact-cache-ad9bf531b28a-final-summary.json"
+      ],
+      "final_cleanup": {
+        "all_get_404": true,
+        "hub_prefix_leftover_clear": true,
+        "native1_clean": true,
+        "native1_roots_removed": {
+          "a": true,
+          "b": true,
+          "c": true
+        },
+        "native1_owned_processes_after": [],
+        "native1_tmpfs_mounts_after": [],
+        "operator_proxy_ports_released": true,
+        "protected_nodes_online_synced": true,
+        "healthz": {
+          "repair_18080": 200,
+          "primary_8080": 200
+        },
+        "hub_db_quick_check": "ok",
+        "deleted_fixtures": [
+          {
+            "kind": "schedule",
+            "id": "01c201bc-7d2b-4536-a9f6-a8b7cdfbc232",
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "d762ca05-3d43-4ed6-a0c4-0b6efa5e7f96",
+            "get_http": 404
+          },
+          {
+            "kind": "task",
+            "id": "a5602e59-91de-47d3-8259-6bc50ef52120",
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "69ec4989-85ca-4ff5-a002-7c3524e3faed",
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "f859f368-fe69-4761-ac3e-94b74fd4a587",
+            "get_http": 404
+          }
+        ],
+        "ui_subrun_node": {
+          "id": "c73c4be7-eb2d-4d0b-8846-45594a58998a",
+          "delete_http": 200,
+          "get_http": 404
+        },
+        "defensive_sweep": {
+          "killed": [],
+          "remaining": [],
+          "roots_removed": [],
+          "roots_exists_after": []
+        },
+        "independent_verifier": "evidence/phase12-independent-cleanup-verification.json"
+      }
+    }
+  ],
+  "actual_budget": {
+    "api_mutations": 16,
+    "child_process_starts": 8,
+    "child_process_stops": 7
+  },
+  "final_cleanup": {
+    "all_get_404": true,
+    "hub_prefix_leftover_clear": true,
+    "native1_clean": true,
+    "native1_roots_removed": {
+      "a": true,
+      "b": true,
+      "c": true
+    },
+    "native1_owned_processes_after": [],
+    "native1_tmpfs_mounts_after": [],
+    "operator_proxy_ports_released": true,
+    "protected_nodes_online_synced": true,
+    "healthz": {
+      "repair_18080": 200,
+      "primary_8080": 200
+    },
+    "hub_db_quick_check": "ok",
+    "deleted_fixtures": [
+      {
+        "kind": "schedule",
+        "id": "01c201bc-7d2b-4536-a9f6-a8b7cdfbc232",
+        "get_http": 404
+      },
+      {
+        "kind": "task",
+        "id": "d762ca05-3d43-4ed6-a0c4-0b6efa5e7f96",
+        "get_http": 404
+      },
+      {
+        "kind": "task",
+        "id": "a5602e59-91de-47d3-8259-6bc50ef52120",
+        "get_http": 404
+      },
+      {
+        "kind": "script",
+        "id": "69ec4989-85ca-4ff5-a002-7c3524e3faed",
+        "get_http": 404
+      },
+      {
+        "kind": "script",
+        "id": "f859f368-fe69-4761-ac3e-94b74fd4a587",
+        "get_http": 404
+      }
+    ],
+    "ui_subrun_node": {
+      "id": "c73c4be7-eb2d-4d0b-8846-45594a58998a",
+      "delete_http": 200,
+      "get_http": 404
+    },
+    "defensive_sweep": {
+      "killed": [],
+      "remaining": [],
+      "roots_removed": [],
+      "roots_exists_after": []
+    },
+    "independent_verifier": "evidence/phase12-independent-cleanup-verification.json"
+  },
+  "deviations": [
+    "Harness-level (not product) defects from earlier attempts were fixed before the final run: a format-string bug in the owned-child removal helper (left residue in two aborted attempts, cleaned up manually) and a %-escaping bug in the socket-inventory probe."
+  ],
+  "harness_errors": [],
+  "defects_added": [
+    {
+      "id": "psm-INV05-commit-failure-double-unlock",
+      "summary": "CommitSync error path double-unlocks the local store mutex: applySync defers RollbackSync after CommitSync has already unlocked and cleared tx, so any CommitSync error (here an injected SQLITE_FULL) panics the Agent with \"fatal error: sync: unlock of unlocked mutex\".",
+      "code_refs": [
+        "internal/agent/store.go:244-265",
+        "internal/agent/agent.go:794-802",
+        "internal/agent/agent.go:917-919"
+      ]
+    }
+  ],
+  "unverified_items": [
+    "Docker/Compose recreate form (E2E-18) and Docker/host restart variants (SYS-02) — out of scope for this batch."
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "case_id": "FL-14",
+  "overall_status": "partial",
+  "authority": "independent loopback short-TTL Hub",
+  "build_label": "dddee4f0-e2e-repair-20261004",
+  "hub_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+  "session_ttl": "3s",
+  "verified": {
+    "AUTH_TTL_API": {
+      "status": "passed",
+      "evidence": "ttl-live.json",
+      "checks": [
+        "fresh login /api/me 200",
+        "monotonic wait >3s",
+        "expired /api/me and /api/nodes both 401",
+        "24h repair Hub config exact restore and health/login recovery"
+      ]
+    },
+    "UI_401_CLEAR_AND_SIGNIN": {
+      "status": "passed",
+      "checks": [
+        "fresh UI login /api/login=200 and initial /api/me=200",
+        "left the Dashboard open with no clicks/reloads/route changes",
+        "after 16s, natural 15s query polling produced authenticated GETs 401",
+        "app automatically redirected to sign-in with redirect=/",
+        "localStorage nodesteer_token removed"
+      ],
+      "network_evidence": "ttl-background-expiry.json",
+      "screenshot": "ttl-background-401-signin.png"
+    },
+    "UI_VALID_SIGNIN_INTERNAL_RETURN": {
+      "status": "passed",
+      "redirect": "/users?search=ttl#auth-expiry",
+      "screenshot": "ttl-ui-internal-return.png"
+    },
+    "UI_EXTERNAL_REDIRECT_REJECTED": {
+      "status": "passed",
+      "input": "https://evil.invalid/credential-capture",
+      "after_login": "http://127.0.0.1:18995/",
+      "screenshot": "ttl-ui-external-return.png"
+    },
+    "UI_LOGOUT_CLEAR": {
+      "status": "passed",
+      "checks": [
+        "logout confirmation accepted",
+        "navigated to sign-in preserving local path/query/hash",
+        "localStorage nodesteer_token cleared"
+      ]
+    },
+    "OPERATOR_403_SESSION": {
+      "status": "passed_api_boundary",
+      "checks": [
+        "Operator /api/users HTTP403",
+        "same token /api/me HTTP200 and role operator"
+      ],
+      "note": "Users UI hides admin-only page action and did not issue /api/users request; browser-session non-logout for 403 is additionally covered by passing api-session Vitest but not claimed as live UI request"
+    }
+  },
+  "remaining": [
+    "live backend-generated 500 response not triggered; browser transport-abort recovery and frontend 500 handling unit evidence remain separate",
+    "403 error path was verified at API boundary; admin-only Users UI correctly prevents an Operator request, so no UI 403 rendering path was exercised"
+  ],
+  "evidence_files": [
+    "ttl-live.json",
+    "ttl-ui-authority.json",
+    "luna-quota-handoff.json",
+    "ttl-ui-expired-signin.png",
+    "ttl-ui-internal-return.png",
+    "ttl-ui-external-return.png"
+  ],
+  "secrets_included": false
+}

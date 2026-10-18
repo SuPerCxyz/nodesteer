@@ -1,0 +1,254 @@
+{
+  "run_id": "20260930-101945",
+  "workstream": "qa-resume-20261009-runtime",
+  "owner": "luna_runtime_cases",
+  "model": "gpt-6-luna",
+  "status": "P0_ATTEMPT03_RECOVERY_CAPTURED_WAITING_ROOT_REVIEW_AND_CLEANUP",
+  "updated_at": "2026-10-09T09:15:53Z",
+  "authorization_basis": "Continue 2026-10-04 confirmed repair of 22 defects and isolated retest; parent approved exact Native-1 child identity/root/unit and child setup/preflight. Application creation and PREPARING fault injection remain gated on parent review of this ledger/source and explicit approval.",
+  "write_scope": ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/",
+  "current_phase": "P0_ATTEMPT03_AUTOMATIC_RECOVERY_CAPTURED",
+  "phases": [
+    {
+      "id": "rules_and_case_review",
+      "status": "DONE",
+      "evidence": [
+        "AGENTS.md",
+        ".e2e/README.md",
+        "docs/PRODUCT.md",
+        "docs/ARCHITECTURE.md#67",
+        "docs/DEV_RULES.md",
+        "openspec/changes/repair-e2e-confirmed-defects/proposal.md",
+        "openspec/changes/repair-e2e-confirmed-defects/design.md",
+        ".e2e/run-state.json",
+        ".e2e/coverage.json",
+        ".e2e/workflows.json",
+        ".e2e/failures.json",
+        ".e2e/test-data.json"
+      ]
+    },
+    {
+      "id": "create_local_plan",
+      "status": "DONE",
+      "evidence": [
+        "case-plan.json"
+      ]
+    },
+    {
+      "id": "native1_native2_readonly_target_discovery",
+      "status": "DONE",
+      "evidence": [
+        "read_only_discovery.py",
+        "readonly-discovery.json"
+      ],
+      "result": "GET /api/nodes,/api/tasks,/api/applications all HTTP 200 via repair :18080; Native-1 and Native-2 are online/synced native amd64 nodes; no existing task targets them; all 10 listed QA tasks target native4 child; listed applications were not operated."
+    },
+    {
+      "id": "parent_guard_review",
+      "status": "DONE",
+      "gate": "Parent approved Native-1 read-only probes and isolated child creation/preflight. Only PREPARING fault injection remains gated on parent review of child ledger and exact source after preflight.",
+      "result": "Parent approved owned App/v1 baseline and preparation of v2/observer; final exact-source review and explicit signal authorization are pending."
+    },
+    {
+      "id": "approved_native1_readonly_probe",
+      "status": "DONE",
+      "evidence": "native1-readonly-probe-evidence.json",
+      "result": "Command Task ran once SUCCESS; exact task deleted and GET 404; node remained online/synced. Native1 is Linux x86_64 uid0, original service active with PID/starttime/UID/argv/exeSHA captured; Docker 29.3.1, systemd-run, nsenter available; systemd state is degraded; proposed QA /tmp root is absent."
+    },
+    {
+      "id": "review_existing_host_tls_runners",
+      "status": "DONE",
+      "evidence": [
+        "../environment/hostintegration-preflight.json",
+        "../environment/host-negative-runner.py",
+        "../environment/tls-full-results.json"
+      ],
+      "result": "Native-1 Docker 29.3.1 and nsenter/systemd-run are available. Prior Host runner was on a different host and uses host PID/net, RW host bind mounts, and added capabilities; it is reference-only. No current private-CA TLS runner proven."
+    },
+    {
+      "id": "write_fixture_proposal",
+      "status": "DONE",
+      "evidence": "fixture-proposal.json",
+      "result": "Exact new node name/IP, unique nonce/root, transient unit, expected manifest binary SHA, secret handling, signal guard, cleanup and approval boundary recorded."
+    },
+    {
+      "id": "approved_child_creation_and_preflight",
+      "status": "DONE",
+      "attempts": [
+        {
+          "attempt": 1,
+          "status": "HARNESS_BLOCKED_BEFORE_TASK_OR_CHILD_START",
+          "cause": "Enrollment response has no registration_token field; exact pending Node deleted 200/GET404 and name/IP list now absent; no child root/process created."
+        },
+        {
+          "attempt": 2,
+          "status": "CHILD_PREFLIGHT_READY",
+          "evidence": "child-setup-evidence.json",
+          "child_node_id": "c77b8a84-8085-4ea8-8532-de171761854b",
+          "child_pid": 47582,
+          "child_exe_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+          "task_cleanup": "DELETE 200; GET 404"
+        }
+      ],
+      "scope": "Only isolated child Agent created and preflighted; no Application or PREPARING fault yet."
+    },
+    {
+      "id": "approved_app_v1_setup",
+      "status": "DONE",
+      "evidence": "app-v1-baseline-evidence.json",
+      "result": "Real v1 Artifact uploaded and Application assigned/deployed only to child. API execution SUCCESS; physical artifact binary/config/unit hashes match and Unit is active; Journal DONE with first-install absent sentinels."
+    },
+    {
+      "id": "v1_application_ui_feedback",
+      "status": "DONE",
+      "tool": "agent-browser core",
+      "evidence": "app-v1-ui-detail.png",
+      "result": "Real authenticated application detail UI shows v1 Definition, selected child Node online, green healthy state, deploy operation and SUCCESS execution history; no mocked network routes."
+    },
+    {
+      "id": "prepare_app_v2_and_readonly_fault_observer",
+      "status": "DONE",
+      "evidence": "app-v2-preparation-evidence.json",
+      "result": "16 MiB unique v2 Artifact uploaded, App definition synced to child; real Agent artifact-cache DB/file contains matching SHA before any v2 Deploy, while physical v1 binary/config/unit remain unchanged and active. No v2 deployment was invoked."
+    },
+    {
+      "id": "build_exact_preparing_observer",
+      "status": "DONE",
+      "scope": "Prepare source only. Parent must review PID/starttime/UID/argv/exe SHA/cgroup guard, read-only exact AppID/DeploymentID phase query, SIGSTOP freeze recheck, safe SIGCONT miss path and SIGKILL path before source is run.",
+      "evidence": [
+        "preparing_fault_observer.py",
+        "run_p0_preparing_fault.py",
+        "fault-observer-manifest.json",
+        "observer-static-check.json"
+      ],
+      "result": "Root identified and reviewed launcher stdout JSON parsing defect; fixed to parse READY and final JSON as separate lines and select only the final non-READY observer record. Current py_compile passed and default launcher still PREPARE_ONLY_NO_REMOTE_CALLS."
+    },
+    {
+      "id": "runtime_execution",
+      "status": "PARTIAL_WINDOW_MISSED_NO_SIGNAL",
+      "scope": "No v2 deployment or signal until Root immediate approval. Child RuntimeMax extension was rejected by systemd and remains due 2026-10-09T08:48:22Z.",
+      "evidence": [
+        "p0-preparing-fault-evidence.json",
+        "restore-v1-after-attempt-evidence.json",
+        "v1-restore-physical-oracle-evidence.json",
+        "app-v1-restored-ui-evidence.json"
+      ],
+      "result": "Observer saw exact AppID/DeploymentID in PREPARING with empty backup fields, then rejected before SIGSTOP because old app Unit was already inactive. No signal was sent. v2 deployment completed normally (Execution SUCCESS); exact App v1 definition/deploy and physical Oracle/UI were then restored successfully. This does not pass the fault-recovery case."
+    },
+    {
+      "id": "evidence_and_cleanup",
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "p0_002_attempt03_crash_recovery",
+      "status": "CAPTURED_WAITING_ROOT_REVIEW_AND_CLEANUP",
+      "evidence": [
+        "attempt03/p0-preparing-fault-attempt03-evidence.json",
+        "attempt03/post-fault-oracle-evidence.json",
+        "attempt03/restart-after-fault-evidence.json",
+        "attempt03/post-restart-local-state-evidence.json",
+        "attempt03/post-restart-api-state-evidence.json",
+        "attempt03/recovery-log-marker-evidence.json",
+        "attempt03/post-restart-ui-evidence.json"
+      ],
+      "result": "Real PREPARING fault injection and exact child restart completed. Recovery retained v1 files/Unit, kept PREPARING Journal for inspection, and marked in-flight execution FAILED agent_restarted. Attempt03 desired version v2-attempt3 stayed unchanged after kill; Hub/API/UI/local Journal/execution and filtered recovery log evidence captured."
+    }
+  ],
+  "safety_constraints": [
+    "Use only repair gateway :18080; never issue management writes to primary :8080.",
+    "Preserve original Hub, four repair Agents, and all backups.",
+    "Do not touch native4 child TTL/reenrollment work or native3 web live-log work.",
+    "Do not stop/kill original Agents, alter system services/global config, or use guest SSH/QGA guest-exec bypass.",
+    "Do not print or include credentials in evidence or Task definitions. The already-authorized registration credential is held only in local memory/secret Task parameter and written into the unique child config mode 0600; strip it before systemd-run and do not copy the config into evidence.",
+    "No source/AGENTS changes, Git delivery, or OpenSpec archive."
+  ],
+  "runtime_status": "ATTEMPT03_FAULT_SIGKILL_SENT; SAME_CHILD_RESTARTED_ONLINE_SYNCED; JOURNAL_PREPARING_FILES_V1_UNIT_ACTIVE; HUB_AND_LOCAL_EXECUTION_FAILED_AGENT_RESTARTED; APP_API_UI_UNHEALTHY_AGENT_RESTARTED; DESIRED_V2_ATTEMPT3_UNCHANGED_DURING_RESTART; WAITING_ROOT_REVIEW_THEN_CLEANUP",
+  "child_runtime_limit": {
+    "unit": "nodesteer-qa-e2e-20261009-p0-002-native1-870358cd92ee.service",
+    "max_runtime_seconds": 3600,
+    "latest_mainpid": 48271,
+    "latest_starttime_ticks": 130265882,
+    "verified_runtime_property": "1h",
+    "owner_nonce": "870358cd92ee"
+  },
+  "discovery": {
+    "repair_endpoint": "http://192.168.100.209:18080",
+    "native_1_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+    "native_1_status": "online/synced",
+    "native_2_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+    "native_2_status": "online/synced",
+    "existing_task_count": 11,
+    "existing_tasks_for_native1_or_native2": 0,
+    "existing_qa_tasks_for_native4_child": 10,
+    "existing_host_integration_nodes": 0,
+    "private_ca_tls_runner_proven": false
+  },
+  "blockers": [
+    "PREPARING fault injection requires a separate parent review after child preflight and source/ledger review.",
+    "No Host Integration node or isolated private-CA TLS runner was found in the current inventory; those cases remain not run."
+  ],
+  "next_action": "Read-only design and then Root review for separate BE-SCRIPT-SHA-002 full snapshot SHA/prune scenario; retain QA child/App fixture until combined cleanup.",
+  "observer_review": {
+    "observer_source": "preparing_fault_observer.py",
+    "observer_sha256": "e6dd681a81611bca164d9d7be913de30257dc143bd369506fd21685be05c837d",
+    "launcher_source": "run_p0_preparing_fault.py",
+    "launcher_sha256": "9a3b1bd5061435e7be065e3e85413a7bf2bdc09007f1cca67a50cad5864199c3",
+    "py_compile_passed": true,
+    "default_gates_checked": true,
+    "stdout_records_parse_line_by_line": true,
+    "v2_deploy_invoked": false,
+    "signals_sent": false,
+    "waiting_for_root_explicit_fault_approval": true,
+    "static_check_evidence": "observer-static-check.json"
+  },
+  "last_p0_attempt": {
+    "observer_execution_id": "d9cf7a93-209c-47a7-b559-d377132e99ce",
+    "deployment_id": "0ed2ef20-00c1-49b5-9a79-5a35d92c6a0a",
+    "v2_deployment_execution_id": "b2f2d366-0923-4558-b02c-3232d8df15fe",
+    "observer_status": "PRE_SIGNAL_GUARD_REJECTED",
+    "signals_sent": false,
+    "reason": "pre_signal_app_physical.matches_v1=false because exact owned v1 Application Unit was inactive/MainPID=0 at the guard",
+    "restoration_execution_id": "6a9f399e-73aa-4981-80d2-22e858206de9",
+    "restoration_oracle_execution_id": "c8e6f5c0-32ed-48a9-a63b-6c5e8097ee69",
+    "restored_ui_evidence": "app-v1-restored-ui-evidence.json"
+  },
+  "attempt02_qualification": {
+    "status": "SIGKILL_SENT_RECOVERY_CAPTURED_WITH_PRE_RESTART_MANUAL_APP_DESIRED_V1_PUT",
+    "manual_put_at": "2026-10-09T08:59:57Z",
+    "note": "Attempt02 evidence retained. Do not attribute v1 desired definition/UI to automatic recovery."
+  },
+  "attempt03": {
+    "directory": "attempt03/",
+    "status": "AUTOMATIC_RESTART_RECOVERY_EVIDENCE_CAPTURED",
+    "fault_deployment_id": "e3298145-23c7-4ee8-98b5-cf53b50e0345",
+    "observer_execution_id": "13b34d03-cf82-4ddb-98c9-78cc91f06654",
+    "deployment_execution_id": "2bb4e175-af11-471a-9c03-c01bd391a51a",
+    "restart_execution_id": "a6726a90-0323-4132-9f85-e9788b0d2fc2",
+    "desired_app_version": "v2-attempt3",
+    "desired_app_changed_after_fault": false,
+    "child_after_restart": {
+      "pid": 48271,
+      "startticks": 130265882,
+      "runtime_max": "1h",
+      "status": "online/synced"
+    },
+    "journal_phase": "PREPARING",
+    "backup_fields_empty": true,
+    "v1_files_and_unit_preserved": true,
+    "managed_app_unit_active": true,
+    "execution_final": "FAILED agent_restarted in Hub and local SQLite; local synced=1",
+    "startup_recovery_log_markers": [
+      "recovering incomplete deployment",
+      "preparing deployment aborted; files preserved, recovery requires inspection"
+    ],
+    "api_ui_state": "Application unhealthy agent_restarted; UI displays FAILED and same reason",
+    "evidence": "attempt03/progress.json"
+  },
+  "attempt03_result": {
+    "status": "P0_002_SPECIAL_PATH_PASS_CONSERVATIVE_RECOVERY",
+    "summary": "Attempt03 exact PREPARING SIGKILL/restart verified old v1 Binary/Config/Unit/service preserved; startup explicitly logs needs inspection, Journal remains PREPARING, in-flight Execution fails agent_restarted, API/UI unhealthy reflects that actual failure. No DONE/healthy claim.",
+    "evidence": "attempt03/progress.json",
+    "attempt03_deploy_invoked": true,
+    "execution_id": "2bb4e175-af11-471a-9c03-c01bd391a51a"
+  }
+}

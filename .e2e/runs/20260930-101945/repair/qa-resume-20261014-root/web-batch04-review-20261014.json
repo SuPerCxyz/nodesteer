@@ -1,0 +1,94 @@
+{
+  "review_id": "ROOT-WEB-BATCH04-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T09:23:39.051043+00:00",
+  "reviewer": "main-agent(root)",
+  "authority": "http://192.168.100.209:18080",
+  "batch": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-web/batch04",
+  "status": "INTEGRATED",
+  "authorization_basis": "用户 2026-10-14 确认继续测试、剩余分母全量推进；并发上限提升到 5",
+  "verdicts": [
+    {
+      "case_id": "P22-12",
+      "canonical_before": "PARTIAL",
+      "canonical_after": "PASS",
+      "confidence": "高（P11-08 中高）",
+      "reason": "三种状态（PENDING 离线源 / UPLOADING 300MiB / DELIVERING 混合目标）均用真实 UI 行菜单取消：均无确认弹窗（dialogs_present_after_click=0）、POST /cancel 200、终态 CANCELED、非 SUCCESS 目标归一 CANCELED、已成功目标保留、Hub staging 清空、终态行无空菜单。",
+      "remaining": []
+    },
+    {
+      "case_id": "FL-09",
+      "canonical_before": "PASS",
+      "canonical_after": "PASS",
+      "confidence": "高（P11-08 中高）",
+      "reason": "补齐分配写路径：owned Application 勾选 native-3 → 保存 → POST /assign 200；Application 节点列表/Agent Detail/Node Detail 三处一致、双向比对 0 不一致；取消 assign 后空态「暂无托管应用」；非 owned 应用 804e6b14 三次检查未变。",
+      "remaining": []
+    },
+    {
+      "case_id": "P11-07",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "高（P11-08 中高）",
+      "reason": "双节点任务两次真实 Manual Run：每次恰好每节点一条 Execution（各 2 条，node_id 分别为 native-1/native-3，均 SUCCESS、stdout 带 nonce）。",
+      "remaining": []
+    },
+    {
+      "case_id": "P11-08",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PARTIAL",
+      "confidence": "高（P11-08 中高）",
+      "reason": "前半实测通过：同一请求体两次 Manual Run 产生 4 个互不重复 Execution（新 UUID = 新意图）。",
+      "remaining": [
+        "后半「同 Execution ID/Key 重复投递/上传幂等」在当前产品无 UI/HTTP 触发路径（每次手动运行都铸造新 UUID、无 HTTP 幂等键），伪造协议帧超出本批授权；仅有代码级佐证（agent OnRunExecution 本地 journal 早退、hub MarkFinished 终态早退、UpsertFromAgent 不回退终态、调度 errSlotExists 槽位去重）。"
+      ]
+    },
+    {
+      "case_id": "P22-08",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PASS",
+      "confidence": "高（P11-08 中高）",
+      "reason": "创建成功后 0.6s 抓取：源路径清空、目标列表清空、目标选择器/路径复位、按钮禁用（源 Agent 按实现保留）；且真实投递成功——native-3 落地文件 size/sha256 与源完全一致，Hub staging 清空。",
+      "remaining": []
+    },
+    {
+      "case_id": "P22-09",
+      "canonical_before": "NOT_RUN",
+      "canonical_after": "PARTIAL",
+      "confidence": "高（P11-08 中高）",
+      "reason": "单传输 3 目标同时呈 SUCCESS/FAILED/PENDING，错误按目标独立呈现；整体聚合 DELIVERING（未因单目标失败提前终结）、全成功时 SUCCESS、取消后 CANCELED 且 SUCCESS 目标保留。",
+      "remaining": [
+        "「全终态且有失败 → 聚合 FAILED」分支未覆盖，需第 5 个 owned Transfer（超本批 ≤4 授权）；已给出最小闭合方案（源 native-1 → 单目标 host001 非白名单路径，快速失败且不落盘）。"
+      ]
+    }
+  ],
+  "safety": {
+    "credential_scan": "仅管理员用户名出现在 UI DOM 文本（侧栏），无密码泄漏；落盘网络证据已剥离 Authorization 头",
+    "server_writes": "POST /transfers ×4、cancel ×3、POST /applications ×1、assign ×2、DELETE /applications ×1、POST /tasks ×1、run ×2、DELETE /tasks ×1",
+    "cleanup": "owned Task/Application 均 DELETE 200 → GET 404；native-1/native-3 自有 /tmp 目录已删；Hub staging 空；native-4 零操作",
+    "undeletable_history": {
+      "transfers": 4,
+      "executions": 4,
+      "reason": "transfers 无 DELETE 端点；execution 历史按既定策略保留"
+    },
+    "cross_batch_note": "基线/终态差异中 nodes −1、artifacts −3 由并行批次（sys-b10 重建子节点、第三方清理）造成，非本批；本批断言已限定自有 nonce 前缀"
+  },
+  "root_actions": [
+    "关闭 batch04 遗留的 agent-browser 会话（agent-browser --session qaweb1410b04 close）",
+    "复核发现 session 列表中仍有多个历史会话残留（2026-09-30/10-09/10-10 等），属当轮既有状态，未清理以免影响在跑批次"
+  ],
+  "new_observations_note": "本批再次观测到「已删除 Application 的 /nodes 子资源仍返 200 null」，与既有 OBS-20261014-APP-NODES-NULL-SHAPE 相互印证",
+  "counts_before": {
+    "PASS": 238,
+    "FAIL": 5,
+    "PARTIAL": 163,
+    "NOT_RUN": 89,
+    "BLOCKED": 9
+  },
+  "not_claimed": "未执行产品修复、Git 交付或 Archive",
+  "counts_after": {
+    "PASS": 241,
+    "FAIL": 5,
+    "PARTIAL": 164,
+    "NOT_RUN": 85,
+    "BLOCKED": 9
+  }
+}

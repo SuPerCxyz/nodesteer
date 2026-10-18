@@ -1,0 +1,77 @@
+{
+  "reviewed_at_utc": "2026-10-12T12:55:17Z",
+  "source_sha256_verified": {
+    "lifecycle_source_proposal.py": "b76588c5ca4d4e0e9eb8caf90a537e6d51ecad27d17d82d437b35012cb0cf773",
+    "sys12_outer_controller.py": "c2a16bc9ef9a1c8ab2a3e2e34072a45bd51cf1627a603ec87cb563d70993a07a"
+  },
+  "decision": "HOLD",
+  "summary": "Most of the prior four HOLD findings are closed in the reviewed source/plan, but prepare has a deterministic NameError after bridge creation; the authorized case cannot reach container A. The six-call cap also cannot finish recovery after a failed final cleanup call, and helper timeout/ambiguous-run cleanup can delete its Task before a terminal Execution is established.",
+  "prior_hold_closure": [
+    {
+      "finding": "NodeName uniqueness check occurred after container A startup",
+      "status": "CLOSED_IN_CONTROLLER_SEQUENCE",
+      "evidence": "Controller calls ensure_node_name_unused through run_helper pre_run after exact helper Task readback and immediately before POST /api/tasks/{id}/run; that helper Run starts A (sys12_outer_controller.py:261-315, 480-486). It also checks the four baseline Node IDs are unchanged at that point and verifies a new Node ID after HELLO (232-243, 489-493)."
+    },
+    {
+      "finding": "SQLite quick_check and exact DB inode/process-open proof were not enforced",
+      "status": "CLOSED_FOR_PROPOSED_ORACLES",
+      "evidence": "read_database requires quick_check == ok, opens mode=ro/query_only, checks FD and path identity before/after, and returns db dev/inode (lifecycle_source_proposal.py:571-639). Agent PID/UID/cgroup/exe SHA/container DB inode/open FD are checked twice (420-495), and controller matches SQLite Node/Agent identity and the same DB inode across A/B reads (sys12_outer_controller.py:761-793, 628-656, 677-686)."
+    },
+    {
+      "finding": "B opened old shared SQLite path without proving the B Agent had opened it",
+      "status": "CLOSED_FOR_PROPOSED_ORACLES",
+      "evidence": "B now starts on the same owned bridge, then boundedly waits for state.db and proves the exact B Agent process has the same DB inode open before/after SQLite reads (lifecycle_source_proposal.py:864-896). Plan explicitly removes network=none and uses a monotonic revision lower bound, not equality (one-root-controller-plan.json:34-39, resource-plan.json:49-59)."
+    },
+    {
+      "finding": "Docker create commit-window resources lacked exact-name recovery",
+      "status": "MOSTLY_CLOSED",
+      "evidence": "Container recovery uses nonce-derived exact name followed by immutable ID/name/owner-label/image/full policy/mount inspection before ledgering (lifecycle_source_proposal.py:498-550, 356-418). Network recovery uses exact nonce name plus owner label and ID shape (166-183, 319-343)."
+    }
+  ],
+  "blocking_findings": [
+    {
+      "severity": "BLOCKER",
+      "location": "lifecycle_source_proposal.py:336-343",
+      "fact": "create_root_and_network discards the network-inspect JSON at line 336 (`rc, _, _ = docker(...)`) but line 339 reads `nrow.get('Id')`; nrow is not defined in this function. A normal successful prepare will create the bridge, then raise NameError before container A starts.",
+      "recommendation": "Capture and parse the exact network inspect row into nrow, then verify immutable network ID/name/owner label and expected bridge driver before recording NETWORK_CREATED. Re-pin and review the changed source SHA before any run."
+    },
+    {
+      "severity": "HIGH",
+      "location": "sys12_outer_controller.py:24, 721-755, 738-751, 1083-1100",
+      "fact": "MAX_HELPER_CALLS is 6, exactly the six normal lifecycle calls. If call 5 cleanup-runtime fails, recovery can spend call 6 retrying runtime cleanup but then rejects cleanup-root because the cap is exhausted. If call 6 cleanup-root fails, recovery is immediately over budget. The source safely preserves unknown paths, but the plan's failed-phase cleanup cannot complete these cases under its stated budget.",
+      "recommendation": "Have Root explicitly choose a revised recovery budget or consolidate cleanup so a normal run reserves the required exact-runtime/root recovery calls. Do not silently exceed six during execution."
+    },
+    {
+      "severity": "HIGH",
+      "location": "sys12_outer_controller.py:313-342, 367-376",
+      "fact": "run_helper marks run_requested before POST, but its finally block deletes the helper Task after timeout, transport/shape errors, or missing terminal status without first reconciling an ambiguous POST to an exact Execution and proving that Execution terminal. Task deletion is not shown to cancel an already accepted command. In the timeout path, recovery may later see task_deleted_and_404 and skip the recorded helper, so cleanup could overlap an in-flight remote lifecycle command. The current TaskManager.Delete only blocks Schedule references and deletes the Task; it does not cancel or guard active Executions (internal/hub/definitions.go:352-380), confirming that a DELETE/GET404 is not a terminal-run oracle.",
+      "recommendation": "On every ambiguous/timeout Run outcome, list executions by the exact Task ID, bind the exact returned Execution ID, poll it to terminal before Task deletion or any cleanup helper; preserve the Task and stop with a safe error if terminal state cannot be established. Never replay the business Run."
+    }
+  ],
+  "requested_guard_review": {
+    "helper_budget": "Normal success is exactly six helper Task/Run calls: prepare, inspect-A, recreate-B, inspect-B-and-stop, cleanup-runtime, cleanup-root. create and exact readback enforce retry=0, timeout=90, unique nonce name and Native2 target; each Task is DELETEd and GET404 in finally (controller.py:261-376). Recovery does not rerun the business Script Task/Run, but its cleanup calls share the same six-call cap and have the gap above.",
+    "fresh_name_and_node_identity": "GET /api/nodes confirms fresh NodeName absent immediately before prepare Run; afterward controller waits for that exact name, captures ID/AgentID, rejects a preexisting Node ID, and verifies deployment_mode=docker/HostIntegration=false/online/synced. It does not explicitly compare the new AgentID against AgentIDs of the original four; NodeName and fresh NodeID are pinned. (controller.py:172-243,480-493).",
+    "api_readbacks": "Script create/readback checks ID/name/content/SHA/revision; Task readback checks ID/name/type/script/target; Execution checks exact ID, Node/Task/Script/revision/status/log marker; Schedule readback checks ID/task/type/expression/timezone/owner/offline/misfire and enabled=false (controller.py:496-608, 545-582). Resource response ID/name checks are followed by GET of that exact ID.",
+    "credential_boundary": "Controller reads the private root-owned 0600 connection in memory; API sends the bearer only in Authorization headers, and records only method/path/status/byte-count/response SHA. No logout endpoint is called, so the shared Root session is not revoked (controller.py:76-146). Helper source copies only registration token into the newly owned 65534:65534 0600 config and marks credentials_emitted=false; no token is in command parameters or ledger (lifecycle_source_proposal.py:90-123,263-268,306-318).",
+    "repair_hub": "Connection URL is constrained to HTTP 192.168.100.209:18080 in controller read_private; the lifecycle source similarly accepts only the repair address/port and writes a WebSocket URL on 18080 (controller.py:97-105; lifecycle_source_proposal.py:90-123).",
+    "protected_scope": "Controller snapshots exactly four supplied original Node IDs, requires all online/synced before and after, and checks their health/mode fields. Lifecycle Docker operations use only nonce-derived container/network names and owned labels, pinned image ID, exact mounts, no host integration, no image/tag mutation, and an exact new root; no primary :8080 or original Host container operations are present (controller.py:448-471,704-715; lifecycle_source_proposal.py:21-29,271-344,356-418,898-1033).",
+    "delete_and_root_gate": "Cleanup deletes exact schedule→Task→Script→Node with pre-delete identity/ownership predicates and verifies each GET404; all_api_objects_404 repeats exact-ID GETs and collection-name absence. Only after that returns true does controller pass hub_objects_deleted=true to cleanup-root in normal and recovery paths (controller.py:387-403,688-703,795-1003,1091-1099)."
+  },
+  "secondary_observations": [
+    {
+      "severity": "LOW",
+      "location": "sys12_outer_controller.py:60-73; 497-499, 589-591, 613-615, 635-637, 662-664, 688-700",
+      "fact": "Several identical set_phase calls and duplicate set_phase definitions are redundant but do not change behavior."
+    },
+    {
+      "severity": "REVIEW_NOTE",
+      "location": "sys12_outer_controller.py:1125-1129",
+      "fact": "The 64-hex grant ID is required and logged, but the script only checks its shape; it is not independently bound to a trusted grant record. Treat it as an operator/runbook gate, not as an authorization credential enforced by this code."
+    }
+  ],
+  "limits": [
+    "Static review only. No API, Docker, Task, Run, service or resource action was performed.",
+    "Global revision checks correctly use monotonic/lower-bound semantics; no exact-equality defect is reported.",
+    "The current Script DB cache oracle does not claim a materialized per-Script file; that prior physical-file gate remains excluded."
+  ]
+}

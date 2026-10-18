@@ -1,0 +1,22 @@
+{
+  "method": "POST",
+  "path": "/api/tasks",
+  "payload": {
+    "name": "BE-REMOTE-TTL-004-history-file-oracle-5a36f0e3",
+    "type": "command",
+    "target": {
+      "type": "node",
+      "node_ids": [
+        "03cb50cc-eab6-4afd-bbe0-f73c4e326773"
+      ]
+    },
+    "parameters": [],
+    "param_values": {},
+    "command": "python3 - <<'PY'\nimport hashlib,json,os,stat\nfrom pathlib import Path\nD=Path(\"/tmp/qa-resume-20261008-child-ciivjupc\"); M=D/\"owner-manifest.json\"; raw=M.read_bytes(); m=json.loads(raw)\nif hashlib.sha256(raw).hexdigest()!=\"7a5bf21f70ec2610527f054809f40fbc17bb5dcbfd24f8af804237bc811f7cfc\" or m.get(\"node_id\")!=\"15961ef7-81b4-43f3-80c8-1b6977ca2aea\": raise RuntimeError(\"owner_guard_failed\")\np=Path('/tmp/qa-resume-20261008-child-ciivjupc/data/qa-be-remote-ttl/eab24564/history.txt'); b=p.read_bytes(); st=p.stat()\nprint(json.dumps({\"exists\":p.is_file(),\"text\":b.decode(),\"sha256\":hashlib.sha256(b).hexdigest(),\"mode\":oct(stat.S_IMODE(st.st_mode)),\"uid\":st.st_uid},separators=(\",\",\":\")))\nPY",
+    "timeout": 60,
+    "retry": 0,
+    "offline_policy": "hub_online_required",
+    "enabled": true
+  },
+  "source_sha256": "709d30b3ceaf9e46e219c49a03417fa4f2635f22407830975387cc77f77d2be6"
+}

@@ -1,0 +1,147 @@
+{
+  "config": {
+    "argv": [
+      "/usr/bin/node",
+      "/home/superc/code/nodesteer/web/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "e2e/playwright.config.ts",
+      "--reporter=json",
+      "--grep",
+      "SAFE-17"
+    ],
+    "configFile": "/home/superc/code/nodesteer/web/e2e/playwright.config.ts",
+    "rootDir": "/home/superc/code/nodesteer/web/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/superc/code/nodesteer/web/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "safe-ui.spec.ts",
+      "file": "safe-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "SAFE-17 详情深链刷新前后退/不存在资源ErrorRetry与Definition回链",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 57662,
+                  "error": {
+                    "message": "TimeoutError: locator.click: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('a[href=\"/applications/a5d5e68b-e363-4a58-8438-af8cc44016ae\"]')\u001b[22m\n",
+                    "stack": "TimeoutError: locator.click: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('a[href=\"/applications/a5d5e68b-e363-4a58-8438-af8cc44016ae\"]')\u001b[22m\n\n    at /home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts:554:97",
+                    "location": {
+                      "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                      "column": 97,
+                      "line": 554
+                    },
+                    "snippet": "  552 |     }\n  553 |     await page.goto('/tasks/'+scriptedId);await page.locator(`a[href=\"/scripts/${scriptId}\"]`).click();await expect(page).toHaveURL(new RegExp('/scripts/'+scriptId+'$'))\n> 554 |     await page.goto('/tasks/'+appTaskId);await page.locator(`a[href=\"/applications/${appId}\"]`).click();await expect(page).toHaveURL(new RegExp('/applications/'+appId+'$'))\n      |                                                                                                 ^\n  555 |     await page.goto('/tasks/'+task.id);await page.locator(`a[href=\"/executions/${executionId}\"]`).click();await expect(page).toHaveURL(new RegExp('/executions/'+executionId+'$'))\n  556 |     for(const path of ['/agents/','/groups/','/scripts/','/tasks/','/tasks/','/tasks/','/schedules/','/applications/','/executions/'].map((prefix,i)=>prefix+'00000000-0000-0000-0000-000000000000'+(i===4?'/edit':i===5?'/run':''))) {\n  557 |       await page.goto(path);await expect(page.getByRole('button',{name:/^重试$/})).toBeVisible();await page.getByRole('button',{name:/^重试$/}).click()"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                        "column": 97,
+                        "line": 554
+                      },
+                      "message": "TimeoutError: locator.click: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('a[href=\"/applications/a5d5e68b-e363-4a58-8438-af8cc44016ae\"]')\u001b[22m\n\n\n  552 |     }\n  553 |     await page.goto('/tasks/'+scriptedId);await page.locator(`a[href=\"/scripts/${scriptId}\"]`).click();await expect(page).toHaveURL(new RegExp('/scripts/'+scriptId+'$'))\n> 554 |     await page.goto('/tasks/'+appTaskId);await page.locator(`a[href=\"/applications/${appId}\"]`).click();await expect(page).toHaveURL(new RegExp('/applications/'+appId+'$'))\n      |                                                                                                 ^\n  555 |     await page.goto('/tasks/'+task.id);await page.locator(`a[href=\"/executions/${executionId}\"]`).click();await expect(page).toHaveURL(new RegExp('/executions/'+executionId+'$'))\n  556 |     for(const path of ['/agents/','/groups/','/scripts/','/tasks/','/tasks/','/tasks/','/schedules/','/applications/','/executions/'].map((prefix,i)=>prefix+'00000000-0000-0000-0000-000000000000'+(i===4?'/edit':i===5?'/run':''))) {\n  557 |       await page.goto(path);await expect(page.getByRole('button',{name:/^重试$/})).toBeVisible();await page.getByRole('button',{name:/^重试$/}).click()\n    at /home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts:554:97"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-01T04:45:47.750Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts/safe-ui-SAFE-17-详情深链刷新前后退-不存在资源ErrorRetry与Definition回链-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/superc/code/nodesteer/web/e2e/tests/safe-ui.spec.ts",
+                    "column": 97,
+                    "line": 554
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "ddd7e7cf69376006a28d-d5dded03b06a2c30ceb9",
+          "file": "safe-ui.spec.ts",
+          "line": 523,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-01T04:45:47.124Z",
+    "duration": 58400.969999999994,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

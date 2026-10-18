@@ -1,0 +1,140 @@
+{
+  "batch_id": "web-20261009-01",
+  "captured_at": "2026-10-09T16:37:38+08:00",
+  "executor": "gpt-6-luna",
+  "canonical_cases_planned": 12,
+  "results": [
+    {
+      "canonical_id": "P01-02",
+      "status": "PASS",
+      "evidence": [
+        "p01-02-results.json"
+      ],
+      "result": "错误密码UI POST 401、具体invalid credentials、留在/sign-in、无token；认证setup后/ api/me验证Administrator。"
+    },
+    {
+      "canonical_id": "P01-03",
+      "status": "PASS",
+      "evidence": [
+        "p01-03-fresh-results.json",
+        "p01-03-server-fields.json"
+      ],
+      "result": "三个独立fresh UI分支均Invalid input、0 login POST、无token；对应direct API三种空字段均401且无token/session。"
+    },
+    {
+      "canonical_id": "G02-09",
+      "status": "PASS",
+      "evidence": [
+        "g02-09-results.json",
+        "navigation-dashboard.png"
+      ],
+      "result": "12个Sidebar链接真实点击后URL、aria-current=page及active class匹配；back/forward、Task详情深链刷新通过。Artifacts直接URL可打开；Application页间接入口本次未找到，不属于此canonical剩余面。"
+    },
+    {
+      "canonical_id": "X15",
+      "status": "PARTIAL",
+      "evidence": [
+        "first-execution.json",
+        "second-execution.json",
+        "third-execution.json",
+        "live-run-start.json",
+        "offline-recovery-start.json",
+        "filter-clear-recovery.json",
+        "offline-online-fetch.json"
+      ],
+      "result": "专属Task retry=1，多次真实UI Run最终FAILED/exit1；当前5c5d运行时同页先RUNNING/first，browser offline后API terminal FAILED、UI stale；恢复online后同页status/log API恢复，真实Control+A/Backspace清search后显示first+second，navCount=1。API/detail/log UI均不暴露attempt计数/分组，因此不根据重复日志估算retry attempt，PENDING UI也未采样。"
+    },
+    {
+      "canonical_id": "WEB-LIVE-LOG",
+      "status": "PARTIAL",
+      "evidence": [
+        "first-execution.json",
+        "live-run-start.json",
+        "offline-recovery-start.json",
+        "filter-clear-recovery.json",
+        "offline-online-fetch.json",
+        "reconnected-poll.json"
+      ],
+      "result": "首块后同页日志UI恢复和最终FAILED/终态双marker通过；浏览器session真实offline请求TypeError、online GET200；offline failure并非Agent自身断连；自动恢复详情后搜索仍过滤first，用户清除后完整日志可见。Attempt metadata与Copy精确读回未闭合。"
+    },
+    {
+      "canonical_id": "P17P18-10",
+      "status": "PARTIAL",
+      "evidence": [
+        "offline-recovery-start.json",
+        "filter-clear-recovery.json",
+        "clipboard-summary.json",
+        "cdp-context-clipboard-results.json",
+        "offline-stale-running.png",
+        "reconnected-final-both-logs.png",
+        "clipboard-terminal.png"
+      ],
+      "result": "已证实浏览器session离线时执行真实stream过滤/search及Follow控件交互，但无离线操作结果文件；只以offline-recovery-start.json和离线截图证明断网时的页面态。重连后search清空、最终双日志与同页恢复见filter-clear-recovery.json及截图。Copy Logs真实按钮反馈success；真实clipboard读权限被拒，精确文本和deny-write失败反馈未验证，PARTIAL。"
+    },
+    {
+      "canonical_id": "X16",
+      "status": "PARTIAL",
+      "evidence": [],
+      "result": "本批未执行新的Revision/Audit/error/default-input遮蔽场景；保留现有PARTIAL，不升级。"
+    },
+    {
+      "canonical_id": "G02-06",
+      "status": "NOT_RUN",
+      "evidence": [],
+      "result": "由Root移至batch02执行。"
+    },
+    {
+      "canonical_id": "G02-07",
+      "status": "NOT_RUN",
+      "evidence": [],
+      "result": "由Root移至batch02执行。"
+    },
+    {
+      "canonical_id": "G04-04",
+      "status": "NOT_RUN",
+      "evidence": [],
+      "result": "键盘Tab/Enter/Escape分支本批未执行。"
+    },
+    {
+      "canonical_id": "P01-04",
+      "status": "NOT_RUN",
+      "evidence": [],
+      "result": "真实pending/重复登录按钮路径未执行；未延迟/拦截服务端响应。"
+    },
+    {
+      "canonical_id": "P04-06",
+      "status": "PARTIAL",
+      "evidence": [],
+      "result": "仅Administrator凭据在授权private中，本批未读取其它角色凭据；Viewer/Operator禁止状态写403与前后状态不变未验证。"
+    },
+    {
+      "canonical_id": "P04-07",
+      "status": "PARTIAL",
+      "evidence": [],
+      "result": "Admin Add Node入口可见/Operator和Viewer隐藏/后端拒绝路径未在本批执行；没有为此新建无DELETE API节点。"
+    }
+  ],
+  "supplementary_defect": {
+    "id": "WEB-LIVE-LOG",
+    "status": "PARTIAL",
+    "no_source_changes": true
+  },
+  "cleanup": {
+    "task_id": "4006d075-8c15-4d14-9cbc-8b63f5823131",
+    "ui_delete_http": 200,
+    "get_after_delete_http": 404,
+    "execution_ids": [
+      "cba06f0d-9b09-4ad5-97b6-e538ab46a8c1",
+      "b448b9dc-edfa-4d9a-be11-6c9c80b981dc",
+      "f3ba436f-e4ba-4253-b6b7-d17462934b31",
+      "5c5d8c3e-945f-4ca2-ab91-fd30cb8b5b9b"
+    ],
+    "executions_get_logs_retained": true,
+    "details": "fixture-cleanup.json; no other business resources created; session kept online"
+  },
+  "sensitive_material_scan": "sensitive-material-scan.json reports zero actual private auth values in this batch directory",
+  "not_overall_completion": true,
+  "next_batch": "Root-authored list web-20261009-02, up to 16 canonical cases; X16 and unresolved keyboard/RBAC cases remain future work.",
+  "corrected_at": "2026-10-09T16:47:00+08:00",
+  "correction_note": "Root review found offline-ui-controls.json absent. Removed missing path and narrowed evidence claim to existing offline state/recovery observations and screenshots; no synthetic evidence added."
+}

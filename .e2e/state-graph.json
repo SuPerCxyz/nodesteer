@@ -1,399 +1,134 @@
 {
- "schema_version": 1,
- "generated_at": "2026-09-22T09:34:49+08:00",
- "base_url": "http://192.168.100.209:8080",
- "states": [
-  {
-   "id": "node.online",
-   "entity": "node",
-   "description": "在线，可执行任务/部署/传输"
-  },
-  {
-   "id": "node.maintenance",
-   "entity": "node",
-   "description": "维护中，UI 标记 maintenance；传输仍可交付"
-  },
-  {
-   "id": "node.disabled",
-   "entity": "node",
-   "description": "禁用；撤销凭证后进入此状态且拒绝旧凭据"
-  },
-  {
-   "id": "node.pending",
-   "entity": "node",
-   "description": "纳管生成的待接入节点，首次 HELLO 后绑定并转 online"
-  },
-  {
-   "id": "node.deleted",
-   "entity": "node",
-   "description": "删除节点记录；执行历史保留；需无活跃传输引用"
-  },
-  {
-   "id": "transfer.pending",
-   "entity": "transfer",
-   "description": "等待源上传"
-  },
-  {
-   "id": "transfer.uploading",
-   "entity": "transfer",
-   "description": "源 Agent 上传中"
-  },
-  {
-   "id": "transfer.delivering",
-   "entity": "transfer",
-   "description": "目标下载中；无超时看门狗"
-  },
-  {
-   "id": "transfer.success",
-   "entity": "transfer",
-   "description": "全部目标成功"
-  },
-  {
-   "id": "transfer.failed",
-   "entity": "transfer",
-   "description": "整体失败；目标可能停在 pending（缺陷路径）"
-  },
-  {
-   "id": "transfer.canceled",
-   "entity": "transfer",
-   "description": "取消；目标未成功的置为 canceled"
-  },
-  {
-   "id": "target.pending",
-   "entity": "transfer_target",
-   "description": "未派发；源失败时永久停留（FAIL-M-001）"
-  },
-  {
-   "id": "target.delivering",
-   "entity": "transfer_target",
-   "description": "已派发待回执；仅 FAILED 可重试"
-  },
-  {
-   "id": "target.success",
-   "entity": "transfer_target",
-   "description": "交付成功"
-  },
-  {
-   "id": "target.failed",
-   "entity": "transfer_target",
-   "description": "交付失败，可重试"
-  },
-  {
-   "id": "target.canceled",
-   "entity": "transfer_target",
-   "description": "取消"
-  },
-  {
-   "id": "app.defined",
-   "entity": "application",
-   "description": "应用定义（含发布包）已同步"
-  },
-  {
-   "id": "app.deploying",
-   "entity": "application",
-   "description": "部署/升级执行中"
-  },
-  {
-   "id": "app.healthy",
-   "entity": "application",
-   "description": "健康检查通过"
-  },
-  {
-   "id": "app.unhealthy",
-   "entity": "application",
-   "description": "健康检查失败或部署失败"
-  },
-  {
-   "id": "execution.pending",
-   "entity": "execution",
-   "description": "已创建待执行"
-  },
-  {
-   "id": "execution.running",
-   "entity": "execution",
-   "description": "运行中，可取消"
-  },
-  {
-   "id": "execution.success",
-   "entity": "execution",
-   "description": "成功"
-  },
-  {
-   "id": "execution.failed",
-   "entity": "execution",
-   "description": "失败"
-  },
-  {
-   "id": "execution.skipped",
-   "entity": "execution",
-   "description": "条件跳过；block_reason 未回写（FAIL-B-002）"
-  },
-  {
-   "id": "execution.canceled",
-   "entity": "execution",
-   "description": "取消且进程已终止"
-  }
- ],
- "transitions": [
-  {
-   "id": "transition.node.maintenance",
-   "from": "node.online",
-   "to": "node.maintenance",
-   "trigger": "节点行菜单-维护"
-  },
-  {
-   "id": "transition.node.online",
-   "from": "node.maintenance",
-   "to": "node.online",
-   "trigger": "节点行菜单-设为在线"
-  },
-  {
-   "id": "transition.node.disable",
-   "from": "node.online",
-   "to": "node.disabled",
-   "trigger": "节点行菜单-禁用"
-  },
-  {
-   "id": "transition.node.revoke",
-   "from": "node.online",
-   "to": "node.disabled",
-   "trigger": "节点行菜单-撤销凭证（原生 confirm）"
-  },
-  {
-   "id": "transition.node.reenroll",
-   "from": "node.disabled",
-   "to": "node.pending",
-   "trigger": "添加节点生成命令并在节点执行（需清理本地 state.db）"
-  },
-  {
-   "id": "transition.node.bind",
-   "from": "node.pending",
-   "to": "node.online",
-   "trigger": "Agent 首次 HELLO 绑定"
-  },
-  {
-   "id": "transition.node.delete",
-   "from": "node.disabled",
-   "to": "node.deleted",
-   "trigger": "节点行菜单-删除（需无活跃传输）"
-  },
-  {
-   "id": "transition.transfer.upload",
-   "from": "transfer.pending",
-   "to": "transfer.uploading",
-   "trigger": "源 Agent 收到上传请求"
-  },
-  {
-   "id": "transition.transfer.deliver",
-   "from": "transfer.uploading",
-   "to": "transfer.delivering",
-   "trigger": "上传完成并派发目标"
-  },
-  {
-   "id": "transition.transfer.success",
-   "from": "transfer.delivering",
-   "to": "transfer.success",
-   "trigger": "全部目标成功"
-  },
-  {
-   "id": "transition.transfer.fail",
-   "from": "transfer.uploading",
-   "to": "transfer.failed",
-   "trigger": "源上传失败（目标保持 pending）"
-  },
-  {
-   "id": "transition.transfer.cancel",
-   "from": "transfer.failed",
-   "to": "transfer.canceled",
-   "trigger": "API cancel（UI 仅重试）"
-  },
-  {
-   "id": "transition.app.deploy",
-   "from": "app.defined",
-   "to": "app.deploying",
-   "trigger": "部署/升级"
-  },
-  {
-   "id": "transition.app.healthy",
-   "from": "app.deploying",
-   "to": "app.healthy",
-   "trigger": "systemd 健康检查通过"
-  },
-  {
-   "id": "transition.app.fail",
-   "from": "app.deploying",
-   "to": "app.unhealthy",
-   "trigger": "部署或健康检查失败（自动回滚）"
-  },
-  {
-   "id": "transition.execution.run",
-   "from": "execution.pending",
-   "to": "execution.running",
-   "trigger": "Manual Run / Schedule"
-  },
-  {
-   "id": "transition.execution.success",
-   "from": "execution.running",
-   "to": "execution.success",
-   "trigger": "进程退出码 0"
-  },
-  {
-   "id": "transition.execution.fail",
-   "from": "execution.running",
-   "to": "execution.failed",
-   "trigger": "非零退出/超时"
-  },
-  {
-   "id": "transition.execution.skip",
-   "from": "execution.pending",
-   "to": "execution.skipped",
-   "trigger": "条件不满足"
-  },
-  {
-   "id": "transition.execution.cancel",
-   "from": "execution.running",
-   "to": "execution.canceled",
-   "trigger": "执行页取消"
-  },
-  {
-   "id": "transition.workflow.script.task.run",
-   "from": null,
-   "to": null,
-   "trigger": "workflow.script.task.run",
-   "workflow_id": "workflow.script.task.run"
-  },
-  {
-   "id": "transition.workflow.schedule.crud.trigger",
-   "from": null,
-   "to": null,
-   "trigger": "workflow.schedule.crud.trigger",
-   "workflow_id": "workflow.schedule.crud.trigger"
-  },
-  {
-   "id": "transition.workflow.task.multi.node",
-   "from": null,
-   "to": null,
-   "trigger": "workflow.task.multi_node",
-   "workflow_id": "workflow.task.multi_node"
-  },
-  {
-   "id": "transition.workflow.transfer.multi.target.sha256",
-   "from": null,
-   "to": null,
-   "trigger": "workflow.transfer.multi_target.sha256",
-   "workflow_id": "workflow.transfer.multi_target.sha256"
-  },
-  {
-   "id": "transition.workflow.transfer.failure.retry.cancel",
-   "from": null,
-   "to": null,
-   "trigger": "workflow.transfer.failure_retry_cancel",
-   "workflow_id": "workflow.transfer.failure_retry_cancel"
-  },
-  {
-   "id": "transition.workflow.execution.cancel.timeout.retry.audit",
-   "from": null,
-   "to": null,
-   "trigger": "workflow.execution.cancel_timeout_retry.audit",
-   "workflow_id": "workflow.execution.cancel_timeout_retry.audit"
-  },
-  {
-   "id": "transition.workflow.task.param.override",
-   "from": null,
-   "to": null,
-   "trigger": "workflow.task_param_override",
-   "workflow_id": "workflow.task_param_override"
-  },
-  {
-   "id": "transition.workflow.entity.reference.guards",
-   "from": null,
-   "to": null,
-   "trigger": "workflow.entity_reference_guards",
-   "workflow_id": "workflow.entity_reference_guards"
-  },
-  {
-   "id": "transition.workflow.task.delete.history",
-   "from": null,
-   "to": null,
-   "trigger": "workflow.task_delete_history",
-   "workflow_id": "workflow.task_delete_history"
-  },
-  {
-   "id": "transition.workflow.label.group.task",
-   "from": null,
-   "to": null,
-   "trigger": "workflow.label.group.task",
-   "workflow_id": "workflow.label.group.task"
-  },
-  {
-   "id": "transition.workflow.enrollment",
-   "from": null,
-   "to": null,
-   "trigger": "workflow.enrollment",
-   "workflow_id": "workflow.enrollment"
-  },
-  {
-   "id": "transition.workflow.node.status",
-   "from": null,
-   "to": null,
-   "trigger": "workflow.node.status",
-   "workflow_id": "workflow.node.status"
-  },
-  {
-   "id": "transition.workflow.rbac.matrix",
-   "from": null,
-   "to": null,
-   "trigger": "workflow.rbac.matrix",
-   "workflow_id": "workflow.rbac.matrix"
-  },
-  {
-   "id": "transition.workflow.user.lifecycle",
-   "from": null,
-   "to": null,
-   "trigger": "workflow.user.lifecycle",
-   "workflow_id": "workflow.user.lifecycle"
-  },
-  {
-   "id": "transition.workflow.settings.roundtrip",
-   "from": null,
-   "to": null,
-   "trigger": "workflow.settings.roundtrip",
-   "workflow_id": "workflow.settings.roundtrip"
-  },
-  {
-   "id": "transition.workflow.artifact.lifecycle",
-   "from": null,
-   "to": null,
-   "trigger": "制品上传→SHA256/大小校验→下载校验→Usage 引用→删除被引用制品",
-   "workflow_id": "workflow.artifact.lifecycle"
-  },
-  {
-   "id": "transition.workflow.artifact.app.deploy",
-   "from": null,
-   "to": null,
-   "trigger": "制品→创建应用→分配节点→Deploy→健康→Start/Stop/Restart→Upgrade→删除清理",
-   "workflow_id": "workflow.artifact.app.deploy"
-  },
-  {
-   "id": "transition.workflow.app.execution.audit",
-   "from": null,
-   "to": null,
-   "trigger": "应用操作产生的执行→执行详情/日志→审计",
-   "workflow_id": "workflow.app.execution.audit"
-  },
-  {
-   "id": "transition.workflow.dashboard.consistency",
-   "from": null,
-   "to": null,
-   "trigger": "仪表盘统计与列表 API 一致性、各「查看全部」落点",
-   "workflow_id": "workflow.dashboard.consistency"
-  },
-  {
-   "id": "transition.workflow.ui.basics",
-   "from": null,
-   "to": null,
-   "trigger": "UI 基础项：字体（无外网请求）/主题/语言切换与刷新保持；1366/1920/3840 无横向溢出",
-   "workflow_id": "workflow.ui.basics"
-  }
- ]
+  "schema_version": 1,
+  "run_id": "20260930-101945",
+  "status": "running",
+  "definition": "业务状态迁移的证据索引；状态名称是当前行为摘要，不替代逐项场景和断言。",
+  "transitions": [
+    {
+      "entity": "authentication",
+      "from": "anonymous",
+      "to": "authenticated",
+      "case_id": "P01-01",
+      "status": "PASS",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json"
+      ]
+    },
+    {
+      "entity": "authentication",
+      "from": "authenticated",
+      "to": "signed_out",
+      "case_id": "G02-05",
+      "status": "PASS",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/auth-keyboard-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/auth-safe-basics.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/keyboard-history-safe.json"
+      ]
+    },
+    {
+      "entity": "authentication",
+      "from": "authenticated",
+      "to": "expired_then_sign_in",
+      "case_id": "G-01-05",
+      "status": "PASS",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/readonly-ui-continuation/summary.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/readonly-ui-continuation/invalid-token-sign-in.png",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/readonly-ui-continuation/summary.json"
+      ]
+    },
+    {
+      "entity": "node",
+      "from": "unregistered",
+      "to": "online_synced",
+      "case_id": "E2E-16",
+      "status": "PASS",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/environment/agent-install-results.json"
+      ]
+    },
+    {
+      "entity": "script",
+      "from": "revision_1",
+      "to": "revision_2",
+      "case_id": "E2E-01",
+      "status": "PARTIAL",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/final-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/interpreter-final-results.json"
+      ]
+    },
+    {
+      "entity": "execution",
+      "from": "running",
+      "to": "timed_out_or_canceled",
+      "case_id": "E2E-08",
+      "status": "PARTIAL",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/task.retry.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/task.timeout.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/task.cancel.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.process.native-bab6a27a.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/arch.process_group_cleanup-82e979d1.json"
+      ]
+    },
+    {
+      "entity": "execution",
+      "from": "condition_evaluation",
+      "to": "success_skipped_blocked",
+      "case_id": "E2E-09",
+      "status": "PASS",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/condition.false.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/isolated/evidence/feature.condition.unknown-nested-offline-3140b18e.json"
+      ]
+    },
+    {
+      "entity": "application",
+      "from": "defined",
+      "to": "installed_healthy",
+      "case_id": "E2E-11",
+      "status": "FAIL",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/managed-app-complete-results.json",
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/evidence/managed-app-5994994a.json"
+      ]
+    },
+    {
+      "entity": "application",
+      "from": "v1",
+      "to": "v2_or_rollback",
+      "case_id": "E2E-12",
+      "status": "PASS",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/backend/evidence/feature.application.lifecycle-e22782da.json"
+      ]
+    },
+    {
+      "entity": "application",
+      "from": "interrupted_upgrade",
+      "to": "recovered",
+      "case_id": "E2E-13",
+      "status": "FAIL",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/main/native-results.json"
+      ]
+    },
+    {
+      "entity": "file_transfer",
+      "from": "source_file",
+      "to": "staged_delivered_or_retried",
+      "case_id": "E2E-14",
+      "status": "PARTIAL",
+      "evidence": [
+        "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/web/relay-verified-results.json"
+      ]
+    }
+  ],
+  "status_scope": "原版dddee4f0基线保留；修复版验收以repair/feature-inventory.json及defect-regression-matrix.json为准",
+  "repair_feature_inventory": "runs/20260930-101945/repair/feature-inventory.json",
+  "repair_defect_matrix": "runs/20260930-101945/repair/defect-regression-matrix.json",
+  "repair_complete": false,
+  "updated_at": "2026-10-08T07:45:46.741160+00:00"
 }

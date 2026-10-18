@@ -1,0 +1,1704 @@
+[
+  {
+    "case_id": "MAIN-USER-operator",
+    "title": "创建本轮专用角色账户",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:24+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/users"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-USER-viewer",
+    "title": "创建本轮专用角色账户",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:24+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/users"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-LOGIN-operator",
+    "title": "专用角色真实密码登录",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:24+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/login"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-LOGIN-viewer",
+    "title": "专用角色真实密码登录",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/login"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-PUBLIC-1",
+    "title": "公开接口无需会话",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/healthz"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-PUBLIC-2",
+    "title": "公开接口无需会话",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/readyz"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-PUBLIC-3",
+    "title": "公开接口无需会话",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/oidc/state"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-BINARY-HEAD",
+    "title": "公开 amd64 下载元数据",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": {
+      "size": "11260088",
+      "sha256": "43bf33d06e775bd6581f120a002d6d904de36de6c6d4e18eaef90f6862fb6998"
+    },
+    "request": {
+      "method": "HEAD",
+      "url": "http://192.168.100.209:8080/api/agent/binary?architecture=amd64"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-BINARY-SHA",
+    "title": "真实下载内容匹配 SHA256",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": {
+      "size": 11260088,
+      "sha256": "43bf33d06e775bd6581f120a002d6d904de36de6c6d4e18eaef90f6862fb6998",
+      "header_matches": true
+    },
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/agent/binary?architecture=amd64"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-BINARY-BADARCH",
+    "title": "非法架构明确拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 400,
+    "actual_http": 400,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/agent/binary?architecture=invalid"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-BINARY-METHOD",
+    "title": "公开下载拒绝写方法",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 405,
+    "actual_http": 405,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/agent/binary?architecture=amd64"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-OIDC-DISABLED",
+    "title": "未配置OIDC时登录入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 404,
+    "actual_http": 404,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/oidc/login"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-NOAUTH-01",
+    "title": "受保护接口无会话拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 401,
+    "actual_http": 401,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/me"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-administrator-01",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/me"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-operator-01",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/me"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-viewer-01",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/me"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-NOAUTH-02",
+    "title": "受保护接口无会话拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 401,
+    "actual_http": 401,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/nodes"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-administrator-02",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/nodes"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-operator-02",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/nodes"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-viewer-02",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/nodes"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-NOAUTH-03",
+    "title": "受保护接口无会话拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 401,
+    "actual_http": 401,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/groups"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-administrator-03",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/groups"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-operator-03",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/groups"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-viewer-03",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/groups"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-NOAUTH-04",
+    "title": "受保护接口无会话拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 401,
+    "actual_http": 401,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/scripts"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-administrator-04",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/scripts"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-operator-04",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/scripts"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-viewer-04",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/scripts"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-NOAUTH-05",
+    "title": "受保护接口无会话拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 401,
+    "actual_http": 401,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/tasks"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-administrator-05",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/tasks"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-operator-05",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/tasks"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-viewer-05",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/tasks"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-NOAUTH-06",
+    "title": "受保护接口无会话拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 401,
+    "actual_http": 401,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/schedules"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-administrator-06",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/schedules"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-operator-06",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/schedules"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-viewer-06",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/schedules"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-NOAUTH-07",
+    "title": "受保护接口无会话拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 401,
+    "actual_http": 401,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/applications"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-administrator-07",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/applications"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-operator-07",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/applications"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-viewer-07",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/applications"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-NOAUTH-08",
+    "title": "受保护接口无会话拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 401,
+    "actual_http": 401,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/artifacts"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-administrator-08",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/artifacts"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-operator-08",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/artifacts"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-viewer-08",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/artifacts"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-NOAUTH-09",
+    "title": "受保护接口无会话拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 401,
+    "actual_http": 401,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/executions"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-administrator-09",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/executions"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-operator-09",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/executions"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-viewer-09",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/executions"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-NOAUTH-10",
+    "title": "受保护接口无会话拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 401,
+    "actual_http": 401,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/transfers"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-administrator-10",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/transfers"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-operator-10",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/transfers"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-viewer-10",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/transfers"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-NOAUTH-11",
+    "title": "受保护接口无会话拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 401,
+    "actual_http": 401,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/audit"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-administrator-11",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/audit"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-operator-11",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/audit"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-viewer-11",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/audit"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-NOAUTH-12",
+    "title": "受保护接口无会话拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 401,
+    "actual_http": 401,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/settings"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-administrator-12",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/settings"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-operator-12",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/settings"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-viewer-12",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/settings"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-NOAUTH-13",
+    "title": "受保护接口无会话拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 401,
+    "actual_http": 401,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/users"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-administrator-13",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/users"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-operator-13",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/users"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-viewer-13",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/users"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-NOAUTH-14",
+    "title": "受保护接口无会话拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 401,
+    "actual_http": 401,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/metrics"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-administrator-14",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/metrics"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-operator-14",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/metrics"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-READ-viewer-14",
+    "title": "真实角色读取权限",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/metrics"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-WRITE-DENY-operator-01",
+    "title": "真实角色写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/scripts"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-WRITE-DENY-operator-02",
+    "title": "真实角色写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/tasks"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-WRITE-DENY-operator-03",
+    "title": "真实角色写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/groups"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-WRITE-DENY-operator-04",
+    "title": "真实角色写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/schedules"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-WRITE-DENY-operator-05",
+    "title": "真实角色写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/applications"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-WRITE-DENY-operator-06",
+    "title": "真实角色写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/users"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-WRITE-DENY-operator-07",
+    "title": "真实角色写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/transfers"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-WRITE-DENY-operator-08",
+    "title": "真实角色写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/nodes/enrollment"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-SETTINGS-DENY-operator",
+    "title": "真实角色设置写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "PUT",
+      "url": "http://192.168.100.209:8080/api/settings"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-WRITE-DENY-viewer-01",
+    "title": "真实角色写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/scripts"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-WRITE-DENY-viewer-02",
+    "title": "真实角色写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/tasks"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-WRITE-DENY-viewer-03",
+    "title": "真实角色写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/groups"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-WRITE-DENY-viewer-04",
+    "title": "真实角色写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/schedules"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-WRITE-DENY-viewer-05",
+    "title": "真实角色写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/applications"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-WRITE-DENY-viewer-06",
+    "title": "真实角色写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/users"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-WRITE-DENY-viewer-07",
+    "title": "真实角色写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/transfers"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-WRITE-DENY-viewer-08",
+    "title": "真实角色写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "POST",
+      "url": "http://192.168.100.209:8080/api/nodes/enrollment"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-SETTINGS-DENY-viewer",
+    "title": "真实角色设置写入口拒绝",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "PUT",
+      "url": "http://192.168.100.209:8080/api/settings"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-SETTING-INVALID-01",
+    "title": "设置非法值原子拒绝且旧值不变",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 400,
+    "actual_http": 400,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": {
+      "unchanged": true
+    },
+    "request": {
+      "method": "PUT",
+      "url": "http://192.168.100.209:8080/api/settings"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-SETTING-INVALID-02",
+    "title": "设置非法值原子拒绝且旧值不变",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 400,
+    "actual_http": 400,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": {
+      "unchanged": true
+    },
+    "request": {
+      "method": "PUT",
+      "url": "http://192.168.100.209:8080/api/settings"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-SETTING-INVALID-03",
+    "title": "设置非法值原子拒绝且旧值不变",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 400,
+    "actual_http": 400,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": {
+      "unchanged": true
+    },
+    "request": {
+      "method": "PUT",
+      "url": "http://192.168.100.209:8080/api/settings"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-SETTING-INVALID-04",
+    "title": "设置非法值原子拒绝且旧值不变",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 400,
+    "actual_http": 400,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": {
+      "unchanged": true
+    },
+    "request": {
+      "method": "PUT",
+      "url": "http://192.168.100.209:8080/api/settings"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-SETTING-INVALID-05",
+    "title": "设置非法值原子拒绝且旧值不变",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 400,
+    "actual_http": 400,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": {
+      "unchanged": true
+    },
+    "request": {
+      "method": "PUT",
+      "url": "http://192.168.100.209:8080/api/settings"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-SETTING-INVALID-06",
+    "title": "设置非法值原子拒绝且旧值不变",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 400,
+    "actual_http": 400,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": {
+      "unchanged": true
+    },
+    "request": {
+      "method": "PUT",
+      "url": "http://192.168.100.209:8080/api/settings"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-MISSING-tasks",
+    "title": "不存在对象读取",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 404,
+    "actual_http": 404,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/tasks/not-a-real-id"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-MISSING-scripts",
+    "title": "不存在对象读取",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 404,
+    "actual_http": 404,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/scripts/not-a-real-id"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-MISSING-applications",
+    "title": "不存在对象读取",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 404,
+    "actual_http": 404,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/applications/not-a-real-id"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-ROLE-PROMOTE",
+    "title": "专用viewer升为administrator",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "PUT",
+      "url": "http://192.168.100.209:8080/api/users/2574c14f-83db-4d1a-91dd-14dc5bb209d9"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-ROLE-OLDTOKEN-PROMOTE",
+    "title": "既有token实时获取升权",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/users"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-ROLE-RESTORE",
+    "title": "恢复专用viewer角色",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 200,
+    "actual_http": 200,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "PUT",
+      "url": "http://192.168.100.209:8080/api/users/2574c14f-83db-4d1a-91dd-14dc5bb209d9"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  },
+  {
+    "case_id": "MAIN-ROLE-OLDTOKEN-DEMOTE",
+    "title": "既有token实时获取降权",
+    "classification": "REAL_API",
+    "status": "PASS",
+    "expected_http": 403,
+    "actual_http": 403,
+    "time": "2026-09-30T10:27:25+0800",
+    "detail": null,
+    "request": {
+      "method": "GET",
+      "url": "http://192.168.100.209:8080/api/users"
+    },
+    "evidence": [
+      "main/api-results.json"
+    ]
+  }
+]

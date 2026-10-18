@@ -1,0 +1,344 @@
+{
+  "schema_version": 1,
+  "planned_at_utc": "2026-10-10T11:24:44Z",
+  "status": "READ_ONLY_PLAN_ROOT_REVIEW_REQUIRED",
+  "scope": {
+    "canonical_inventory": ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+    "write_only": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/next-batch-plan.json"
+    ],
+    "runtime_actions_this_turn": 0,
+    "api_calls_this_turn": 0,
+    "browser_or_helper_this_turn": 0,
+    "repair_authority_for_future_execution": "repair Hub :18080 only; relay calls use previously observed Gateway authority http://192.168.100.209:18080; require fresh preflight before execution",
+    "original_resources": "No original repair Node/Hub/Host changes. Read-only snapshots only except the single disposable session logout flow and the single disposable helper Task noted below.",
+    "model": "gpt-6-luna"
+  },
+  "basis_and_deduplication": {
+    "inventory_statuses": {
+      "AUTH-MANAGEMENT": "PARTIAL",
+      "AUTH-RELAY": "PARTIAL",
+      "API-CONTRACT": "PARTIAL",
+      "API-NOT-FOUND": "PASS; no repeat"
+    },
+    "not_repeated": [
+      "API-NOT-FOUND's eight resource routes plus Execution GET/logs/cancel/method closure, all already reviewed with live evidence.",
+      "API-CONTRACT batch02's AgentBinary amd64 HEAD/invalid architecture and Script/Task empty-name fail-before-create.",
+      "AUTH-MANAGEMENT batch03's 76 anonymous/synthetic-invalid-Bearer probes and bounded snapshots.",
+      "AUTH-RELAY's four anonymous/invalid Bearer/valid user/invalid Agent-token GET probes.",
+      "AUTH-ARTIFACT's anonymous/invalid/Admin/registration/owned-Agent download matrix."
+    ],
+    "evidence_refs": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/management-auth-batch03/results.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/contract-batch02/results.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/auth-relay/evidence/gateway-authority-and-auth-get-matrix.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/not-found/closure/results.json",
+      ".e2e/runs/20260930-101945/repair/feature-inventory.json"
+    ],
+    "prior_plan": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/next-batch-plan.json (this file's prior revision); its two API-CONTRACT candidates were executed in contract-batch02 and its API-NOT-FOUND closure was executed."
+  },
+  "candidate_cases": [
+    {
+      "id": "AUTH-MANAGEMENT: logout revokes only its own session",
+      "priority": "P0",
+      "gap": "Canonical inventory still lacks an observed valid-session logout followed by revoked-token rejection; do not reuse Root's shared admin session or stale token.",
+      "operations": [
+        {
+          "method": "POST",
+          "path": "/api/login",
+          "body": "valid existing administrator credentials, read only from approved private credential file; token remains memory-only",
+          "oracle": "200; response token/user parsed in memory; role administrator confirmed"
+        },
+        {
+          "method": "GET",
+          "path": "/api/me",
+          "oracle": "200 for the new disposable session"
+        },
+        {
+          "method": "POST",
+          "path": "/api/logout",
+          "oracle": "200 JSON object with ok=true"
+        },
+        {
+          "method": "GET",
+          "path": "/api/me",
+          "oracle": "401 JSON object with error after logout"
+        },
+        {
+          "method": "GET",
+          "path": "/api/nodes",
+          "oracle": "401 JSON object with error using that same logged-out token"
+        }
+      ],
+      "business_oracle": "The newly created session works before logout and is rejected by both identity and a protected management route after logout. The shared/admin session and user rows remain untouched.",
+      "budget": {
+        "new_users": 0,
+        "sessions_created": 1,
+        "durable_business_objects": 0
+      },
+      "cleanup": "Logout revokes the exact new session; the login audit entry is expected to remain as immutable audit history. Keep token only in process memory; never persist response body/token. Capture audit before/after and attribute exactly one successful login record.",
+      "preconditions": "Only if the approved private directory has a valid existing admin login secret and no other active test is using login/session state; otherwise skip as blocked without attempting login. Fresh /me admin preflight; do not use or logout the shared connection token.",
+      "source_refs": [
+        "internal/hub/api/api.go:219-239",
+        "internal/hub/api/api.go:392-457",
+        "internal/hub/auth/auth.go:110-177"
+      ],
+      "request_budget": 5
+    },
+    {
+      "id": "AUTH-RELAY: authenticated owned Agent is rejected for a transfer it does not own",
+      "priority": "P0",
+      "gap": "The four unauthenticated/user/invalid-Agent cases are covered; valid owned Agent authorization against a non-target Transfer remains untested.",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/transfers/256de7fe-c8df-4825-a7cb-651568b4ff34",
+          "oracle": "200; fresh source/target metadata confirms owned child is neither source nor target before relay probe"
+        },
+        {
+          "method": "GET",
+          "path": "http://192.168.100.209:18080/agent/transfers/256de7fe-c8df-4825-a7cb-651568b4ff34/download",
+          "headers": "X-NodeSteer-Agent-ID and X-NodeSteer-Agent-Token from the reviewed remote in-memory credential helper only",
+          "oracle": "403 JSON error for not-a-transfer-target; zero payload bytes"
+        },
+        {
+          "method": "GET",
+          "path": "/api/transfers/256de7fe-c8df-4825-a7cb-651568b4ff34",
+          "oracle": "200 and exact safe transfer metadata unchanged"
+        }
+      ],
+      "business_oracle": "Valid Agent authentication succeeds far enough to reach transfer-target authorization; response is 403 before blob read and no Transfer/audit mutation occurs.",
+      "budget": {
+        "new_transfer_rows": 0,
+        "temporary_parent_command_tasks": 1,
+        "runs": 1
+      },
+      "cleanup": "Exact helper Task DELETE then GET404; retain Execution/Audit history. Do not log or persist credential/config/body. Compare selected Transfer metadata and transfer/audit summaries before/after.",
+      "preconditions": "Freshly confirm live Gateway authority, selected Transfer remains SUCCESS and owned child absent from source/targets, child ownership/process guards current, Runtime has released the child, and no concurrent transfer change. Reuse the reviewed helper pattern; do not touch proxy/process/controls/config.",
+      "source_refs": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/auth-relay-plan.json",
+        "internal/hub/file_transfer.go:233-289,390-418",
+        "internal/hub/gateway.go:82-89"
+      ],
+      "request_budget": 3
+    },
+    {
+      "id": "API-CONTRACT: executions pagination and total-count coherence",
+      "priority": "P1",
+      "gap": "The API contract has no reviewed live pagination oracle for execution list response and X-Total-Count.",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/executions?limit=1&offset=0",
+          "oracle": "200 JSON array with at most one item; numeric X-Total-Count equals an unpaginated baseline total"
+        },
+        {
+          "method": "GET",
+          "path": "/api/executions?limit=2&offset=1",
+          "oracle": "200 array with at most two items; same X-Total-Count; returned rows form the requested page under created_at DESC ordering"
+        },
+        {
+          "method": "GET",
+          "path": "/api/executions?limit=1&offset=<baseline_total+5>",
+          "oracle": "200 empty array; X-Total-Count remains baseline total"
+        }
+      ],
+      "business_oracle": "List length follows positive limit, offset selects a page, and the count header is independent of pagination. This is read-only; preserve only safe ID digests/counts, not full execution command/log content.",
+      "budget": {
+        "fixtures": 0,
+        "mutations": 0
+      },
+      "cleanup": "None. Capture exact executions ID digest/count and audit count before/after; if concurrent executions change during window, mark inconclusive and do not attribute the delta.",
+      "source_refs": [
+        "internal/hub/api/api.go:1760-1796",
+        "internal/store/sqlite_executions.go:88-145"
+      ],
+      "request_budget": 3
+    },
+    {
+      "id": "API-CONTRACT: audit pagination and exact-action filter",
+      "priority": "P1",
+      "gap": "Audit list success schema, paging header, and filter behavior are not included in current repair API evidence.",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/audit?limit=1&offset=0",
+          "oracle": "200 JSON array <=1 item and numeric X-Total-Count"
+        },
+        {
+          "method": "GET",
+          "path": "/api/audit?action=qa-no-such-action-<random-nonce>",
+          "oracle": "200 empty JSON array and X-Total-Count=0"
+        }
+      ],
+      "business_oracle": "Pagination returns a bounded page while count reflects all matching rows; exact action equality returns no match for unique sentinel. No audit row is added by GET.",
+      "budget": {
+        "fixtures": 0,
+        "mutations": 0
+      },
+      "cleanup": "None. Snapshot audit count/digest around only these GETs; isolate after any candidate login test so its expected login audit is already in baseline.",
+      "source_refs": [
+        "internal/hub/api/api.go:1865-1892",
+        "internal/store/sqlite_executions.go:350-430"
+      ],
+      "request_budget": 2
+    },
+    {
+      "id": "API-CONTRACT: invalid pagination numerics are safely observed",
+      "priority": "P2",
+      "gap": "Current handler silently ignores non-integer pagination values; this behavior has no runtime evidence and should be recorded rather than assumed to be a 400 contract.",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/executions?limit=qa-invalid&offset=qa-invalid",
+          "oracle": "Source currently ignores each non-integer value; expected current implementation is 200 as unpaginated results with total header. Record exact result; do not label malformed input as an intended contract."
+        },
+        {
+          "method": "GET",
+          "path": "/api/audit?limit=qa-invalid&offset=qa-invalid",
+          "oracle": "Source currently ignores each non-integer value; expected current implementation is 200 as unpaginated results with total header. Record exact result; do not label malformed input as an intended contract."
+        }
+      ],
+      "business_oracle": "Compare status, body array length and X-Total-Count against adjacent unpaginated read. A non-200 or changed behavior is evidence to review, not an automatic product failure.",
+      "budget": {
+        "fixtures": 0,
+        "mutations": 0
+      },
+      "cleanup": "None; GET only. Do not run alongside other list-changing actions.",
+      "source_refs": [
+        "internal/hub/api/api.go:1770-1778",
+        "internal/hub/api/api.go:1871-1879"
+      ],
+      "request_budget": 2
+    },
+    {
+      "id": "API-CONTRACT: AgentBinary architecture normalization parity",
+      "priority": "P2",
+      "gap": "HEAD/amd64 and invalid architecture are already covered; case/whitespace normalization of an otherwise supported architecture is not.",
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/api/agent/binary?architecture=%20AMD64%20",
+          "oracle": "200 binary; body SHA and byte length match d55.../16805087 from existing amd64 evidence and response headers"
+        },
+        {
+          "method": "HEAD",
+          "path": "/api/agent/binary?architecture=%20AMD64%20",
+          "oracle": "200 empty body; Content-Length and X-Agent-Binary-SHA256 match the GET"
+        }
+      ],
+      "business_oracle": "Supported architecture normalization is case-insensitive and trims surrounding whitespace; GET and HEAD describe the same payload.",
+      "budget": {
+        "fixtures": 0,
+        "mutations": 0
+      },
+      "cleanup": "None; public read only. Do not persist binary bytes, only byte count and SHA.",
+      "source_refs": [
+        "internal/hub/api/api.go:701-747",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/contract-batch02/results.json"
+      ],
+      "request_budget": 2
+    },
+    {
+      "id": "API-CONTRACT: malformed JSON fails before Script/Task creation",
+      "priority": "P1",
+      "gap": "Empty-name validation is already covered; JSON decoding failure path and non-mutation have no live evidence.",
+      "operations": [
+        {
+          "method": "POST",
+          "path": "/api/scripts",
+          "body": "malformed JSON bytes with no secret/content",
+          "oracle": "400 JSON object with error='invalid request'"
+        },
+        {
+          "method": "POST",
+          "path": "/api/tasks",
+          "body": "malformed JSON bytes with no secret/content",
+          "oracle": "400 JSON object with error='invalid request'"
+        }
+      ],
+      "business_oracle": "Both handlers decode before Create; Scripts/Tasks counts and sorted-ID digests remain identical before/after, no object ID returned, no execution created and no audit delta attributable to these calls.",
+      "budget": {
+        "new_scripts": 0,
+        "new_tasks": 0,
+        "new_executions": 0
+      },
+      "cleanup": "None if source ordering holds and 400 observed. If any response returns 2xx or an object ID, stop and report the ID; do not attempt guessed cleanup.",
+      "preconditions": "Fresh Admin role check; use bounded snapshots. Only this synthetic malformed write request is allowed after Root review; no valid creation/update body.",
+      "source_refs": [
+        "internal/hub/api/api.go:302-304",
+        "internal/hub/api/api.go:1132-1165",
+        "internal/hub/api/api.go:1237-1270"
+      ],
+      "request_budget": 2
+    },
+    {
+      "id": "API-CONTRACT: CORS preflight response on public and protected path",
+      "priority": "P2",
+      "gap": "Route auth and normal endpoint responses are covered, but CORS OPTIONS behavior is not in the repair runtime evidence.",
+      "operations": [
+        {
+          "method": "OPTIONS",
+          "path": "/api/nodes",
+          "headers": "Origin and Access-Control-Request-Method: GET",
+          "oracle": "204; Access-Control-Allow-Origin *, allowed methods/headers are present; no auth required"
+        },
+        {
+          "method": "OPTIONS",
+          "path": "/api/agent/binary",
+          "headers": "Origin and Access-Control-Request-Method: GET",
+          "oracle": "204 with same middleware CORS headers; zero body"
+        }
+      ],
+      "business_oracle": "Global CORS wrapper answers preflight before handlers/auth; no resource or audit changes.",
+      "budget": {
+        "fixtures": 0,
+        "mutations": 0
+      },
+      "cleanup": "None; OPTIONS only. Compare safe headers, status and zero body.",
+      "source_refs": [
+        "internal/hub/api/api.go:116-202",
+        "internal/hub/api/api.go:204-217"
+      ],
+      "request_budget": 2
+    }
+  ],
+  "total_request_budget": 21,
+  "fixture_budget_maximum": {
+    "permanent_users": 0,
+    "permanent_tasks_scripts_or_transfers": 0,
+    "disposable_sessions": 1,
+    "disposable_helper_tasks": 1,
+    "runs_for_helper": 1,
+    "valid_create_update_delete_bodies": 0
+  },
+  "execution_order": [
+    "Preflight repair :18080 role and bounded collection/audit snapshots; ensure Runtime has no concurrent Task/Run/API mutation window.",
+    "Run the session revocation case first only if its approved private login secret is available; logout exact disposable session and record one expected login audit entry.",
+    "Run other pure GET/OPTIONS cases with stable snapshots; execute malformed JSON negative writes only after source/role/snapshot guards and Root approval.",
+    "Run AUTH-RELAY last after Runtime releases the owned child; fresh-check Node/Agent/root/process guard, selected Transfer relation and live Gateway authority. Use exactly one helper Task and clean it DELETE/GET404."
+  ],
+  "not_covered_or_blocked": [
+    {
+      "canonical_case": "AUTH-MANAGEMENT",
+      "remaining": "Operator/Viewer 403 remains untestable without an existing role credential; no new User should be created because User DELETE is unsupported. Disposable logout verifies revoked-session behavior but does not substitute for TTL expiry."
+    },
+    {
+      "canonical_case": "AUTH-USERS",
+      "remaining": "Operator/Viewer 403 and successful Admin create/update/delete are excluded; no permanent or non-deletable User fixture."
+    },
+    {
+      "canonical_case": "AUTH-RELAY",
+      "remaining": "Real owned source upload/target download positive flow needs one retained Transfer row and two owned-file operations; omitted because Transfer has no DELETE and creates durable history."
+    },
+    {
+      "canonical_cases": "SYS-03..SYS-66",
+      "remaining": "The outstanding reboot/reconciliation, scheduler, journal/log/timeout/retry, Artifact cache, Host/container/capability and offline-transfer cases require Agent/runtime/process, durable fixtures, Host policy/resources, or cross-node behavior; these are not safely covered by this API-only batch. Do not infer SYS PASS from read-only API probes."
+    },
+    {
+      "canonical_case": "API-CONTRACT",
+      "remaining": "This is a bounded batch of live response-shape and query checks, not full API method/parameter coverage."
+    }
+  ],
+  "review_required_before_execution": "Root to review. This file is a plan only; no API requests, Task/helper, browser, or product/runtime writes were performed in this turn."
+}

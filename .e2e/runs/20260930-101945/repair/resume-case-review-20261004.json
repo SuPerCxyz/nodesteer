@@ -1,0 +1,3488 @@
+{
+  "schema_version": 1,
+  "review_type": "read-only evidence acceptance recommendations",
+  "created_from": "new repair qa-resume actual evidence and existing test assertions; no live operations executed by reviewer",
+  "canonical_denominator": 504,
+  "defect_denominator": 22,
+  "canonical_inventory_sha256": "9ca8c770193afcb14caec5328c92f20d0bc48cc2d3f3f84d6fbabd9702ff742d",
+  "authority_url": "http://192.168.100.209:18080",
+  "build_verification": {
+    "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/versions.json:20",
+    "hub_disk_sha256": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+    "agent_disk_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "limitation": "Disk file hash verified; current process /proc SHA and systemctl status not read due guest-exec allowlist; do not state running process hash proved."
+  },
+  "merge_rules": [
+    "Root must inspect and merge per-case evidence; these statuses are recommendations only and no global counts written.",
+    "Preserve prior independently accepted covered dimensions/evidence; replace only stale remaining claims actually resolved by these tests.",
+    "Failed suite does not invalidate already proved independent dimensions; failed or mock tests do not receive full PASS.",
+    "No original baseline evidence is treated as repaired runtime PASS.",
+    "P09P11-14 may now be PASS only by combining old repair Task forward evidence with new independently verified persisted-parameter reverse; X16 remains PARTIAL.",
+    "FL12 must remain PARTIAL for actual connected Native maintenance and successful execution recovery; Hub-only artificial status transitions cannot prove Agent workflow."
+  ],
+  "case_recommendations": [
+    {
+      "case_id": "G-01-02",
+      "title": "已登录访问 `/sign-in` → 不进入登录表单，回到业务页",
+      "status": "PASS",
+      "covered_description": "Authenticated /me=200 then direct /sign-in returns local business root; no login form.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:107",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:293",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/authenticated-sign-in.json:1"
+      ],
+      "test_id": "SAFE-10",
+      "test_ids": [
+        "SAFE-10"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G-01-01",
+      "title": "未登录访问 `/`、`/agents`、`/tasks` 等 → 跳转 `/sign-in`",
+      "status": "PARTIAL",
+      "covered_description": "Logout then /agents navigation redirects to sign-in.",
+      "remaining_dimensions": [
+        "Other protected top-level paths not individually verified anonymously in this batch."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:205",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:150",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/auth-safe-basics.json:1"
+      ],
+      "test_id": "SAFE-06",
+      "test_ids": [
+        "SAFE-06"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G-01-03",
+      "title": "登录带 `redirect` 的目标页 → 成功后只回到本站合法路径",
+      "status": "PASS",
+      "covered_description": "Real login returns to /agents?qa=safe#anchor preserving legal local query/hash.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:205",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:150",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/auth-safe-basics.json:1"
+      ],
+      "test_id": "SAFE-06",
+      "test_ids": [
+        "SAFE-06"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G-01-04",
+      "title": "redirect 为外部 URL、`/sign-in` 或非法值 → 不发生开放重定向",
+      "status": "PARTIAL",
+      "covered_description": "Real login rejects an external absolute redirect and returns local root.",
+      "remaining_dimensions": [
+        "/sign-in redirect, protocol-relative URL and malformed value branches remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:205",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:150",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/auth-safe-basics.json:1"
+      ],
+      "test_id": "SAFE-06",
+      "test_ids": [
+        "SAFE-06"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G02-04",
+      "title": "Profile 菜单退出登录，分别验证取消和确认。",
+      "status": "PASS",
+      "covered_description": "Profile logout cancel preserves token; confirmation clears it and reaches sign-in.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:205",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:150",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/auth-safe-basics.json:1"
+      ],
+      "test_id": "SAFE-06",
+      "test_ids": [
+        "SAFE-06"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G02-05",
+      "title": "退出后 Token、用户状态清除，刷新受限页面仍需登录。",
+      "status": "PASS",
+      "covered_description": "After confirmed logout token is absent and fresh protected /agents navigation requires login.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:205",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:150",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/auth-safe-basics.json:1"
+      ],
+      "test_id": "SAFE-06",
+      "test_ids": [
+        "SAFE-06"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G02-09",
+      "title": "导航 active 状态、浏览器前进后退和直接 URL 访问正确。",
+      "status": "PARTIAL",
+      "covered_description": "Real tasks/scripts history and scripts active marker; detail deep links navigate directly and survive back/forward.",
+      "remaining_dimensions": [
+        "Other navigation active markers not all individually asserted."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:239",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:180",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/keyboard-history-safe.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:443",
+        "web/e2e/tests/safe-ui.spec.ts:528",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/detail-deep-links.json:1"
+      ],
+      "test_id": "SAFE-07,SAFE-17",
+      "test_ids": [
+        "SAFE-07",
+        "SAFE-17"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P01-03",
+      "title": "用户名为空、密码为空、同时为空，前端校验和服务端响应正确。",
+      "status": "PARTIAL",
+      "covered_description": "Empty username/password/both cause zero login POST through form required validation.",
+      "remaining_dimensions": [
+        "Direct server missing-field responses not exercised by this form-only check."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:205",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:150",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/auth-safe-basics.json:1"
+      ],
+      "test_id": "SAFE-06",
+      "test_ids": [
+        "SAFE-06"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P01-05",
+      "title": "Password 显示/隐藏按钮正确。",
+      "status": "PASS",
+      "covered_description": "Password show/hide switches actual input type text/password.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:205",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:150",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/auth-safe-basics.json:1"
+      ],
+      "test_id": "SAFE-06",
+      "test_ids": [
+        "SAFE-06"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P02-04",
+      "title": "浏览器前进、后退、刷新、直接输入子路由。",
+      "status": "PASS",
+      "covered_description": "Actual Agent/alias, Group, Script, Task detail/edit/run, Schedule, Application and Execution paths support direct navigation, reload, back/forward.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:239",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:180",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/keyboard-history-safe.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:443",
+        "web/e2e/tests/safe-ui.spec.ts:528",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/detail-deep-links.json:1"
+      ],
+      "test_id": "SAFE-07,SAFE-17",
+      "test_ids": [
+        "SAFE-07",
+        "SAFE-17"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G03-01",
+      "title": "搜索命中。",
+      "status": "PARTIAL",
+      "covered_description": "SAFE01 successful search-hit checks retained for agents/groups/scripts/tasks/schedules/applications/artifacts; Execution beyond-page ID and Audit beyond-page resource search separately passed.",
+      "remaining_dimensions": [
+        "Transfers/users and unfinished execution/audit table matrix dimensions not all checked by SAFE01."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:10",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/tables-safe.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:85",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-cross-page-search.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap07b/audit-cross-page-search.json:1"
+      ],
+      "test_id": "SAFE-01,SAFE-02,GAP-07",
+      "test_ids": [
+        "SAFE-01",
+        "SAFE-02",
+        "GAP-07"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G03-02",
+      "title": "搜索无结果显示 No Results。",
+      "status": "PARTIAL",
+      "covered_description": "Seven completed SAFE01 modules show their real no-results state.",
+      "remaining_dimensions": [
+        "SAFE01 fails at later tbody locator; remaining modules require actual empty-state observation, not inference."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:10",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/tables-safe.json:1"
+      ],
+      "test_id": "SAFE-01",
+      "test_ids": [
+        "SAFE-01"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G03-03",
+      "title": "清空搜索恢复数据。",
+      "status": "PARTIAL",
+      "covered_description": "Completed seven table modules recover data after clearing/resetting search; Audit search reset also passed.",
+      "remaining_dimensions": [
+        "Remaining four table modules require full reset/recovery assertions."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:10",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/tables-safe.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap07b/audit-cross-page-search.json:1"
+      ],
+      "test_id": "SAFE-01,GAP-07",
+      "test_ids": [
+        "SAFE-01",
+        "GAP-07"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G03-04",
+      "title": "Reset 清除搜索/筛选。",
+      "status": "PARTIAL",
+      "covered_description": "Completed table modules and Audit reset clear search; Execution filter reset clears URL q/status/trigger.",
+      "remaining_dimensions": [
+        "Remaining module reset branches and actual post-clear execution dataset comparison."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:10",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/tables-safe.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:571",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filter-transfer-draft.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filters.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap07b/audit-cross-page-search.json:1"
+      ],
+      "test_id": "SAFE-01,SAFE-18,GAP-07",
+      "test_ids": [
+        "SAFE-01",
+        "SAFE-18",
+        "GAP-07"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G03-05",
+      "title": "View 菜单隐藏列、恢复列，操作列不可误隐藏。",
+      "status": "PASS",
+      "covered_description": "All 11 real View menus hide every hideable column, persist across reload and restore original selection; nonhideable headers remain.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:209",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:313",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/all-tables-all-columns.json:1"
+      ],
+      "test_id": "GAP-08",
+      "test_ids": [
+        "GAP-08"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G03-06",
+      "title": "切换每页 10/20/30/40/50 条。",
+      "status": "PARTIAL",
+      "covered_description": "Completed seven SAFE01 modules verify page-size selections and persistence.",
+      "remaining_dimensions": [
+        "Remaining modules and all page-size options for those modules require completion."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:10",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/tables-safe.json:1"
+      ],
+      "test_id": "SAFE-01",
+      "test_ids": [
+        "SAFE-01"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G03-07",
+      "title": "首页、上一页、页码、下一页、末页。",
+      "status": "PARTIAL",
+      "covered_description": "Audit actual second-page navigation plus previous/first reset confirmed; completed modules have pagination controls checked.",
+      "remaining_dimensions": [
+        "All table datasets including multiple pages and last/page-number navigation not completed."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:10",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/tables-safe.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap07b/audit-cross-page-search.json:1"
+      ],
+      "test_id": "SAFE-01,GAP-07",
+      "test_ids": [
+        "SAFE-01",
+        "GAP-07"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G03-08",
+      "title": "第一页/最后一页按钮禁用状态。",
+      "status": "PARTIAL",
+      "covered_description": "Completed modules prove single-page disabled controls; Audit first/previous and second-page transitions verified.",
+      "remaining_dimensions": [
+        "Last-page disabled controls and remaining modules need exact dataset-based assertions."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:10",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/tables-safe.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap07b/audit-cross-page-search.json:1"
+      ],
+      "test_id": "SAFE-01,GAP-07",
+      "test_ids": [
+        "SAFE-01",
+        "GAP-07"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G03-09",
+      "title": "API 失败显示 Error，Retry 会重新请求。",
+      "status": "PARTIAL",
+      "covered_description": "Real nonexistent Agent/Group/Script/Task/Schedule/Application/Execution pages display Retry; Retry reissues request and remains error with return link.",
+      "remaining_dimensions": [
+        "General table API Error/Retry/loading branches require live errors; UI_MOCK excluded."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:443",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:528",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/detail-deep-links.json:1"
+      ],
+      "test_id": "SAFE-17",
+      "test_ids": [
+        "SAFE-17"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G04-01",
+      "title": "所有提交按钮 pending 时禁用，不能重复创建。",
+      "status": "PARTIAL",
+      "covered_description": "Task Save, Artifact multipart upload and Enrollment submission are actually delayed unchanged requests; pending disabled and request count one.",
+      "remaining_dimensions": [
+        "Other submit controls, error and recovery branches remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:90",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap/task-pending-secret.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:254",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/enrollment-retry-pending.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:243",
+        "web/e2e/tests/gap-ui.spec.ts:359",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/artifact-large-pending.json:1"
+      ],
+      "test_id": "GAP-02,GAP-06,GAP-09",
+      "test_ids": [
+        "GAP-02",
+        "GAP-06",
+        "GAP-09"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G04-02",
+      "title": "删除菜单必须打开确认框；取消不发送 DELETE，确认后才删除。",
+      "status": "PARTIAL",
+      "covered_description": "Group/Task/Schedule/Artifact deletion cancel emits zero DELETE; confirm emits one and appropriate removal or referenced 409.",
+      "remaining_dimensions": [
+        "Node, Script, Application and other deletion branches not all covered here."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:141",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:359",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/group-task-roundtrip.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-tasks.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-groups.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:107",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:129",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/artifact-boundaries-reference-delete.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:311",
+        "web/e2e/tests/gap-ui.spec.ts:484",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-schedule-continuity.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:345",
+        "web/e2e/tests/gap-ui.spec.ts:686",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/artifact-unreferenced-ui-delete.json:1"
+      ],
+      "test_id": "SAFE-12,GAP-03,GAP-13,GAP-19",
+      "test_ids": [
+        "SAFE-12",
+        "GAP-03",
+        "GAP-13",
+        "GAP-19"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G04-03",
+      "title": "所有 Alert/Error 文案具体、无重复通用错误。",
+      "status": "PARTIAL",
+      "covered_description": "Task missing fields, disabled Script reference and maintenance Run surface specific actual server errors.",
+      "remaining_dimensions": [
+        "Other error sources and duplicate generic-message check across all pages remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:141",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:231",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-missing-fields.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:379",
+        "web/e2e/tests/gap-ui.spec.ts:702",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/script-disabled-reference-boundaries.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:481",
+        "web/e2e/tests/gap-ui.spec.ts:815",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/maintenance-dashboard-run-guard.json:1"
+      ],
+      "test_id": "GAP-05,GAP-20,GAP-23",
+      "test_ids": [
+        "GAP-05",
+        "GAP-20",
+        "GAP-23"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G04-04",
+      "title": "Tab 键顺序、Enter 提交、Escape 关闭弹窗符合预期。",
+      "status": "PARTIAL",
+      "covered_description": "Profile Enter/Escape and selected Node toolbar Home/End/Arrow/Escape operations work.",
+      "remaining_dimensions": [
+        "Tab order, form Enter, focus return and all dialog keyboard branches remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:239",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:180",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/keyboard-history-safe.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:477",
+        "web/e2e/tests/safe-ui.spec.ts:602",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/bulk-selection-keyboard.json:1"
+      ],
+      "test_id": "SAFE-07,SAFE-20",
+      "test_ids": [
+        "SAFE-07",
+        "SAFE-20"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G04-05",
+      "title": "所有图标按钮具备可识别 aria-label/title。",
+      "status": "PARTIAL",
+      "covered_description": "Actual Application/Group/Schedule detail buttons and dynamic action menu have accessible names.",
+      "remaining_dimensions": [
+        "Other pages, parameter/dialog controls and complete accessibility-tree controls remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:447",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:768",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/dynamic-detail-menu-button-names.json:1"
+      ],
+      "test_id": "GAP-22",
+      "test_ids": [
+        "GAP-22"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "G04-07",
+      "title": "长 ID、SHA256、路径、命令可复制或换行，不覆盖按钮。",
+      "status": "PARTIAL",
+      "covered_description": "2144-character Task command is rendered exactly, selectable and horizontally contained at 760 width; Run button visible/enabled.",
+      "remaining_dimensions": [
+        "Secure clipboard exactness; long ID/SHA/path controls and other layouts remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:413",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:728",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/long-command-detail-layout.json:1"
+      ],
+      "test_id": "GAP-21",
+      "test_ids": [
+        "GAP-21"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P03-01",
+      "title": "顶部 4 个指标：节点总数、运行中执行、失败执行、成功率。",
+      "status": "PASS",
+      "covered_description": "Real Dashboard node/running/failed/success-rate values checked against actual 50-execution window, including maintenance state change.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:341",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:329",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/dashboard-node-links.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:481",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:815",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/maintenance-dashboard-run-guard.json:1"
+      ],
+      "test_id": "SAFE-11,GAP-23",
+      "test_ids": [
+        "SAFE-11",
+        "GAP-23"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P03-02",
+      "title": "Running Executions 的 View All 和每条执行链接。",
+      "status": "PARTIAL",
+      "covered_description": "Running Executions View All routes correctly.",
+      "remaining_dimensions": [
+        "Actual running record links require owned running fixtures."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:341",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:329",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/dashboard-node-links.json:1"
+      ],
+      "test_id": "SAFE-11",
+      "test_ids": [
+        "SAFE-11"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P03-03",
+      "title": "Agent Health 的 View All。",
+      "status": "PASS",
+      "covered_description": "Agent Health View All routes to /agents.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:341",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:329",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/dashboard-node-links.json:1"
+      ],
+      "test_id": "SAFE-11",
+      "test_ids": [
+        "SAFE-11"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P03-04",
+      "title": "Application Status 的 View All 和每个应用链接。",
+      "status": "PARTIAL",
+      "covered_description": "Application Status View All routes to /applications.",
+      "remaining_dimensions": [
+        "Every relevant Application card record link remains."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:341",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:329",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/dashboard-node-links.json:1"
+      ],
+      "test_id": "SAFE-11",
+      "test_ids": [
+        "SAFE-11"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P03-05",
+      "title": "Sync Status 的 View All。",
+      "status": "PASS",
+      "covered_description": "Sync Status View All routes to /agents.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:341",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:329",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/dashboard-node-links.json:1"
+      ],
+      "test_id": "SAFE-11",
+      "test_ids": [
+        "SAFE-11"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P03-06",
+      "title": "Recent Executions 的 View All、任务名/执行详情链接。",
+      "status": "PARTIAL",
+      "covered_description": "Recent Executions View All routes to /executions.",
+      "remaining_dimensions": [
+        "Recent record Task and Execution link checks remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:341",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:329",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/dashboard-node-links.json:1"
+      ],
+      "test_id": "SAFE-11",
+      "test_ids": [
+        "SAFE-11"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P03-07",
+      "title": "Upcoming Schedules 的 View All、调度链接。",
+      "status": "PARTIAL",
+      "covered_description": "Upcoming Schedules View All routes to /schedules; independent Task/Node schedule links work.",
+      "remaining_dimensions": [
+        "Actual upcoming Dashboard schedule-row link remains."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:341",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:329",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/dashboard-node-links.json:1"
+      ],
+      "test_id": "SAFE-11",
+      "test_ids": [
+        "SAFE-11"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P03-08",
+      "title": "节点、执行、应用、同步统计与对应列表 API 一致。",
+      "status": "PARTIAL",
+      "covered_description": "Node counts and execution metrics match actual API and maintenance transitions.",
+      "remaining_dimensions": [
+        "Dashboard application-health and sync aggregate comparisons are not completely covered by these suites."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:341",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:329",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/dashboard-node-links.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:481",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:815",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/maintenance-dashboard-run-guard.json:1"
+      ],
+      "test_id": "SAFE-11,GAP-23",
+      "test_ids": [
+        "SAFE-11",
+        "GAP-23"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P03-09",
+      "title": "无运行执行、无应用、无调度、无失败执行的空态。",
+      "status": "PARTIAL",
+      "covered_description": "Actual no-running and no-enabled-schedule empty states match API; real existing Application and failed history are preserved.",
+      "remaining_dimensions": [
+        "No-app and no-failed-execution empty states require an isolated empty authority; current data cannot prove them."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:515",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:902",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/dashboard-real-empty-state-applicability.json:1"
+      ],
+      "test_id": "GAP-24",
+      "test_ids": [
+        "GAP-24"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P05A-03",
+      "title": "节点名称非法字符、长度边界。",
+      "status": "PARTIAL",
+      "covered_description": "Invalid node-name characters fail with 400; 128-character name accepted.",
+      "remaining_dimensions": [
+        "Empty name and beyond-128 boundary remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:254",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/enrollment-retry-pending.json:1"
+      ],
+      "test_id": "GAP-06",
+      "test_ids": [
+        "GAP-06"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P05A-05",
+      "title": "Hub 地址仅允许 http/https 且 Host 有效。",
+      "status": "PARTIAL",
+      "covered_description": "HTTPS Hub address accepted during real pending enrollment.",
+      "remaining_dimensions": [
+        "Unsupported scheme, missing Host and native-validity edge branches remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:254",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/enrollment-retry-pending.json:1"
+      ],
+      "test_id": "GAP-06",
+      "test_ids": [
+        "GAP-06"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P05A-06",
+      "title": "点击“生成安装命令”只发送一次 POST。",
+      "status": "PASS",
+      "covered_description": "Enrollment successful submission emits one unchanged POST and creates exact pending Node.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:254",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/enrollment-retry-pending.json:1"
+      ],
+      "test_id": "GAP-06",
+      "test_ids": [
+        "GAP-06"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P05A-07",
+      "title": "pending/loading 状态按钮禁用。",
+      "status": "PASS",
+      "covered_description": "Enrollment request held pending disables button and displays loading skeleton; button recovers after response.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:254",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/enrollment-retry-pending.json:1"
+      ],
+      "test_id": "GAP-06",
+      "test_ids": [
+        "GAP-06"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P05A-09",
+      "title": "三种命令包含 Gateway、Registration Token、节点身份和节点参数。",
+      "status": "PARTIAL",
+      "covered_description": "Gateway display presence recorded; generated command values omitted from public evidence for secret hygiene.",
+      "remaining_dimensions": [
+        "All three command parameter fields need nonsecret assertions without recording credentials."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:254",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/enrollment-retry-pending.json:1"
+      ],
+      "test_id": "GAP-06",
+      "test_ids": [
+        "GAP-06"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P05A-11",
+      "title": "Retry 重新使用原参数，不产生额外错误。",
+      "status": "PASS",
+      "covered_description": "Bad name/IP/Hub fields explicitly filled before first request; first Generate and actual Retry each return real400, and response.request().postDataJSON is independently captured and asserted equal to original input. No route is installed before both requests; later pending-success route only waits and continues without overrides.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:254",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/enrollment-retry-pending.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:261",
+        "web/e2e/tests/gap-ui.spec.ts:272"
+      ],
+      "test_id": "GAP-06",
+      "test_ids": [
+        "GAP-06"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P05A-12",
+      "title": "提交后校验 Hub 侧 pending 节点记录；Agent HELLO 后复用 Node ID/Agent ID 并变为 online/synced。",
+      "status": "PARTIAL",
+      "covered_description": "Hub stores actual pending Node with generated identity.",
+      "remaining_dimensions": [
+        "Real Agent HELLO must reuse Node/Agent identity and reach online/synced."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:254",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/enrollment-retry-pending.json:1"
+      ],
+      "test_id": "GAP-06",
+      "test_ids": [
+        "GAP-06"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P05B-05",
+      "title": "无 Inventory、无任务、无调度、无应用、无执行的空态。",
+      "status": "PASS",
+      "covered_description": "New owned pending Node detail shows inventory/tasks/schedules/applications/executions empty messages.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:609",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:764",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/node-controls.json:1"
+      ],
+      "test_id": "SAFE-25",
+      "test_ids": [
+        "SAFE-25"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P05B-06",
+      "title": "Labels 添加、覆盖同名 key、空 key 禁用、保存后刷新。",
+      "status": "PASS",
+      "covered_description": "Whitespace/empty label key disabled; same key added then overwritten, persisted API value and browser reload show latest value.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:609",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:764",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/node-controls.json:1"
+      ],
+      "test_id": "SAFE-25",
+      "test_ids": [
+        "SAFE-25"
+      ],
+      "existing_status_before_root_merge": "PARTIAL",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P05B-07",
+      "title": "Tasks → Task Detail。",
+      "status": "PASS",
+      "covered_description": "Real Node detail Task link visible and clicked to exact Task detail.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:341",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:329",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/dashboard-node-links.json:1"
+      ],
+      "test_id": "SAFE-11",
+      "test_ids": [
+        "SAFE-11"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P05B-08",
+      "title": "Schedules → Schedule Detail。",
+      "status": "PARTIAL",
+      "covered_description": "Node detail schedule link visible; Task-detail schedule link clicked to correct Schedule detail and reload Task selection.",
+      "remaining_dimensions": [
+        "Direct click from Node Schedule list to exact Schedule detail remains."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:341",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:329",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/dashboard-node-links.json:1"
+      ],
+      "test_id": "SAFE-11",
+      "test_ids": [
+        "SAFE-11"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P05B-12",
+      "title": "无效 Node ID 显示 404/Error/Retry。",
+      "status": "PASS",
+      "covered_description": "Nonexistent Node shows Error/Retry; retry and return path exercised.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:341",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:329",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/dashboard-node-links.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:443",
+        "web/e2e/tests/safe-ui.spec.ts:528",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/detail-deep-links.json:1"
+      ],
+      "test_id": "SAFE-11,SAFE-17",
+      "test_ids": [
+        "SAFE-11",
+        "SAFE-17"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P06-02",
+      "title": "新建 Static Group：名称、描述、多个节点成员、创建结果。",
+      "status": "PASS",
+      "covered_description": "UI creates Static Group name/description/two authorized members and API exactly matches.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:141",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:359",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/group-task-roundtrip.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-tasks.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-groups.json:1"
+      ],
+      "test_id": "SAFE-12",
+      "test_ids": [
+        "SAFE-12"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P06-04",
+      "title": "编辑名称、描述、类型、成员、label 定义。",
+      "status": "PASS",
+      "covered_description": "UI edits name/description/type/members/label key-value and API records Static-to-Label-to-Static changes.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:141",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:359",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/group-task-roundtrip.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-tasks.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-groups.json:1"
+      ],
+      "test_id": "SAFE-12",
+      "test_ids": [
+        "SAFE-12"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P06-05",
+      "title": "类型切换后旧字段不产生错误残留。",
+      "status": "PARTIAL",
+      "covered_description": "Static/Label roundtrip restores intended static membership; stale label keys remain stored.",
+      "remaining_dimensions": [
+        "Real next Task execution must demonstrate irrelevant stale label fields cannot alter static-target business."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:141",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:359",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/group-task-roundtrip.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-tasks.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-groups.json:1"
+      ],
+      "test_id": "SAFE-12",
+      "test_ids": [
+        "SAFE-12"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P06-06",
+      "title": "删除打开确认框；取消/确认分别验证。",
+      "status": "PASS",
+      "covered_description": "Group UI deletion cancellation preserves access and zero DELETE; confirmation single DELETE and GET404.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:141",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:359",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/group-task-roundtrip.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-tasks.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-groups.json:1"
+      ],
+      "test_id": "SAFE-12",
+      "test_ids": [
+        "SAFE-12"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P07_P08-02",
+      "title": "新建入口、编辑入口、返回/取消。",
+      "status": "PARTIAL",
+      "covered_description": "New Script parameter/environment form cancel issues zero POST and returns Script list; Script edit/detail navigation works.",
+      "remaining_dimensions": [
+        "All editor return/edit cancel branches including unchanged persisted Revision/Audit remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:137",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:108",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:443",
+        "web/e2e/tests/safe-ui.spec.ts:528",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/detail-deep-links.json:1"
+      ],
+      "test_id": "SAFE-04,SAFE-17",
+      "test_ids": [
+        "SAFE-04",
+        "SAFE-17"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P07_P08-05",
+      "title": "参数新增、类型选择、默认值、删除、空名称不添加。",
+      "status": "PARTIAL",
+      "covered_description": "New Script form adds string/number/bool/secret and defaults, removes all, rejects blank name.",
+      "remaining_dimensions": [
+        "Persisted all-type parameters and their removal saved/read back are not proved by cancelled new-form flow."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:137",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:108"
+      ],
+      "test_id": "SAFE-04",
+      "test_ids": [
+        "SAFE-04"
+      ],
+      "existing_status_before_root_merge": "PARTIAL",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P07_P08-06",
+      "title": "Environment 新增、覆盖、删除、空 KEY 不添加。",
+      "status": "PARTIAL",
+      "covered_description": "Form adds/overwrites/removes environment rows and rejects blank KEY; final cancel emits zero POST.",
+      "remaining_dimensions": [
+        "Persisted overwrite/removal after save/reopen remains; prior FULL07 only covers saved addition/use."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:137",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:108"
+      ],
+      "test_id": "SAFE-04",
+      "test_ids": [
+        "SAFE-04"
+      ],
+      "existing_status_before_root_merge": "PARTIAL",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P07_P08-11",
+      "title": "后端错误、重复名称、超长内容、超时边界。",
+      "status": "PARTIAL",
+      "covered_description": "Actual API duplicate-name rejection, 294963-byte content/SHA roundtrip, zero/negative timeout observations recorded.",
+      "remaining_dimensions": [
+        "These boundaries in Script UI editor/error rendering and remaining timeout edges are not represented by API-only evidence."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:379",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:702",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/script-disabled-reference-boundaries.json:1"
+      ],
+      "test_id": "GAP-20",
+      "test_ids": [
+        "GAP-20"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P09P11-03",
+      "title": "启用/禁用，状态和按钮反转。",
+      "status": "PASS",
+      "covered_description": "Owned Task disabled then enabled; API value matches each opposite menu action.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:141",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:359",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/group-task-roundtrip.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-tasks.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-groups.json:1"
+      ],
+      "test_id": "SAFE-12",
+      "test_ids": [
+        "SAFE-12"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P09P11-04",
+      "title": "删除确认框取消/确认。",
+      "status": "PASS",
+      "covered_description": "Task delete cancellation zero request and unlocked controls; confirm one request and GET404.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:141",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:359",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/group-task-roundtrip.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-tasks.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-groups.json:1"
+      ],
+      "test_id": "SAFE-12",
+      "test_ids": [
+        "SAFE-12"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P09P11-05",
+      "title": "类型 command：命令必填、保存、实际执行。",
+      "status": "PASS",
+      "covered_description": "Command mandatory error through real UI and final command roundtrip saved/actually executed successfully.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:42",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-four-types-roundtrip.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:141",
+        "web/e2e/tests/gap-ui.spec.ts:231",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-missing-fields.json:1"
+      ],
+      "test_id": "GAP-01,GAP-05",
+      "test_ids": [
+        "GAP-01",
+        "GAP-05"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P09P11-06",
+      "title": "类型 script：脚本选择、禁用脚本不可引用、保存、实际执行。",
+      "status": "PASS",
+      "covered_description": "Script selection creates persisted Script Task; disabled reference actual 400 displayed, enabling recovery executes correct stdout.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:42",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-four-types-roundtrip.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:379",
+        "web/e2e/tests/gap-ui.spec.ts:702",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/script-disabled-reference-boundaries.json:1"
+      ],
+      "test_id": "GAP-01,GAP-20",
+      "test_ids": [
+        "GAP-01",
+        "GAP-20"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P09P11-07",
+      "title": "类型 app_deploy：应用选择、节点目标、部署执行。",
+      "status": "PARTIAL",
+      "covered_description": "App deploy UI selection/save payload contains correct application_id/deploy operation and exact readback.",
+      "remaining_dimensions": [
+        "No real application deployment/Unit/health business in these roundtrip suites; FULL09 not assumed complete."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:42",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-four-types-roundtrip.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:273",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:194",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/task-form-switch-condition.json:1"
+      ],
+      "test_id": "GAP-01,SAFE-08",
+      "test_ids": [
+        "GAP-01",
+        "SAFE-08"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P09P11-08",
+      "title": "类型 app_operation：start/stop/restart/upgrade 四种操作。",
+      "status": "PARTIAL",
+      "covered_description": "Four App operation options visible; app_operation stop saved/read back.",
+      "remaining_dimensions": [
+        "Actual start/stop/restart/upgrade operation executions and effects remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:42",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-four-types-roundtrip.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:273",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:194",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/task-form-switch-condition.json:1"
+      ],
+      "test_id": "GAP-01,SAFE-08",
+      "test_ids": [
+        "GAP-01",
+        "SAFE-08"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P09P11-12",
+      "title": "类型/目标切换后旧字段不误提交。",
+      "status": "PARTIAL",
+      "covered_description": "Four Task-type saved request fields trimmed correctly; script and final command actual execution verified; target controls roundtrip to Node.",
+      "remaining_dimensions": [
+        "Saved Group/Label target combinations and App operation business effects remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:42",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-four-types-roundtrip.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:273",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:194",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/task-form-switch-condition.json:1"
+      ],
+      "test_id": "GAP-01,SAFE-08",
+      "test_ids": [
+        "GAP-01",
+        "SAFE-08"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P09P11-13",
+      "title": "Timeout、Retry、Run User、Enabled、Offline Policy。",
+      "status": "PARTIAL",
+      "covered_description": "Task timeout40/retry2/Enabled and Node target saved/read back.",
+      "remaining_dimensions": [
+        "Run User/Offline Policy actual consumer behavior and numeric/error boundaries remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:273",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:194",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/task-form-switch-condition.json:1"
+      ],
+      "test_id": "SAFE-08",
+      "test_ids": [
+        "SAFE-08"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P09P11-14",
+      "title": "参数添加/删除、secret 类型不在页面泄漏值。",
+      "status": "PASS",
+      "covered_description": "Task UI forward adds secret default, saves and reopens persisted masked summary; independent reverse seeds an existing real secret parameter, hard-opens edit with mask/no plaintext, removes exactly that row, actual UI PUT200 persists Revision1->2/parameters=[], hard-reopens with no row, DELETE200/GET404.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:90",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap/task-pending-secret.json:1",
+        ".e2e/runs/20260930-101945/repair/qa/task-secret-default-live.json:18",
+        ".e2e/runs/20260930-101945/repair/qa/task-secret-default-cleanup.json:3",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/task-secret-parameter-reverse.json:8",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/task-secret-parameter-reverse.json:15",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/task-secret-parameter-reverse.json:24"
+      ],
+      "test_id": "GAP-02,TASK-SECRET-PARAMETER-REVERSE",
+      "test_ids": [
+        "GAP-02",
+        "TASK-SECRET-PARAMETER-REVERSE"
+      ],
+      "existing_status_before_root_merge": "PARTIAL",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P09P11-15",
+      "title": "Local Condition 8 种 metric、6 种 operator、设置/清除。",
+      "status": "PARTIAL",
+      "covered_description": "All 8 metrics/6 operators selectable, final command_result condition set/cleared and saved; actual local false path from prior GAP12.",
+      "remaining_dimensions": [
+        "Other metric/operator saved outcomes and validation boundaries not proved by option-loop alone."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:273",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:194",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/task-form-switch-condition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-results.json:171",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:436",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap/offline-node-condition-blocked.json:1"
+      ],
+      "test_id": "SAFE-08,GAP-12",
+      "test_ids": [
+        "SAFE-08",
+        "GAP-12"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P09P11-16",
+      "title": "Remote Condition online、last_execution、operator、节点和 task_id 校验。",
+      "status": "PARTIAL",
+      "covered_description": "Remote node/last_execution/online editing, task_id field, online condition saved within AND; prior unknown-last_execution runtime BLOCKED.",
+      "remaining_dimensions": [
+        "Operator/invalid Node/task_id branches and saved last_execution comparison variations remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:273",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:194",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/task-form-switch-condition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-results.json:171",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:436",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap/offline-node-condition-blocked.json:1"
+      ],
+      "test_id": "SAFE-08,GAP-12",
+      "test_ids": [
+        "SAFE-08",
+        "GAP-12"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P09P11-17",
+      "title": "Condition AND 结构通过 API 或当前支持的编辑入口验证。",
+      "status": "PARTIAL",
+      "covered_description": "Actual AND definition with Local+Remote saved, reopened and then last conditions cleared.",
+      "remaining_dimensions": [
+        "Same owned AND Task execute/block semantics and unset-checkbox combinations remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:273",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:194",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/task-form-switch-condition.json:1"
+      ],
+      "test_id": "SAFE-08",
+      "test_ids": [
+        "SAFE-08"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P09P11-19",
+      "title": "Definition显示command内容、script链接、application名称文本（当前无application href）",
+      "status": "PASS",
+      "covered_description": "Task command text rendered exactly; Script Definition link clicked to exact Script; Application name appears as text with absent unsupported href.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:443",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:528",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/detail-deep-links.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:413",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:728",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/long-command-detail-layout.json:1"
+      ],
+      "test_id": "SAFE-17,GAP-21",
+      "test_ids": [
+        "SAFE-17",
+        "GAP-21"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P09P11-20",
+      "title": "Execution History 链接到 Execution Detail。",
+      "status": "PASS",
+      "covered_description": "Task Execution History actual owned record link clicked to exact Execution detail.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:443",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:528",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/detail-deep-links.json:1"
+      ],
+      "test_id": "SAFE-17",
+      "test_ids": [
+        "SAFE-17"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P09P11-21",
+      "title": "Schedule 表链接到 Schedule Detail。",
+      "status": "PASS",
+      "covered_description": "Task schedule link clicked to exact Schedule detail; linked Task name preserved on reload.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:341",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:329",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/dashboard-node-links.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:311",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:484",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-schedule-continuity.json:1"
+      ],
+      "test_id": "SAFE-11,GAP-13",
+      "test_ids": [
+        "SAFE-11",
+        "GAP-13"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P09P11-22",
+      "title": "空名称、空命令、无脚本、无应用、无目标、非法 ID 的错误反馈。",
+      "status": "PARTIAL",
+      "covered_description": "Empty name zero POST and missing command/script/application/operation/Node-target actual 400; offline and maintenance real errors shown.",
+      "remaining_dimensions": [
+        "Invalid-ID API contract and remaining malformed ID combinations not injected by UI selector."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:141",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:231",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-missing-fields.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-results.json:171",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:436",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap/offline-node-condition-blocked.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:481",
+        "web/e2e/tests/gap-ui.spec.ts:815",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/maintenance-dashboard-run-guard.json:1"
+      ],
+      "test_id": "GAP-05,GAP-12,GAP-23",
+      "test_ids": [
+        "GAP-05",
+        "GAP-12",
+        "GAP-23"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P12P13-02",
+      "title": "调度任务名链接、编辑、启用/禁用、删除确认。",
+      "status": "PARTIAL",
+      "covered_description": "Task/Schedule links and real delete cancel/confirm checked; schedule edit owner/policy save works.",
+      "remaining_dimensions": [
+        "Schedule UI enabled/disabled toggle and all list/action states remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:307",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:256",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/cron-fields-safe.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:311",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:484",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-schedule-continuity.json:1"
+      ],
+      "test_id": "SAFE-09,GAP-13",
+      "test_ids": [
+        "SAFE-09",
+        "GAP-13"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P12P13-03",
+      "title": "Cron 表达式必填和非法表达式。",
+      "status": "PASS",
+      "covered_description": "Actual Cron required/invalid validation, valid expression graphical/raw fields and saved normal Cron proved.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:171",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:132",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:307",
+        "web/e2e/tests/safe-ui.spec.ts:256",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/cron-fields-safe.json:1"
+      ],
+      "test_id": "SAFE-05,SAFE-09",
+      "test_ids": [
+        "SAFE-05",
+        "SAFE-09"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P12P13-04",
+      "title": "Interval 最小值、0、负数、小数和超大值。",
+      "status": "PARTIAL",
+      "covered_description": "Interval 0 validation and normal120 saved readback.",
+      "remaining_dimensions": [
+        "Minimum positive, negative, fractional and excessive values remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:171",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:132",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:575",
+        "web/e2e/tests/safe-ui.spec.ts:662",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/schedule-four-types.json:1"
+      ],
+      "test_id": "SAFE-05,SAFE-22",
+      "test_ids": [
+        "SAFE-05",
+        "SAFE-22"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P12P13-05",
+      "title": "One-Time 未来时间、过去时间、时区、空 run_at。",
+      "status": "PARTIAL",
+      "covered_description": "Blank one-time validation, real future IANA wall time/UTC conversion and reload preserve instant.",
+      "remaining_dimensions": [
+        "Past date and DST boundaries remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:171",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:132",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:575",
+        "web/e2e/tests/safe-ui.spec.ts:662",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/schedule-four-types.json:1"
+      ],
+      "test_id": "SAFE-05,SAFE-22",
+      "test_ids": [
+        "SAFE-05",
+        "SAFE-22"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P12P13-06",
+      "title": "Hub Owner 和 Agent Owner。",
+      "status": "PARTIAL",
+      "covered_description": "Hub and Agent owner actual form saves preserve configured owner; prior backend first triggers exist.",
+      "remaining_dimensions": [
+        "Independent trigger-source/other-owner exclusion needed for actual owner correctness."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:307",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:256",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/cron-fields-safe.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:575",
+        "web/e2e/tests/safe-ui.spec.ts:662",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/schedule-four-types.json:1"
+      ],
+      "test_id": "SAFE-09,SAFE-22",
+      "test_ids": [
+        "SAFE-09",
+        "SAFE-22"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P12P13-07",
+      "title": "`allow_offline` 与 `hub_online_required` 组合。",
+      "status": "PARTIAL",
+      "covered_description": "Both offline policies stored through UI owner changes and schedule type saves.",
+      "remaining_dimensions": [
+        "Offline/recovery behavior across all owner-policy combinations not exercised by UI-save suite."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:307",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:256",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/cron-fields-safe.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:575",
+        "web/e2e/tests/safe-ui.spec.ts:662",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/schedule-four-types.json:1"
+      ],
+      "test_id": "SAFE-09,SAFE-22",
+      "test_ids": [
+        "SAFE-09",
+        "SAFE-22"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P12P13-08",
+      "title": "`run_once` 与 `skip` Misfire。",
+      "status": "PARTIAL",
+      "covered_description": "skip/run_once Misfire values saved/read back through UI.",
+      "remaining_dimensions": [
+        "Actual missed-slot behavior and recovery remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:307",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:256",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/cron-fields-safe.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:575",
+        "web/e2e/tests/safe-ui.spec.ts:662",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/schedule-four-types.json:1"
+      ],
+      "test_id": "SAFE-09,SAFE-22",
+      "test_ids": [
+        "SAFE-09",
+        "SAFE-22"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P12P13-09",
+      "title": "保存后不向非 one_time 调度提交无效 run_at。",
+      "status": "PASS",
+      "covered_description": "All non-one_time real saves read back empty/zero run_at; Cron-only expression and on_start interval cleared.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:575",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:662",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/schedule-four-types.json:1"
+      ],
+      "test_id": "SAFE-22",
+      "test_ids": [
+        "SAFE-22"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P12P13-10",
+      "title": "调度编辑部分字段更新不覆盖未修改字段。",
+      "status": "PASS",
+      "covered_description": "Editing owner/offline/misfire preserves same task/type/expression/timezone; API readback retains untouched values.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:307",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:256",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/cron-fields-safe.json:1"
+      ],
+      "test_id": "SAFE-09",
+      "test_ids": [
+        "SAFE-09"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P12P13-11",
+      "title": "Task Detail 调度表与 Schedule List 一致。",
+      "status": "PASS",
+      "covered_description": "Same Schedule present in Task detail/List; detail Task link valid; UI deletion removes list row and Task link.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:311",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:484",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-schedule-continuity.json:1"
+      ],
+      "test_id": "GAP-13",
+      "test_ids": [
+        "GAP-13"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P12P13-12",
+      "title": "取消编辑不发送请求。",
+      "status": "PASS",
+      "covered_description": "All four persisted Schedule editor cancel flows issue zero PUT and return list.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:575",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:662",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/schedule-four-types.json:1"
+      ],
+      "test_id": "SAFE-22",
+      "test_ids": [
+        "SAFE-22"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P14P15-03",
+      "title": "Arguments 添加/删除、Environment 添加/覆盖/删除。",
+      "status": "PASS",
+      "covered_description": "App arguments added/removed; environment added/overwritten/removed; saved API exact final arrays/map.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:375",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:408",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/artifact-app-form.json:1"
+      ],
+      "test_id": "SAFE-14",
+      "test_ids": [
+        "SAFE-14"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P14P15-04",
+      "title": "Health Check：systemd、tcp、http、command；target/timeout/attempts/interval。",
+      "status": "PARTIAL",
+      "covered_description": "Four health types selectable; Command target/timeout/attempts/interval persisted and browser reload retained target.",
+      "remaining_dimensions": [
+        "Other health types fields/readback and numeric/error boundaries remain; options alone do not prove their consumers."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:375",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:408",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/artifact-app-form.json:1"
+      ],
+      "test_id": "SAFE-14",
+      "test_ids": [
+        "SAFE-14"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P14P15-05",
+      "title": "自动 Unit 名称补全。",
+      "status": "PASS",
+      "covered_description": "Real App form did not fill Unit; saved Unit exactly equals nodesteer-<saved Application name>.service, independently compared from actual saved evidence.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:375",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:408",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/artifact-app-form.json:1"
+      ],
+      "test_id": "SAFE-14",
+      "test_ids": [
+        "SAFE-14"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P14P15-10",
+      "title": "Deploy 按钮无节点时禁用。",
+      "status": "PASS",
+      "covered_description": "Unassigned real Application detail Deploy button disabled.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:375",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:408",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/artifact-app-form.json:1"
+      ],
+      "test_id": "SAFE-14",
+      "test_ids": [
+        "SAFE-14"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P16-02",
+      "title": "上传名称、版本、架构 amd64/arm64、文件。",
+      "status": "PARTIAL",
+      "covered_description": "Real arm64 selected UI upload name/version/file; previous FULL02 real default architecture upload.",
+      "remaining_dimensions": [
+        "Explicit amd64 saved/readback architecture assertion remains; no ARM runtime inferred."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:375",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:408",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/artifact-app-form.json:1"
+      ],
+      "test_id": "SAFE-14",
+      "test_ids": [
+        "SAFE-14"
+      ],
+      "existing_status_before_root_merge": "PARTIAL",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P16-03",
+      "title": "HTML required 阻止空字段提交。",
+      "status": "PASS",
+      "covered_description": "Missing name/version/file combinations issue zero upload POST due actual required validation.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:375",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:408",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/artifact-app-form.json:1"
+      ],
+      "test_id": "SAFE-14",
+      "test_ids": [
+        "SAFE-14"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P16-04",
+      "title": "重复对象、空文件、超大文件、上传中按钮禁用。",
+      "status": "PARTIAL",
+      "covered_description": "Duplicate name/version observed accepted as distinct object, empty file accepted exact zero SHA, 8MiB upload pending disabled and one request.",
+      "remaining_dimensions": [
+        "Only bounded 8MiB large-file case tested; no configured maximum, arbitrary resource-exhaustion limits not asserted."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:107",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:129",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/artifact-boundaries-reference-delete.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:243",
+        "web/e2e/tests/gap-ui.spec.ts:359",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/artifact-large-pending.json:1"
+      ],
+      "test_id": "GAP-03,GAP-09",
+      "test_ids": [
+        "GAP-03",
+        "GAP-09"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P16-05",
+      "title": "Hub 计算 Size/SHA256，和本地校验一致。",
+      "status": "PASS",
+      "covered_description": "Hub exact bytes Size/SHA equals local buffer hash for nonempty/empty/8MiB fixtures.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:107",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:129",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/artifact-boundaries-reference-delete.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:243",
+        "web/e2e/tests/gap-ui.spec.ts:359",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/artifact-large-pending.json:1"
+      ],
+      "test_id": "GAP-03,GAP-09",
+      "test_ids": [
+        "GAP-03",
+        "GAP-09"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P16-06",
+      "title": "下载得到正确文件、Content-Length、`X-Artifact-SHA256`。",
+      "status": "PASS",
+      "covered_description": "Actual downloaded bytes identical, Content-Length and X-Artifact-SHA256 match actual object.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:107",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:129",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/artifact-boundaries-reference-delete.json:1"
+      ],
+      "test_id": "GAP-03",
+      "test_ids": [
+        "GAP-03"
+      ],
+      "existing_status_before_root_merge": "PARTIAL",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P16-07",
+      "title": "Artifact Usage 显示引用应用并可跳转。",
+      "status": "PASS",
+      "covered_description": "Artifact Usage shows owning Application and actual link navigates exact Application with artifact_id preserved.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:375",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:408",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/artifact-app-form.json:1"
+      ],
+      "test_id": "SAFE-14",
+      "test_ids": [
+        "SAFE-14"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P16-08",
+      "title": "删除确认框取消/确认；被应用引用时行为明确。",
+      "status": "PASS",
+      "covered_description": "Referenced Artifact cancellation zero DELETE; confirmed attempt exactly one returns409 preserving App/object; unreferenced confirm200 and object/download404.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:107",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:129",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/artifact-boundaries-reference-delete.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:345",
+        "web/e2e/tests/gap-ui.spec.ts:686",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/artifact-unreferenced-ui-delete.json:1"
+      ],
+      "test_id": "GAP-03,GAP-19",
+      "test_ids": [
+        "GAP-03",
+        "GAP-19"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P17P18-02",
+      "title": "q 搜索：Execution ID、Task ID/名称、Node ID。",
+      "status": "PARTIAL",
+      "covered_description": "Execution ID search finds known beyond-page real record.",
+      "remaining_dimensions": [
+        "Task ID/name and Node ID search variants remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:85",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-cross-page-search.json:1"
+      ],
+      "test_id": "SAFE-02",
+      "test_ids": [
+        "SAFE-02"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P17P18-03",
+      "title": "status：PENDING/RUNNING/SUCCESS/FAILED/SKIPPED/CANCELED/TIMED_OUT/BLOCKED。",
+      "status": "PARTIAL",
+      "covered_description": "Eight status values select and reflect in URL/control; actual real SUCCESS/CANCELED/SKIPPED/BLOCKED records from related flows.",
+      "remaining_dimensions": [
+        "Filter returned-dataset status correctness for all states remains."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:571",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filter-transfer-draft.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filters.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:409",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:447",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/execution-log-cancel.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-results.json:171",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:436",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap/offline-node-condition-blocked.json:1"
+      ],
+      "test_id": "SAFE-18,SAFE-15,GAP-12",
+      "test_ids": [
+        "SAFE-18",
+        "SAFE-15",
+        "GAP-12"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P17P18-04",
+      "title": "trigger：manual/schedule/system。",
+      "status": "PARTIAL",
+      "covered_description": "manual/schedule/system filter options and URL/control verified.",
+      "remaining_dimensions": [
+        "Actual result trigger attribution for all three states not independently asserted."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:571",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filter-transfer-draft.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filters.json:1"
+      ],
+      "test_id": "SAFE-18",
+      "test_ids": [
+        "SAFE-18"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P17P18-05",
+      "title": "status/trigger/q 清空后 URL 参数和结果正确。",
+      "status": "PARTIAL",
+      "covered_description": "status/trigger/q clear removes URL params and resets controls.",
+      "remaining_dimensions": [
+        "Actual result datasets before/after clearing remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:571",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filter-transfer-draft.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filters.json:1"
+      ],
+      "test_id": "SAFE-18",
+      "test_ids": [
+        "SAFE-18"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P17P18-09",
+      "title": "stdout、stderr、all stream；日志搜索。",
+      "status": "PASS",
+      "covered_description": "Real running stdout/stderr/all streams, late stdout and case-insensitive search each show correct inclusion/exclusion.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:409",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:447",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/execution-log-cancel.json:1"
+      ],
+      "test_id": "SAFE-15",
+      "test_ids": [
+        "SAFE-15"
+      ],
+      "existing_status_before_root_merge": "PARTIAL",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P17P18-10",
+      "title": "Wrap、Follow、Copy Logs。",
+      "status": "PARTIAL",
+      "covered_description": "Wrap CSS toggle, Follow toggles and real HTTP manual clipboard fallback feedback.",
+      "remaining_dimensions": [
+        "Secure clipboard exact bytes/success/failure and actual Follow scrolling after disconnect remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:409",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:447",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/execution-log-cancel.json:1"
+      ],
+      "test_id": "SAFE-15",
+      "test_ids": [
+        "SAFE-15"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P17P18-12",
+      "title": "RUNNING 取消确认、取消后 CANCELED；非 RUNNING 不显示取消按钮。",
+      "status": "PASS",
+      "covered_description": "Real RUNNING cancel confirmation: cancel zero write, confirm one; API CANCELED and Stop control absent.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:409",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:447",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/execution-log-cancel.json:1"
+      ],
+      "test_id": "SAFE-15",
+      "test_ids": [
+        "SAFE-15"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P17P18-13",
+      "title": "BLOCKED 显示 block_reason。",
+      "status": "PASS",
+      "covered_description": "Real Remote unknown BLOCKED reason returned by Agent is rendered exactly in Execution detail, no command marker executed.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-results.json:171",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:436",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap/offline-node-condition-blocked.json:1"
+      ],
+      "test_id": "GAP-12",
+      "test_ids": [
+        "GAP-12"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P19-01",
+      "title": "列表、搜索、分页、空态、Error/Retry。",
+      "status": "PARTIAL",
+      "covered_description": "Real Audit next/previous/first/reset and q global beyond-page resource query200 with consistent total/hits.",
+      "remaining_dimensions": [
+        "List complete fields, empty state and real API Error/Retry remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap07b/audit-cross-page-search.json:1"
+      ],
+      "test_id": "GAP-07",
+      "test_ids": [
+        "GAP-07"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P19-03",
+      "title": "执行、取消、部署、升级、节点状态、用户角色/密码修改。",
+      "status": "PARTIAL",
+      "covered_description": "Real execution cancellation records exact Audit resource/execution/action and actual UI search shows cancel.",
+      "remaining_dimensions": [
+        "Deploy/upgrade/node/user role-password operation Audit branches remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:409",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:447",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/execution-log-cancel.json:1"
+      ],
+      "test_id": "SAFE-15",
+      "test_ids": [
+        "SAFE-15"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P19-04",
+      "title": "`action/resource/resource_id/username/time/detail` 正确。",
+      "status": "PARTIAL",
+      "covered_description": "Exact cancel Audit entry resource_id/username/action/resource/time/detail retained.",
+      "remaining_dimensions": [
+        "All event classes and error-path Audit detail correctness remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:409",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:447",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/execution-log-cancel.json:1"
+      ],
+      "test_id": "SAFE-15",
+      "test_ids": [
+        "SAFE-15"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P20-04",
+      "title": "创建成功、重复用户名、错误输入。",
+      "status": "PARTIAL",
+      "covered_description": "SAFE21 actual new user create displayed in list and duplicate request400 completed before legacy login helper timeout.",
+      "remaining_dimensions": [
+        "Full user field/error bounds and completed role-login lifecycle remain; no test PASS inferred."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:511",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:621"
+      ],
+      "test_id": "SAFE-21",
+      "test_ids": [
+        "SAFE-21"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P20-05",
+      "title": "修改角色即时保存，刷新后保持。",
+      "status": "PARTIAL",
+      "covered_description": "SAFE21 first administrator selection saved and browser reload retained label before login timeout.",
+      "remaining_dimensions": [
+        "Operator/Viewer role changes and exact three fresh-session permissions remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:511",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:621"
+      ],
+      "test_id": "SAFE-21",
+      "test_ids": [
+        "SAFE-21"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P22-01",
+      "title": "源 Agent 下拉、源路径输入。",
+      "status": "PASS",
+      "covered_description": "Source Agent selected and source file path controls update actual draft state.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:571",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filter-transfer-draft.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filters.json:1"
+      ],
+      "test_id": "SAFE-18",
+      "test_ids": [
+        "SAFE-18"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P22-02",
+      "title": "目标 Agent 下拉、目标路径输入。",
+      "status": "PASS",
+      "covered_description": "Target Agent selected, target path supplied and draft target added.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:571",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filter-transfer-draft.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filters.json:1"
+      ],
+      "test_id": "SAFE-18",
+      "test_ids": [
+        "SAFE-18"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P22-03",
+      "title": "源节点不能作为目标。",
+      "status": "PASS",
+      "covered_description": "Source excluded as target; changing source to selected target removes self-target and disables Start.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:571",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filter-transfer-draft.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filters.json:1"
+      ],
+      "test_id": "SAFE-18",
+      "test_ids": [
+        "SAFE-18"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P22-04",
+      "title": "添加目标按钮的禁用条件。",
+      "status": "PASS",
+      "covered_description": "Add target disabled without source/target/destination path and enables with valid draft fields.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:571",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filter-transfer-draft.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filters.json:1"
+      ],
+      "test_id": "SAFE-18",
+      "test_ids": [
+        "SAFE-18"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P22-05",
+      "title": "添加多个目标、重复目标不允许。",
+      "status": "PARTIAL",
+      "covered_description": "Single target add/remove exercised.",
+      "remaining_dimensions": [
+        "Multiple targets and duplicate target rejection remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:571",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filter-transfer-draft.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filters.json:1"
+      ],
+      "test_id": "SAFE-18",
+      "test_ids": [
+        "SAFE-18"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P22-06",
+      "title": "删除已添加目标，不发送请求。",
+      "status": "PASS",
+      "covered_description": "Draft target removal emits zero transfer POST and disables Start.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:571",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filter-transfer-draft.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filters.json:1"
+      ],
+      "test_id": "SAFE-18",
+      "test_ids": [
+        "SAFE-18"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "P22-07",
+      "title": "开始传输按钮的禁用条件和 loading。",
+      "status": "PARTIAL",
+      "covered_description": "Empty source path/empty targets disable Start; source-change self-target invalidates Start.",
+      "remaining_dimensions": [
+        "Actual Start pending/loading branch remains."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:571",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filter-transfer-draft.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filters.json:1"
+      ],
+      "test_id": "SAFE-18",
+      "test_ids": [
+        "SAFE-18"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "FL-02",
+      "title": "Agents → Agent Detail → Task → 节点任务过滤、Task 回链、目标一致",
+      "status": "PARTIAL",
+      "covered_description": "Node Task link routes to actual Task; Task then Schedule navigation verified.",
+      "remaining_dimensions": [
+        "Node Task list exact target filtering and reverse target consistency remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:341",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:329",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/dashboard-node-links.json:1"
+      ],
+      "test_id": "SAFE-11",
+      "test_ids": [
+        "SAFE-11"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "FL-06",
+      "title": "Task → Schedule → Task Detail/Schedule List → 调度两处一致，删除后两处消失",
+      "status": "PASS",
+      "covered_description": "Previously verified FULL05 actual Task Detail New Schedule click carries/locks task_id; current GAP13 real create is consistent in Task/List, Schedule context correct, cancellation zero DELETE and confirm removes both.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:311",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:484",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-schedule-continuity.json:1",
+        ".e2e/runs/20260930-101945/repair/qa/full-feature-01-05-07-results.json:230",
+        "web/e2e/tests/full-feature-ui.spec.ts:265"
+      ],
+      "test_id": "GAP-13,FULL-05",
+      "test_ids": [
+        "GAP-13",
+        "FULL-05"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "FL-07",
+      "title": "Execution Cancel → Audit → 取消状态和审计记录一致",
+      "status": "PASS",
+      "covered_description": "Real Execution UI cancel creates CANCELED and exact Audit event; Audit UI search shows corresponding cancel.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:409",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:447",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/execution-log-cancel.json:1"
+      ],
+      "test_id": "SAFE-15",
+      "test_ids": [
+        "SAFE-15"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "FL-08",
+      "title": "Artifact Upload → Usage → Application → Artifact Usage 回链，应用引用正确",
+      "status": "PASS",
+      "covered_description": "Real Artifact UI upload to Usage link to exact Application with correct persisted Artifact reference.",
+      "remaining_dimensions": [],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:375",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:408",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/artifact-app-form.json:1"
+      ],
+      "test_id": "SAFE-14",
+      "test_ids": [
+        "SAFE-14"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "FL-12",
+      "title": "Node Maintenance → Dashboard/Task Run → Dashboard 统计变化，任务运行按状态阻断",
+      "status": "PARTIAL",
+      "covered_description": "Exact new Hub-only pending enrollment record manually marked online, UI maintenance changes actual Dashboard counts, Task Run returns real400/status maintenance with zero Execution, and UI restore recovers Hub counts. No connected Agent was involved.",
+      "remaining_dimensions": [
+        "On an owned actually connected Native Agent, prove normal Run before maintenance, real maintenance blocking, then restore and actual successful Run/guest business effect.",
+        "Verify recovery preserves relevant real Task/Node state and original fixtures."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:481",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:815",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/maintenance-dashboard-run-guard.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:858"
+      ],
+      "test_id": "GAP-23",
+      "test_ids": [
+        "GAP-23"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "X04",
+      "title": "Cron 图形五字段/预设/原始表达式双向同步、非法表达式、下次执行预览与浏览器/IANA时区。",
+      "status": "PARTIAL",
+      "covered_description": "All current Cron presets nonempty, graphical minute-to-raw expression, actual 5 previews, invalid timezone alert and UI owner/policy save.",
+      "remaining_dimensions": [
+        "All five graphical fields bidirectional assertions, invalid raw-expression edges and browser/IANA/DST preview comparison remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:307",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:256",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/cron-fields-safe.json:1"
+      ],
+      "test_id": "SAFE-09",
+      "test_ids": [
+        "SAFE-09"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "X05",
+      "title": "Task Detail 新建调度传 task_id 并预选锁定；无效 task_id 明确反馈；取消无写请求。",
+      "status": "PARTIAL",
+      "covered_description": "Task detail Schedule creation path carries and locks task_id; same Schedule rows/cancel deletion checked.",
+      "remaining_dimensions": [
+        "Invalid task_id explicit feedback and new-editor cancel zero write remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:311",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:484",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-schedule-continuity.json:1"
+      ],
+      "test_id": "GAP-13",
+      "test_ids": [
+        "GAP-13"
+      ],
+      "existing_status_before_root_merge": "PARTIAL",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "X06",
+      "title": "Artifact 列表新建 Application 预选 artifact_id/version；应用内嵌上传成功自动选中，失败/取消不覆盖已有定义。",
+      "status": "PARTIAL",
+      "covered_description": "Artifact preset unchanged after inline upload cancel/native required failure; valid upload auto-selects new id/version and saved App matches.",
+      "remaining_dimensions": [
+        "Artifact List actual create-entry click and real server upload error must be tested; UI_MOCK error excluded."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:277",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:382",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/inline-artifact-upload.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:375",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:408",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/artifact-app-form.json:1"
+      ],
+      "test_id": "GAP-10,SAFE-14",
+      "test_ids": [
+        "GAP-10",
+        "SAFE-14"
+      ],
+      "existing_status_before_root_merge": "PARTIAL",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "X07",
+      "title": "所有详情/编辑/Run 深链刷新和前进后退；不存在 ID、并发删除、404/Error/Retry/返回；旧 tasks?view=schedules 重定向 /schedules。",
+      "status": "PARTIAL",
+      "covered_description": "Direct/reload/back/forward all actual tested detail/edit/run routes; nonexistent ID real404/Error/Retry/return; Script link/App text/Execution history.",
+      "remaining_dimensions": [
+        "Concurrent deletion race and legacy tasks?view=schedules redirect remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:443",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:528",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/detail-deep-links.json:1"
+      ],
+      "test_id": "SAFE-17",
+      "test_ids": [
+        "SAFE-17"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "X08",
+      "title": "删除/Run/Stop/批量升级/吊销取消零写请求，确认单请求；慢响应重复点击、失败后重试；取消编辑不改 Revision/Audit。",
+      "status": "PARTIAL",
+      "covered_description": "Group/Task/Schedule/Artifact delete cancel0-confirm1; Run/Stop cancel0; Node upgrade/maintenance cancel0; Task/Artifact/Enrollment pending1.",
+      "remaining_dimensions": [
+        "Credential revoke, other resource branches, failed mutation retry, cancelled-edit Revision/Audit and duplicate slow operations remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:141",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:359",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/group-task-roundtrip.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-tasks.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-groups.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:409",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:447",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/execution-log-cancel.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:477",
+        "web/e2e/tests/safe-ui.spec.ts:602",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/bulk-selection-keyboard.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:90",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap/task-pending-secret.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:107",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:129",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/artifact-boundaries-reference-delete.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:175",
+        "web/e2e/tests/gap-ui.spec.ts:254",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/enrollment-retry-pending.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:243",
+        "web/e2e/tests/gap-ui.spec.ts:359",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/artifact-large-pending.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:311",
+        "web/e2e/tests/gap-ui.spec.ts:484",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-schedule-continuity.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:345",
+        "web/e2e/tests/gap-ui.spec.ts:686",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/artifact-unreferenced-ui-delete.json:1"
+      ],
+      "test_id": "SAFE-12,SAFE-15,SAFE-20,GAP-02,GAP-03,GAP-06,GAP-09,GAP-13,GAP-19",
+      "test_ids": [
+        "SAFE-12",
+        "SAFE-15",
+        "SAFE-20",
+        "GAP-02",
+        "GAP-03",
+        "GAP-06",
+        "GAP-09",
+        "GAP-13",
+        "GAP-19"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "X09",
+      "title": "Task 四类型往返保存后 command/script_id/application_id/app_operation 隐藏字段不改变当前业务；target Node/Group/Label 往返及 Group Static/Label 往返。",
+      "status": "PARTIAL",
+      "covered_description": "All four Task saved types trim inactive command/script/App-operation fields; script/command real effects; Static/Label Group saved roundtrip.",
+      "remaining_dimensions": [
+        "App-type real business and saved Group/Label target roundtrips remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:42",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/task-four-types-roundtrip.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:273",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:194",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/task-form-switch-condition.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:141",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:359",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/group-task-roundtrip.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-tasks.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-groups.json:1"
+      ],
+      "test_id": "GAP-01,SAFE-08,SAFE-12",
+      "test_ids": [
+        "GAP-01",
+        "SAFE-08",
+        "SAFE-12"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "X10",
+      "title": "Schedule四类型往返字段裁剪/非法时区切on_start/One-Time时区转换/Owner-Offline组合；DST边界按当前解析实现观察，不新增拒绝或补偿契约。",
+      "status": "PARTIAL",
+      "covered_description": "Actual four Schedule-type saves/reload/cancel, one-time IANA/UTC conversion, non-one-time field trimming and owner/offline/misfire values.",
+      "remaining_dimensions": [
+        "Illegal-timezone-to-on_start saved transition, owner/offline runtime combinations and DST actual boundary remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:171",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:132",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:307",
+        "web/e2e/tests/safe-ui.spec.ts:256",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/cron-fields-safe.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:575",
+        "web/e2e/tests/safe-ui.spec.ts:662",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/schedule-four-types.json:1"
+      ],
+      "test_id": "SAFE-05,SAFE-09,SAFE-22",
+      "test_ids": [
+        "SAFE-05",
+        "SAFE-09",
+        "SAFE-22"
+      ],
+      "existing_status_before_root_merge": "PARTIAL",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "X11",
+      "title": "Local/Remote/AND 条件编辑回显、AND 勾选未设置的语义、覆盖/清除一个和最后一个条件后实际执行/阻断。",
+      "status": "PARTIAL",
+      "covered_description": "Local set/clear/re-set, Remote online/last_execution editing, AND saved/reopened then condition fully removed.",
+      "remaining_dimensions": [
+        "Unset AND checkbox semantics and each overwrite/last-clear actual runtime execute/block effects remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:273",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:194",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/task-form-switch-condition.json:1"
+      ],
+      "test_id": "SAFE-08",
+      "test_ids": [
+        "SAFE-08"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "X14",
+      "title": "选中 Node 后过滤/排序/翻页/列表增删/刷新，批量请求 ID 不漂移；删除最后页末项、pageSize/筛选/总数；Execution 跨页搜索/Trigger。",
+      "status": "PARTIAL",
+      "covered_description": "Real Execution beyond-page ID search and trigger URL options; table pagination/columns partial; Node bulk cancel preserves selection.",
+      "remaining_dimensions": [
+        "Selection across filter/sort/pages/list mutations, last-page deletion/total semantics and result trigger correctness remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:10",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/tables-safe.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:85",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-cross-page-search.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:175",
+        "web/e2e/tests/safe-ui.spec.ts:571",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filter-transfer-draft.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filters.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:477",
+        "web/e2e/tests/safe-ui.spec.ts:602",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/bulk-selection-keyboard.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap07b/audit-cross-page-search.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:209",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:313",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/all-tables-all-columns.json:1"
+      ],
+      "test_id": "SAFE-01,SAFE-02,SAFE-18,SAFE-20,GAP-07,GAP-08",
+      "test_ids": [
+        "SAFE-01",
+        "SAFE-02",
+        "SAFE-18",
+        "SAFE-20",
+        "GAP-07",
+        "GAP-08"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "X15",
+      "title": "PENDING→RUNNING→终态无需刷新；新日志分片、终态 stdout/stderr 完整且无旧 chunks 覆盖；断线恢复后的 Follow/搜索/流过滤/Copy。",
+      "status": "PARTIAL",
+      "covered_description": "Real late stdout, both streams/all/search/Wrap/Follow toggles and CANCELED API/UI convergence without reloading running detail.",
+      "remaining_dimensions": [
+        "PENDING->RUNNING UI states, terminal stdout/stderr entirety, seq/retry/truncation and disconnect/secureCopy remaining."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:409",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:447",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/execution-log-cancel.json:1"
+      ],
+      "test_id": "SAFE-15",
+      "test_ids": [
+        "SAFE-15"
+      ],
+      "existing_status_before_root_merge": "PARTIAL",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "X16",
+      "title": "使用非敏感标记值检查 secret 默认值/输入/Revision/Execution/Audit/错误遮蔽；凭据、Registration Token、Authorization 和 Cookie 不进入交付证据。",
+      "status": "PARTIAL",
+      "covered_description": "Task/Script default summary masking plus independently proven persisted Task secret parameter remove/save/reopen; actual real PUT and precise cleanup, no plaintext recorded.",
+      "remaining_dimensions": [
+        "Revision/Audit/error shielding, default value editing input visibility, cross-stream/truncation/cancel/timeout/retry tails and all remaining rendered locations."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-results.json:73",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:90",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap/task-pending-secret.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/task-secret-parameter-reverse.json:8"
+      ],
+      "test_id": "GAP-02",
+      "test_ids": [
+        "GAP-02"
+      ],
+      "existing_status_before_root_merge": "PARTIAL",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "X18",
+      "title": "批量一成功一失败不互相覆盖；Application 定义成功 Assign 失败可定位重试；Transfer 添加目标后换源不变成自传，重试不破坏已成功目标。",
+      "status": "PARTIAL",
+      "covered_description": "Transfer source-change removes self-target; pending draft emits no accidental POST.",
+      "remaining_dimensions": [
+        "Bulk mixed-success isolation, App assign-failure retry and Transfer retry preservation remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:175",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:571",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filter-transfer-draft.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filters.json:1"
+      ],
+      "test_id": "SAFE-18",
+      "test_ids": [
+        "SAFE-18"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "X19",
+      "title": "键盘 Tab/Enter/Escape 确认/取消与焦点返回；批量工具栏 Arrow/Home/End/Escape 不误清选择或误执行。",
+      "status": "PARTIAL",
+      "covered_description": "Profile Enter/Escape and Node toolbar Arrow/Home/End/Escape, cancel preserves selection and emits zero maintenance/upgrade POST.",
+      "remaining_dimensions": [
+        "Full Tab order/form Enter/focus return and all confirmation keyboard branches remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:239",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+        "web/e2e/tests/safe-ui.spec.ts:180",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/keyboard-history-safe.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:477",
+        "web/e2e/tests/safe-ui.spec.ts:602",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe_more/bulk-selection-keyboard.json:1"
+      ],
+      "test_id": "SAFE-07,SAFE-20",
+      "test_ids": [
+        "SAFE-07",
+        "SAFE-20"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    },
+    {
+      "case_id": "X20",
+      "title": "长中文名称/路径/ID/SHA/命令/大量参数/日志；列全部隐藏再恢复、空搜索恢复、窄屏表单/菜单/确认框。",
+      "status": "PARTIAL",
+      "covered_description": "All hideable columns hidden/reloaded/restored on 11 tables; long command exact selectable/contained at760.",
+      "remaining_dimensions": [
+        "Long Chinese/ID/SHA/path/params/logs, secure clipboard, remaining empty search and narrow dialog/form/menu cases remain."
+      ],
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:209",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+        "web/e2e/tests/gap-ui.spec.ts:313",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/all-tables-all-columns.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:413",
+        "web/e2e/tests/gap-ui.spec.ts:728",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap_more/long-command-detail-layout.json:1"
+      ],
+      "test_id": "GAP-08,GAP-21",
+      "test_ids": [
+        "GAP-08",
+        "GAP-21"
+      ],
+      "existing_status_before_root_merge": "NOT_RUN",
+      "status_is_review_recommendation": true
+    }
+  ],
+  "defect_recommendations": [
+    {
+      "defect_id": "WEB-AUTH-SIGN-IN",
+      "status": "PASS",
+      "covered_description": "Authenticated direct sign-in reaches local business root without form.",
+      "remaining_dimensions": [],
+      "test_id": "SAFE-10",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:107",
+        "web/e2e/tests/safe-ui.spec.ts:293",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/authenticated-sign-in.json:1"
+      ]
+    },
+    {
+      "defect_id": "WEB-TASK-DELETE-CANCEL",
+      "status": "PASS",
+      "covered_description": "Task cancellation preserves unlock/actions; no residue; subsequent confirm and GET404 succeed.",
+      "remaining_dimensions": [],
+      "test_id": "SAFE-12",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:141",
+        "web/e2e/tests/safe-ui.spec.ts:359",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/group-task-roundtrip.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-tasks.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/delete-cancel-groups.json:1"
+      ]
+    },
+    {
+      "defect_id": "WEB-TRANSFER-SOURCE-CHANGE",
+      "status": "PASS",
+      "covered_description": "Self-target cleared on source change; Start disabled; zero transfer POST.",
+      "remaining_dimensions": [],
+      "test_id": "SAFE-18",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:175",
+        "web/e2e/tests/safe-ui.spec.ts:571",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filter-transfer-draft.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-filters.json:1"
+      ]
+    },
+    {
+      "defect_id": "WEB-EXEC-SEARCH-PAGE",
+      "status": "PASS",
+      "covered_description": "Execution and Audit each find actual known beyond-page records; Audit q actual request200 and matching total/hits.",
+      "remaining_dimensions": [],
+      "test_id": "SAFE-02,GAP-07",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:73",
+        "web/e2e/tests/safe-ui.spec.ts:85",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-safe/execution-cross-page-search.json:1",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-results.json:73",
+        "web/e2e/tests/gap-ui.spec.ts:285",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap07b/audit-cross-page-search.json:1"
+      ]
+    },
+    {
+      "defect_id": "WEB-BLOCK-REASON",
+      "status": "PASS",
+      "covered_description": "Actual BLOCKED reason rendered and command not executed.",
+      "remaining_dimensions": [],
+      "test_id": "GAP-12",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-results.json:171",
+        "web/e2e/tests/gap-ui.spec.ts:436",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap/offline-node-condition-blocked.json:1"
+      ]
+    },
+    {
+      "defect_id": "WEB-TASK-PENDING-SAVE",
+      "status": "PASS",
+      "covered_description": "Unchanged real delayed PUT; disabled Save; one request and persisted revision2.",
+      "remaining_dimensions": [],
+      "test_id": "GAP-02",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-results.json:73",
+        "web/e2e/tests/gap-ui.spec.ts:90",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap/task-pending-secret.json:1"
+      ]
+    }
+  ],
+  "harness_findings": [
+    {
+      "test_id": "SAFE-01",
+      "classification": "harness_locator_failure_pending_UI_empty_state_confirmation",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:73",
+      "source": "web/e2e/tests/safe-ui.spec.ts:47",
+      "completed_modules": [
+        "agents",
+        "groups",
+        "scripts",
+        "tasks",
+        "schedules",
+        "applications",
+        "artifacts"
+      ],
+      "actual_failure": "Next module (executions in current loop) tbody does not exist during no-results assertion; no retained screenshot conclusively distinguishes changed container from missing product empty-state feedback.",
+      "product_failure_confirmed": false,
+      "next_step": "Inspect actual executions no-results rendered state; adapt locator only if real empty feedback exists, then rerun remaining modules."
+    },
+    {
+      "test_id": "SAFE-21",
+      "classification": "legacy_login_helper_session_handling_failure",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:511",
+      "source": [
+        "web/e2e/tests/fixtures.ts:97",
+        "web/e2e/tests/safe-ui.spec.ts:636"
+      ],
+      "actual_failure": "Login helper navigates sign-in while admin token remains; authenticated-sign-in redirect prevents username form and fill times out.",
+      "product_failure_confirmed": false,
+      "accepted_pre_failure_dimensions": [
+        "real user UI create",
+        "duplicate username400",
+        "first administrator role save/reload"
+      ],
+      "unverified": [
+        "fresh role-login",
+        "later operator/viewer role lifecycle",
+        "password reset old/new flows"
+      ],
+      "next_step": "Only logout/clear current owned browser token before login helper; retain exact QA user and fixture evidence."
+    },
+    {
+      "test_id": "GAP-07",
+      "classification": "first_attempt_fixture_unique_resource_id_missing_superseded_by_real_retry_PASS",
+      "evidence": [
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-results.json:124",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-results.json:73"
+      ],
+      "latest_status": "PASS",
+      "actual_query_evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/evidence/resume-20261004-gap07b/audit-cross-page-search.json:1"
+    }
+  ],
+  "cleanup_limits": [
+    "SAFE12 and GAP13/19 explicitly assert successful delete and GET404 for their exact objects; other PASS cases finally cleanupByIds runs and would fail test on refused/error DELETE, but no independent final resource inventory was read by this reviewer.",
+    "SAFE01 is failed but its finally cleanup executes by source; separate resource ledger/GET404 audit required before declaring all definitions removed.",
+    "SAFE21 creates undeletable QA User before helper failure; source finally restores own account Viewer; exact account/password/token ledger and role restoration still need Root/Luna verification.",
+    "Execution/Audit/Transfer history remains by product contract; never claim deleted or erase it.",
+    "GAP08 restores column preferences; draft Transfer source-change never posts; synthetic Node maintenance/label tests only own pending enrollment records.",
+    "No repaired authorities/services/backups or original Hub/4Agents are asserted cleaned by this mapping.",
+    "Inline upload server-error branch is explicitly UI_MOCK supplementary and not live PASS; clipboard only manual HTTP fallback in current run.",
+    "New persisted Task parameter reverse explicitly records DELETE200 and GET404; it does not prove all-suite resource cleanup.",
+    "GAP23 maintenance fixture is a synthetic Hub-only Node; no real Agent Host effects or service/command recovery observed."
+  ],
+  "reviewed_tests": [
+    {
+      "test_id": "SAFE-02",
+      "title": "SAFE-02 Execution跨服务端页搜索已知ID",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:73",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:85",
+      "suite": "safe"
+    },
+    {
+      "test_id": "SAFE-10",
+      "title": "SAFE-10 已登录访问登录入口应回到业务页",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:107",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:293",
+      "suite": "safe"
+    },
+    {
+      "test_id": "SAFE-12",
+      "title": "SAFE-12 Group静态双成员/标签往返和Task启停/删除取消确认",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:141",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:359",
+      "suite": "safe"
+    },
+    {
+      "test_id": "SAFE-18",
+      "title": "SAFE-18 Execution状态触发筛选URL/清空与Transfer目标草稿反向操作",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-results.json:175",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:571",
+      "suite": "safe"
+    },
+    {
+      "test_id": "GAP-02",
+      "title": "GAP-02 Task真实PUT pending重复提交与secret摘要",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-results.json:73",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:90",
+      "suite": "gap"
+    },
+    {
+      "test_id": "GAP-07",
+      "title": "GAP-07 Audit真实服务端分页与跨页搜索",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-results.json:73",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap07b-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:285",
+      "suite": "gap07b"
+    },
+    {
+      "test_id": "GAP-12",
+      "title": "GAP-12 自有offline节点明确错误和Node1条件BLOCKED反馈",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-results.json:171",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:436",
+      "suite": "gap"
+    },
+    {
+      "test_id": "SAFE-01",
+      "title": "SAFE-01 所有11表格搜索/无结果/Reset/排序/列持久化/分页",
+      "runtime_status": "failed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:73",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:10",
+      "suite": "safe_more"
+    },
+    {
+      "test_id": "SAFE-04",
+      "title": "SAFE-04 Script参数/环境增删覆盖空字段与取消",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:137",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:108",
+      "suite": "safe_more"
+    },
+    {
+      "test_id": "SAFE-05",
+      "title": "SAFE-05 Schedule类型切换/必填/非法输入/Owner/Misfire",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:171",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:132",
+      "suite": "safe_more"
+    },
+    {
+      "test_id": "SAFE-06",
+      "title": "SAFE-06 登录必填/显示隐藏/真实回跳/退出取消确认/安全外站回跳",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:205",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:150",
+      "suite": "safe_more"
+    },
+    {
+      "test_id": "SAFE-07",
+      "title": "SAFE-07 Browser历史、导航active、快捷键与退出Esc",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:239",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:180",
+      "suite": "safe_more"
+    },
+    {
+      "test_id": "SAFE-08",
+      "title": "SAFE-08 Task四类型/目标切换、参数与Local/Remote/AND编辑清除",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:273",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:194",
+      "suite": "safe_more"
+    },
+    {
+      "test_id": "SAFE-09",
+      "title": "SAFE-09 Cron图形/所有预设/表达式/预览/IANA/Owner/Misfire",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:307",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:256",
+      "suite": "safe_more"
+    },
+    {
+      "test_id": "SAFE-11",
+      "title": "SAFE-11 Dashboard统计和全部ViewAll/Node-Task-Schedule回链与刷新",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:341",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:329",
+      "suite": "safe_more"
+    },
+    {
+      "test_id": "SAFE-14",
+      "title": "SAFE-14 Artifact必填/架构/Usage与Application参数环境健康字段",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:375",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:408",
+      "suite": "safe_more"
+    },
+    {
+      "test_id": "SAFE-15",
+      "title": "SAFE-15 真实执行日志流/搜索/换行跟随复制与停止取消审计",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:409",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:447",
+      "suite": "safe_more"
+    },
+    {
+      "test_id": "SAFE-17",
+      "title": "SAFE-17 详情深链刷新前后退/不存在资源ErrorRetry与Definition回链",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:443",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:528",
+      "suite": "safe_more"
+    },
+    {
+      "test_id": "SAFE-20",
+      "title": "SAFE-20 Node多选/工具栏键盘/升级维护取消零写请求",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:477",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:602",
+      "suite": "safe_more"
+    },
+    {
+      "test_id": "SAFE-21",
+      "title": "SAFE-21 新用户UI创建/重复/三角色保存登录/密码新旧边界",
+      "runtime_status": "failed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:511",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:621",
+      "suite": "safe_more"
+    },
+    {
+      "test_id": "SAFE-22",
+      "title": "SAFE-22 Schedule四类型实际保存/OneTime时区转换/取消零写",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:575",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:662",
+      "suite": "safe_more"
+    },
+    {
+      "test_id": "SAFE-25",
+      "title": "SAFE-25 独占pending节点空态/Labels覆盖/状态控件/清理",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-results.json:609",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-safe_more-run.json:1",
+      "source": "web/e2e/tests/safe-ui.spec.ts:764",
+      "suite": "safe_more"
+    },
+    {
+      "test_id": "GAP-01",
+      "title": "GAP-01 Task四类型真实保存及隐藏字段往返",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:73",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:42",
+      "suite": "gap_more"
+    },
+    {
+      "test_id": "GAP-03",
+      "title": "GAP-03 Artifact真实下载headers重复空文件与引用删除",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:107",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:129",
+      "suite": "gap_more"
+    },
+    {
+      "test_id": "GAP-05",
+      "title": "GAP-05 Task所有缺字段真实错误且不创建",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:141",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:231",
+      "suite": "gap_more"
+    },
+    {
+      "test_id": "GAP-06",
+      "title": "GAP-06 Enrollment真实Retry原参数与pending禁用",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:175",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:254",
+      "suite": "gap_more"
+    },
+    {
+      "test_id": "GAP-08",
+      "title": "GAP-08 所有11表隐藏全部可隐藏列并刷新恢复",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:209",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:313",
+      "suite": "gap_more"
+    },
+    {
+      "test_id": "GAP-09",
+      "title": "GAP-09 Artifact真实8MiB上传pending与精确大小SHA",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:243",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:359",
+      "suite": "gap_more"
+    },
+    {
+      "test_id": "GAP-10",
+      "title": "GAP-10 Application内嵌Artifact上传取消错误与成功预选",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:277",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:382",
+      "suite": "gap_more"
+    },
+    {
+      "test_id": "GAP-13",
+      "title": "GAP-13 TaskSchedule双页创建取消删除完整一致",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:311",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:484",
+      "suite": "gap_more"
+    },
+    {
+      "test_id": "GAP-19",
+      "title": "GAP-19 Artifact无引用UI取消确认删除与真实下载404",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:345",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:686",
+      "suite": "gap_more"
+    },
+    {
+      "test_id": "GAP-20",
+      "title": "GAP-20 禁用Script实际引用拒绝恢复和定义边界",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:379",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:702",
+      "suite": "gap_more"
+    },
+    {
+      "test_id": "GAP-21",
+      "title": "GAP-21 长命令详情可选择复制且操作入口仍可用",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:413",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:728",
+      "suite": "gap_more"
+    },
+    {
+      "test_id": "GAP-22",
+      "title": "GAP-22 App/Group/Schedule详情与动态菜单按钮名称",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:447",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:768",
+      "suite": "gap_more"
+    },
+    {
+      "test_id": "GAP-23",
+      "title": "GAP-23 自有QA节点维护阻断Run并联动Dashboard统计",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:481",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:815",
+      "suite": "gap_more"
+    },
+    {
+      "test_id": "GAP-24",
+      "title": "GAP-24 Dashboard真实运行/应用/调度空态与服务端一致",
+      "runtime_status": "passed",
+      "report": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-results.json:515",
+      "run": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/resume-20261004-gap_more-run.json:1",
+      "source": "web/e2e/tests/gap-ui.spec.ts:902",
+      "suite": "gap_more"
+    }
+  ],
+  "source_sha256_at_final_review": {
+    "web/e2e/tests/safe-ui.spec.ts": "8095fecf5a5dc3617362745169963c0af99cb593c1455546ff9e1c35ea9cf9a3",
+    "web/e2e/tests/gap-ui.spec.ts": "d0fdd74a55d4a5342094b3947b8cc571ba17115359c3b3bd338de0fdbc561ef5"
+  },
+  "supplementary_runtime_evidence": [
+    {
+      "test_id": "TASK-SECRET-PARAMETER-REVERSE",
+      "status": "passed",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261004/task-secret-parameter-reverse.json:8",
+      "adds_to_canonical_denominator": false,
+      "adds_to_defect_denominator": false
+    }
+  ],
+  "final_review_status": "FINAL_READY_FOR_ROOT_REVIEW_NOT_GLOBAL_STATUS",
+  "final_review_note": "Second targeted audit downgraded FL12 to PARTIAL because its fixture has no real connected Agent or normal/recovered execution; P03 UI statistics remain separately accepted. P05A11 request-payload matching retained after checking no pre-Retry route or postData override. P09P11-14 stays PASS only with new persisted reverse proof.",
+  "root_merged_at": "2026-10-04T16:20:35.688452+00:00",
+  "root_merge_complete": true,
+  "global_feature_counts_after_merge": {
+    "PASS": 57,
+    "FAIL": 0,
+    "PARTIAL": 124,
+    "NOT_RUN": 323,
+    "BLOCKED": 0
+  }
+}

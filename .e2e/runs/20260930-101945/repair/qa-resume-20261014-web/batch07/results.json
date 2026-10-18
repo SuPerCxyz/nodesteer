@@ -1,0 +1,582 @@
+{
+ "batch_id": "qa-resume-20261014-web-batch07",
+ "updated_at_utc": "2026-10-14T10:53:13Z",
+ "status": "completed_with_two_partial_cases",
+ "environment": {
+  "authority": "http://192.168.100.209:18080 (repair; the only management write endpoint)",
+  "primary_8080_touched": false,
+  "node_scope": [
+   "native-3 (37989297-3bc8-4c0c-b302-7c6efbdba630, 192.168.100.222, KVM domain nodesteer-agent-2)"
+  ],
+  "failure_target_only": [
+   "host001 (f6a79d23-2410-450c-ac39-64dd70c9daa1, docker host integration) used as the failure target without any write test"
+  ],
+  "agent_data_dir": "/var/lib/nodesteer-repair-20260930-101945/native-3",
+  "hub_data_dir": "/var/lib/nodesteer-hub-repair-20260930-101945",
+  "nonce": "30fb54d4",
+  "prefix": "qa-w1410b07-30fb54d4"
+ },
+ "cases": [
+  {
+   "case_id": "P22-10",
+   "title": "目标失败隔离，其他目标仍成功。",
+   "canonical_before": {
+    "status": "NOT_RUN",
+    "baseline_status": "PARTIAL",
+    "priority": "P1"
+   },
+   "proposed_after": "PARTIAL",
+   "confidence": "medium",
+   "covered_dimensions": [
+    "two real 2-target transfers (source native-3 .222): target A native-3 /tmp (allowlisted) reached SUCCESS with the exact source size/sha256/mode in both attempts, while target B (host001 docker host-integration, destination outside its host_path_allowlist) never blocked or failed target A -> the 'other target still succeeds' half of the case is verified end to end",
+    "UI readback of the same isolation: /transfers filtered by the batch nonce shows the CANCELED transfer with per-target statuses 'native-3 成功' + 'host001 已取消' (UI-01b screenshot+scan)",
+    "hub-side per-target state machine observed: target A SUCCESS while target B stayed DELIVERING with no agent result, then POST /api/transfers/{id}/cancel -> 200 -> CANCELED (attempt1 12+ min, attempt2 90 s)"
+   ],
+   "remaining_or_limitations": [
+    "the FAILED-target half is NOT verified: host001's agent accepted the delivery envelope but never reported any result (no allowlist error, no failure, no success) in either attempt. The Hub has no delivery timeout, so the target stayed DELIVERING and the transfer stayed non-terminal until canceled. batch04 (2026-10-14 09:17Z) did observe the fast 'destination path: path is outside host allowlist' FAILED on host001, so this is environment drift on host001's docker host integration, not a product verdict.",
+    "a harness fault injection (truncating the Hub staged blob to 4096 B) also produced no agent-side result, confirming the host001 agent never started the download (its download URL is not in use).",
+    "because only native-3 may be used for node-side work, no second native node was available for a FAILED+SUCCESS pair; state-changing a node to produce a fast failure was out of scope."
+   ],
+   "evidence": [
+    "evidence/P22-10-isolation.json",
+    "evidence/P22-10-isolation-attempt1.json",
+    "evidence/UI-01b-transfers-filtered.json",
+    "evidence/UI-01-transfers.json",
+    "evidence/snapshot-after-transfers.json"
+   ],
+   "actual": {
+    "attempt1_transfer": "3f91190c-0fb0-42e2-8c48-c56d501ae34d",
+    "attempt1_final": "CANCELED",
+    "attempt1_targets": [
+     "SUCCESS",
+     "CANCELED"
+    ],
+    "attempt2_transfer": "4184507e-cf4d-4e0c-9ab1-157082d704d0",
+    "attempt2_final": "CANCELED",
+    "attempt2_targets": [
+     "SUCCESS",
+     "CANCELED"
+    ],
+    "attempt2_poll_seconds": 90.2,
+    "native3_destination": "{\"exists_true\":true,\"size\":2097152,\"mode\":640,\"mtime\":1791972089,\"sha256\":\"14d4c49597086853a1d0a0f57e6ec8bede461b0fe9fe620042f1d81eae95583f\"}"
+   }
+  },
+  {
+   "case_id": "P22-11",
+   "title": "FAILED → retry，验证整体重试和 `target_id` 单目标重试。",
+   "canonical_before": {
+    "status": "NOT_RUN",
+    "baseline_status": "PARTIAL",
+    "priority": "P1"
+   },
+   "proposed_after": "PASS",
+   "confidence": "high",
+   "covered_dimensions": [
+    "whole-transfer retry (no target_id) after a source-side FAILED: transfer c8f2cb42 ended FAILED with 'source upload failed: open /tmp/qa-w1410b07-<nonce>/src-late.bin: no such file or directory' (sha256=\"\"), the missing source was created, POST /api/transfers/{id}/retry restarted the source upload and the delivery -> SUCCESS with the new source sha256 verified on the node",
+    "single-target retry (target_id=37989297-...): transfer f926be58 (FAILED, target FAILED with 'write ...: no space left on device') -> POST /api/transfers/{id}/retry?target_id=<native-3> -> 200 -> target re-dispatched -> SUCCESS; the destination then matched the source sha256/size exactly",
+    "retry does not re-dispatch an already SUCCESS target: retry on the SUCCESS transfer 4aff7bd2 (no FAILED target left) kept SUCCESS and left the destination untouched (mtime/sha stable)",
+    "source re-dispatch on a FAILED transfer with sha256=\"\" observed twice (c8f2cb42 and f926be58: the retried source upload re-staged the blob and re-delivered)"
+   ],
+   "remaining_or_limitations": [
+    "the UI retry menu item (transfers row 操作 -> 重试) could not be exercised: the UI only offers it for status FAILED, and every owned transfer was already terminal (SUCCESS/CANCELED) when the UI stage ran; creating a fresh FAILED transfer would have exceeded the <=6 owned-transfer budget. All retry semantics were verified through the same API endpoint the UI calls.",
+    "multi-target target_id isolation (restarting only target B while target A stays SUCCESS) was not observed: the only 2-target transfers ended CANCELED and canceled transfers refuse retry.",
+    "one earlier attempt at a target-id retry (4aff7bd2) was invalidated by a harness naming mistake: the pre-planted symlink was called dst-symlink.bin while the transfer destination was retry-symlink.bin, so the first delivery simply succeeded; recorded in P22-11-retry.json."
+   ],
+   "evidence": [
+    "evidence/P22-11-retry.json",
+    "evidence/P22-14-half-file.json",
+    "evidence/snapshot-after-transfers.json"
+   ],
+   "actual": {
+    "whole_retry": {
+     "transfer": "c8f2cb42-4d81-4b3d-b454-36f90bd1d006",
+     "failed": "FAILED",
+     "error": "source upload failed: open /tmp/qa-w1410b07-30fb54d4/src-late.bin: no such file or directory",
+     "after_retry": "SUCCESS",
+     "dst_sha": "{\"exists_true\":true,\"size\":1048576,\"mode\":644,\"mtime\":1791972229,\"sha256\":\"bf5c6bb8a4142cee1f49080b82a19a54b49c860d0da7ae878351d2e4ab478e11\"}"
+    },
+    "target_id_retry": {
+     "transfer": "f926be58-68db-4181-854f-dba803340500",
+     "failed_error": "write /tmp/qa-w1410b07-30fb54d4/.nodesteer-transfer-237579231: no space left on device",
+     "retry_http": 200,
+     "after_retry": "SUCCESS",
+     "dst_sha_matches_src": true
+    },
+    "retry_skips_success_target": {
+     "before": "{\"exists\":false}",
+     "after": "{\"exists\":false}",
+     "final": "SUCCESS"
+    }
+   }
+  },
+  {
+   "case_id": "P22-13",
+   "title": "源/目标相对路径、路径逃逸、错误 Agent Credential、文件超限。",
+   "canonical_before": {
+    "status": "NOT_RUN",
+    "baseline_status": "PARTIAL",
+    "priority": "P1"
+   },
+   "proposed_after": "PASS",
+   "confidence": "high",
+   "covered_dimensions": [
+    "relative source path -> HTTP 400 'source path: absolute path required'; relative destination path -> 400 'destination path: absolute path required'; empty source -> 400; no target -> 400 'at least one target is required'; duplicate target -> 400 'target node is empty or duplicated'; unknown source node -> 400 'source node not found'",
+    "path escape on both sides -> 400 'path traversal is not allowed' for '/tmp/../etc/passwd' (source), '<own dir>/../../etc/evil.bin' and '/tmp/./../tmp/evil2.bin' (destinations); none of them created a transfer, a Hub staging file or a node file",
+    "wrong Agent Credential on the Agent data channel: no headers -> 401 'agent authentication required'; bogus agent id+token -> 401 'invalid agent credential'; the REAL native-3 agent_id with a wrong token (download and upload) -> 401 'invalid agent credential'; the admin user token on the agent channel -> 401; the artifact download endpoint without Agent identity -> 401 'unauthorized'. No staging file and no transfer state change followed any of these.",
+    "file over the Hub limit (repair hub has no max_file_transfer_bytes -> 10 GiB default): a 10737418241-byte source gave a fast terminal FAILED in 1.0 s with error 'source upload failed: invalid file size', target FAILED, no .part/.blob in the Hub staging dir, and no destination file on native-3",
+    "UI feedback for the path rules through the real transfers form: submitting a relative source path raised the toast 'source path: absolute path required' and a traversal destination path raised 'destination path: path traversal is not allowed'; the transfers table count was unchanged (38) after both, so no transfer was created (screenshots UI-02)"
+   ],
+   "remaining_or_limitations": [
+    "the 403 branch (valid credentials of a different Agent used against another node's transfer) was not reachable: neither the node JSON nor any API exposes agent credentials, and reading another Agent's private config is out of scope.",
+    "the Agent-side allowlist rejection message ('path is outside host allowlist') was not reproduced in this run; the only non-allowlist target available (host001) never reported a result (see P22-10 limitations).",
+    "the over-limit case only proves the Hub-side size rejection; the source Agent never streamed a body, so 'upload interrupted mid-body' remains unverified for this dimension."
+   ],
+   "evidence": [
+    "evidence/P22-13-api-negatives.json",
+    "evidence/P22-13-size-limit.json",
+    "evidence/UI-02-form-negative.json"
+   ],
+   "actual": {
+    "api_negatives": {
+     "duplicate_target": [
+      400,
+      "target node is empty or duplicated"
+     ],
+     "empty_source_path": [
+      400,
+      "source path: absolute path required"
+     ],
+     "no_target": [
+      400,
+      "at least one target is required"
+     ],
+     "rel_dest_path": [
+      400,
+      "destination path: absolute path required"
+     ],
+     "rel_source_path": [
+      400,
+      "source path: absolute path required"
+     ],
+     "traversal_dest": [
+      400,
+      "destination path: path traversal is not allowed"
+     ],
+     "traversal_dest_nested": [
+      400,
+      "destination path: path traversal is not allowed"
+     ],
+     "traversal_source": [
+      400,
+      "source path: path traversal is not allowed"
+     ],
+     "unknown_source_node": [
+      400,
+      "source node not found"
+     ]
+    },
+    "agent_credential": {
+     "admin_user_token_on_agent_channel": 401,
+     "artifact_download_no_credential": 401,
+     "bogus_id_token_download": 401,
+     "no_headers_download": 401,
+     "real_agent_id_wrong_token_download": 401,
+     "real_agent_id_wrong_token_upload": 401
+    },
+    "over_limit": {
+     "transfer": "f926be58-68db-4181-854f-dba803340500",
+     "final": "FAILED",
+     "error": "source upload failed: invalid file size",
+     "elapsed_s": 1.0,
+     "hub_blob": "MISSING",
+     "hub_part": "MISSING",
+     "node_destination": "{\"exists\":false}"
+    },
+    "ui_toasts": [
+     [
+      "source path: absolute path required"
+     ],
+     [
+      "destination path: path traversal is not allowed"
+     ]
+    ],
+    "ui_transfers_count_unchanged": true
+   }
+  },
+  {
+   "case_id": "P22-14",
+   "title": "目标文件内容、Mode、SHA256、原子替换和半文件清理。",
+   "canonical_before": {
+    "status": "NOT_RUN",
+    "baseline_status": "PARTIAL",
+    "priority": "P1"
+   },
+   "proposed_after": "PASS",
+   "confidence": "high",
+   "covered_dimensions": [
+    "content/SHA256/size: transfer 0892e422 delivered a 167772160-byte source into native-3 with the destination sha256 identical to the source (mode 640 as requested); transfer f926be58 (256 MiB) delivered with dst sha256 == source sha256 and dst size == 268435456 exactly",
+    "Mode: requested 640 -> delivered 640 (0892e422); file with no explicit mode -> source mode 644 applied (f926be58, and the source-mode default in the P22-10/P22-11 transfers)",
+    "atomic replace + no stale tail: the pre-existing destination was a 201326592-byte sparse file (mode 644) replaced by exactly 167772160 bytes of new content (0892e422) and, in the failed case, still byte-identical (sha 46b23b74..., size 201326592, mode 644) after the delivery error",
+    "half-file cleanup: a real mid-write failure ('write /tmp/qa-w1410b07-<nonce>/.nodesteer-transfer-237579231: no space left on device') left NO .nodesteer-transfer-* file behind, and the transfer target ended FAILED with that exact agent error; the temp file name in the error proves a partial temp existed and was removed",
+    "recovery: after space was freed, POST /api/transfers/{id}/retry?target_id=<native-3> re-delivered the whole 256 MiB and the destination matched the source (sha/size 268435456/mode 644)"
+   ],
+   "remaining_or_limitations": [
+    "the 'no stale tail' direction is proven only for new > old (192 MiB sparse -> 160 MiB and 192 MiB -> 256 MiB); a replacement where the new file is SMALLER than the old one was not run (would have needed an extra transfer beyond the budget).",
+    "the mid-write ENOSPC was produced by node tmpfs pressure created by the harness (see incident-report.json); no product interface can inject a short write, so this is infrastructure fault injection on real Agent code, not a product API path.",
+    "a deterministic mid-download interruption for the TRANSFER path (Hub blob truncated while streaming) was attempted once before the node incident and missed the window because the interrupt call itself copied the blob first (P22-14-interrupt.json records the miss); the equivalent mid-stream interruption was then proven on the Agent artifact cache path (P16-10-interrupt-retry2.json)."
+   ],
+   "evidence": [
+    "evidence/P22-14-half-file.json",
+    "evidence/P22-14-interrupt.json",
+    "evidence/snapshot-after-transfers.json",
+    "evidence/incident-report.json"
+   ],
+   "actual": {
+    "replace_transfer": "0892e422-7079-41aa-9640-4482bdbce8c3",
+    "replace_dst_size": "{\"exists_true\":true,\"size\":167772160,\"mode\":640,\"mtime\":1791972344,\"sha256\":\"29526af988eb29a7d3c55ac9f95203e8025ef8e3e24c5e834390af947d4441dc\"}",
+    "replace_dst_mode": "640",
+    "half_file_transfer": "f926be58-68db-4181-854f-dba803340500",
+    "half_file_error": "write /tmp/qa-w1410b07-30fb54d4/.nodesteer-transfer-237579231: no space left on device",
+    "half_file_remnants": "none",
+    "dst_after_failure": "{\"exists_true\":true,\"size\":201326592,\"mode\":644,\"mtime\":1791972588,\"sha256\":\"46b23b74b0d431993099b9ccef75ac4e30dc48305089aa236b6ff1de97fed713\"}",
+    "after_retry": "SUCCESS",
+    "dst_after_retry": "{\"exists_true\":true,\"size\":268435456,\"mode\":644,\"mtime\":1791973532,\"sha256\":\"5adc86e1fa6d986e5706c332411e1f8a8a66fd04c1821a666d59449556a4e765\"}"
+   }
+  },
+  {
+   "case_id": "P16-09",
+   "title": "Agent Cache 下载 `.tmp`、校验失败不安装、不污染正式缓存。",
+   "canonical_before": {
+    "status": "NOT_RUN",
+    "baseline_status": "PARTIAL",
+    "priority": "P1"
+   },
+   "proposed_after": "PASS",
+   "confidence": "high",
+   "covered_dimensions": [
+    "real download into the Agent cache: owned Application -> POST /api/applications/{id}/assign -> Hub sync delivered the app with derived artifact_url/sha256 -> the native-3 Agent downloaded the 256 MiB artifact from /api/artifacts/51735863-.../download",
+    "`.tmp` lifecycle observed inside the guest with a 2 ms-granularity watcher: tmp_created(size=0) at t0 -> tmp_gone(renamed) at +2125 ms with tmp_max_size = 268435456 (966 samples) -> final_appeared(size=268435456); the final cache file sha256 equals the artifact sha256, size 268435456, mode 644",
+    "agent registry + log: SQLite artifacts row for the sha present (PRAGMA quick_check=ok) and the real Agent log line 'level=INFO msg=\"artifact cached\" sha=952ecc...'",
+    "verification failure is not installed: with the Hub blob appended (artifact blob sha changed, download itself completed) the watcher recorded tmp_created -> tmp_gone with final_exists=false (tmp_max_size 268435470) and the Agent logged 'level=WARN msg=\"application artifact prefetch failed\" ... error=\"sha256 mismatch: expected 952ecc... got a975afe0...\"'. No cache file for the sha existed afterwards and no .tmp remained",
+    "cache pollution check: the pre-existing cache entry 37a674d6...(56 B, mtime 2026-10-12T21:48) was byte-identical and untouched at every step, and no .tmp was ever left in the cache directory",
+    "UI readback: the owned application shows as assigned (API /nodes -> [native-3]) and the applications list, node detail and agent detail all render the app link; the artifact list shows the owned artifact with its sha256 and the referencing app (screenshots UI-05/06/07/08)"
+   ],
+   "remaining_or_limitations": [
+    "the download-time mismatch needed a storage-layer fault (append to the fixture's own content-addressed blob) because the Hub always derives the download URL and sha from the same artifact row; the blob was restored to the exact sha afterwards",
+    "the ~2.1 s download window means the `.tmp` observation is sampling-based (966 samples at 2 ms); the rename is atomic in the product code (os.Rename + RegisterArtifact)",
+    "after the forced re-download the SQLite row from the earlier successful install remained until the explicit cleanup; the product's own Has() re-hashes the file, so that stale row never installed anything (verified: no cache file for the sha)"
+   ],
+   "evidence": [
+    "evidence/P16-setup.json",
+    "evidence/P16-09-happy-install.json",
+    "evidence/P16-09-sha-mismatch.json",
+    "evidence/UI-05-07-readback.json"
+   ],
+   "actual": {
+    "artifact": {
+     "id": "51735863-f1e3-4291-bdf4-91ebb735e1be",
+     "name": "qa-w1410b07-30fb54d4-art-A",
+     "purpose": "P16-09/P16-10 agent artifact cache",
+     "sha256": "952ecc974fb739448eae6e7cdea79f8ac57130659d619ba3fe5bf0520f17f8b0",
+     "size": 268435456
+    },
+    "application": {
+     "artifact_id": "51735863-f1e3-4291-bdf4-91ebb735e1be",
+     "id": "82e8ee0a-9e32-4fab-8f92-43ff0d20edee",
+     "name": "qa-w1410b07-30fb54d4-app-A",
+     "purpose": "drive agent artifact prefetch (assign only, no deploy)"
+    },
+    "happy_tmp_lifetime_ms": 2125.1,
+    "happy_final_size": "268435456 644 1791974506",
+    "happy_log": true,
+    "mismatch_final_exists": false,
+    "mismatch_error": [
+     "watch_start",
+     "tmp_created",
+     "tmp_gone"
+    ],
+    "cache_entry_after_mismatch": "",
+    "baseline_entry_intact": true
+   }
+  },
+  {
+   "case_id": "P16-10",
+   "title": "下载中断后临时文件清理和重试。",
+   "canonical_before": {
+    "status": "NOT_RUN",
+    "baseline_status": "PARTIAL",
+    "priority": "P1"
+   },
+   "proposed_after": "PASS",
+   "confidence": "high",
+   "covered_dimensions": [
+    "download failure (artifact blob moved aside -> GET /api/artifacts/{id}/download = 404): watcher recorded tmp_created(size=0) -> tmp_gone after 30.7 ms with final_exists=false; Agent log 'application artifact prefetch failed ... error=\"download status 404\"'; no cache entry, no .tmp left",
+    "mid-stream interruption: the host loop sampled the in-guest .tmp (30506016 -> 72317984 bytes) and truncated the Hub blob to 4096 bytes while the 256 MiB download was streaming; the temp reached 143075656 bytes (a real half file) and was then removed -> tmp_gone after 828.9 ms with final_exists=false; Agent log 'error=\"unexpected EOF\"'; no cache entry, no .tmp left",
+    "retry after cleanup succeeds: after restoring the blob to its exact sha the same desired-state change re-downloaded the artifact, tmp_created -> tmp_gone with final_exists=true and the cache file sha256 == artifact sha256 (size 268435456, mode 644) in both the 404 and the interruption cases",
+    "no cache pollution: the baseline entry 37a674d6... stayed byte-identical and the final cache directory contains exactly the baseline entry plus nothing else after cleanup",
+    "one earlier interruption attempt that missed the window is recorded honestly (P16-10-interrupt-retry.json: the interrupt call copied the 256 MiB blob first, so the download had already completed and the artifact installed; the retry of the fault was then done with a single-round-trip truncate)"
+   ],
+   "remaining_or_limitations": [
+    "the interruption is a storage-layer fault injection on the fixture's own blob (documented, restored by sha verification); the product exposes no way to abort another Agent's artifact prefetch",
+    "the '.tmp' observations come from an in-guest sampler (2 ms) plus the watcher's own stat calls; the exact removal instant is bounded by that granularity"
+   ],
+   "evidence": [
+    "evidence/P16-10-notfound-cleanup-retry.json",
+    "evidence/P16-10-interrupt-retry.json",
+    "evidence/P16-10-interrupt-retry2.json",
+    "evidence/P16-cache-cleanup.json"
+   ],
+   "actual": {
+    "notfound_tmp_lifetime_ms": 30.7,
+    "notfound_final_exists": false,
+    "notfound_error": "download status 404",
+    "interrupt_tmp_max_bytes": 268435456,
+    "interrupt2_tmp_max_bytes": 143075656,
+    "interrupt2_final_exists": false,
+    "interrupt2_error": "unexpected EOF",
+    "retry_after_notfound": "952ecc974fb73944",
+    "retry_after_interrupt": "952ecc974fb73944"
+   }
+  }
+ ],
+ "counts": {
+  "nodes": 6,
+  "applications": 1,
+  "tasks": 0,
+  "schedules": 0,
+  "artifacts": 1,
+  "scripts": 2,
+  "groups": 0,
+  "users": 8,
+  "transfers": 38,
+  "executions_head": 1
+ },
+ "server_writes": {
+  "artifact:delete": 1,
+  "application:delete": 1,
+  "application:assign": 12,
+  "application:update": 1,
+  "application:create": 1,
+  "artifact:upload": 1,
+  "file_transfer:retry": 6,
+  "file_transfer:create": 6,
+  "file_transfer:cancel": 2
+ },
+ "harbor_session": {
+  "admin_logins_in_audit_window": 293
+ },
+ "operation_counts": {
+  "owned_transfers_created": 6,
+  "owned_artifacts_created": 1,
+  "owned_applications_created": 1,
+  "server_writes_attributed_to_owned_objects": {
+   "artifact:delete": 1,
+   "application:delete": 1,
+   "application:assign": 12,
+   "application:update": 1,
+   "application:create": 1,
+   "artifact:upload": 1,
+   "file_transfer:retry": 6,
+   "file_transfer:create": 6,
+   "file_transfer:cancel": 2
+  },
+  "node_side_commands": "native-3 SSH read/write sessions on the owned /tmp/qa-w1410b07-<nonce> dir, the Agent cache dir and the Agent log/SQLite; no other node touched",
+  "ui_actions": [
+   "sign-in",
+   "/transfers table + nonce filter + screenshots",
+   "transfers form: 2 invalid-path submissions",
+   "/applications, /nodes/<id>, /agents/<id>, /artifacts readbacks + screenshots",
+   "applications row 操作 -> 删除 -> confirm"
+  ]
+ },
+ "observations": [
+  "OBS-B07-01 (environment): host001 (docker host integration) accepts FILE_DELIVERY_REQUEST but never reports a result and never errors; the Hub has no delivery timeout, so the target stays DELIVERING and the transfer stays non-terminal until canceled. Two attempts (12+ min, 90 s) plus a Hub-blob truncation produced no agent-side outcome. batch04 observed a fast allowlist FAILED on the same node earlier the same day, so this is environment drift.",
+  "OBS-B07-02 (UI candidate defect, needs a second opinion): on /applications/<id> for an API-created application the 保存 button (enabled, type=submit) emitted no request at all across 3 attempts (network requests empty, app revision unchanged, no toast) while the assign checkbox toggled normally; the transfers form on the same session did emit requests, so click delivery is not the cause. The FL-09 UI-created-app save path is PASS in batch04.",
+  "OBS-B07-03 (harness): the node tmpfs is only 979 MiB and the VM balloon was at 1 GiB; a ~483 MiB fixture file plus the transfer fixtures caused guest memory pressure that broke sshd and took the repair Agent offline (18:09Z-18:24Z). Recovery used a live balloon raise only; see evidence/incident-report.json.",
+  "OBS-B07-04 (product, low confidence): a 256 MiB artifact prefetch takes ~2.1 s and both the artifact cache and the transfer temp path use a single rename for atomic landing; no .tmp or .nodesteer-transfer-* file was ever left behind in a failure path we produced."
+ ],
+ "harness_notes": [
+  "H-01: the first P22-10 poll loop was killed by the harness shell timeout; attempt1 evidence is a reconstruction from the live API plus the recorded observations (P22-10-isolation-attempt1.json).",
+  "H-02: the P22-11 target-id case was first run against a misnamed symlink and therefore delivered successfully; the valid run is the ENOSPC one (P22-14-half-file.json).",
+  "H-03: the first artifact interruption attempt missed the window because the interrupt call copied the 256 MiB blob first; the retry (single truncate round trip) hit it.",
+  "H-04: the app editor UI save emitted no request (OBS-B07-02), so the prefetch trigger used the same assign endpoint the UI calls.",
+  "H-05: the wrong-domain reboot and the tmpfs incident are disclosed in evidence/incident-report.json."
+ ],
+ "final_cleanup_guard": {
+  "captured_at_utc": "2026-10-14T10:53:13Z",
+  "authority": "http://192.168.100.209:18080 (repair)",
+  "nonce": "30fb54d4",
+  "counts_baseline_at_start": {
+   "applications": 1,
+   "artifacts": 1,
+   "executions_head": 1,
+   "groups": 0,
+   "nodes": 9,
+   "schedules": 0,
+   "scripts": 5,
+   "tasks": 3,
+   "transfers": 16,
+   "users": 8
+  },
+  "counts_after_batch07": {
+   "nodes": 6,
+   "applications": 1,
+   "tasks": 0,
+   "schedules": 0,
+   "artifacts": 1,
+   "scripts": 2,
+   "groups": 0,
+   "users": 8,
+   "transfers": 38,
+   "executions_head": 1
+  },
+  "counts_note": "global counts are shared with parallel batches (sys-b02/b07/b12, web batch06/08) and are NOT used to attribute batch07 actions",
+  "owned_objects": {
+   "applications": [
+    {
+     "id": "82e8ee0a-9e32-4fab-8f92-43ff0d20edee",
+     "deleted": true,
+     "get_http": 404
+    }
+   ],
+   "artifacts": [
+    {
+     "id": "51735863-f1e3-4291-bdf4-91ebb735e1be",
+     "deleted": true,
+     "get_http": 404
+    }
+   ],
+   "transfers": [
+    {
+     "id": "3f91190c-0fb0-42e2-8c48-c56d501ae34d",
+     "final_status": "CANCELED",
+     "delete_endpoint": null,
+     "retained_as_history": true
+    },
+    {
+     "id": "4184507e-cf4d-4e0c-9ab1-157082d704d0",
+     "final_status": "CANCELED",
+     "delete_endpoint": null,
+     "retained_as_history": true
+    },
+    {
+     "id": "4aff7bd2-b018-426e-a53a-c7871a367c04",
+     "final_status": "SUCCESS",
+     "delete_endpoint": null,
+     "retained_as_history": true
+    },
+    {
+     "id": "c8f2cb42-4d81-4b3d-b454-36f90bd1d006",
+     "final_status": "SUCCESS",
+     "delete_endpoint": null,
+     "retained_as_history": true
+    },
+    {
+     "id": "f926be58-68db-4181-854f-dba803340500",
+     "final_status": "SUCCESS",
+     "delete_endpoint": null,
+     "retained_as_history": true
+    },
+    {
+     "id": "0892e422-7079-41aa-9640-4482bdbce8c3",
+     "final_status": "SUCCESS",
+     "delete_endpoint": null,
+     "retained_as_history": true
+    }
+   ]
+  },
+  "node_side_absence": {
+   "rc": 0,
+   "stdout": "ls: cannot access '/tmp/qa-w1410b07-*': No such file or directory\nno watcher",
+   "stderr": "Warning: Permanently added '192.168.100.222' (ED25519) to the list of known hosts."
+  },
+  "agent_cache_final": {
+   "rc": 0,
+   "stdout": "DATA_DIR=/var/lib/nodesteer-repair-20260930-101945/native-3\n--artifacts\ntotal 4\ndrwxr-xr-x 2 root root  78 Oct 14 18:49 .\ndrwx------ 8 root root 155 Oct  4 09:11 ..\n-rw-r--r-- 1 root root  56 Oct 12 21:48 37a674d655a6ac4111e488608d81d368364db8d8a13d4293d03e9f9eec8a7b8a\n--tmp_dir\ntotal 0\ndrwxr-xr-x 2 root root   6 Oct  4 09:01 .\ndrwx------ 8 root root 155 Oct  4 09:11 ..\n--dot_tmp_in_cache\nnone\n--cache_sha\n37a674d655a6ac4111e488608d81d368364db8d8a13d4293d03e9f9eec8a7b8a 56 37a674d655a6ac4111e488608d81d368364db8d8a13d4293d03e9f9eec8a7b8a",
+   "stderr": "Warning: Permanently added '192.168.100.222' (ED25519) to the list of known hosts."
+  },
+  "agent_db_final": {
+   "tables": [
+    "identity",
+    "sync_state",
+    "scripts",
+    "tasks",
+    "schedules",
+    "applications",
+    "artifacts",
+    "executions",
+    "deployments",
+    "unit_registry"
+   ],
+   "artifacts": [
+    {
+     "sha256": "37a674d655a6ac4111e488608d81d368364db8d8a13d4293d03e9f9eec8a7b8a",
+     "path": "/var/lib/nodesteer-repair-20260930-101945/native-3/artifacts/37a674d655a6ac4111e488608d81d368364db8d8a13d4293d03e9f9eec8a7b8a",
+     "downloaded_at": "2026-10-12T13:48:58.406068868Z"
+    }
+   ],
+   "quick_check": "ok"
+  },
+  "agent_cache_cleanup": {
+   "owned_cache_files_removed": true,
+   "owned_sqlite_rows_removed": true,
+   "baseline_entry": "37a674d655a6ac4111e488608d81d368364db8d8a13d4293d03e9f9eec8a7b8a",
+   "baseline_entry_intact": true,
+   "evidence": "evidence/P16-cache-cleanup.json"
+  },
+  "hub_leftovers_check": {
+   "rc": 0,
+   "stdout": "none\n--staging--\nnone",
+   "stderr": "Warning: Permanently added '192.168.100.209' (ED25519) to the list of known hosts."
+  },
+  "native3_health": {
+   "rc": 0,
+   "stdout": "active\nactive\ntmpfs           979M     0  979M   0% /tmp\n               total        used        free      shared  buff/cache   available\nMem:             932         306         592           4         166         625\n 18:53:12 up  3:23,  2 users,  load average: 0.00, 0.08, 2.19",
+   "stderr": "Warning: Permanently added '192.168.100.222' (ED25519) to the list of known hosts."
+  },
+  "nodes_online": [
+   {
+    "id": "91f44866-8a28-435e-bbda-2f2367126c00",
+    "hostname": "qa-repair-20260930-101945-native-1",
+    "ip": "qa-repair-20260930-101945-native-1.invalid",
+    "status": "online",
+    "deployment_mode": "native"
+   },
+   {
+    "id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+    "hostname": "qa-repair-20260930-101945-native-2",
+    "ip": "qa-repair-20260930-101945-native-2.invalid",
+    "status": "online",
+    "deployment_mode": "native"
+   },
+   {
+    "id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+    "hostname": "qa-repair-20260930-101945-native-3",
+    "ip": "qa-repair-20260930-101945-native-3.invalid",
+    "status": "online",
+    "deployment_mode": "native"
+   },
+   {
+    "id": "03cb50cc-eab6-4afd-bbe0-f73c4e326773",
+    "hostname": "qa-repair-20260930-101945-native-4",
+    "ip": "qa-repair-20260930-101945-native-4.invalid",
+    "status": "online",
+    "deployment_mode": "native"
+   },
+   {
+    "id": "f6a79d23-2410-450c-ac39-64dd70c9daa1",
+    "hostname": "qa-resume-20261010-host-f174890c3846-host001",
+    "ip": "qa-resume-20261010-host-f174890c3846-host001.invalid",
+    "status": "online",
+    "deployment_mode": "docker_host_integration"
+   }
+  ],
+  "other_batches_touched": "none (no fixture, path or process of another batch was used); the only cross-batch effect was the accidental native-1 reboot during the incident",
+  "incident": {
+   "file": "evidence/incident-report.json",
+   "summary": "A harness fixture step that filled /tmp (tmpfs, 979 MiB) on native-3 (.222) while the VM balloon was at 1 GiB caused severe guest memory pressure: sshd stopped answering after 18:09Z, the repair Agent went offline at 2026-10-14T18:09:47Z, and my node-side SSH checks failed until the balloon was raised."
+  },
+  "all_owned_deletes_get_404": true,
+  "harness_error": null
+ }
+}

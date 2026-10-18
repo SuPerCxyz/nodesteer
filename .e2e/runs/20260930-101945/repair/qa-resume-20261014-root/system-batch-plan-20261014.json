@@ -1,0 +1,543 @@
+{
+  "generated_at_utc": "2026-10-14T08:05:00Z",
+  "reviewer": "system-batch-planner",
+  "total_not_run": 84,
+  "basis": {
+    "authoritative_inventory": ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+    "selection": "owner == system AND status == NOT_RUN, all 84 rows carry remaining_dimensions='修复版全部适用维度待执行；旧版证据不能计入新版通过'",
+    "authority": "http://192.168.100.209:18080 (repair)",
+    "environment_facts_used": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/environment-restore-20261014.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/latest-evidence-integration-20261014.json",
+      ".e2e/runs/20260930-101945/repair/defect-regression-matrix.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/host001-environment-blocker.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/backend-next-batch-plan.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/next-runtime-batch-plan-20261012.json",
+      "docs/ARCHITECTURE.md §67",
+      "docs/PRODUCT.md",
+      ".e2e/README.md"
+    ],
+    "repair_nodes_online_synced": [
+      "qa-repair-20260930-101945-native-1 (91f44866-8a28-435e-bbda-2f2367126c00, 192.168.100.204)",
+      "qa-repair-20260930-101945-native-2 (611c02a5-1859-4465-878b-d543b7f6fdec, 192.168.100.206)",
+      "qa-repair-20260930-101945-native-3 (37989297-3bc8-4c0c-b302-7c6efbdba630, 192.168.100.222)",
+      "qa-repair-20260930-101945-native-4 (03cb50cc-eab6-4afd-bbe0-f73c4e326773, 192.168.100.247)"
+    ],
+    "other_node_records": [
+      "qa-resume-20261010-host-f174890c3846-host001 (f6a79d23-2410-450c-ac39-64dd70c9daa1) online/synced in Node record, but its owned container is STOPPED for quota and its host-root oracle is blocked",
+      "qa-resume-20261008-native4-child-c5d48ea9 (15961ef7-81b4-43f3-80c8-1b6977ca2aea) offline leftover",
+      "primary :8080 Hub and nodesteer-agent.service on the 4 VMs are the ORIGINAL deployment and MUST NOT be touched"
+    ],
+    "binary_shas_expected": {
+      "hub": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+      "agent": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add"
+    },
+    "coverage_accounting": {
+      "scheduled_in_batches": 74,
+      "environment_infeasible": 5,
+      "reusable_prior_evidence": 5,
+      "total": 84,
+      "note": "每个 case_id 在 batches / environment_infeasible / reusable_prior_evidence 中恰好出现一次"
+    }
+  },
+  "batches": [
+    {
+      "batch_id": "sys-b01",
+      "title": "Hub 重启：Agent 自动重连、Session/Desired State 重建与权威源收敛",
+      "case_ids": ["SYS-03", "AR-01", "SYS-17", "INV-01"],
+      "harness_needed": [
+        "需要停止/启动 repair Hub 单元：systemctl stop/start nodesteer-hub-repair-20260930-101945.service (Hub VM 192.168.100.209)；只动 repair 单元，绝不碰 nodesteer-hub.service(:8080)",
+        "fixture：native repair 节点上 1 个 nonce 命名 Script + Script Task（retry=0、无 schedule），执行前后各留 1 个真实 marker",
+        "Hub 重启前需先写一次 Desired State 变更（新增/禁用 Script），重启后校验 revision 不丢、Agent 重连后自行 reconcile",
+        "不需要网络故障注入，但需要能读取 Agent 侧只读 SQLite（query_only）与 Hub API readback",
+        "SYS-17 需要能观测 HELLO→reconcile→READY 的时序：优先用既有 ws-frame-proxy (.e2e/.../qa-resume-20261010-runtime/sha-prune/ws-frame-proxy) 记录帧顺序，或从 Agent 日志时间线读出",
+        "重启 repair Hub 前必须先记录 hub 进程/二进制 SHA=164ea4ac…，重启后复核一致"
+      ],
+      "conflicts": [
+        "重启 repair Hub 会中断所有并行 UI/写批次，必须独占串行执行",
+        "占用全局 global_revision 与 Hub session，不能与 sys-b03/b04/b06/b08 并行",
+        "与 sys-b13/sys-b14 并发会污染其新建 Node/Transfer 的在线状态观测"
+      ],
+      "risk": "medium",
+      "cleanup_obligations": [
+        "Task/Script 精确 DELETE 200 → GET404；保留 Execution/Audit 历史",
+        "确认 4 个 repair node 全部回到 online/synced；确认 primary :8080 Hub 与 nodesteer-agent.service 未被触碰",
+        "确认 repair Hub 进程/二进制 SHA 与重启前一致，无半写入的 Desired State 行"
+      ],
+      "evidence_minimum": [
+        "Hub 重启前后 API 读数：Agent 重连时间线、Session 重建证据、global_revision 与 Script/Task 行未丢失",
+        "重连期间 Agent 未宣告 READY 的时间证据 + reconcile 完成后 online/synced 的 API readback",
+        "1 个真实 Execution ID 终态 SUCCESS，且重启未产生重复 Execution",
+        "Hub 与 Agent 二进制 SHA、以及重启前后 revision/行数对比 JSON",
+        "Task/Script DELETE 200 与随后 GET404 的原始响应"
+      ]
+    },
+    {
+      "batch_id": "sys-b02",
+      "title": "提交边界与通知语义：Commit 前不通知、通知不承担最终一致性、依赖同步失败回滚",
+      "case_ids": ["SYS-10", "INV-17", "INV-03", "INV-04", "SYS-08", "AR-16"],
+      "harness_needed": [
+        "需要 ws-frame-proxy 抓取 SYNC/Notification 帧顺序（证明 commit 前无 desired-state 通知、commit 后一次或可安全重复）",
+        "需要构造 1 次会失败的依赖同步（例如同一 SYNC_RESPONSE 内含坏 SHA 的 Script，或引用不存在的依赖）以触发事务回滚",
+        "fixture：native 节点上 2 个 nonce 命名 Script（good/bad）+ 1 个引用它们的 Script Task",
+        "需要 Hub 侧只读 SQLite/API readback 证明 revision 不前进、无半同步行",
+        "不需要重启 repair Hub，但需要 Agent 保持连接（不适用离线）"
+      ],
+      "conflicts": [
+        "抢占用全局 revision 计数；不得与 sys-b01/b06 并行（Hub 停/重启会破坏帧观测）",
+        "坏 SHA 帧注入与 sys-b10 的制品 SHA 负向批次使用不同机制（控制帧 vs Artifact 下载），可并行但都要保证 Agent 单连接",
+        "代理注入不得改全局 changelog_window 或制造大规模 revision"
+      ],
+      "risk": "medium",
+      "cleanup_obligations": [
+        "撤回注入的坏帧/坏 Script，恢复 good 版本并确认 revision 前进到一致值",
+        "精确 DELETE 两个 Script/一个 Task 并 GET404；保留 1 条 SUCCESS 与 1 条失败/回滚 Execution 历史",
+        "停止并移除自有 proxy 单元/根目录；不得改动原 Hub/Agent 服务"
+      ],
+      "evidence_minimum": [
+        "帧级证据：commit 前后 Notification 的先后与次数（含重复帧可安全重复的证据）",
+        "失败同步后 Agent revision 保持不前进、Hub 无半同步行的 API+DB readback（前后两次）",
+        "回滚后 revision 前进且内容 SHA 一致的证据 + 1 条真实 Execution 终态",
+        "INV-03/INV-04 的 Notify + Revision Check + Reconciliation 三段均有可核对的时序证据"
+      ]
+    },
+    {
+      "batch_id": "sys-b03",
+      "title": "通知丢失与 Revision 落后：以 Revision Check 收敛",
+      "case_ids": ["SYS-04", "AR-10", "SYS-06", "AR-13"],
+      "harness_needed": [
+        "需要网络/帧故障注入：丢弃 Notification 帧（或用 proxy 丢弃单帧），保留 Agent 周期性 Revision Check",
+        "fixture：native 节点 1 个 nonce Script Task；Hub 侧连续 2~3 次 Desired State 变更制造 revision 差",
+        "需要 Agent 本地 revision 与 Hub current revision 的只读对比读数",
+        "可选：短时离线（stop 自有 child 单元）后恢复，验证 revision check 补齐；不得停原始 nodesteer-agent.service"
+      ],
+      "conflicts": [
+        "需要独占 1 个 repair node 的 Agent 连接以做丢帧；与 sys-b04/b08 的断连类批次互斥",
+        "不得与 sys-b01/b06 并行（Hub 停机会让丢帧与重连观测混淆）",
+        "占用全局 revision 计数，不得做大规模 revision 制造"
+      ],
+      "risk": "medium",
+      "cleanup_obligations": [
+        "移除丢帧 proxy/网络规则并确认恢复直连；Agent 回到 online/synced",
+        "精确 DELETE Script/Task 并 GET404；保留执行历史",
+        "确认最终 revision 在 Hub/Agent 两侧一致且无重复 Execution"
+      ],
+      "evidence_minimum": [
+        "丢帧后 Notification 缺失但最终 revision 收敛的时序证据（含收敛耗时）",
+        "Agent 本地 revision 落后 → 增量 Sync 到一致的 DB readback 前后对照",
+        "同一逻辑变更只产生一条 Execution（无重复）的 Execution 列表",
+        "恢复后 online/synced 的 API readback"
+      ]
+    },
+    {
+      "batch_id": "sys-b04",
+      "title": "通知重复/乱序与 Change Log 窗口过期：以 Hub Current Desired State / Full Resync 收敛",
+      "case_ids": ["SYS-05", "AR-11", "AR-12", "SYS-07", "AR-14", "AR-15"],
+      "harness_needed": [
+        "需要 ws-frame-proxy 注入重复帧与乱序帧（重放/调换顺序），不改产品代码",
+        "Change Log 窗口过期不能靠修改全局 changelog_window：改用真实 Full Desired Snapshot 或让 Agent revision 落到窗口之外（既有约束已禁止全局窗口与大规模 revision 变更），并在证据中说明所用 seam",
+        "需要 Agent 本地 revision/snapshot 标记与 Hub revision 的只读对比",
+        "fixture：native 节点 1~2 个 nonce Script/Task"
+      ],
+      "conflicts": [
+        "代理注入需独占 Agent 连接；与 sys-b03/b08 互斥",
+        "不得与 sys-b01/b06 并行；不得与 sys-b10 共用同一 artifact 变更流",
+        "与 sys-b02 都使用 frame proxy：若同一 proxy 实例，必须串行以免帧账目混淆"
+      ],
+      "risk": "high",
+      "cleanup_obligations": [
+        "撤掉重放/乱序注入并确认真实状态收敛后无残留半状态",
+        "精确 DELETE fixture 并 GET404；保留历史 Execution",
+        "恢复 Agent 本地与 Hub 的 revision 一致性；移除自有 proxy 单元/根目录"
+      ],
+      "evidence_minimum": [
+        "重复/乱序帧后最终以 Hub Current Desired State 为准的证据（同一 revision 不被回退，行内容与 Hub 一致）",
+        "Full Resync 触发条件与实际执行证据（snapshot 全量下发、Agent 落盘后 revision 前进）",
+        "无重复 Execution、无半同步行；收敛前后 DB/API 对照",
+        "如需覆盖窗口过期，必须给出所用 seam 的负向证明（未修改全局窗口）"
+      ]
+    },
+    {
+      "batch_id": "sys-b05",
+      "title": "Execution/Schedule 幂等键：手动 UUID、调度 Key 与离线上传不重复",
+      "case_ids": ["SYS-31", "SYS-32", "INV-07", "SYS-15", "AR-20"],
+      "harness_needed": [
+        "fixture：native 节点 1 个 nonce Script Task（retry=0）；1 个 disabled/far-future one_time Schedule 用于取调度 Key",
+        "需要重复提交同一 Execution ID 请求（手动重复 POST/重放）与重复上传同一条离线 Execution",
+        "离线部分需要先断连（stop 自有 child 单元或用 proxy 断开）制造 Offline Execution，再恢复上传两次",
+        "需要 Execution 列表与 Agent 本地 journal 的只读去重核对"
+      ],
+      "conflicts": [
+        "离线断连与 sys-b03/b08 互斥（同一节点连接）",
+        "不得与 sys-b01/b06 并行（Hub 停机改变离线语义）",
+        "与 sys-b14 无关但都会写 Execution 历史行，需登记保留的记录 ID"
+      ],
+      "risk": "low",
+      "cleanup_obligations": [
+        "精确 DELETE Task/Schedule 并 GET404；保留 1 条手动与 1 条调度与 1 条离线 Execution 历史",
+        "确认无重复 Execution 行、无重复 ACK 副作用；Agent 回到 online/synced"
+      ],
+      "evidence_minimum": [
+        "同一手动 UUID 重复请求只产生 1 条 Execution 的 API 证据（含两次请求原始响应）",
+        "同一 Task+Node+Scheduled Time 的调度 Key 只产生 1 条 Execution",
+        "离线 Execution 上传/ACK 重复后 Hub 仅 1 条且状态一致；Agent 本地 journal synced 标记一致",
+        "INV-07 幂等键在手动/调度/离线三路径均给出具体键值与去重结果"
+      ]
+    },
+    {
+      "batch_id": "sys-b06",
+      "title": "Journal 先行、Hub 断开时本地日志完整、恢复后幂等上传",
+      "case_ids": ["SYS-33", "INV-08", "SYS-35", "SYS-36", "AR-19", "AR-07"],
+      "harness_needed": [
+        "需要停止/断开 repair Hub（或阻断 Agent→Hub 连接）以制造 Hub 不可用窗口，必然中断并行批次",
+        "fixture：native 节点 1 个产生 stdout/stderr 与多 chunk 的 nonce Script Task（可用既有 sys34-40 双流 payload 模板）",
+        "需要 Agent 本地 SQLite（query_only）读 Journal 与日志 chunk 表，证明 start 前已写 Journal、断连期间日志完整",
+        "恢复后需要重新上传的同 ID Execution 与日志不重复的核对"
+      ],
+      "conflicts": [
+        "停 Hub 与 sys-b01/b08 互斥且必须串行；会打断所有并行 UI 批次",
+        "与 sys-b03/b05 的断连类批次互斥（同一 Agent 连接）",
+        "与 sys-b10 的日志/artifact 证据目录不能混用"
+      ],
+      "risk": "medium",
+      "cleanup_obligations": [
+        "恢复 Hub 与 Agent 连接，确认 online/synced 且无半上传状态",
+        "精确 DELETE fixture 并 GET404；保留断连期间的 Execution/日志历史",
+        "确认 Hub 恢复后没有重复 Execution/重复日志 chunk，且非本次自有的服务/单元未被改动"
+      ],
+      "evidence_minimum": [
+        "Execution 行在进程启动前已存在的 Journal 时序证据（时间戳/状态先 RUNNING）",
+        "Hub 断开期间 Agent 本地日志 chunk 数量与内容完整（含终态 stdout/stderr）",
+        "Hub 恢复后同 ID Execution 与日志幂等上传证据（条数不增、内容 SHA 一致）",
+        "AR-07 需给出“执行中断连→恢复”全过程的状态一致性读数"
+      ]
+    },
+    {
+      "batch_id": "sys-b07",
+      "title": "Agent 重启/断连/任务更新期间离线：旧 RUNNING 收尾与 Desired State 一致",
+      "case_ids": ["SYS-16", "AR-02", "AR-06", "AR-09"],
+      "harness_needed": [
+        "需要重启/停止单个 repair Agent 单元：systemctl stop/start nodesteer-agent-repair-20260930-101945-native-N.service；绝不触碰 4 台 VM 上的原始 nodesteer-agent.service",
+        "需要制造“旧 RUNNING 但进程不存在”的状态：写入 1 条 RUNNING journal 后杀掉其子进程再重启 Agent（可复用 P0-002 的 SIGSTOP/SIGKILL 手法，但只作用于自有 child/进程）",
+        "fixture：native 节点 1 个 nonce Script Task；1 个在 Agent 离线期间被更新的 Task/Script（AR-09）",
+        "需要 Agent 本地 journal 与 Hub Execution 状态的只读对照"
+      ],
+      "conflicts": [
+        "重启 Agent 会中断该节点所有并行批次；与 sys-b08/b09 同节点互斥",
+        "不得与 sys-b01/b06 并行（Hub 停机与 Agent 重启叠加会让收尾归因不清）",
+        "与 sys-b15(X01) 互斥：自升级同样替换/重启 Agent 二进制"
+      ],
+      "risk": "medium",
+      "cleanup_obligations": [
+        "确认 Agent 单元 active、online/synced，本地 identity/revision 未变",
+        "旧 RUNNING Execution 以 agent_restarted 收尾且不重复；精确 DELETE fixture 并 GET404",
+        "确认未改动任何原始服务、备份或原部署数据目录"
+      ],
+      "evidence_minimum": [
+        "旧 RUNNING + 进程不存在 → agent_restarted 的 Execution 终态与 UI/API 反馈",
+        "重启后 identity/revision 不变、Desired State 与本地状态一致的读数",
+        "离线段更新的 Task 在恢复后只同步一次且生效（无重复执行）",
+        "Agent 二进制 SHA 与重启前后一致"
+      ]
+    },
+    {
+      "batch_id": "sys-b08",
+      "title": "离线自治与在线门禁：Allow Offline 继续执行、Hub Online Required 不执行、Agent-owned 调度离线触发",
+      "case_ids": ["SYS-13", "SYS-14", "AR-18", "E2E-04"],
+      "harness_needed": [
+        "需要断开 Agent 与 Hub 的连接（proxy 阻断或停止自有 child 单元）制造 Hub 不可用窗口",
+        "fixture：Agent-owned interval Schedule（短周期）+ 1 个 Allow Offline Task + 1 个 Hub Online Required Task，均为 nonce 命名且可确定性判定",
+        "SYS-14 需要 repair Hub 不可达窗口（停止 repair Hub 或阻断网络）——注意这会中断并行批次",
+        "需要 Agent 本地 scheduler 日志与 journal 只读读数，以及恢复后的幂等对账"
+      ],
+      "conflicts": [
+        "断连/停 Hub 与 sys-b03/b05/b06/b07 互斥，必须串行",
+        "制造 Hub 不可用窗口会打断并行 UI 批次",
+        "Agent-owned Schedule 会持续产生 Execution，需与其他占用同一节点的批次错开"
+      ],
+      "risk": "high",
+      "cleanup_obligations": [
+        "恢复连接并确认 online/synced；停止所有 interval Schedule（DELETE+GET404）避免继续触发",
+        "精确 DELETE 两个 Task 与 Schedule；保留离线期间产生的 Execution 历史（作为幂等证据）",
+        "确认恢复后无重复补跑、无残留进程；原始服务未改动"
+      ],
+      "evidence_minimum": [
+        "Hub 不可用期间 Allow Offline 任务真实执行（文件/marker 效果 + journal）",
+        "同一不可用窗口内 Hub Online Required 任务未在客户机执行（无副作用证据）",
+        "Agent-owned 调度在离线期间继续触发，恢复后上传幂等无重复",
+        "E2E-04 需给出“离线继续执行→恢复后无重复”的完整 Execution 对照"
+      ]
+    },
+    {
+      "batch_id": "sys-b09",
+      "title": "Agent 本地调度与条件引擎：Misfire、重复触发、心跳/退避参数、条件结构与 Remote online",
+      "case_ids": ["SYS-23", "SYS-22", "AR-17", "SYS-18", "SYS-26", "SYS-27"],
+      "harness_needed": [
+        "fixture：native 节点 1 个 nonce Script Task + 1 个 misfire 配置为 skip 的 Schedule + 1 个 run_once 的 Schedule；1 个嵌套 AND 条件 Task（local command_result/file_exists 组合）；1 个 Remote online 条件 Task",
+        "SYS-23/SYS-22 需要让 slot 在 Agent 不可用时到达（短时停自有 Agent 单元）或在同一 slot 重复触发",
+        "SYS-18 需要读取 Agent 配置（heartbeat/revision check/backoff/jitter 参数）并测量真实间隔与抖动；不得断言规范未定义的阈值，只记录观测值与配置一致性",
+        "SYS-26 需要合法与错误结构的条件（错误结构应被拒绝且不执行）",
+        "SYS-27 需要构造 Remote online 满足与不满足两种情形（另一节点在线/离线或 hub 侧状态切换）"
+      ],
+      "conflicts": [
+        "短时停 Agent 与 sys-b07/b08 互斥（同节点）",
+        "SYS-27 依赖另一节点的在线状态，可能与 sys-b13 新建节点/离线遗留节点的状态互相影响",
+        "SYS-18 的测量窗口不应与其他批次造成的频繁重连叠加"
+      ],
+      "risk": "low",
+      "cleanup_obligations": [
+        "精确 DELETE 全部 Task/Schedule 并 GET404；保留每条分支的 Execution 历史",
+        "恢复 Agent 在线并确认无残留 misfire 补跑；无残留条件求值子进程",
+        "确认未修改全局调度/心跳配置源（只读观测）"
+      ],
+      "evidence_minimum": [
+        "Misfire skip 未补跑 / run_once 只补跑一次的 Execution 计数与时间",
+        "同一 Task+Node+Scheduled Time 重复触发只产生 1 条 Execution（AR-17 同源证据）",
+        "心跳/Revision Check/退避的配置值与实测间隔/Jitter 观测（含“无规范阈值不作断言”的说明）",
+        "条件 AND 多层与错误结构的求值结果（true/false/SKIPPED/拒绝），Remote online 满足与不满足各自的实际执行/未执行效果"
+      ]
+    },
+    {
+      "batch_id": "sys-b10",
+      "title": "Artifact 下载：成功校验原子落盘、SHA 错误禁止安装、中断/超时/HTTP 错误清理与恢复",
+      "case_ids": ["SYS-41", "SYS-42", "SYS-43", "AR-24", "AR-25", "INV-10"],
+      "harness_needed": [
+        "fixture：1 个自有 Artifact（正确 SHA）+ 1 个 SHA 不匹配的 Artifact/变体；native 节点 1 个引用该 Artifact 的 Application 或 Prefetch 目标",
+        "需要下载故障注入：中断（截断字节）、超时、HTTP 错误（可用既有 proxy 或 Hub 侧 staged blob 控制），不改产品代码",
+        "需要读取 Agent DataDir 下 artifacts/<sha> 与 .tmp* 的物理状态、文件 SHA/大小，以及 Agent 本地 artifacts 行",
+        "SYS-44 的 tls-final-summary.json 已覆盖“正确 CA GET200/77B/SHA 缓存 + 错误/无 CA 零 GET + 独立坏 SHA 拒绝无缓存”，Root 若接受可作为 SYS-41/SYS-42/INV-10/AR-25 的复核依据，本批只补其余维度"
+      ],
+      "conflicts": [
+        "与 sys-b11 共用 Artifact/Application fixture，需串行或使用不同 hash 的 Artifact",
+        "改变 Hub staged blob/Artifact 会影响并行 Prefetch 观测；不得与 sys-b14 的 Transfer blob 混用",
+        "不得删除共享 Artifact 7b8929ed-c880-46f1-90e6-a5e9c0dab096"
+      ],
+      "risk": "medium",
+      "cleanup_obligations": [
+        "清理自有 .tmp 残留与自建 Artifact（精确 DELETE+GET404 或保留共享 Artifact）",
+        "确认正式缓存与目标文件未被坏 SHA 污染（负向证明）",
+        "移除故障注入、恢复直连；保留相关 Execution/Prefetch 历史"
+      ],
+      "evidence_minimum": [
+        "下载成功后 SHA256 校验通过并原子落盘的物理证据（无 .tmp 残留、目标文件 SHA 匹配）",
+        "SHA 错误时明确拒绝安装且正式缓存/目标文件不被污染的负向证据",
+        "中断/超时/HTTP 错误后 .tmp 被清理、无半文件、无伪缓存行",
+        "AR-24/AR-25 各自给出故障→恢复后的状态一致性结论"
+      ]
+    },
+    {
+      "batch_id": "sys-b11",
+      "title": "Application 生命周期：安装幂等、升级、Health 失败回滚、Backup 失败明确报错",
+      "case_ids": ["AR-27", "AR-28", "AR-29", "SYS-50", "SYS-52"],
+      "harness_needed": [
+        "fixture：native repair 节点上 1 个自有 Managed Application（v1→v2 两个 Artifact 版本，或一个会 Health 失败的 v2）+ 精确自有 Unit/路径",
+        "需要制造 Health 失败（v2 启动后不健康）与 Backup 失败（备份路径缺失/权限不足/磁盘不足）两类故障",
+        "需要读取 systemd Unit 状态、Binary/Config SHA、进程 PID、Deployment Journal 与 Hub API/UI 状态",
+        "AR-27 可复用 P0-002 attempt03 的 PREPARING 崩溃恢复证据；SYS-50/AR-28/AR-29 可复用 SYS-44 的 EROFS 失败回滚证据，Root 复核后可减少实际重跑"
+      ],
+      "conflicts": [
+        "写 systemd Unit 与 Binary：与任何在同节点跑 Agent/应用观测的批次互斥",
+        "与 sys-b10 共用 Artifact fixture；与 sys-b13（Docker/Host 拓扑）互斥，FAIL-ENV-HOST-001(BLOCKED) 只影响 Docker-Host 分支",
+        "回滚会短时改变节点上的受管应用状态，不得在并行 UI 批次期间执行"
+      ],
+      "risk": "high",
+      "cleanup_obligations": [
+        "卸载/删除自有 Application 与 Unit，恢复 Binary/Config 到基线（或删除自有路径），确认无残留 systemd unit/enable 链接",
+        "精确 DELETE Application/Artifact fixtures 并 GET404；保留 Deployment Journal/Execution 历史",
+        "确认 4 个 repair node 与原部署未被影响；不删除共享 Artifact"
+      ],
+      "evidence_minimum": [
+        "Health 失败后：停止新版本、恢复 Binary/Config/Unit、Health 后记录 ROLLBACK_SUCCESS 的完整顺序证据",
+        "失败升级后 v1 文件/Unit/Health 恢复且无伪 DONE/healthy",
+        "Backup 缺失/权限不足/磁盘不足各自给出明确失败（不静默成功、不半替换）",
+        "AR-28/AR-29 给出恢复后幂等、持久化与 Desired State 一致性的读数"
+      ]
+    },
+    {
+      "batch_id": "sys-b12",
+      "title": "Host Adapter 路径守卫、跨文件系统原子替换、权限拒绝与 Capability 前置门禁",
+      "case_ids": ["SYS-56", "SYS-57", "AR-32", "AR-34", "AR-35", "SYS-58", "AR-33", "INV-16"],
+      "harness_needed": [
+        "fixture：native 节点上的自有目标路径 + 通过 FileTransfer/部署 API 提交 4 类恶意/异常路径：`../` 相对路径、非 clean 绝对路径、绝对路径下的 symlink、以及 allowlist 之外路径（NativeHostAdapter.ValidatePath 要求绝对且 filepath.Clean 相同，ContainerHostAdapter 另有 host-root 与 allowlist 校验）",
+        "SYS-57/AR-35 需要跨文件系统（不同 mount）的目标目录，验证 .tmp 与目标同目录、rename 原子性",
+        "AR-32 需要权限拒绝路径（自有 root 下由其他 uid 拥有/只读的目录）",
+        "SYS-58/AR-33/INV-16 需要一个不具备 application_deploy/host_filesystem/managed_systemd capability 的节点（legacy: 纯 docker 非 Host 形态节点，或 agent.go capabilities() 的 native 分支之外），并验证 Hub 在下发前 BLOCKED、不到客户机执行",
+        "注意：容器 Host Adapter 专属的 symlink-escape/host-root 校验在本环境不可运行（见 environment_infeasible），本批只覆盖 native 适配器与 API 层可观测部分"
+      ],
+      "conflicts": [
+        "Capability 门禁需要非 native 节点 fixture，与 sys-b13 的 Docker 节点创建互斥/需串行复用同一节点",
+        "路径/文件写入与 sys-b11 的应用路径批次互斥（同节点文件系统）",
+        "不得改动 Host001 容器/挂载/策略；不得关闭 AppArmor 或用 privileged/unconfined 方案"
+      ],
+      "risk": "medium",
+      "cleanup_obligations": [
+        "删除自有的测试路径/symlink/mount 目录，确认未留在系统目录",
+        "删除为 Capability 门禁临时创建的非 native 节点（精确 DELETE+GET404 或按现状保留并记录）",
+        "恢复任何被临时改权限的自有目录；保留被拒绝请求的审计历史"
+      ],
+      "evidence_minimum": [
+        "每类路径逃逸请求的明确拒绝证据（HTTP 错误/Execution BLOCKED，且客户机无任何文件副作用）",
+        "跨文件系统场景下 .tmp 与目标同文件系统、rename 原子成功且无部分文件",
+        "权限拒绝给出明确失败且不破坏目标",
+        "Capability 不匹配时 Hub 下发前 BLOCKED 的证据 + 客户机无执行痕迹（journal 不存在或无 RUNNING）"
+      ]
+    },
+    {
+      "batch_id": "sys-b13",
+      "title": "Docker Agent：纳管接入、重启/重建持久化、持久卷缺失与 Native/Docker 共享 Core",
+      "case_ids": ["E2E-17", "AR-03", "AR-05", "INV-13"],
+      "harness_needed": [
+        "需要 Docker 运行时（既有 work 使用 native-2 192.168.100.206 的 docker daemon）与已导入的 pinned 镜像 sha256:ecd4dd9f8300067ba2cba22e8c5a701f1984f054fa4476354ed4d58af544cd44 (nodesteer-qa/agent-host:f174890c3846)；不得 pull/rebuild/retag",
+        "需要按既有 SYS-12 方案新建 1 个 nonce 命名 Docker Node（docker run 与 Compose 两种接入方式各验证一次）+ 1 个自有 volume + 1 条自有 bridge，全部带 owner label",
+        "E2E-17 覆盖 docker run 与 Compose 两种纳管接入；AR-03 覆盖容器 restart 后的 identity/revision/journal/cache；AR-05 覆盖持久卷缺失时的行为与恢复",
+        "需要只读 SQLite (query_only) 读 /var/lib/nodesteer 内 DB 与 artifacts 缓存文件，对比容器重启前后 8 字段",
+        "INV-13 需要同时读 native Agent 与 Docker Agent 的核心行为证据（配置/日志/CLI 形态）证明共享 Agent Core"
+      ],
+      "conflicts": [
+        "新建 Docker Node 改变全局节点集合，与 sys-b12 的 Capability 节点 fixture 互斥、与 sys-b14 Transfer 目标选择互相影响",
+        "不得触碰 Host001 容器/volume/bridge 与既有 pinned 镜像",
+        "与 sys-b01/b06/b08 的 Hub 停机或全局 revision 操作互斥",
+        "E2E-18/AR-04/INV-15 已由 SYS-12 修复版证据实质覆盖，不在本批重复执行（见 reusable_prior_evidence）"
+      ],
+      "risk": "high",
+      "cleanup_obligations": [
+        "按依赖顺序 stop/remove 自有容器（by immutable ID + owner label）、删除自有 volume/bridge/私有 root",
+        "删除临时 Node 并 GET404（保留 tombstone/audit），保留 1 条历史 Execution",
+        "保留 pinned 镜像与 Host001 fixture 不动；确认 4 个 repair node 仍 online/synced"
+      ],
+      "evidence_minimum": [
+        "docker run 与 Compose 两种接入方式下真实 HELLO→online/synced，且 deployment_mode=docker",
+        "容器 restart 前后 identity/revision/journal/cache 一致的只读 DB+物理文件对比",
+        "持久卷缺失时的明确失败/恢复行为（无半状态、无伪 SUCCESS）",
+        "INV-13 的 native/docker 共享核心证据（同代码路径/同行为对比）"
+      ]
+    },
+    {
+      "batch_id": "sys-b14",
+      "title": "FileTransfer：源/目标身份认证、大小与 SHA 校验、Hub staged blob 原子提升、Hub 重启后无半成品",
+      "case_ids": ["SYS-59", "SYS-60", "SYS-61", "SYS-66"],
+      "harness_needed": [
+        "需要至少 2 个可用 Agent 作为 source/target（native 节点），并使用各自真实 Agent 凭证做正/负身份认证",
+        "需要 1 条真实 Transfer 记录：注意 Hub 无 Transfer DELETE API，成功行会持久保留，必须先取得 Root 对“保留该历史行”的授权（参见 qa-resume-20261010-api/backend-next-batch-plan.json 的 future_positive_transfer_gate）",
+        "需要大小校验与 SHA256 校验的负向变体（篡改大小/内容）以及 Hub staged blob 原子提升的观测",
+        "SYS-66 需要 Hub 重启与目标离线窗口，验证状态与文件不产生半成品"
+      ],
+      "conflicts": [
+        "与 sys-b13 的新建 Docker 节点（作为 source/target）互斥/需串行",
+        "SYS-66 需要重启 repair Hub → 与所有并行批次互斥，必须单独串行",
+        "Transfer 行无删除接口：一旦产生将永久留在台账，需 Root 授权与后续清理说明"
+      ],
+      "risk": "high",
+      "cleanup_obligations": [
+        "删除自有的 source/target 本地文件与临时 .tmp；保留 Transfer 历史行并明确说明不可删除",
+        "恢复 Hub/Agent 连接并确认 online/synced；确认目标端无半文件",
+        "记录所有新增 Transfer/Blob 的 ID 与保留原因"
+      ],
+      "evidence_minimum": [
+        "源 Agent 认证成功且源节点只能上传（越权负向被拒绝）的证据",
+        "目标 Agent 认证成功且只能下载自己的目标（错误目标被拒）的证据",
+        "大小/SHA 校验失败被拒 + Hub staged blob 原子提升成功的证据",
+        "SYS-66 给出 Hub 重启/Agent 重连/目标离线后状态与文件无半成品的读数"
+      ]
+    },
+    {
+      "batch_id": "sys-b15",
+      "title": "Agent 自升级与 on_start 触发语义（二进制级批次，独占）",
+      "case_ids": ["X01", "X03"],
+      "harness_needed": [
+        "X01 需要可替换 Agent 二进制的新旧版本 fixture 与至少 3 个节点：混合选择 Docker 节点、含暂停/离线节点、重复在途升级、部分失败、取消确认、版本更新与重连——单个 X01 的子场景量约等于一个批次，故独占",
+        "X03 需要 1 个 on_start 触发的 Task，验证每次 Agent 进程启动触发一次、网络重连不重复触发、禁用/删除后停止触发",
+        "需要 systemctl 重启自有 Agent 单元与二进制 SHA 前后对比；绝不碰原始 nodesteer-agent.service",
+        "需要 Hub 侧 Agent 版本/capability 上报读数"
+      ],
+      "conflicts": [
+        "替换/重启 Agent 二进制，与所有占用同一节点的批次（sys-b07/b08/b09/b12/b13）互斥，必须独占串行且在环境稳定期执行",
+        "部分失败场景可能留下旧版本节点，需在下批开始前恢复基线二进制",
+        "与 sys-b01/sys-b06 的 Hub 停机批次互斥"
+      ],
+      "risk": "high",
+      "cleanup_obligations": [
+        "将所有节点 Agent 二进制/单元恢复为基线 SHA=d55dc5cd… 并确认 online/synced",
+        "删除自有的升级 payload/旧版本文件与 on_start Task（DELETE+GET404）",
+        "确认原部署服务与备份未被改动；保留升级/取消相关 Execution 与审计历史"
+      ],
+      "evidence_minimum": [
+        "混选/暂停/离线/重复在途/部分失败/取消确认各自的行为证据（含明确失败与幂等，不产生重复升级）",
+        "升级成功后版本上报更新与重连后 capability/version 读数",
+        "on_start：进程启动仅触发一次、网络重连不再次触发、禁用/删除停止触发 三组计数证据",
+        "所有节点二进制 SHA 回到基线"
+      ]
+    }
+  ],
+  "environment_infeasible": [
+    {
+      "case_id": "SYS-24",
+      "reason": "baseline 已为 BLOCKED；Timezone/DST 边界需要在 repair 节点上真实变更宿主机时区/TZ 数据并等待真实 DST 跳变，而 4 台 VM(192.168.100.204/206/222/247) 的时钟与时区与原部署共享，本环境没有安全的时区/DST 注入 seam，也不允许用单元测试或 Mock 代替真实边界。",
+      "recommended_status": "BLOCKED",
+      "note": "如实保留 BLOCKED；如后续用户提供可独占的时区可变节点或明确授权改 TZ，再单独立项，不得用静态分析替代。"
+    },
+    {
+      "case_id": "SYS-54",
+      "reason": "ContainerHostAdapter `/host` 映射与 Host Inventory 只能在 docker_host_integration 形态容器内验证；该容器的 host-root 身份校验依赖 /proc/1/root，在 docker-default AppArmor 下返回 Permission denied（FAIL-ENV-HOST-001 BLOCKED，nsenter rc=1）。对应 Host001 容器已为配额停止，且变更 AppArmor/安全策略需要用户或 Root 的额外授权，本环境不具备运行条件。",
+      "recommended_status": "BLOCKED",
+      "note": "host001-environment-blocker.json 已记录 3 caps + 默认 seccomp/NoNewPrivs 正确、AppArmor enforce；不得使用 privileged/unconfined 或追加 capability 绕过。"
+    },
+    {
+      "case_id": "SYS-55",
+      "reason": "属于 FAIL-ENV-HOST-002（Docker Host Mount 缺失/只读/错误路径），当前 regression_status=NOT_RUN 且 runtime_evidence 为空；运行它需要与 Host001 同族的 Host Integration 容器（missing/wrong/readonly 挂载变体），而该 fixture 已停止且其 host-root 映射 oracle 在本环境不可访问。",
+      "recommended_status": "BLOCKED",
+      "note": "修好 FAIL-ENV-HOST-001 的环境门禁并取得安全变更授权后，再与 AR-31 一起单独立项。"
+    },
+    {
+      "case_id": "AR-31",
+      "reason": "Docker Host Mount Missing，与 SYS-55 同属 FAIL-ENV-HOST-002；需要同一不可运行的 Host Integration 容器 fixture。",
+      "recommended_status": "BLOCKED",
+      "note": "与 SYS-55 绑定，不可拆分单独执行。"
+    },
+    {
+      "case_id": "INV-14",
+      "reason": "Native/Docker 差异必须进入 Host Adapter：FAIL-ENV-HOST-001 的 inventory_case_ids 明确包含 INV-14，需要真实 Host Integration 容器来对比 Native 与 Docker Host Adapter 的差异，而该容器的 host-root 校验在 docker-default AppArmor 下不可用；若只用非 Host 的纯 docker 容器，则无法观测到容器 Host Adapter 的差异语义，属于用错误 fixture 代替。",
+      "recommended_status": "BLOCKED",
+      "note": "纯 docker 非 Host 容器只能证明 deployment_mode=docker 的行为，不能替代 Host Adapter 差异项。"
+    }
+  ],
+  "reusable_prior_evidence": [
+    {
+      "case_id": "E2E-18",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/artifact-cache-preparation/artifact-cache-ad9bf531b28a-final-summary.json (+ ledger/result) 与 qa-resume-20261010-root/latest-evidence-integration-20261014.json 的 SYS-12 判定",
+      "why": "修复版 SYS-12 attempt04 已在真实 Docker 容器 A/B 重建中核对 Identity/Revision/Journal/Cache 8 字段（含 path_relative）、revision 1630/1632/1634 单调、同 DB dev/inode 与打开 FD、quick_check=ok，正是 E2E-18 的“容器重建后 Identity/Revision/Journal/Cache 不丢”。建议由 Root 复核后按复用处理，不重复执行；若 Root 要求补充 Compose 形态重建，再并入 sys-b13。"
+    },
+    {
+      "case_id": "AR-04",
+      "evidence": "同 E2E-18（SYS-12 attempt04 artifact-cache-ad9bf531b28a-* 与 SYS-12 canonical PASS 判定）",
+      "why": "AR-04 是 Docker Agent Recreate 的恢复框架版本，其恢复后幂等/持久化维度与 SYS-12 已测内容一致；建议 Root 复核后复用，仅补“恢复后 Desired State 与实际状态一致”的读数即可。"
+    },
+    {
+      "case_id": "INV-15",
+      "evidence": "同 E2E-18（SYS-12 attempt04 的容器重建持久化证据）",
+      "why": "INV-15“Docker Agent state 必须 Persistent”是 SYS-12 的核心断言之一，已有修复版真实容器重建证据；建议 Root 复核后复用。"
+    },
+    {
+      "case_id": "E2E-16",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261009-runtime/recreate-owned-child-evidence.json 等 SYS-01 证据（20261010-SHA-EXISTING:SYS-01，layer=real-agent-api-db-physical）",
+      "why": "SYS-01 修复版证据已产生新 Node ID/Agent ID、确认凭证仅存于 0600 私有配置与真实认证连接、Hub online/synced，实质覆盖 E2E-16“Native Enrollment → pending → HELLO → online/synced”。缺口只在“HELLO/heartbeat 报文级证据”，建议 Root 复核后复用并注明该限制。"
+    },
+    {
+      "case_id": "AR-26",
+      "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-host-tls/tls-final-summary.json（SYS-44：新建 App 初次安装、首次 EROFS 回滚、修复 harness 后重试 SUCCESS，真实 Unit/进程/文件 SHA/Registry/DONE 与 UI 核验）",
+      "why": "AR-26=Application Install 的恢复框架版本；修复版已有 App 初次安装 + 失败回滚 + 重试成功的闭环证据。注意 FAIL-ENV-HOST-001(BLOCKED) 只影响 Docker Host Integration 拓扑分支，原生分支可复用；建议 Root 复核后复用，不重复执行。"
+    }
+  ],
+  "sequencing_notes": [
+    "必须单独串行（会中断并行 UI/写批次）：sys-b01（重启 repair Hub）、sys-b06（Hub 断开窗口）、sys-b08（Hub Online Required 需要 Hub 不可用）、sys-b14 的 SYS-66 段（重启 repair Hub）。这些批次互相之间也不能并行。",
+    "Agent 二进制/单元级独占批次：sys-b15（X01 自升级）必须独占执行；sys-b07（重启 Agent）、sys-b09（短时停 Agent）、sys-b08（断连）不能与任何其他写同一节点的批次并行。",
+    "节点集合变更互斥：sys-b13（新建 Docker Node）与 sys-b12 的 Capability 门禁节点 fixture、sys-b14 的 source/target 选择互相影响，需串行且每次都重新登记节点集合与全局计数。",
+    "Artifact/Application 资源互斥：sys-b10 与 sys-b11 共用 Artifact/Application fixture，建议不同 hash 的 Artifact 或串行；不得删除共享 Artifact 7b8929ed-c880-46f1-90e6-a5e9c0dab096。",
+    "frame proxy 互斥：sys-b02、sys-b03、sys-b04 都需要帧级注入，若复用同一 proxy 实例必须串行，且任何 Hub 停机批次（sys-b01/b06/b08）期间不得运行它们。",
+    "原生低风险快速收益批次：sys-b05（幂等键）、sys-b09（调度/条件）、sys-b10（Artifact）可在环境稳定期并行于不同节点，建议优先作为第一批。",
+    "推荐执行顺序：1) sys-b05 与 sys-b09（不同 native 节点并行，低风险、无需改连接）；2) sys-b10；3) sys-b11；4) sys-b02；5) sys-b03；6) sys-b04；7) sys-b07；8) sys-b08；9) sys-b12；10) sys-b13；11) sys-b01；12) sys-b06；13) sys-b14；14) sys-b15（自升级，最后做，之后需恢复基线二进制）。",
+    "environment_infeasible 的 5 项（SYS-24、SYS-54、SYS-55、AR-31、INV-14）不要安排执行；保持如实 BLOCKED，不用 Mock/静态结论代替；其中 SYS-55+AR-31 需先解决 FAIL-ENV-HOST-001 的环境门禁与安全变更授权。",
+    "本清单之外的产品后规划能力（如 OIDC/SSO、ARM 架构等）不属于 system 归属的这 84 个 NOT_RUN，未纳入批次；如需覆盖应先按 PRODUCT.md 的一期/后续范围与需求确认单独立项。",
+    "所有批次执行前必须先做 fresh 只读 preflight（repair :18080 可达、4 个 native 节点 online/synced、Hub/Agent 二进制 SHA=164ea4ac…/d55dc5cd…、目标 fixture 路径不存在），任何不复用历史 PID/凭证。"
+  ]
+}

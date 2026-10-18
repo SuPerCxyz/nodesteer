@@ -1,0 +1,352 @@
+{
+  "case_id": "AUTH-MANAGEMENT",
+  "created_at_utc": "2026-10-10T10:41:17.321604+00:00",
+  "status": "EXECUTED_MATRIX_PASS_STATE_STABLE",
+  "scope": "Incremental unauthenticated/invalid-Bearer matrix for actual protected management reads and representative POST/PUT/DELETE routes; repair Hub :18080 only; no login, fixture, Helper Run, API call or state mutation in this planning batch. Earlier read-only pre-snapshot harness attempt is counted against the 101-read ceiling; no matrix request was sent in that attempt.",
+  "current_canonical": {
+    "AUTH-MANAGEMENT": {
+      "status": "PARTIAL",
+      "inventory_remaining": "其余管理端点、非法/过期会话、错误响应结构及状态一致性仍须逐端点验证；不能泛化所有受保护API。"
+    },
+    "AUTH-USERS": {
+      "status": "PARTIAL",
+      "reused_evidence": "auth-users-negative-matrix.json covers /api/users GET/POST and /api/users/{id} PUT/DELETE with absent/invalid sessions and state digest; no repeat in this batch. Existing Admin invalid/empty fail-before-write evidence remains."
+    },
+    "AUTH-ARTIFACT": {
+      "status": "PASS",
+      "excluded": "Do not repeat anonymous/invalid/admin/registration/Agent download tests."
+    },
+    "AUTH-PUBLIC": {
+      "status": "PASS",
+      "excluded": "healthz/readyz/OIDC-disabled/public AgentBinary dimensions already covered; no repeat."
+    }
+  },
+  "auth_contract_static": {
+    "middleware": "Every listed protected path is wrapped in withAuth(action=read); anonymous exits 401 error=unauthorized, invalid/expired Bearer exits 401 error=invalid or expired session before handler/mutation.",
+    "credential_mode": "Two probes per planned path: (1) no Authorization header, (2) synthetic invalid Bearer header. Never send admin/operator/viewer credentials to these paths.",
+    "response_oracle": {
+      "status": 401,
+      "content_type": "application/json",
+      "body_shape": "object",
+      "body_keys": [
+        "error"
+      ],
+      "anonymous_error": "unauthorized",
+      "invalid_bearer_error": "invalid or expired session",
+      "redirects_followed": false
+    },
+    "side_effect_oracle": "Use existing private Admin Bearer only in Authorization header for bounded read-only before/after collection and audit summaries; no /api/login and no write credential. Requests with dynamic item IDs use fresh UUIDs; snapshot counts and sorted ID digests, user identity-role digest, and audit count/digest before/after must match."
+  },
+  "protected_get_paths": [
+    {
+      "path": "/api/me",
+      "route": "protected session identity"
+    },
+    {
+      "path": "/api/nodes/enrollment",
+      "route": "protected enrollment configuration GET"
+    },
+    {
+      "path": "/api/nodes",
+      "route": "protected node collection"
+    },
+    {
+      "path": "/api/nodes/<fresh-random-node-uuid>",
+      "route": "protected node item"
+    },
+    {
+      "path": "/api/transfers",
+      "route": "protected transfer collection"
+    },
+    {
+      "path": "/api/transfers/<fresh-random-transfer-uuid>",
+      "route": "protected transfer item"
+    },
+    {
+      "path": "/api/groups",
+      "route": "protected group collection"
+    },
+    {
+      "path": "/api/groups/<fresh-random-group-uuid>",
+      "route": "protected group item"
+    },
+    {
+      "path": "/api/scripts",
+      "route": "protected script collection"
+    },
+    {
+      "path": "/api/scripts/<fresh-random-script-uuid>",
+      "route": "protected script item"
+    },
+    {
+      "path": "/api/scripts/<fresh-random-script-uuid>/revisions",
+      "route": "protected script revision list"
+    },
+    {
+      "path": "/api/scripts/<fresh-random-script-uuid>/revisions/1",
+      "route": "protected specific script revision"
+    },
+    {
+      "path": "/api/tasks",
+      "route": "protected task collection"
+    },
+    {
+      "path": "/api/tasks/<fresh-random-task-uuid>",
+      "route": "protected task item"
+    },
+    {
+      "path": "/api/schedules",
+      "route": "protected schedule collection"
+    },
+    {
+      "path": "/api/schedules/<fresh-random-schedule-uuid>",
+      "route": "protected schedule item"
+    },
+    {
+      "path": "/api/artifacts",
+      "route": "protected artifact collection"
+    },
+    {
+      "path": "/api/artifacts/<fresh-random-artifact-uuid>",
+      "route": "protected artifact metadata item"
+    },
+    {
+      "path": "/api/applications",
+      "route": "protected application collection"
+    },
+    {
+      "path": "/api/applications/<fresh-random-application-uuid>",
+      "route": "protected application item"
+    },
+    {
+      "path": "/api/applications/<fresh-random-application-uuid>/state",
+      "route": "protected application node states"
+    },
+    {
+      "path": "/api/applications/<fresh-random-application-uuid>/executions",
+      "route": "protected application executions"
+    },
+    {
+      "path": "/api/applications/<fresh-random-application-uuid>/revisions",
+      "route": "protected application revisions"
+    },
+    {
+      "path": "/api/applications/<fresh-random-application-uuid>/nodes",
+      "route": "protected application nodes"
+    },
+    {
+      "path": "/api/executions",
+      "route": "protected execution collection"
+    },
+    {
+      "path": "/api/executions/<fresh-random-execution-uuid>",
+      "route": "protected execution item"
+    },
+    {
+      "path": "/api/executions/<fresh-random-execution-uuid>/logs",
+      "route": "protected execution logs"
+    },
+    {
+      "path": "/api/audit",
+      "route": "protected audit collection"
+    },
+    {
+      "path": "/api/settings",
+      "route": "protected settings read"
+    },
+    {
+      "path": "/api/users/<fresh-random-user-uuid>",
+      "route": "protected user item path; item GET is unsupported after auth, included to check guard precedence"
+    },
+    {
+      "path": "/metrics",
+      "route": "protected metrics endpoint (adjacent protected read route)"
+    }
+  ],
+  "already_covered_skip": [
+    {
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "path": "/api/users",
+      "evidence": "auth-users-negative-matrix.json; existing absent/invalid bearer matrix."
+    },
+    {
+      "methods": [
+        "PUT",
+        "DELETE"
+      ],
+      "path": "/api/users/{id}",
+      "evidence": "auth-users-negative-matrix.json; random-only fail-before-write matrix."
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "path": "/api/artifacts/{id}/download",
+      "evidence": "auth-artifact/download-matrix.json plus agent-branch-execution-evidence.json; dual user/registration/Agent auth already completed."
+    }
+  ],
+  "representative_write_paths": [
+    {
+      "method": "POST",
+      "path": "/api/logout",
+      "body_shape": "empty",
+      "safety": "No/invalid session must stop in withAuth; logout handler is never reached."
+    },
+    {
+      "method": "POST",
+      "path": "/api/tasks/<fresh-random-task-uuid>/run",
+      "body": {
+        "params": {}
+      },
+      "safety": "Fresh nonexistent Task UUID; withAuth rejects first, then canRun would reject an empty session if middleware were bypassed."
+    },
+    {
+      "method": "POST",
+      "path": "/api/executions/<fresh-random-execution-uuid>/cancel",
+      "body_shape": "empty",
+      "safety": "Fresh nonexistent Execution UUID; withAuth rejects first, then canRun would reject."
+    },
+    {
+      "method": "POST",
+      "path": "/api/nodes/upgrade",
+      "body": {
+        "node_ids": []
+      },
+      "safety": "Empty node list is fail-before-upgrade; withAuth rejects before handler."
+    },
+    {
+      "method": "POST",
+      "path": "/api/transfers",
+      "body_shape": "empty",
+      "safety": "No transfer body; withAuth rejects before admin check/create, and handler would deny absent user context before parsing."
+    },
+    {
+      "method": "PUT",
+      "path": "/api/settings",
+      "body": {},
+      "safety": "Empty settings object; withAuth rejects before canWrite/store update."
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/scripts/<fresh-random-script-uuid>",
+      "body_shape": "empty",
+      "safety": "Fresh random nonexistent Script UUID; withAuth rejects before delete; GET preflight with existing admin Bearer must confirm absent if execution is later approved."
+    }
+  ],
+  "public_excluded": [
+    "/api/login",
+    "/api/oidc/state",
+    "/api/oidc/login",
+    "/api/oidc/callback",
+    "/healthz",
+    "/readyz",
+    "/api/agent/binary"
+  ],
+  "request_budget": {
+    "protected_get_paths": 31,
+    "already_covered_paths_skipped": 4,
+    "representative_write_routes": 7,
+    "auth_modes_per_request": 2,
+    "api_writes": 0,
+    "tasks_created": 0,
+    "users_created": 0,
+    "helper_runs": 0,
+    "matrix_http_requests": 76,
+    "state_snapshot_reads_before_after": 16,
+    "admin_me_precheck_read": 0,
+    "planned_http_reads_total_max": 101,
+    "item_id_404_preflight_reads": 3,
+    "earlier_harness_reads_counted": 6,
+    "actual_matrix_requests": 76,
+    "actual_state_reads_new_batch": 19,
+    "note": "The new batch used 16 before/after snapshots plus 3 fresh-ID GET404 checks; the prior aborted harness used six reads (including successful /me), all counted against the 101 maximum."
+  },
+  "private_fixture_availability": {
+    "inspected_directory": "/tmp/nodesteer-e2e-resume-20261009-Qv9AYO",
+    "file_metadata": [
+      {
+        "name": "repair-connection.json",
+        "uid": 1000,
+        "mode": "0600",
+        "values_read": false
+      },
+      {
+        "name": "repair-credentials.json",
+        "uid": 1000,
+        "mode": "0600",
+        "values_read": false
+      },
+      {
+        "name": "repair-hub.yaml",
+        "uid": 1000,
+        "mode": "0600",
+        "values_read": false
+      }
+    ],
+    "operator_viewer_credentials_found": false,
+    "expired_or_disposable_session_token_found": false,
+    "safe_action": "Do not create User and do not logout/invalidate the existing administrator session. Synthetic invalid Bearer covers the invalid-session branch."
+  },
+  "role_dimensions": {
+    "historical_evidence": "Existing RBAC evidence covers selected Operator/Viewer read allow and write 403 dimensions on nodes/scripts; latest private directory contains no Operator/Viewer credentials.",
+    "remaining": "AUTH-USERS remains PARTIAL for real Operator/Viewer 403 on current endpoints and successful Admin User Create/Update; no User creation is planned because User DELETE is unsupported."
+  },
+  "mapping": {
+    "primary": "AUTH-MANAGEMENT: add batch03 unauthenticated/invalid-session status+JSON-shape+state-invariance coverage for protected reads and representative write guards.",
+    "secondary": "AUTH-USERS: no rerun of existing four User methods; only user item GET path can be included as one new protected route dimension, while role/successful admin CRUD remain out of scope."
+  },
+  "source_refs": [
+    "internal/hub/api/api.go:115-180 (registered protected/public routes)",
+    "internal/hub/api/api.go:218-240 (auth-before-handler and exact 401 branches)",
+    "internal/hub/api/api.go:841-875 (node item/revoke route)",
+    "internal/hub/api/api.go:970-1053 (transfer management)",
+    "internal/hub/api/api.go:1168-1235 (script item/revisions)",
+    "internal/hub/api/api.go:1270-1329 (task item/run)",
+    "internal/hub/api/api.go:1602-1748 (application item/state/executions/revisions/nodes)",
+    "internal/hub/api/api.go:1797-1852 (execution item/logs/cancel)",
+    "internal/hub/api/api.go:1897-1927 (settings GET/PUT)",
+    "internal/hub/api/api.go:2001-2085 (User handlers and item-method behavior)",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/auth-users-negative-matrix.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/auth-public-live.json",
+    ".e2e/runs/20260930-101945/repair/feature-inventory.json case AUTH-MANAGEMENT / AUTH-USERS"
+  ],
+  "execution_constraints": [
+    "No request in this plan batch.",
+    "Use only repair :18080.",
+    "No /api/login; admin token for read-only snapshots stays in Authorization header memory only.",
+    "No query tokens or response bodies/credentials in evidence.",
+    "No Operator/Viewer/User fixture creation and no valid User mutation.",
+    "No original Node IDs in mutation paths; all write representative item IDs are fresh random UUIDs.",
+    "AUTH-MANAGEMENT and AUTH-USERS remain PARTIAL until remaining role/session dimensions are addressed.",
+    "Check attempt02 Tasks and active executions in the bounded before snapshots; no Task/Execution is run or created by this batch.",
+    "Only 8 bounded state groups are snapshotted before/after; omit Groups and Schedules snapshots because no request writes to them. Audit changes are attributed only when exact owned evidence proves origin; otherwise report as concurrent/unattributed."
+  ],
+  "execution_budget": {
+    "matrix_requests": 76,
+    "stable_state_snapshots": {
+      "endpoint_groups": 8,
+      "before_and_after_calls": 16,
+      "groups": [
+        "nodes",
+        "transfers",
+        "tasks",
+        "executions",
+        "applications",
+        "artifacts",
+        "users",
+        "audit"
+      ]
+    },
+    "admin_session_precheck": "Root evidence management-session-refresh.json (new private session /me 200 administrator); this driver does not repeat /me.",
+    "admin_get404_preflight_for_fresh_write_item_ids": 3,
+    "earlier_attempt_reads_already_counted": 6,
+    "total_http_reads_max_including_earlier_attempt": 101,
+    "new_http_reads_remaining": 95,
+    "note": "Earlier harness attempt passed /api/me and completed four small snapshots, then stopped at executions limit=1000 size/status guard before sending any matrix request. New run uses executions limit=100 and only the required eight stable groups."
+  },
+  "execution_evidence": "results.json",
+  "execution_progress": "progress.json"
+}

@@ -1,0 +1,153 @@
+{
+ "batch_id": "qa-resume-20261017-g9",
+ "owner": "e2e（G9 数据形态批：多页数据集 / 跨页漂移）",
+ "generated_at_utc": "2026-10-17T04:42:00Z",
+ "authorization": {
+  "checklist": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/authorization-checklist-20261016.md",
+  "group": "G9（数据形态类：大数据集／跨页漂移，1 条）",
+  "cases_authorized": [
+   "X14"
+  ],
+  "constraints_applied": [
+   "多页数据集只在隔离可销毁实例上构造（未在 repair :18080 造任何数据）",
+   "repair :18080 只读；primary :8080 全程未触碰",
+   "对 protected 节点零接触；批量动作只作用于自有 qa-* 节点"
+  ]
+ },
+ "environment": {
+  "instance": "nodesteer-qa-g89202610178970c813",
+  "nonce": "g89202610178970c813",
+  "port": 18086,
+  "base_url": "http://192.168.100.209:18086",
+  "tunnel_local_port": 38286,
+  "shared_with": "qa-resume-20261017-g8（同一实例，见 instance-ledger.json）",
+  "binary": "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard",
+  "binary_sha256": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+  "owned_child_agent_sha256": "b15f6df540a63a8eb530ec837c57d4628ff7925822153a02d624f021a525ac4f",
+  "browser": "agent-browser（自有 session：qa-g89-<nonce>-*）"
+ },
+ "dataset": {
+  "construction": "自有 qa-<nonce>-n*/b*/p* 节点 + 1 个 owned child（真实 Agent 接入），pageSize=10 下 3–4 页；数据集明细见 dataset-ledger.json / fixture-ledger.json",
+  "peak_nodes": 34,
+  "deleted_during_probes": "漂移复现与末页删除探针共真实删除 5 个自有节点（b3、b4、原 child、p09 及末页项），全部为 qa-* 自有对象",
+  "final_nodes": 28
+ },
+ "cases": [
+  {
+   "case_id": "X14",
+   "title": "选中 Node 后过滤/排序/翻页/列表增删/刷新，批量请求 ID 不漂移；删除最后页末项、pageSize/筛选/总数；Execution 跨页搜索/Trigger。",
+   "before_status": "PASS",
+   "proposed_status": "FAIL",
+   "confidence": "high（三条独立探针一致：主数据集 p7、drift-repro A、minrepro；且前端源码根因吻合）",
+   "verified_dimensions": [
+    {
+     "dimension": "跨页勾选保持（pageSize=10，3 页）",
+     "result": "PASS",
+     "layer": "real-ui-api",
+     "detail": "第 1/2/3 页各勾选后回到第 1 页，勾选保持；批量栏计数「已选择 N 项」与勾选一致。",
+     "evidence": [
+      "evidence/X14-multipage-selection-drift-v2.json",
+      "evidence/G9-probe-after-select.png"
+     ]
+    },
+    {
+     "dimension": "筛选后选择语义与批量 payload 计数",
+     "result": "PASS",
+     "layer": "real-ui-api",
+     "detail": "搜索命中 1 行时选择栏消失（选择被清空）、无写请求；清筛选后恢复列表、无幽灵 ID；批量 payload 条数与 UI 计数一致。",
+     "evidence": [
+      "evidence/X14-multipage-selection-drift-v2.json",
+      "evidence/G9-filter-selection-state.png"
+     ]
+    },
+    {
+     "dimension": "排序 / pageSize 切换 / 刷新后选择语义",
+     "result": "PASS",
+     "layer": "real-ui-api",
+     "detail": "点「主机名」排序后 2 个勾选仍在原行（b1/b2，排序后仍居首，弱判别）；pageSize 10↔20 切换后勾选保持且无写请求；刷新后选择清空。",
+     "evidence": [
+      "evidence/X14-multipage-selection-drift-v2.json"
+     ]
+    },
+    {
+     "dimension": "删除最后页末项 / 总数收敛 / 无幽灵 ID",
+     "result": "PASS",
+     "layer": "real-ui-api",
+     "detail": "末页末项经行菜单删除：DELETE /api/nodes/{id} 命中末页项，页数 4→3，API 总数 31→30，删除项不在 API 中，选择栏计数归零且无幽灵 ID。",
+     "evidence": [
+      "evidence/X14-selection-drift-repro.json",
+      "evidence/G9-C-after-last-delete.png"
+     ]
+    },
+    {
+     "dimension": "Execution 跨页搜索与 Trigger 过滤（回归核对）",
+     "result": "PASS",
+     "layer": "real-ui-api",
+     "detail": "/executions?q=<id> 命中 1 行；trigger=manual 命中 10 行；status=SUCCESS 命中 8 行；均非空态。",
+     "evidence": [
+      "evidence/X14-multipage-selection-drift-v2.json"
+     ]
+    },
+    {
+     "dimension": "列表增删后批量请求 ID 不漂移（含跨页）",
+     "result": "FAIL（新缺陷候选）",
+     "layer": "real-ui-api",
+     "detail": "最小复现（干净会话、pageSize=10）：第 1 页勾选 index 3 的 n01（「已选择 1 项」）→ 删除 index 0 的 b4 → 勾选标记漂移到占据原 index 3 的 n02，随后「设为维护」确认框与真实请求均命中 n02（POST /api/nodes/9e176a27-…，期望 70f29427-…（n01）），n02 状态 pending→maintenance 实际变更；主数据集探针同样以 n05 选中、payload 命中 n06；drift-repro A 以 n06 选中、payload 命中 n07。对照：删除位于被选行之后或异页的行时不出现漂移（C1/C3），模式为「删除排序在被选行之前的行 → 勾选按行位置漂移」。",
+     "root_cause_reference": "web/src/features/shared/data-table.tsx:124 注释声明「选择按行 id 跨分页/排序保留」，但 useReactTable（同文件 160-208）未设置 getRowId，TanStack Table 默认以行索引作为 rowSelection 键；列表数据变化后同一索引映射到不同行，批量动作因此作用于错误节点。全仓 grep 无 getRowId。",
+     "proposed_defect_id": "WEB-NODE-SELECTION-DRIFT-20261017（候选，未写入 .e2e/failures.json）",
+     "severity_suggestion": "P1（批量操作命中非用户所选节点，属数据完整性风险）",
+     "evidence": [
+      "evidence/X14-selection-drift-minrepro.json",
+      "evidence/G9-minrepro-drifted-selection.png",
+      "evidence/X14-multipage-selection-drift-v2.json",
+      "evidence/X14-selection-drift-repro.json",
+      "evidence/X14-drift-controls.json"
+     ]
+    }
+   ],
+   "remaining_or_unverified": [
+    "drift-repro 的 B 场景（异页第 3 页选中后删异页行）因列表在操作间被刷新出现 harness 竞态（勾选目标行未找到），该场景由 minrepro 与主数据集探针覆盖，B 场景本身不计入判定。",
+    "排序维度的对照为弱判别（排序后勾选行仍居原位）；未构造「排序确实改变被选行位置」的更强对照。",
+    "同一 DataTable 组件被 tasks/executions/transfers 等页面复用（web/src/features/shared/data-table.tsx），同缺陷类可能在其它列表出现；本批只按用例范围验证 /nodes，未扩展到其它页面。"
+   ],
+   "layer": "real-ui-api-agent",
+   "evidence": [
+    "evidence/X14-selection-drift-minrepro.json",
+    "evidence/X14-multipage-selection-drift-v2.json",
+    "evidence/X14-selection-drift-repro.json",
+    "evidence/X14-drift-controls.json",
+    "evidence/X14-multipage-selection-drift.json",
+    "evidence/G9-minrepro-drifted-selection.png",
+    "evidence/G9-A-before-delete.png",
+    "evidence/G9-C-after-last-delete.png",
+    "results.json"
+   ],
+   "actual": "多页数据集（34 节点、3–4 页）下跨页保持、筛选清空语义、pageSize 切换、刷新清空、末页末项删除与总数收敛、Execution 跨页搜索均通过；但「选中行之后删除排序在前的行」会使勾选按行位置漂移，真实批量请求命中非用户所选节点（三条独立探针一致，源码根因：DataTable 未设置 getRowId，选择按索引键控）。"
+  }
+ ],
+ "observations_and_findings": [
+  {
+   "id": "G9-OBS-20261017-ENROLLMENT-INTERMITTENT-500",
+   "severity": "P3（独立观察，非 X14 判定项）",
+   "status": "reported-not-registered",
+   "summary": "构造多页数据集时，连续 POST /api/nodes/enrollment 间歇返回 500（同一请求体此前/此后均 200，无请求体差异）；明细见 dataset-ledger.json、evidence/G9-enrollment-burst-observation*.json。"
+  },
+  {
+   "id": "G9-OBS-20261017-SELECTION-DRIFT",
+   "severity": "P1",
+   "status": "reported-not-registered",
+   "summary": "见 X14「列表增删后批量请求 ID 不漂移」维度；候选缺陷 ID WEB-NODE-SELECTION-DRIFT-20261017，是否登记与修复授权由 Root 裁决（本批未改产品源码与台账）。"
+  }
+ ],
+ "harness_anomalies": [
+  "v1 数据集探针存在勾选后立即读 aria-checked 的竞态（假「未勾选」），v2 改为点击后等待并按名称定位后通过；v1 结果仅作留档。",
+  "drift-repro B 场景在删除与勾选之间列表被刷新，出现「目标行未找到」的 harness 竞态（已如实记录，未据此判定）。",
+  "数据集构造期间 enrollment 间歇 500 需重试（见上）。",
+  "收尾首轮用 `pkill -f \"-L 38286:127.0.0.1:18086\"` 关闭本地隧道：模式以 '-' 开头被解析为选项，隧道未终止且 pgrep 检查假阴性；已按 PID 终止并复验（进程 0），final-cleanup-oracle.json 已记录该 harness bug。"
+ ],
+ "teardown": {
+  "oracle": "final-cleanup-oracle.json",
+  "instance": "与 qa-resume-20261017-g8 共享，一次性整体销毁并核对零残留",
+  "result": "ISOLATED_INSTANCE_DESTROYED_AND_VERIFIED（进程 0 / 端口 0 / 目录与配置不存在 / repair 与 primary PID 未变 / 自有 session 0 / 隧道 0）"
+ }
+}

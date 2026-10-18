@@ -1,0 +1,134 @@
+{
+  "batch_id": "qa-resume-20261010-web-batch19-table-error-recovery",
+  "updated_at_utc": "2026-10-12T13:27:02.936931+00:00",
+  "status": "COMPLETE_FOR_ROOT_REVIEW",
+  "counts": {
+    "PASS": 0,
+    "PARTIAL": 7,
+    "FAIL": 0,
+    "NOT_RUN": 0
+  },
+  "cases": [
+    {
+      "case_id": "TABLE-NODES-ERROR",
+      "title": "nodes Loading/Empty/Error/Retry",
+      "status": "PARTIAL",
+      "evidence": [
+        "evidence/TABLE-NODES-ERROR-loading.json",
+        "evidence/TABLE-NODES-ERROR-failure.json",
+        "evidence/TABLE-NODES-ERROR-retry-action.json"
+      ],
+      "actual": "Hard reload paused exact GET /api/nodes while same target displayed 5 skeletons; continued GET 200 returned 6 API items and 6 UI rows. Exact request interception produced five real net::ERR_FAILED loading failures, then actual alert + Retry button. Fetch/cache interception was removed before clicking Retry; exact GET returned 200 and UI/API both showed 6 rows, alert cleared. A separate authenticated read-only GET confirmed 6 items, so true EmptyState remains unobserved.",
+      "remaining_dimensions": [
+        "Canonical Loading/Empty/Error/Retry includes true EmptyState. This run verified actual loading, exact GET failure/ErrorState/Retry and recovery, but the actual GET returned 6 Nodes and the UI showed 6 rows; no Node was modified/deleted to manufacture empty."
+      ],
+      "server_writes": 0,
+      "runs": 0
+    },
+    {
+      "case_id": "TABLE-APPLICATIONS-ERROR",
+      "title": "TABLE APPLICATIONS ERROR",
+      "status": "PARTIAL",
+      "evidence": [
+        "evidence/TABLE-APPLICATIONS-ERROR-loading.json",
+        "evidence/TABLE-APPLICATIONS-ERROR-failure.json",
+        "evidence/TABLE-APPLICATIONS-ERROR-retry.json"
+      ],
+      "actual": "{\"loading_feedback_observed\": true, \"initial_get_200\": true, \"fetch_failures\": 5, \"error_state_and_retry_observed\": true, \"retry_clicked\": true, \"retry_200\": true, \"retry_restored_ui\": true, \"api_count_after_retry\": 1, \"ui_rows_after_retry\": 1, \"true_empty_confirmed\": false, \"evidence\": [\"evidence/TABLE-APPLICATIONS-ERROR-loading.json\", \"evidence/TABLE-APPLICATIONS-ERROR-failure.json\", \"evidence/TABLE-APPLICATIONS-ERROR-retry.json\"]}",
+      "remaining_dimensions": [
+        "The live successful API response contained 1 items; true empty state cannot be safely manufactured under the zero-write scope."
+      ],
+      "server_writes": 0,
+      "runs": 0
+    },
+    {
+      "case_id": "TABLE-ARTIFACTS-ERROR",
+      "title": "TABLE ARTIFACTS ERROR",
+      "status": "PARTIAL",
+      "evidence": [
+        "evidence/TABLE-ARTIFACTS-ERROR-loading.json",
+        "evidence/TABLE-ARTIFACTS-ERROR-failure.json",
+        "evidence/TABLE-ARTIFACTS-ERROR-retry.json"
+      ],
+      "actual": "{\"loading_feedback_observed\": true, \"initial_get_200\": true, \"fetch_failures\": 5, \"error_state_and_retry_observed\": true, \"retry_clicked\": true, \"retry_200\": true, \"retry_restored_ui\": true, \"api_count_after_retry\": 1, \"ui_rows_after_retry\": 1, \"true_empty_confirmed\": false, \"evidence\": [\"evidence/TABLE-ARTIFACTS-ERROR-loading.json\", \"evidence/TABLE-ARTIFACTS-ERROR-failure.json\", \"evidence/TABLE-ARTIFACTS-ERROR-retry.json\"]}",
+      "remaining_dimensions": [
+        "The live successful API response contained 1 items; true empty state cannot be safely manufactured under the zero-write scope."
+      ],
+      "server_writes": 0,
+      "runs": 0
+    },
+    {
+      "case_id": "TABLE-EXECUTIONS-ERROR",
+      "title": "TABLE EXECUTIONS ERROR",
+      "status": "PARTIAL",
+      "evidence": [
+        "evidence/TABLE-EXECUTIONS-ERROR-loading-supplement.json",
+        "evidence/TABLE-EXECUTIONS-ERROR-failure.json",
+        "evidence/TABLE-EXECUTIONS-ERROR-retry.json",
+        "evidence/TABLE-EXECUTIONS-ERROR-attempt01-harness-diagnosis.json"
+      ],
+      "actual": "Source-defined Loader2 spinner was observed while the exact paginated GET was held; real GET 200 loaded 10 rows. Corrected exact-path-prefix interception triggered five real net::ERR_FAILED requests and actual ErrorState/Retry. After disabling Fetch and restoring cache, clicking Retry produced exact GET 200 and restored 10 rows with alert cleared. The live API returned 10 items, so true Empty remains untested under no-mutation scope.",
+      "remaining_dimensions": [
+        "The live executions API returned 10 items and the UI displayed 10 rows; true EmptyState cannot be safely manufactured under the zero-write scope."
+      ],
+      "server_writes": 0,
+      "runs": 0
+    },
+    {
+      "case_id": "TABLE-TRANSFERS-ERROR",
+      "title": "TABLE TRANSFERS ERROR",
+      "status": "PARTIAL",
+      "evidence": [
+        "evidence/TABLE-TRANSFERS-ERROR-loading.json",
+        "evidence/TABLE-TRANSFERS-ERROR-failure.json",
+        "evidence/TABLE-TRANSFERS-ERROR-retry.json"
+      ],
+      "actual": "{\"loading_feedback_observed\": true, \"initial_get_200\": true, \"fetch_failures\": 5, \"error_state_and_retry_observed\": true, \"retry_clicked\": true, \"retry_200\": true, \"retry_restored_ui\": true, \"api_count_after_retry\": 5, \"ui_rows_after_retry\": 5, \"true_empty_confirmed\": false, \"evidence\": [\"evidence/TABLE-TRANSFERS-ERROR-loading.json\", \"evidence/TABLE-TRANSFERS-ERROR-failure.json\", \"evidence/TABLE-TRANSFERS-ERROR-retry.json\"]}",
+      "remaining_dimensions": [
+        "The live successful API response contained 5 items; true empty state cannot be safely manufactured under the zero-write scope."
+      ],
+      "server_writes": 0,
+      "runs": 0
+    },
+    {
+      "case_id": "TABLE-AUDIT-ERROR",
+      "title": "TABLE AUDIT ERROR",
+      "status": "PARTIAL",
+      "evidence": [
+        "evidence/TABLE-AUDIT-ERROR-loading.json",
+        "evidence/TABLE-AUDIT-ERROR-failure.json",
+        "evidence/TABLE-AUDIT-ERROR-retry.json"
+      ],
+      "actual": "{\"loading_feedback_observed\": true, \"initial_get_200\": true, \"fetch_failures\": 5, \"error_state_and_retry_observed\": true, \"retry_clicked\": true, \"retry_200\": true, \"retry_restored_ui\": true, \"api_count_after_retry\": 10, \"ui_rows_after_retry\": 10, \"true_empty_confirmed\": false, \"evidence\": [\"evidence/TABLE-AUDIT-ERROR-loading.json\", \"evidence/TABLE-AUDIT-ERROR-failure.json\", \"evidence/TABLE-AUDIT-ERROR-retry.json\"]}",
+      "remaining_dimensions": [
+        "The live successful API response contained 10 items; true empty state cannot be safely manufactured under the zero-write scope."
+      ],
+      "server_writes": 0,
+      "runs": 0
+    },
+    {
+      "case_id": "TABLE-USERS-ERROR",
+      "title": "TABLE USERS ERROR",
+      "status": "PARTIAL",
+      "evidence": [
+        "evidence/TABLE-USERS-ERROR-loading.json",
+        "evidence/TABLE-USERS-ERROR-failure.json",
+        "evidence/TABLE-USERS-ERROR-retry.json"
+      ],
+      "actual": "{\"loading_feedback_observed\": true, \"initial_get_200\": true, \"fetch_failures\": 5, \"error_state_and_retry_observed\": true, \"retry_clicked\": true, \"retry_200\": true, \"retry_restored_ui\": true, \"api_count_after_retry\": 8, \"ui_rows_after_retry\": 8, \"true_empty_confirmed\": false, \"evidence\": [\"evidence/TABLE-USERS-ERROR-loading.json\", \"evidence/TABLE-USERS-ERROR-failure.json\", \"evidence/TABLE-USERS-ERROR-retry.json\"]}",
+      "remaining_dimensions": [
+        "The live successful API response contained 8 items; true empty state cannot be safely manufactured under the zero-write scope."
+      ],
+      "server_writes": 0,
+      "runs": 0
+    }
+  ],
+  "batch_constraints": {
+    "server_writes": 0,
+    "runs": 0,
+    "new_resources": 0,
+    "node_agent_group_task_schedule_script_mutations": 0,
+    "browser": "existing owned session, online; exact same-target per-route Fetch interception removed and cache restored after each"
+  },
+  "final_guard_evidence": "evidence/final-session-guard.json"
+}

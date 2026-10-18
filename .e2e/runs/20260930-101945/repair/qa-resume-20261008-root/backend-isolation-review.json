@@ -1,0 +1,208 @@
+{
+  "schema_version": 1,
+  "review_type": "后端残余真实验收隔离实施可行性只读Review",
+  "status": "FEASIBLE_PENDING_PRODUCT_TASK_PREFLIGHT",
+  "reviewed_at": "2026-10-08T07:22:03.679046+00:00",
+  "new_runtime_execution": false,
+  "remote_operations_executed_by_reviewer": false,
+  "only_written_artifact": ".e2e/runs/20260930-101945/repair/qa-resume-20261008-root/backend-isolation-review.json",
+  "authorized_scope": "现有kvm2测试VM上的repair authority，22已确认缺陷及必要关联验收；具体用例由gpt-6-luna执行。",
+  "authority_url": "http://192.168.100.209:18080",
+  "target_host": {
+    "domain": "nodesteer-agent-4",
+    "repair_node_name": "qa-repair-20260930-101945-native-4",
+    "repair_service": "nodesteer-agent-repair-20260930-101945-native-4.service",
+    "existing_repair_binary": "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent",
+    "required_binary_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "exact_repair_config": "由本轮只读service ExecStart确认--config绝对路径；禁止凭预计文件名读取/写入。",
+    "no_existing_service_or_config_mutation": true
+  },
+  "conclusion": "可由native-4现有repair Command Task创建独占随机/tmp目录，在既有非root UID下运行真实修复Agent及loopback透明proxy；所有Agent本地DB/文件/进程事实通过定向只读产品Task采集，无需guestSSH、QGA guest-exec、安装依赖、Docker或systemd新服务。当前Python/UID/权限/安全scalar解析/进程可持续性尚未实际预检；这些条件未满足不得进入具体故障用例。",
+  "responsibilities": {
+    "root": "串行管理产品Task、enrollment及精确新身份资源，验证权限/ownership边界，审查脱敏证据并更新中央状态。",
+    "concrete_executor": "gpt-6-luna执行预检、具体正常/故障/恢复用例及清理；不得运行历史固定容器/Agent身份runner。",
+    "reviewer": "本文件作者仅只读分析，不执行具体用例。"
+  },
+  "environment_preflight": [
+    {
+      "id": "ENV-01",
+      "operation": "新建一个独占command Task，仅target当前native-4精确NodeID，retry0、无Schedule、timeout充分；先保存真实定义及command SHA。",
+      "assertions": [
+        "Root的现有四repair NodeID列表确认native-4映射；不按数组位置推断。",
+        "所有读命令只指定expected repair unit/binary；任务不得含凭据值。"
+      ]
+    },
+    {
+      "id": "ENV-02",
+      "operation": "只读探测python3版本并import asyncio/json/pathlib/struct/time/socket/sqlite3/subprocess/os/pwd/hashlib，定位可执行文件。",
+      "assertions": [
+        "建议Python>=3.8；sqlite3可mode=ro读预期数据库。",
+        "缺少组件时记录真实BLOCKED；不安装包、不改变全局环境。"
+      ]
+    },
+    {
+      "id": "ENV-03",
+      "operation": "pwd.getpwnam核验既有低权限账号（优先实际存在的nobody或项目既有测试账号）；记录UID/GID、确认UID非0，不创建/改账号。",
+      "assertions": [
+        "launcher Task实际EUID0或已有足够setuid/setgid权限。",
+        "低权限child可读取仅复制到其独占目录的修复binary/config并写自身data_dir；不赋予sudo/capabilities。",
+        "无法drop privilege时保留BLOCKED，报告具体缺少条件；不自行root启动新Agent。"
+      ]
+    },
+    {
+      "id": "ENV-04",
+      "operation": "只读systemctl show exact repair service的ExecStart/MainPID及/proc MainPID exe，核验存在的native-4修复binary SHA；只读准确config文件。",
+      "assertions": [
+        "config路径必须从实际unit确认，拒绝symlink/意外路径；不输出config正文。",
+        "registration_token scalar必须严格接受受控YAML双引号JSON字符串；格式不符即固定错误退出，不回显scalar。",
+        "仅输出成功/权限/mode及binarySHA或token指纹，不输出credential、env或完整/proc cmdline。"
+      ]
+    },
+    {
+      "id": "ENV-05",
+      "operation": "创建os.mkdtemp返回的唯一0700目录（qa-resume-20261008-child前缀），保存目录dev/inode与ownership marker；可在同目录做独占短生命周期daemon探测。",
+      "assertions": [
+        "daemon start_new_session、stdinDEVNULL、stdout/stderr私密文件、close_fds，Task正常退出后不会因继承pipe阻塞。",
+        "后续只终止此次daemon PID，确认PID/starttime/UID/exe/argv路径，检验不存在遗留。",
+        "未完成持久进程与cleanup探测时不启动测试Agent。"
+      ]
+    }
+  ],
+  "isolation_setup": [
+    {
+      "step": 1,
+      "action": "Root生成随机nonce、唯一NodeName与数据目录；选择native-4上确实可绑定的独占127/8 loopback地址作为child NodeIP，先检查repair /api/nodes全部name/IP无碰撞；若地址已占用重新选择。",
+      "proof": "enrollment会按忽略大小写Name或相同IP复用旧节点，必须同时无碰撞。NodeIP为新child本机loopback proxy的真实绑定地址，不伪造外部VM地址。"
+    },
+    {
+      "step": 2,
+      "action": "POST /api/nodes/enrollment使用唯一NodeName/NodeIP与repairHub地址；公开记录新NodeID/AgentID以及statuspending/syncpending，断言新ID不在原四节点集合。敏感enrollment配置/脚本响应只保存当前私密目录，不展示。",
+      "proof": "新AgentID只取此响应，不读取/复制现有Agent stable credential、identity DB或data_dir。共用的是本repair authority允许的新纳管registration grant。"
+    },
+    {
+      "step": 3,
+      "action": "仅在拥有的随机目录复制已SHA核验修复Agent二进制，生成0600 child.yaml；registration_token由准确native-4 repair config只读动态提取，源Task command中没有literal token。yaml仅新AgentID/Name/IP、own data_dir、host_integrationfalse；运行模式按真实native环境，不伪称Docker。",
+      "proof": "目录/config/data/logs由已验证非root UID独占。umask077。Popen argv只binary与--config路径；不用token环境变量或含token的命令参数。"
+    },
+    {
+      "step": 4,
+      "action": "保存带SHA的现有purestdlib ws_proxy.py源到自身目录；导入Proxy类，从独占supervisor使用asyncio.start_server(proxy.connection,child_loopback_IP,0)取得OS ephemeral port。proxy上游固定192.168.100.209:18080，child hub_url固定对应loopback/ws。",
+      "proof": "不能直接运行历史CLI：其绑定0.0.0.0且默认固定18084。不得修改现有VM防火墙、Hub地址/config/settings或四repair Agent连接地址。proxy只接child这一条连接，禁止第二客户端；所有扰动必须directiondown且指定child connection与owned Script/task/request ID，其他frame透传。"
+    },
+    {
+      "step": 5,
+      "action": "supervisor与child Agent均在非root既有UID下运行独立owned session；私密manifest保存两PID、/proc starttime/UID/exe真实路径、binaryhash/目录devinode。Task只打印脱敏UID/port/PID/ID与fingerprint。",
+      "proof": "现有proxy不记录HELLO/HELLO_ACK内容；只保留frame类型/requestid/globalrev/明确fault字段。禁止公开日志state.db或identity.value。"
+    },
+    {
+      "step": 6,
+      "action": "Root等待新Nodeonline/synced，真实手动command/script Task只target新NodeID且所有新Taskretry0、无Schedule；通过私密本地DB的定向产品read Task确认identityNode/AgentID与API一致。",
+      "proof": "Child没有任何Group/App assignment或Schedule；开始前核对新节点DesiredState只含本批独占Task/Script，无既有on_start任务。existing四Agent全程不重启/换配置/凭证/状态。"
+    }
+  ],
+  "global_revision_boundary": {
+    "fact": "正常enrollment/本批独占资源写入会按产品机制增加全局Revision并通知在线Agent；无法声称全局Revision完全不变。",
+    "evidence": "internal/hub/sync.go:208",
+    "scope_protection": "sync.go:88-129按目标筛Task并按依赖收集Script，所有本批Task target仅新NodeID，因此四旧Agent不会收到本批坏脚本；proxy不在其网络路径。严禁修改全局changelog/settings、停Hub、写Hub数据库或变更既有节点。",
+    "oracle": "具体坏帧批次串行执行，期间无其他测试mutator；前后四旧节点identity/status/version保持、最终online/synced，正常Revision前进不作为破坏。"
+  },
+  "cases": [
+    {
+      "defect_id": "BE-SCRIPT-SHA-002",
+      "steps": [
+        "创建两条新Script及新Node专属Script Task，合法v1首次sync成功并真运行，保存本地sync_state Revision、两scripts content/revision/SHA、owned fixture文件内容/模式/SHA。所有脚本只操作本批owned目录。",
+        "停止仅owned child PID以获得确定帧边界；修改Hub两新Script为合法v2，并提前仅proxy对owned badScript开启corrupt_script_sha。随后用同data_dir/identity重启child，让首次SYNC_RESPONSE含两个待更新依赖；保留实际帧globalrev、对象ID和合法declaredSHA/变异contentSHA。若未取得含两Script的同帧，调整harness并重试，不声称整帧原子性已测。",
+        "真实Agent拒帧：采集invalid sync scripts固定日志及非敏感SYNC_ACK okfalse字段；本地Revision仍baseline，两Script所有字段维持v1，禁止goodScript半更新。定向只读owned文件证明baseline物理内容/SHA未变且注入执行marker文件不存在。",
+        "撤除fault、重启仅ownedchild重新对账；两Script与Hub合法v2一致、Revision收敛，真实TaskSUCCESS并生成v2预期文件输出；UI/Execution反馈对应实际执行。"
+      ],
+      "required_evidence": [
+        "真实进程exe与d55dc5SHA、已保存Task定义、合法/变异frame摘要、同帧两依赖、DBmode=ro before/after、own文件before/after SHA及absent、恢复真执行/业务文件/UI。"
+      ],
+      "limitations": [
+        "这里只能关闭坏Script拒帧及已测整帧数据/Revision/own业务文件维度；未部署ManagedApp，不把普通文件保留冒充坏FullSnapshot之前pruned应用物理cleanup路径验证。",
+        "不运行坏Script。proxy旧固定corruption文本为仅printf，无宿主改写；如需marker必须限定本批目录。"
+      ]
+    },
+    {
+      "defect_id": "BE-REMOTE-TTL-004",
+      "steps": [
+        "新Node真实运行history Task得到SUCCESS，依真实Hub last_execution查询构造条件Task，首个合法时间/正TTL用例真实SUCCESS并在own目录生成专属marker。",
+        "保持Hub返回真实value/node/property及请求ID，只对该child该条件请求响应做透明协议fault，顺序验证：过期ObservedAt+TTL1、TTL0、TTL负值、malformedObservedAt、ObservedAtfuture、empty/UNKNOWNvalue。每例新Execution与独占marker路径，禁止用UNKNOWN替代过期TTL负向。",
+        "现有ws_proxy.py expire_remote已覆盖过期用例；其余字段须在独占私密harness内扩展仅该request的白名单override，不改仓库产品源码、不改全局Hub状态；保留原值/变异值及对应requestid。",
+        "每个无效状态应真实BLOCKED：Hub终态与Agent本地Journal一致、syncedACK、真实block_reason，marker不存在；打开Execution页面确认同reason。撤除fault后新ExecutionSUCCESS及实际marker恢复。"
+      ],
+      "required_evidence": [
+        "合法控制组实际效果、每个单一时间/TTLfault变异帧、BLOCKEDJournal+API+UI、逐例物理marker不存在、无fault恢复实际效果。"
+      ],
+      "limitations": [
+        "自身Node经Hub查询last_execution可复现此Agent时间校验缺陷，不能泛化完整跨不同Node的E2E-10/全部条件维度；跨Nodeonline可只读引用现有repair peer，其他条件需要单独覆盖。",
+        "协议fault是透明传输故障注入，Agent/Hub运行真实二进制；不是MockAgent或静态PASS。"
+      ]
+    },
+    {
+      "defect_id": "BE-REENROLL-STATUS-003",
+      "steps": [
+        "仅新Node建立label、Task正常成功及history，保存Node/AgentID、Label、ExecutionID和新stablecredential指纹（值只在私密存储）。",
+        "POST exact新Node/revoke-credential；确认disabled，旧stablecredential对owned Artifactdownload401，Taskrun被拒且业务marker未新增。",
+        "POST enrollment使用与新Node一致Name/IP；断言返回相同NodeID/AgentID，GETstatuspending/syncpending，Label与已有history保持。禁止自动Enable。",
+        "仅重启ownedchild同data_dir，正常HELLO先拒旧credential并registration重新取得新stablecredential；新fingerprint与旧不同，Node自动online/synced且Label/history仍同一身份。",
+        "旧stablecredential再次Artifactdownload401，新credential成功下载SHA正确；新真实TaskSUCCESS，UI节点状态与API一致。单独正常HELLO重连核验人工maintenance/disabled不会被普通HELLO覆盖，仅修改ownedNode。"
+      ],
+      "required_evidence": [
+        "sameNode/AgentID、pending→online/synced、Label/oldExecutionhistory保持、新旧指纹、旧401与新下载业务正确、恢复Task及UI；原四Agent均保留。"
+      ],
+      "limitations": [
+        "不得执行历史isolated_runner.py所含人工Enable兜底并当作通过；失败只保留故障或做明确标注的ownedfixture恢复。",
+        "stablecredential值不能进Taskparams、command或stdout；download验证使用新child私密config/DB由私密runner在VM端完成，只输出HTTP/SHA，旧值仅留0600 own文件供这一负向用例。"
+      ]
+    }
+  ],
+  "cleanup": [
+    "先清本批ownedSchedules/Tasks/Script/App/Artifact引用（实际未创建的类型不动）；所有操作只取本次ledger精确ID，保留不可删Execution/Audithistory。",
+    "停止ownedchild/supervisor前分别验证PID仍存在且/proc starttime+UID+exeSHA+cmdline中exact自身随机目录吻合；任一不匹配禁止signal并报错。先TERM等待，再仅同一已验证ownedPID KILL；不得pkill/killall或触碰native-4现有repair/MainPID。",
+    "只对os.mkdtemp返回且dev/inode/owner marker一致的exact目录清理；拒绝symlink/逃逸，删除前确认两ownedPID消失与无监听。config/identityDB均私密，不复制入仓库。",
+    "精确新Node删除需先解除其引用并核验GET404，失败记录真实cleanup残余；读取Hub/四repair原Nodehealth、status与version证明保留。primary8080仅公开健康GET，禁止管理写。"
+  ],
+  "blocking_policy": [
+    "当前readonly结论不等于Python/UID/privilege/daemon条件通过。",
+    "预检任一门禁失败时不执行依赖步骤，不安装依赖/放宽权限/新建账号，不修改原Agent或绕过guest-exec；保留结构化真实BLOCKED/未验证维度。",
+    "若现有产品Task无法安全取得私密config或持续非root子进程/精确cleanup，guestSSH仍是实际依赖，复用此前待用户提供的有效guestSSH连接信息，不能用未经确认的新root权限补洞。"
+  ],
+  "source_refs": [
+    "internal/hub/node.go:43",
+    "internal/hub/node.go:100",
+    "internal/hub/node.go:376",
+    "internal/hub/api/api.go:584",
+    "internal/hub/api/api.go:701",
+    "internal/hub/api/api.go:751",
+    "internal/hub/sync.go:88",
+    "internal/hub/sync.go:112",
+    "internal/hub/sync.go:208",
+    "internal/agent/agent.go:359",
+    "internal/agent/agent.go:735",
+    "internal/agent/agent.go:1685",
+    "internal/agent/sync_validation.go:14",
+    "internal/agent/sync_validation.go:31",
+    "internal/agent/store.go:78",
+    "internal/agent/execution/runner.go:114",
+    "internal/agent/execution/runner.go:203",
+    ".e2e/runs/20260930-101945/backend/ws_proxy.py:3",
+    ".e2e/runs/20260930-101945/backend/ws_proxy.py:91",
+    ".e2e/runs/20260930-101945/backend/ws_proxy.py:112",
+    ".e2e/runs/20260930-101945/backend/ws_proxy.py:126",
+    ".e2e/runs/20260930-101945/backend/ws_proxy.py:196",
+    ".e2e/runs/20260930-101945/backend/isolated_runner.py:413",
+    ".e2e/runs/20260930-101945/backend/isolated_runner.py:533",
+    ".e2e/runs/20260930-101945/backend/isolated_runner.py:599",
+    "cmd/agent/main.go:21",
+    "cmd/agent/main.go:53",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261008-root/disk-binaries.json:1"
+  ],
+  "source_hashes": {
+    ".e2e/runs/20260930-101945/backend/ws_proxy.py": "fb8b1a4c6421a5d27dcafcb25b4d01ff5dae4328c86c075e4fef6398c4b9b6cf",
+    "internal/agent/sync_validation.go": "927a603e227b56712de4ab0fd67497d70bbed342f3fe1dceacf33e9bee72f628"
+  },
+  "central_state_written": false,
+  "product_source_changed": false,
+  "credentials_read_by_reviewer": false
+}

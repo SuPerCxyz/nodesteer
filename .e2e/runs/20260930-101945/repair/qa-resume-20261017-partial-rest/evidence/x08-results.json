@@ -1,0 +1,567 @@
+{
+ "case_id": "X08",
+ "at_utc": "2026-10-17T14:42:08Z",
+ "authority": "http://192.168.100.209:18080 (repair)",
+ "browser_session": "qa-prst-621bfad5-ui",
+ "tests": {
+  "fixture_task": {
+   "http": 200,
+   "task_id": "47a29cca-bd91-4478-8c4f-5890a7e7cc53",
+   "status": "INFO",
+   "at_utc": "2026-10-17T14:42:08Z"
+  },
+  "fixture_node": {
+   "http": 200,
+   "node_id": "901da814-0040-42f6-9cdd-96a152a45f91",
+   "note": "owned enrollment node, pending; command text not persisted (registration token inside)",
+   "status": "INFO",
+   "at_utc": "2026-10-17T14:42:09Z"
+  },
+  "T1_run_cancel_and_slow_dblclick": {
+   "page_url": "http://192.168.100.209:18080/tasks/47a29cca-bd91-4478-8c4f-5890a7e7cc53/run",
+   "mark_run": {
+    "ok": true,
+    "text": "立即运行"
+   },
+   "click_run": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "mark_cancel": {
+    "ok": true,
+    "text": "取消"
+   },
+   "click_cancel": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "dialog_closed_after_cancel": "true",
+   "cancel_zero_write": {},
+   "inject": {
+    "delay_ms": 2500,
+    "delay_path": "/api/tasks/47a29cca-bd91-4478-8c4f-5890a7e7cc53/run",
+    "patched": true
+   },
+   "mark_run2": {
+    "ok": true,
+    "text": "立即运行"
+   },
+   "click_run2": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "dialog_open": "true",
+   "mark_confirm": {
+    "ok": true,
+    "text": "立即运行"
+   },
+   "dblclick_confirm": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "obs_after_dblclick": {
+    "counts": {
+     "/api/tasks/47a29cca-bd91-4478-8c4f-5890a7e7cc53/run": 1
+    },
+    "requests": [
+     {
+      "method": "POST",
+      "path": "/api/tasks/47a29cca-bd91-4478-8c4f-5890a7e7cc53/run",
+      "query": "",
+      "t": 1792248137998
+     }
+    ]
+   },
+   "run_post_count": 1,
+   "single_request_on_slow_dblclick": true,
+   "execution_id": "9fec8595-6e5c-4c55-a6b0-f44b9b9a13cb",
+   "execution_after_run": {
+    "status": "RUNNING",
+    "id": "9fec8595-6e5c-4c55-a6b0-f44b9b9a13cb"
+   },
+   "status": "PASS",
+   "at_utc": "2026-10-17T14:42:21Z"
+  },
+  "T2_stop_cancel_and_slow_dblclick_audit": {
+   "page_url": "http://192.168.100.209:18080/executions/9fec8595-6e5c-4c55-a6b0-f44b9b9a13cb",
+   "stop_button_present": "true",
+   "mark_stop": {
+    "ok": true,
+    "text": "停止执行"
+   },
+   "click_stop": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "dialog_open": "true",
+   "mark_cancel": {
+    "ok": true,
+    "text": "取消"
+   },
+   "click_cancel": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "dialog_closed_after_cancel": "true",
+   "stop_cancel_zero_write": true,
+   "inject": {
+    "delay_ms": 2500,
+    "delay_path": "/api/executions/9fec8595-6e5c-4c55-a6b0-f44b9b9a13cb/cancel",
+    "patched": true
+   },
+   "mark_stop2": {
+    "ok": true,
+    "text": "停止执行"
+   },
+   "click_stop2": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "mark_confirm": {
+    "ok": true,
+    "text": "停止执行"
+   },
+   "dblclick_confirm": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "obs_after_dblclick": {
+    "counts": {
+     "/api/executions/9fec8595-6e5c-4c55-a6b0-f44b9b9a13cb/cancel": 1
+    },
+    "requests": [
+     {
+      "method": "POST",
+      "path": "/api/executions/9fec8595-6e5c-4c55-a6b0-f44b9b9a13cb/cancel",
+      "query": "",
+      "t": 1792248147507
+     }
+    ]
+   },
+   "cancel_post_count": 1,
+   "single_request_on_slow_dblclick": true,
+   "execution_final": {
+    "status": "CANCELED"
+   },
+   "audit_rows": [
+    {
+     "id": "557eb2b2-182d-470b-aa0e-0334baa84436",
+     "user_id": "cd5945f0-56b4-4cf7-8b71-c4d4751ebb09",
+     "username": "qa-repair-20260930-101945-admin",
+     "action": "cancel",
+     "resource": "execution",
+     "resource_id": "9fec8595-6e5c-4c55-a6b0-f44b9b9a13cb",
+     "detail": "qa-prst-621bfad5-stop",
+     "created_at": "2026-10-17T14:42:30.050163689Z"
+    }
+   ],
+   "audit_cancel_count": 1,
+   "audit_single_cancel": true,
+   "screenshot": "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261017-partial-rest/evidence/x08-stop-after.png",
+   "status": "PASS",
+   "at_utc": "2026-10-17T14:42:32Z"
+  },
+  "T3_revoke_cancel_zero_write": {
+   "mark_menu": {
+    "ok": true,
+    "text": ""
+   },
+   "click_menu": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "mark_revoke": {
+    "ok": true,
+    "text": "撤销凭证"
+   },
+   "click_revoke": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": "⚠ A JavaScript confirm dialog is blocking the page: \"确定撤销该节点凭证吗？Agent 需要重新纳管。\" — use `dialog accept` or `dialog dismiss` to resolve it"
+   },
+   "dialog_status": "⚠ JavaScript confirm dialog is open: \"确定撤销该节点凭证吗？Agent 需要重新纳管。\"\n  Default prompt text: \"\"\n  Use `dialog accept [text]` or `dialog dismiss` to resolve it",
+   "dialog_dismiss": {
+    "rc": 0,
+    "out": "✓ Done"
+   },
+   "obs_after_cancel": {
+    "counts": {},
+    "requests": []
+   },
+   "revoke_post_count": 0,
+   "revoke_cancel_zero_write": true,
+   "node_after": {
+    "http": 200,
+    "status": "pending",
+    "same_status": true
+   },
+   "status": "PASS",
+   "at_utc": "2026-10-17T14:42:38Z"
+  },
+  "T4_bulk_upgrade_cancel_zero_write": {
+   "mark_select": {
+    "ok": true,
+    "text": ""
+   },
+   "click_select": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "toolbar": [
+    "清除选择",
+    "升级 Agent (1)",
+    "设为维护 (1)"
+   ],
+   "mark_upgrade": {
+    "ok": true,
+    "text": "升级 Agent (1)"
+   },
+   "click_upgrade": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "dialog_text": "\"批量升级确认\\n\\n将对 1 个 native 节点触发 Agent 升级。\\n\\n取消\\n确认升级\"",
+   "mark_cancel": {
+    "ok": true,
+    "text": "取消"
+   },
+   "click_cancel": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "dialog_closed_after_cancel": "true",
+   "obs_after_cancel": {
+    "counts": {},
+    "requests": []
+   },
+   "node_post_counts": {},
+   "bulk_upgrade_zero_write": true,
+   "native1_after": {
+    "status": "online",
+    "global_revision": 3771,
+    "sync_status": "synced"
+   },
+   "native1_unchanged": false,
+   "shared_node_effect": "none (cancel-only; zero write asserted)",
+   "status": "HARNESS_INVALID",
+   "at_utc": "2026-10-17T14:42:44Z",
+   "harness_note": "first-run oracle flaw: global_revision was captured before this batch's own fixture writes (task create/enroll advance the global revision) and obs was read without injecting the wrapper on the /agents page; corrected rerun is x08-t4-rerun.json",
+   "valid": false,
+   "superseded_by": "T4_bulk_upgrade_cancel_zero_write_rerun"
+  },
+  "T5_enrollment_failure_retry": {
+   "mark_add": {
+    "ok": true,
+    "text": "添加节点"
+   },
+   "click_add": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "dialog_open": "true",
+   "fill_bad_name": {
+    "ip": "192.0.2.211",
+    "name": "qa prst bad!",
+    "ok": true
+   },
+   "inject": {
+    "delay_ms": 0,
+    "delay_path": null,
+    "patched": true
+   },
+   "mark_submit": {
+    "ok": true,
+    "text": "生成安装命令"
+   },
+   "click_submit_bad": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "error_state_1": "\"node_name may contain only letters, numbers, '-', '_' and '.'\\n重试\"",
+   "mark_retry": {
+    "ok": true,
+    "text": "重试"
+   },
+   "click_retry": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "error_state_2": "\"node_name may contain only letters, numbers, '-', '_' and '.'\\n重试\"",
+   "screenshot_error": "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261017-partial-rest/evidence/x08-enrollment-error-retry.png",
+   "fill_fixed_name": {
+    "name": "qa-prst-621bfad5-retry",
+    "ok": true
+   },
+   "mark_submit2": {
+    "ok": true,
+    "text": "生成安装命令"
+   },
+   "click_submit_fixed": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "command_shown_no_text_capture": {
+    "length": 1835,
+    "present": true
+   },
+   "obs": {
+    "counts": {
+     "/api/nodes/enrollment": 3
+    },
+    "requests": [
+     {
+      "method": "POST",
+      "path": "/api/nodes/enrollment",
+      "query": "",
+      "t": 1792248168875
+     },
+     {
+      "method": "POST",
+      "path": "/api/nodes/enrollment",
+      "query": "",
+      "t": 1792248170888
+     },
+     {
+      "method": "POST",
+      "path": "/api/nodes/enrollment",
+      "query": "",
+      "t": 1792248173023
+     }
+    ]
+   },
+   "enrollment_post_count": 3,
+   "sequence_expected": "bad(400) -> retry-same-bad(400) -> fixed(200)",
+   "retry_node": {
+    "found": true,
+    "id": "14d19a9d-cddf-4da9-8cee-8ec9f404f377",
+    "status": "pending"
+   },
+   "status": "PASS",
+   "at_utc": "2026-10-17T14:42:55Z"
+  },
+  "T4_bulk_upgrade_cancel_zero_write_rerun": {
+   "case_id": "X08",
+   "test": "T4_bulk_upgrade_cancel_zero_write_rerun",
+   "at_utc": "2026-10-17T14:43:36Z",
+   "authority": "http://192.168.100.209:18080",
+   "protected_node": {
+    "id": "91f44866-8a28-435e-bbda-2f2367126c00",
+    "hostname": "qa-repair-20260930-101945-native-1"
+   },
+   "note": "cancel-only; owned fixture not possible because pending enrollment nodes have deployment_mode=\"\" and the bulk upgrade entry filters deployment_mode===native (node-bulk.ts + PrepareEnrollment reset)",
+   "login": {
+    "submit": {
+     "ok": true
+    },
+    "token_in_localStorage": true,
+    "url": "http://192.168.100.209:18080/"
+   },
+   "node_before": {
+    "status": "online",
+    "global_revision": 3772,
+    "sync_status": "synced",
+    "last_seen": "2026-10-17T22:43:19.35131429+08:00"
+   },
+   "upgrade_audit_before": 0,
+   "inject": {
+    "delay_ms": 0,
+    "delay_path": null,
+    "patched": true
+   },
+   "mark_select": {
+    "ok": true,
+    "text": ""
+   },
+   "click_select": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "toolbar": [
+    "清除选择",
+    "升级 Agent (1)",
+    "设为维护 (1)"
+   ],
+   "mark_upgrade": {
+    "ok": true,
+    "text": "升级 Agent (1)"
+   },
+   "click_upgrade": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "dialog_text": "\"批量升级确认\\n\\n将对 1 个 native 节点触发 Agent 升级。\\n\\n取消\\n确认升级\"",
+   "mark_cancel": {
+    "ok": true,
+    "text": "取消"
+   },
+   "click_cancel": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "dialog_closed_after_cancel": "true",
+   "obs_after_cancel": {
+    "counts": {},
+    "requests": []
+   },
+   "node_post_counts": {},
+   "bulk_upgrade_zero_write": true,
+   "node_after": {
+    "status": "online",
+    "global_revision": 3772,
+    "sync_status": "synced",
+    "last_seen": "2026-10-17T22:43:19.35131429+08:00"
+   },
+   "node_state_unchanged_during_cancel": true,
+   "last_seen_advanced": false,
+   "upgrade_audit_after": 0,
+   "no_new_upgrade_audit": true,
+   "shared_node_effect": "none (cancel-only)",
+   "toolbar_cleared": "true",
+   "screenshot": "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261017-partial-rest/evidence/x08-bulk-upgrade-cancel-rerun.png",
+   "status": "PASS"
+  },
+  "T6_revoke_confirm_single_request": {
+   "case_id": "X08",
+   "test": "T6_revoke_confirm_single_request",
+   "at_utc": "2026-10-17T14:46:32Z",
+   "authority": "http://192.168.100.209:18080",
+   "owned_node": {
+    "name": "qa-prst-621bfad5-revnode",
+    "id": "9ab139d0-4b3c-4656-a1bb-00944f5ab75f"
+   },
+   "node_before": {
+    "http": 200,
+    "status": "pending"
+   },
+   "login": {
+    "submit": {
+     "ok": true
+    },
+    "token_in_localStorage": true,
+    "url": "http://192.168.100.209:18080/"
+   },
+   "inject": {
+    "delay_ms": 0,
+    "delay_path": null,
+    "patched": true
+   },
+   "mark_menu": {
+    "ok": true,
+    "text": ""
+   },
+   "click_menu": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": ""
+   },
+   "mark_revoke": {
+    "ok": true,
+    "text": "撤销凭证"
+   },
+   "click_revoke": {
+    "rc": 0,
+    "out": "✓ Done",
+    "err": "⚠ A JavaScript confirm dialog is blocking the page: \"确定撤销该节点凭证吗？Agent 需要重新纳管。\" — use `dialog accept` or `dialog dismiss` to resolve it"
+   },
+   "dialog_status": "⚠ JavaScript confirm dialog is open: \"确定撤销该节点凭证吗？Agent 需要重新纳管。\"\n  Default prompt text: \"\"\n  Use `dialog accept [text]` or `dialog dismiss` to resolve it",
+   "dialog_accept": {
+    "rc": 0,
+    "out": "✓ Done"
+   },
+   "obs": {
+    "counts": {
+     "/api/nodes/9ab139d0-4b3c-4656-a1bb-00944f5ab75f/revoke-credential": 1
+    },
+    "requests": [
+     {
+      "method": "POST",
+      "path": "/api/nodes/9ab139d0-4b3c-4656-a1bb-00944f5ab75f/revoke-credential",
+      "query": "",
+      "t": 1792248399990
+     }
+    ]
+   },
+   "revoke_post_count": 1,
+   "single_request_on_confirm": true,
+   "node_after": {
+    "http": 200,
+    "status": "disabled"
+   },
+   "confirm_effect_ok": true,
+   "screenshot": "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261017-partial-rest/evidence/x08-revoke-confirm.png",
+   "status": "PASS",
+   "cleanup": {
+    "delete_http": 200,
+    "get_after_http": 404,
+    "get404": true
+   }
+  }
+ },
+ "native1_before": {
+  "status": "online",
+  "global_revision": 3770,
+  "sync_status": "synced"
+ },
+ "login": {
+  "submit": {
+   "ok": false,
+   "reason": "inputs-not-found"
+  },
+  "token_in_localStorage": true,
+  "url": "http://192.168.100.209:18080/"
+ },
+ "cleanup": {
+  "at_utc": "2026-10-17T14:42:55Z",
+  "deleted": [
+   {
+    "kind": "node",
+    "id": "901da814-0040-42f6-9cdd-96a152a45f91",
+    "delete_http": 200,
+    "get_after_http": 404,
+    "get404": true
+   },
+   {
+    "kind": "node",
+    "id": "14d19a9d-cddf-4da9-8cee-8ec9f404f377",
+    "delete_http": 200,
+    "get_after_http": 404,
+    "get404": true
+   },
+   {
+    "kind": "task",
+    "id": "47a29cca-bd91-4478-8c4f-5890a7e7cc53",
+    "delete_http": 200,
+    "get_after_http": 404,
+    "get404": true
+   }
+  ],
+  "all_deleted_get404": true,
+  "non_deletable_history": {
+   "executions": [
+    "9fec8595-6e5c-4c55-a6b0-f44b9b9a13cb"
+   ],
+   "note": "execution records have no delete API; retained as history (this batch created the listed execution(s) only)"
+  }
+ },
+ "verdict": "PASS",
+ "slow_response_method": "client-side window.fetch wrapper injected via agent-browser eval: records all non-GET /api requests and delays the target path by 2500ms; native agent-browser dblclick on the dialog confirm button"
+}

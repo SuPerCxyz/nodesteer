@@ -1,0 +1,257 @@
+{
+  "run_id": "20260930-101945",
+  "executor": "gpt-6-luna",
+  "role": "资深Web QA；本会话负责真实浏览器用例，不修改产品源码",
+  "created_at": "2026-10-09",
+  "authority": "http://192.168.100.209:18080",
+  "source_of_truth": [
+    ".e2e/run-state.json",
+    ".e2e/coverage.json",
+    ".e2e/workflows.json",
+    ".e2e/failures.json",
+    ".e2e/test-data.json",
+    ".e2e/runs/20260930-101945/repair/feature-inventory.json",
+    ".e2e/runs/20260930-101945/repair/defect-regression-matrix.json",
+    "openspec/changes/repair-e2e-confirmed-defects/proposal.md",
+    "docs/PRODUCT.md",
+    "docs/ARCHITECTURE.md",
+    "docs/DEV_RULES.md"
+  ],
+  "execution_gate": {
+    "status": "WAITING_FOR_ROOT_PRIVATE_PATH_AND_CONNECTION",
+    "rule": "收到Root新的private路径和连接恢复通知后方可认证；不查询/读取/回显其他private目录或凭据。",
+    "browser": "agent-browser 0.32.4；新独立session，--allowed-domains仅repair origin，不复用Chrome profile/CDP/state。",
+    "environment": "仅repair :18080；primary :8080禁止管理写。保留原Hub/Agent/备份。",
+    "fixture_safety": "复用已有QA角色；无确认不新建无DELETE API资源；优先repair native-3，严禁触碰native-4 child及其他Agent的owned对象。",
+    "browser_secure_context": {
+      "method": "本次session的精确repair origin启动参数 --unsafely-treat-insecure-origin-as-secure=http://192.168.100.209:18080；--allowed-domains 192.168.100.209；不复用profile/CDP/state。",
+      "verified": {
+        "location_origin": "http://192.168.100.209:18080",
+        "isSecureContext": true,
+        "navigator_clipboard": true
+      }
+    }
+  },
+  "batch_limit": 30,
+  "batches": [
+    {
+      "batch_id": "web-20261009-01",
+      "case_count": 12,
+      "cases": [
+        {
+          "canonical_ids": [
+            "X15",
+            "P17P18-11",
+            "WEB-LIVE-LOG"
+          ],
+          "current_status": {
+            "X15": "PARTIAL",
+            "P17P18-11": "PASS"
+          },
+          "required_behavior": [
+            "用户点击Run启动本批唯一Task；同页观察PENDING/RUNNING（以API真实状态事件为oracle），先显示首块、后续stdout/stderr chunks增长，完成后无需reload。",
+            "Task retry仅设本批retry=1；命令只执行echo非敏感标记后false，两次attempt均真实失败；最终FAILED UI/API一致。",
+            "终态页核对attempt元数据、两轮日志与最终错误，验证All/Stdout/Stderr过滤、标记搜索、Follow关闭/开启；记录导航次数。"
+          ],
+          "method": "agent-browser交互+只读API GET task/execution/logs逐项比对；不通过API直接伪造状态。",
+          "resources": "仅本批随机owned Task和Execution，目标repair native-3；不写持久宿主文件，不触碰native-4 child；结尾按精确Task ID DELETE/GET404，保留Execution/Audit历史。"
+        },
+        {
+          "canonical_ids": [
+            "X15",
+            "P17P18-10",
+            "WEB-LIVE-LOG"
+          ],
+          "current_status": {
+            "X15": "PARTIAL",
+            "P17P18-10": "PARTIAL"
+          },
+          "required_behavior": [
+            "执行中仅令当前浏览器session离线后恢复，核对恢复请求、日志缺口补齐、Follow复位/滚动反馈。",
+            "实际操作All/Stdout/Stderr过滤、搜索、Follow关闭/开启，核对URL、请求、页面内容。",
+            "只有确认单次session的repair-only安全上下文启动参数可用时才检查window.isSecureContext/Clipboard API，再由页面Copy动作写入系统剪贴板并读回精确字节；检查成功与可控失败反馈。"
+          ],
+          "method": "独立agent-browser session并限制--allowed-domains仅repair origin；网络断连只作用该session。HTTP安全上下文无法隔离证明时保留Copy维度PARTIAL。真实clipboard不得mock，内容只在内存比对。",
+          "resources": "复用本批Task/Execution与单次浏览器session；不改变Hub/全局设置。"
+        },
+        {
+          "canonical_ids": [
+            "X16"
+          ],
+          "current_status": {
+            "X16": "PARTIAL"
+          },
+          "required_behavior": [
+            "用仅本次运行内生成的synthetic secret marker核查Script/Task默认值输入、编辑、保存、重开；Revision、Execution、Audit和错误UI不显示marker。",
+            "实际执行后核对secret遮蔽和非敏感尾部可用；扫描交付文件不含marker/Cookie/Authorization/Registration Token/登录凭据。"
+          ],
+          "method": "真实UI创建/编辑/保存/重开/执行+只读GET Revision/Execution/Audit作为oracle；只记录布尔值/哈希/长度，不存原文、输入截图或原始敏感响应。",
+          "resources": "优先复用本批可删除Task/Script；确需新建时只使用本批随机可精确删除资源，不新建用户。"
+        },
+        {
+          "canonical_ids": [
+            "G02-09"
+          ],
+          "current_status": {
+            "G02-09": "PARTIAL"
+          },
+          "required_behavior": [
+            "逐个访问12个Sidebar canonical route和Artifacts管理入口，核对URL、页面主标题、唯一active项。",
+            "执行浏览器后退/前进、直接合法详情URL和刷新，验证页面与active项一致。"
+          ],
+          "method": "真实浏览器导航与AX snapshot；请求只读页面/列表数据。",
+          "resources": "现有只读业务数据，无创建/更新/删除。"
+        },
+        {
+          "canonical_ids": [
+            "G02-06"
+          ],
+          "current_status": {
+            "G02-06": "NOT_RUN"
+          },
+          "required_behavior": [
+            "桌面视口折叠/展开Sidebar；核对主内容布局、溢出/遮挡，刷新/导航后状态。"
+          ],
+          "method": "真实点击+viewport、scrollWidth/clientWidth、可见元素矩形和截图。",
+          "resources": "浏览器纯UI状态，无业务写入。"
+        },
+        {
+          "canonical_ids": [
+            "G02-07"
+          ],
+          "current_status": {
+            "G02-07": "NOT_RUN"
+          },
+          "required_behavior": [
+            "移动视口打开/关闭Sidebar，选中导航后菜单关闭且目标route正确；Escape和焦点恢复按组件可用行为记录。"
+          ],
+          "method": "真实触控等价点击/键盘，核对URL和布局尺寸。",
+          "resources": "浏览器纯UI状态，无业务写入。"
+        },
+        {
+          "canonical_ids": [
+            "G04-04"
+          ],
+          "current_status": {
+            "G04-04": "PARTIAL"
+          },
+          "required_behavior": [
+            "真实表单/对话框逐项核对Tab焦点顺序、Enter行为、Escape关闭与焦点返回。",
+            "空必填表单Enter不得发送POST；可取消确认框Escape不发送DELETE，页面继续可交互。"
+          ],
+          "method": "真实Tab/Enter/Escape；network request method/count及UI前后状态作副作用oracle。",
+          "resources": "仅登录空表单和现有可取消确认框；不确认破坏性操作。"
+        },
+        {
+          "canonical_ids": [
+            "P01-02"
+          ],
+          "current_status": {
+            "P01-02": "PARTIAL"
+          },
+          "required_behavior": [
+            "用现有QA用户名和故意错误密码提交一次；登录POST真实拒绝，仍在/sign-in，显示具体错误且未持久化Token。"
+          ],
+          "method": "真实登录表单；只记录URL/method/status，不记录body；检查token key布尔值和错误类别。",
+          "resources": "已有QA账号，不建用户、不改密码、不重复失败尝试。"
+        },
+        {
+          "canonical_ids": [
+            "P01-03"
+          ],
+          "current_status": {
+            "P01-03": "PARTIAL"
+          },
+          "required_behavior": [
+            "用户名空、密码空、两者均空逐项提交；验证required反馈/停留登录页且login POST计数为0。",
+            "不把纯UI测试等同于服务端直接缺字段API测试；该维度仍保留PARTIAL。"
+          ],
+          "method": "真实表单+network request count；检查输入校验反馈。",
+          "resources": "不需账号或业务对象；不发服务端写请求。"
+        },
+        {
+          "canonical_ids": [
+            "P01-04"
+          ],
+          "current_status": {
+            "P01-04": "NOT_RUN"
+          },
+          "required_behavior": [
+            "在真实pending期间登录按钮禁用且重复点击只产生一个login POST，完成后恢复。"
+          ],
+          "method": "仅当可以不改服务端/全局设置地自然观察安全pending时执行；否则环境受限保持NOT_RUN/PARTIAL，不做请求延迟mock。",
+          "resources": "已有QA账号；不增加失败重试或尝试锁定用户。"
+        },
+        {
+          "canonical_ids": [
+            "P04-06"
+          ],
+          "current_status": {
+            "P04-06": "PARTIAL"
+          },
+          "required_behavior": [
+            "Viewer对修复native-3一次点击受限状态操作，期望真实403；GET状态前后完全一致并有明确UI反馈。",
+            "若误得2xx立即用Admin恢复原status并记录FAIL；无法保证owner/restore则不发写请求，仅测可见性并保持PARTIAL。"
+          ],
+          "method": "各角色先GET /api/me验证角色；GET node before→UI点击→记录method/status→GET node after。",
+          "resources": "只用Root确认的repair native-3；绝不访问/操作native-4 child；不创建节点。"
+        },
+        {
+          "canonical_ids": [
+            "P04-07"
+          ],
+          "current_status": {
+            "P04-07": "PARTIAL"
+          },
+          "required_behavior": [
+            "Admin/Operator/Viewer分别核对Add Node入口可见性与admin-only策略。",
+            "不提交enrollment表单、不调用创建接口；因此只覆盖UI可见性，后端拒绝维度仍保留PARTIAL。"
+          ],
+          "method": "角色认证后读取页面AX树和DOM控件；network确认无enrollment POST。",
+          "resources": "复用已有QA角色，不新建用户或节点。"
+        }
+      ],
+      "next_batch_plan": [
+        {
+          "canonical_ids": [
+            "G02-01",
+            "P01-06"
+          ],
+          "scope": "中英切换、刷新持久化与文案。"
+        },
+        {
+          "canonical_ids": [
+            "G02-03",
+            "P02-02"
+          ],
+          "scope": "Profile/Settings及Header菜单与取消确认。"
+        },
+        {
+          "canonical_ids": [
+            "P02-01"
+          ],
+          "scope": "12个Sidebar入口与Artifacts间接入口一致性。"
+        },
+        {
+          "canonical_ids": [
+            "P03-10",
+            "P04-09"
+          ],
+          "scope": "Dashboard和节点列表Error/Retry真实请求闭环，仅session级网络故障注入。"
+        },
+        {
+          "canonical_ids": [
+            "P04-08",
+            "P17P18-01",
+            "P17P18-02",
+            "P17P18-03",
+            "P17P18-04",
+            "P17P18-05"
+          ],
+          "scope": "只读列表搜索/分页/状态/trigger过滤。"
+        }
+      ]
+    }
+  ],
+  "acceptance": "每case按canonical ID及当前剩余适用维度独立判定；记录用户动作→请求→状态/真实效果→UI反馈，附独立oracle。缺环境或证据则PARTIAL/NOT_RUN；旧版/static证据不得升级本轮状态；不mock clipboard冒充真实Copy。"
+}

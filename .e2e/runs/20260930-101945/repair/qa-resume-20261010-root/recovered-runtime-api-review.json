@@ -1,0 +1,59 @@
+{
+  "reviewed_at": "2026-10-10T06:26:59.836601+00:00",
+  "actual_new_runtime": true,
+  "model": "gpt-6-luna",
+  "api_public": {
+    "status": "PASS_CURRENT_CONFIG_CONTRACT",
+    "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/auth-public-live.json",
+    "description": "公开healthz/readyz/state/disabledOIDClogin/callback、amd64binary非401且实际200/404契约一致，binarySHA匹配；OIDC后规划/当前关闭（PRODUCT§49），未启IdP，不把这个结果当SSO认证成功"
+  },
+  "users": {
+    "status": "PARTIAL",
+    "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/auth-users-negative-matrix.json",
+    "description": "AdminGET200、invalidBearer四方法401、empty/invalidrolePOSTPUT400、itemGETDELETE405；数量/role摘要不变，未创建无delete可清的User",
+    "missing": [
+      "Operator/Viewer真实403",
+      "Admin成功写入；没有安全可回收新User机制"
+    ]
+  },
+  "db_write": {
+    "status": "PASS_FOR_WRITE_FAILURE_RECOVERY_RUN_UI_DIMENSIONS",
+    "evidence": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/db-fault/attempt02/case-result.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/db-fault/attempt02/child-runtime-readonly-evidence.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/db-fault/attempt02/run-execution-evidence.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/db-fault/attempt02/cleanup-tombstone-evidence.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/ui-native3/execution-ui-evidence.json"
+    ],
+    "description": "实测锁NACK/oldSHA/rev保持→正常同步DB v2 SHA落盘→同Task唯一SUCCESS/marker→真实UI状态及DOMmarker→精确删除/tombstone/quick_check；截图证明status/ID/target，DOM另证marker",
+    "missing": [
+      "CommitSync调用失败",
+      "成功后重启Revision持久化尚未执行"
+    ]
+  },
+  "web_live": {
+    "status": "PARTIAL",
+    "evidence": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/attempt05/follow-scroll-oracle.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/attempt05/execution-final-oracle.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/attempt05/pending-ui-observation.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/attempt05/clipboard-oracle.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/live-log/attempt05/cleanup-verification.json"
+    ],
+    "description": "同Execution真实两流增长、FAILED23且无需刷新；Followoff top0/height增长，Followon top3312=3872-560；单UIRun，Task/token/context/SSH清理",
+    "missing": [
+      "clipboard实际读回/拒绝反馈",
+      "真实PENDING UI",
+      "精确两流过滤冷页补证尚待Root审查"
+    ]
+  },
+  "native3_process": {
+    "evidence": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/ui-native3/native3-process-sha-evidence.json",
+    "pid": 445056,
+    "startticks": 84206852,
+    "unit": "nodesteer-agent-repair-20260930-101945-native-3.service",
+    "proc_and_disk_sha_verified": true,
+    "does_not_claim_other_nodes_same_time_refresh": true
+  },
+  "product_source_changed": false
+}

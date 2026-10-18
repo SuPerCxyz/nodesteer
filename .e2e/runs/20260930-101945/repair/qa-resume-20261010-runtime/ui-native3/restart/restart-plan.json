@@ -1,0 +1,83 @@
+{
+  "reviewed_at_utc": "2026-10-10T06:19:59Z",
+  "status": "EXECUTED_UNDER_EXPLICIT_MANUAL_RESTART_APPROVAL",
+  "purpose": "Proposed Native4 child-only restart for persisted revision/identity and heartbeat recovery verification.",
+  "read_only_sources": [
+    "api-preflight.json",
+    "owner-probe-evidence.json",
+    "supervisor-source-evidence.json",
+    "process-ancestry-evidence.json"
+  ],
+  "current_guards": {
+    "child_node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+    "agent_id": "agent-ab15a133-73cd-4025-8c97-f2ff37e000f5",
+    "child_pid": 47015,
+    "child_startticks": 130084225,
+    "child_uid": 65534,
+    "child_exe_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "child_config_path": "/tmp/qa-resume-20261008-child-ciivjupc/child.yaml",
+    "child_ppid": 1,
+    "supervisor_pid": 44932,
+    "supervisor_startticks": 123677922,
+    "supervisor_uid": 65534,
+    "supervisor_source_sha256": "fb486284ca7a13da78555b05aed039eeb20122649a5e7a2d43390ce7404901c1",
+    "root_dev_inode_uid": "33:135:65534",
+    "db_dev_inode_uid": "33:155:65534",
+    "local_revision_at_probe": 1394,
+    "sqlite_quick_check": "ok",
+    "hub_child_status": "online",
+    "hub_child_sync_status": "synced",
+    "hub_parent_status": "online",
+    "hub_parent_sync_status": "synced",
+    "child_task_count": 0,
+    "child_schedule_count": 0,
+    "fixture_rows": {
+      "scripts": 0,
+      "tasks": 0,
+      "schedules": 0,
+      "applications": 0,
+      "deployments": 0,
+      "unit_registry": 0
+    },
+    "running_or_pending_executions": 0
+  },
+  "restart_strategy_finding": {
+    "proxy_supervisor_is_agent_restarter": false,
+    "evidence": "supervisor.py only creates asyncio TCP server and awaits proxy.connection/serve_forever; it does not Popen or monitor the Agent. Child PPID is PID 1.",
+    "systemd_unit": "nodesteer-agent-repair-20260930-101945-native-4.service",
+    "systemd_state": "active",
+    "systemd_main_pid": 32487,
+    "systemd_main_pid_is_child": false,
+    "systemd_main_pid_agent_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+    "systemd_restart_policy": "on-failure (3s)",
+    "systemd_kill_mode": "control-group",
+    "shared_cgroup": "/system.slice/nodesteer-agent-repair-20260930-101945-native-4.service",
+    "consequence": "Restart=on-failure applies to MainPID 32487, not child PID 47015; stopping/restarting this Unit risks all processes in the shared cgroup and is prohibited. No existing child-only auto-respawner was found."
+  },
+  "heartbeat_evidence": {
+    "proxy_event_counts": {
+      "connection": 75,
+      "sync_ack": 691
+    },
+    "explicit_proxy_heartbeat_events": 0,
+    "agent_log_prior_heartbeat_lines_tagged": 24,
+    "interpretation": "Historical log keyword matches and current API last_seen are not packet-level heartbeat capture. A future restart check should record a new connection event plus a successful sync_ack at/after the persisted revision and an advancing Hub last_seen; this remains a real behavior oracle, not source inference."
+  },
+  "conditional_validation_steps_if_root_authorizes_a_child_only_start_mechanism": [
+    "Before acting, repeat exact owner/PID/startticks/UID/argv-config-path/exeSHA/cgroup, Unit, DB-inode/identity/revision and API health guards.",
+    "Do not stop/restart the parent Unit or cgroup. Do not use killall or process-name matching.",
+    "Use only an explicitly approved child-only restart mechanism; current environment has no verified mechanism that recreates PID 47015 after SIGTERM.",
+    "If a mechanism is approved, signal only the exact owned child PID after the approved guard; preserve root/config/binary/Node/Agent identity.",
+    "Within <=30s require old PID gone and a different PID with UID65534, same d55 SHA/config path/root/DB inode and a distinct child restart observation; leave supervisor PID44932 unchanged.",
+    "Require the local global revision not to regress, DB quick_check ok and exact Node/Agent identity unchanged.",
+    "Require repair API online/synced, same IDs, advancing last_seen, and a new proxy connection+successful sync_ack covering the persisted revision; if absent, report failure/partial, never infer from source.",
+    "Recheck original 4 Agents and parent service remain healthy; exact read-only helper Task DELETE/GET404; preserve Execution/Audit history."
+  ],
+  "decision": "Explicit Root approval supplied a dedicated one-child manual SIGTERM/Popen recipe. It was executed with exact process/data guards; the parent Unit/cgroup and proxy were preserved.",
+  "process_signal_sent": false,
+  "systemd_action_taken": false,
+  "database_written_or_locked": false,
+  "proxy_changed": false,
+  "superseded_by_approval": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/manual-child-restart-review.json",
+  "execution_evidence": "manual-attempt01/restart-evidence.json"
+}

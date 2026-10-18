@@ -1,0 +1,33 @@
+{
+  "reviewed_at": "2026-10-10T03:01:06.326002+00:00",
+  "status": "APPROVED_WRITE_BUSY_FAULT_ONLY",
+  "proposal": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/db-fault/db-fault-and-ar08-plan.md",
+  "source_checked": [
+    "internal/agent/store.go:50 WAL/busy_timeout5000",
+    "internal/agent/store.go:228 BeginTx deferred",
+    "internal/agent/agent.go:788 scripts first/upsert failure rollback"
+  ],
+  "target": {
+    "parent_node_id": "03cb50cc-eab6-4afd-bbe0-f73c4e326773",
+    "owned_child_node_id": "15961ef7-81b4-43f3-80c8-1b6977ca2aea",
+    "owned_agent_id": "agent-ab15a133-73cd-4025-8c97-f2ff37e000f5",
+    "owned_root": "/tmp/qa-resume-20261008-child-ciivjupc",
+    "root_dev_ino_uid": "33:135:65534",
+    "db_dev_ino_uid": "33:155:65534"
+  },
+  "scope": [
+    "1benign Script v1→v2 +1target-ownedChildScriptTask，retry0/noSchedule/timeout≤60",
+    "1parent CommandTask timeout30/retry0/noSchedule +12s ownedDB BEGIN IMMEDIATE held lock、finallyROLLBACK，无SQL数据/Schema写",
+    "真实write-stagefailure DB/revision/oldScript保持、释放后正常Reconciliation v2并1次Run实际marker/UI",
+    "DELETE exactScript/Task/holderTask GET404、connectedChild tombstone消失；保留child/supervisor/root/proxy/history"
+  ],
+  "corrections": [
+    "先freshguard并等基线Script/Task精确SHA/rev、Hubsynced；parenthelper创建/删除也增GlobalRev，因此以LOCK_ACQUIRED时DB实际revision作为负向baseline，记录Hub revisions/动作顺序，不能要求两次不同时间GET严格相等",
+    "LOCK_ACQUIRED从真实ExecutionLogs读到才PUT v2；lockholder记oldScriptSHA/rev/global并在release前再次读取；只在12s持锁时window采集negative oracle",
+    "恢复等待按正常RevisionCheck45s+jitter，总预算90s并每≤30s刷新progress；不改全局配置/不无界重试",
+    "无现成replay就不做AR08duplicate，不改旧proxy，不停父Unit/cgroup；如safe仅为核对，已有Supervisor源码只读允许",
+    "故障不是CommitSync调用失败，不把INV05整体PASS；若无法拿真实NACK可保留缺口，不能由静态source推断ACK实际值"
+  ],
+  "product_source_write_authorized": false,
+  "retention": "未获Root最终清理分派前保留Native4现有child供后续fault测试，原4parent保持"
+}

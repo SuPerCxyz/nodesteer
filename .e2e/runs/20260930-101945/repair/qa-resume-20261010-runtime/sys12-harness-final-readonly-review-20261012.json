@@ -1,0 +1,70 @@
+{
+  "reviewed_at_utc": "2026-10-12T13:17:44Z",
+  "status": "HOLD",
+  "mode": "readonly_source_review",
+  "execution_performed": false,
+  "sources": {
+    "lifecycle_source_proposal.py": {
+      "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/lifecycle_source_proposal.py",
+      "sha256": "ddee6d87832781794ea5d44e8a21c3beac22532cccae4763a87732cbbdc6d407"
+    },
+    "sys12_outer_controller.py": {
+      "path": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/sys12_outer_controller.py",
+      "sha256": "a717119abf6abed819e543227a634a2f70cbf1f24ac2060b6aa9b6bf936ffb34"
+    }
+  },
+  "findings": [
+    {
+      "id": "cancel_semantics",
+      "status": "PASS_STATIC",
+      "evidence": [
+        "internal/hub/api/api.go:1816-1837: cancel endpoint returns ok after ExecutionManager.Cancel succeeds",
+        "internal/hub/execution.go:604-619: Cancel sends MsgCancelExecution and does not update Execution status",
+        "internal/agent/agent.go:1199-1203,1145-1169: Agent handles cancel, persists finished result, and sends MsgExecFinished",
+        "internal/hub/gateway.go:531-545; internal/hub/execution.go:359-440: Hub marks terminal from Agent ExecutionFinishedPayload",
+        ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/sys12-preflight/sys12_outer_controller.py:334-352: after POST cancel, controller polls the same Execution ID until terminal, otherwise blocks"
+      ],
+      "conclusion": "HTTP ok=true is a message-send acknowledgment, not proof of terminal status or process inactivity. Terminal status is Agent-result-confirmed; the controller correctly waits for exact Execution GET terminal state."
+    },
+    {
+      "id": "unknown_execution_reconciliation_and_mutation_gate",
+      "status": "PASS_STATIC",
+      "evidence": [
+        "sys12_outer_controller.py:282-317: missing Execution ID is reconciled through exact task_id list and must resolve uniquely; exact GET verifies both Execution and Task IDs",
+        "sys12_outer_controller.py:44-63: ambiguous/unreadable/active reconciliation writes OWNED_ACTIVE_HELPER_BLOCKED and raises before further mutation",
+        "sys12_outer_controller.py:494-505,937-940,1094-1104,1211-1237: helper terminal proof precedes Task deletion and recovery cleanup"
+      ],
+      "conclusion": "Unknown or ambiguous Run results fail closed. Active-helper block stops subsequent remote cleanup mutations; no terminal is inferred from cancel response."
+    },
+    {
+      "id": "helper_budget_and_cleanup_recovery",
+      "status": "PASS_STATIC_WITH_RECOVERY_LIMIT",
+      "evidence": [
+        "sys12_outer_controller.py:24-26,355-371: budget is 6 normal + 4 recovery, total 10",
+        "sys12_outer_controller.py:616-617,746,768,795,827,832: nominal sequence consumes six normal helper Runs (prepare, inspect A, recreate, inspect B, runtime cleanup, root cleanup)",
+        "sys12_outer_controller.py:819-833,887-893,1182-1239: API objects must be GET 404 before root cleanup; recovery reconciles Runs, removes exact runtime, cleans API objects, then removes root",
+        "lifecycle_source_proposal.py:998-1048: root cleanup requires Hub-deleted flag, no recorded Docker resources, exact root identity, strict allowlisted paths/types/owners"
+      ],
+      "conclusion": "The nominal and recovery budgets close. Recovery cleanup is retryable within its four-call allowance; a failed cleanup-runtime attempt in the primary path intentionally stops that path and leaves recovery for explicit --recover-ledger. Hub 404 gating is enforced by the controller before setting the helper flag."
+    },
+    {
+      "id": "business_terminal_skipped_coverage",
+      "status": "HOLD",
+      "evidence": [
+        "sys12_outer_controller.py:28: helper terminal set includes SKIPPED",
+        "sys12_outer_controller.py:686-701: business Script Execution poll recognizes SUCCESS, FAILED, BLOCKED, TIMED_OUT, CANCELED but omits SKIPPED"
+      ],
+      "conclusion": "The business poll does not recognize the newly accepted SKIPPED terminal state; it waits the full 75 seconds and reports timeout instead of classifying the terminal result promptly. Source is frozen; record this as a source review hold for a later approved correction."
+    },
+    {
+      "id": "stopped_container_ip_readback",
+      "status": "HOLD_RUNTIME_CONTRACT_UNPROVEN",
+      "evidence": [
+        "lifecycle_source_proposal.py:371-423: inspect_container unconditionally parses NetworkSettings IPAddress before returning state",
+        "lifecycle_source_proposal.py:827-829,857-859: normal stop readbacks call inspect_container and expect a stopped container"
+      ],
+      "conclusion": "If Docker reports an empty IP for a stopped container, stop verification and cleanup fail at docker_dynamic_ip_readback_invalid before checking stopped state. No runtime Docker value was read in this review, so actual failure is unproven. Require either state-aware validation (valid IP while running; membership/identity while stopped) in a later approved source revision, or direct stopped-container readback evidence before unholding."
+    }
+  ],
+  "overall": "HOLD: cancellation, reconciliation, mutation gating, and cleanup logic are statically sound; source review remains held on SKIPPED handling and stopped-container IP contract. No runtime behavior is claimed."
+}

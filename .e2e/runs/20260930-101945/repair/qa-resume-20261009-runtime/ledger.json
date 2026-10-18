@@ -1,0 +1,152 @@
+{
+  "run_id": "20260930-101945",
+  "workstream": "qa-resume-20261009-runtime",
+  "status": "V2_READY_OBSERVER_DRAFT",
+  "updated_at": "2026-10-09T08:33:29Z",
+  "canonical_denominator_504_unchanged": true,
+  "repair_defects_count_22_unchanged": true,
+  "scope": "Native-1 read-only environment probes plus isolated P0-002 child Agent creation/preflight. No Application, Artifact, app Unit, or PREPARING injection yet.",
+  "management_endpoint": "http://192.168.100.209:18080",
+  "task_runs": [
+    {
+      "purpose": "Read-only Native-1 host/service/Docker/nsenter/root candidate inventory",
+      "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "task_id": "b71b1ac4-9d00-4641-a71b-afa1d0855dec",
+      "execution_id": "7ee49554-877c-4419-bb98-28e14a71a355",
+      "status": "SUCCESS",
+      "task_command_sha256": "8358ade8d2e187c938aabb16d67a5d23110c1b17c115459b31470ae9cb4f7b44",
+      "source_sha256": "b6ec6606b5c911dffc0c38a43ed16322e5ea145ff5977d95fc06c28e12a9c562",
+      "local_harness_sha256": "df644deb99cb484b1eca528f770acc7730c3e6f070250749b863fa9dafa24978",
+      "evidence": "native1-readonly-probe-evidence.json",
+      "cleanup": {"task_delete_http": 200, "task_get_http": 404, "verified": true}
+    },
+    {
+      "purpose": "Read-only process ancestry to distinguish baseline service from repair Agent executing Command Tasks",
+      "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "task_id": "d464bb09-102d-4b99-88d0-6c31dd8ad84a",
+      "execution_id": "4bc9ffe4-d837-4aea-934e-c5607195c189",
+      "status": "SUCCESS",
+      "task_command_sha256": "a318ad2d7b072e0a3498492ed9cc19929cd93c74a2fdda7a5dd6e9d6dfe9162e",
+      "source_sha256": "988389b93018861a76dc3e9ec3796a2bbe1b70ff2b5338aaf3815e11483ecb0c",
+      "local_harness_sha256": "296c306a18c1fe9e947e22205ab01dbd01c3356c61efc11457b49cbcfa13ed18",
+      "evidence": "native1-ancestor-probe-evidence.json",
+      "cleanup": {"task_delete_http": 200, "task_get_http": 404, "verified": true}
+    },
+    {
+      "purpose": "One-shot owned setup Task to start only the isolated child Agent and report process/path owner fingerprints",
+      "node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+      "task_id": "c21fdae4-a8c9-42d3-b9d9-ddf5e45d824d",
+      "execution_id": "623c516d-c4ca-4c9b-9086-31e65d79d6fc",
+      "status": "SUCCESS",
+      "task_definition": {
+        "name": "qa-resume-20261009-native1-child-setup-870358cd92ee",
+        "type": "command",
+        "retry": 0,
+        "schedule": null,
+        "timeout": 60,
+        "target_node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+        "secret_parameter_name": "registration_token",
+        "secret_parameter_type": "secret"
+      },
+      "task_command_sha256": "d3d98bc00a49bd9a2810ceeb15aab08171bbbb7b675f368830eb7bee6bfc2437",
+      "source_sha256": "549e59aa69504226c670fe06acd27f2cfd34bcbd697d2a08d671ccc141cf4892",
+      "local_harness_sha256": "474346448c730bfdc31b1c5a58fe1b93b2838031760f03070b06b4f981d5e9f6",
+      "evidence": "child-setup-evidence.json",
+      "cleanup": {"task_delete_http": 200, "task_get_http": 404, "verified": true}
+    }
+  ],
+  "failed_harness_attempts": [
+    {
+      "attempt": 1,
+      "status": "HARNESS_BLOCKED_BEFORE_TASK_OR_CHILD_START",
+      "cause": "Enrollment response has no registration_token field; the authorized existing private credential file was then used in memory for the successful retry.",
+      "evidence": "child-setup-attempt-01.json",
+      "cleanup": {"delete_http": 200, "get_by_id_http": 404, "name_and_ip_absent_from_node_list": true, "qa_root_created": false, "child_started": false}
+    }
+  ],
+  "child_preflight": {
+    "status": "READY",
+    "node_id": "c77b8a84-8085-4ea8-8532-de171761854b",
+    "agent_id": "agent-426aa507-af4c-4005-858f-ce497d2fc67d",
+    "node_name": "qa-resume-20261009-native1-p0-002-child-870358cd92ee",
+    "node_ip": "qa-resume-20261009-native1-p0-002-870358cd92ee.example.test",
+    "online": true,
+    "synced": true,
+    "agent_version": "dddee4f0-e2e-repair-20261004",
+    "root": {"path": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee", "uid": 0, "mode": "0700", "mountpoint": "/", "noexec": false},
+    "child_unit": "nodesteer-qa-e2e-20261009-p0-002-native1-870358cd92ee.service",
+    "child_process": {
+      "pid": 47582,
+      "starttime_ticks": 129963662,
+      "uid": 0,
+      "argv": [
+        "/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent",
+        "--config",
+        "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/agent.yaml"
+      ],
+      "exe_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+      "control_group": "/system.slice/nodesteer-qa-e2e-20261009-p0-002-native1-870358cd92ee.service"
+    },
+    "private_config": {"path": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/agent.yaml", "uid": 0, "mode": "0600", "contents_in_evidence": false},
+    "state_dir": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/state",
+    "log_path": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/log/agent.log",
+    "original_native1_services": {
+      "baseline_unit": {"unit": "nodesteer-agent.service", "main_pid_before_after": 24684, "active_before_after": true},
+      "repair_unit": {"unit": "nodesteer-agent-repair-20260930-101945-native-1.service", "main_pid_before_after": 33342, "starttime_ticks_before_after": 84203924, "active_before_after": true, "exe_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add"}
+    },
+    "application_or_fault_injection": "NONE"
+  },
+  "application_fixture": {
+    "application_id": "2e4fecee-afc8-43a8-9d93-dd36cfc10bf9",
+    "application_name": "qa-resume-20261009-native1-p0-002-app-870358cd92ee",
+    "application_unit": "nodesteer-qa-e2e-20261009-p0-002-app-870358cd92ee.service",
+    "binary_path": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/app/bin/qa-app",
+    "config_path": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/app/config/qa-app.env",
+    "v1": {
+      "artifact_id": "0c74fcee-7689-49a4-8206-3fa5f6eba746",
+      "execution_id": "9af96c3f-d898-4ca3-811e-f8e823eb9900",
+      "deployment_id": "b48e8688-91bb-4305-810c-44db255c18b8",
+      "binary_sha256": "35d10e1ef6728c5b46555efac91c605c0f1eb7edfe217f3724ae25a0dffb9d1c",
+      "config_sha256": "5d24742791cf5f34c6b128ce01b7b4f5ee2516508e47731653abbf92c6190b34",
+      "unit_sha256": "6f0bb711bdeb0d88ad738824209c652928d28ada6cb104f46fe87114edcd7ffa",
+      "unit_active": true,
+      "application_api_health": "healthy",
+      "application_api_execution": "SUCCESS",
+      "ui_route": "/applications/2e4fecee-afc8-43a8-9d93-dd36cfc10bf9",
+      "ui_screenshot": "app-v1-ui-detail.png",
+      "ui_screenshot_sha256": "a05b8863dfe637a0546547726cd57cb2ba110823009e118b571cd6a0b35ee5e3",
+      "ui_observed": ["child assigned and online", "green healthy state", "deploy operation", "execution history SUCCESS", "revision r1"]
+    },
+    "v2_preparation": {
+      "artifact_id": "5517ff25-65b1-4da3-b5d7-a3f86f0de73d",
+      "artifact_name": "qa-resume-20261009-native1-p0-002-artifact-870358cd92ee-v2",
+      "artifact_sha256": "e978740d1f6e40e831013a1ccd60ecd6d27e2c67ba1389d4df23bcbd4801cd46",
+      "artifact_size": 16777216,
+      "app_definition_revision": 2,
+      "desired_version": "v2",
+      "v2_cache_path": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/state/artifacts/e978740d1f6e40e831013a1ccd60ecd6d27e2c67ba1389d4df23bcbd4801cd46",
+      "v2_cache_sha_verified": true,
+      "v2_deployment_journal_count": 0,
+      "v1_physical_binary_config_unit_still_match": true,
+      "v1_unit_active": true,
+      "v1_application_state_healthy": true,
+      "v2_deploy_invoked": false
+    },
+    "evidence": ["app-v1-baseline-evidence.json", "app-v2-preparation-evidence.json"]
+  },
+  "case_state": {
+    "E2E-20260930-101945-P0-002": "V1_BASELINE_READY, UI healthy/SUCCESS; v2 desired definition/cache ready while v1 physical files and Unit remain active; PREPARING deploy/fault not run; observer source awaiting parent review",
+    "FAIL-ENV-HOST-001": "NOT_RUN; historical Host runner is different host and would add Host PID/net exposure and capabilities/mounts",
+    "FAIL-ENV-HOST-002": "NOT_RUN; no current Host Integration Agent; no negative mount fixture created",
+    "FAIL-ENV-TLS-001": "NOT_RUN; no isolated private-CA runner proven",
+    "canonical_504_count": "unchanged; no case status credited by this inventory/setup evidence"
+  },
+  "credential_safety": {
+    "registration_token_values_in_evidence": false,
+    "agent_config_contents_in_evidence": false,
+    "registration_token_used_only_from_authorized_private_file": true,
+    "token_transmitted_only_as_secret_task_parameter_and_written_to_child_config_0600": true,
+    "token_removed_from_systemd_run_environment": true
+  },
+  "next_gate": "Root reviews exact-AppID and v2 ArtifactID, observer source/harness, process guard, frozen-phase recheck, safe SIGCONT miss path and child-only SIGKILL. Do not invoke v2 deploy or send signals until explicit Root approval."
+}

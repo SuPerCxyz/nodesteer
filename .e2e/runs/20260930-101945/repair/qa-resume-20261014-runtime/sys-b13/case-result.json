@@ -1,0 +1,304 @@
+{
+  "batch_id": "sys-b13",
+  "title": "Docker Agent：纳管接入、重启/重建持久化、持久卷缺失与 Native/Docker 共享 Core",
+  "nonce": "e7ec52cebad9",
+  "owned_prefix": "qa-sysb13-e7ec52cebad9-",
+  "endpoint": "http://192.168.100.209:18080",
+  "target_node_vm": "repair native-4 (192.168.100.247)",
+  "pinned_image": {
+    "digest": "sha256:ecd4dd9f8300067ba2cba22e8c5a701f1984f054fa4476354ed4d58af544cd44",
+    "tag": "nodesteer-qa/agent-host:f174890c3846",
+    "agent_binary_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add"
+  },
+  "executed_at_utc": "2026-10-14T09:51:27Z",
+  "finished_at_utc": "2026-10-14T10:04:53Z",
+  "cases": [
+    {
+      "case_id": "E2E-17",
+      "title": "Docker Enrollment → docker run/Compose Agent 真实接入并持久化",
+      "canonical_before": "NOT_RUN (repair build; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:E2E-17/docker-run",
+          "layer": "hub-api + real pinned-image container + real agent process + agent-sqlite/physical-data-dir",
+          "status": "PASS",
+          "description": [
+            "Access method A = `docker run`: container fa8b374172ae6f3e7f287430b5c8196fddb0b5046d7bd06693d205a7d26a56da started from the pinned image digest sha256:ecd4dd9f8300067ba2cba22e8c5a701f1984f054fa4476354ed4d58af544cd44 (user 65534:65534, --read-only, --cap-drop ALL, --security-opt no-new-privileges, owned bridge aeea42845d53093134f7fb6a4c493de2460fa301feee41d5244f448ee4cf3edb).",
+            "Real HELLO/enrollment: Hub node d5e0beb7-2602-4309-8712-a8a020435170 hostname=qa-sysb13-e7ec52cebad9-run reported status=online sync_status=synced, deployment_mode=docker, host_integration=false, agent_version=dddee4f0-e2e-repair-20261004 (see evidence/phase1-e2e17-docker-run.json).",
+            "Agent-side physical effect: /.dockerenv present in the container; the agent log shows \"nodesteer agent starting ... mode=docker data_dir=/var/lib/nodesteer\" and \"agent connected\"; the bind-mounted data dir /opt/qa-sysb13-e7ec52cebad9/data-a holds state.db (uid 65534, PRAGMA quick_check=ok) whose identity table carries node_id=d5e0beb7-2602-4309-8712-a8a020435170 and agent_id=agent-155dfe6c-011d-49bf-8549-fc33d7bc1f08."
+          ]
+        },
+        {
+          "test_id": "20261014-RUNTIME:E2E-17/compose",
+          "layer": "hub-api + docker compose + real agent process + named-volume data dir",
+          "status": "PASS",
+          "description": [
+            "Access method B = `docker compose -p qa-sysb13-e7ec52cebad9 -f /opt/qa-sysb13-e7ec52cebad9/compose.yaml up -d` created container 3767092ed6c32ec72adae5eae0f7f1785189ec5b59e5e9b1776f8b7d4146b181 carrying com.docker.compose.project=qa-sysb13-e7ec52cebad9 labels, on the same owned bridge, with the owned named volume qa-sysb13-e7ec52cebad9-data-b mounted at /var/lib/nodesteer.",
+            "Real HELLO/enrollment: Hub node b4e8d722-b442-498a-9a61-2a88b17f7497 hostname=qa-sysb13-e7ec52cebad9-compose reported status=online sync_status=synced, deployment_mode=docker, host_integration=false (see evidence/phase3-e2e17-compose.json).",
+            "Persistence premise: the agent state of both nodes lives on operators-supplied persistent storage (host bind dir for A, named volume for B), not inside the container writable layer."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "No browser UI was exercised; the caller-side feedback used here is the Hub API readback (node status/deployment_mode) plus the container/agent-side physical state.",
+        "The pinned image did not exist on the designated batch node (native-4) and was imported from native-2 via a read-only `docker save` stream (no pull/rebuild/retag); the digest was verified identical (sha256:ecd4dd9f...) before use and the image was removed again at cleanup. See harness_notes.",
+        "The 4 original repair native nodes were left online/synced and the primary :8080 Hub was never contacted (authority is hard-guarded to :18080)."
+      ],
+      "evidence": [
+        "evidence/phase0-preflight.json",
+        "evidence/phase1-e2e17-docker-run.json",
+        "evidence/phase3-e2e17-compose.json"
+      ]
+    },
+    {
+      "case_id": "AR-03",
+      "title": "Docker Agent Restart；恢复后幂等、持久化、Desired State与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-03",
+          "layer": "real `docker restart` + hub-api + agent-sqlite/physical-filesystem",
+          "status": "PASS",
+          "description": [
+            "Real restart of container A by immutable ID: State.Pid changed 10338 -> 11649, State.StartedAt changed 2026-10-14T09:51:39.089763317Z -> 2026-10-14T09:53:43.448648712Z, RestartCount stayed 0 (single deliberate restart).",
+            "Persistence: the agent DB file kept the SAME (dev,inode)=65026,4653987 across the restart (same bind-mounted file), PRAGMA quick_check=ok before and after, identity (node_id=d5e0beb7-2602-4309-8712-a8a020435170 / agent_id=agent-155dfe6c-011d-49bf-8549-fc33d7bc1f08) unchanged in the DB identity table, sync_state.global_revision 1899 -> 1899 (monotonic, not regressed).",
+            "Idempotency: all executions present before the restart are still present after it with identical terminal state, and the restart created no new execution (fixture execution cab03ee8-b7bc-4076-a66e-d65ce2379331 = SUCCESS, exit_code 0, stdout=qa-sysb13-e7ec52cebad9-marker also persisted in the container DB).",
+            "Desired State vs actual: the Hub-synced owned Script is present in the local scripts table at revision 1 with sha256 matching the published content sha (6ead4e95a826836f...), and the node returned online/synced after reconnect."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "A second manual execution of the same fixture exists in the retained history because the first harness attempt aborted after issuing the run; the post-restart comparison is therefore \"execution set unchanged\", which is the correct idempotency statement.",
+        "Only `docker restart` was used; a full container recreate (remove + create) is covered by the SYS-12 reusable evidence for E2E-18/AR-04/INV-15, not claimed here."
+      ],
+      "evidence": [
+        "evidence/phase2-ar03-restart.json"
+      ]
+    },
+    {
+      "case_id": "AR-05",
+      "title": "Persistent Volume Missing；恢复后幂等、持久化、Desired State与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-05/negative",
+          "layer": "docker compose + real volume removal + real agent process + hub-api",
+          "status": "PASS",
+          "description": [
+            "The owned named volume qa-sysb13-e7ec52cebad9-data-b was truly removed (`docker volume rm` verified absent) after `docker compose down`; bringing the service up recreated an EMPTY, root-owned volume mountpoint (compose created container bc0823ff5edee89dd00cf6c9c7eacaa3487e7d4872be1a9d45c57c1faed8862c with a NEW immutable ID).",
+            "Explicit failure, no half state / no fake SUCCESS: container exited (State.Status=exited, ExitCode=1) with log \"init agent: unable to open database file (14)\"; state.db does not exist in the recreated volume (False), and the Hub node went status=offline."
+          ]
+        },
+        {
+          "test_id": "20261014-RUNTIME:AR-05/recovery",
+          "layer": "restore volume content + real agent process + agent-sqlite + hub-api",
+          "status": "PASS",
+          "description": [
+            "After restoring the exact volume content and restarting the compose service, the SAME node b4e8d722-b442-498a-9a61-2a88b17f7497 / agent_id agent-6223113c-a548-4df1-b502-65fa49d70cbb came back online/synced with quick_check=ok, identical identity table, sync_state revision not regressed, and no duplicated execution rows (see volume_inode_observation: the recreated volume legitimately gets a new host inode; content identity is what is preserved).",
+            "Desired State vs actual after recovery: the local scripts table matches the previous desired snapshot and a real post-recovery execution 9efda585-4cb8-470c-9d77-f4cbb35933bd completed SUCCESS with stdout=qa-sysb13-e7ec52cebad9-marker (proving the recovered agent actually applies Hub Desired State, not only a reconnected socket)."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Observation (not a pass/fail criterion): while the agent was dead, the Hub node record showed status=offline but retained sync_status=synced. This is recorded as-is; no assertion was made on that field.",
+        "The \"missing volume\" seam used is a destroyed-then-recreated named volume whose mountpoint is empty and not writable by uid 65534; a missing mount entirely rejected by the container runtime is a different failure path and was not forced."
+      ],
+      "evidence": [
+        "evidence/phase4-ar05-missing-volume.json"
+      ]
+    },
+    {
+      "case_id": "INV-13",
+      "title": "Native 与 Docker 共享 Agent Core",
+      "canonical_before": "NOT_RUN (repair build; legacy baseline PARTIAL excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:INV-13",
+          "layer": "identical repair Agent binary + shared Agent Core behaviour on native and docker deployment modes",
+          "status": "PASS",
+          "description": [
+            "Same binary: the running Docker Agent process image sha256 (d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add, resolved via /proc/<pid>/root/opt/nodesteer/nodesteer-agent) and the protected native-4 repair Agent binary (/opt/nodesteer-repair-20260930-101945/agent/nodesteer-agent) both equal the pinned repair Agent digest d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add.",
+            "Same CLI: `--help` output body (everything after the argv[0] usage line) is byte-identical on both deployment modes (sha 69314412f51d54af766ae154a2eab26e6e92748c2f62352623e898c69342e191); only the first line differs because it echoes argv[0].",
+            "Same local store schema: the Docker agent data dir and the native repair agent data dir expose identical SQLite objects (schema sha256 0797ae161da8b8b19fcef58d594155a5174ddcd540678098aabca7e7becf6a0e on both, identical table set).",
+            "Same capability model and execution path: Hub-reported capability KEY SETS are identical for the docker node and the native node (values differ by design: docker disables application_deploy/host_filesystem/managed_systemd/agent_upgrade); and one identical Script executed on both modes produced SUCCESS with the same journal shape (docker row ['cab03ee8-b7bc-4076-a66e-d65ce2379331', 'SUCCESS', 0, 'qa-sysb13-e7ec52cebad9-marker', '882d1cde-aab2-48d0-85b9-99dac989c138', 1, 'd5e0beb7-2602-4309-8712-a8a020435170', 'manual', 1, 0] vs native execution a25c9e76-3d8b-4153-9d24-126b05b38047)."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "shared-core is demonstrated through identical binary + CLI + store schema + capability key set + identical script execution semantics on the same host; no separate ContainerHostAdapter (Host Integration) path was exercised (that is SYS-54/SYS-55/INV-14, environment_infeasible).",
+        "The native comparison target is the pre-existing repair native-4 agent (a benign owned Script was executed through the Hub; the unit was never restarted)."
+      ],
+      "evidence": [
+        "evidence/phase5-inv13-shared-core.json"
+      ]
+    }
+  ],
+  "harness_notes": [
+    "The pinned image was absent from the designated node native-4 daemon (only a 2-week-old unrelated image was present). It was transferred from native-2 (192.168.100.206) with a read-only `docker save | docker load` stream, verified to load with the EXACT digest sha256:ecd4dd9f... and the exact agent binary sha d55dc5cd..., used, and then removed at cleanup to restore the native-4 daemon baseline. No pull/rebuild/retag was performed; native-2 daemon state was not modified.",
+    "Harness bugs hit and corrected during the run (no product impact): (1) an initial DB reader passed the data dir instead of state.db; (2) `/api/tasks/{id}/run` returns a bare JSON array of executions, not {\"executions\": [...]}; (3) the CLI-help comparison initially hashed argv[0] and needed the usage line stripped.",
+    "All Hub mutations used the scoped :18080 client with a 0600-credentials gate; no credential value was written to evidence (the agent credential in the identity table is redacted to a sha256 prefix).",
+    "Concurrency: only native-4 was used for owned resources; other batches' nodes/containers (sysb02/sysb12 child nodes, Host001 on native-2) were never touched."
+  ],
+  "cleanup_summary": {
+    "hub_objects_deleted_200_get404": [
+      {
+        "type": "task",
+        "id": "940d854d-7da1-4fcb-b276-778ede0f1a55",
+        "name": "qa-sysb13-e7ec52cebad9-task-a",
+        "delete": 200,
+        "get_after": 404
+      },
+      {
+        "type": "task",
+        "id": "9e5de5c7-c33c-419f-88f9-791b07049e85",
+        "name": "qa-sysb13-e7ec52cebad9-task-b",
+        "delete": 200,
+        "get_after": 404
+      },
+      {
+        "type": "task",
+        "id": "b1f2778b-13f8-4f41-97c1-3bdea34b1ff0",
+        "name": "qa-sysb13-e7ec52cebad9-task-native",
+        "delete": 200,
+        "get_after": 404
+      },
+      {
+        "type": "script",
+        "id": "882d1cde-aab2-48d0-85b9-99dac989c138",
+        "name": "qa-sysb13-e7ec52cebad9-script",
+        "delete": 200,
+        "get_after": 404
+      }
+    ],
+    "nodes_deleted_200_get404": [
+      {
+        "key": "A",
+        "id": "d5e0beb7-2602-4309-8712-a8a020435170",
+        "delete": 200,
+        "get_after": 404
+      },
+      {
+        "key": "B",
+        "id": "b4e8d722-b442-498a-9a61-2a88b17f7497",
+        "delete": 200,
+        "get_after": 404
+      }
+    ],
+    "runtime": {
+      "removed_containers": [
+        {
+          "key": "A",
+          "id": "fa8b374172ae6f3e7f287430b5c8196fddb0b5046d7bd06693d205a7d26a56da",
+          "removed": true
+        }
+      ],
+      "containers_absent": true,
+      "network_absent": true,
+      "volume_absent": true,
+      "root_absent": true,
+      "root_before_removal": "65026 13449154 root 700",
+      "pinned_image_present": true,
+      "other_images": [
+        "ecd4dd9f8300 nodesteer-qa/agent-host:f174890c3846",
+        "93d27860a380 qa-20260930-101945-env-agent:dddee4f0"
+      ],
+      "remaining_containers": [],
+      "remaining_volumes": [],
+      "remaining_networks": [
+        "bridge",
+        "host",
+        "none"
+      ]
+    },
+    "protected_nodes_after": {
+      "native-1": {
+        "status": "online",
+        "sync_status": "synced"
+      },
+      "native-2": {
+        "status": "online",
+        "sync_status": "synced"
+      },
+      "native-3": {
+        "status": "online",
+        "sync_status": "synced"
+      },
+      "native-4": {
+        "status": "online",
+        "sync_status": "synced"
+      }
+    },
+    "cleanup_runtime_snapshot_note": "runtime.pinned_image_present was captured inside the cleanup phase; the imported pinned image was then explicitly removed to restore the native-4 daemon baseline (see final_absence.native4_daemon.pinned_image_absent_after_cleanup=true).",
+    "final_absence": {
+      "captured_at_utc": "2026-10-14T10:04:53Z",
+      "hub": {
+        "owned_node_names_absent": true,
+        "owned_node_gets_404": true,
+        "node_gets": {
+          "A": {
+            "id": "d5e0beb7-2602-4309-8712-a8a020435170",
+            "get_http": 404
+          },
+          "B": {
+            "id": "b4e8d722-b442-498a-9a61-2a88b17f7497",
+            "get_http": 404
+          }
+        },
+        "protected_nodes": {
+          "native-1": {
+            "status": "online",
+            "sync_status": "synced"
+          },
+          "native-2": {
+            "status": "online",
+            "sync_status": "synced"
+          },
+          "native-3": {
+            "status": "online",
+            "sync_status": "synced"
+          },
+          "native-4": {
+            "status": "online",
+            "sync_status": "synced"
+          }
+        },
+        "protected_all_online_synced": true
+      },
+      "native4_daemon": {
+        "images": [
+          "93d27860a380 qa-20260930-101945-env-agent:dddee4f0"
+        ],
+        "pinned_image_absent_after_cleanup": true,
+        "pre_existing_image_present": true,
+        "containers": [],
+        "volumes": [],
+        "networks": [
+          "bridge",
+          "host",
+          "none"
+        ],
+        "only_default_networks": true,
+        "owned_root_absent": true,
+        "no_help_temp_files": true,
+        "owned_network_absent": true,
+        "owned_volume_absent": true
+      },
+      "protected_repair_units": {
+        "native-4_agent_unit": "active",
+        "untouched": true
+      },
+      "notes": [
+        "Primary Hub :8080 was never contacted; every hubapi call is hard-guarded to port 18080.",
+        "The pinned image was imported to native-4 via a read-only `docker save` stream from native-2 (no pull/rebuild/retag) and removed again at cleanup to restore the native-4 daemon baseline."
+      ]
+    }
+  }
+}

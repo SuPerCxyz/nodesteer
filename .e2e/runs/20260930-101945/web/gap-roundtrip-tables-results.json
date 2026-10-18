@@ -1,0 +1,245 @@
+{
+  "config": {
+    "argv": [
+      "/usr/bin/node",
+      "/home/superc/code/nodesteer/web/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "e2e/playwright.config.ts",
+      "--reporter=json",
+      "--grep",
+      "GAP-01|GAP-07|GAP-08"
+    ],
+    "configFile": "/home/superc/code/nodesteer/web/e2e/playwright.config.ts",
+    "rootDir": "/home/superc/code/nodesteer/web/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/superc/code/nodesteer/web/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "gap-ui.spec.ts",
+      "file": "gap-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "GAP-01 Task四类型真实保存及隐藏字段往返",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7055,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-03T00:51:15.193Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e7bf0fd7afce34bc30c5-ffcc004c5c71c018fd27",
+          "file": "gap-ui.spec.ts",
+          "line": 42,
+          "column": 1
+        },
+        {
+          "title": "GAP-07 Audit真实服务端分页与跨页搜索",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5689,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeDisabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button', { name: /^跳转到上一页$/ })\nExpected: disabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeDisabled\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button', { name: /^跳转到上一页$/ })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeDisabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button', { name: /^跳转到上一页$/ })\nExpected: disabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeDisabled\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button', { name: /^跳转到上一页$/ })\u001b[22m\n\n    at /home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts:290:26",
+                    "location": {
+                      "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                      "column": 26,
+                      "line": 290
+                    },
+                    "snippet": "  288 |   await pageSize.click(); await page.getByRole('option', { name: '10', exact: true }).click()\n  289 |   const next = page.getByRole('button', { name: /^跳转到下一页$/ }), previous = page.getByRole('button', { name: /^跳转到上一页$/ }), first = page.getByRole('button', { name: /^跳转到第一页$/ })\n> 290 |   await expect(previous).toBeDisabled(); await expect(next).toBeEnabled()\n      |                          ^\n  291 |   const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/audit' && new URL(r.url()).searchParams.get('offset') === '10')\n  292 |   await next.click(); const actual = await response, rows = await actual.json() as { id: string; resource_id: string; detail: string; action: string; resource: string }[]\n  293 |   await expect(previous).toBeEnabled(); await expect(page.locator('table')).toBeVisible()"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                        "column": 26,
+                        "line": 290
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeDisabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button', { name: /^跳转到上一页$/ })\nExpected: disabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeDisabled\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button', { name: /^跳转到上一页$/ })\u001b[22m\n\n\n  288 |   await pageSize.click(); await page.getByRole('option', { name: '10', exact: true }).click()\n  289 |   const next = page.getByRole('button', { name: /^跳转到下一页$/ }), previous = page.getByRole('button', { name: /^跳转到上一页$/ }), first = page.getByRole('button', { name: /^跳转到第一页$/ })\n> 290 |   await expect(previous).toBeDisabled(); await expect(next).toBeEnabled()\n      |                          ^\n  291 |   const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/audit' && new URL(r.url()).searchParams.get('offset') === '10')\n  292 |   await next.click(); const actual = await response, rows = await actual.json() as { id: string; resource_id: string; detail: string; action: string; resource: string }[]\n  293 |   await expect(previous).toBeEnabled(); await expect(page.locator('table')).toBeVisible()\n    at /home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts:290:26"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-03T00:51:22.317Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts/gap-ui-GAP-07-Audit真实服务端分页与跨页搜索-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                    "column": 26,
+                    "line": 290
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e7bf0fd7afce34bc30c5-7d5f2ecac957b91b7c33",
+          "file": "gap-ui.spec.ts",
+          "line": 285,
+          "column": 1
+        },
+        {
+          "title": "GAP-08 所有11表隐藏全部可隐藏列并刷新恢复",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 17314,
+                  "error": {
+                    "message": "TimeoutError: locator.click: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('menuitemcheckbox').nth(1)\u001b[22m\n\u001b[2m    - locator resolved to <div tabindex=\"-1\" aria-checked=\"true\" data-state=\"checked\" role=\"menuitemcheckbox\" data-orientation=\"vertical\" data-radix-collection-item=\"\" data-slot=\"dropdown-menu-checkbox-item\" class=\"relative flex cursor-default items-center gap-2 rounded-sm py-1.5 ps-8 pe-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 capitalize\">…</div>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not stable\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is not stable\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 100ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m  - element was detached from the DOM, retrying\u001b[22m\n",
+                    "stack": "TimeoutError: locator.click: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('menuitemcheckbox').nth(1)\u001b[22m\n\u001b[2m    - locator resolved to <div tabindex=\"-1\" aria-checked=\"true\" data-state=\"checked\" role=\"menuitemcheckbox\" data-orientation=\"vertical\" data-radix-collection-item=\"\" data-slot=\"dropdown-menu-checkbox-item\" class=\"relative flex cursor-default items-center gap-2 rounded-sm py-1.5 ps-8 pe-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 capitalize\">…</div>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not stable\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is not stable\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 100ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m  - element was detached from the DOM, retrying\u001b[22m\n\n    at /home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts:329:94",
+                    "location": {
+                      "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                      "column": 94,
+                      "line": 329
+                    },
+                    "snippet": "  327 |     const options = page.getByRole('menuitemcheckbox'), labels = await options.allTextContents(), baseline = await options.evaluateAll(items => items.map(item => item.getAttribute('aria-checked') === 'true'))\n  328 |     for (let i = 0; i < labels.length; i++) {\n> 329 |       if (await options.nth(i).getAttribute('aria-checked') === 'true') await options.nth(i).click()\n      |                                                                                              ^\n  330 |       if (!(await options.count())) await view.click()\n  331 |     }\n  332 |     await page.keyboard.press('Escape')"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                        "column": 94,
+                        "line": 329
+                      },
+                      "message": "TimeoutError: locator.click: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('menuitemcheckbox').nth(1)\u001b[22m\n\u001b[2m    - locator resolved to <div tabindex=\"-1\" aria-checked=\"true\" data-state=\"checked\" role=\"menuitemcheckbox\" data-orientation=\"vertical\" data-radix-collection-item=\"\" data-slot=\"dropdown-menu-checkbox-item\" class=\"relative flex cursor-default items-center gap-2 rounded-sm py-1.5 ps-8 pe-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 capitalize\">…</div>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not stable\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is not stable\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 100ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m  - element was detached from the DOM, retrying\u001b[22m\n\n\n  327 |     const options = page.getByRole('menuitemcheckbox'), labels = await options.allTextContents(), baseline = await options.evaluateAll(items => items.map(item => item.getAttribute('aria-checked') === 'true'))\n  328 |     for (let i = 0; i < labels.length; i++) {\n> 329 |       if (await options.nth(i).getAttribute('aria-checked') === 'true') await options.nth(i).click()\n      |                                                                                              ^\n  330 |       if (!(await options.count())) await view.click()\n  331 |     }\n  332 |     await page.keyboard.press('Escape')\n    at /home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts:329:94"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-03T00:51:28.365Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/nodesteer-e2e-20260930-101945-7wksl0_x/playwright-artifacts/gap-ui-GAP-08-所有11表隐藏全部可隐藏列并刷新恢复-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                    "column": 94,
+                    "line": 329
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e7bf0fd7afce34bc30c5-2ef220054c947f379711",
+          "file": "gap-ui.spec.ts",
+          "line": 308,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-03T00:51:14.644Z",
+    "duration": 31131.876999999997,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}

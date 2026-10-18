@@ -1,0 +1,150 @@
+{
+  "run": "qa-resume-20261008-workflows",
+  "date": "2026-10-08",
+  "authority": "http://192.168.100.209:18080",
+  "scope": [
+    "Repair Hub only; no primary :8080 requests.",
+    "UI-created resources used unique qa-resume-20261008-* names and only native-3 ID 37989297-3bc8-4c0c-b302-7c6efbdba630.",
+    "No original Node labels, roles, sharing settings, or other Agent resources changed. No source or central .e2e state files changed."
+  ],
+  "precondition": {
+    "native3": "online/synced",
+    "normal_ui_login": "PASS",
+    "private_connection_file_mode": "0600",
+    "credentials_or_token_in_evidence": false
+  },
+  "canonical_cases": [
+    {
+      "case_id": "E2E-01",
+      "status": "PASS_FOR_REQUESTED_CONTINUOUS_UI_PATH",
+      "actual": "UI created an isolated static Group with only native-3, created a Script and Script Task targeting that Group, entered a non-sensitive parameter override in Run Now, ran on native-3, saw SUCCESS/output in Execution Logs, and searched Audit by the same Task ID.",
+      "covered_dimensions": [
+        "Script and Task UI create and association",
+        "Group target membership is native-3 only",
+        "Task Run UI request POST /api/tasks/{taskID}/run returned HTTP 200 and execution ID was captured",
+        "Execution was SUCCESS on native-3; stdout contained the supplied parameter marker and Script environment marker",
+        "Execution detail UI displayed the marker output and SUCCESS",
+        "Audit API returned the exact Task's execute entry; Audit UI search by exact Task ID showed correlated create/execute rows"
+      ],
+      "remaining_dimensions": [],
+      "evidence": [
+        "workflow-results-qa-resume-20261008-workflow-f6d35801.json",
+        "workflow-results-qa-resume-20261008-workflow-f235ae0f.json",
+        "execution-logs.png",
+        "task-audit.png",
+        "audit-verification.json"
+      ]
+    },
+    {
+      "case_id": "E2E-03",
+      "status": "PARTIAL",
+      "actual": "The same Script Task used a Run Now parameter override and Script environment value; both markers were observed in native-3 stdout. Script working_dir was set to /tmp but its actual process cwd was not observed. run_user was left at its default and was not tested.",
+      "covered_dimensions": [
+        "Task parameter override through the UI and real Agent process",
+        "Script environment variable consumed by the real Agent process",
+        "Execution Logs UI matched the same marker output"
+      ],
+      "remaining_dimensions": [
+        "Actual working-directory consumption / pwd oracle",
+        "Actual run-user consumption and expected identity oracle"
+      ],
+      "evidence": [
+        "workflow-results-qa-resume-20261008-workflow-f6d35801.json",
+        "workflow-results-qa-resume-20261008-workflow-f235ae0f.json",
+        "execution-logs.png"
+      ]
+    },
+    {
+      "case_id": "E2E-04",
+      "status": "NOT_RUN",
+      "covered_dimensions": [],
+      "remaining_dimensions": ["Agent-owned Interval execution while offline and recovery without duplicate execution."],
+      "evidence": []
+    },
+    {
+      "case_id": "E2E-05",
+      "status": "NOT_RUN",
+      "covered_dimensions": [],
+      "remaining_dimensions": ["Cron slot timing, multiple slots, Hub non-duplication, and idempotency."],
+      "evidence": []
+    },
+    {
+      "case_id": "E2E-06",
+      "status": "PARTIAL",
+      "covered_dimensions": ["Future one-time run in Asia/Shanghai was accepted and triggered once on native-3."],
+      "remaining_dimensions": ["Past-time and timezone boundaries; SKIP/RUN_ONCE misfire behavior."],
+      "evidence": ["task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json"]
+    },
+    {
+      "case_id": "E2E-07",
+      "status": "PARTIAL",
+      "covered_dimensions": ["Schedule enable and disable UI state changes; one-time Schedule was disabled after its successful slot."],
+      "remaining_dimensions": ["A future repeatable slot was not observed after disable; a one-time Schedule cannot prove suppression of a later slot."],
+      "evidence": ["task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json", "crosspage-delete-results-qa-resume-20261008-crosspage-5bebfff5.json"]
+    }
+  ],
+  "cross_page_and_crud": {
+    "group_target": "PASS: Group created in UI with exact native-3 membership and used as Script Task target.",
+    "task_crud": "PASS: A separate exact-node Command Task was edited, disabled, re-enabled, delete-canceled with GET 200, then confirmed deleted with GET 404.",
+    "schedule_lifecycle": "PASS: Task detail opened Schedule creation with that Task preselected; disabled one-time Agent Schedule was updated/enabled, triggered once with SUCCESS and marker on native-3, then disabled; delete-cancel preserved the exact resource and confirm removed it with GET 404.",
+    "cross_page_link": "PASS: Task detail exposed the exact Schedule href; Schedule detail showed its Task name. A later removal-link assertion was not reached due Task detail navigation timeout.",
+    "delete_cancel_network_counts": "Schedule: an instrumented run passed zero DELETE + GET 200 after Cancel and exactly one DELETE + GET 404 after Confirm; the runner timed out on the subsequent Task detail page before serializing those in-memory counts. The partial control-flow checkpoint is crosspage-partial-assertions.json. Task: Cancel + GET 200 and Confirm + GET 404 were tested in another run, but exact request counts were not instrumented."
+  },
+  "schedule_execution": {
+    "schedule_id": "53aa77d6-87d5-472d-985a-f25a449d6b54",
+    "task_id": "cf3b756e-4229-4084-8a08-2d6cc0ed1838",
+    "execution_id": "b2cfe3d5-362f-4e71-a675-144098ac28c0",
+    "trigger_type": "schedule",
+    "node_id": "37989297-3bc8-4c0c-b302-7c6efbdba630",
+    "status": "SUCCESS",
+    "marker_observed": true,
+    "schedule_type": "one_time",
+    "owner": "agent",
+    "timezone": "Asia/Shanghai",
+    "evidence": ["task-schedule-results-qa-resume-20261008-task-schedule-ad0dc532.json", "scheduled-execution-qa-resume-20261008-task-schedule-ad0dc532.png"]
+  },
+  "cleanup": {
+    "exact_ids_checked": 25,
+    "all_get_404": true,
+    "evidence": ["cleanup-get404-verification.json", "orphan-cleanup.json"],
+    "resource_ledgers": [
+      "ledger-qa-resume-20261008-task-schedule-ad0dc532.json",
+      "ledger-qa-resume-20261008-crosspage-e265cfde.json",
+      "ledger-qa-resume-20261008-crosspage-5bebfff5.json"
+    ]
+  },
+  "harness_failures_not_product_defects": [
+    {"run": "ec8657ee", "reason": "Create response body read after hard navigation; orphan Group recovered by exact random name, ID recorded and deleted, GET 404."},
+    {"run": "3ba7721b", "reason": "Run observer route had an extra /api path segment; actual UI Run still produced SUCCESS with both markers, exact Task ID was recovered, then resources cleaned."},
+    {"run": "59432ea2", "reason": "Audit Task ID locator matched two rows in strict mode; later run changed locator to first exact match and UI Audit passed."},
+    {"run": "01955bd9", "reason": "Authenticated Task page hard navigation waited for load and timed out after Run/Logs/Audit passed."},
+    {"run": "f235ae0f", "reason": "Authenticated Task detail hard navigation timed out after Task edit/disable/enable passed."},
+    {"run": "f6d35801", "reason": "Authenticated Task list hard navigation timed out after Run/Logs/Audit passed."},
+    {"run": "223a8f27", "reason": "Runner incorrectly required a main landmark on Sign In; no resource was created."},
+    {"run": "a87978c3", "reason": "Runner targeted a nonexistent Task Description field; Task was exact-ID deleted and GET 404 verified."},
+    {"run": "e265cfde", "reason": "Schedule checkbox count was page-wide; cross-page links passed, exact resources were cleaned and GET 404 verified."},
+    {"run": "5bebfff5", "reason": "Schedule link/update/cancel/delete gates passed; subsequent Task detail hard navigation timed out before link-removal and Task delete-cancel counter checks."}
+  ],
+  "navigation_diagnostic": {
+    "actual_result": "No-fixture authenticated sidebar SPA click and direct hard navigation to /tasks both rendered the Task heading, main region, and table; /api/me and /api/tasks returned HTTP 200; no failed requests or console errors were observed.",
+    "evidence": ["navigation-diagnostic.json", "navigation-diagnostic-2.json", "tasks-navigation-spa-click.png", "tasks-navigation-direct-commit.png"]
+  },
+  "source_references": [
+    "docs/PRODUCT.md sections 20-23, 29-32, 43, 45-46",
+    "docs/ARCHITECTURE.md section 67",
+    "web/src/features/tasks/index.tsx:526",
+    "web/src/features/tasks/index.tsx:634",
+    "web/src/features/tasks/index.tsx:1390",
+    "web/src/features/editors/index.tsx:74",
+    "web/src/features/editors/index.tsx:382",
+    "web/src/features/editors/index.tsx:756",
+    "web/src/features/catalog/index.tsx:1151",
+    ".e2e/runs/20260930-101945/repair/feature-inventory.json"
+  ],
+  "coverage_claim": "This summary records the specific canonical cases and dimensions above; it does not claim the 504-case suite or the complete WF-SCRIPT/WF-SCHEDULE matrices are finished.",
+  "recommended_follow_up": [
+    "Complete E2E-03 with a non-sensitive PWD marker and an approved real-user identity oracle for run_user.",
+    "Run remaining safe p07/p09/p12/p24 UI cases only after matching each case to current canonical dimensions and exact resource ownership; exclude shared settings, users, labels, and pre-existing resources.",
+    "Keep E2E-04 interval/offline recovery, E2E-05 cron/idempotency, E2E-06 timezone/misfire boundaries, and E2E-07 suppression of a future slot after disable as remaining Schedule coverage."
+  ]
+}

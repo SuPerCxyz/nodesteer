@@ -1,0 +1,77 @@
+{
+  "batch_id": "qa-resume-20261014-api-p-api",
+  "owner": "api",
+  "phase": "COMPLETE_PENDING_ROOT_REVIEW",
+  "started_at_utc": "2026-10-15T08:30:00Z",
+  "updated_at_utc": "2026-10-15T09:05:00Z",
+  "authority": {
+    "repair_authority_readonly": "http://192.168.100.209:18080",
+    "isolated_instances": [
+      "http://192.168.100.209:18083 (session_ttl=24h, nonce papim803e7aad, tunnel 38383)",
+      "http://192.168.100.209:18084 (session_ttl=3s, nonce papitt20430508, tunnel 38384)"
+    ],
+    "version_parity": "binary sha256 == repair binary sha256 (164ea4ac…); index.html sha256 == repair (612c23ba…)"
+  },
+  "scope_authorization": "Root 指定：角色/用户维度必须在可整体销毁的隔离 Hub 实例上做（产品无删除用户 API），同一 repair 二进制，端口 18083（顺延），独立 data_dir/配置，临时进程，收尾必须销毁并核验。",
+  "steps": [
+    {"name": "只读台账/源码复核：AUTH-MANAGEMENT/AUTH-USERS/AUTH-RELAY/API-CONTRACT 的 remaining_dimensions 与实现契约", "status": "done"},
+    {"name": "创建隔离实例：main 18083（24h TTL）+ ttl 18084（3s TTL），核验二进制/首页 SHA 与 repair 一致、config 0640、data_dir 0750", "status": "done", "result": "PASS"},
+    {"name": "重建真实增强项：overwrite 后清理临时文件、无 systemd 单元", "status": "done"},
+    {"name": "AUTH-MANAGEMENT：28 端点 × {匿名/非法Bearer/已撤销} 401 矩阵 + natural TTL 过期矩阵 + Operator/Viewer 44 条越权 403 + 无副作用", "status": "done", "result": "PASS"},
+    {"name": "AUTH-USERS：Admin 创建 operator/viewer（1→3）、PUT 角色/口令生效、operator/viewer 10 条 403", "status": "done", "result": "PASS"},
+    {"name": "AUTH-RELAY：两个自建 owned Agent 真实上传/下载，Hub 暂存物理 size/SHA、目标文件 size/SHA、成功与 cancel 清理、12 条冒充矩阵", "status": "done", "result": "PASS"},
+    {"name": "API-CONTRACT：公共端点、27 端点未认证方法矩阵、26 路径 admin 方法矩阵、24 条必填错误、CRUD 全链路、Artifact multipart 往返、observations", "status": "done", "result": "PASS"},
+    {"name": "收尾：停 Agent 与实例进程、删 data_dir/配置/日志/临时目录、核验端口与目录不存在、旁证 :8080/:18080/agent.service 未受影响", "status": "done", "result": "ALL_INSTANCES_DESTROYED_AND_FIXTURES_REMOVED"},
+    {"name": "证据目录凭据泄露扫描", "status": "done", "result": "CLEAN"}
+  ],
+  "case_status": {
+    "AUTH-MANAGEMENT": {"before": "PARTIAL", "proposed_after": "PASS", "confidence": "high"},
+    "AUTH-USERS": {"before": "PARTIAL", "proposed_after": "PASS", "confidence": "high"},
+    "AUTH-RELAY": {"before": "PARTIAL", "proposed_after": "PASS", "confidence": "high"},
+    "API-CONTRACT": {"before": "PARTIAL", "proposed_after": "PASS", "confidence": "medium-high", "note": "10 条契约偏差 findings，均与源码实现一致，非本批次新引入缺陷"}
+  },
+  "key_results": {
+    "auth_management": {
+      "endpoints_x_anon_invalid_revoked": "28 × 3 全部 401",
+      "natural_ttl": "session_ttl=3s：过期前 /api/me 200，等待 6s 后 28/28 401",
+      "admin_only_write_403": "44/44 = 403",
+      "state_invariance": true
+    },
+    "auth_users": {
+      "admin_post_create_http": 200,
+      "users_count": "1 → 3",
+      "admin_put_role_effective": "旧 token /api/me 立即变 operator；新口令重登 200 role=operator",
+      "operator_viewer_403": "10/10 = 403"
+    },
+    "auth_relay": {
+      "agents_online": {"src": "online", "dst": "online"},
+      "transfer_final_status": "SUCCESS",
+      "source_size_sha": "524288 / 7541b357…（每次运行重新生成）",
+      "destination_file_match": true,
+      "hub_staged_blob_match": true,
+      "cleanup_verified": true,
+      "impersonation": {
+        "anon": 401, "user_bearer": 401, "user_bearer_as_agent_token": 401,
+        "previous_agent_download": 403, "other_agent_upload": 403,
+        "mismatched_id_token": 401, "wrong_method": 405, "unknown_transfer": 404
+      },
+      "existing_transfer_state_unchanged": true
+    },
+    "api_contract": {
+      "unauth_non_options_401": "27/27 全部 401",
+      "options_204": "27/27 全部 204",
+      "required_field_errors": "24 条统一 {\"error\": …}",
+      "crud_ok": ["group", "script", "task", "application", "schedule"],
+      "artifact_roundtrip_sha_match": true
+    }
+  },
+  "outputs": ["case-result.json", "progress.json", "instance-ledger.json", "fixture-ledger.json", "evidence/", "terminal/", "runners/"],
+  "unverified_or_limitations": [
+    "AUTH-RELAY 未覆盖多目标部分失败 + retry/target_id 分支、分片续传（Content-Range 断点与 offset mismatch 409）、HTTPS/TLS Gateway 形态。",
+    "API-CONTRACT 未覆盖 OIDC 启用后成功回调（需真实 IdP）、/metrics 启用态、application health_check 各类型、artifact 多架构与重复版本、node/group/remote/and target-condition 分支、list 端点 limit/offset 语义。",
+    "隔离实例在收尾时已整体销毁，上述未覆盖项如需补测必须重建实例。",
+    "repair authority（18080）本批次仅做只读版本比对，未执行任何写操作；历史 Transfer 未被修改。"
+  ],
+  "host_resources": "两个隔离实例、两个 owned Agent 与全部 fixture 已销毁并核验；:8080 与 repair :18080 未受影响（repair pid 5952 存活），nodesteer-agent.service 未被触碰。",
+  "secrets": "凭据仅存在于 0600 临时文件（已删除）与 Hub 运行时；未写入 evidence/terminal，未输出明文；evidence 目录泄露扫描 CLEAN。"
+}

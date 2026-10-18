@@ -1,0 +1,56 @@
+{
+  "at": "2026-10-12T15:13:43.836396+00:00",
+  "status": "APPROVED_ONE_UNIQUE_PENDING_NODE_CLIPBOARD_UI_TEST",
+  "grant_id": "ROOT-P05A-10-CLIPBOARD-PENDING-NODE-20261012-01",
+  "scope": "P05A-10正常真实Clipboard+拒绝真实copyfailed+恢复与清理；P05A-12仅pending读回，不宣称HELLO完成",
+  "authorization_basis": "既有504场景Web E2E临时owned fixture授权；没有永久User或Host权限改变",
+  "executor": "/root/luna_web_cases",
+  "model": "gpt-6-luna",
+  "write_scope": "qa-resume-20261010-web/batch23/ only",
+  "authority": "repair18080 via existing owned38181 transport",
+  "fixture": {
+    "nonce": "dac06b349112",
+    "node_name": "qa-copy-dac06b349112",
+    "node_ip": "198.51.100.237",
+    "hub_address": "http://192.168.100.209:18080",
+    "expected_status": "pending",
+    "expected_agent_hello": false
+  },
+  "budget": {
+    "ui_enrollment_posts_max": 1,
+    "new_pending_nodes_max": 1,
+    "exact_delete_total_max": 1,
+    "fallback_delete_allowed_only_if_ui_request_not_sent": true,
+    "agent_install_hello_run_other_resource_writes": 0
+  },
+  "root_source_review": "internal/hub/node.go:43-73，同名忽略大小写或同IP会复用；必须临POST再真实GET列表确认两者无冲突，并保存existingIDs保护集。不能用Mock/注入response等价真实copy。",
+  "pre_post_guards": [
+    "dedicatedWebBearer /me200 admin，origin/CDP/profile专属且一致；无需新Login",
+    "真实GETNode list200: no samecaseinsensitiveName/IP；所有原Node IDs保留",
+    "仅UI填写上述字段，唯一一次Generate POST；任何响应丢失只用GET精确name/IP与beforeIDs reconcile，禁止重试POST",
+    "exactreturnedNodeID新ID、不在原beforeIDs、expectedname/IP、pending，AgentID与响应一致才能后续delete"
+  ],
+  "clipboard": [
+    "grant ownprofile exactorigin clipboard perms→实际Copyclick→readText memory string equality/len/SHA +freshCopiedfeedback",
+    "write nonsecret unique sentinel；deny onlyexactorigin/context clipboardwrite；真实Copyclick；freshcopyfailedfeedback、sentinel SHA remains",
+    "restorepermission，真实Copy→同bytes成功；finally clipboard空0length并reset ownpermissions"
+  ],
+  "secret_handling": [
+    "RegistrationToken/AgentToken/generatedcommands/clipboardcontent仅进程或browser内存，不记录body/DOM原文/rawsnapshot/截图/CLI含secret",
+    "publicevidence仅caseID/status/requestcount/len/SHA/equality/feedback类别/NodeID或hash，publicidentity可记录；非认证凭据",
+    "exception只输出预定义错误class，不打印HTTPresponse/requestbody/secrettext"
+  ],
+  "cleanup": [
+    "先确认exactownpendingNode，无Group/App/activeTransfer新增引用",
+    "优先实际UI删除exactID；仅UI没有发出DELETE且不可用允许exactAPI单次fallback，不能双delete；GET404确认",
+    "丢失create响应按nonceName/IP/newIDs定位唯一资源；冲突停止不删protected",
+    "protectedNodes只读健康前后，existingforward/profile保留；不退出其他会话"
+  ],
+  "excluded": [
+    "Agentinstall/HELLO/P05A-12 fullPASS",
+    "User/roles/password",
+    "原Node重纳管",
+    "Run/Task/Schedule/App/Artifact/Transfer",
+    "任何产品源或Git/OpenSpecArchive"
+  ]
+}

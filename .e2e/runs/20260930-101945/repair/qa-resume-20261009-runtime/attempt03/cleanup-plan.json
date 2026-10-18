@@ -1,0 +1,40 @@
+{
+  "updated_at": "2026-10-09T09:11:55Z",
+  "status": "PREPARED_NOT_EXECUTED_WAITING_ROOT_REVIEW",
+  "evidence_preflight": "cleanup-preflight-readonly.json",
+  "endpoint": "repair :18080 only",
+  "owned_targets": {
+    "child_node_id": "c77b8a84-8085-4ea8-8532-de171761854b",
+    "child_agent_id": "agent-426aa507-af4c-4005-858f-ce497d2fc67d",
+    "owner_nonce": "870358cd92ee",
+    "root": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee",
+    "child_agent_unit": "nodesteer-qa-e2e-20261009-p0-002-native1-870358cd92ee.service",
+    "app_id": "2e4fecee-afc8-43a8-9d93-dd36cfc10bf9",
+    "app_unit": "nodesteer-qa-e2e-20261009-p0-002-app-870358cd92ee.service",
+    "artifact_ids": [
+      "0c74fcee-7689-49a4-8206-3fa5f6eba746",
+      "5517ff25-65b1-4da3-b5d7-a3f86f0de73d",
+      "93ccd9eb-14b6-4a26-bceb-3f4c13de6061"
+    ]
+  },
+  "sequence": [
+    "Snapshot exact current child/app/artifacts/tasks and original Native-1 parent service fingerprints.",
+    "Through Native-1 only, verify exact Agent Unit PID/startticks/UID/argv/config/exeSHA/cgroup and exact App Unit PID/argv/cgroup; stop only these two owned QA Units.",
+    "Remove only this App assignment; DELETE exact App and verify GET 404.",
+    "DELETE only the three listed owned Artifacts and verify each GET 404.",
+    "DELETE exact QA child Node and verify GET 404; original four Nodes and baseline/repair Agents unchanged.",
+    "Remove only exact App Unit file and daemon-reload; stop/reset-failed exact transient Agent Unit and verify no loaded Unit.",
+    "Delete exact QA root only after owner.json nonce/Node/Agent/root/binary and no symlink realpath guards; verify absent.",
+    "Read-only final oracle: App/Node/Artifacts GET404, no QA Task, units absent, root absent, original Native-1 baseline and repair Units/owner PIDs unchanged, original four repair nodes online/synced."
+  ],
+  "never_touch": [
+    "primary :8080",
+    "original Hub",
+    "Native-1 baseline PID24684/unit",
+    "Native-1 repair parent PID33342/unit",
+    "Native-2/3/4 or native3/native4 child work",
+    "existing backups",
+    "private connection/credentials files"
+  ],
+  "cleanup_executed": false
+}

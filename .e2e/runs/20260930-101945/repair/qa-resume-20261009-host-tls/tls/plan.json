@@ -1,0 +1,52 @@
+{
+  "run_id": "repair-qa-resume-20261009-host-tls",
+  "nonce": "1358f9a990bd",
+  "stage": "PLAN_CREATED_PREFLIGHT_PENDING",
+  "actual_at": "2026-10-09T09:13:32Z",
+  "authority": "repair Hub http://192.168.100.209:18080 only",
+  "target_native2_node_id": "611c02a5-1859-4465-878b-d543b7f6fdec",
+  "expected_agent_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add",
+  "remote_owned_root": "/opt/qa-resume-20261009-host-tls-1358f9a990bd",
+  "local_private_dir": "/home/superc/code/nodesteer/.e2e/runs/20260930-101945/repair/qa-resume-20261009-host-tls/tls/private",
+  "units": {
+    "child": "nodesteer-qa-tls-1358f9a990bd-child.service",
+    "https_server": "nodesteer-qa-tls-1358f9a990bd-server.service",
+    "managed_app": "nodesteer-qa-tls-1358f9a990bd-app.service"
+  },
+  "paths": {
+    "ca_key": "/opt/qa-resume-20261009-host-tls-1358f9a990bd/private/ca.key",
+    "ca_cert": "/opt/qa-resume-20261009-host-tls-1358f9a990bd/private/ca.crt",
+    "server_key": "/opt/qa-resume-20261009-host-tls-1358f9a990bd/private/server.key",
+    "server_cert": "/opt/qa-resume-20261009-host-tls-1358f9a990bd/private/server.crt",
+    "child_config": "/opt/qa-resume-20261009-host-tls-1358f9a990bd/private/child.yaml",
+    "child_data": "/opt/qa-resume-20261009-host-tls-1358f9a990bd/agent-data",
+    "server_log": "/opt/qa-resume-20261009-host-tls-1358f9a990bd/private/server-access.jsonl",
+    "server_status": "/opt/qa-resume-20261009-host-tls-1358f9a990bd/private/server-status.json",
+    "application_root": "/opt/qa-resume-20261009-host-tls-1358f9a990bd/app",
+    "application_binary": "/opt/qa-resume-20261009-host-tls-1358f9a990bd/app/bin/qa-app",
+    "application_config": "/opt/qa-resume-20261009-host-tls-1358f9a990bd/app/config/qa.env"
+  },
+  "execution_plan": [
+    "Read-only exact target/owner-root/unit/tool/API preflight before first remote write.",
+    "Create unique remote root 0700 and owner manifest with dev/ino/uid/mode; generate CA/server keypair inside private host dir; keys 0600, no key values in Task stdout/logs/argv. Bind only loopback 127.0.0.1 on kernel-selected port.",
+    "Enroll exactly one uniquely named child, create config 0600 with tls_ca_file, independent data_dir, launch only as unique managed systemd child Unit after registration token enters via reviewed secret Task parameter; verify pid/start/uid/argv/exe SHA/cgroup.",
+    "Create real API Application with artifact_id empty, custom HTTPS URL and expected SHA, assign only to child; test absent CA, wrong CA and correct CA via guarded exact child service restart and Application revision bump; inspect exact SHA cache, local artifact record, server GET log and absence of tmp file.",
+    "Exercise a distinct uncached SHA mismatch URL; verify download rejected and no cache/temp pollution.",
+    "Update the same Application with the real managed Artifact ID; cache hit by SHA; deploy through normal Application API; verify unique nodesteer-* Unit, binary/config bytes, health, execution and UI.",
+    "Finally remove only the exact app/unit/artifact/node/task/server and owned root after dynamic owner guards; keep historical executions/audit; verify original four repair Agents unchanged."
+  ],
+  "secret_rules": [
+    "CA private key and server key stay at remote private paths with mode 0600; no private key values in output/evidence.",
+    "Registration Token/Agent Credential never emitted or included in command argv/logs; use a secret Command Task parameter and write exact child config mode 0600.",
+    "Only public CA/server certificates, hashes and paths may be persisted as evidence."
+  ],
+  "preflight_required": [
+    "exact root absent/no symlink; host path owner/dev/ino and /opt capacity",
+    "all exact unit names absent",
+    "openssl availability/version; systemd state; current Native2 health and process/SHA",
+    "Docker image listing command return code and image rows for deferred Host batch",
+    "Task parameter secret substitution path reviewed before token use",
+    "local app/test binary preparation with no install"
+  ],
+  "current_batch_boundary": "TLS setup/recovery only. Host Integration containers remain uncreated; any Host image import/build requires separate Root review."
+}

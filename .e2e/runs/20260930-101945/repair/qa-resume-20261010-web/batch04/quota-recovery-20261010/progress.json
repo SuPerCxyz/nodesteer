@@ -1,0 +1,25 @@
+{
+  "task": "Recover and revoke the retained dedicated browser token after offline route interruption",
+  "captured_at_utc": "2026-10-10T10:36:36.232+00:00",
+  "executor": "gpt-6-luna",
+  "status": "COMPLETE",
+  "tool_availability": "clock and local exec succeeded",
+  "security_event": "security-event.json",
+  "existing_browser_session_reused": true,
+  "new_browser_session_created": false,
+  "fixture_created": false,
+  "token_persisted_only_in_original_browser_storage": true,
+  "logout_verified": true,
+  "logout_http": 200,
+  "same_token_me_http_after_logout": 401,
+  "storage_removed": true,
+  "network_buffer_cleared": true,
+  "ssh_guard_stopped": true,
+  "listener_gone": true,
+  "pending_product_cases": [
+    "P03-10 cold Dashboard offline: previous attempt never mounted Dashboard because offline blocked the lazy authenticated route chunk",
+    "P06-01 Group search is inapplicable with API count 0; source-defined empty state displayed",
+    "P06-09 Cancel footer locator still needs exact Cancel-text scoping"
+  ],
+  "next_harness_plan": "On the same-scope fresh read-only run, load /groups as first protected route; while online hover the real sidebar Dashboard link to trigger TanStack Router intent preload of the route chunk, verify location remains /groups and no dashboard data APIs fire; then set only this browser session offline, click Dashboard, assert actual /api/* failed metadata plus ErrorState/Retry, restore online and Retry to GET 200."
+}

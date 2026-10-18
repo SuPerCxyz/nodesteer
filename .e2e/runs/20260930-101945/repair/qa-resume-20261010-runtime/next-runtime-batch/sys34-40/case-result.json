@@ -1,0 +1,101 @@
+{
+  "completed_at_utc": "2026-10-12 15:58:22 UTC",
+  "grant_id": "ROOT-SYS34-40-PARAM-UI-20261012-01",
+  "actual_resources": {
+    "script_id": "c62129b6-5b5b-4acf-a86f-1f7b743ddefc",
+    "script_revision": 1,
+    "script_task_id": "1eebdc72-2912-46e9-bfc5-5e37d6acd44b",
+    "script_task_revision": 1,
+    "readonly_verifier_task_id": "3742b04e-eb0b-460f-b42c-56e92cba82fa",
+    "business_execution_id": "18dec1a2-cd4e-4096-b280-bdb32cf0a852",
+    "verifier_execution_ids": [
+      "476bcfa4-7ddb-46cc-bb51-c9d4d5a58031",
+      "13583fae-cf90-4a1a-ac3a-b98492c07b04"
+    ]
+  },
+  "actual_budget": {
+    "business_ui_run_posts": 1,
+    "readonly_verifier_run_posts": 2,
+    "internal_attempts": 3,
+    "schedules": 0,
+    "new_nodes_users_apps_artifacts": 0
+  },
+  "cases": [
+    {
+      "case_id": "SYS-34",
+      "canonical_before": "PARTIAL",
+      "proposed_after": "PASS",
+      "covered_dimensions": [
+        "stdout/stderr each had three complete 71680-byte payload chunks",
+        "18 realtime log chunks sequence 0..17 contiguous and stream tags retained",
+        "all three attempt BEGIN/END markers and distinct monotonic start markers reconstructed in both streams",
+        "no execution output truncation; final state-removed marker verified",
+        "same Execution log panel rendered all three attempts and both streams in actual UI"
+      ],
+      "remaining_or_limitations": [],
+      "evidence": [
+        "business-execution-log-oracle.json",
+        "business-ui-detail-evidence.json",
+        "ui-execution-detail.png"
+      ]
+    },
+    {
+      "case_id": "SYS-40",
+      "canonical_before": "PARTIAL",
+      "proposed_after": "PARTIAL",
+      "covered_dimensions": [
+        "one manual Execution retried twice and terminal SUCCESS",
+        "actual monotonic attempt-start gaps measured as 49,763,362ns and 61,448,500ns; no threshold inferred",
+        "three attempt logs present in both streams with full contents and UI feedback",
+        "one task execute audit action retained for the one logical Run"
+      ],
+      "remaining_or_limitations": [
+        "No canonical retry interval threshold was established, so measured gaps are evidence only.",
+        "The single logical execution has one execute audit row; no per-attempt audit records were observed.",
+        "This test did not separately probe unrelated error-boundary branches."
+      ],
+      "evidence": [
+        "business-execution-log-oracle.json",
+        "business-linkage-audit-evidence.json",
+        "business-ui-detail-evidence.json"
+      ]
+    },
+    {
+      "case_id": "FL-05",
+      "canonical_before": "NOT_RUN",
+      "proposed_after": "PASS",
+      "covered_dimensions": [
+        "real Task Run page exposed required qa_value; user filled the nonce and confirmed once",
+        "Agent validated NODESTEER_PARAM_qa_value and emitted only length/SHA/match fields",
+        "one same-ID manual Execution reached SUCCESS and matched API Task/Script/Node revisions and identity",
+        "real UI detail showed same Execution ID, SUCCESS, Task and Node backlinks, and Logs containing three complete attempts on stdout/stderr",
+        "Task execute Audit action verified; Task/Script/Verifier definitions deleted with GET404 and history preserved"
+      ],
+      "remaining_or_limitations": [
+        "Execution detail UI does not display Script ID/revision as a separate backlink; API Execution and Task/Script readbacks verify Script revision 1."
+      ],
+      "evidence": [
+        "business-ui-pre-run-evidence.json",
+        "business-run-api-observation.json",
+        "business-execution-log-oracle.json",
+        "business-linkage-audit-evidence.json",
+        "business-ui-detail-evidence.json",
+        "fixture-cleanup-evidence.json",
+        "final-readonly-cleanup-guard.json"
+      ]
+    }
+  ],
+  "final_cleanup": {
+    "three_definitions_deleted_get404": true,
+    "three_execution_histories_preserved": true,
+    "execute_audit_preserved": true,
+    "fixed_marker_absent_by_postcheck": true,
+    "dedicated_logout_200_same_token_me_401": true,
+    "dedicated_browser_and_profile_removed": true,
+    "shared_forward_untouched": true,
+    "protected_five_online_synced": true
+  },
+  "global_inventory_modified": false,
+  "product_source_modified": false,
+  "result_note": "This is a per-case QA recommendation for Root integration; no global feature inventory was edited."
+}

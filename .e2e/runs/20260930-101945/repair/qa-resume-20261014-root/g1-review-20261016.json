@@ -1,0 +1,124 @@
+{
+  "review_id": "ROOT-G1-REVIEW-20261016",
+  "reviewed_at": "2026-10-16T09:52:02.456749+00:00",
+  "reviewer": "main-agent(root)",
+  "status": "INTEGRATED",
+  "dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261016-g1",
+  "verified_build": "dddee4f0-e2e-repair-20261016",
+  "authorization_basis": "授权清单 G1（隔离可销毁实例；用户要求全力推进）",
+  "verdicts": [
+    {
+      "case_id": "P03-09",
+      "canonical_after": "PASS",
+      "confidence": "high/medium-high",
+      "reason": "真空实例：API 五类资源全 0（含 failed/RUNNING 过滤）；UI 仪表盘与 /executions?status=failed 空态文案逐条核实"
+    },
+    {
+      "case_id": "P04-06",
+      "canonical_after": "PASS",
+      "confidence": "high/medium-high",
+      "reason": "operator/viewer 各 23/23 受限操作真实 403；六页面受限控件计数全 0（admin 正向对照 1）；23×2 次前后 state fingerprint 一致；边界：operator task/run 与 app/deploy→200 真实执行、viewer→403"
+    },
+    {
+      "case_id": "P21-08",
+      "canonical_after": "PASS",
+      "confidence": "high/medium-high",
+      "reason": "operator/viewer GET /api/settings 200、PUT 403 且配置读回不变；/settings 输入框全 disabled、保存按钮计数 0（admin 对照可编辑+保存）"
+    },
+    {
+      "case_id": "P20-04",
+      "canonical_after": "PASS",
+      "confidence": "high/medium-high",
+      "reason": "UI 真实创建成功（toast/API 13→14/末页出现/审计 create）；重复用户名 UI+API 均 400 无新行；空用户名/空密码/缺密码/非法角色 400；role 省略默认 viewer；UI 空值禁用创建；MAIN-USER-EMPTY-PASSWORD 三条路径全部拒绝空密码登录"
+    },
+    {
+      "case_id": "P14P15-12",
+      "canonical_after": "PASS",
+      "confidence": "high/medium-high",
+      "reason": "五操作：admin 5/5=200、operator 5/5=200（真实执行落到 owned child）、viewer 5/5=403；定义修改 admin 200、operator/viewer 403 且定义未改；详情页控件分角色"
+    },
+    {
+      "case_id": "P19-03",
+      "canonical_after": "PASS",
+      "confidence": "high/medium-high",
+      "reason": "六类动作逐类按审计行 id 比对新增：execute/cancel/deploy/upgrade/节点状态 update×2/用户角色+密码 update×2（改密后旧密码失效）；UI 审计页按 execution id 搜索命中唯一行"
+    },
+    {
+      "case_id": "X13",
+      "canonical_after": "PASS",
+      "confidence": "high/medium-high",
+      "reason": "跨页缓存：另一会话改定义后 3s 内不更新、离开返回即拉新；旧会话改角色：旧 token 0.001s 收敛、受限写立即 403；另一标签退出/替换 token：localStorage 清空但保护页 15s 内不跳转、标签自身刷新即收敛 /sign-in（对照：显式 /api/logout 后旧 token 立即 401）"
+    },
+    {
+      "case_id": "X14",
+      "canonical_after": "PASS",
+      "confidence": "high/medium-high",
+      "reason": "pageSize=10 两页跨页勾选保持；「设为维护」确认框 3 节点与 3 条请求 ID 完全一致；筛选命中 1 行计数收缩为 1、清筛选后恢复且无幽灵 ID；末页末项删除 18→17；刷新清空选择；Execution 搜索命中"
+    }
+  ],
+  "new_defect": "E2E-20261016-ASSIGN-MISSING-APP-500-SQL-LEAK",
+  "new_observations": [
+    "OBS-20261016-G1-USER-DUP-SQL-MESSAGE",
+    "OBS-20261016-G1-USER-INPUT-NOT-TRIMMED",
+    "OBS-20261016-G1-ENROLL-TRANSIENT-500",
+    "OBS-20261016-G1-APP-DEPLOY-UNIT-SIDE-EFFECT",
+    "OBS-20261016-G1-X13-CONVERGENCE-SEMANTICS"
+  ],
+  "instance_destroyed": "ISOLATED_INSTANCE_DESTROYED_AND_VERIFIED：PGREP=0/端口不监听/data_dir·config·log·child root 不存在/全盘 nonce 扫描 0 命中/无新增 systemd 单元；旁证 repair 与 primary PID 未变",
+  "counts_before": {
+    "PASS": 461,
+    "FAIL": 6,
+    "PARTIAL": 27,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "counts_after": {
+    "PASS": 469,
+    "FAIL": 6,
+    "PARTIAL": 19,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "status_changes": [
+    [
+      "P03-09",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P04-06",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P14P15-12",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P19-03",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P20-04",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P21-08",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "X13",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "X14",
+      "PARTIAL",
+      "PASS"
+    ]
+  ]
+}

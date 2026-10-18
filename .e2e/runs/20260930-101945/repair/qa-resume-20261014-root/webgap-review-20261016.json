@@ -1,0 +1,152 @@
+{
+  "review_id": "ROOT-WEB-GAP-REVIEW-20261016",
+  "reviewed_at": "2026-10-16T07:48:47.362591+00:00",
+  "reviewer": "main-agent(root)",
+  "status": "INTEGRATED",
+  "dir": ".e2e/runs/20260930-101945/repair/qa-resume-20261016-webgap",
+  "verified_build": "dddee4f0-e2e-repair-20261016",
+  "authorization_basis": "用户要求全力推进；C1 批次（partial-closeout-plan）",
+  "verdicts": [
+    {
+      "case_id": "X04",
+      "canonical_after": "PASS",
+      "confidence": "高/中",
+      "reason": "cron raw↔五字段双向回填/重生成、非法表达式 aria-invalid+alert+预览无法预览、字段级非法、@daily 五字段禁用、预设切换；零提交"
+    },
+    {
+      "case_id": "P16-02",
+      "canonical_after": "PASS",
+      "confidence": "高/中",
+      "reason": "入口为页面 /artifacts/new（历史误判为弹层）；四字段必填与架构 select 默认 amd64；amd64/arm64 真实 UI 上传并 API 复核 sha/size"
+    },
+    {
+      "case_id": "P16-04",
+      "canonical_after": "PASS",
+      "confidence": "高/中",
+      "reason": "同名同版本→2 条独立记录；空文件接受（size0）；64MiB 接受（无上限）；上传中 disabled 采样到且重复点击仅 1 次 POST"
+    },
+    {
+      "case_id": "P05B-08",
+      "canonical_after": "PASS",
+      "confidence": "高/中",
+      "reason": "Node Detail → schedule 链接落 /schedules/{id}（任务名/Cron 五字段/时区/触发可见）"
+    },
+    {
+      "case_id": "P03-02",
+      "canonical_after": "PASS",
+      "confidence": "高/中",
+      "reason": "真实 RUNNING 执行下运行中计数与行为 /executions/{id} 链接，「查看全部」→/executions"
+    },
+    {
+      "case_id": "P05B-10",
+      "canonical_after": "PASS",
+      "confidence": "高/中",
+      "reason": "执行表任务列渲染 /tasks/{id} 链接并可点击，未知任务为纯文本"
+    },
+    {
+      "case_id": "P22-07",
+      "canonical_after": "PASS",
+      "confidence": "高/中",
+      "reason": "禁用矩阵+清空源路径回退；注入 2s 延迟后真实观测「创建中...」+disabled，加载中二次点击零新增请求（POST=1）"
+    },
+    {
+      "case_id": "P22-09",
+      "canonical_after": "PASS",
+      "confidence": "高/中",
+      "reason": "自有 2 目标传输聚合 FAILED（一 SUCCESS 一 FAILED）；源文件缺失→FAILED 且全目标 FAILED"
+    },
+    {
+      "case_id": "P22-10",
+      "canonical_after": "PASS",
+      "confidence": "高/中",
+      "reason": "受控注入证明 FAILED 侧可达：native-4 目标 mkdir not a directory FAILED、native-2 目标 SUCCESS 且落盘校验通过（历史 PARTIAL 归因于当时 host001 未回报，属误判）"
+    },
+    {
+      "case_id": "X20",
+      "canonical_after": "FAIL",
+      "reason": "X20 实测：/schedules/{id} 长任务名使 Radix SelectTrigger 宽 898px（w-fit+nowrap 无 max-width），760/480 出现页面级横向滚动（docScrollW 939/898；未选任务时 480 正常，归因已隔离）；/scripts/{id} 含超长内容/长参数时 480 视口 docScrollW 676>480（空表单 /scripts/new=448 正常）。"
+    }
+  ],
+  "reverse_correction": "P22-10 反向纠正：受控注入证明失败隔离的 FAILED 侧完全可达，历史\"FAILED 侧不可达/挂 DELIVERING\"应归因于当时 host001 目标未回报，属误判 → 本轮升 PASS。",
+  "new_defect": {
+    "id": "E2E-20261016-NARROW-VIEWPORT-LONG-VALUE-OVERFLOW",
+    "priority": "P2",
+    "title": "窄屏下长值导致页面级横向溢出：/schedules/{id} 的长任务名 SelectTrigger 无 max-width；/scripts/{id} 含超长内容时溢出",
+    "actual": "X20 实测：/schedules/{id} 长任务名使 Radix SelectTrigger 宽 898px（w-fit+nowrap 无 max-width），760/480 出现页面级横向滚动（docScrollW 939/898；未选任务时 480 正常，归因已隔离）；/scripts/{id} 含超长内容/长参数时 480 视口 docScrollW 676>480（空表单 /scripts/new=448 正常）。",
+    "source_change_authorized": false,
+    "affected_cases": [
+      "X20"
+    ],
+    "evidence": [
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261016-webgap/evidence/X20-attribution.json",
+      ".e2e/runs/20260930-101945/repair/qa-resume-20261016-webgap/evidence/X20-attribution2.json"
+    ]
+  },
+  "cleanup": "schedule/task/script 各 1、artifact 5 全部删除并 GET404；native-2 自有目录 rm -rf 复核不存在；计数 delta 全 0；不可删历史：Transfer 4 条（终态 FAILED）+ Execution 3 条",
+  "counts_before": {
+    "PASS": 426,
+    "FAIL": 5,
+    "PARTIAL": 63,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "counts_after": {
+    "PASS": 435,
+    "FAIL": 6,
+    "PARTIAL": 53,
+    "NOT_RUN": 0,
+    "BLOCKED": 10
+  },
+  "status_changes": [
+    [
+      "P03-02",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P05B-08",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P05B-10",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P16-02",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P16-04",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P22-07",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P22-09",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "P22-10",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "X04",
+      "PARTIAL",
+      "PASS"
+    ],
+    [
+      "X20",
+      "PARTIAL",
+      "FAIL"
+    ]
+  ]
+}

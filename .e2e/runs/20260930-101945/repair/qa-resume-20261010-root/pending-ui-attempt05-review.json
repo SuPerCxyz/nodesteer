@@ -1,0 +1,42 @@
+{
+  "reviewed_at": "2026-10-10T11:37:02.609568+00:00",
+  "decision": "APPROVED_REAL_TEST_AFTER_PHYSICAL_SAFE_READBACK_AND_LOCAL_COPY_HASH_CHECK",
+  "scope": "Same already confirmed P11-02/live PENDING path; repair18080 and owned Native4 child only",
+  "physical_readback": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-api/owner-inspection-attempt04/result.json",
+  "actual_controls_empty": true,
+  "old_watchdog_final_status": "NOOP_CONTROL_OWNER_MISMATCH",
+  "old_watchdog_proc_absent": true,
+  "harness_baseline": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui/attempt04",
+  "source_sha256": {
+    "arm_control.py": "bb54d35122068c8e5ae0c871cdf84cf1f4ca3287f9ceb08b8728b32a920c872d",
+    "watchdog.py": "cadfa357ce19783824825589755f398590399e99cc8667df2bff3a4793ef0480",
+    "controller.py": "ca6ff58356a6f6990b1a08ef64158412eb415e15e13a3f314d4646c16207875b",
+    "ui_driver.py": "5e3f408f9757629be2f9366bbb09b65d4635267b2cbdbc6589da4d49a8bf88c4",
+    "ui-network-observer.js": "db0d2d0bf557f13425424faade3e0a39ef20a8ab7e097748f26239ddf4483014"
+  },
+  "preconditions": [
+    "attempt05 same depth copy matches these reviewed corrected source hashes",
+    "local compile/CAS test success",
+    "unique output/proof nonce paths",
+    "fresh Task/API+physical ownership+UI_READY guards before hold"
+  ],
+  "budgets_total": {
+    "child_tasks_max": 5,
+    "child_tasks_used": 4,
+    "parent_arm_helpers_max": 4,
+    "parent_arm_helpers_used": 3,
+    "readonly_inspectors_used": 2,
+    "actual_UI_Run_max": 1,
+    "actual_UI_Run_used": 0
+  },
+  "fault_seconds_max": 8,
+  "keep_fixture": "If UI/helper preRun fails retain exactly owned idle Task for diagnosis. No blind recreate, no next arm without reason",
+  "cleanup": "Only owned Task/helper definitions after actual terminal or Root stop, same dedicated-token401/browser-profile; actual controls released/watchdog final readback. Preserve core child/root/DB/config/proxy/original Unit",
+  "forbidden": [
+    "product source",
+    "shared session logout",
+    "primary writes",
+    "original Unit/cgroup changes/signals",
+    "extra UI Run"
+  ]
+}

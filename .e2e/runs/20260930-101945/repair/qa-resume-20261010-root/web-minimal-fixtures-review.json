@@ -1,0 +1,34 @@
+{
+  "reviewed_at": "2026-10-10T15:19:19.268286+00:00",
+  "status": "APPROVED_WITHIN_EXISTING_504_E2E_SCOPE",
+  "source_plan": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-web/minimal-fixture-plan.json",
+  "purpose": "补真实有效资源的路由/搜索/排序/分页/列持久化；不是扩展产品功能",
+  "budget": {
+    "new_static_empty_groups": 11,
+    "new_disabled_command_tasks": 11,
+    "new_disabled_on_start_schedules": 11,
+    "new_disabled_unattached_scripts": 9,
+    "retained_owned_scripts": 2,
+    "new_Run": 0,
+    "new_User_Node_App_Artifact_Transfer": 0
+  },
+  "why": "UI最小pageSize10，11真实owned行是实际跨页与末页变化的最低数据量；1行方案会留下本可执行的排序/分页缺口。",
+  "authorization": "已确认全504 E2E测试，Root负责子任务与临时可删fixtures预算；不涉及持久User审批、Host策略、Git或新产品需求。",
+  "definitions": {
+    "groups": "static且members=[]，各nonce名称；不参与任何Task target",
+    "tasks": "enabled=false、command仅builtin printf QA非secret marker、retry0、timeout15~30；label唯一且实际现有所有Node无该key，无target_node_ids/group引用",
+    "schedules": "on_start、enabled=false，仅关联owned disabled Task；绝不enable/execute；不指定真实Node",
+    "scripts": "enabled=false、tiny shell printf、env{}，不挂Task；9新增与2既有ownership分开"
+  },
+  "execution": "第1个每类型可UI保存且API检查实际字段/ID；其余可直接API建立fixture（不把API创建算UI创建验收），每个响应立即ledger，GET200/id/disabled/无匹配Nodes检查后再下一对象。",
+  "safety_gates": [
+    "只repair18080；所有原4Node与child不改labels/definitions/过程/Unit",
+    "fresh API status与所有Nodeid readback；名称collision不复用非owned对象",
+    "API反映enabled=false、空成员或唯一无匹配label后才继续",
+    "0Run硬门禁；任一异常停止该类型且cleanup已登记ID，不自动重试POST",
+    "只保存非secret ID/count/hash/status；不保存用户/日志/环境/原始network",
+    "global文件由Root写；Luna只本目录和ownedfixture服务器对象"
+  ],
+  "cleanup": "删除owned11Schedules→11Tasks→11Groups→9新Scripts，各精确DELETE200/GET404；原2Scripts保留后续所需时再按既有ledger收口；真实Execute/Audit/revision历史保留。",
+  "verification": "真实UI行hash：首/末/前/后页、pageSize持久化restore、末页删除1owned行后回到合法页且无重复/遗漏（删除需budget内，剩余cleanup清单立即更新）；2+条不同names排序双方向/clear；q hit/none/reset；validID detail刷新/history/错误恢复；不追加Run/save门禁到ROUTE项。"
+}

@@ -1,0 +1,79 @@
+{
+  "instance_id": "nodesteer-qa-users1410-5ece52a9",
+  "purpose": "Isolated, fully disposable Hub instance so that user accounts could be created for TABLE-USERS-PAGE / RBAC tests without writing users into the shared repair authority (the product has no delete-user API).",
+  "authorization_basis": "User authorized a disposable isolated Hub instance on 2026-10-14 (same repair binary/SHA), to be destroyed afterwards.",
+  "host": "192.168.100.209",
+  "port": 18081,
+  "ports_considered_free": [18081, 18082],
+  "binary": {
+    "path": "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard",
+    "sha256_expected": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+    "sha256_verified": "164ea4aca898feb1e118ef9b45f02d76482dd4745cef1d9598cc78c7569132d6",
+    "match": true
+  },
+  "config": {
+    "path": "/etc/nodesteer/qa-users1410-5ece52a9.yaml",
+    "mode": "0640 root:nodesteer",
+    "template_source": "/etc/nodesteer/hub-repair-20260930-101945.yaml (read-only, unmodified)",
+    "fields": ["web_addr=:18081", "gateway_addr=:18081", "base_url=http://192.168.100.209:18081", "registration_token=<new random, not recorded>", "data_dir", "artifact_dir", "admin_username=qa-users1410-admin", "admin_password=<new random, 0600/0640 only, not recorded>", "session_ttl=24h"]
+  },
+  "data_dir": {
+    "path": "/var/lib/nodesteer-qa-users1410-5ece52a9",
+    "mode": "0750 nodesteer:nodesteer",
+    "size_before_teardown": "1.3M"
+  },
+  "launch": {
+    "method": "transient process: runuser -u nodesteer -- setsid nohup <binary> --config <cfg> (NO systemd unit, NO autostart)",
+    "log": "/var/log/nodesteer-qa-users1410-5ece52a9.log",
+    "pids_at_start": {"runuser_parent": 16228, "hub": 16230},
+    "startup_checks": {"healthz": 200, "root": 200, "listener_18081": true}
+  },
+  "version_parity_with_repair": {
+    "repair_authority": "http://192.168.100.209:18080",
+    "repair_pid": 5952,
+    "same_binary_path": true,
+    "same_binary_sha256": true,
+    "index_html_sha256_18080": "612c23ba1efed95fb7d773c625d68f61adad16f21d30232e2102aa118b920449",
+    "index_html_sha256_18081": "612c23ba1efed95fb7d773c625d68f61adad16f21d30232e2102aa118b920449",
+    "index_html_identical": true,
+    "asset_bundle_names_identical": true,
+    "evidence": "evidence/INSTANCE-01-version-parity.json"
+  },
+  "data_created_during_batch": {
+    "users_created_via_ui": 13,
+    "users_total": 14,
+    "resources": "script/task/schedule/artifact/application fixtures (created for P19-02), all on the isolated instance only",
+    "note": "All of the above live only inside /var/lib/nodesteer-qa-users1410-5ece52a9 and are destroyed with it."
+  },
+  "teardown": {
+    "steps": [
+      "pkill -TERM -f qa-users1410-5ece52a9 (stopped runuser parent 16228 and hub 16230; no child processes besides the hub)",
+      "pkill -KILL fallback (not needed; processes were already gone)",
+      "rm -rf /var/lib/nodesteer-qa-users1410-5ece52a9",
+      "rm -f /etc/nodesteer/qa-users1410-5ece52a9.yaml",
+      "rm -f /var/log/nodesteer-qa-users1410-5ece52a9.log"
+    ],
+    "verification": {
+      "processes_after": "none (pgrep -af qa-users1410-5ece52a9 -> no matches)",
+      "port_18081_listening": false,
+      "data_dir_exists": false,
+      "config_exists": false,
+      "log_exists": false,
+      "etc_leftovers": "none",
+      "var_lib_leftovers": "none"
+    },
+    "collateral_check": {
+      "repair_18080_listening": true,
+      "repair_pid_5952_alive": true,
+      "repair_config_untouched": true,
+      "systemd_units_changed": false
+    },
+    "result": "ISOLATED_INSTANCE_DESTROYED_AND_VERIFIED"
+  },
+  "safety": {
+    "repair_18080_writes": "none (read-only parity GETs only)",
+    "primary_8080_writes": "none",
+    "credentials_in_evidence": "none (scanned)",
+    "local_credential_files": "0600 files under /tmp/opencode, removed after teardown"
+  }
+}

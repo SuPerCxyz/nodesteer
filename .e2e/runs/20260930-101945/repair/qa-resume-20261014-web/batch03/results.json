@@ -1,0 +1,287 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch03",
+  "updated_at_utc": "2026-10-14T08:45:00Z",
+  "status": "COMPLETE_FOR_ROOT_REVIEW",
+  "environment": {
+    "authority": "http://192.168.100.209:18080",
+    "authority_type": "repair",
+    "primary_8080_touched": false,
+    "revision": "dddee4f0",
+    "browser": "agent-browser 0.32.4 (session qaweb1410b03)",
+    "nonce": "69bdbd0f"
+  },
+  "cases": [
+    {
+      "case_id": "FL-09",
+      "canonical_before": {"status": "NOT_RUN", "baseline_status": "PASS", "priority": "P0"},
+      "proposed_after": "PASS",
+      "covered_dimensions": [
+        "Application editor 分配节点 list (checked set) vs Application /nodes API",
+        "Agent Detail 托管应用 list for the assigned node",
+        "Node Detail 托管应用 list (same component)",
+        "Agent Detail 托管应用 empty state for a non-assigned node",
+        "bidirectional API consistency across all 6 nodes x 1 application"
+      ],
+      "remaining_or_limitations": [
+        "the mutating assign action (toggling a node checkbox + 保存 -> POST /applications/{id}/assign) was NOT executed: it mutates the pre-existing non-owned Application and no owned Application may be created under this batch's scope",
+        "consistency was verified against the already-existing assignment (native-1) and its empty counterpart on the other nodes"
+      ],
+      "evidence": [
+        "evidence/FL09-01-application-assign-nodes.png",
+        "evidence/FL09-02-app-assign-scan.json",
+        "evidence/FL09-03-agent-detail-native1.png",
+        "evidence/FL09-04-agent-native1-scan.json",
+        "evidence/FL09-05-node-detail-native1-scan.json",
+        "evidence/FL09-06-agent-detail-native3-empty.png",
+        "evidence/FL09-07-agent-native3-scan.json",
+        "evidence/FL09-08-api-consistency.json",
+        "evidence/FL09-09-applications-list.png"
+      ],
+      "actual": {
+        "application": "qa-repair-20260930-101945-app-async-live-6a32f (804e6b14-eb84-4dda-90de-8bcab9586c4c)",
+        "assign_nodes_card": "分配节点",
+        "assign_nodes_ui": [{"node": "native-1", "state": "checked"}, {"node": "native-2", "state": "unchecked"}, {"node": "native-3", "state": "unchecked"}, {"node": "native-4", "state": "unchecked"}, {"node": "native4-child(offline)", "state": "unchecked"}, {"node": "host001", "state": "unchecked"}],
+        "api_app_nodes": ["91f44866-8a28-435e-bbda-2f2367126c00"],
+        "agent_detail_native1_managed_apps": ["qa-repair-20260930-101945-app-async-live-6a32f -> /applications/804e6b14-eb84-4dda-90de-8bcab9586c4c"],
+        "node_detail_native1_managed_apps": ["qa-repair-20260930-101945-app-async-live-6a32f -> /applications/804e6b14-eb84-4dda-90de-8bcab9586c4c"],
+        "agent_detail_native3_managed_apps": [],
+        "agent_detail_native3_empty_text": "暂无托管应用",
+        "bidirectional_mismatches": [],
+        "consistent": true
+      }
+    },
+    {
+      "case_id": "FL-13",
+      "canonical_before": {"status": "NOT_RUN", "baseline_status": "PASS", "priority": "P0"},
+      "proposed_after": "PASS",
+      "covered_dimensions": [
+        "File Transfer create via UI form (source Agent / source path / target Agent / destination path / 添加目标 / 开始传输)",
+        "POST /api/transfers 200 from the UI action",
+        "status transition UPLOADING -> DELIVERING -> target SUCCESS",
+        "hub staging blob size + SHA256",
+        "delivered target file size + SHA256",
+        "source SHA == hub staging SHA == target file SHA"
+      ],
+      "remaining_or_limitations": [
+        "the hub staging blob was captured from the sibling owned transfer 08dc8196 (identical source bytes) because the SUCCESS transfer 08195116 has its staging blob removed on terminal success by design (cleanupFiles on SUCCESS); the transfer record's sha256 (computed from the staged blob) matches the delivered file",
+        "destination had to be a native node (native-3 PENDING/SUCCESS with no allowlist); the docker host-integration node host001 rejected /tmp with 'path is outside host allowlist' (allowlist = /etc,/opt,/usr/local/bin,/var/lib per internal/agent/host/container.go:33)"
+      ],
+      "evidence": [
+        "evidence/FL13-01-transfer-form-ready.png",
+        "evidence/FL13-03-transfer2-form-ready.png",
+        "evidence/FL13-04-status-timeline.json",
+        "evidence/FL13-05-owned-transfers-api.json",
+        "evidence/FL13-06-staging-and-target-fs-verification.json",
+        "evidence/FL13-07-transfers-ui-success.png"
+      ],
+      "actual": {
+        "transfer_id": "08195116-ea50-42fa-b132-b39346bc812e",
+        "source_node": "native-1 (91f44866-8a28-435e-bbda-2f2367126c00)",
+        "source_path": "/tmp/qa-w1410b03-69bdbd0f/src-69bdbd0f.bin",
+        "source_size": 25165824,
+        "source_sha256": "6edf3c97b057e6e2e898f9e7bca45852fb585fe128907d2aba5d5f97b3685d1c",
+        "target": {"node": "native-3 (37989297-3bc8-4c0c-b302-7c6efbdba630)", "destination_path": "/tmp/qa-w1410b03-69bdbd0f/dst-native3-69bdbd0f.bin", "status": "SUCCESS"},
+        "transfer_status": "SUCCESS",
+        "hub_staging_sha256": "6edf3c97b057e6e2e898f9e7bca45852fb585fe128907d2aba5d5f97b3685d1c",
+        "hub_staging_size": 25165824,
+        "target_file_sha256": "6edf3c97b057e6e2e898f9e7bca45852fb585fe128907d2aba5d5f97b3685d1c",
+        "target_file_size": 25165824,
+        "ui_status": "成功, target native-3 成功",
+        "sha_consistent": true,
+        "no_extra_side_effects": "only the two owned nodes' owned files changed; no node state change; no run/deploy"
+      }
+    },
+    {
+      "case_id": "P22-12",
+      "canonical_before": {"status": "NOT_RUN", "baseline_status": "PARTIAL", "priority": "P0"},
+      "proposed_after": "PARTIAL",
+      "covered_dimensions": [
+        "DELIVERING -> cancel via row 操作 menu (取消传输)",
+        "cancel confirmation verified against the current product design (no dialog; immediate POST)",
+        "POST /api/transfers/{id}/cancel 200",
+        "resulting state CANCELED with all non-SUCCESS targets normalized to CANCELED",
+        "hub staging cleanup after cancel",
+        "terminal row shows no empty action menu",
+        "UPLOADING and PENDING states observed (not cancelled)"
+      ],
+      "remaining_or_limitations": [
+        "cancel from aggregate PENDING not executed: it needs an offline-source transfer and the <=2 owned-transfer cap was already met",
+        "cancel from UPLOADING not executed: UPLOADING lasts ~150 ms on LAN and the cap was met",
+        "To execute these, Root must authorize additional owned transfers."
+      ],
+      "evidence": [
+        "evidence/P22-12-01-transfer-row-menu.png",
+        "evidence/P22-12-02-after-cancel-click.png",
+        "evidence/P22-12-03-after-cancel-api.json",
+        "evidence/P22-12-04-canceled-ui.png",
+        "evidence/P22-12-05-cancel-summary.json",
+        "evidence/FL13-02-status-timeline.json"
+      ],
+      "actual": {
+        "transfer_id": "08dc8196-4f7e-4fc3-a6f2-6e678523da0f",
+        "cancel_from_state": "DELIVERING",
+        "menu_item": "取消传输",
+        "confirmation_dialog": "none (current design); DOM alertdialog/dialog count = 0 immediately after click",
+        "cancel_http": 200,
+        "post_cancel_status": "CANCELED",
+        "post_cancel_targets": "offline PENDING -> CANCELED; host001 FAILED -> CANCELED",
+        "ui_status_after": "已取消",
+        "staging_cleanup": "hub file-transfers dir empty",
+        "uploading_observed": true,
+        "pending_on_target_observed": true,
+        "aggregate_pending_observed": false
+      }
+    },
+    {
+      "case_id": "TABLE-ARTIFACTS-PAGE",
+      "canonical_before": {"status": "NOT_RUN", "baseline_status": "PASS", "priority": "P1"},
+      "proposed_after": "PASS",
+      "covered_dimensions": [
+        "first/last page controls",
+        "previous/next page controls",
+        "pageSize persistence across reload (localStorage nodesteer.table.artifacts)",
+        "pageSize change 10 -> 20 -> back to 10",
+        "last-page data change (delete an owned row on the last page)"
+      ],
+      "remaining_or_limitations": [
+        "fixture-driven: 11 owned artifacts were created (cap 12) so pageSize 10 yields 2 pages; all were deleted and GET404-verified afterwards"
+      ],
+      "evidence": [
+        "evidence/TABLE-ARTIFACTS-PAGE-02-page1.png",
+        "evidence/TABLE-ARTIFACTS-PAGE-03-page1-controls.json",
+        "evidence/TABLE-ARTIFACTS-PAGE-04-nextpage.json",
+        "evidence/TABLE-ARTIFACTS-PAGE-05-page2.png",
+        "evidence/TABLE-ARTIFACTS-PAGE-06-first.json",
+        "evidence/TABLE-ARTIFACTS-PAGE-07-last.json",
+        "evidence/TABLE-ARTIFACTS-PAGE-08-pagesize20.json",
+        "evidence/TABLE-ARTIFACTS-PAGE-09-pagesize20-after-reload.json",
+        "evidence/TABLE-ARTIFACTS-PAGE-11-pagesize-back10.json",
+        "evidence/TABLE-ARTIFACTS-PAGE-12-lastpage-before-change.json",
+        "evidence/TABLE-ARTIFACTS-PAGE-13-lastpage-before.png",
+        "evidence/TABLE-ARTIFACTS-PAGE-14-delete-confirm-dialog.png",
+        "evidence/TABLE-ARTIFACTS-PAGE-15-lastpage-after-delete.png",
+        "evidence/TABLE-ARTIFACTS-PAGE-16-lastpage-after-change.json",
+        "evidence/TABLE-ARTIFACTS-PAGE-17-lastpage-after.json",
+        "evidence/cleanup-artifacts-get404.json"
+      ],
+      "actual": {
+        "row_total": 12,
+        "page1": {"rowCount": 10, "pageOf": "第 1 页，共 2 页", "first_disabled": true, "prev_disabled": true, "next_enabled": true, "last_enabled": true},
+        "page2": {"rowCount": 2, "pageOf": "第 2 页，共 2 页", "next_disabled": true, "last_disabled": true, "prev_enabled": true, "first_enabled": true},
+        "first_button": "返回第 1 页 (10 rows)",
+        "last_button": "返回最后一页 (2 rows before change)",
+        "pageSize": {"set_20_rowCount": 11, "pageOf_at_20": "第 1 页，共 1 页", "after_reload_combo": "20", "storage": "{\"columnVisibility\":{},\"pageSize\":20}", "restored": 10},
+        "last_page_data_change": {"before": "2 rows [art-01, baseline]", "delete": "DELETE /api/artifacts/d5aae606-... 200 via row menu + confirm dialog", "after_reset_to": "第 1 页 (autoResetPageIndex), 10 rows", "last_page_after": "1 row [baseline]"},
+        "delete_confirmation": {"dialog": true, "heading": "删除: qa-w1410b03-69bdbd0f-art-01", "buttons": ["取消", "删除"]}
+      }
+    },
+    {
+      "case_id": "TABLE-ARTIFACTS-SORT",
+      "canonical_before": {"status": "NOT_RUN", "baseline_status": "PASS", "priority": "P1"},
+      "proposed_after": "PASS",
+      "covered_dimensions": [
+        "sortable header controls for all allowed columns",
+        "string column ascending/descending/clear",
+        "numeric column ascending/descending/clear",
+        "aria-sort reflected on th"
+      ],
+      "remaining_or_limitations": [
+        "numeric columns sort descending on the first click (TanStack sortDescFirst auto-detect) - observed library behaviour, not a defect"
+      ],
+      "evidence": [
+        "evidence/TABLE-ARTIFACTS-SORT-01-unsorted.json",
+        "evidence/TABLE-ARTIFACTS-SORT-03-name-asc.json",
+        "evidence/TABLE-ARTIFACTS-SORT-03a-name-asc.png",
+        "evidence/TABLE-ARTIFACTS-SORT-04-name-desc.json",
+        "evidence/TABLE-ARTIFACTS-SORT-05-name-cleared.json",
+        "evidence/TABLE-ARTIFACTS-SORT-06-size-asc.json",
+        "evidence/TABLE-ARTIFACTS-SORT-07-size-desc.json",
+        "evidence/TABLE-ARTIFACTS-SORT-08-size-cleared.json",
+        "evidence/TABLE-ARTIFACTS-SORT-09-summary.json"
+      ],
+      "actual": {
+        "sortable_columns": ["名称", "版本", "架构", "文件名", "大小", "SHA256", "使用情况"],
+        "name_column": {"unsorted": null, "click1": "ascending (baseline first, then art-01, art-02)", "click2": "descending (art-11, art-10, art-09)", "click3": null},
+        "size_column": {"click1": "descending (1564 KB first)", "click2": "ascending (0 KB first)", "click3": null},
+        "clear_sorting": "third click returns aria-sort=null and the default order"
+      }
+    },
+    {
+      "case_id": "TABLE-USERS-PAGE",
+      "canonical_before": {"status": "NOT_RUN", "baseline_status": "PASS", "priority": "P1"},
+      "proposed_after": "PARTIAL",
+      "covered_dimensions": [
+        "users list render + page controls present",
+        "pageSize persistence across reload (localStorage nodesteer.table.users)"
+      ],
+      "remaining_or_limitations": [
+        "first/last/previous/next traversal not exercisable: only 8 users -> single page (all nav disabled)",
+        "last-page data change not exercisable: requires >=11 users for 2 pages at pageSize 10",
+        "creating User accounts requires separate Root authorization (persistent accounts); this batch is forbidden from creating/removing users"
+      ],
+      "evidence": [
+        "evidence/TABLE-USERS-PAGE-01-users.png",
+        "evidence/TABLE-USERS-PAGE-02-page1.json",
+        "evidence/TABLE-USERS-PAGE-03-pagesize20.json",
+        "evidence/TABLE-USERS-PAGE-04-pagesize20-after-reload.json",
+        "evidence/TABLE-USERS-PAGE-05-pagesize20-reload.png",
+        "evidence/TABLE-USERS-PAGE-06-pagesize-back10.json",
+        "evidence/TABLE-USERS-PAGE-07-summary.json"
+      ],
+      "actual": {
+        "users_total": 8,
+        "pageOf": "第 1 页，共 1 页",
+        "nav_buttons": {"first": "disabled", "prev": "disabled", "next": "disabled", "last": "disabled"},
+        "pageSize": {"set_20": true, "after_reload_combo": "20", "storage": "{\"columnVisibility\":{},\"pageSize\":20}", "restored": 10},
+        "traversal_possible": false,
+        "reason": "insufficient rows and user creation is out of scope"
+      }
+    }
+  ],
+  "counts": {"PASS": 4, "PARTIAL": 2, "FAIL": 0, "NOT_RUN": 0},
+  "server_writes": {
+    "transfer_create": 2,
+    "transfer_cancel": 1,
+    "artifact_upload": 11,
+    "artifact_delete": 11,
+    "persistent_resources_created": 0,
+    "persistent_resources_deleted": 0,
+    "node_state_changes": 0,
+    "runs_triggered": 0,
+    "deploys_triggered": 0
+  },
+  "observations": [
+    {
+      "id": "OBS-B03-01",
+      "severity": "low",
+      "where": "/transfers status badge",
+      "detail": "StatusBadge has no zh/en label for UPLOADING/DELIVERING, so the transfers table shows the raw enum ('DELIVERING') while PENDING/SUCCESS/CANCELED/FAILED are localized (web/src/features/shared/ui.tsx:64-92). Cosmetic/localization coverage gap.",
+      "blocks_case": false
+    },
+    {
+      "id": "OBS-B03-02",
+      "severity": "info",
+      "where": "host-integration transfer target",
+      "detail": "A docker_host_integration node rejects non-allowlisted destination paths with 'path is outside host allowlist' (default allowlist /etc,/opt,/usr/local/bin,/var/lib). Expected safety behaviour; recorded so future transfer fixtures target an allowlisted path or a native node.",
+      "blocks_case": false
+    }
+  ],
+  "harness_notes": [
+    "agent-browser click on the artifacts column header returned a false 'element is covered by <h1>' guard error while document.elementFromPoint(box centre) returned the header button itself; sort clicks were then issued as real mouse move/down/up. Harness guard false-positive; no product impact.",
+    "Piping run_eval.sh output into a command that immediately opens the output file races (pipeline stages start together); scans were re-run without the pipe.",
+    "No agent-browser or harness failure changed any case conclusion."
+  ],
+  "final_cleanup_guard": {
+    "evidence": "final-cleanup-guard.json",
+    "no_leftovers": true,
+    "counts_baseline": {"nodes": 6, "applications": 1, "tasks": 0, "schedules": 0, "artifacts": 1, "scripts": 2, "groups": 0, "users": 8, "transfers": 5},
+    "counts_after": {"nodes": 6, "applications": 1, "tasks": 0, "schedules": 0, "artifacts": 1, "scripts": 2, "groups": 0, "users": 8, "transfers": 7},
+    "note": "transfers +2 are the two owned transfer records; transfers have no DELETE endpoint, so terminal records persist as history (1 SUCCESS, 1 CANCELED); owned files removed on native-1/native-3 and hub staging dir emptied"
+  },
+  "credential_handling": {
+    "password_or_token_in_evidence": false,
+    "username_in_evidence_files": false,
+    "screenshots": "app chrome shows the app's own admin display name; no password/token present",
+    "signin_technique": "credentials read from the 0600 file and injected via a piped JS so they never entered argv, stdout or evidence"
+  }
+}

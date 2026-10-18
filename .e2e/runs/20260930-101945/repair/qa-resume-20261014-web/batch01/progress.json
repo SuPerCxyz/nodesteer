@@ -1,0 +1,46 @@
+{
+  "batch_id": "qa-resume-20261014-web-batch01",
+  "status": "COMPLETE_FOR_ROOT_REVIEW",
+  "phase": "RESULTS_SAVED_2PASS_2PARTIAL",
+  "updated_at_utc": "2026-10-14T07:50:48Z",
+  "session": "qaweb1410b01",
+  "origin": "http://192.168.100.209:18080",
+  "authority_type": "repair",
+  "primary_8080_management_writes": 0,
+  "case_ids": ["FL-01", "P14P15-01", "P09P11-01", "P12P13-01"],
+  "results": {
+    "FL-01": {"status": "PASS", "confidence": "high", "evidence": "evidence/FL-01-consistency.json"},
+    "P14P15-01": {"status": "PASS", "confidence": "high", "evidence": "evidence/P14P15-01-consistency.json"},
+    "P09P11-01": {"status": "PARTIAL", "confidence": "high-for-covered-dims", "evidence": "evidence/P09P11-01-consistency.json"},
+    "P12P13-01": {"status": "PARTIAL", "confidence": "high-for-covered-dims", "evidence": "evidence/P12P13-01-consistency.json"}
+  },
+  "executed_real_operations": {
+    "ui_logins": 1,
+    "ui_navigations_and_clicks": 17,
+    "ui_search_actions": 2,
+    "ui_retry_clicks": 2,
+    "page_reloads": 2,
+    "request_interceptions": {"aborts": 2, "unroutes": 2},
+    "read_only_api_snapshots": 6
+  },
+  "server_writes": {
+    "resource_mutations": 0,
+    "node_state_changes": 0,
+    "new_persistent_resources": 0,
+    "deleted_persistent_resources": 0,
+    "auth_audit_rows_created_by_this_batch": "login/auth/local only",
+    "audit_evidence": "evidence/P12P13-01-api-audit.json (all 2026-10-14 rows are action=login resource=auth)"
+  },
+  "new_resources": 0,
+  "runs": 0,
+  "unverified_dimensions": [
+    "P09P11-01: positive search hit, multi-page pagination, View (row -> /tasks/{id}) — need >=1 owned Task",
+    "P12P13-01: search, pagination, and the 7 metadata columns (类型/表达式/时区/Owner/Offline/Misfire/Enabled) — need >=1 owned Schedule; the schedules list renders no table at all while empty",
+    "P14P15-01: application delete action was observed but not executed (zero-write scope)"
+  ],
+  "token_saved": false,
+  "raw_credentials_in_evidence": false,
+  "product_source_modified": false,
+  "git_operations": "none",
+  "next_action": "Root decision: for the two PARTIAL cases, either accept the covered dimensions or authorize a disposable, self-cleaned owned Task/Schedule fixture (as in prior batch26) to close search/pagination/View/metadata."
+}

@@ -1,0 +1,74 @@
+{
+  "run_id": "20260930-101945",
+  "status": "awaiting_root_stage_dispatch",
+  "primary_services_unchanged": [
+    "192.168.100.209:nodesteer-hub.service",
+    "192.168.100.207:nodesteer-agent.service"
+  ],
+  "host": "192.168.100.209",
+  "prefix": "qa-20260930-101945-env",
+  "network": "qa-20260930-101945-env-net",
+  "services": {
+    "hub": {
+      "container": "qa-20260930-101945-env-hub",
+      "port": 18080,
+      "volume": "qa-20260930-101945-env-hubdata"
+    },
+    "agent": {
+      "container": "qa-20260930-101945-env-agent",
+      "volume": "qa-20260930-101945-env-agentdata"
+    },
+    "idp": {
+      "container": "qa-20260930-101945-env-idp",
+      "port": 18081
+    },
+    "sso_hub": {
+      "container": "qa-20260930-101945-env-sso-hub",
+      "port": 18082,
+      "volume": "qa-20260930-101945-env-sso-hubdata"
+    },
+    "tls_proxy": {
+      "container": "qa-20260930-101945-env-tls",
+      "port": 18443
+    },
+    "restore_hub": {
+      "container": "qa-20260930-101945-env-restore-hub",
+      "port": 18083,
+      "volume": "qa-20260930-101945-env-restore-hubdata"
+    },
+    "hostintegration_agent": {
+      "host": "192.168.100.247",
+      "container": "qa-20260930-101945-env-hostint-agent",
+      "volume": "qa-20260930-101945-env-hostintdata",
+      "pid": "host",
+      "privileged": false,
+      "cap_drop": [
+        "ALL"
+      ],
+      "cap_add_initial_probe": [
+        "SYS_ADMIN",
+        "SYS_CHROOT",
+        "SYS_PTRACE",
+        "DAC_OVERRIDE"
+      ],
+      "readonly_host_mounts": [
+        "/proc:/host/proc",
+        "/sys:/host/sys",
+        "/etc/os-release:/host/etc/os-release"
+      ],
+      "readwrite_host_mounts": [
+        "/opt/qa-20260930-101945-env:/host/opt/qa-20260930-101945-env",
+        "/etc/systemd/system:/host/etc/systemd/system"
+      ],
+      "logical_path_allowlist": [
+        "/opt/qa-20260930-101945-env",
+        "/etc/systemd/system/qa-20260930-101945-env-hostint.service"
+      ],
+      "unit": "qa-20260930-101945-env-hostint.service"
+    }
+  },
+  "secret_handling": "Remote run directory 0700; credentials/config/private TLS keys 0600; reports contain IDs/digests/status only",
+  "image_handling": "Use tested dddee4f0 Hub/Agent binaries; record base image and IdP/proxy repository digests after pull; bound resource usage",
+  "restore_policy": "Restore only into newly created isolated Hub volume; never overwrite primary Hub DB or delete real volumes",
+  "arm64_boundary": "Public arm64 payload/ELF/SHA testing needs isolated bundled arm64 payload; actual execution remains blocked without explicitly authorized ARM/emu environment"
+}

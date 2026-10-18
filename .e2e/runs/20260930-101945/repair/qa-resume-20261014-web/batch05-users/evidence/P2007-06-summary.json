@@ -1,0 +1,38 @@
+{
+  "case": "P20-07",
+  "assertion": "Operator/Viewer 无用户管理控件，访问页面显示管理员限制。",
+  "authority": "http://192.168.100.209:18081 (isolated disposable instance)",
+  "operator": {
+    "login": "UI session qausers1410op, /api/me Role=operator",
+    "users_page": {
+      "url": "/users",
+      "main_text": "只有管理员可以管理用户。",
+      "new_user_button": false,
+      "table_present": false,
+      "role_comboboxes_in_table": 0,
+      "user_rows": 0
+    },
+    "sidebar_users_link_present": true,
+    "api": {"GET /api/users": 403, "POST /api/users": 403, "PUT /api/users/{id}": 403, "DELETE /api/users/{id}": 403}
+  },
+  "viewer": {
+    "login": "UI session qausers1410view, /api/me Role=viewer",
+    "users_page": {
+      "url": "/users",
+      "main_text": "只有管理员可以管理用户。",
+      "new_user_button": false,
+      "table_present": false,
+      "user_rows": 0
+    },
+    "sidebar_users_link_present": true,
+    "api": {"GET /api/users": 403, "POST /api/users": 403, "PUT /api/users/{id}": 403, "DELETE /api/users/{id}": 403}
+  },
+  "admin_baseline": {"GET /api/users": 200, "POST /api/users": 200, "PUT /api/users/{id}": 200, "DELETE /api/users/{id}": 405},
+  "nuance": "The sidebar still renders the 用户 link for operator/viewer; only the page body is restricted and all management controls are absent. There is no server-side DeleteUser API (admin DELETE returns 405).",
+  "evidence": [
+    "evidence/P2007-01-operator-users-page.png",
+    "evidence/P2007-04-viewer-users-page.png",
+    "evidence/P2007-02-users-api-by-role.json",
+    "evidence/P2007-03-user-crud-api-by-role.json"
+  ]
+}

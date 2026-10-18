@@ -1,0 +1,91 @@
+{
+  "batch_id": "qa-resume-20261010-web-batch08-routes-executions",
+  "captured_at_utc": "2026-10-10T14:16:31.897142+00:00",
+  "status": "COMPLETED_WITH_PARTIAL",
+  "executor": "gpt-6-luna",
+  "cases": [
+    {
+      "case_id": "ROUTE-18",
+      "status": "PASS",
+      "evidence": "evidence/route-18-schedules.json",
+      "covered": "Direct/refresh/sidebar/back-forward; empty UI matches GET /api/schedules count0.",
+      "remaining": null
+    },
+    {
+      "case_id": "ROUTE-20",
+      "status": "PASS",
+      "evidence": "evidence/route-20-schedule-new.json",
+      "covered": "Direct/refresh/history for blank Schedule editor; no task_id or submit.",
+      "remaining": "Default blank-Cron UI shows two validation/preview alerts; not route errors."
+    },
+    {
+      "case_id": "ROUTE-23",
+      "status": "PASS",
+      "evidence": "evidence/route-23-applications.json",
+      "covered": "Direct/refresh/sidebar/history; GET /api/applications count1 matches one visible row.",
+      "remaining": null
+    },
+    {
+      "case_id": "ROUTE-27",
+      "status": "PASS",
+      "evidence": "evidence/route-27-artifacts.json",
+      "covered": "Direct/refresh/sidebar/history; GET /api/artifacts count1 matches one visible row.",
+      "remaining": null
+    },
+    {
+      "case_id": "ROUTE-29",
+      "status": "PASS",
+      "evidence": "evidence/route-29-executions.json",
+      "covered": "GET /api/executions count565, 10 visible, direct refresh and actual detail link/history.",
+      "remaining": null
+    },
+    {
+      "case_id": "ROUTE-30",
+      "status": "PARTIAL",
+      "evidence": "evidence/route-30-owned-execution.json",
+      "covered": "Retained owned Execution detail GET200, failed status and 160 log lines; history works.",
+      "remaining": "Fresh nonexistent Execution ID 404 -> error/not-found UI -> recovery to this owned Execution remains for next batch."
+    },
+    {
+      "case_id": "ROUTE-31",
+      "status": "PASS",
+      "evidence": "evidence/route-31-audit.json",
+      "covered": "GET /api/audit count2426 matches ready paginated view of 10 rows; no audit contents saved.",
+      "remaining": null
+    },
+    {
+      "case_id": "ROUTE-35",
+      "status": "PASS",
+      "evidence": "evidence/route-35-invalid-route.json",
+      "covered": "Canonical invalid route persists on refresh and renders 页面不存在; history back/forward works.",
+      "remaining": null
+    },
+    {
+      "case_id": "TABLE-EXECUTIONS-SEARCH",
+      "status": "PASS",
+      "evidence": "evidence/table-executions-search.json",
+      "covered": "Owned Execution ID hits one; unmatched term renders no-match UI; keyboard clear restores 10 rows.",
+      "remaining": null
+    },
+    {
+      "case_id": "TABLE-EXECUTIONS-SORT",
+      "status": "PASS",
+      "evidence": "evidence/table-executions-sort.json",
+      "covered": "Actual status enum ascending/descending/clear order validated against accessor and next-action labels.",
+      "remaining": null
+    }
+  ],
+  "new_resources": 0,
+  "server_writes": 0,
+  "task_run_user_group_node_agent_script_mutations": 0,
+  "raw_auth_or_api_body_saved": false,
+  "token_saved": false,
+  "limitations": [
+    "ROUTE-30 valid retained Execution happy path passed, but missing-ID error/recovery branch is reserved for next batch.",
+    "Execution/Audit raw row data, user text, task labels, command/log output and response bodies were not stored."
+  ],
+  "preserved_fixtures": [
+    "batch05 owned original Script",
+    "batch05 owned Script Clone"
+  ]
+}

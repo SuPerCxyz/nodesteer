@@ -1,0 +1,50 @@
+{
+  "review_id": "ROOT-OIDC-CASES-BLOCKED-REVIEW-20261014",
+  "reviewed_at": "2026-10-14T08:15:43.504388+00:00",
+  "reviewer": "main-agent(root)",
+  "status": "INTEGRATED",
+  "decision": "OIDC/SSO 类 4 个用例记为 BLOCKED（环境不可行），附逐项理由与 baseline 对照；不用 Mock IdP 或静态检查代替真实通过。",
+  "evidence": [
+    "docs/PRODUCT.md §49（OIDC/SSO 属一期明确不做/后续规划）",
+    "/etc/nodesteer/hub-repair-20260930-101945.yaml（未配置 OIDC）",
+    "internal/hub/api/api.go:45,68,124（OIDC 客户端仅在 SSO-only 模式注入，本地模式恒为 nil）"
+  ],
+  "decisions": {
+    "P01-08": {
+      "to_status": "BLOCKED",
+      "baseline_status": "PARTIAL",
+      "reason": "OIDC/SSO 维度在当前 repair 部署不可执行：hub-repair-20260930-101945.yaml 未配置 OIDC（本地登录模式），运行需启用 OIDC 并接入可达 IdP，属部署配置与外部 IdP 变更，超出本次测试授权；PRODUCT.md §49 亦将 OIDC/SSO 列为后续规划。baseline 中该用例曾测得状态见 baseline_status，故本项记为环境不可行而非产品回归。"
+    },
+    "P01-09": {
+      "to_status": "BLOCKED",
+      "baseline_status": "PASS",
+      "reason": "OIDC/SSO 维度在当前 repair 部署不可执行：hub-repair-20260930-101945.yaml 未配置 OIDC（本地登录模式），运行需启用 OIDC 并接入可达 IdP，属部署配置与外部 IdP 变更，超出本次测试授权；PRODUCT.md §49 亦将 OIDC/SSO 列为后续规划。baseline 中该用例曾测得状态见 baseline_status，故本项记为环境不可行而非产品回归。 题述后半「本地 fallback 按实际配置验证」在本部署为本地登录模式，可由后续本地登录用例覆盖。"
+    },
+    "P01-10": {
+      "to_status": "BLOCKED",
+      "baseline_status": "PASS",
+      "reason": "OIDC/SSO 维度在当前 repair 部署不可执行：hub-repair-20260930-101945.yaml 未配置 OIDC（本地登录模式），运行需启用 OIDC 并接入可达 IdP，属部署配置与外部 IdP 变更，超出本次测试授权；PRODUCT.md §49 亦将 OIDC/SSO 列为后续规划。baseline 中该用例曾测得状态见 baseline_status，故本项记为环境不可行而非产品回归。"
+    },
+    "X17": {
+      "to_status": "BLOCKED",
+      "baseline_status": "FAIL",
+      "reason": "OIDC/SSO 维度在当前 repair 部署不可执行：hub-repair-20260930-101945.yaml 未配置 OIDC（本地登录模式），运行需启用 OIDC 并接入可达 IdP，属部署配置与外部 IdP 变更，超出本次测试授权；PRODUCT.md §49 亦将 OIDC/SSO 列为后续规划。baseline 中该用例曾测得状态见 baseline_status，故本项记为环境不可行而非产品回归。 其中「停留页轮询/写请求401退登」子维度已由缺陷 E2E-20260930-101945-P1-001 单独覆盖并通过；其余 OIDC 子维度不可执行。"
+    }
+  },
+  "flagged_for_user": "若要复测，需要 (a) 启用 OIDC 的 repair 配置变更 + (b) 可达测试 IdP；二者均需单独授权。",
+  "counts_before": {
+    "PASS": 217,
+    "FAIL": 4,
+    "PARTIAL": 162,
+    "NOT_RUN": 116,
+    "BLOCKED": 5
+  },
+  "counts_after": {
+    "PASS": 217,
+    "FAIL": 4,
+    "PARTIAL": 162,
+    "NOT_RUN": 112,
+    "BLOCKED": 9
+  },
+  "not_claimed": "未修改部署配置、未执行产品修复、未 Git/Archive"
+}

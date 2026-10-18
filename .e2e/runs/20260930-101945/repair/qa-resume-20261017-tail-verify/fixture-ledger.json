@@ -1,0 +1,126 @@
+{
+ "batch": "qa-resume-20261017-tail-verify",
+ "at_utc": "2026-10-17T15:50:00Z",
+ "build_label": "dddee4f0-e2e-repair-20261017-fixall",
+ "authority": "http://192.168.100.209:18080",
+ "nonce_prefix": "qa-tail-*",
+ "fixtures": [
+  {
+   "case": 1,
+   "kind": "application",
+   "id": "93d8bdfc-bca0-4dcc-91d0-de05f2904081",
+   "name": "qa-tail-cb205e26-appnodes",
+   "created_via": "API POST /api/applications",
+   "cleanup": {"via": "API DELETE", "delete_http": 200, "after_get_http": 404, "get404": true}
+  },
+  {
+   "case": 7,
+   "kind": "node",
+   "id": "isolated-instance-only",
+   "name": "qa-tail202610177588afab-*（same/same2/diff-00..11/conc-00..11/csame 共 38 个）",
+   "created_via": "隔离实例 :18088 上的 enrollment 连发探针",
+   "cleanup": {"via": "整体销毁隔离实例", "data_dir_removed": true, "port_released": true}
+  },
+  {
+   "case": 8,
+   "kind": "node+script+task+execution",
+   "id": "multiple（隔离实例内）",
+   "name": "qa-tail202610177588afab-* / qa-tail-dispatch-*",
+   "created_via": "隔离实例 :18088",
+   "cleanup": {"via": "整体销毁隔离实例", "note": "含一条 FAILED 执行（block_reason='agent offline'）作为判定证据，随实例销毁"}
+  },
+  {
+   "case": 5,
+   "kind": "node+script+task",
+   "id": "0dc68f6f-01b1-4739-bb07-495097435304 / cc5ce5cd-bb5f-4729-8792-af3f8fde965a / 6504a793-48b2-46fe-ace8-1161a57cf485",
+   "name": "qa-tail20261017231730-uival / -uival-task",
+   "created_via": "API（repair :18080），供 UI 调度表单使用",
+   "cleanup": {"via": "API DELETE", "results": [{"kind": "task", "delete": 200, "after_get": 404}, {"kind": "script", "delete": 200, "after_get": 404}, {"kind": "node", "delete": 200, "after_get": 404}], "get404": true}
+  },
+  {
+   "case": 6,
+   "kind": "schedule",
+   "id": "b7fda079-9588-4b3f-be3e-add0a02f6d11",
+   "name": "（UI 测试期间真实创建：type=one_time, run_at=2019-12-31T16:00:00Z, enabled=true, misfire_policy=run_once）",
+   "created_via": "UI 实机点击保存（/schedules/new，POST /api/schedules → 200）",
+   "cleanup": {"via": "API DELETE", "delete_http": 200, "after_get_http": 404, "get404": true}
+  },
+  {
+   "case": "5/6 服务端判定",
+   "kind": "node+script+task+schedule×2",
+   "id": "063c53d1-0f35-42ac-a92c-39f46f48fd53 / e791c2cc-bad6-40e3-b1a4-f0c2c4e10a55 / c50e9a3f-4546-44e0-9acd-d74044fadb88 / 91c4a485-41cd-46e5-8701-d9eebc5c7f7e / 5aa0e4dc-e513-44f9-8fe8-3e221a3e2c5b",
+   "name": "qa-tail20261017231637-*",
+   "created_via": "API POST（schedule-validation-server.py）",
+   "cleanup": {"via": "API DELETE", "all_get404": true}
+  },
+  {
+   "case": 3,
+   "kind": "node",
+   "id": "da267119-c5b4-482b-985d-bf354fc0aaec",
+   "name": "qa-tail-c2b7238a-child",
+   "created_via": "API POST /api/nodes/enrollment",
+   "cleanup": {"via": "API DELETE", "delete_http": 200, "after_get_http": 404, "get404": true}
+  },
+  {
+   "case": 3,
+   "kind": "artifact",
+   "id": "1c67af60-f118-4a95-9fe5-e9b32d9bc78e",
+   "name": "qa-tail-c2b7238a-art",
+   "created_via": "API multipart POST /api/artifacts",
+   "cleanup": {"via": "API DELETE", "delete_http": 200, "after_get_http": 404, "get404": true}
+  },
+  {
+   "case": 3,
+   "kind": "application",
+   "id": "1f7a79f5-7b51-480e-93c7-295868779dba",
+   "name": "qa-tail-c2b7238a-firstinstall",
+   "created_via": "API POST /api/applications",
+   "cleanup": {"via": "API DELETE", "delete_http": 200, "after_get_http": 404, "get404": true}
+  },
+  {
+   "case": "3（中止的第一次尝试）",
+   "kind": "node",
+   "id": "facbb1fa-37ec-4736-b62b-6b90f365d035",
+   "name": "qa-tail-7ad88d7f-child",
+   "created_via": "API POST /api/nodes/enrollment",
+   "cleanup": {"via": "API DELETE", "delete_http": 200, "after_get_http": 404, "get404": true}
+  },
+  {
+   "case": "1（无副作用只读探测）",
+   "kind": "http-probe",
+   "id": "n/a",
+   "name": "POST /api/audit、POST /api/me、POST /metrics、GET /api/logout、PUT /api/transfers/{missing}、DELETE {missing id}（各端点）、OPTIONS /api/nodes、GET 各列表端点",
+   "created_via": "只读/无副作用探测",
+   "cleanup": {"via": "无需清理", "note": "DELETE 只针对不存在的 id（00000000-0000-0000-0000-0000000000ff），未删除任何真实对象"}
+  }
+ ],
+ "host_fixtures_204": [
+  {
+   "case": 3,
+   "kind": "systemd-unit+binary+config",
+   "paths": ["/etc/systemd/system/qa-tail-c2b7238a-firstinstall.service", "/opt/qa-tail-c2b7238a-bin/qa-tail-c2b7238a-app", "/etc/qa-tail-c2b7238a-firstinstall.conf"],
+   "note": "由产品部署路径创建（首次安装后回滚已自行删除 unit/binary/config）；本批另做兜底清理，复验 unit/binary/config/binary_dir 均 false",
+   "cleanup": {"verified": true}
+  },
+  {
+   "case": "3（中止的第一次尝试）",
+   "kind": "child-root",
+   "paths": ["/var/lib/nodesteer-qa-fixall-7ad88d7fi3"],
+   "note": "该次尝试未产生任何宿主 unit/binary/config（HELLO 被拒即中止）",
+   "cleanup": {"verified": true}
+  },
+  {
+   "case": 3,
+   "kind": "child-root",
+   "paths": ["/var/lib/nodesteer-qa-fixall-c2b7238ai3"],
+   "note": "自有 child Agent 的 root/config/data/log（0600/0700）",
+   "cleanup": {"verified": true, "child_root_left": "0"}
+  }
+ ],
+ "no_delete_of_pre_existing_objects": true,
+ "pre_existing_objects_untouched": {
+  "nodes": ["qa-repair-20260930-101945-native-1", "qa-repair-20260930-101945-native-2", "qa-repair-20260930-101945-native-3", "qa-repair-20260930-101945-native-4", "qa-resume-20261008-native4-child-c5d48ea9-…", "qa-resume-20261010-host-f174890c3846-host001"],
+  "applications": ["qa-repair-20260930-101945-app-async-live-6a32f"],
+  "note": "均为历史批次遗留，本批只读列出、未删除、未修改"
+ }
+}

@@ -1,0 +1,58 @@
+{
+  "updated_at_utc": "2026-10-10T15:30:26+00:00",
+  "scope": "Read-only repair:18080 Execution list/detail/auth lifecycle; no business resources created or mutated.",
+  "case_results": {
+    "P17P18-01": {
+      "status": "PASS",
+      "evidence": "list-case-results.json",
+      "assertion": "Visible columns, empty query, 10-row pagination and first/second page API/UI ID order verified."
+    },
+    "P17P18-02": {
+      "status": "PARTIAL",
+      "evidence": "query-case-results.json",
+      "assertion": "Execution ID, historical Task ID and Node ID queries matched; Task name unavailable because GET /api/tasks returned 0 tasks."
+    },
+    "P17P18-03": {
+      "status": "PARTIAL",
+      "evidence": "filter-case-results.json",
+      "assertion": "All 8 selectors drove matching API queries; six states had matching positive UI/API rows, PENDING/RUNNING had no sample."
+    },
+    "P17P18-04": {
+      "status": "PARTIAL",
+      "evidence": "filter-case-results.json",
+      "assertion": "manual and schedule had matching sample rows; system had no sample."
+    },
+    "P17P18-05": {
+      "status": "PASS",
+      "evidence": "clear-filter-case-results.json",
+      "assertion": "Active q+status+trigger filter returned one row; UI clearing removed all query fields and restored all rows."
+    },
+    "P17P18-08": {
+      "status": "PASS",
+      "evidence": "detail-case-results.json",
+      "assertion": "Execution metadata and logs appeared on one detail document, with no tabs; same Execution API and logs API succeeded."
+    },
+    "P17P18-15": {
+      "status": "PARTIAL",
+      "evidence": "detail-case-results.json",
+      "assertion": "The sampled execution was Command type and had no Script fields; a real ScriptTask sample is still required to verify fixed Task/Script revisions."
+    },
+    "P17P18-10": {
+      "status": "PASS",
+      "evidence": "p17p18-10-case-result.json",
+      "assertion": "Reviewed exact clipboard success/denial and Follow coordinates plus real Wrap button DOM/geometry transition."
+    },
+    "G-01-05": {
+      "status": "PASS",
+      "evidence": "g01-05-case-result.json",
+      "assertion": "Dedicated valid session logout 200→same-token /me 401; invalid token reload produced UI /api/me 401, cleared localStorage and sign-in route."
+    }
+  },
+  "aggregate": "5 PASS, 4 PARTIAL among 9 selected canonical cases; no global ledger update made.",
+  "live_execution_collection_observations": [
+    568,
+    569
+  ],
+  "our_business_resource_writes": 0,
+  "cleanup": "Dedicated UI token revoked with same-token /me 401; browser session closed and exact 0700 profile removed. One earlier API-login token from a failed about:blank injection could not be recovered or revoked; see auth-session-creation-anomaly.json."
+}

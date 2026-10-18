@@ -1,0 +1,31 @@
+{
+  "captured_at": "2026-10-10T02:15:37Z",
+  "case_id": "BE-SCRIPT-SHA-002",
+  "previous_source_sha256": "a4fba037729524358e92f0aed881aec655c9b58f4691d7b4639aeb9b1c503db7",
+  "source_sha256": "a19f5cf6431c9d0487169e2313a2d2a6b938cca6e6ae55ec58167aba7519f59f",
+  "source_diff": "sha-prune/ws-frame-proxy/source-change.diff",
+  "source_diff_sha256": "ab38f89eabef75a0efc3fa71bb613e14edbde41a20226653f279977ef1d516c0",
+  "deployment_binary": "sha-prune/ws-frame-proxy/ws-frame-proxy-stripped",
+  "deployment_binary_sha256": "6c3eb791a7058ab20fc8eeedad98b317d566c7eb19b348d2feedc25e11db00a9",
+  "build_command": "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOPROXY=off GOSUMDB=off GOCACHE=<sha-prune/build-cache> go build -trimpath -ldflags=-s -w",
+  "local_test": "go test PASS; pure scenario tests for exact Snapshot/App/script filter, SHA validation, exact bad SHA ACK with applied_rev 0, fail-closed pre-arm/missing-Script hold, repeated post-fault/reconnect hold until explicit release",
+  "root_requested_fixes": {
+    "hold_every_matching_snapshot_after_fault_until_release_across_reconnect": true,
+    "latch_bad_sent_before_client_write_and_accept_only_exact_negative_ack_after_latch": true,
+    "require_ok_false_applied_rev_zero_exact_script_id_sha256_mismatch": true,
+    "hold_matching_snapshot_until_fault_armed": true,
+    "block_any_App_omission_Snapshot_with_incomplete_target_script_revisions": true
+  },
+  "target_ids": {
+    "app": "2e4fecee-afc8-43a8-9d93-dd36cfc10bf9",
+    "good_script": "fc6fbcc6-39ce-49f4-9368-265a5a42d174",
+    "bad_script": "616a9db6-a87f-4d79-a4de-7d1b016e2986"
+  },
+  "v2_expected_revisions_after_update": {
+    "good": 3,
+    "bad": 2
+  },
+  "raw_frames_or_credentials_recorded": false,
+  "proxy_remote_redeployed": false,
+  "fault_armed": false
+}

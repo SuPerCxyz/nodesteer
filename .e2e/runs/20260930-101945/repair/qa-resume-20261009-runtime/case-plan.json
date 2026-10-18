@@ -1,0 +1,109 @@
+{
+  "run_id": "20260930-101945",
+  "workstream": "qa-resume-20261009-runtime",
+  "canonical_denominator": 504,
+  "repair_defect_denominator": 22,
+  "status": "WAITING_ROOT_FAULT_REVIEW",
+  "updated_at": "2026-10-09T08:33:29Z",
+  "application_fixture": {
+    "application_id": "2e4fecee-afc8-43a8-9d93-dd36cfc10bf9",
+    "application_name": "qa-resume-20261009-native1-p0-002-app-870358cd92ee",
+    "application_unit": "nodesteer-qa-e2e-20261009-p0-002-app-870358cd92ee.service",
+    "binary_path": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/app/bin/qa-app",
+    "config_path": "/tmp/nodesteer-e2e-20261009-P0-002-native1-870358cd92ee/app/config/qa-app.env",
+    "v1_artifact_id": "0c74fcee-7689-49a4-8206-3fa5f6eba746",
+    "v1_deploy_execution_id": "9af96c3f-d898-4ca3-811e-f8e823eb9900",
+    "v1_deployment_journal_id": "b48e8688-91bb-4305-810c-44db255c18b8",
+    "v1_binary_sha256": "35d10e1ef6728c5b46555efac91c605c0f1eb7edfe217f3724ae25a0dffb9d1c",
+    "v1_config_sha256": "5d24742791cf5f34c6b128ce01b7b4f5ee2516508e47731653abbf92c6190b34",
+    "v1_unit_sha256": "6f0bb711bdeb0d88ad738824209c652928d28ada6cb104f46fe87114edcd7ffa",
+    "v1_ui_screenshot": "app-v1-ui-detail.png",
+    "v1_ui_screenshot_sha256": "a05b8863dfe637a0546547726cd57cb2ba110823009e118b571cd6a0b35ee5e3",
+    "v2_artifact_id": "5517ff25-65b1-4da3-b5d7-a3f86f0de73d",
+    "v2_artifact_sha256": "e978740d1f6e40e831013a1ccd60ecd6d27e2c67ba1389d4df23bcbd4801cd46",
+    "v2_artifact_size": 16777216,
+    "application_definition_revision": 2,
+    "desired_version": "v2",
+    "actual_deployed_state": "v1 healthy; v1 binary/config/unit remain active and unchanged",
+    "v2_cache_verified_before_deploy": true,
+    "v2_deployment_or_fault_injection": "NOT_RUN"
+  },
+  "read_only_discovery": {
+    "evidence": "readonly-discovery.json",
+    "endpoint": "http://192.168.100.209:18080",
+    "native_1": {"node_id": "91f44866-8a28-435e-bbda-2f2367126c00", "hostname": "qa-repair-20260930-101945-native-1", "status": "online/synced", "deployment_mode": "native", "managed_systemd": true, "application_deploy": true},
+    "native_2": {"node_id": "611c02a5-1859-4465-878b-d543b7f6fdec", "hostname": "qa-repair-20260930-101945-native-2", "status": "online/synced", "deployment_mode": "native", "managed_systemd": true, "application_deploy": true},
+    "existing_tasks": {"count": 11, "native1_or_native2_targets": 0, "native4_child_targets": 10},
+    "host_integration_runner": false,
+    "tls_private_ca_runner": "not proven; current authenticated repair endpoint is HTTP :18080"
+  },
+  "proposed_first_mutation_for_parent_review": {
+    "type": "single uniquely named read-only Command Task",
+    "target_node_id": "91f44866-8a28-435e-bbda-2f2367126c00",
+    "target_hostname": "qa-repair-20260930-101945-native-1",
+    "purpose": "read-only owner/process/path/capability inventory for a disposable QA child; no signals, no writes to host paths or services",
+    "outputs": "restricted JSON evidence in this workstream only, with command/credential/config values redacted",
+    "preconditions": ["Root approves exact task creation and harmless command", "confirm no active concurrent task or native1 assignment collision", "before/after API health and node state unchanged"],
+    "status": "DONE",
+    "evidence": "native1-readonly-probe-evidence.json"
+  },
+  "cases": [
+    {
+      "case_id": "E2E-20260930-101945-P0-002",
+      "related_case_ids": ["MAIN-PHASE-PREPARING", "AR-30", "INV-11"],
+      "priority": "P0",
+      "target": "One newly created QA child/process and its exclusively owned Application, binary/config/unit paths, journal and temporary directory on an explicitly identified Native-1 or Native-2 repair Agent.",
+      "intent": "Exercise repaired PREPARING crash recovery, proving pre-existing old binary/config/unit are retained and recovery state plus Hub/API/UI feedback are truthful.",
+      "required_path": ["verify QA Agent online/synced and build identity", "create unique owned app/artifact/task through repair :18080", "deploy v1 and assert physical hashes/unit active", "begin v2 upgrade", "observe owned journal PREPARING with old version still recoverable", "fault only the new owned child process after exact PID/starttime/UID/argv/exe SHA confirmation", "restart/reconcile only that owned child", "verify journal terminal state, old file hashes/unit state, execution and actual API/UI feedback", "delete only this workstream's application/artifact/task/temp paths after capturing evidence"],
+      "parent_gate": "Child identity/root/unit/process preflight is done. Before Application/Artifact creation and PREPARING injection, parent must review ledger/source and approve the exact app/artifact/task IDs, paths, signals/restart and cleanup.",
+      "pass_evidence": ["before/after binary-config-unit SHA and active state", "journal phase and recovery transitions", "process ownership fingerprint before every signal", "Execution/API/UI feedback linked to same owned IDs", "cleanup result with original service/node health unchanged"],
+      "status": "CHILD_PREFLIGHT_READY; PREPARING_FAULT_NOT_RUN",
+      "preflight_evidence": "child-setup-evidence.json",
+      "child_node_id": "c77b8a84-8085-4ea8-8532-de171761854b",
+      "child_agent_id": "agent-426aa507-af4c-4005-858f-ce497d2fc67d",
+      "child_process": {"pid": 47582, "starttime_ticks": 129963662, "uid": 0, "exe_sha256": "d55dc5cd9b1a697a76f0bf6dccb3347b7715ef760173d31d1d1e57db96373add", "control_group": "/system.slice/nodesteer-qa-e2e-20261009-p0-002-native1-870358cd92ee.service"},
+      "fault_gate": "No app/artifact exists. Waiting for parent to review ledger and source definition before PREPARING fault injection."
+    },
+    {
+      "case_id": "FAIL-ENV-HOST-001",
+      "priority": "P1",
+      "target": "Only if an existing Host Integration runner is proven isolated and all container mount/capability effects are explicitly bounded; otherwise no live injection.",
+      "intent": "Validate nsenter root invocation through a real owned Host Managed Application operation, with no privilege expansion and exact temporary host paths.",
+      "status": "NOT_RUN",
+      "execution_blocker": "No Host Integration Agent exists in current repair API inventory. The historical Host runner targeted another host and had host PID/net, writable host mounts and extra capabilities; it is not reused.",
+      "fallback": "PARTIAL/BLOCKED with reason; do not reinterpret the known prior failure as repaired evidence."
+    },
+    {
+      "case_id": "FAIL-ENV-HOST-002",
+      "priority": "P1",
+      "target": "Only isolated runner and new unique host/container sentinel paths, after read-only mount/path/capability inventory proves impact boundary.",
+      "intent": "Use missing/wrong host mapping negative inputs and verify transport result, physical host target, wrong target, overlay sentinel, and truthful capability/status feedback.",
+      "status": "NOT_RUN",
+      "execution_blocker": "No isolated private-CA TLS runner proven; the current repair control endpoint is HTTP :18080 and no TLS fixture was created.",
+      "fallback": "PARTIAL/BLOCKED if the disposable mapping cannot be proven or exact cleanup cannot be guaranteed."
+    },
+    {
+      "case_id": "FAIL-ENV-TLS-001",
+      "priority": "P1",
+      "target": "Only isolated runner, explicit parent-provided repair connection, private CA fixture and owned artifact/cache directories; no credentials in evidence.",
+      "intent": "Verify configured private CA across real Agent Artifact prefetch and, if isolated targets exist, File Relay HTTPS; inspect cache SHA and tmp cleanup plus actual UI/API/execution outcome.",
+      "status": "NOT_RUN",
+      "execution_blocker": "No isolated private-CA TLS runner proven; current repair control endpoint is HTTP :18080. Do not create a TLS fixture without a separate approved impact plan.",
+      "fallback": "PARTIAL/BLOCKED if private CA/target isolation or valid TLS endpoint cannot be proven."
+    },
+    {
+      "case_id": "SYS-504-RUNTIME-GAPS",
+      "priority": "P2",
+      "target": "If high-risk runtime fixtures are unsafe/unavailable, execute bounded no-side-effect SYS/INV verification on Native-1/2 only, using existing read-only or harmless product Command Task and owned evidence outputs.",
+      "dimensions": ["execution path", "state synchronization", "condition evaluation", "artifact or persisted effect when applicable"],
+      "status": "NOT_RUN",
+      "note": "Parent owns canonical ledger/scope. Do not manufacture PASS from static review, mock, or lack of observable effect; report exact case IDs and PARTIAL/BLOCKED."
+    }
+  ],
+  "owner_safety_protocol": {
+    "before_mutation": ["read node and task/application identity", "bind operation to explicit repair :18080", "record exact PID plus /proc starttime, UID, argv, executable path and executable SHA256 for the newly owned process", "verify no target path/unit/process belongs to an original Agent or another active workstream", "parent approves the resulting target/guard plan"],
+    "before_signal_or_restart": ["re-read PID/starttime/UID/argv/exe SHA", "abort on any mismatch or PID reuse", "signal only the owned child process through its verified handle", "never signal original Agent or parent/runner service"],
+    "cleanup": ["delete only IDs and absolute paths created by this workstream", "verify retained original node/Hub/Agent health and backup inventory", "record cleanup receipts and residuals", "leave unremovable history/backup artifacts intact"]
+  },
+  "prohibited": ["primary:8080 management writes", "original Agent/service mutation", "QGA guest-exec bypass", "assuming guest SSH availability", "privileged/mount/capability expansion", "credential output/copy", "source or AGENTS edits", "Git or OpenSpec archive"]
+}

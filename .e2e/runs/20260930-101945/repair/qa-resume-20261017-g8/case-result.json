@@ -1,0 +1,174 @@
+{
+ "batch_id": "qa-resume-20261017-g8",
+ "owner": "e2e（G8 安全复测批：凭据遮蔽矩阵）",
+ "generated_at_utc": "2026-10-17T04:40:00Z",
+ "authorization": {
+  "checklist": ".e2e/runs/20260930-101945/repair/qa-resume-20261014-root/authorization-checklist-20261016.md",
+  "group": "G8（安全复测类，1 条）",
+  "cases_authorized": [
+   "X16"
+  ],
+  "constraints_applied": [
+   "遮蔽矩阵只在隔离可销毁实例上构造敏感值（标记值），真实凭据不入证据",
+   "repair :18080 只读；primary :8080 全程未触碰",
+   "不建持久化账号；不重启 VM/服务；不改产品源码"
+  ]
+ },
+ "environment": {
+  "instance": "nodesteer-qa-g89202610178970c813",
+  "nonce": "g89202610178970c813",
+  "port": 18086,
+  "base_url": "http://192.168.100.209:18086",
+  "tunnel_local_port": 38286,
+  "shared_with": "qa-resume-20261017-g9（同一实例，见 instance-ledger.json）",
+  "binary": "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard",
+  "binary_sha256": "fdfa667bf51ce1a7e9a0b1aeeeef7660764b605360613d14fb518b67015e36d1",
+  "owned_child_agent_sha256": "b15f6df540a63a8eb530ec837c57d4628ff7925822153a02d624f021a525ac4f",
+  "ui_parity_with_repair": "index.html sha256 相同（612c23ba…）",
+  "browser": "agent-browser（自有 session：qa-g89-<nonce>-*）",
+  "markers": "全部为非敏感 QAMARK-* 标记值（script_default/task_default/task_value/revision/ui_input/error/boundary），随实例销毁"
+ },
+ "cases": [
+  {
+   "case_id": "X16",
+   "title": "使用非敏感标记值检查 secret 默认值/输入/Revision/Execution/Audit/错误遮蔽；凭据、Registration Token、Authorization 和 Cookie 不进入交付证据。",
+   "before_status": "PARTIAL",
+   "proposed_status": "FAIL",
+   "confidence": "high（遮蔽矩阵逐项证据齐全）；执行/日志维度的缺陷归类为 medium（疑似回归 vs 未覆盖变体，交 Root 复核）",
+   "verified_dimensions": [
+    {
+     "dimension": "默认值摘要遮蔽（Script/Task 编辑器、列表、详情）",
+     "result": "PASS",
+     "layer": "real-ui-api",
+     "detail": "Script 编辑器 secret 参数摘要渲染为掩码 token「••••••••」，页面 HTML 与可见文本均无标记原文（marker_in_html=0 / marker_in_visible_text=0）；Task 详情、Scripts/Tasks 列表无标记。管理员鉴权 API 单对象 GET 返回明文 default（编辑/下发所必需的设计行为，非泄漏面）；运行页把 default 预填进 type=password 输入框（视觉掩码）。",
+     "evidence": [
+      "evidence/G8-masking-matrix-ui.json",
+      "evidence/G8-masking-matrix-api.json",
+      "evidence/G8-script-editor-masked.png",
+      "evidence/G8-task-detail-masked.png",
+      "evidence/G8-scripts-list.png",
+      "evidence/G8-tasks-list.png"
+     ]
+    },
+    {
+     "dimension": "输入遮蔽（参数编辑器 + 运行页 secret 输入）",
+     "result": "PASS",
+     "layer": "real-ui-api",
+     "detail": "参数编辑器：type 切到 secret 后「默认值」输入框 type=password 且值为空（不回填明文）；运行页 /tasks/{id}/run 的 secret 输入为 type=password，填入标记值后页面可见文本无标记（visible_plaintext_in_dom=false）；登录口令输入 password 型。",
+     "evidence": [
+      "evidence/G8-masking-matrix-ui2.json",
+      "evidence/G8-param-type-secret-input.png",
+      "evidence/G8-run-page-secret-input.json",
+      "evidence/G8-runpage-secret-input.png",
+      "evidence/G8-runpage-secret-filled.png"
+     ]
+    },
+    {
+     "dimension": "Revision 历史遮蔽",
+     "result": "PASS",
+     "layer": "real-ui-api",
+     "detail": "GET /api/scripts/{id}/revisions 返回 6 条 {revision, content, sha256, changed_at}，无 parameters/defaults 字段，标记值命中 0；单 revision 明细 156 字节，无标记；UI「版本历史」逐项点击（r6/r5/r4）后页面文本无标记。",
+     "evidence": [
+      "evidence/G8-revision-history-masking.json",
+      "evidence/G8-script-revision-history.png"
+     ]
+    },
+    {
+     "dimension": "Execution 与运行日志遮蔽（终态 + 实时 + UI）",
+     "result": "FAIL（缺陷类别命中）",
+     "layer": "real-ui-api-agent",
+     "detail": "整值路径全部遮蔽：task_full（stdout 整值）→ [REDACTED]；task_stderr（stderr 整值）→ ERR-[REDACTED]-END；script_default 链路 → [REDACTED]；运行页提交的 secret → 日志 [REDACTED]、DOM 无标记；实时轮询 7 次快照均无完整标记。但「同值拆片」变体未遮蔽：task_split（先输出 secret 去掉末尾 8 字符的 34 字符前缀、1.5s 后输出去掉开头 8 字符的 34 字符后缀，同一 stdout chunk 69 字节）两片均原样可见、redacted 计数 0，两片并集即完整标记值；task_fail（stdout/跨流 stderr 各一片）同样两片可见；1MiB 边界形态 chunk0 头 27 字符 + 末块尾 19 字符可见，两段拼接即完整标记值。",
+     "defect_reference": "BE-SECRET-STREAM-001（P1，confirmed，repair_status=PASS）——本例命中其描述「跨实时日志分块后可重组为明文」；2026-10-08 验证摘要为「stdout 前缀遮蔽、terminal_fields_reconstruct=false」，与本构建观测不一致，故标注为疑似回归/未覆盖变体，需 Root 复核。",
+     "evidence": [
+      "evidence/G8-masking-matrix-api.json",
+      "evidence/G8-split-stream-probes.json",
+      "evidence/G8-boundary-seam-excerpt.json",
+      "evidence/G8-execution-detail-redacted.png",
+      "evidence/G8-run-page-secret-input-confirm.json"
+     ]
+    },
+    {
+     "dimension": "Audit 遮蔽",
+     "result": "PASS",
+     "layer": "real-ui-api",
+     "detail": "GET /api/audit 行字段仅 {id,user_id,username,action,resource,resource_id,created_at}，无参数/值字段，标记命中 0；UI 审计页无标记。",
+     "evidence": [
+      "evidence/G8-masking-matrix-api.json",
+      "evidence/G8-audit-page.png"
+     ]
+    },
+    {
+     "dimension": "错误信息遮蔽（错误体不得回显 secret）",
+     "result": "PASS",
+     "layer": "real-api",
+     "detail": "5 条携带标记值的错误路径中 4 条不回显标记：run+伪造节点（错误体为节点不存在类）、transfer 源节点伪造、schedule 非法类型、required 缺失（错误体只含参数名）；唯一 echo 命中的 script PUT 实际返回 200（未做类型校验，非错误路径）。另：伪造目标触发的原始 SQL 错误文本属既有缺陷类别（引用 E2E-20261015-SQL-ERROR-LEAK-ON-PUT-NOTFOUND / E2E-20261016-ASSIGN-MISSING-APP-500-SQL-LEAK），本项只确认其不回显 secret。",
+     "evidence": [
+      "evidence/G8-error-masking-and-session-surface.json",
+      "evidence/G8-masking-matrix-api.json"
+     ]
+    },
+    {
+     "dimension": "凭据 / Registration Token / Authorization / Cookie 不进入交付证据",
+     "result": "PASS",
+     "layer": "real-api + 证据目录扫描",
+     "detail": "以 6 个真实凭据（本实例 admin 口令/registration token/bearer、repair admin 口令/registration token/connection token）为 needle 扫描 repair 交付树：8797 文件、7092 文本文件，命中 0；本两批自有目录命中 0。登录响应无 Set-Cookie、无口令回显（token 在响应体，浏览器存 localStorage，document.cookie 为空）；/api/me 仅回显调用者本人 token（会话信息接口，其它只读接口命中 0）；enrollment 响应内嵌 registration token 属新节点接入设计用途，且未同时出现口令/bearer。通用形态扫描命中均为测试脚本中的 Authorization 字面量与 1 个「invalid…」负向测试假 token（非真实凭据）。",
+     "evidence": [
+      "evidence/G8-credential-leak-scan.json",
+      "evidence/G8-masking-matrix-ui.json"
+     ]
+    }
+   ],
+   "remaining_or_unverified": [
+    "task_split/task_fail/1MiB 边界三个「同值拆片」形态的遮蔽判定：本批按缺陷类别命中如实记录并引用 BE-SECRET-STREAM-001，未自行放宽；其归类（回归 / 未覆盖变体 / 已接受残余口径）需 Root 或独立核验裁决。",
+    "script PUT 未校验参数类型（type=not-a-type 返回 200）仅作观察记录，非 X16 判定项，未计入缺陷。",
+    "enrollment 间歇 500 观察（见 G9 批次 dataset-ledger / G9-enrollment-burst-observation*.json）与 X16 无关，未计入判定。"
+   ],
+   "layer": "real-ui-api-agent",
+   "evidence": [
+    "evidence/G8-masking-matrix-api.json",
+    "evidence/G8-masking-matrix-ui.json",
+    "evidence/G8-masking-matrix-ui2.json",
+    "evidence/G8-split-stream-probes.json",
+    "evidence/G8-boundary-seam-excerpt.json",
+    "evidence/G8-revision-history-masking.json",
+    "evidence/G8-error-masking-and-session-surface.json",
+    "evidence/G8-credential-leak-scan.json",
+    "evidence/G8-run-page-secret-input.json",
+    "evidence/G8-run-page-secret-input-confirm.json",
+    "matrix-raw.json"
+   ],
+   "actual": "遮蔽矩阵按用例逐项执行（默认值/输入/Revision/Execution/Audit/错误/凭据泄漏面），7 个维度中 6 个 PASS、1 个（Execution 与运行日志）在「同值拆片」变体下未遮蔽并可拼接还原完整标记值（引用 BE-SECRET-STREAM-001）；交付证据目录不含任何真实凭据原文。"
+  }
+ ],
+ "observations_and_findings": [
+  {
+   "id": "G8-OBS-20261017-SPLIT-FRAGMENT-MASKING",
+   "severity": "P1（沿用 BE-SECRET-STREAM-001 类别）",
+   "status": "reported-not-registered",
+   "summary": "CR-1 构建（hub fdfa667b + agent b15f6df5）下，同一 secret 的重叠/互补片段打印形态在 stdout/stderr 均未遮蔽，两片并集可还原完整值；与 2026-10-08 对 BE-SECRET-STREAM-001 的 PASS 验证口径不一致。",
+   "note": "本批未修改 .e2e/failures.json 或台账；缺陷 ID 引用既有 BE-SECRET-STREAM-001，是否升级为新缺陷/回归条目由 Root 裁决。"
+  },
+  {
+   "id": "G8-OBS-20261017-PARAM-TYPE-NOT-VALIDATED",
+   "severity": "P3（观察，非本用例判定项）",
+   "summary": "PUT /api/scripts/{id} 携带 parameters[].type='not-a-type' 返回 200 并被持久化，未见类型校验；随后已恢复合法定义。"
+  },
+  {
+   "id": "G8-OBS-20261017-ENROLLMENT-INTERMITTENT-500",
+   "severity": "P3（观察，与 X16 无关）",
+   "summary": "隔离实例内连续 enrollment 探针出现间歇 500（相同请求体此前/此后均 200），明细见 G9 批次 dataset-ledger.json 与 evidence/G9-enrollment-burst-observation*.json。"
+  }
+ ],
+ "harness_anomalies": [
+  "运行页确认弹窗内的「立即运行」需按 dialog 作用域点击；页面级点击会命中弹窗背后的同名按钮且不触发提交（已修正并复测通过）。",
+  "首次运行页探针（12:21）记录 dialog=false 属时序假阴性；本次以页面态 + 对话框态分步读取后复现成功（G8-run-page-secret-input-confirm.json）。",
+  "error-masking 探针以 content='echo x' 覆盖了自有脚本夹具内容（参数与默认值已恢复；content 未回滚，随实例销毁）；对已记录的 script_default 链路证据无影响。",
+  "G8 矩阵早期（12:01）的 required-missing 探针记录 400「required parameter marker_secret is missing」；本次复测时该任务目标节点已因 G9 数据集操作失效，返回 500 目标错误——两者均为真实结果，非产品变更。",
+  "收尾首轮用 `pkill -f \"-L 38286:127.0.0.1:18086\"` 关闭本地隧道：模式以 '-' 开头被解析为选项，隧道未终止且 pgrep 检查假阴性；已按 PID 终止并复验（进程 0），final-cleanup-oracle.json 已记录该 harness bug。"
+ ],
+ "teardown": {
+  "oracle": "final-cleanup-oracle.json",
+  "instance": "与 qa-resume-20261017-g9 共享，一次性整体销毁并核对零残留",
+  "result": "ISOLATED_INSTANCE_DESTROYED_AND_VERIFIED（进程 0 / 端口 0 / 目录与配置不存在 / repair 与 primary PID 未变 / 自有 session 0 / 隧道 0）"
+ }
+}

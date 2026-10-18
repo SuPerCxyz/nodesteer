@@ -1,0 +1,718 @@
+{
+  "batch_id": "sys-b06",
+  "title": "Journal 先行、Hub 断开时本地日志完整、恢复后幂等上传",
+  "nonce": "2200f26673a4",
+  "executed_at_utc": "2026-10-15T11:05:27Z",
+  "finished_at_utc": "2026-10-15T11:07:01Z",
+  "endpoint": "http://192.168.100.209:18080",
+  "cases": [
+    {
+      "case_id": "SYS-33",
+      "title": "SYS-33 Execution 开始前先写 Journal",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-33",
+          "layer": "agent-local journal (sqlite) / real process start / hub dispatch",
+          "status": "PASS",
+          "description": [
+            "A real manual Run was dispatched to the owned child Agent through the repair Hub; a node-local sampler (~1ms) watched the Agent store and the script effect file at the same time, on the same kernel clock.",
+            "The journal row was first seen with status RUNNING before the script had executed its first statement; the sampler recorded 4 sample(s) of exactly that half state (journal visible, process not yet started).",
+            "The journal row kept the dispatch-time start_time written before the process was spawned and reached terminal SUCCESS; the Hub row and the local journal agree on stdout/exit status.",
+            "Journal-first is also visible in the negative direction: nothing is written to the Hub for the execution before the Agent journal exists (the Hub row is created by the Hub dispatch, the Agent row by the Agent)."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The half state window is measured, not injected: it was observed by a node-local ~1ms sampler. If the process had started inside a single sample interval the ordering would rest on the timestamps of the same node clock (also reported). Reported observations: {\"direct\": true, \"gap_row_to_marker_sec\": 0.007638, \"timestamp_margin_sec\": 0.011003, \"samples\": 335}."
+      ],
+      "evidence": [
+        "attempt01-harness-bug",
+        "attempt02-oracle-repairhub-mainpid",
+        "final-cleanup-oracle.json",
+        "phase-frames.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-sys33-inv08-journal-first.json",
+        "phase4-sys35-sys36-ar07-hub-outage.json",
+        "phase5-ar19-execution-reupload.json",
+        "phase6-settle-consistency.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb06-2200f26673a4-",
+        "child_node_id": "99d27885-4b6d-41f0-9c3f-d32e3e5365d2",
+        "child_agent_id": "agent-f995562d-4326-4864-92c6-24e8c8a97da5",
+        "script_id": "b876772b-a834-4b48-b9da-1bd735ad2c09",
+        "task_id": "bef743d0-6c34-4562-9478-504afdb77aa6",
+        "executions": {
+          "journal_first": "812e066d-dafb-4a3c-aa2b-2e68d6dbbf62",
+          "hub_outage_during_execution": "2a323f45-6eb2-4575-aa6c-5299c7a5422f",
+          "reupload": "343f75a3-6f1f-418f-a62e-d1bbba519dae"
+        },
+        "preserved_execution_history": [
+          "812e066d-dafb-4a3c-aa2b-2e68d6dbbf62",
+          "2a323f45-6eb2-4575-aa6c-5299c7a5422f",
+          "343f75a3-6f1f-418f-a62e-d1bbba519dae"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 9,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 3,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1,
+        "hub_stop_events": 1,
+        "hub_start_events": 1,
+        "proxy_cut_events": 1,
+        "background_samplers": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "bef743d0-6c34-4562-9478-504afdb77aa6",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "b876772b-a834-4b48-b9da-1bd735ad2c09",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "at_utc": "2026-10-15T11:06:56Z",
+        "effect_files": {
+          "still_exists": {
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/journal.txt": false,
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/outage.txt": false,
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/reup.txt": false
+          }
+        },
+        "node_child_removal": {
+          "signalled": [
+            27351
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "99d27885-4b6d-41f0-9c3f-d32e3e5365d2",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "INV-08",
+      "title": "INV-08 Execution Start 前必须先写 Journal",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:INV-08",
+          "layer": "agent journal invariant / real execution start",
+          "status": "PASS",
+          "description": [
+            "Same execution as SYS-33: the Agent persisted the journal row (RUNNING, synced=0) and only then spawned the script process.",
+            "The row survived independent of the process lifetime and carried the status/logs of the real run; the Hub never observed an Execution whose journal did not already exist locally.",
+            "The invariant also held on the offline paths exercised in this batch (outage execution, re-upload): the local journal row existed with synced=0 while the Hub had no/partial information."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Observed through the Agent store + the process effect file, not by reading Agent memory. No product source was modified."
+      ],
+      "evidence": [
+        "attempt01-harness-bug",
+        "attempt02-oracle-repairhub-mainpid",
+        "final-cleanup-oracle.json",
+        "phase-frames.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-sys33-inv08-journal-first.json",
+        "phase4-sys35-sys36-ar07-hub-outage.json",
+        "phase5-ar19-execution-reupload.json",
+        "phase6-settle-consistency.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb06-2200f26673a4-",
+        "child_node_id": "99d27885-4b6d-41f0-9c3f-d32e3e5365d2",
+        "child_agent_id": "agent-f995562d-4326-4864-92c6-24e8c8a97da5",
+        "script_id": "b876772b-a834-4b48-b9da-1bd735ad2c09",
+        "task_id": "bef743d0-6c34-4562-9478-504afdb77aa6",
+        "executions": {
+          "journal_first": "812e066d-dafb-4a3c-aa2b-2e68d6dbbf62",
+          "hub_outage_during_execution": "2a323f45-6eb2-4575-aa6c-5299c7a5422f",
+          "reupload": "343f75a3-6f1f-418f-a62e-d1bbba519dae"
+        },
+        "preserved_execution_history": [
+          "812e066d-dafb-4a3c-aa2b-2e68d6dbbf62",
+          "2a323f45-6eb2-4575-aa6c-5299c7a5422f",
+          "343f75a3-6f1f-418f-a62e-d1bbba519dae"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 9,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 3,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1,
+        "hub_stop_events": 1,
+        "hub_start_events": 1,
+        "proxy_cut_events": 1,
+        "background_samplers": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "bef743d0-6c34-4562-9478-504afdb77aa6",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "b876772b-a834-4b48-b9da-1bd735ad2c09",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "at_utc": "2026-10-15T11:06:56Z",
+        "effect_files": {
+          "still_exists": {
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/journal.txt": false,
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/outage.txt": false,
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/reup.txt": false
+          }
+        },
+        "node_child_removal": {
+          "signalled": [
+            27351
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "99d27885-4b6d-41f0-9c3f-d32e3e5365d2",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "SYS-35",
+      "title": "SYS-35 Hub 断开时本地日志仍完整",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-35",
+          "layer": "real repair-Hub stop while a real execution is in flight / agent-local logs",
+          "status": "PASS",
+          "description": [
+            "A real execution (6 stdout + 6 stderr chunks with 2s spacing) was dispatched, then the ONE authorised repair Hub unit was stopped while the process was still running; the caller-visible API went away (HTTP probe + TCP :18080).",
+            "While the Hub did not exist the process finished normally: the node effect file got its end marker and the Agent-local journal row ended SUCCESS with the full stdout/stderr of all 6+6 chunks and synced=0.",
+            "Local log completeness is therefore not dependent on Hub availability; the execution was still in flight when the Hub died and no output was lost.",
+            "Hub-side realtime LOG_CHUNK frames stopped at the disconnection (they require a live link) and were not re-sent afterwards - the authoritative full stdout/stderr arrived with the final upload (see SYS-36)."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "The Hub outage was produced by stopping the authorised repair unit (`nodesteer-hub-repair-20260930-101945.service`) once; the primary :8080 Hub and every Agent unit kept their original MainPIDs (recorded before/after)."
+      ],
+      "evidence": [
+        "attempt01-harness-bug",
+        "attempt02-oracle-repairhub-mainpid",
+        "final-cleanup-oracle.json",
+        "phase-frames.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-sys33-inv08-journal-first.json",
+        "phase4-sys35-sys36-ar07-hub-outage.json",
+        "phase5-ar19-execution-reupload.json",
+        "phase6-settle-consistency.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb06-2200f26673a4-",
+        "child_node_id": "99d27885-4b6d-41f0-9c3f-d32e3e5365d2",
+        "child_agent_id": "agent-f995562d-4326-4864-92c6-24e8c8a97da5",
+        "script_id": "b876772b-a834-4b48-b9da-1bd735ad2c09",
+        "task_id": "bef743d0-6c34-4562-9478-504afdb77aa6",
+        "executions": {
+          "journal_first": "812e066d-dafb-4a3c-aa2b-2e68d6dbbf62",
+          "hub_outage_during_execution": "2a323f45-6eb2-4575-aa6c-5299c7a5422f",
+          "reupload": "343f75a3-6f1f-418f-a62e-d1bbba519dae"
+        },
+        "preserved_execution_history": [
+          "812e066d-dafb-4a3c-aa2b-2e68d6dbbf62",
+          "2a323f45-6eb2-4575-aa6c-5299c7a5422f",
+          "343f75a3-6f1f-418f-a62e-d1bbba519dae"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 9,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 3,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1,
+        "hub_stop_events": 1,
+        "hub_start_events": 1,
+        "proxy_cut_events": 1,
+        "background_samplers": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "bef743d0-6c34-4562-9478-504afdb77aa6",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "b876772b-a834-4b48-b9da-1bd735ad2c09",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "at_utc": "2026-10-15T11:06:56Z",
+        "effect_files": {
+          "still_exists": {
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/journal.txt": false,
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/outage.txt": false,
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/reup.txt": false
+          }
+        },
+        "node_child_removal": {
+          "signalled": [
+            27351
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "99d27885-4b6d-41f0-9c3f-d32e3e5365d2",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "SYS-36",
+      "title": "SYS-36 Hub 恢复后日志和 Execution 幂等上传",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:SYS-36",
+          "layer": "hub recovery / agent reconnect reconcile / execution + log upload idempotency",
+          "status": "PASS",
+          "description": [
+            "After the Hub came back (healthz=readyz=200) the owned child reconnected by itself and the journal row with synced=0 was re-uploaded through the normal product path.",
+            "The Hub row for that Execution ID became terminal with the complete stdout (6/6 chunk markers) and stderr (6/6), and its content SHA256 equals the Agent-local content SHA256.",
+            "The upload was idempotent: exactly one row per Execution ID, the ID set on the Hub equals the ID set in the Agent store, and the realtime log_chunk rows stayed partial (no chunk equals the full final stdout, and the last output line - produced while the Hub was down - is present only in the final upload).",
+            "A second, deliberate re-upload (EXECUTION_ACK withheld on the harness frame proxy + real link cut/reconnect) produced the same single row with byte-identical content (see AR-19)."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "Realtime log chunks are best-effort while connected; the authoritative full stdout/stderr is carried by the final execution upload. That distinction is product behaviour, reported as observed, not as a failure."
+      ],
+      "evidence": [
+        "attempt01-harness-bug",
+        "attempt02-oracle-repairhub-mainpid",
+        "final-cleanup-oracle.json",
+        "phase-frames.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-sys33-inv08-journal-first.json",
+        "phase4-sys35-sys36-ar07-hub-outage.json",
+        "phase5-ar19-execution-reupload.json",
+        "phase6-settle-consistency.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb06-2200f26673a4-",
+        "child_node_id": "99d27885-4b6d-41f0-9c3f-d32e3e5365d2",
+        "child_agent_id": "agent-f995562d-4326-4864-92c6-24e8c8a97da5",
+        "script_id": "b876772b-a834-4b48-b9da-1bd735ad2c09",
+        "task_id": "bef743d0-6c34-4562-9478-504afdb77aa6",
+        "executions": {
+          "journal_first": "812e066d-dafb-4a3c-aa2b-2e68d6dbbf62",
+          "hub_outage_during_execution": "2a323f45-6eb2-4575-aa6c-5299c7a5422f",
+          "reupload": "343f75a3-6f1f-418f-a62e-d1bbba519dae"
+        },
+        "preserved_execution_history": [
+          "812e066d-dafb-4a3c-aa2b-2e68d6dbbf62",
+          "2a323f45-6eb2-4575-aa6c-5299c7a5422f",
+          "343f75a3-6f1f-418f-a62e-d1bbba519dae"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 9,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 3,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1,
+        "hub_stop_events": 1,
+        "hub_start_events": 1,
+        "proxy_cut_events": 1,
+        "background_samplers": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "bef743d0-6c34-4562-9478-504afdb77aa6",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "b876772b-a834-4b48-b9da-1bd735ad2c09",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "at_utc": "2026-10-15T11:06:56Z",
+        "effect_files": {
+          "still_exists": {
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/journal.txt": false,
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/outage.txt": false,
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/reup.txt": false
+          }
+        },
+        "node_child_removal": {
+          "signalled": [
+            27351
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "99d27885-4b6d-41f0-9c3f-d32e3e5365d2",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "AR-19",
+      "title": "AR-19 Execution Re-upload；恢复后幂等、持久化、Desired State与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-19",
+          "layer": "genuine product re-upload path (reconcileExecutions) / hub idempotency / persistence",
+          "status": "PASS",
+          "description": [
+            "The harness withheld exactly one Hub->Agent EXECUTION_ACK frame on its own frame proxy, so the Agent kept the completed journal row at synced=0 (its own invariant: a row is only synced after the ACK) while the Hub already held the terminal result.",
+            "A real link cut and reconnect then triggered the product re-upload path; the Agent marked the row synced and the Hub kept exactly one row for that Execution ID with identical stdout/stderr (byte-for-byte SHA256 match) - no duplicate Execution, no duplicated log chunks.",
+            "Persistence: the Hub database revision did not decrease across the outage, the owned script/task rows were still present and quick_check=ok; the Agent store quick_check=ok as well.",
+            "Desired State equals actual state after recovery: Hub script sha256/revision match the Agent-local copy, task revisions match, and the re-uploaded execution content matches on both sides."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "No local-store write was performed by the harness for this seam (0 writes): the half-synced state was produced purely by withholding one protocol frame."
+      ],
+      "evidence": [
+        "attempt01-harness-bug",
+        "attempt02-oracle-repairhub-mainpid",
+        "final-cleanup-oracle.json",
+        "phase-frames.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-sys33-inv08-journal-first.json",
+        "phase4-sys35-sys36-ar07-hub-outage.json",
+        "phase5-ar19-execution-reupload.json",
+        "phase6-settle-consistency.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb06-2200f26673a4-",
+        "child_node_id": "99d27885-4b6d-41f0-9c3f-d32e3e5365d2",
+        "child_agent_id": "agent-f995562d-4326-4864-92c6-24e8c8a97da5",
+        "script_id": "b876772b-a834-4b48-b9da-1bd735ad2c09",
+        "task_id": "bef743d0-6c34-4562-9478-504afdb77aa6",
+        "executions": {
+          "journal_first": "812e066d-dafb-4a3c-aa2b-2e68d6dbbf62",
+          "hub_outage_during_execution": "2a323f45-6eb2-4575-aa6c-5299c7a5422f",
+          "reupload": "343f75a3-6f1f-418f-a62e-d1bbba519dae"
+        },
+        "preserved_execution_history": [
+          "812e066d-dafb-4a3c-aa2b-2e68d6dbbf62",
+          "2a323f45-6eb2-4575-aa6c-5299c7a5422f",
+          "343f75a3-6f1f-418f-a62e-d1bbba519dae"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 9,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 3,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1,
+        "hub_stop_events": 1,
+        "hub_start_events": 1,
+        "proxy_cut_events": 1,
+        "background_samplers": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "bef743d0-6c34-4562-9478-504afdb77aa6",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "b876772b-a834-4b48-b9da-1bd735ad2c09",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "at_utc": "2026-10-15T11:06:56Z",
+        "effect_files": {
+          "still_exists": {
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/journal.txt": false,
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/outage.txt": false,
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/reup.txt": false
+          }
+        },
+        "node_child_removal": {
+          "signalled": [
+            27351
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "99d27885-4b6d-41f0-9c3f-d32e3e5365d2",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    },
+    {
+      "case_id": "AR-07",
+      "title": "AR-07 Hub Disconnect During Execution；恢复后幂等、持久化、Desired State与实际状态一致",
+      "canonical_before": "NOT_RUN (repair build not executed; legacy baseline PASS excluded per remaining_dimensions)",
+      "proposed_after": "PASS",
+      "confidence": "high",
+      "covered_dimensions": [
+        {
+          "test_id": "20261014-RUNTIME:AR-07",
+          "layer": "full chain: real dispatch -> hub stop mid-execution -> local finish -> hub start -> reconnect -> upload",
+          "status": "PASS",
+          "description": [
+            "The whole user-visible chain was exercised once: dispatch from the API, the repair Hub unit stopped while the process was running (MainPID changed, binary SHA unchanged, healthz/readyz down from the operator workstation), the process finishing during the outage, the Hub restarting, the Agent reconnecting and the result being uploaded.",
+            "After recovery the 4 protected repair nodes were all back to online/synced within the observation window (>=45s Revision Check window allowed) and every protected Agent unit plus the primary :8080 Hub kept exactly its pre-outage MainPID (the repair Hub unit itself changed MainPID by design, being the one authorised stop/start).",
+            "State consistency after recovery: exactly one Execution per dispatch, no duplicated Execution or log rows, Hub Desired State rows and revision sequence preserved, and Desired == actual on script/task revisions.",
+            "Failure/reverse path: the outage itself produced no extra side effects (no phantom Execution, no half-uploaded row, no fixture loss); the caller-visible outage and the recovery were both observed from the operator workstation."
+          ]
+        }
+      ],
+      "remaining_or_limitations": [
+        "One outage cycle was performed, on the single authorised repair unit. Protected Agent services and the primary Hub were only read."
+      ],
+      "evidence": [
+        "attempt01-harness-bug",
+        "attempt02-oracle-repairhub-mainpid",
+        "final-cleanup-oracle.json",
+        "phase-frames.json",
+        "phase0-guard.json",
+        "phase0-preflight.json",
+        "phase1-owned-child.json",
+        "phase2-fixtures.json",
+        "phase3-sys33-inv08-journal-first.json",
+        "phase4-sys35-sys36-ar07-hub-outage.json",
+        "phase5-ar19-execution-reupload.json",
+        "phase6-settle-consistency.json",
+        "case-result.json",
+        "progress.json",
+        "fixture-ledger.json",
+        "final-cleanup-oracle.json",
+        "run-evidence.json"
+      ],
+      "actual_resources": {
+        "owned_prefix": "qa-sysb06-2200f26673a4-",
+        "child_node_id": "99d27885-4b6d-41f0-9c3f-d32e3e5365d2",
+        "child_agent_id": "agent-f995562d-4326-4864-92c6-24e8c8a97da5",
+        "script_id": "b876772b-a834-4b48-b9da-1bd735ad2c09",
+        "task_id": "bef743d0-6c34-4562-9478-504afdb77aa6",
+        "executions": {
+          "journal_first": "812e066d-dafb-4a3c-aa2b-2e68d6dbbf62",
+          "hub_outage_during_execution": "2a323f45-6eb2-4575-aa6c-5299c7a5422f",
+          "reupload": "343f75a3-6f1f-418f-a62e-d1bbba519dae"
+        },
+        "preserved_execution_history": [
+          "812e066d-dafb-4a3c-aa2b-2e68d6dbbf62",
+          "2a323f45-6eb2-4575-aa6c-5299c7a5422f",
+          "343f75a3-6f1f-418f-a62e-d1bbba519dae"
+        ]
+      },
+      "actual_budget": {
+        "api_mutations": 9,
+        "hub_definition_creates": 2,
+        "hub_definition_deletes": 2,
+        "manual_run_posts": 3,
+        "node_enroll_posts": 1,
+        "child_process_starts": 1,
+        "child_process_stops": 1,
+        "hub_stop_events": 1,
+        "hub_start_events": 1,
+        "proxy_cut_events": 1,
+        "background_samplers": 1
+      },
+      "final_cleanup": {
+        "deleted": [
+          {
+            "kind": "task",
+            "id": "bef743d0-6c34-4562-9478-504afdb77aa6",
+            "delete_http": 200,
+            "get_http": 404
+          },
+          {
+            "kind": "script",
+            "id": "b876772b-a834-4b48-b9da-1bd735ad2c09",
+            "delete_http": 200,
+            "get_http": 404
+          }
+        ],
+        "errors": [],
+        "at_utc": "2026-10-15T11:06:56Z",
+        "effect_files": {
+          "still_exists": {
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/journal.txt": false,
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/outage.txt": false,
+            "/var/lib/nodesteer-qa-sysb06-2200f26673a4/effects/reup.txt": false
+          }
+        },
+        "node_child_removal": {
+          "signalled": [
+            27351
+          ],
+          "remaining_processes": [],
+          "root_removed": true,
+          "root_exists_after": false
+        },
+        "child_node": {
+          "id": "99d27885-4b6d-41f0-9c3f-d32e3e5365d2",
+          "delete_http": 200,
+          "get_http": 404,
+          "delete_body": {
+            "ok": "true"
+          }
+        },
+        "all_get_404": true
+      }
+    }
+  ],
+  "deviations": [],
+  "budget": {
+    "api_mutations": 9,
+    "hub_definition_creates": 2,
+    "hub_definition_deletes": 2,
+    "manual_run_posts": 3,
+    "node_enroll_posts": 1,
+    "child_process_starts": 1,
+    "child_process_stops": 1,
+    "hub_stop_events": 1,
+    "hub_start_events": 1,
+    "proxy_cut_events": 1,
+    "background_samplers": 1
+  },
+  "final_cleanup_oracle_clean": true,
+  "harness_seams": {
+    "authority": "management writes only to repair http://192.168.100.209:18080",
+    "hub_outage": "only nodesteer-hub-repair-20260930-101945.service was stopped/started, once; nodesteer-hub.service (:8080) and all Agent units untouched",
+    "owned_child": "one harness-owned child Agent on native-1 (exact repair Agent binary d55dc5cd...) behind a harness-owned frame proxy on 192.168.100.170",
+    "journal_probe": "node-local ~1ms sampler watching the Agent store and the script effect file on the same kernel clock (no injected delay)",
+    "reupload": "EXECUTION_ACK withheld on the harness frame proxy + real link cut/reconnect; zero writes to the Agent store",
+    "product_source_changes": 0,
+    "git_operations": 0,
+    "vms_restarted": 0
+  }
+}

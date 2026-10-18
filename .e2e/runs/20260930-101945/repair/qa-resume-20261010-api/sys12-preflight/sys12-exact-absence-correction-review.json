@@ -1,0 +1,37 @@
+{
+  "reviewed_at_utc": "2026-10-12T13:39:00Z",
+  "status": "LOCAL_PARSER_VALIDATION_PASS_ROOT_REVIEW_REQUIRED",
+  "scope": "QA lifecycle-only reuse of exact_absent for container A absence after successful docker rm; no controller/product/API/remote resource changes.",
+  "previous_lifecycle_sha256_used_by_d19_attempt": "6be51c872462fee3428c11df3d3cd567f42a4d6d471354cc5bbac2c8f8b2ffad",
+  "corrected_lifecycle_sha256": "37313e526279f86a8b191320d653d202762c11ce5dfe94859da2973673ee00fb",
+  "controller_sha256_unchanged": "0e213c45180eab1701dfc87aabc9b353d7025f909429f764bc1028b083e353a7",
+  "change": {
+    "file": "lifecycle_source_proposal.py",
+    "old": "After docker rm A, a duplicated predicate accepted only inspect stderr containing 'no such object: <exact A ID>'.",
+    "new": "After docker rm A returns rc=0, call existing exact_absent('container', exact A ID), which already recognizes exact no-such-container diagnostics while preserving rc=0 collision rejection and unknown-error rejection."
+  },
+  "local_parser_checks": {
+    "method": "AST-extract the exact_absent function from lifecycle_source_proposal.py and inject a deterministic fake docker result; no lifecycle module execution and no Docker invocation.",
+    "cases": {
+      "inspect_rc0_collision": "PASS_REJECTED",
+      "exact_no_such_container_suffix": "PASS_ACCEPTED",
+      "wrong_container_id": "PASS_REJECTED",
+      "permission_error_mentions_exact_id": "PASS_REJECTED",
+      "other_error_mentions_exact_id": "PASS_REJECTED"
+    },
+    "ruff_f821": "PASS",
+    "pyflakes": "PASS",
+    "compile": "PASS: lifecycle source, controller, parser test source"
+  },
+  "prior_remote_evidence": {
+    "attempt": "d19e0c4f3e69",
+    "actual_container_absence_class": "EXACT_NO_SUCH_CONTAINER",
+    "raw_stdout_stderr": "not persisted or printed; only lengths and hashes retained in probe-final-summary.json",
+    "network_absence_class": "UNKNOWN_DIAGNOSTIC; this correction does not alter network predicates"
+  },
+  "authorization": {
+    "remote_actions": 0,
+    "resource_rebuild_or_retry": 0,
+    "next_action": "Root may review this exact lifecycle SHA and separately authorize any fresh nonce attempt. Do not reuse d19 or alter its result/ledger."
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "reviewed_at": "2026-10-10T06:53:34.233647+00:00",
+  "decision": "PREPARE_ONLY; hold/Run requires exact guardian driver review",
+  "plan": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-runtime/pending-ui-plan/plan.md",
+  "scope": "owned Native4 child单Task和独占UI预置；既有hold_types暂存RUN_EXECUTION，不暂停heartbeat",
+  "budget": "1 business command Task/1 UI Run（Run未授权到本步），helperTasks只freshguard/watchdog清controls后精确删",
+  "max_hold_seconds": 8,
+  "guardian_requirements": "独立即使driver中断仍执行；fresh root/UID/PID/binary/config/controls guards，仅精确匹配本轮controls才原子clear，禁止覆盖其他controls；不能靠Root在线恢复",
+  "excluded": [
+    "SIGSTOP",
+    "parent Unit/cgroup操作",
+    "proxy source/config修改",
+    "原4Agent字段变更",
+    "primary8080管理写"
+  ],
+  "execution_authorization": "用户继续既有full504/22范围；Root只分阶段控制已授权测试细节，无新功能扩张"
+}

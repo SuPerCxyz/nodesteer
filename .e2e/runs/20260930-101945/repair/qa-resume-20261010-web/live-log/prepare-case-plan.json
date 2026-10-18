@@ -1,0 +1,97 @@
+{
+  "batch_id": "web-20261010-live-log-secure",
+  "executor": "gpt-6-luna",
+  "created_at_utc": "2026-10-10T02:42:37+00:00",
+  "origin": "http://127.0.0.1:38181",
+  "repair_upstream": "http://192.168.100.209:18080",
+  "canonical_cases": [
+    "WEB-LIVE-LOG",
+    "X15"
+  ],
+  "scope": "Only the remaining real PENDING UI sample, real clipboard success/denied-feedback, and Follow actual scroll-coordinate sample. Existing normal-connection/offline recovery evidence is reused only for already covered dimensions; no attempt count inference.",
+  "root_approved_scope": {
+    "max_owned_tasks": 1,
+    "max_ui_runs": 1,
+    "retry_count": 0,
+    "target": "repair-native-3 (read-only; no Node mutation)",
+    "script_behavior": "synthetic nonsecret stdout/stderr marker waves separated by bounded sleeps, then known nonzero exit 23; actual source text is never printed or persisted",
+    "no_schedules": true,
+    "no_original_task_changes": true,
+    "execution_history_retained": true,
+    "task_create_mechanism": "filtered safe API helper from the exclusive loopback browser context; real Task Run remains a user-equivalent UI flow",
+    "max_created_tasks_total": 2,
+    "max_simultaneous_owned_tasks": 1,
+    "max_ui_runs_total": 1,
+    "attempt_01_task_cleanup_get404_no_run": true,
+    "final_task_replacement_authorized_by_root": true,
+    "api_login": "direct login only in browser-page memory; write unique token to current loopback localStorage; verify /api/me after reload; no token leaves eval"
+  },
+  "tunnel": {
+    "argv": [
+      "ssh",
+      "-N",
+      "-o",
+      "BatchMode=yes",
+      "-o",
+      "ExitOnForwardFailure=yes",
+      "-o",
+      "ControlMaster=no",
+      "-o",
+      "ControlPath=none",
+      "-L",
+      "127.0.0.1:38181:192.168.100.209:18080",
+      "kvm2"
+    ],
+    "clear_all_forwardings": false,
+    "reason": "ClearAllForwardings=yes would remove the command-line -L; `ssh -G kvm2` showed no configured local/remote forward, remote command, agent forwarding or control path.",
+    "port_preflight_unoccupied": true,
+    "launch_requires_exact_process_pid_startticks_argv_and_ss_listener_guard": true,
+    "terminate_only_exact_owned_child": true
+  },
+  "browser": {
+    "session": "qawebsecure20261010-live-log-38181",
+    "allowed_domains": [
+      "127.0.0.1"
+    ],
+    "no_unsafe_origin_flag": true,
+    "require_exact_origin": "http://127.0.0.1:38181",
+    "require_isSecureContext": true,
+    "new_exclusive_context": true
+  },
+  "oracles": {
+    "pending": "timestamped API status and DOM status within bounded polling after real UI Run click; if missed remain PARTIAL",
+    "terminal": "GET execution status/exit code and same-page UI status, no reload/navigation",
+    "follow": "actual log-container scrollTop/clientHeight/scrollHeight sampled with Follow off/on across incoming real marker waves",
+    "clipboard_success": "real Copy button then navigator.clipboard.readText in page; in memory exact compare, persist only length/SHA256/equality boolean",
+    "clipboard_denied": "context+origin-specific browser permission deny verified by page Permissions API, then real Copy button; record actual toast/manual-copy/error feedback, do not assert fixed wording or mock",
+    "permission_scope": "actual target browserContextId + exact loopback origin; reset only that context before close"
+  },
+  "cleanup": {
+    "task": "delete only response-ledgered owned Task ID; verify GET 404",
+    "execution": "retain history, max 1",
+    "browser": "logout only the exclusive session token; verify old /api/me 401; clear network log; close context",
+    "tunnel": "stop only child matching recorded PID/start ticks/argv; verify listener gone",
+    "baseline": "verify repair/native3 and all baseline Node state unchanged"
+  },
+  "evidence_whitelist": [
+    "task_id",
+    "execution_id",
+    "HTTP status codes",
+    "status timestamps",
+    "exit code",
+    "PENDING observed bool",
+    "stdout/stderr marker presence/hash",
+    "scrollTop/clientHeight/scrollHeight numeric values",
+    "clipboard byte length/SHA256/exact-equality bool",
+    "isSecureContext",
+    "permission states",
+    "PID/start ticks/argv hash",
+    "ss listener PID/port",
+    "cleanup status/GET404"
+  ],
+  "private_values_saved": false,
+  "raw_network_or_command_content_saved": false,
+  "status": "APPROVED_WITH_SAFE_API_TASK_CREATE",
+  "root_review_file": ".e2e/runs/20260930-101945/repair/qa-resume-20261010-root/live-log-plan-review.json",
+  "root_review_status": "APPROVED_WITH_SPECIFIC_CORRECTIONS"
+}

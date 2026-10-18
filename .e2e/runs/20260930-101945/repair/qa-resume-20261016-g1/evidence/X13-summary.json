@@ -1,0 +1,207 @@
+{
+ "case_id": "X13",
+ "at_utc": "2026-10-16T09:35:04Z",
+ "evidence_files": [
+  "evidence/X13-multi-session-role-logout-convergence.json",
+  "evidence/X13-other-tab-logout-token-replacement.json"
+ ],
+ "dimensions": {
+  "cross_page_cache": {
+   "app_name_before": "qa-g1202610163692428a-app",
+   "written_by_other_session": "qa-g1202610163692428a-app-v2",
+   "definition_put_http": 200,
+   "open_page_after_3s_no_navigation": {
+    "names": [
+     "qa-g1202610163692428a-admin-28a7",
+     "qa-g1202610163692428a-admin-f8e9",
+     "qa-g1202610163692428a-app",
+     "qa-g1202610163692428a-app-admin",
+     "qa-g1202610163692428a-tmp-operator-28a7",
+     "qa-g1202610163692428a-tmp-operator-f8e9",
+     "qa-g1202610163692428a-tmp-viewer-28a7",
+     "qa-g1202610163692428a-tmp-viewer-f8e9"
+    ],
+    "path": "/applications"
+   },
+   "after_leave_and_return": {
+    "names": [
+     "qa-g1202610163692428a-admin-28a7",
+     "qa-g1202610163692428a-admin-f8e9",
+     "qa-g1202610163692428a-app-admin",
+     "qa-g1202610163692428a-app-v2",
+     "qa-g1202610163692428a-tmp-operator-28a7",
+     "qa-g1202610163692428a-tmp-operator-f8e9",
+     "qa-g1202610163692428a-tmp-viewer-28a7",
+     "qa-g1202610163692428a-tmp-viewer-f8e9"
+    ],
+    "path": "/applications"
+   },
+   "open_page_shows_new": false,
+   "after_nav_shows_new": true
+  },
+  "two_session_edit_and_role_change_api": {
+   "pre_change_read_http": 200,
+   "change_http": 200,
+   "convergence_seconds_to_viewer": 0.001,
+   "role_observed": "viewer",
+   "poll_trace": [
+    {
+     "ms": 1,
+     "http": 200,
+     "role": "viewer"
+    }
+   ],
+   "restricted_write_http_after": 403,
+   "read_http_after": 200,
+   "definition_unchanged_after_denied_write": true,
+   "wall_clock_seconds": 0.021
+  },
+  "role_change_ui_path": {
+   "ui_change": {
+    "ok": true,
+    "picked": "操作员"
+   },
+   "convergence_seconds_back_to_operator": 0.002,
+   "role_observed": "operator",
+   "poll_trace": [
+    {
+     "ms": 1,
+     "http": 200,
+     "role": "operator"
+    }
+   ],
+   "read_http_after_restore": 200,
+   "wall_clock_seconds": 0.63
+  },
+  "other_tab_logout": {
+   "other_tab_passive_redirect_seconds": null,
+   "passive_trace": [
+    {
+     "ms": 3,
+     "path": "/tasks",
+     "has_ls": false
+    },
+    {
+     "ms": 1006,
+     "path": "/tasks",
+     "has_ls": false
+    },
+    {
+     "ms": 2011,
+     "path": "/tasks",
+     "has_ls": false
+    },
+    {
+     "ms": 3014,
+     "path": "/tasks",
+     "has_ls": false
+    },
+    {
+     "ms": 4018,
+     "path": "/tasks",
+     "has_ls": false
+    }
+   ],
+   "wall_clock_seconds": 19.116,
+   "after_in_app_navigation": {
+    "head": "Skip to Main NodeSteer Linux 节点自动化控制台 切换侧边栏 仪表盘 任务 调度 执行 文件传",
+    "path": "/"
+   },
+   "after_self_reload": {
+    "seconds": 2.336,
+    "path": "\"/sign-in\"",
+    "has_ls_token": "false"
+   }
+  },
+  "other_tab_token_replacement": {
+   "other_tab_passive_redirect_seconds": null,
+   "passive_trace": [
+    {
+     "ms": 4,
+     "path": "/tasks",
+     "has_ls": true
+    },
+    {
+     "ms": 1007,
+     "path": "/tasks",
+     "has_ls": true
+    },
+    {
+     "ms": 2012,
+     "path": "/tasks",
+     "has_ls": true
+    },
+    {
+     "ms": 3015,
+     "path": "/tasks",
+     "has_ls": true
+    },
+    {
+     "ms": 4018,
+     "path": "/tasks",
+     "has_ls": true
+    }
+   ],
+   "wall_clock_seconds": 15.811,
+   "after_self_reload": {
+    "seconds": 2.305,
+    "path": "\"/sign-in\"",
+    "has_ls_token": "false"
+   }
+  },
+  "server_side_contrast": {
+   "api_login": 200,
+   "api_logout": 200,
+   "old_token_after_explicit_logout": 401
+  }
+ },
+ "verdict": {
+  "fresh_sessions_verified": true,
+  "cross_page_cache_no_cross_session_push": true,
+  "cross_page_cache_refetch_on_navigation": true,
+  "old_token_downgrade_converges_seconds": 0.001,
+  "old_token_restricted_403_after_downgrade": true,
+  "old_token_read_still_200": true,
+  "denied_write_left_definition_unchanged": true,
+  "old_token_recovers_after_ui_restore": true,
+  "ui_logout_clears_local_token_only": false,
+  "explicit_api_logout_revokes_session": true,
+  "other_tab_page_passive_redirect_after_logout": true,
+  "converges_on_self_reload_after_logout": true,
+  "other_tab_page_passive_redirect_after_token_replace": false,
+  "converges_on_self_reload_after_token_replace": true,
+  "tabs_share_localstorage": true,
+  "ui_logout_clears_localstorage_in_other_tab": true,
+  "ui_logout_does_not_revoke_server_session": true,
+  "other_tab_passive_redirect_after_logout_seconds": null,
+  "other_tab_still_usable_after_logout": true,
+  "forged_token_rejected_by_server": true,
+  "other_tab_keeps_old_session_after_replace": true,
+  "other_tab_passive_redirect_after_replace_seconds": null,
+  "converges_on_self_reload_after_replace": true,
+  "explicit_api_logout_revokes": true
+ },
+ "observations": [
+  {
+   "id": "OBS-UI-LOGOUT-NO-SERVER-REVOKE",
+   "severity": "low-medium",
+   "case": "X13",
+   "detail": "Web UI 退出登录只做本地清理（auth.reset() + 跳 /sign-in），未调用 POST /api/logout；因此服务端会话在 TTL 内仍然有效，另一标签页的受保护页面在0.003秒被动窗口内不跳转。对照：显式 /api/logout 后旧 token 立即 401。",
+   "evidence": "logout_in_other_tab / server_side_logout_contrast"
+  },
+  {
+   "id": "OBS-LOCALSTORAGE-TOKEN-NOT-CROSS-TAB",
+   "severity": "info",
+   "case": "X13",
+   "detail": "另一标签改写 localStorage 的 nodesteer_token 后，已打开页面的内存会话不受影响，仍以原 token 正常访问 API；仅在自身刷新后才收敛到 /sign-in。",
+   "evidence": "token_replaced_in_other_tab"
+  },
+  {
+   "id": "OBS-CROSS-SESSION-NO-PUSH",
+   "severity": "info",
+   "case": "X13",
+   "detail": "另一会话修改数据后，已打开页面不会自动刷新（无跨会话推送）；离开再返回该页时重新拉取并显示新值。",
+   "evidence": "cross_page_cache"
+  }
+ ]
+}
