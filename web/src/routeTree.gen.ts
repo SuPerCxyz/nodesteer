@@ -25,6 +25,8 @@ import { Route as AuthenticatedAuditIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedArtifactsIndexRouteImport } from './routes/_authenticated/artifacts/index'
 import { Route as AuthenticatedApplicationsIndexRouteImport } from './routes/_authenticated/applications/index'
 import { Route as AuthenticatedAgentsIndexRouteImport } from './routes/_authenticated/agents/index'
+import { Route as AuthenticatedUsersUserIdRouteImport } from './routes/_authenticated/users/$userId'
+import { Route as AuthenticatedTransfersTransferIdRouteImport } from './routes/_authenticated/transfers/$transferId'
 import { Route as AuthenticatedTasksNewRouteImport } from './routes/_authenticated/tasks/new'
 import { Route as AuthenticatedTasksTaskIdRouteImport } from './routes/_authenticated/tasks/$taskId'
 import { Route as AuthenticatedScriptsNewRouteImport } from './routes/_authenticated/scripts/new'
@@ -36,6 +38,7 @@ import { Route as AuthenticatedGroupsNewRouteImport } from './routes/_authentica
 import { Route as AuthenticatedGroupsGroupIdRouteImport } from './routes/_authenticated/groups/$groupId'
 import { Route as AuthenticatedExecutionsExecutionIdRouteImport } from './routes/_authenticated/executions/$executionId'
 import { Route as AuthenticatedArtifactsNewRouteImport } from './routes/_authenticated/artifacts/new'
+import { Route as AuthenticatedArtifactsArtifactIdRouteImport } from './routes/_authenticated/artifacts/$artifactId'
 import { Route as AuthenticatedApplicationsNewRouteImport } from './routes/_authenticated/applications/new'
 import { Route as AuthenticatedApplicationsApplicationIdRouteImport } from './routes/_authenticated/applications/$applicationId'
 import { Route as AuthenticatedAgentsAgentIdRouteImport } from './routes/_authenticated/agents/$agentId'
@@ -131,6 +134,18 @@ const AuthenticatedAgentsIndexRoute =
     path: '/agents/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedUsersUserIdRoute =
+  AuthenticatedUsersUserIdRouteImport.update({
+    id: '/users/$userId',
+    path: '/users/$userId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTransfersTransferIdRoute =
+  AuthenticatedTransfersTransferIdRouteImport.update({
+    id: '/transfers/$transferId',
+    path: '/transfers/$transferId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTasksNewRoute = AuthenticatedTasksNewRouteImport.update({
   id: '/tasks/new',
   path: '/tasks/new',
@@ -194,6 +209,12 @@ const AuthenticatedArtifactsNewRoute =
     path: '/artifacts/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedArtifactsArtifactIdRoute =
+  AuthenticatedArtifactsArtifactIdRouteImport.update({
+    id: '/artifacts/$artifactId',
+    path: '/artifacts/$artifactId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedApplicationsNewRoute =
   AuthenticatedApplicationsNewRouteImport.update({
     id: '/applications/new',
@@ -237,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/agents/$agentId': typeof AuthenticatedAgentsAgentIdRoute
   '/applications/$applicationId': typeof AuthenticatedApplicationsApplicationIdRoute
   '/applications/new': typeof AuthenticatedApplicationsNewRoute
+  '/artifacts/$artifactId': typeof AuthenticatedArtifactsArtifactIdRoute
   '/artifacts/new': typeof AuthenticatedArtifactsNewRoute
   '/executions/$executionId': typeof AuthenticatedExecutionsExecutionIdRoute
   '/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
@@ -248,6 +270,8 @@ export interface FileRoutesByFullPath {
   '/scripts/new': typeof AuthenticatedScriptsNewRoute
   '/tasks/$taskId': typeof AuthenticatedTasksTaskIdRouteWithChildren
   '/tasks/new': typeof AuthenticatedTasksNewRoute
+  '/transfers/$transferId': typeof AuthenticatedTransfersTransferIdRoute
+  '/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/agents/': typeof AuthenticatedAgentsIndexRoute
   '/applications/': typeof AuthenticatedApplicationsIndexRoute
   '/artifacts/': typeof AuthenticatedArtifactsIndexRoute
@@ -271,6 +295,7 @@ export interface FileRoutesByTo {
   '/agents/$agentId': typeof AuthenticatedAgentsAgentIdRoute
   '/applications/$applicationId': typeof AuthenticatedApplicationsApplicationIdRoute
   '/applications/new': typeof AuthenticatedApplicationsNewRoute
+  '/artifacts/$artifactId': typeof AuthenticatedArtifactsArtifactIdRoute
   '/artifacts/new': typeof AuthenticatedArtifactsNewRoute
   '/executions/$executionId': typeof AuthenticatedExecutionsExecutionIdRoute
   '/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
@@ -281,6 +306,8 @@ export interface FileRoutesByTo {
   '/scripts/$scriptId': typeof AuthenticatedScriptsScriptIdRoute
   '/scripts/new': typeof AuthenticatedScriptsNewRoute
   '/tasks/new': typeof AuthenticatedTasksNewRoute
+  '/transfers/$transferId': typeof AuthenticatedTransfersTransferIdRoute
+  '/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/agents': typeof AuthenticatedAgentsIndexRoute
   '/applications': typeof AuthenticatedApplicationsIndexRoute
   '/artifacts': typeof AuthenticatedArtifactsIndexRoute
@@ -306,6 +333,7 @@ export interface FileRoutesById {
   '/_authenticated/agents/$agentId': typeof AuthenticatedAgentsAgentIdRoute
   '/_authenticated/applications/$applicationId': typeof AuthenticatedApplicationsApplicationIdRoute
   '/_authenticated/applications/new': typeof AuthenticatedApplicationsNewRoute
+  '/_authenticated/artifacts/$artifactId': typeof AuthenticatedArtifactsArtifactIdRoute
   '/_authenticated/artifacts/new': typeof AuthenticatedArtifactsNewRoute
   '/_authenticated/executions/$executionId': typeof AuthenticatedExecutionsExecutionIdRoute
   '/_authenticated/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
@@ -317,6 +345,8 @@ export interface FileRoutesById {
   '/_authenticated/scripts/new': typeof AuthenticatedScriptsNewRoute
   '/_authenticated/tasks/$taskId': typeof AuthenticatedTasksTaskIdRouteWithChildren
   '/_authenticated/tasks/new': typeof AuthenticatedTasksNewRoute
+  '/_authenticated/transfers/$transferId': typeof AuthenticatedTransfersTransferIdRoute
+  '/_authenticated/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/_authenticated/agents/': typeof AuthenticatedAgentsIndexRoute
   '/_authenticated/applications/': typeof AuthenticatedApplicationsIndexRoute
   '/_authenticated/artifacts/': typeof AuthenticatedArtifactsIndexRoute
@@ -342,6 +372,7 @@ export interface FileRouteTypes {
     | '/agents/$agentId'
     | '/applications/$applicationId'
     | '/applications/new'
+    | '/artifacts/$artifactId'
     | '/artifacts/new'
     | '/executions/$executionId'
     | '/groups/$groupId'
@@ -353,6 +384,8 @@ export interface FileRouteTypes {
     | '/scripts/new'
     | '/tasks/$taskId'
     | '/tasks/new'
+    | '/transfers/$transferId'
+    | '/users/$userId'
     | '/agents/'
     | '/applications/'
     | '/artifacts/'
@@ -376,6 +409,7 @@ export interface FileRouteTypes {
     | '/agents/$agentId'
     | '/applications/$applicationId'
     | '/applications/new'
+    | '/artifacts/$artifactId'
     | '/artifacts/new'
     | '/executions/$executionId'
     | '/groups/$groupId'
@@ -386,6 +420,8 @@ export interface FileRouteTypes {
     | '/scripts/$scriptId'
     | '/scripts/new'
     | '/tasks/new'
+    | '/transfers/$transferId'
+    | '/users/$userId'
     | '/agents'
     | '/applications'
     | '/artifacts'
@@ -410,6 +446,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agents/$agentId'
     | '/_authenticated/applications/$applicationId'
     | '/_authenticated/applications/new'
+    | '/_authenticated/artifacts/$artifactId'
     | '/_authenticated/artifacts/new'
     | '/_authenticated/executions/$executionId'
     | '/_authenticated/groups/$groupId'
@@ -421,6 +458,8 @@ export interface FileRouteTypes {
     | '/_authenticated/scripts/new'
     | '/_authenticated/tasks/$taskId'
     | '/_authenticated/tasks/new'
+    | '/_authenticated/transfers/$transferId'
+    | '/_authenticated/users/$userId'
     | '/_authenticated/agents/'
     | '/_authenticated/applications/'
     | '/_authenticated/artifacts/'
@@ -558,6 +597,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgentsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/users/$userId': {
+      id: '/_authenticated/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/users/$userId'
+      preLoaderRoute: typeof AuthenticatedUsersUserIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/transfers/$transferId': {
+      id: '/_authenticated/transfers/$transferId'
+      path: '/transfers/$transferId'
+      fullPath: '/transfers/$transferId'
+      preLoaderRoute: typeof AuthenticatedTransfersTransferIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/tasks/new': {
       id: '/_authenticated/tasks/new'
       path: '/tasks/new'
@@ -635,6 +688,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedArtifactsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/artifacts/$artifactId': {
+      id: '/_authenticated/artifacts/$artifactId'
+      path: '/artifacts/$artifactId'
+      fullPath: '/artifacts/$artifactId'
+      preLoaderRoute: typeof AuthenticatedArtifactsArtifactIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/applications/new': {
       id: '/_authenticated/applications/new'
       path: '/applications/new'
@@ -703,6 +763,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgentsAgentIdRoute: typeof AuthenticatedAgentsAgentIdRoute
   AuthenticatedApplicationsApplicationIdRoute: typeof AuthenticatedApplicationsApplicationIdRoute
   AuthenticatedApplicationsNewRoute: typeof AuthenticatedApplicationsNewRoute
+  AuthenticatedArtifactsArtifactIdRoute: typeof AuthenticatedArtifactsArtifactIdRoute
   AuthenticatedArtifactsNewRoute: typeof AuthenticatedArtifactsNewRoute
   AuthenticatedExecutionsExecutionIdRoute: typeof AuthenticatedExecutionsExecutionIdRoute
   AuthenticatedGroupsGroupIdRoute: typeof AuthenticatedGroupsGroupIdRoute
@@ -714,6 +775,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedScriptsNewRoute: typeof AuthenticatedScriptsNewRoute
   AuthenticatedTasksTaskIdRoute: typeof AuthenticatedTasksTaskIdRouteWithChildren
   AuthenticatedTasksNewRoute: typeof AuthenticatedTasksNewRoute
+  AuthenticatedTransfersTransferIdRoute: typeof AuthenticatedTransfersTransferIdRoute
+  AuthenticatedUsersUserIdRoute: typeof AuthenticatedUsersUserIdRoute
   AuthenticatedAgentsIndexRoute: typeof AuthenticatedAgentsIndexRoute
   AuthenticatedApplicationsIndexRoute: typeof AuthenticatedApplicationsIndexRoute
   AuthenticatedArtifactsIndexRoute: typeof AuthenticatedArtifactsIndexRoute
@@ -735,6 +798,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedApplicationsApplicationIdRoute:
     AuthenticatedApplicationsApplicationIdRoute,
   AuthenticatedApplicationsNewRoute: AuthenticatedApplicationsNewRoute,
+  AuthenticatedArtifactsArtifactIdRoute: AuthenticatedArtifactsArtifactIdRoute,
   AuthenticatedArtifactsNewRoute: AuthenticatedArtifactsNewRoute,
   AuthenticatedExecutionsExecutionIdRoute:
     AuthenticatedExecutionsExecutionIdRoute,
@@ -747,6 +811,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedScriptsNewRoute: AuthenticatedScriptsNewRoute,
   AuthenticatedTasksTaskIdRoute: AuthenticatedTasksTaskIdRouteWithChildren,
   AuthenticatedTasksNewRoute: AuthenticatedTasksNewRoute,
+  AuthenticatedTransfersTransferIdRoute: AuthenticatedTransfersTransferIdRoute,
+  AuthenticatedUsersUserIdRoute: AuthenticatedUsersUserIdRoute,
   AuthenticatedAgentsIndexRoute: AuthenticatedAgentsIndexRoute,
   AuthenticatedApplicationsIndexRoute: AuthenticatedApplicationsIndexRoute,
   AuthenticatedArtifactsIndexRoute: AuthenticatedArtifactsIndexRoute,

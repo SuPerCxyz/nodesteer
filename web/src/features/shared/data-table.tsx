@@ -14,6 +14,7 @@ import {
   type Table as ReactTable,
   type VisibilityState,
 } from '@tanstack/react-table'
+import { Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
   readTablePageSize,
@@ -80,6 +81,29 @@ function SelectRowCell<TData>({ row }: { row: Row<TData> }): React.ReactNode {
   )
 }
 
+/**
+ * 无稳定 id 字段时的兜底：按对象身份分配一次性键。
+ * 同一对象实例跨分页/排序/重渲染保持同一个键，避免退回行索引。
+ */
+const identityKeys = new WeakMap<object, string>()
+let identitySeq = 0
+
+/** 行选择键：优先取行对象的稳定 id（字符串/数字），否则按对象身份兜底 */
+function resolveRowId(row: unknown, index: number): string {
+  if (row && typeof row === 'object') {
+    const candidate = (row as { id?: unknown }).id
+    if (typeof candidate === 'string' && candidate) return candidate
+    if (typeof candidate === 'number' && Number.isFinite(candidate))
+      return String(candidate)
+    const existing = identityKeys.get(row)
+    if (existing) return existing
+    const generated = `identity-${++identitySeq}`
+    identityKeys.set(row, generated)
+    return generated
+  }
+  return `index-${index}`
+}
+
 export function DataTable<TData>({
   data,
   columns,
@@ -87,6 +111,10 @@ export function DataTable<TData>({
   className = '',
   hideSearch = false,
   manualPagination = false,
+  manualFiltering = false,
+  isLoading = false,
+  filter,
+  onFilterChange,
   total,
   page = 1,
   pageSize = 10,
@@ -94,6 +122,7 @@ export function DataTable<TData>({
   onPageSizeChange,
   storageKey,
   enableRowSelection = false,
+  getRowId,
   renderBulkActions,
   bulkEntityName = '',
 }: {
@@ -104,6 +133,12 @@ export function DataTable<TData>({
   hideSearch?: boolean
   /** 服务端分页：data 仅为当前页，分页状态由 page/pageSize 受控传入 */
   manualPagination?: boolean
+  /** 服务端搜索时禁用当前页本地过滤，并受控同步搜索框。 */
+  manualFiltering?: boolean
+  /** 首次加载中：尚无数据时不显示「没有结果」，改显示加载占位（避免 Loading 与 No Results 混淆） */
+  isLoading?: boolean
+  filter?: string
+  onFilterChange?: (value: string) => void
   /** 服务端匹配总条数（manualPagination 时使用） */
   total?: number
   /** 当前页码，1-based（manualPagination 时使用） */
@@ -116,6 +151,8 @@ export function DataTable<TData>({
   storageKey?: string
   /** 启用行多选（注入前置选择列）；选择按行 id 跨分页/排序保留 */
   enableRowSelection?: boolean
+  /** 行选择键；缺省取行对象的 id 字段（无 id 时按对象身份兜底），不再用行索引 */
+  getRowId?: (row: TData, index: number) => string
   /** 选中后浮出的批量操作工具条内容；未启用多选时不渲染 */
   renderBulkActions?: (table: ReactTable<TData>) => React.ReactNode
   /** 工具条读屏文案中的实体名（如「节点」） */
@@ -156,15 +193,24 @@ export function DataTable<TData>({
     state: {
       sorting,
       columnVisibility,
-      globalFilter,
+      globalFilter: filter ?? globalFilter,
       pagination,
       rowSelection,
     },
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
-    onGlobalFilterChange: setGlobalFilter,
+    onGlobalFilterChange: (updater) => {
+      const value =
+        typeof updater === 'function'
+          ? updater(filter ?? globalFilter)
+          : updater
+      if (onFilterChange) onFilterChange(value)
+      else setGlobalFilter(value)
+    },
     onRowSelectionChange: setRowSelection,
     enableRowSelection,
+    // 显式提供 getRowId：TanStack 默认按行索引生成 selection 键，跨页/排序会漂移到别的行
+    getRowId: getRowId ?? resolveRowId,
     onPaginationChange: (updater) => {
       const next = typeof updater === 'function' ? updater(pagination) : updater
       if (manualPagination) {
@@ -177,6 +223,7 @@ export function DataTable<TData>({
       }
     },
     manualPagination,
+    manualFiltering,
     pageCount: manualPagination
       ? Math.max(1, Math.ceil((total ?? 0) / (pageSize || 1)))
       : undefined,
@@ -279,6 +326,19 @@ export function DataTable<TData>({
                   ))}
                 </TableRow>
               ))
+            ) : isLoading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={table.getVisibleLeafColumns().length}
+                  className='h-24 text-center'
+                  aria-busy='true'
+                >
+                  <span className='inline-flex items-center gap-2 text-sm text-muted-foreground'>
+                    <Loader2 className='size-4 animate-spin' />
+                    {t('common.loading')}
+                  </span>
+                </TableCell>
+              </TableRow>
             ) : (
               <TableRow>
                 <TableCell

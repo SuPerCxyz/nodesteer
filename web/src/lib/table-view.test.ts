@@ -42,6 +42,16 @@ describe('table-view 持久化', () => {
     expect(readTablePageSize('unit-test', 20)).toBe(20)
   })
 
+  it('越界 pageSize（超出 10..50 选项）回退默认值（OBS-20261014-PAGESIZE-PERSISTED-OUT-OF-RANGE-BLANK）', () => {
+    writeTableView('unit-test', { pageSize: 1 })
+    // 旧版本残留的 1 不在分页选项内，会让下拉无匹配项显示空白：读取时必须回退
+    expect(readTablePageSize('unit-test', 10)).toBe(10)
+    writeTableView('unit-test', { pageSize: 500 })
+    expect(readTablePageSize('unit-test', 20)).toBe(20)
+    writeTableView('unit-test', { pageSize: 50 })
+    expect(readTablePageSize('unit-test', 10)).toBe(50)
+  })
+
   it('不同 storageKey 互不影响', () => {
     writeTableView('a', { pageSize: 20 })
     expect(readTablePageSize('a', 10)).toBe(20)

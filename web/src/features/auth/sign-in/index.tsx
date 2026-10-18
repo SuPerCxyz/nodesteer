@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -7,7 +7,7 @@ import { Loader2, LogIn } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { sessionToUser, useAuthStore } from '@/stores/auth-store'
-import { api, type SessionInfo } from '@/lib/api'
+import { api, ApiError, type SessionInfo } from '@/lib/api'
 import { safeRedirect } from '@/lib/navigation'
 import { Button } from '@/components/ui/button'
 import {
@@ -30,7 +30,34 @@ const formSchema = z.object({
 export function SignIn() {
   const { t } = useTranslation()
   const { auth } = useAuthStore()
+  const setUser = auth.setUser
   const [error, setError] = useState('')
+  const session = useQuery({
+    queryKey: ['sign-in-session', auth.accessToken],
+    queryFn: () => api.get<SessionInfo>('/me'),
+    enabled: Boolean(auth.accessToken),
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: 'always',
+  })
+  useEffect(() => {
+    if (
+      !session.data ||
+      session.isFetching ||
+      session.isError ||
+      !auth.accessToken
+    )
+      return
+    setUser(sessionToUser(session.data))
+    const redirect = new URLSearchParams(window.location.search).get('redirect')
+    window.location.replace(safeRedirect(redirect))
+  }, [
+    session.data,
+    session.isFetching,
+    session.isError,
+    auth.accessToken,
+    setUser,
+  ])
   const oidc = useQuery({
     queryKey: ['oidc-state'],
     queryFn: () =>
@@ -65,6 +92,27 @@ export function SignIn() {
     } catch (err) {
       setError(err instanceof Error ? err.message : t('login.failed'))
     }
+  }
+
+  if (auth.accessToken) {
+    return (
+      <AuthLayout>
+        {session.isError &&
+        !(session.error instanceof ApiError && session.error.status === 401) ? (
+          <div role='alert' className='grid gap-4'>
+            <p>{session.error.message}</p>
+            <Button onClick={() => session.refetch()}>
+              {t('common.retry')}
+            </Button>
+          </div>
+        ) : (
+          <Loader2
+            className='mx-auto animate-spin'
+            aria-label={t('common.loading')}
+          />
+        )}
+      </AuthLayout>
+    )
   }
 
   return (

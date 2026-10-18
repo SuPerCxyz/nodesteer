@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { api, type Execution, type Node, type Task } from '@/lib/api'
 import { copyText } from '@/lib/clipboard'
+import { executionLogView } from '@/lib/execution-logs'
 import { useCanRun } from '@/lib/permissions'
 import { readTablePageSize } from '@/lib/table-view'
 import { Button } from '@/components/ui/button'
@@ -66,17 +67,25 @@ export function Executions() {
   const [pageSize, setPageSize] = useState(() =>
     readTablePageSize('executions', 10)
   )
-  // 状态筛选变化时在渲染期重置页码，避免 effect 内同步 setState
-  const [prevStatus, setPrevStatus] = useState(search.status)
-  if (prevStatus !== search.status) {
-    setPrevStatus(search.status)
+  // 搜索或筛选变化时重置页码，避免查询旧页造成空结果。
+  const filters = JSON.stringify([search.status, search.q, search.trigger])
+  const [previousFilters, setPreviousFilters] = useState(filters)
+  if (previousFilters !== filters) {
+    setPreviousFilters(filters)
     setPage(1)
   }
   const query = useQuery({
-    queryKey: ['executions', search.status, page, pageSize],
+    queryKey: [
+      'executions',
+      search.status,
+      search.q,
+      search.trigger,
+      page,
+      pageSize,
+    ],
     queryFn: () =>
       api.getPage<Execution>(
-        `/executions?limit=${pageSize}&offset=${(page - 1) * pageSize}${search.status ? `&status=${encodeURIComponent(search.status)}` : ''}`
+        `/executions?limit=${pageSize}&offset=${(page - 1) * pageSize}${search.status ? `&status=${encodeURIComponent(search.status)}` : ''}${search.q ? `&q=${encodeURIComponent(search.q)}` : ''}${search.trigger ? `&trigger_type=${encodeURIComponent(search.trigger)}` : ''}`
       ),
     placeholderData: keepPreviousData,
   })
@@ -105,26 +114,16 @@ export function Executions() {
         return next
       },
     })
-  const visible = useMemo(
-    () =>
-      (query.data?.items || []).filter((execution) => {
-        const q = (search.q || '').toLowerCase()
-        return (
-          (!q ||
-            [
-              execution.id,
-              execution.task_id,
-              taskNames.get(execution.task_id) || '',
-              execution.node_id,
-            ].some((value) => value.toLowerCase().includes(q))) &&
-          (!search.trigger || execution.trigger_type === search.trigger)
-        )
-      }),
-    [query.data, search.q, search.trigger, taskNames]
-  )
+  const visible = query.data?.items || []
   const triggers = Array.from(
     new Set(
-      (query.data?.items || [])
+      [
+        // 一期仅 manual/schedule 能产出执行（系统触发不在 PRODUCT.md 一期范围），
+        // 枚举只预置真实可达类型；已存在的其他触发值仍按观测数据展示（OBS-20261016-P17P18-04）
+        { trigger_type: 'manual' },
+        { trigger_type: 'schedule' },
+        ...(query.data?.items || []),
+      ]
         .map((execution) => execution.trigger_type)
         .filter(Boolean)
     )
@@ -354,7 +353,9 @@ export function ExecutionDetail() {
     queryKey: ['execution', id],
     queryFn: () => api.get<Execution>(`/executions/${id}`),
     refetchInterval: (query) =>
-      query.state.data?.status === 'RUNNING' ? 3000 : false,
+      ['PENDING', 'RUNNING'].includes(query.state.data?.status || '')
+        ? 3000
+        : false,
   })
   const task = useQuery({
     queryKey: ['task', execution.data?.task_id],
@@ -372,7 +373,20 @@ export function ExecutionDetail() {
       api.get<{ stream: string; seq: number; chunk: string }[]>(
         `/executions/${id}/logs`
       ),
+    refetchInterval: ['PENDING', 'RUNNING'].includes(
+      execution.data?.status || ''
+    )
+      ? 3000
+      : false,
   })
+  useEffect(() => {
+    if (
+      execution.data?.status &&
+      !['PENDING', 'RUNNING'].includes(execution.data.status)
+    ) {
+      void client.invalidateQueries({ queryKey: ['execution-logs', id] })
+    }
+  }, [execution.data?.status, client, id])
   const stop = useMutation({
     mutationFn: () => api.post(`/executions/${id}/cancel`),
     onSuccess: () => {
@@ -522,6 +536,20 @@ export function ExecutionDetail() {
                 r{exec.task_revision || '-'}
               </span>
             </DetailField>
+            {exec.script_id ? (
+              <DetailField label={t('executions.script')}>
+                <a
+                  className='font-mono text-xs hover:underline'
+                  href={`/scripts/${exec.script_id}`}
+                  title={exec.script_id}
+                >
+                  {exec.script_id}
+                </a>
+                <span className='ms-2 font-mono text-xs'>
+                  r{exec.script_revision || '-'}
+                </span>
+              </DetailField>
+            ) : null}
             <DetailField label={t('dashboard.trigger')}>{trigger}</DetailField>
             <DetailField label={t('executions.offline')}>
               {exec.offline ? t('executions.yes') : t('executions.no')}
@@ -529,6 +557,11 @@ export function ExecutionDetail() {
             <DetailField label={t('executions.synced')}>
               {exec.synced ? t('executions.yes') : t('executions.no')}
             </DetailField>
+            {exec.block_reason ? (
+              <DetailField label={t('executions.blockReason')}>
+                {exec.block_reason}
+              </DetailField>
+            ) : null}
           </DetailGrid>
         </SectionCard>
         <SectionCard title={t('executions.outputSummary')}>
@@ -566,6 +599,9 @@ export function ExecutionDetail() {
               stdout={exec.stdout}
               stderr={exec.stderr}
               chunks={logs.data || []}
+              terminal={!['PENDING', 'RUNNING'].includes(exec.status)}
+              stdoutTruncated={exec.stdout_truncated}
+              stderrTruncated={exec.stderr_truncated}
             />
           </SectionCard>
         </div>
@@ -578,10 +614,16 @@ function LogViewer({
   stdout,
   stderr,
   chunks,
+  terminal,
+  stdoutTruncated,
+  stderrTruncated,
 }: {
   stdout?: string
   stderr?: string
   chunks: { stream: string; seq: number; chunk: string }[]
+  terminal: boolean
+  stdoutTruncated?: boolean
+  stderrTruncated?: boolean
 }) {
   const { t } = useTranslation()
   const [search, setSearch] = useState('')
@@ -589,18 +631,24 @@ function LogViewer({
   const [follow, setFollow] = useState(false)
   const [stream, setStream] = useState<'all' | 'stdout' | 'stderr'>('all')
   const outputRef = useRef<HTMLPreElement>(null)
-  const content = chunks.length
-    ? chunks
-        .slice()
-        .sort((a, b) => a.seq - b.seq)
-        .filter((chunk) => stream === 'all' || chunk.stream === stream)
-        .map((chunk) => chunk.chunk)
-        .join('')
-    : stream === 'stdout'
-      ? stdout || ''
-      : stream === 'stderr'
-        ? stderr || ''
-        : [stdout, stderr].filter(Boolean).join('\n')
+  const view = executionLogView({
+    chunks,
+    stream,
+    terminal,
+    stdout,
+    stderr,
+    stdoutTruncated,
+    stderrTruncated,
+  })
+  const content = [
+    view.content,
+    ...view.supplements.map(
+      (summary) =>
+        `[${summary.stream} · ${t('executions.finalOutput')}${summary.truncated ? t('executions.truncated') : ''}]\n${summary.content}`
+    ),
+  ]
+    .filter(Boolean)
+    .join('\n\n')
   const filtered = search
     ? content
         .split('\n')

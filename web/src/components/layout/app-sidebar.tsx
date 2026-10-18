@@ -17,8 +17,9 @@ export function AppSidebar() {
   const { collapsible, variant } = useLayout()
   const { t } = useTranslation()
   const user = useAuthStore((state) => state.auth.user)
-  const sidebarData = getSidebarData(t)
   const rawRole = user?.role?.[0]
+  const canAdmin = rawRole === 'administrator'
+  const sidebarData = getSidebarData(t, { canAdmin })
   const roleKey =
     rawRole === 'administrator' ||
     rawRole === 'operator' ||

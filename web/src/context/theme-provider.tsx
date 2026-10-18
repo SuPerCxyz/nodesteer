@@ -41,16 +41,17 @@ export function ThemeProvider({
   const [theme, _setTheme] = useState<Theme>(
     () => (getCookie(storageKey) as Theme) || defaultTheme
   )
+  const [systemDark, setSystemDark] = useState(
+    () => window.matchMedia('(prefers-color-scheme: dark)').matches
+  )
 
   // Optimized: Memoize the resolved theme calculation to prevent unnecessary re-computations
   const resolvedTheme = useMemo((): ResolvedTheme => {
     if (theme === 'system') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light'
+      return systemDark ? 'dark' : 'light'
     }
     return theme as ResolvedTheme
-  }, [theme])
+  }, [theme, systemDark])
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -59,13 +60,16 @@ export function ThemeProvider({
     const applyTheme = (currentResolvedTheme: ResolvedTheme) => {
       root.classList.remove('light', 'dark') // Remove existing theme classes
       root.classList.add(currentResolvedTheme) // Add the new theme class
+      document
+        .querySelector("meta[name='theme-color']")
+        ?.setAttribute(
+          'content',
+          currentResolvedTheme === 'dark' ? '#020817' : '#fff'
+        )
     }
 
     const handleChange = () => {
-      if (theme === 'system') {
-        const systemTheme = mediaQuery.matches ? 'dark' : 'light'
-        applyTheme(systemTheme)
-      }
+      setSystemDark(mediaQuery.matches)
     }
 
     applyTheme(resolvedTheme)

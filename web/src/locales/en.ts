@@ -167,6 +167,9 @@ export default {
     signOutTitle: 'Sign out',
     signOutDescription:
       'Sign out of the current session? You will need to sign in again.',
+    signOutRevoked: 'Signed out',
+    signOutRevokeFailed:
+      'The server session could not be revoked; you have been signed out locally.',
   },
   header: {
     checking: 'Checking Hub',
@@ -187,6 +190,7 @@ export default {
     applicationStatus: 'Application status',
     syncStatus: 'Sync status',
     appsHealthy: 'Healthy Apps',
+    appsHealthUnavailable: 'App health unavailable',
     appsUnhealthy: 'Unhealthy Apps',
     execSucceeded: 'Executions Succeeded',
     execFailed: 'Executions Failed',
@@ -324,6 +328,7 @@ export default {
     start: 'Start transfer',
     creating: 'Creating...',
     created: 'File transfer created',
+    targetMustDiffer: 'Target must differ from the source node',
     retry: 'Retry',
     cancel: 'Cancel transfer',
     id: 'Transfer ID',
@@ -453,6 +458,8 @@ export default {
     setRemote: 'Set Remote',
     setCondition: 'Set Condition',
     clear: 'Clear',
+    conditionSummary: 'Condition Summary',
+    clearConditions: 'Clear All Conditions',
     addParam: 'Add Param',
     schedules: 'Schedules',
     noSchedules: 'No schedules for this task',
@@ -508,9 +515,11 @@ export default {
     cronRequired: 'Enter a Cron expression',
     intervalInvalid: 'Interval must be greater than 0 seconds',
     runAtRequired: 'Select a run time',
+    runAtPast: 'Run time must be in the future',
     cronInvalidSyntax:
       'Invalid Cron expression. Check field values and step sizes.',
     taskPrefilled: 'Created from the task detail page; the task is locked.',
+    taskNotFound: 'Task does not exist or was deleted; cannot create a schedule.',
     cronEdit: {
       preset: 'Preset',
       custom: 'Custom',
@@ -672,6 +681,7 @@ export default {
     exitCode: 'Exit Code',
     synced: 'Synced',
     blockReason: 'Block Reason',
+    finalOutput: 'Final output supplement',
     truncated: '(truncated)',
     empty: '(empty)',
     yes: 'Yes',

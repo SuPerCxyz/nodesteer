@@ -22,6 +22,22 @@ export function getToken(): string | null {
   return authToken
 }
 
+/** JSON、文件上传和下载共用会话失效处理；旧请求不得清除新会话。 */
+export async function authenticatedFetch(
+  path: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const requestToken = authToken
+  const headers = new Headers(options.headers)
+  if (requestToken) headers.set('Authorization', `Bearer ${requestToken}`)
+  const response = await fetch(path, { ...options, headers })
+  if (response.status === 401 && requestToken && requestToken === authToken) {
+    setToken(null)
+    window.dispatchEvent(new Event('nodesteer-unauthorized'))
+  }
+  return response
+}
+
 export class ApiError extends Error {
   status: number
   /** 后端原始错误信息（未经可读化映射） */
@@ -42,14 +58,10 @@ async function requestWithResponse<T>(
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   }
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`
-  }
-  const resp = await fetch(`${API_BASE}${path}`, { ...options, headers })
-  if (resp.status === 401) {
-    setToken(null)
-    window.dispatchEvent(new Event('nodesteer-unauthorized'))
-  }
+  const resp = await authenticatedFetch(`${API_BASE}${path}`, {
+    ...options,
+    headers,
+  })
   if (!resp.ok) {
     let msg = `HTTP ${resp.status}`
     try {
@@ -402,11 +414,11 @@ export interface Settings {
 }
 
 export interface SessionInfo {
-  Token: string
-  UserID: string
-  Username: string
-  Role: string
-  Expires: string
+  token: string
+  user_id: string
+  username: string
+  role: string
+  expires: string
   /** 头像 URL（OIDC picture claim），空值时后端省略该字段 */
   avatar?: string
 }

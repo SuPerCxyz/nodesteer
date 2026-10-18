@@ -10,11 +10,11 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { Check, Copy, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
+import { sessionToUser, useAuthStore } from '@/stores/auth-store'
 import {
   api,
   ApiError,
-  getToken,
+  authenticatedFetch,
   type Application,
   type Artifact,
   type AuditLog,
@@ -24,6 +24,7 @@ import {
   type Schedule,
   type Script,
   type Settings,
+  type SessionInfo,
   type Task,
   type User,
 } from '@/lib/api'
@@ -60,6 +61,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import { NodeBulkActions } from '@/features/catalog/node-bulk-actions'
@@ -78,6 +80,20 @@ import {
   TableCard,
   TimeValue,
 } from '@/features/shared/ui'
+
+/** 触发发布包下载（带鉴权）；失败时抛出 HTTP 状态错误供调用方提示 */
+async function downloadArtifactFile(artifact: Artifact) {
+  const response = await authenticatedFetch(
+    `/api/artifacts/${artifact.id}/download`
+  )
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = artifact.filename
+  link.click()
+  URL.revokeObjectURL(url)
+}
 
 export function Agents() {
   const { t } = useTranslation()
@@ -986,8 +1002,36 @@ function ExecutionRows({
   )
 }
 
-/** 判断组是否包含节点：label 组按标签匹配，static 组按成员 ID 匹配 */
-function groupMatchesNode(group: Group, node: Node) {
+/** 审计资源 → 详情路由映射；无详情路由的资源类型（如 setting）返回 undefined */
+function auditResourcePath(resource: string, id: string): string | undefined {
+  if (!id) return undefined
+  switch (resource) {
+    case 'task':
+      return `/tasks/${id}`
+    case 'script':
+      return `/scripts/${id}`
+    case 'schedule':
+      return `/schedules/${id}`
+    case 'application':
+      return `/applications/${id}`
+    case 'group':
+      return `/groups/${id}`
+    case 'node':
+      return `/agents/${id}`
+    case 'execution':
+      return `/executions/${id}`
+    case 'artifact':
+      return `/artifacts/${id}`
+    case 'user':
+      return `/users/${id}`
+    case 'file_transfer':
+      return `/transfers/${id}`
+    default:
+      return undefined
+  }
+}
+
+/** 判断组是否包含节点：label 组按标签匹配，static 组按成员 ID 匹配 */function groupMatchesNode(group: Group, node: Node) {
   if (group.type === 'label')
     return node.labels?.[group.label_key] === group.label_value
   return group.members?.includes(node.id) || false
@@ -1671,21 +1715,10 @@ export function Artifacts() {
   const downloadArtifact = useCallback(
     async (artifact: Artifact) => {
       try {
-        const response = await fetch(`/api/artifacts/${artifact.id}/download`, {
-          headers: { Authorization: `Bearer ${getToken() || ''}` },
-        })
-        if (!response.ok)
-          throw new Error(`${t('artifacts.download')}: HTTP ${response.status}`)
-        const url = URL.createObjectURL(await response.blob())
-        const link = document.createElement('a')
-        link.href = url
-        link.download = artifact.filename
-        link.click()
-        URL.revokeObjectURL(url)
+        await downloadArtifactFile(artifact)
       } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : t('artifacts.download')
-        )
+        const detail = error instanceof Error ? `: ${error.message}` : ''
+        toast.error(`${t('artifacts.download')}${detail}`)
       }
     },
     [t]
@@ -1699,12 +1732,13 @@ export function Artifacts() {
         minSize: 160,
         maxSize: 280,
         cell: ({ row }: { row: { original: Artifact } }) => (
-          <span
-            className='block truncate font-medium'
+          <a
+            className='block truncate font-medium hover:underline'
+            href={`/artifacts/${row.original.id}`}
             title={row.original.name}
           >
             {row.original.name}
-          </span>
+          </a>
         ),
       },
       {
@@ -1851,15 +1885,144 @@ export function Artifacts() {
   )
 }
 
+export function ArtifactDetail() {
+  const { t } = useTranslation()
+  const canWrite = useCanWrite()
+  const client = useQueryClient()
+  const id = window.location.pathname.split('/').pop() || ''
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const artifact = useQuery({
+    queryKey: ['artifact', id],
+    queryFn: () => api.get<Artifact>(`/artifacts/${id}`),
+  })
+  const applications = useQuery({
+    queryKey: ['applications'],
+    queryFn: () => api.get<Application[]>('/applications'),
+  })
+  const { mutate: removeArtifact, isPending: removing } = useMutation({
+    mutationFn: () => api.del(`/artifacts/${id}`),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['artifacts'] })
+      toast.success(t('common.deleted'))
+      window.location.assign('/artifacts')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  if (artifact.isError && !artifact.data)
+    return (
+      <ErrorPage
+        title={t('artifacts.title')}
+        error={artifact.error}
+        onRetry={() => artifact.refetch()}
+        backTo='/artifacts'
+      />
+    )
+  if (!artifact.data) return <LoadingPage title={t('artifacts.title')} />
+  const item = artifact.data
+  const usedBy = (applications.data || []).filter(
+    (application) => application.artifact_id === item.id
+  )
+  const download = async () => {
+    try {
+      await downloadArtifactFile(item)
+    } catch (error) {
+      const detail = error instanceof Error ? `: ${error.message}` : ''
+      toast.error(`${t('artifacts.download')}${detail}`)
+    }
+  }
+  return (
+    <>
+      <NodeSteerHeader
+        title={item.name}
+        description={`${item.version || '-'} · ${item.architecture || '-'}`}
+        action={
+          <div className='flex items-center gap-2'>
+            <Button variant='outline' onClick={() => void download()}>
+              {t('artifacts.download')}
+            </Button>
+            {canWrite ? (
+              <Button variant='destructive' onClick={() => setDeleteOpen(true)}>
+                {t('common.delete')}
+              </Button>
+            ) : null}
+          </div>
+        }
+      />
+      <Main className='flex flex-1 flex-col gap-6'>
+        <Button asChild variant='ghost' className='w-fit px-0'>
+          <Link to='/artifacts'>← {t('common.back')}</Link>
+        </Button>
+        <ConfirmDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          title={`${t('common.delete')}: ${item.name}`}
+          desc={t('artifacts.confirmDelete')}
+          cancelBtnText={t('common.cancel')}
+          confirmText={t('common.delete')}
+          destructive
+          isLoading={removing}
+          handleConfirm={() => {
+            removeArtifact()
+            setDeleteOpen(false)
+          }}
+        />
+        <SectionCard title={t('artifacts.title')}>
+          <DetailGrid>
+            <DetailField label={t('common.name')}>{item.name}</DetailField>
+            <DetailField label={t('common.version')}>
+              {item.version || '-'}
+            </DetailField>
+            <DetailField label={t('artifacts.archField')}>
+              {item.architecture || '-'}
+            </DetailField>
+            <DetailField label={t('artifacts.filename')}>
+              <span className='font-mono text-xs break-all'>
+                {item.filename}
+              </span>
+            </DetailField>
+            <DetailField label={t('artifacts.size')}>
+              {`${Math.round(item.size / 1024)} KB`}
+            </DetailField>
+            <DetailField label='SHA256'>
+              <span className='font-mono text-xs break-all'>{item.sha256}</span>
+            </DetailField>
+            <DetailField label={t('artifacts.uploaded')}>
+              <TimeValue value={item.uploaded_at} absolute />
+            </DetailField>
+          </DetailGrid>
+        </SectionCard>
+        <SectionCard title={t('artifacts.usage')}>
+          {usedBy.length ? (
+            <div className='flex flex-wrap gap-x-3 gap-y-2'>
+              {usedBy.map((application) => (
+                <a
+                  className='hover:underline'
+                  href={`/applications/${application.id}`}
+                  key={application.id}
+                >
+                  {application.name}
+                </a>
+              ))}
+            </div>
+          ) : (
+            <span className='text-sm text-muted-foreground'>-</span>
+          )}
+        </SectionCard>
+      </Main>
+    </>
+  )
+}
+
 export function Audit() {
   const { t } = useTranslation()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(() => readTablePageSize('audit', 10))
+  const [filter, setFilter] = useState('')
   const query = useQuery({
-    queryKey: ['audit', page, pageSize],
+    queryKey: ['audit', filter, page, pageSize],
     queryFn: () =>
       api.getPage<AuditLog>(
-        `/audit?limit=${pageSize}&offset=${(page - 1) * pageSize}`
+        `/audit?limit=${pageSize}&offset=${(page - 1) * pageSize}&q=${encodeURIComponent(filter)}`
       ),
     placeholderData: keepPreviousData,
   })
@@ -1897,14 +2060,28 @@ export function Audit() {
         header: t('common.resourceId'),
         size: 210,
         minSize: 160,
-        cell: ({ row }: { row: { original: AuditLog } }) => (
-          <span
-            className='block truncate font-mono text-xs'
-            title={row.original.resource_id}
-          >
-            {row.original.resource_id || '-'}
-          </span>
-        ),
+        cell: ({ row }: { row: { original: AuditLog } }) => {
+          const path = auditResourcePath(
+            row.original.resource,
+            row.original.resource_id
+          )
+          return path ? (
+            <a
+              className='block truncate font-mono text-xs hover:underline'
+              href={path}
+              title={row.original.resource_id}
+            >
+              {row.original.resource_id}
+            </a>
+          ) : (
+            <span
+              className='block truncate font-mono text-xs'
+              title={row.original.resource_id}
+            >
+              {row.original.resource_id || '-'}
+            </span>
+          )
+        },
       },
       {
         accessorKey: 'detail',
@@ -1929,6 +2106,11 @@ export function Audit() {
       data={query.data?.items || []}
       searchPlaceholder={t('misc.auditSearch')}
       storageKey='audit'
+      filter={filter}
+      onFilterChange={(value) => {
+        setFilter(value)
+        setPage(1)
+      }}
       pagination={{
         total: query.data?.total ?? 0,
         page,
@@ -1970,7 +2152,23 @@ export function Users() {
   const { mutate: setUserRole } = useMutation({
     mutationFn: ({ user, role }: { user: User; role: string }) =>
       api.put(`/users/${user.id}`, { role }),
-    onSuccess: () => client.invalidateQueries({ queryKey: ['users'] }),
+    onSuccess: async (_result, { user, role }) => {
+      const auth = useAuthStore.getState().auth
+      if (auth.user?.userId === user.id) {
+        // PUT 已确认该角色，先关闭失权表单，再用服务端会话核验完整身份。
+        auth.setUser({ ...auth.user, role: [role] })
+        if (role !== 'administrator') setShowForm(false)
+        const session = await api.get<SessionInfo>('/me')
+        if (useAuthStore.getState().auth.accessToken !== auth.accessToken)
+          return
+        auth.setUser(sessionToUser(session))
+        if (session.role !== 'administrator') {
+          client.removeQueries({ queryKey: ['users'] })
+          return
+        }
+      }
+      await client.invalidateQueries({ queryKey: ['users'] })
+    },
     onError: (error) => toast.error(error.message),
   })
   const columns = useMemo<ColumnDef<User>[]>(
@@ -1982,12 +2180,13 @@ export function Users() {
         minSize: 200,
         maxSize: 320,
         cell: ({ row }: { row: { original: User } }) => (
-          <span
-            className='block truncate font-medium'
+          <a
+            className='block truncate font-medium hover:underline'
+            href={`/users/${row.original.id}`}
             title={row.original.username}
           >
             {row.original.username}
-          </span>
+          </a>
         ),
       },
       {
@@ -2107,6 +2306,84 @@ export function Users() {
         ) : null
       }
     />
+  )
+}
+
+export function UserDetail() {
+  const { t } = useTranslation()
+  const isAdministrator = useAuthStore(
+    (state) => state.auth.user?.role.includes('administrator') ?? false
+  )
+  const id = window.location.pathname.split('/').pop() || ''
+  const query = useQuery({
+    queryKey: ['users'],
+    queryFn: () => api.get<User[]>('/users'),
+    enabled: isAdministrator,
+  })
+  if (!isAdministrator) {
+    return (
+      <>
+        <NodeSteerHeader
+          title={t('misc.usersTitle')}
+          description={t('misc.usersDescription')}
+        />
+        <Main>
+          <ErrorState error={new Error(t('misc.adminOnly'))} />
+        </Main>
+      </>
+    )
+  }
+  if (query.isError && !query.data)
+    return (
+      <ErrorPage
+        title={t('misc.usersTitle')}
+        error={query.error}
+        onRetry={() => query.refetch()}
+        backTo='/users'
+      />
+    )
+  if (!query.data) return <LoadingPage title={t('misc.usersTitle')} />
+  const user = query.data.find((item) => item.id === id)
+  if (!user)
+    return (
+      <ErrorPage
+        title={t('misc.usersTitle')}
+        error={new Error(
+          t('errors.notFoundResource', { resource: t('errors.types.user') })
+        )}
+        backTo='/users'
+      />
+    )
+  return (
+    <>
+      <NodeSteerHeader
+        title={user.username}
+        description={t(`misc.${user.role}`, { defaultValue: user.role })}
+      />
+      <Main className='flex flex-1 flex-col gap-6'>
+        <Button asChild variant='ghost' className='w-fit px-0'>
+          <Link to='/users'>← {t('common.back')}</Link>
+        </Button>
+        <SectionCard title={t('misc.usersTitle')}>
+          <DetailGrid>
+            <DetailField label={t('misc.username')}>
+              {user.username}
+            </DetailField>
+            <DetailField label={t('misc.role')}>
+              {t(`misc.${user.role}`, { defaultValue: user.role })}
+            </DetailField>
+            <DetailField label={t('misc.created')}>
+              <TimeValue value={user.created_at} absolute />
+            </DetailField>
+            <DetailField label='ID'>
+              <span className='block truncate font-mono text-xs' title={user.id}>
+                {user.id}
+              </span>
+            </DetailField>
+          </DetailGrid>
+        </SectionCard>
+      </Main>
+    </>
   )
 }
 
@@ -2262,6 +2539,8 @@ function ListLayout<TData>({
   extra,
   storageKey,
   pagination,
+  filter,
+  onFilterChange,
   enableRowSelection,
   renderBulkActions,
   bulkEntityName,
@@ -2289,6 +2568,8 @@ function ListLayout<TData>({
     onPageChange: (page: number) => void
     onPageSizeChange: (pageSize: number) => void
   }
+  filter?: string
+  onFilterChange?: (value: string) => void
   /** 启用行多选（注入前置选择列） */
   enableRowSelection?: boolean
   /** 选中后浮出的批量操作工具条内容 */
@@ -2318,13 +2599,16 @@ function ListLayout<TData>({
             <Skeleton className='h-12 w-full' />
             <Skeleton className='h-12 w-full' />
           </div>
-        ) : data.length || (pagination?.total ?? 0) > 0 ? (
+        ) : onFilterChange || data.length || (pagination?.total ?? 0) > 0 ? (
           <DataTable
             data={data}
             columns={columns}
             searchPlaceholder={searchPlaceholder}
             storageKey={storageKey}
             manualPagination={Boolean(pagination)}
+            manualFiltering={Boolean(onFilterChange)}
+            filter={filter}
+            onFilterChange={onFilterChange}
             total={pagination?.total}
             page={pagination?.page}
             pageSize={pagination?.pageSize}

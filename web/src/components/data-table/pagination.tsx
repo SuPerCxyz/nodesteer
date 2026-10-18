@@ -6,6 +6,7 @@ import {
 } from '@radix-ui/react-icons'
 import { type Table } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
+import { PAGE_SIZE_OPTIONS } from '@/lib/table-view'
 import { cn, getPageNumbers } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,9 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-
-/** 每页条数选项（分页选择器与持久化校验共用） */
-export const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50]
 
 type DataTablePaginationProps<TData> = {
   table: Table<TData>
@@ -35,6 +33,11 @@ export function DataTablePagination<TData>({
   const currentPage = table.getState().pagination.pageIndex + 1
   const totalPages = table.getPageCount()
   const pageNumbers = getPageNumbers(currentPage, totalPages)
+  const currentPageSize = table.getState().pagination.pageSize
+  // 当前值不在标准选项内（如 URL 传入的越界值）时补一个选项，避免触发器显示空白
+  const pageSizeOptions = PAGE_SIZE_OPTIONS.includes(currentPageSize)
+    ? PAGE_SIZE_OPTIONS
+    : [...PAGE_SIZE_OPTIONS, currentPageSize].sort((a, b) => a - b)
 
   return (
     <div
@@ -47,16 +50,16 @@ export function DataTablePagination<TData>({
       <div className='flex items-center justify-between gap-3'>
         <div className='flex items-center gap-2'>
           <Select
-            value={`${table.getState().pagination.pageSize}`}
+            value={`${currentPageSize}`}
             onValueChange={(value) => {
               table.setPageSize(Number(value))
             }}
           >
             <SelectTrigger className='h-8 w-17.5'>
-              <SelectValue placeholder={table.getState().pagination.pageSize} />
+              <SelectValue placeholder={currentPageSize} />
             </SelectTrigger>
             <SelectContent side='top'>
-              {PAGE_SIZE_OPTIONS.map((pageSize) => (
+              {pageSizeOptions.map((pageSize) => (
                 <SelectItem key={pageSize} value={`${pageSize}`}>
                   {pageSize}
                 </SelectItem>

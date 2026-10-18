@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Plus, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -20,11 +21,15 @@ import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import { DataTable } from '@/features/shared/data-table'
 import {
+  DetailField,
+  DetailGrid,
   DropdownMenuItem,
   EmptyState,
+  ErrorPage,
   ErrorState,
   LoadingState,
   MoreMenu,
+  SectionCard,
   StatusBadge,
   TimeValue,
 } from '@/features/shared/ui'
@@ -50,12 +55,16 @@ export function FileTransfers() {
     refetchInterval: 3000,
   })
   const create = useMutation({
-    mutationFn: () =>
-      api.post<FileTransfer>('/transfers', {
+    mutationFn: () => {
+      if (targets.some((target) => target.node_id === sourceNodeID)) {
+        throw new Error(t('transfers.targetMustDiffer'))
+      }
+      return api.post<FileTransfer>('/transfers', {
         source_node_id: sourceNodeID,
         source_path: sourcePath,
         targets,
-      }),
+      })
+    },
     onSuccess: () => {
       setSourcePath('')
       setTargets([])
@@ -187,32 +196,41 @@ export function FileTransfers() {
         id: 'actions',
         header: '',
         enableHiding: false,
-        size: 72,
-        minSize: 64,
+        size: 116,
+        minSize: 104,
         cell: ({ row }: { row: { original: FileTransfer } }) => {
           const canRetry = row.original.status === 'FAILED'
           const canCancel = !['SUCCESS', 'CANCELED'].includes(
             row.original.status
           )
-          // 终态且无可用操作时不渲染空菜单（缺陷 FAIL-A-012）
-          if (!canWrite || (!canRetry && !canCancel)) return null
+          const hasActions = canWrite && (canRetry || canCancel)
           return (
-            <MoreMenu>
-              {canRetry && (
-                <DropdownMenuItem
-                  onSelect={() => retryTransfer(row.original.id)}
-                >
-                  {t('transfers.retry')}
-                </DropdownMenuItem>
-              )}
-              {canCancel && (
-                <DropdownMenuItem
-                  onSelect={() => cancelTransfer(row.original.id)}
-                >
-                  {t('transfers.cancel')}
-                </DropdownMenuItem>
-              )}
-            </MoreMenu>
+            <div className='flex items-center gap-2'>
+              <a
+                className='text-sm text-primary hover:underline'
+                href={`/transfers/${row.original.id}`}
+              >
+                {t('common.viewDetails')}
+              </a>
+              {hasActions ? (
+                <MoreMenu>
+                  {canRetry && (
+                    <DropdownMenuItem
+                      onSelect={() => retryTransfer(row.original.id)}
+                    >
+                      {t('transfers.retry')}
+                    </DropdownMenuItem>
+                  )}
+                  {canCancel && (
+                    <DropdownMenuItem
+                      onSelect={() => cancelTransfer(row.original.id)}
+                    >
+                      {t('transfers.cancel')}
+                    </DropdownMenuItem>
+                  )}
+                </MoreMenu>
+              ) : null}
+            </div>
           )
         },
       },
@@ -222,6 +240,7 @@ export function FileTransfers() {
   const addTarget = () => {
     if (
       !targetNodeID ||
+      targetNodeID === sourceNodeID ||
       !destinationPath ||
       targets.some((target) => target.node_id === targetNodeID)
     )
@@ -252,7 +271,16 @@ export function FileTransfers() {
               <div className='grid gap-4 md:grid-cols-[minmax(180px,1fr)_minmax(0,2fr)_108px]'>
                 <label className='grid gap-2 text-sm'>
                   {t('transfers.source')}
-                  <Select value={sourceNodeID} onValueChange={setSourceNodeID}>
+                  <Select
+                    value={sourceNodeID}
+                    onValueChange={(nodeID) => {
+                      setSourceNodeID(nodeID)
+                      setTargets((current) =>
+                        current.filter((target) => target.node_id !== nodeID)
+                      )
+                      if (targetNodeID === nodeID) setTargetNodeID('')
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder={t('transfers.selectSource')} />
                     </SelectTrigger>
@@ -308,7 +336,11 @@ export function FileTransfers() {
                   variant='outline'
                   className='w-full self-end'
                   onClick={addTarget}
-                  disabled={!targetNodeID || !destinationPath}
+                  disabled={
+                    !targetNodeID ||
+                    targetNodeID === sourceNodeID ||
+                    !destinationPath
+                  }
                 >
                   <Plus className='size-4' />
                   {t('transfers.addTarget')}
@@ -356,6 +388,7 @@ export function FileTransfers() {
                   !source ||
                   !sourcePath ||
                   targets.length === 0 ||
+                  targets.some((target) => target.node_id === sourceNodeID) ||
                   create.isPending
                 }
               >
@@ -385,6 +418,178 @@ export function FileTransfers() {
             <EmptyState message={t('transfers.empty')} />
           </Card>
         )}
+      </Main>
+    </>
+  )
+}
+
+/** 传输详情（轻量详情页）：GET /transfers/{id} 返回完整传输与各目标状态 */
+export function TransferDetail() {
+  const { t } = useTranslation()
+  const canWrite = useCanWrite()
+  const client = useQueryClient()
+  const id = window.location.pathname.split('/').pop() || ''
+  const transfer = useQuery({
+    queryKey: ['transfer', id],
+    queryFn: () => api.get<FileTransfer>(`/transfers/${id}`),
+    refetchInterval: (query) =>
+      ['PENDING', 'UPLOADING', 'DELIVERING'].includes(
+        query.state.data?.status || ''
+      )
+        ? 3000
+        : false,
+  })
+  const nodes = useQuery({
+    queryKey: ['nodes'],
+    queryFn: () => api.get<Node[]>('/nodes'),
+  })
+  const { mutate: retryTransfer, isPending: retrying } = useMutation({
+    mutationFn: () => api.post(`/transfers/${id}/retry`),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['transfer', id] })
+      client.invalidateQueries({ queryKey: ['transfers'] })
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  const { mutate: cancelTransfer, isPending: canceling } = useMutation({
+    mutationFn: () => api.post(`/transfers/${id}/cancel`),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['transfer', id] })
+      client.invalidateQueries({ queryKey: ['transfers'] })
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  if (transfer.isError && !transfer.data)
+    return (
+      <ErrorPage
+        title={t('transfers.title')}
+        error={transfer.error}
+        onRetry={() => transfer.refetch()}
+        backTo='/transfers'
+      />
+    )
+  if (!transfer.data)
+    return (
+      <>
+        <NodeSteerHeader title={t('transfers.title')} />
+        <Main>
+          <LoadingState />
+        </Main>
+      </>
+    )
+  const item = transfer.data
+  const nodeNames = new Map(
+    (nodes.data || []).map((node) => [node.id, node.hostname])
+  )
+  const nodeName = (nodeId: string) =>
+    nodeNames.get(nodeId) || t('common.unknownNode')
+  const canRetry = item.status === 'FAILED'
+  const canCancel = !['SUCCESS', 'CANCELED'].includes(item.status)
+  return (
+    <>
+      <NodeSteerHeader
+        title={item.source_path || t('transfers.title')}
+        description={t('transfers.id') + `: ${item.id}`}
+        action={
+          canWrite && (canRetry || canCancel) ? (
+            <div className='flex items-center gap-2'>
+              {canRetry ? (
+                <Button
+                  variant='outline'
+                  disabled={retrying}
+                  onClick={() => retryTransfer()}
+                >
+                  {t('transfers.retry')}
+                </Button>
+              ) : null}
+              {canCancel ? (
+                <Button
+                  variant='destructive'
+                  disabled={canceling}
+                  onClick={() => cancelTransfer()}
+                >
+                  {t('transfers.cancel')}
+                </Button>
+              ) : null}
+            </div>
+          ) : undefined
+        }
+      />
+      <Main className='flex flex-1 flex-col gap-6'>
+        <Button asChild variant='ghost' className='w-fit px-0'>
+          <Link to='/transfers'>← {t('common.back')}</Link>
+        </Button>
+        <SectionCard title={t('transfers.title')}>
+          <DetailGrid>
+            <DetailField label={t('common.status')}>
+              <StatusBadge status={item.status} />
+            </DetailField>
+            <DetailField label={t('transfers.source')}>
+              <a
+                className='hover:underline'
+                href={`/agents/${item.source_node_id}`}
+              >
+                {nodeName(item.source_node_id)}
+              </a>
+            </DetailField>
+            <DetailField label={t('transfers.sourcePath')}>
+              <span className='font-mono text-xs break-all'>
+                {item.source_path}
+              </span>
+            </DetailField>
+            <DetailField label={t('artifacts.size')}>
+              {`${Math.round((item.size || 0) / 1024)} KB`}
+            </DetailField>
+            <DetailField label='SHA256'>
+              <span className='font-mono text-xs break-all'>
+                {item.sha256 || '-'}
+              </span>
+            </DetailField>
+            <DetailField label={t('misc.created')}>
+              <TimeValue value={item.created_at} absolute />
+            </DetailField>
+            <DetailField label={t('common.time')}>
+              <TimeValue value={item.updated_at} absolute />
+            </DetailField>
+            {item.error ? (
+              <DetailField label={t('transfers.errorReason')}>
+                <span className='text-xs text-destructive'>{item.error}</span>
+              </DetailField>
+            ) : null}
+          </DetailGrid>
+        </SectionCard>
+        <SectionCard title={t('transfers.targets')}>
+          {item.targets.length ? (
+            <div className='divide-y'>
+              {item.targets.map((target) => (
+                <div
+                  className='flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 py-3'
+                  key={target.node_id}
+                >
+                  <a
+                    className='min-w-0 truncate font-medium hover:underline'
+                    href={`/agents/${target.node_id}`}
+                    title={nodeName(target.node_id)}
+                  >
+                    {nodeName(target.node_id)}
+                  </a>
+                  <span className='font-mono text-xs break-all text-muted-foreground'>
+                    {target.destination_path}
+                  </span>
+                  <StatusBadge status={target.status} />
+                  <TimeValue value={target.updated_at} />
+                  {target.error ? (
+                    <span className='max-w-full truncate text-xs text-destructive'>
+                      {target.error}
+                    </span>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState message={t('common.noData')} />
+          )}
+        </SectionCard>
       </Main>
     </>
   )

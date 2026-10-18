@@ -1,5 +1,8 @@
 import type { VisibilityState } from '@tanstack/react-table'
 
+/** 每页条数选项（分页选择器与持久化校验共用） */
+export const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50]
+
 /** 表格视图持久化状态：列可见性与每页条数 */
 export interface TableViewState {
   columnVisibility?: VisibilityState
@@ -55,7 +58,10 @@ export function writeTableView(storageKey: string, state: TableViewState) {
   }
 }
 
-/** 读取已持久化的每页条数，缺失或非法时回退到 fallback */
+/** 读取已持久化的每页条数；缺失、非法或超出分页选项范围时回退到 fallback */
 export function readTablePageSize(storageKey: string, fallback: number) {
-  return readTableView(storageKey).pageSize ?? fallback
+  const pageSize = readTableView(storageKey).pageSize
+  if (pageSize === undefined) return fallback
+  // 越界值（如旧版本残留的 1）会让分页下拉无匹配项而显示空白，统一回退默认值
+  return PAGE_SIZE_OPTIONS.includes(pageSize) ? pageSize : fallback
 }

@@ -45,10 +45,19 @@ type DashboardData = {
   executions: Execution[]
   applications: Application[]
   applicationHealth: Record<string, string>
+  /** 应用状态接口是否全部成功；任一失败时健康比显示为不可用，避免显示假 0 值 */
+  applicationHealthAvailable: boolean
+  /** 首个应用状态请求错误，用于错误态文案与重试 */
+  applicationHealthError: unknown
   schedules: Schedule[]
   tasks: Task[]
   healthyApplications: number
 }
+
+/** 单个应用状态查询结果：失败不再吞成空数组，保留错误供错误态与健康比判定使用 */
+type ApplicationStatesResult =
+  | { ok: true; states: ApplicationNodeState[] }
+  | { ok: false; error: unknown }
 
 async function loadDashboard(): Promise<DashboardData> {
   const [nodes, executions, applications, schedules, tasks] = await Promise.all(
@@ -60,21 +69,38 @@ async function loadDashboard(): Promise<DashboardData> {
       api.get<Task[]>('/tasks'),
     ]
   )
-  const applicationStates = await Promise.all(
-    applications.map((application) =>
-      api
-        .get<ApplicationNodeState[]>(`/applications/${application.id}/state`)
-        .catch(() => [])
+  const applicationStateResults = await Promise.all(
+    applications.map(
+      async (application): Promise<ApplicationStatesResult> => {
+        try {
+          return {
+            ok: true,
+            states: await api.get<ApplicationNodeState[]>(
+              `/applications/${application.id}/state`
+            ),
+          }
+        } catch (error) {
+          return { ok: false, error }
+        }
+      }
     )
   )
+  const applicationHealthAvailable = applicationStateResults.every(
+    (result) => result.ok
+  )
+  const applicationHealthError =
+    applicationStateResults.find((result) => !result.ok)?.error ?? null
   const applicationHealth = Object.fromEntries(
     applications.map((application, index) => {
-      const states = applicationStates[index]
-      const health = states.some((state) => state.health === 'healthy')
-        ? 'healthy'
-        : states.some((state) => state.health === 'unhealthy')
-          ? 'unhealthy'
-          : 'unknown'
+      const result = applicationStateResults[index]
+      // 状态请求失败的应用健康未知，不得当作不健康（否则健康比错误下降）
+      const health = !result.ok
+        ? 'unknown'
+        : result.states.some((state) => state.health === 'healthy')
+          ? 'healthy'
+          : result.states.some((state) => state.health === 'unhealthy')
+            ? 'unhealthy'
+            : 'unknown'
       return [application.id, health]
     })
   )
@@ -86,6 +112,8 @@ async function loadDashboard(): Promise<DashboardData> {
     executions,
     applications,
     applicationHealth,
+    applicationHealthAvailable,
+    applicationHealthError,
     schedules,
     tasks,
     healthyApplications,
@@ -295,8 +323,9 @@ export function Dashboard() {
                 </CardTitle>
                 <div className='flex items-center gap-3'>
                   <span className='text-xs text-muted-foreground'>
-                    {data.healthyApplications}/{data.applications.length}{' '}
-                    {t('dashboard.appsHealthy').toLowerCase()}
+                    {data.applicationHealthAvailable
+                      ? `${data.healthyApplications}/${data.applications.length} ${t('dashboard.appsHealthy').toLowerCase()}`
+                      : t('dashboard.appsHealthUnavailable')}
                   </span>
                   <Link
                     className='text-xs text-muted-foreground hover:text-foreground'
@@ -308,6 +337,14 @@ export function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent className='px-5'>
+                {!data.applicationHealthAvailable ? (
+                  <div className='mb-3'>
+                    <ErrorState
+                      error={data.applicationHealthError}
+                      onRetry={() => query.refetch()}
+                    />
+                  </div>
+                ) : null}
                 {data.applications.length === 0 ? (
                   <EmptyState
                     className='min-h-20 py-4'

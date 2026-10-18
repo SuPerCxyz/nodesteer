@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from '@tanstack/react-router'
 import { sessionToUser, useAuthStore } from '@/stores/auth-store'
-import { api, type SessionInfo } from '@/lib/api'
+import { api, ApiError, type SessionInfo } from '@/lib/api'
 import { getCookie } from '@/lib/cookies'
 import { currentPath } from '@/lib/navigation'
 import { cn } from '@/lib/utils'
@@ -10,6 +10,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { SkipToMain } from '@/components/skip-to-main'
+import { ErrorState } from '@/features/shared/ui'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -23,6 +24,8 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const setUser = useAuthStore((state) => state.auth.setUser)
   const reset = useAuthStore((state) => state.auth.reset)
   const [checking, setChecking] = useState(true)
+  const [checkError, setCheckError] = useState<Error | null>(null)
+  const [retry, setRetry] = useState(0)
   const redirecting = useRef(false)
 
   useEffect(() => {
@@ -47,11 +50,26 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     api
       .get<SessionInfo>('/me')
       .then((session) => {
-        if (mounted) setUser(sessionToUser(session))
+        if (
+          mounted &&
+          useAuthStore.getState().auth.accessToken === accessToken
+        ) {
+          setCheckError(null)
+          setUser(sessionToUser(session))
+        }
       })
-      .catch(() => {
-        reset()
-        redirectToSignIn()
+      .catch((error: Error) => {
+        if (
+          !mounted ||
+          useAuthStore.getState().auth.accessToken !== accessToken
+        )
+          return
+        if (error instanceof ApiError && error.status === 401) {
+          reset()
+          redirectToSignIn()
+        } else {
+          setCheckError(error)
+        }
       })
       .finally(() => {
         if (mounted) setChecking(false)
@@ -68,6 +86,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     navigate,
     reset,
     setUser,
+    retry,
   ])
 
   if (checking) {
@@ -78,12 +97,30 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     )
   }
 
+  if (checkError) {
+    return (
+      <div className='p-6'>
+        <ErrorState
+          error={checkError}
+          onRetry={() => {
+            setCheckError(null)
+            setChecking(true)
+            setRetry((value) => value + 1)
+          }}
+        />
+      </div>
+    )
+  }
+
   return (
     <LayoutProvider>
       <SidebarProvider defaultOpen={defaultOpen}>
         <SkipToMain />
         <AppSidebar />
         <SidebarInset
+          // 跳转链接 #content 的落点：可聚焦并随之后续 Tab 顺序进入正文
+          id='content'
+          tabIndex={-1}
           className={cn(
             // Set content container, so we can use container queries
             '@container/content',

@@ -15,7 +15,18 @@ import {
 } from 'lucide-react'
 import type { SidebarData } from '../types'
 
-export function getSidebarData(t: TFunction): SidebarData {
+export function getSidebarData(
+  t: TFunction,
+  options: { canAdmin?: boolean } = {}
+): SidebarData {
+  const systemItems: SidebarData['navGroups'][number]['items'] = [
+    { title: t('nav.audit'), url: '/audit', icon: History },
+  ]
+  // 「用户」仅管理员可读（后端 /api/users 要求 administrator），非管理员不渲染入口（OBS-20261014-NAV-ROLE-UNFILTERED）
+  if (options.canAdmin) {
+    systemItems.push({ title: t('nav.users'), url: '/users', icon: Users })
+  }
+  systemItems.push({ title: t('nav.settings'), url: '/settings', icon: Settings })
   return {
     user: {
       name: 'NodeSteer User',
@@ -61,11 +72,7 @@ export function getSidebarData(t: TFunction): SidebarData {
       },
       {
         title: t('nav.sections.system'),
-        items: [
-          { title: t('nav.audit'), url: '/audit', icon: History },
-          { title: t('nav.users'), url: '/users', icon: Users },
-          { title: t('nav.settings'), url: '/settings', icon: Settings },
-        ],
+        items: systemItems,
       },
     ],
   }

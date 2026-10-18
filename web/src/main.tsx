@@ -65,16 +65,7 @@ const queryClient = new QueryClient({
     onError: (error) => {
       if (error instanceof AxiosError) {
         if (error.response?.status === 401) {
-          toast.error('Session expired!')
-          useAuthStore.getState().auth.reset()
-          const redirect = currentPath()
-          if (!isSignInPath(redirect)) {
-            router.navigate({
-              to: '/sign-in',
-              search: { redirect },
-              replace: true,
-            })
-          }
+          handleUnauthorized()
         }
         if (error.response?.status === 500) {
           toast.error('Internal Server Error!')
@@ -98,6 +89,26 @@ const router = createRouter({
   defaultPreload: 'intent',
   defaultPreloadStaleTime: 0,
 })
+
+function handleUnauthorized() {
+  const redirect = currentPath()
+  useAuthStore.getState().auth.reset()
+  queryClient.clear()
+  if (!isSignInPath(redirect)) {
+    void router.navigate({
+      to: '/sign-in',
+      search: { redirect },
+      replace: true,
+    })
+  }
+}
+
+window.addEventListener('nodesteer-unauthorized', handleUnauthorized)
+if (import.meta.hot) {
+  import.meta.hot.dispose(() =>
+    window.removeEventListener('nodesteer-unauthorized', handleUnauthorized)
+  )
+}
 
 // Register the router instance for type safety
 declare module '@tanstack/react-router' {

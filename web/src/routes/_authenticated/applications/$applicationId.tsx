@@ -3,4 +3,7 @@ import { ApplicationEditor } from '@/features/editors'
 
 export const Route = createFileRoute(
   '/_authenticated/applications/$applicationId'
-)({ component: ApplicationEditor })
+)({
+  component: ApplicationEditor,
+  remountDeps: ({ params }) => params.applicationId,
+})

@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Plus, X } from 'lucide-react'
+import { Loader2, Plus, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
   api,
+  authenticatedFetch,
   getToken,
   type Application,
   type ApplicationNodeState,
@@ -18,6 +19,7 @@ import {
   type Task,
 } from '@/lib/api'
 import { useCanRun, useCanWrite } from '@/lib/permissions'
+import { statusLabel } from '@/lib/status-labels'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -105,7 +107,26 @@ export function ScheduleEditor() {
   const [draft, setDraft] = useState<Partial<Schedule> | null>(null)
   const form = draft || current.data || defaultForm
   const setForm = (next: Partial<Schedule>) => setDraft(next)
+  // 保存期间禁用按钮：避免重复点击发出第二次 POST/PUT（参照任务编辑器）
+  const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false)
+  // 实时校验（内联错误 + 禁用保存）：间隔必须 ≥ 1 秒、一次性时间必须在未来
+  // （缺陷 OBS-20261014-SCHEDULE-INTERVAL-ZERO-SAVE-ENABLED / OBS-20261014-PAST-ONETIME-SAVE-ENABLED）
+  const intervalInvalid =
+    form.type === 'interval' &&
+    (!Number.isFinite(form.interval_sec) || (form.interval_sec || 0) < 1)
+  const [runAtPast, setRunAtPast] = useState(false)
+  useEffect(() => {
+    // run_at 可能来自异步加载的既有调度：加载/修改后同步「过去时间」校验态
+    const past =
+      form.type === 'one_time' &&
+      Boolean(form.run_at) &&
+      new Date(form.run_at as string).getTime() <= Date.now()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRunAtPast(past)
+  }, [form.type, form.run_at])
   const save = async () => {
+    if (savingRef.current) return
     setError('')
     if (!form.task_id) {
       setError(t('schedules.taskRequired'))
@@ -123,10 +144,7 @@ export function ScheduleEditor() {
         return
       }
     }
-    if (
-      form.type === 'interval' &&
-      (!Number.isFinite(form.interval_sec) || (form.interval_sec || 0) < 1)
-    ) {
+    if (intervalInvalid) {
       setError(t('schedules.intervalInvalid'))
       return
     }
@@ -134,13 +152,22 @@ export function ScheduleEditor() {
       setError(t('schedules.runAtRequired'))
       return
     }
+    if (runAtPast) {
+      setError(t('schedules.runAtPast'))
+      return
+    }
     const payload = buildSchedulePayload(form)
+    savingRef.current = true
+    setSaving(true)
     try {
       if (editing) await api.put(`/schedules/${id}`, payload)
       else await api.post('/schedules', payload)
       window.location.assign('/schedules')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('common.noData'))
+    } finally {
+      savingRef.current = false
+      setSaving(false)
     }
   }
   if (editing && current.isError && !current.data)
@@ -161,6 +188,29 @@ export function ScheduleEditor() {
         <LoadingState />
       </EditorShell>
     )
+  // 任务详情深链 /schedules/new?task_id=x：任务不存在时给出明确错误与返回入口
+  // （缺陷 OBS-20261014-INVALID-TASK-DEEPLINK-NO-ERROR）
+  if (
+    !editing &&
+    presetTaskId &&
+    tasks.isSuccess &&
+    !(tasks.data || []).some((task) => task.id === presetTaskId)
+  )
+    return (
+      <EditorShell
+        title={t('schedules.newTitle')}
+        description={t('schedules.formDescription')}
+      >
+        <Card className='max-w-none'>
+          <CardContent className='grid gap-4 pt-6'>
+            <ErrorState error={new Error(t('schedules.taskNotFound'))} />
+            <Button asChild variant='outline' className='w-fit'>
+              <Link to='/tasks'>← {t('tasks.title')}</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </EditorShell>
+    )
   return (
     <EditorShell
       title={editing ? t('schedules.editTitle') : t('schedules.newTitle')}
@@ -176,7 +226,7 @@ export function ScheduleEditor() {
               disabled={Boolean(presetTaskId)}
               onValueChange={(value) => setForm({ ...form, task_id: value })}
             >
-              <SelectTrigger>
+              <SelectTrigger className='w-full min-w-0'>
                 <SelectValue placeholder={t('schedules.selectTask')} />
               </SelectTrigger>
               <SelectContent>
@@ -209,7 +259,7 @@ export function ScheduleEditor() {
                 })
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className='w-full min-w-0'>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -242,7 +292,13 @@ export function ScheduleEditor() {
                 onChange={(event) =>
                   setForm({ ...form, interval_sec: Number(event.target.value) })
                 }
+                aria-invalid={intervalInvalid}
               />
+              {intervalInvalid ? (
+                <span className='text-xs font-normal text-destructive' role='alert'>
+                  {t('schedules.intervalInvalid')}
+                </span>
+              ) : null}
             </label>
           )}
           {form.type === 'one_time' && (
@@ -266,7 +322,13 @@ export function ScheduleEditor() {
                       : '',
                   })
                 }
+                aria-invalid={runAtPast}
               />
+              {runAtPast ? (
+                <span className='text-xs font-normal text-destructive' role='alert'>
+                  {t('schedules.runAtPast')}
+                </span>
+              ) : null}
             </label>
           )}
           {/* on_start 无触发时间：时区对它无意义，隐藏输入但保留合法默认值随 payload 上送 */}
@@ -304,7 +366,7 @@ export function ScheduleEditor() {
                   setForm({ ...form, execution_owner: value })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className='w-full min-w-0'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -321,7 +383,7 @@ export function ScheduleEditor() {
                   setForm({ ...form, offline_policy: value })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className='w-full min-w-0'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -342,7 +404,7 @@ export function ScheduleEditor() {
                   setForm({ ...form, misfire_policy: value })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className='w-full min-w-0'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -366,7 +428,14 @@ export function ScheduleEditor() {
           <Separator />
           <div className='flex items-center gap-2'>
             {canWrite ? (
-              <Button onClick={save}>{t('common.save')}</Button>
+              <Button
+                onClick={save}
+                disabled={saving || intervalInvalid || runAtPast}
+                aria-busy={saving}
+              >
+                {saving ? <Loader2 className='animate-spin' /> : null}
+                {t('common.save')}
+              </Button>
             ) : null}
             <Button asChild variant='outline'>
               <Link to='/schedules'>{t('common.cancel')}</Link>
@@ -424,18 +493,27 @@ export function ScriptEditor() {
   })
   const [environment, setEnvironment] = useState({ key: '', value: '' })
   const [error, setError] = useState('')
+  // 保存期间禁用按钮：避免重复点击发出第二次 POST/PUT（参照任务编辑器）
+  const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false)
   const save = async () => {
+    if (savingRef.current) return
     setError('')
     if (!form.name) {
       setError(t('common.name'))
       return
     }
+    savingRef.current = true
+    setSaving(true)
     try {
       if (editing) await api.put(`/scripts/${id}`, form)
       else await api.post('/scripts', form)
       window.location.assign('/scripts')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('common.noData'))
+    } finally {
+      savingRef.current = false
+      setSaving(false)
     }
   }
   const addParameter = () => {
@@ -512,7 +590,7 @@ export function ScriptEditor() {
                     setForm({ ...form, interpreter: value })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className='w-full min-w-0'>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -598,7 +676,7 @@ export function ScriptEditor() {
                   setParameter({ ...parameter, type: value })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className='w-full min-w-0'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -610,6 +688,7 @@ export function ScriptEditor() {
                 </SelectContent>
               </Select>
               <Input
+                type={parameter.type === 'secret' ? 'password' : 'text'}
                 placeholder={t('scripts.paramDefault')}
                 value={parameter.default || ''}
                 onChange={(event) =>
@@ -625,10 +704,17 @@ export function ScriptEditor() {
                 className='flex items-center gap-3 border-b py-2 text-sm'
                 key={`${item.name}-${index}`}
               >
-                <span className='font-mono'>{item.name}</span>
-                <span className='text-muted-foreground'>{item.type}</span>
-                <span className='text-muted-foreground'>
-                  {item.default || '-'}
+                {/* 长参数名/默认值在窄屏内换行，不撑破页面 */}
+                <span className='min-w-0 break-all font-mono'>{item.name}</span>
+                <span className='shrink-0 text-muted-foreground'>
+                  {item.type}
+                </span>
+                <span className='min-w-0 break-all text-muted-foreground'>
+                  {item.default
+                    ? item.type === 'secret'
+                      ? '••••••••'
+                      : item.default
+                    : '-'}
                 </span>
                 <Button
                   type='button'
@@ -682,7 +768,7 @@ export function ScriptEditor() {
                 className='flex items-center gap-3 border-b py-2 font-mono text-xs'
                 key={key}
               >
-                <span>
+                <span className='min-w-0 break-all'>
                   {key}={value}
                 </span>
                 <Button
@@ -705,7 +791,12 @@ export function ScriptEditor() {
         </Card>
         <Separator />
         <div className='flex items-center gap-2'>
-          {canWrite ? <Button onClick={save}>{t('common.save')}</Button> : null}
+          {canWrite ? (
+            <Button onClick={save} disabled={saving} aria-busy={saving}>
+              {saving ? <Loader2 className='animate-spin' /> : null}
+              {t('common.save')}
+            </Button>
+          ) : null}
           <Button asChild variant='outline'>
             <Link to='/scripts'>{t('common.cancel')}</Link>
           </Button>
@@ -771,18 +862,27 @@ export function GroupEditor() {
   const form = draft || current.data || defaultForm
   const setForm = (next: Partial<Group>) => setDraft(next)
   const [error, setError] = useState('')
+  // 保存期间禁用按钮：避免重复点击发出第二次 POST/PUT（参照任务编辑器）
+  const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false)
   const save = async () => {
+    if (savingRef.current) return
     setError('')
     if (!form.name) {
       setError(t('common.name'))
       return
     }
+    savingRef.current = true
+    setSaving(true)
     try {
       if (editing) await api.put(`/groups/${id}`, form)
       else await api.post('/groups', form)
       window.location.assign('/groups')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('common.noData'))
+    } finally {
+      savingRef.current = false
+      setSaving(false)
     }
   }
   if (editing && current.isError && !current.data)
@@ -838,7 +938,7 @@ export function GroupEditor() {
                 value={form.type || 'static'}
                 onValueChange={(value) => setForm({ ...form, type: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className='w-full min-w-0'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -892,7 +992,7 @@ export function GroupEditor() {
                       />
                       {node.hostname}
                       <span className='ms-auto text-xs text-muted-foreground'>
-                        {node.status}
+                        {statusLabel(node.status)}
                       </span>
                     </label>
                   ))}
@@ -901,7 +1001,10 @@ export function GroupEditor() {
             )}
             <div className='flex items-center gap-2'>
               {canWrite ? (
-                <Button onClick={save}>{t('common.save')}</Button>
+                <Button onClick={save} disabled={saving} aria-busy={saving}>
+                  {saving ? <Loader2 className='animate-spin' /> : null}
+                  {t('common.save')}
+                </Button>
               ) : null}
               <Button asChild variant='outline'>
                 <Link to='/groups'>{t('common.cancel')}</Link>
@@ -939,16 +1042,59 @@ export function ApplicationEditor() {
   const nodeNames = new Map(
     (nodes.data || []).map((node) => [node.id, node.hostname])
   )
-  const states = useQuery({
-    queryKey: ['application-state', id],
-    queryFn: () => api.get<ApplicationNodeState[]>(`/applications/${id}/state`),
-    enabled: editing,
-  })
+  const [trackedExecutions, setTrackedExecutions] = useState<string[]>([])
+  const [dispatching, setDispatching] = useState(false)
+  const dispatchingRef = useRef(false)
+  const mounted = useRef(false)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   const executions = useQuery({
     queryKey: ['application-executions', id],
     queryFn: () => api.get<Execution[]>(`/applications/${id}/executions`),
     enabled: editing,
+    refetchInterval: (query) =>
+      query.state.data?.some((execution) =>
+        ['PENDING', 'RUNNING'].includes(execution.status)
+      ) ||
+      trackedExecutions.some((executionId) => {
+        const execution = query.state.data?.find(
+          (item) => item.id === executionId
+        )
+        return !execution || ['PENDING', 'RUNNING'].includes(execution.status)
+      })
+        ? 3000
+        : false,
   })
+  const operationInProgress =
+    Boolean(
+      executions.data?.some((execution) =>
+        ['PENDING', 'RUNNING'].includes(execution.status)
+      )
+    ) ||
+    trackedExecutions.some((executionId) => {
+      const execution = executions.data?.find((item) => item.id === executionId)
+      return !execution || ['PENDING', 'RUNNING'].includes(execution.status)
+    })
+  const states = useQuery({
+    queryKey: ['application-state', id],
+    queryFn: () => api.get<ApplicationNodeState[]>(`/applications/${id}/state`),
+    enabled: editing,
+    refetchInterval: operationInProgress ? 3000 : false,
+  })
+  const refetchStates = states.refetch
+  const wasInProgress = useRef(false)
+  useEffect(() => {
+    if (
+      (trackedExecutions.length || wasInProgress.current) &&
+      !operationInProgress
+    )
+      void refetchStates()
+    wasInProgress.current = operationInProgress
+  }, [trackedExecutions, operationInProgress, refetchStates])
   const assignedNodes = useQuery({
     queryKey: ['application-nodes', id],
     queryFn: () => api.get<string[]>(`/applications/${id}/nodes`),
@@ -1014,12 +1160,18 @@ export function ApplicationEditor() {
   const setSelectedNodes = (next: string[]) => setSelectedNodesDraft(next)
   const [operation, setOperation] = useState('deploy')
   const [error, setError] = useState('')
+  // 保存期间禁用按钮：避免重复点击发出第二次 POST/PUT（参照任务编辑器）
+  const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false)
   const save = async () => {
+    if (savingRef.current) return
     setError('')
     if (!form.name) {
       setError(t('common.name'))
       return
     }
+    savingRef.current = true
+    setSaving(true)
     try {
       const saved = editing
         ? await api.put<Application>(`/applications/${id}`, form)
@@ -1042,20 +1194,44 @@ export function ApplicationEditor() {
       window.location.assign(`/applications/${applicationId}`)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('common.noData'))
+    } finally {
+      savingRef.current = false
+      setSaving(false)
     }
   }
   const deploy = async () => {
-    if (!editing || !selectedNodes.length) return
+    if (
+      !editing ||
+      !selectedNodes.length ||
+      dispatchingRef.current ||
+      operationInProgress
+    )
+      return
+    dispatchingRef.current = true
+    setDispatching(true)
     setError('')
+    const requestToken = getToken()
+    const currentRequest = () =>
+      Boolean(requestToken) && mounted.current && getToken() === requestToken
     try {
-      await api.post(`/applications/${id}/deploy`, {
-        node_ids: selectedNodes,
-        operation,
-      })
-      await states.refetch()
-      await executions.refetch()
+      const dispatched = await api.post<Execution[]>(
+        `/applications/${id}/deploy`,
+        {
+          node_ids: selectedNodes,
+          operation,
+        }
+      )
+      if (currentRequest())
+        setTrackedExecutions(dispatched.map((execution) => execution.id))
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('common.noData'))
+      if (currentRequest())
+        setError(cause instanceof Error ? cause.message : t('common.noData'))
+    } finally {
+      // 400/断连也可能已有节点接收操作，重新读取真实历史而非假定全部失败。
+      if (currentRequest()) await executions.refetch()
+      if (currentRequest()) await states.refetch()
+      dispatchingRef.current = false
+      if (currentRequest()) setDispatching(false)
     }
   }
   const uploadArtifact = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -1063,9 +1239,8 @@ export function ApplicationEditor() {
     setUploading(true)
     setUploadError('')
     try {
-      const response = await fetch('/api/artifacts', {
+      const response = await authenticatedFetch('/api/artifacts', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken() || ''}` },
         body: new FormData(event.currentTarget),
       })
       if (!response.ok)
@@ -1189,7 +1364,7 @@ export function ApplicationEditor() {
                     })
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className='w-full min-w-0'>
                     <SelectValue placeholder={t('apps.selectArtifact')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1364,7 +1539,8 @@ export function ApplicationEditor() {
                   className='flex items-center gap-2 border-b py-2 font-mono text-xs'
                   key={`${value}-${index}`}
                 >
-                  {value}
+                  {/* 长参数在窄屏内换行，不撑破页面 */}
+                  <span className='min-w-0 break-all'>{value}</span>
                   <Button
                     type='button'
                     variant='ghost'
@@ -1414,7 +1590,9 @@ export function ApplicationEditor() {
                   className='flex items-center gap-2 border-b py-2 font-mono text-xs'
                   key={key}
                 >
-                  {key}={value}
+                  <span className='min-w-0 break-all'>
+                    {key}={value}
+                  </span>
                   <Button
                     type='button'
                     variant='ghost'
@@ -1445,7 +1623,7 @@ export function ApplicationEditor() {
                     })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className='w-full min-w-0'>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1526,7 +1704,10 @@ export function ApplicationEditor() {
             </div>
             <div className='flex items-center gap-2'>
               {canWrite ? (
-                <Button onClick={save}>{t('common.save')}</Button>
+                <Button onClick={save} disabled={saving} aria-busy={saving}>
+                  {saving ? <Loader2 className='animate-spin' /> : null}
+                  {t('common.save')}
+                </Button>
               ) : null}
               <Button asChild variant='outline'>
                 <Link to='/applications'>{t('common.cancel')}</Link>
@@ -1557,7 +1738,7 @@ export function ApplicationEditor() {
                 />
                 {node.hostname}
                 <span className='ms-auto text-xs text-muted-foreground'>
-                  {node.status}
+                  {statusLabel(node.status)}
                 </span>
               </label>
             ))}
@@ -1593,8 +1774,17 @@ export function ApplicationEditor() {
                   </Select>
                   <Button
                     onClick={deploy}
-                    disabled={!canRun || !selectedNodes.length}
+                    disabled={
+                      !canRun ||
+                      !selectedNodes.length ||
+                      dispatching ||
+                      operationInProgress
+                    }
+                    aria-busy={dispatching || operationInProgress}
                   >
+                    {dispatching || operationInProgress ? (
+                      <Loader2 className='animate-spin' />
+                    ) : null}
                     {t('apps.deploy')}
                   </Button>
                 </CardContent>
@@ -1605,6 +1795,12 @@ export function ApplicationEditor() {
                 <CardTitle className='text-base'>{t('apps.health')}</CardTitle>
               </CardHeader>
               <CardContent>
+                {states.isError ? (
+                  <ErrorState
+                    error={states.error}
+                    onRetry={() => states.refetch()}
+                  />
+                ) : null}
                 {states.data?.length ? (
                   <div className='divide-y'>
                     {states.data.map((state) => (
@@ -1619,6 +1815,10 @@ export function ApplicationEditor() {
                         <StatusBadge status={state.health} />
                         <span className='text-xs text-muted-foreground'>
                           {state.error || state.operation}
+                        </span>
+                        <span className='text-xs text-muted-foreground'>
+                          {t('common.version')} {state.version || '-'} ·{' '}
+                          <TimeValue value={state.updated_at} />
                         </span>
                       </div>
                     ))}
@@ -1637,6 +1837,12 @@ export function ApplicationEditor() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {executions.isError ? (
+                  <ErrorState
+                    error={executions.error}
+                    onRetry={() => executions.refetch()}
+                  />
+                ) : null}
                 {executions.data?.length ? (
                   <div className='divide-y'>
                     {executions.data.map((execution) => (
@@ -1719,9 +1925,8 @@ export function ArtifactEditor() {
     setUploading(true)
     setError('')
     try {
-      const response = await fetch('/api/artifacts', {
+      const response = await authenticatedFetch('/api/artifacts', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken() || ''}` },
         body: new FormData(event.currentTarget),
       })
       if (!response.ok)

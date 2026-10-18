@@ -77,11 +77,11 @@ describe('useAuthStore', () => {
   it('sessionToUser 透传 /api/me 的 avatar，缺省时为 undefined', async () => {
     const { sessionToUser } = await import('./auth-store')
     const base = {
-      Token: 'token',
-      UserID: 'u-1',
-      Username: 'alice',
-      Role: 'viewer',
-      Expires: '2030-01-01T00:00:00Z',
+      token: 'token',
+      user_id: 'u-1',
+      username: 'alice',
+      role: 'viewer',
+      expires: '2030-01-01T00:00:00Z',
     }
 
     expect(

@@ -25,12 +25,12 @@ type AuthState = {
 
 export function sessionToUser(session: SessionInfo): AuthUser {
   return {
-    accountNo: session.UserID,
-    email: session.Username,
-    role: [session.Role],
-    exp: new Date(session.Expires).getTime(),
-    username: session.Username,
-    userId: session.UserID,
+    accountNo: session.user_id,
+    email: session.username,
+    role: [session.role],
+    exp: new Date(session.expires).getTime(),
+    username: session.username,
+    userId: session.user_id,
     avatar: session.avatar || undefined,
   }
 }

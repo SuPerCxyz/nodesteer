@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { MoreHorizontal, Play, Plus } from 'lucide-react'
+import { Loader2, Play, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import {
   api,
   type Application,
+  type Condition,
   type Group,
   type Node,
   type Parameter,
@@ -18,6 +19,7 @@ import {
   type Target,
 } from '@/lib/api'
 import { useCanRun, useCanWrite } from '@/lib/permissions'
+import { statusLabel } from '@/lib/status-labels'
 import {
   appDeployOperations,
   appOperations,
@@ -27,12 +29,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -58,9 +55,12 @@ import { DataTable } from '@/features/shared/data-table'
 import {
   DetailField,
   DetailGrid,
+  DangerMenuItem,
+  EmptyState,
   ErrorPage,
   ErrorState,
   LoadingState,
+  MoreMenu,
   SectionCard,
   StatusBadge,
   TableCard,
@@ -75,6 +75,32 @@ function targetText(task: Task, translate: (key: string) => string) {
   return task.target.label_key
     ? `${task.target.label_key}=${task.target.label_value || ''}`
     : task.target.type
+}
+
+/** 条件项的可读文本；AND 组按 AND 连接（缺陷 OBS-20261016-G5-AND-CONDITION-NO-SUMMARY-NO-CLEAR） */
+function conditionItemText(
+  condition: Condition,
+  nodeName: (id: string) => string
+): string {
+  if (condition.type === 'local' && condition.local) {
+    const local = condition.local
+    const extras = [local.path, local.command].filter(Boolean).join(' ')
+    return `${local.metric} ${local.operator} ${local.value}${extras ? ` (${extras})` : ''}`
+  }
+  if (condition.type === 'remote' && condition.remote) {
+    const remote = condition.remote
+    return `${nodeName(remote.node_id)}.${remote.property} ${remote.operator} ${remote.value}`
+  }
+  return condition.type
+}
+
+/** 整组条件的可读摘要：单条件原样展示，AND 组按 AND 连接 */
+function conditionSummaryText(
+  condition: Condition,
+  nodeName: (id: string) => string
+): string {
+  const items = condition.type === 'and' ? condition.and || [] : [condition]
+  return items.map((item) => conditionItemText(item, nodeName)).join(' AND ')
 }
 
 function TargetDetails({
@@ -137,7 +163,10 @@ export function Tasks() {
   })
   const { mutate: toggleTask } = useMutation({
     mutationFn: (task: Task) =>
-      api.put<Task>(`/tasks/${task.id}`, { ...task, enabled: !task.enabled }),
+      api.put<Task>(
+        `/tasks/${task.id}`,
+        buildTaskPayload({ ...task, enabled: !task.enabled })
+      ),
     onSuccess: () => client.invalidateQueries({ queryKey: ['tasks'] }),
     onError: (error) => toast.error(error.message),
   })
@@ -275,13 +304,19 @@ export function Tasks() {
       <Main className='flex flex-1 flex-col gap-6'>
         {query.isError ? (
           <ErrorState error={query.error} onRetry={() => query.refetch()} />
-        ) : (
+        ) : query.isLoading ? (
+          <LoadingState />
+        ) : query.data?.length ? (
           <DataTable
-            data={query.data || []}
+            data={query.data}
             columns={columns}
             storageKey='tasks'
             searchPlaceholder={t('tasks.searchPlaceholder')}
           />
+        ) : (
+          <Card>
+            <EmptyState message={t('common.noData')} />
+          </Card>
         )}
       </Main>
     </>
@@ -632,11 +667,16 @@ export function TaskEditor() {
   }, [current.data, draft])
   const setTarget = (target: Target) =>
     setForm((previous) => ({ ...previous, target }))
+  const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false)
   const save = async () => {
+    if (savingRef.current) return
     if (!form.name) {
       toast.error(t('common.name'))
       return
     }
+    savingRef.current = true
+    setSaving(true)
     try {
       const payload = buildTaskPayload(form)
       if (editing) await api.put(`/tasks/${id}`, payload)
@@ -645,6 +685,9 @@ export function TaskEditor() {
       window.location.assign('/tasks')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('common.noData'))
+    } finally {
+      savingRef.current = false
+      setSaving(false)
     }
   }
   const selectedNodes = form.target?.node_ids || []
@@ -930,7 +973,7 @@ export function TaskEditor() {
                       />
                       {node.hostname}
                       <span className='ms-auto text-xs text-muted-foreground'>
-                        {node.status}
+                        {statusLabel(node.status)}
                       </span>
                     </label>
                   ))}
@@ -1079,6 +1122,7 @@ export function TaskEditor() {
                 </SelectContent>
               </Select>
               <Input
+                type={parameter.type === 'secret' ? 'password' : 'text'}
                 placeholder={t('tasks.paramDefault')}
                 value={parameter.default || ''}
                 onChange={(event) =>
@@ -1113,7 +1157,11 @@ export function TaskEditor() {
                       </span>
                     )}
                     <span className='text-muted-foreground'>
-                      {item.default || '-'}
+                      {item.default
+                        ? item.type === 'secret'
+                          ? '••••••••'
+                          : item.default
+                        : '-'}
                     </span>
                     <Button
                       className='ms-auto'
@@ -1346,8 +1394,42 @@ export function TaskEditor() {
             )}
           </CardContent>
         </Card>
+        {form.condition ? (
+          <Card className='max-w-4xl'>
+            <CardHeader>
+              <CardTitle className='text-base'>
+                {t('tasks.conditionSummary')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className='grid gap-3'>
+              <p
+                className='font-mono text-xs text-muted-foreground'
+                data-testid='condition-summary'
+              >
+                {conditionSummaryText(
+                  form.condition,
+                  (nodeId) =>
+                    nodeNames.get(nodeId) || t('common.unknownNode')
+                )}
+              </p>
+              <Button
+                type='button'
+                variant='outline'
+                className='w-fit'
+                onClick={() => setForm({ ...form, condition: undefined })}
+              >
+                {t('tasks.clearConditions')}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : null}
         <div className='flex items-center gap-2'>
-          {canWrite ? <Button onClick={save}>{t('common.save')}</Button> : null}
+          {canWrite ? (
+            <Button onClick={save} disabled={saving} aria-busy={saving}>
+              {saving ? <Loader2 className='animate-spin' /> : null}
+              {t('common.save')}
+            </Button>
+          ) : null}
           <Button asChild variant='outline'>
             <Link to='/tasks'>{t('common.cancel')}</Link>
           </Button>
@@ -1494,7 +1576,6 @@ function TaskRowActions({
   removeTask: (id: string) => void
 }) {
   const { t } = useTranslation()
-  const [deleteOpen, setDeleteOpen] = useState(false)
   return (
     <div className='flex items-center gap-1'>
       {canRun ? (
@@ -1511,50 +1592,19 @@ function TaskRowActions({
         </Button>
       ) : null}
       {canWrite ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant='ghost'
-              size='icon'
-              className='size-8'
-              aria-label={t('common.actions')}
-            >
-              <MoreHorizontal className='size-4' />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align='end'>
-            <DropdownMenuItem asChild>
-              <a href={`/tasks/${task.id}/edit`}>{t('common.edit')}</a>
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => toggleTask(task)}>
-              {task.enabled ? t('common.disable') : t('common.enable')}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              variant='destructive'
-              onSelect={(event) => {
-                event.preventDefault()
-                setDeleteOpen(true)
-              }}
-            >
-              {t('common.delete')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : null}
-      {canWrite ? (
-        <ConfirmDialog
-          open={deleteOpen}
-          onOpenChange={setDeleteOpen}
-          title={`${t('common.delete')}: ${task.name}`}
-          desc={t('tasks.confirmDelete')}
-          cancelBtnText={t('common.cancel')}
-          confirmText={t('common.delete')}
-          destructive
-          handleConfirm={() => {
-            removeTask(task.id)
-            setDeleteOpen(false)
-          }}
-        />
+        <MoreMenu>
+          <DropdownMenuItem asChild>
+            <a href={`/tasks/${task.id}/edit`}>{t('common.edit')}</a>
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => toggleTask(task)}>
+            {task.enabled ? t('common.disable') : t('common.enable')}
+          </DropdownMenuItem>
+          <DangerMenuItem
+            title={`${t('common.delete')}: ${task.name}`}
+            description={t('tasks.confirmDelete')}
+            onSelect={() => removeTask(task.id)}
+          />
+        </MoreMenu>
       ) : null}
     </div>
   )
