@@ -1,5 +1,5 @@
 import { test, expect } from 'playwright/test'
-import { apiRequest, cleanupByIds, loginViaApi, testName, TEST_URLS, TEST_USER } from './fixtures'
+import { apiRequest, cleanupByIds, createIsolatedTask, loginViaApi, testName, TEST_URLS, TEST_USER } from './fixtures'
 
 const OPERATOR_USER = process.env.NODESTEER_E2E_OPERATOR_USERNAME || 'test-operator'
 const VIEWER_USER = process.env.NODESTEER_E2E_VIEWER_USERNAME || 'test-viewer'
@@ -86,52 +86,60 @@ test.describe('RBAC 权限矩阵', () => {
   })
 
   test('RBAC-08 页面只展示角色允许的操作', async ({ page }) => {
-    for (const [username, canRun] of [
-      [OPERATOR_USER, true],
-      [VIEWER_USER, false],
-    ] as const) {
-      await loginViaApi(page, username, RBAC_PASSWORD)
-
-      await page.goto(TEST_URLS.nodes)
-      await expect(
-        page.getByRole('button', { name: /add node|添加节点/i })
-      ).toHaveCount(0)
-
-      await page.goto(TEST_URLS.tasks)
-      await expect(
-        page.getByRole('link', { name: /new task|新建任务/i })
-      ).toHaveCount(0)
-      const runLink = page.getByRole('link', { name: /run now|立即运行/i })
-      if (canRun) {
-        // 等待列表渲染完成后再断言（避免在数据加载中取 count 导致假失败）
-        await expect(runLink.first()).toBeVisible({ timeout: 10_000 })
-      } else {
-        await expect(runLink).toHaveCount(0)
-      }
-
-      for (const [path, name] of [
-        [TEST_URLS.scripts, /new script|新建脚本/i],
-        [TEST_URLS.groups, /new group|新建分组/i],
-        [TEST_URLS.schedules, /new schedule|新建调度/i],
-        [TEST_URLS.applications, /new application|新建托管应用/i],
-        [TEST_URLS.artifacts, /upload|上传/i],
+    await loginViaApi(page)
+    // 自建任务夹具：任务列表可能为空，而 Operator 分支需要列表中真实存在「立即运行」入口。
+    const task = await createIsolatedTask(page, 'rbac-run-link')
+    try {
+      for (const [username, canRun] of [
+        [OPERATOR_USER, true],
+        [VIEWER_USER, false],
       ] as const) {
-        await page.goto(path)
-        await expect(page.getByRole('link', { name })).toHaveCount(0)
+        await loginViaApi(page, username, RBAC_PASSWORD)
+
+        await page.goto(TEST_URLS.nodes)
+        await expect(
+          page.getByRole('button', { name: /add node|添加节点/i })
+        ).toHaveCount(0)
+
+        await page.goto(TEST_URLS.tasks)
+        await expect(
+          page.getByRole('link', { name: /new task|新建任务/i })
+        ).toHaveCount(0)
+        const runLink = page.getByRole('link', { name: /run now|立即运行/i })
+        if (canRun) {
+          // 等待列表渲染完成后再断言（避免在数据加载中取 count 导致假失败）
+          await expect(runLink.first()).toBeVisible({ timeout: 10_000 })
+        } else {
+          await expect(runLink).toHaveCount(0)
+        }
+
+        for (const [path, name] of [
+          [TEST_URLS.scripts, /new script|新建脚本/i],
+          [TEST_URLS.groups, /new group|新建分组/i],
+          [TEST_URLS.schedules, /new schedule|新建调度/i],
+          [TEST_URLS.applications, /new application|新建托管应用/i],
+          [TEST_URLS.artifacts, /upload|上传/i],
+        ] as const) {
+          await page.goto(path)
+          await expect(page.getByRole('link', { name })).toHaveCount(0)
+        }
+
+        await page.goto(TEST_URLS.transfers)
+        await expect(
+          page.getByText(/new (file )?transfer|新建文件传输/i)
+        ).toHaveCount(0)
+        await expect(
+          page.getByRole('button', { name: /start|开始传输|add target|添加目标/i })
+        ).toHaveCount(0)
+
+        await page.goto(TEST_URLS.settings)
+        await expect(
+          page.getByRole('button', { name: /save|保存/i })
+        ).toHaveCount(0)
       }
-
-      await page.goto(TEST_URLS.transfers)
-      await expect(
-        page.getByText(/new (file )?transfer|新建文件传输/i)
-      ).toHaveCount(0)
-      await expect(
-        page.getByRole('button', { name: /start|开始传输|add target|添加目标/i })
-      ).toHaveCount(0)
-
-      await page.goto(TEST_URLS.settings)
-      await expect(
-        page.getByRole('button', { name: /save|保存/i })
-      ).toHaveCount(0)
+    } finally {
+      await loginViaApi(page)
+      await cleanupByIds(page, [`/api/tasks/${task.id}`])
     }
   })
 })

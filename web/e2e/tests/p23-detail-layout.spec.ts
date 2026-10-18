@@ -1,5 +1,5 @@
 import { test, expect } from 'playwright/test'
-import { apiRequest, loginViaApi, TEST_URLS } from './fixtures'
+import { apiRequest, cleanupByIds, createIsolatedTask, loginViaApi, TEST_URLS } from './fixtures'
 
 /**
  * P23 详情页单页化与内容宽度一致性（2026-09 布局改造）
@@ -33,47 +33,52 @@ test.describe('P23 详情页单页化与内容宽度', () => {
 
   test('P23-01 列表与详情内容宽度一致，4K 下不超过 2400px', async ({ page }) => {
     await loginViaApi(page)
-    const { nodeId, taskId, execId } = await firstIds(page)
-    await page.setViewportSize({ width: 1920, height: 1080 })
-    const widths = []
-    for (const p of [
-      TEST_URLS.nodes,
-      `/agents/${nodeId}`,
-      TEST_URLS.tasks,
-      `/tasks/${taskId}`,
-      TEST_URLS.executions,
-      `/executions/${execId}`,
-    ]) {
-      widths.push(await mainWidth(page, p))
-    }
-    expect(new Set(widths).size).toBe(1)
+    const { nodeId, execId } = await firstIds(page)
+    // 自建任务夹具：任务列表可能为空，不再依赖环境里已有任务（P23-02 同因）。
+    const task = await createIsolatedTask(page, 'p23-width-task')
+    try {
+      await page.setViewportSize({ width: 1920, height: 1080 })
+      const paths = [TEST_URLS.nodes, `/agents/${nodeId}`, TEST_URLS.tasks, `/tasks/${task.id}`, TEST_URLS.executions]
+      // 执行详情是 P23 单页化改造范围；无执行历史时跳过该路径（环境前提），不影响其余宽度一致性断言。
+      if (execId) paths.push(`/executions/${execId}`)
+      const widths = []
+      for (const p of paths) {
+        widths.push(await mainWidth(page, p))
+      }
+      expect(new Set(widths).size).toBe(1)
 
-    await page.setViewportSize({ width: 3840, height: 2160 })
-    const wide = await mainWidth(page, TEST_URLS.tasks)
-    expect(wide).toBe(2400)
+      await page.setViewportSize({ width: 3840, height: 2160 })
+      const wide = await mainWidth(page, TEST_URLS.tasks)
+      expect(wide).toBe(2400)
+    } finally { await cleanupByIds(page, [`/api/tasks/${task.id}`]) }
   })
 
   test('P23-02 任务详情单页分区且字段多列', async ({ page }) => {
     await loginViaApi(page)
-    const { taskId } = await firstIds(page)
-    await page.setViewportSize({ width: 1920, height: 1080 })
-    await page.goto(`/tasks/${taskId}`)
-    await page.waitForTimeout(1500)
-    await expect(page.locator('main [role=tablist]')).toHaveCount(0)
-    for (const title of [/概览|overview/i, /定义|definition/i, /目标|targets?/i, /执行|executions?/i, /调度|schedules?/i]) {
-      await expect(page.locator('main').getByText(title).first()).toBeVisible()
-    }
-    const cols = await page.evaluate(() => {
-      const grids = [...document.querySelectorAll('main dl')].filter((d) => d.querySelector('dt'))
-      return Math.max(0, ...grids.map((g) => getComputedStyle(g).gridTemplateColumns.split(' ').length))
-    })
-    expect(cols).toBeGreaterThanOrEqual(2)
+    // 自建任务夹具：不再直接取 /api/tasks[0]，任务列表为空时不会静默打开 /tasks/undefined。
+    const task = await createIsolatedTask(page, 'p23-detail-task')
+    try {
+      await page.setViewportSize({ width: 1920, height: 1080 })
+      await page.goto(`/tasks/${task.id}`)
+      await page.waitForTimeout(1500)
+      await expect(page.locator('main [role=tablist]')).toHaveCount(0)
+      for (const title of [/概览|overview/i, /定义|definition/i, /目标|targets?/i, /执行|executions?/i, /调度|schedules?/i]) {
+        await expect(page.locator('main').getByText(title).first()).toBeVisible()
+      }
+      const cols = await page.evaluate(() => {
+        const grids = [...document.querySelectorAll('main dl')].filter((d) => d.querySelector('dt'))
+        return Math.max(0, ...grids.map((g) => getComputedStyle(g).gridTemplateColumns.split(' ').length))
+      })
+      expect(cols).toBeGreaterThanOrEqual(2)
+    } finally { await cleanupByIds(page, [`/api/tasks/${task.id}`]) }
   })
 
   test('P23-03 执行详情单页且日志区可用', async ({ page }) => {
     await loginViaApi(page)
     const { execId } = await firstIds(page)
-    await page.goto(`/executions/${execId}`)
+    // 执行详情需要真实执行记录：无历史时显式 skip 并说明（不静默失败）。
+    test.skip(!execId, '环境无执行历史：执行详情日志区无法验证')
+    await page.goto(`/executions/${execId!}`)
     await page.waitForTimeout(1500)
     await expect(page.locator('main [role=tablist]')).toHaveCount(0)
     const logs = page.locator('#execution-logs')

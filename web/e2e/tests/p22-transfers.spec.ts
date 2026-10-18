@@ -11,16 +11,16 @@ test.describe('P22 文件传输', () => {
   })
 
   /**
-   * FAIL-M-001 UI 层回归：FAILED（非终态口径）传输的行菜单必须提供取消入口，
-   * 取消后状态刷新为 CANCELED，节点删除不再被该传输阻断。
+   * P16 终态冻结 UI 层回归：FAILED 传输不可取消——行菜单仅提供「重试」，
+   * 不再出现「取消传输」入口（取消只对非终态传输开放，Retry 是唯一恢复路径）。
    *
    * 降级说明：现有 harness 无法轻易构造「源上传 completeUpload 失败」的真实传输
    * （需要真实 Agent 凭证走 Gateway 上传并让 Hub 校验失败），本用例用 route mock
-   * 提供 FAILED 传输来覆盖 UI 层 canCancel 行为；Hub 端终态化由 Go 测试
-   * TestFileTransferCompleteUploadFailureTerminalizesTargets 覆盖，
-   * 「节点删除不再 409」由该 Go 用例的真实 NodeManager.Delete 断言。
+   * 提供 FAILED 传输来覆盖 UI 层 canCancel/canRetry 行为；Hub 端终态冻结由 Go 测试
+   * TestFileTransferExplicitActionsOnTerminal（FAILED cancel rejected / FAILED retry
+   * is the explicit recovery path）覆盖。
    */
-  test('P22-02 [UI_MOCK] FAILED 传输行菜单可取消并变为 CANCELED', async ({ page }) => {
+  test('P22-02 [UI_MOCK] FAILED 传输行仅提供重试、无取消入口', async ({ page }) => {
     await loginViaApi(page)
 
     const now = new Date().toISOString()
@@ -44,13 +44,22 @@ test.describe('P22 文件传输', () => {
         },
       ],
     }
-    let status = 'FAILED'
+    let retryCalls = 0
+    let cancelCalls = 0
     await page.route(/\/api\/transfers$/, (route) =>
-      route.fulfill({ json: [{ ...transfer, status }] })
+      route.fulfill({ json: [transfer] })
     )
+    await page.route(/\/api\/transfers\/[^/]+\/retry$/, (route) => {
+      retryCalls += 1
+      // 源文件仍缺失：重试后再次回到 FAILED 终态（Retry 是唯一恢复路径）
+      return route.fulfill({ json: { ...transfer, status: 'FAILED' } })
+    })
     await page.route(/\/api\/transfers\/[^/]+\/cancel$/, (route) => {
-      status = 'CANCELED'
-      return route.fulfill({ json: { ...transfer, status: 'CANCELED' } })
+      cancelCalls += 1
+      return route.fulfill({
+        status: 400,
+        json: { error: 'transfer already finished: FAILED' },
+      })
     })
 
     await page.goto(TEST_URLS.transfers)
@@ -58,17 +67,17 @@ test.describe('P22 文件传输', () => {
     await expect(row).toBeVisible()
     await expect(row.getByText(/^(失败|Failed)$/).first()).toBeVisible()
 
-    // FAILED 行菜单出现取消入口（现有 UI 为菜单项直接触发，无二次确认弹窗）
+    // P16 终态冻结：FAILED 行菜单仅「重试」，不得出现「取消传输」
     await row.getByRole('button', { name: /actions|操作/i }).click()
-    const cancelItem = page.getByRole('menuitem', {
-      name: /取消传输|Cancel transfer/i,
-    })
-    await expect(cancelItem).toBeVisible()
-    await cancelItem.click()
+    const retryItem = page.getByRole('menuitem', { name: /^重试$|^retry$/i })
+    await expect(retryItem).toBeVisible()
+    await expect(
+      page.getByRole('menuitem', { name: /取消传输|Cancel transfer/i })
+    ).toHaveCount(0)
 
-    // 取消请求发出后列表刷新为 CANCELED（已取消）
-    await expect(row.getByText(/^(已取消|Canceled)$/).first()).toBeVisible({
-      timeout: 10_000,
-    })
+    // 「重试」是唯一恢复路径：点击后确实发出 retry 请求，且全程不发出 cancel 请求
+    await retryItem.click()
+    await expect.poll(() => retryCalls).toBe(1)
+    expect(cancelCalls).toBe(0)
   })
 })

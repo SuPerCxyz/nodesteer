@@ -1,35 +1,26 @@
 import { test, expect, type Browser, type BrowserContext, type Page } from 'playwright/test'
 import { createHash, randomUUID } from 'node:crypto'
 import { appendFile, readFile, writeFile } from 'node:fs/promises'
-import { apiRequest, captureCreated, cleanupByIds, createIsolatedTask, getNodeIds, loginViaApi, testName } from './fixtures'
+import { apiRequest, authorizedNodeIds, captureCreated, cleanupByIds, createIsolatedTask, ensureRoleAccount, getNodeIds, loginViaApi, testName, TEST_PREFIX, type QaRoleAccount } from './fixtures'
 
-const QA_ROLE_USER_ID = '8ac0ef0f-fea5-4be3-8707-2c580363353b'
-
-async function qaRoleAccount() {
-  const path = process.env.NODESTEER_E2E_PRIVATE_DIR + '/ui-users.jsonl'
-  const rows = (await readFile(path, 'utf8')).trim().split('\n').map(line => JSON.parse(line) as { user_id?: string; username?: string; password?: string; role?: string })
-  const account = [...rows].reverse().find(row => row.user_id === QA_ROLE_USER_ID && row.password)
-  if (!account?.username || !account.password) throw new Error('Exact retained QA user password is missing from private storage')
-  return { username: account.username, password: account.password }
-}
-
-async function setQaRole(adminPage: Page, role: 'operator' | 'viewer') {
-  const response = await apiRequest(adminPage, `/api/users/${QA_ROLE_USER_ID}`, { method: 'PUT', data: { role } })
+async function setQaRole(adminPage: Page, account: QaRoleAccount, role: 'operator' | 'viewer') {
+  const response = await apiRequest(adminPage, `/api/users/${account.user_id}`, { method: 'PUT', data: { role } })
   if (response.status !== 200) throw new Error(`QA user role restore/set failed: HTTP ${response.status}`)
   const users = await apiRequest(adminPage, '/api/users')
-  const current = (users.body as { id: string; role: string }[]).find(user => user.id === QA_ROLE_USER_ID)
-  expect(current).toMatchObject({ id: QA_ROLE_USER_ID, role })
+  const current = (users.body as { id: string; role: string }[]).find(user => user.id === account.user_id)
+  expect(current).toMatchObject({ id: account.user_id, role })
 }
 
-async function openQaRoleSession(browser: Browser, origin: string, account: { username: string; password: string }, role: 'operator' | 'viewer') {
+async function openQaRoleSession(browser: Browser, origin: string, account: QaRoleAccount, role: 'operator' | 'viewer') {
   const context = await browser.newContext({ baseURL: origin })
   const page = await context.newPage()
   const token = await loginViaApi(page, account.username, account.password)
-  await appendFile(process.env.NODESTEER_E2E_PRIVATE_DIR + '/ui-users.jsonl', JSON.stringify({ user_id: QA_ROLE_USER_ID, role, token, purpose: 'authorized fresh role E2E session' }) + '\n', { mode: 0o600 })
+  await appendFile(process.env.NODESTEER_E2E_PRIVATE_DIR + '/ui-users.jsonl', JSON.stringify({ user_id: account.user_id, username: account.username, role, token, purpose: 'authorized fresh role E2E session' }) + '\n', { mode: 0o600 })
   const session = { context, page, token }
   try {
     const me = await apiRequest(page, '/api/me')
-    expect(me.body).toMatchObject({ Role: role, UserID: QA_ROLE_USER_ID })
+    // 产品契约：/api/me 会话对象键名固定 snake_case（docs/PRODUCT.md）
+    expect(me.body).toMatchObject({ role, user_id: account.user_id })
     return session
   } catch (error) {
     await closeQaRoleSession(session)
@@ -62,14 +53,14 @@ async function verifyReadonlyAudit(page: Page, userId: string, auditId?: string)
   await expect(uiRow).toBeVisible()
   const mutationControls = await uiRow.getByRole('button', { name: /编辑|删除|edit|delete/i }).count()
   expect(mutationControls).toBe(0)
-  const probes = [] as { method: string; status: number; target_unchanged_in_response: boolean }[]
+  const probes = [] as { method: string; status: number; allow: string | null }[]
   for (const method of ['PUT', 'DELETE']) {
     const response = await apiRequest(page, path, { method, data: { ...target, action: 'qa-forbidden-mutation', detail: 'must remain immutable' } })
-    const responseRows = response.body as typeof rows
-    const returned = Array.isArray(responseRows) ? responseRows.find(row => row.id === target!.id) : undefined
-    probes.push({ method, status: response.status, target_unchanged_in_response: JSON.stringify(returned) === JSON.stringify(target) })
-    expect(response.status).toBe(200)
-    expect(returned).toEqual(target)
+    probes.push({ method, status: response.status, allow: response.headers?.allow ?? null })
+    // 产品契约（docs/PRODUCT.md「方法语义」）：/api/audit 仅接受 GET，其它方法 405 + Allow: GET，
+    // 且方法守卫先于角色鉴权（不因权限差异把 405 退化为 403）。写探针不产生审计变更。
+    expect(response.status).toBe(405)
+    expect(response.headers?.allow).toBe('GET')
   }
   const after = await apiRequest(page, path)
   const afterTarget = (after.body as typeof rows).find(row => row.id === target!.id)
@@ -287,12 +278,17 @@ test.describe('FULL 当前页面真实业务补测', () => {
       await cleanupByIds(page, [`/api/tasks/${task.id}`])
     }
   })
-  test('FULL-06 UI文件中继双目标与客户机文件一致、失败重试取消', async ({ page }) => {
+  test('FULL-06 UI文件中继双目标与客户机文件一致、失败重试与终态不可取消', async ({ page }) => {
     test.setTimeout(120_000)
     await loginViaApi(page)
     const nodes = (await apiRequest(page, '/api/nodes')).body as { id: string; hostname: string; status: string }[]
     const sourceNode = nodes.find((n) => n.id === (process.env.NODESTEER_E2E_NODE_IDS || '').split(',')[0])!
-    const targets = [nodes.find((n) => /agent-2/i.test(n.hostname)), nodes.find((n) => n.id === process.env.NODESTEER_E2E_LABEL_NODE_ID)].filter(Boolean) as typeof nodes
+    // 目标节点环境驱动：优先 NODESTEER_E2E_TRANSFER_TARGET_IDS，默认取本轮授权节点（NODE_IDS + LABEL_NODE_ID），排除源节点。
+    // 不再按主机名硬编码匹配（旧环境 "agent-2" 在其它环境不存在）。
+    const configuredTargets = (process.env.NODESTEER_E2E_TRANSFER_TARGET_IDS || '').split(',').filter(Boolean)
+    const targetPool = configuredTargets.length ? configuredTargets : authorizedNodeIds()
+    const targets = [...new Set(targetPool)].filter(id => id !== sourceNode?.id).map(id => nodes.find(n => n.id === id)).filter((n): n is typeof nodes[number] => Boolean(n)).slice(0, 2)
+    test.skip(targets.length < 2, '需要至少 2 个授权测试节点作为文件中继目标（NODESTEER_E2E_TRANSFER_TARGET_IDS 或 NODESTEER_E2E_NODE_IDS + NODESTEER_E2E_LABEL_NODE_ID）')
     expect(targets).toHaveLength(2)
     const marker = testName('relay-marker')
     const sourcePath = '/tmp/'+testName('relay-source')
@@ -345,12 +341,22 @@ test.describe('FULL 当前页面真实业务补测', () => {
       await expect.poll(async () => (await apiRequest(page, `/api/transfers/${failedId}`)).body, { timeout: 20_000 }).toMatchObject({ status: 'FAILED' })
       await page.getByRole('textbox', { name: /搜索|search/i }).fill(failedId)
       const row = page.locator('table tbody tr').first()
+      await expect(row.getByText(/^(失败|Failed)$/).first()).toBeVisible({ timeout: 15_000 })
+      // P16 终态冻结（docs/PRODUCT.md §46）：FAILED 是终态，不可再取消——UI 行菜单
+      // 仅「重试」，取消入口只对非终态传输开放；Retry 是唯一恢复路径。
+      await row.getByRole('button', { name: /^操作$|^actions$/i }).click()
+      await expect(page.getByRole('menuitem', { name: /^重试$|^retry$/i })).toBeVisible()
+      await expect(page.getByRole('menuitem', { name: /^取消传输$|^cancel( transfer)?$/i })).toHaveCount(0)
+      await page.keyboard.press('Escape')
+      // API 复核：对 FAILED 调 cancel → 400 transfer already finished，状态不被改写
+      const cancelProbe = await apiRequest(page, `/api/transfers/${failedId}/cancel`, { method: 'POST' })
+      expect(cancelProbe.status).toBe(400)
+      expect(JSON.stringify(cancelProbe.body)).toContain('transfer already finished')
+      await expect.poll(async () => (await apiRequest(page, `/api/transfers/${failedId}`)).body).toMatchObject({ status: 'FAILED' })
+      // Retry 是唯一恢复路径：UI 菜单重试后，源文件仍缺失，传输再次终态化为 FAILED
       await row.getByRole('button', { name: /^操作$|^actions$/i }).click()
       await page.getByRole('menuitem', { name: /^重试$|^retry$/i }).click()
       await expect.poll(async () => (await apiRequest(page, `/api/transfers/${failedId}`)).body, { timeout: 20_000 }).toMatchObject({ status: 'FAILED' })
-      await row.getByRole('button', { name: /^操作$|^actions$/i }).click()
-      await page.getByRole('menuitem', { name: /^取消传输$|^cancel( transfer)?$/i }).click()
-      await expect.poll(async () => (await apiRequest(page, `/api/transfers/${failedId}`)).body).toMatchObject({ status: 'CANCELED' })
     } finally {
       for (let index=0;index<tasks.length;index++) {
         const task=tasks[index], file=index===0?sourcePath:destinationPath, cleaned=testName('cleaned')
@@ -432,14 +438,16 @@ test.describe('FULL 当前页面真实业务补测', () => {
     const nodes=(await apiRequest(page,'/api/nodes')).body as {id:string;hostname:string}[]
     const node=nodes.find(n=>n.id===nodeId)!
     const elf=process.env.NODESTEER_E2E_APP_ELF, inspector=process.env.NODESTEER_E2E_GUEST_INSPECT, base=process.env.NODESTEER_E2E_APP_DIR
-    if(!elf||!inspector||!base) throw new Error('Authorized ELF/guest inspector/app directory are required')
+    // 需要授权客户机 SSH + ELF/检查器夹具（红线外）：未提供时显式 skip 并说明，不再以报错形式失败。
+    test.skip(!elf||!inspector||!base, '需要授权客户机 SSH 与 ELF/检查器夹具（NODESTEER_E2E_APP_ELF / NODESTEER_E2E_GUEST_INSPECT / NODESTEER_E2E_APP_DIR），本轮红线外')
+    if(!elf||!inspector||!base) return
     const bytes=await readFile(elf)
     const {createHash}=await import('node:crypto')
     const expectedSHA=createHash('sha256').update(bytes).digest('hex')
     const bytesV2=Buffer.concat([bytes,Buffer.from('\nqa-elf-version-v2\n')])
     const expectedSHAV2=createHash('sha256').update(bytesV2).digest('hex')
     const artifactNameV2=testName('elf-v2')
-    const nonce=randomUUID().slice(0,8), unit=`qa-20260930-101945-web-app-${nonce}.service`,directory=`${base}/app-${nonce}`
+    const nonce=randomUUID().slice(0,8), unit=`${TEST_PREFIX}web-app-${nonce}.service`,directory=`${base}/app-${nonce}`
     const applicationName=testName('service'), owned:string[]=[], observations:unknown[]=[]
     let appId:string|undefined,bodyFailure:unknown,cleanupFailure:unknown
     try {
@@ -557,7 +565,7 @@ test.describe('FULL 当前页面真实业务补测', () => {
         await (async()=>{if(appId) {
           const refs=((await apiRequest(page,'/api/tasks')).body as {id:string;name:string;application_id?:string;app_operation?:string}[]).filter(t=>t.application_id===appId)
           for(const task of refs) {
-            if(!task.name.startsWith('qa-20260930-101945-web-'))throw new Error('Unexpected external Task reference to owned Application')
+            if(!task.name.startsWith(TEST_PREFIX))throw new Error('Unexpected external Task reference to owned Application')
             const path='/api/tasks/'+task.id
             if(owned.includes(path))await cleanupByIds(page,[path])
             else {
@@ -584,24 +592,24 @@ test.describe('FULL 当前页面真实业务补测', () => {
 
   test('ROLE-01 Operator与Viewer只能读取自己的Audit记录', async ({ page, browser }) => {
     await loginViaApi(page)
-    const account = await qaRoleAccount()
+    // 角色账号环境驱动/运行时发现/自建夹具（不再硬编码旧环境用户 ID）
+    const account = await ensureRoleAccount(page, 'ROLE-01/02 角色收敛账号')
     let operator: Awaited<ReturnType<typeof openQaRoleSession>> | undefined
     let viewer: Awaited<ReturnType<typeof openQaRoleSession>> | undefined
     try {
-      const users = (await apiRequest(page, '/api/users')).body as { id: string; role: string }[]
-      expect(users.find(user => user.id === QA_ROLE_USER_ID)).toMatchObject({ role: 'viewer' })
-      await setQaRole(page, 'operator')
+      await setQaRole(page, account, 'viewer')
+      await setQaRole(page, account, 'operator')
       operator = await openQaRoleSession(browser, new URL(page.url()).origin, account, 'operator')
-      const operatorAudit = await verifyReadonlyAudit(operator.page, QA_ROLE_USER_ID)
+      const operatorAudit = await verifyReadonlyAudit(operator.page, account.user_id)
       await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR + '/role-audit-operator.json', JSON.stringify(operatorAudit, null, 2))
       const auditId = operatorAudit.audit_id
       const logoutOperator = await closeQaRoleSession(operator)
       operator = undefined
       expect([200, 204]).toContain(logoutOperator)
-      await setQaRole(page, 'viewer')
+      await setQaRole(page, account, 'viewer')
       viewer = await openQaRoleSession(browser, new URL(page.url()).origin, account, 'viewer')
-      const viewerAudit = await verifyReadonlyAudit(viewer.page, QA_ROLE_USER_ID, auditId)
-      await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR + '/role-audit-operator-viewer.json', JSON.stringify({ qa_user_id: QA_ROLE_USER_ID, audit_id: auditId, operator: operatorAudit, viewer: viewerAudit }, null, 2))
+      const viewerAudit = await verifyReadonlyAudit(viewer.page, account.user_id, auditId)
+      await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR + '/role-audit-operator-viewer.json', JSON.stringify({ qa_user_id: account.user_id, account: account.username, audit_id: auditId, operator: operatorAudit, viewer: viewerAudit }, null, 2))
       const logoutViewer = await closeQaRoleSession(viewer)
       viewer = undefined
       expect([200, 204]).toContain(logoutViewer)
@@ -611,7 +619,7 @@ test.describe('FULL 当前页面真实业务补测', () => {
         if (viewer) await closeQaRoleSession(viewer)
       } finally {
         await loginViaApi(page)
-        await setQaRole(page, 'viewer')
+        await setQaRole(page, account, 'viewer')
       }
     }
   })
@@ -619,16 +627,18 @@ test.describe('FULL 当前页面真实业务补测', () => {
   test('ROLE-02 Operator真实部署自有应用但定义只读；Viewer部署与定义写入被拒', async ({ page, browser }) => {
     test.setTimeout(180_000)
     await loginViaApi(page)
-    const account = await qaRoleAccount()
     const elf = process.env.NODESTEER_E2E_APP_ELF
     const inspector = process.env.NODESTEER_E2E_GUEST_INSPECT
     const base = process.env.NODESTEER_E2E_APP_DIR
-    if (!elf || !inspector || !base) throw new Error('Authorized Node1 ELF and guest inspector are required')
+    // 需要授权客户机 SSH + ELF/检查器夹具（红线外）：未提供时显式 skip 并说明。
+    test.skip(!elf || !inspector || !base, '需要授权客户机 SSH 与 ELF/检查器夹具（NODESTEER_E2E_APP_ELF / NODESTEER_E2E_GUEST_INSPECT / NODESTEER_E2E_APP_DIR），本轮红线外')
+    if (!elf || !inspector || !base) return
+    const account = await ensureRoleAccount(page, 'ROLE-01/02 角色收敛账号')
     const bytes = await readFile(elf)
     const expectedSHA = createHash('sha256').update(bytes).digest('hex')
     const nonce = randomUUID().slice(0, 8)
     const directory = `${base}/role-${nonce}`
-    const unit = `qa-20260930-101945-web-role-${nonce}.service`
+    const unit = `${TEST_PREFIX}web-role-${nonce}.service`
     const appName = testName('role-app')
     const owned: string[] = []
     let artifactId = ''
@@ -637,8 +647,7 @@ test.describe('FULL 当前页面真实业务补测', () => {
     let operator: Awaited<ReturnType<typeof openQaRoleSession>> | undefined
     let viewer: Awaited<ReturnType<typeof openQaRoleSession>> | undefined
     try {
-      const users = (await apiRequest(page, '/api/users')).body as { id: string; role: string }[]
-      expect(users.find(user => user.id === QA_ROLE_USER_ID)).toMatchObject({ role: 'viewer' })
+      await setQaRole(page, account, 'viewer')
       nodeId = (await getNodeIds(page))[0]
       const nodes = (await apiRequest(page, '/api/nodes')).body as { id: string; hostname: string }[]
       const node = nodes.find(item => item.id === nodeId)!
@@ -668,7 +677,7 @@ test.describe('FULL 当前页面真实业务补测', () => {
       const artifactBefore = (await apiRequest(page, '/api/artifacts/' + artifactId)).body
       const executionsBefore = (await apiRequest(page, `/api/applications/${appId}/executions`)).body as { id: string }[]
 
-      await setQaRole(page, 'operator')
+      await setQaRole(page, account, 'operator')
       operator = await openQaRoleSession(browser, new URL(page.url()).origin, account, 'operator')
       await operator.page.goto('/applications')
       const operatorRow = operator.page.locator(`tr:has(a[href="/applications/${appId}"])`)
@@ -716,16 +725,16 @@ test.describe('FULL 当前页面真实业务补测', () => {
       expect.soft(operatorAppFeedback.health).toContain('deploy')
       expect.soft(operatorAppFeedback.successRows).toBeGreaterThan(0)
 
-      const auditRows = (await apiRequest(operator.page, `/api/audit?user_id=${QA_ROLE_USER_ID}&limit=100`)).body as { id: string; user_id: string; username: string; resource: string; resource_id: string; action: string }[]
-      const deployAudit = auditRows.find(item => item.resource === 'application' && item.resource_id === appId && item.action === 'deploy' && item.user_id === QA_ROLE_USER_ID)
+      const auditRows = (await apiRequest(operator.page, `/api/audit?user_id=${account.user_id}&limit=100`)).body as { id: string; user_id: string; username: string; resource: string; resource_id: string; action: string }[]
+      const deployAudit = auditRows.find(item => item.resource === 'application' && item.resource_id === appId && item.action === 'deploy' && item.user_id === account.user_id)
       expect(deployAudit).toBeTruthy()
-      const operatorAudit = await verifyReadonlyAudit(operator.page, QA_ROLE_USER_ID, deployAudit!.id)
+      const operatorAudit = await verifyReadonlyAudit(operator.page, account.user_id, deployAudit!.id)
       const operatorExecutions = (await apiRequest(operator.page, `/api/applications/${appId}/executions`)).body
 
       const logoutOperator = await closeQaRoleSession(operator)
       operator = undefined
       expect([200, 204]).toContain(logoutOperator)
-      await setQaRole(page, 'viewer')
+      await setQaRole(page, account, 'viewer')
       viewer = await openQaRoleSession(browser, new URL(page.url()).origin, account, 'viewer')
       await viewer.page.goto('/applications')
       const viewerRow = viewer.page.locator(`tr:has(a[href="/applications/${appId}"])`)
@@ -746,8 +755,8 @@ test.describe('FULL 当前页面真实业务补测', () => {
       expect((await apiRequest(viewer.page, `/api/applications/${appId}/state`)).body).toEqual(state)
       const viewerExecutions = (await apiRequest(viewer.page, `/api/applications/${appId}/executions`)).body
       expect(viewerExecutions).toEqual(operatorExecutions)
-      const viewerAudit = await verifyReadonlyAudit(viewer.page, QA_ROLE_USER_ID, deployAudit!.id)
-      await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR + '/role-application-permissions.json', JSON.stringify({ qa_user_id: QA_ROLE_USER_ID, app_id: appId, artifact_id: artifactId, node_id: nodeId, operator: { list_new_hidden: true, list_actions_hidden: true, save_hidden: true, assigned_node_checkbox_disabled: true, app_create_http: operatorPost.status, app_put_http: operatorPut.status, app_delete_http: operatorDelete.status, app_deploy_http: deployResponse.status(), app_deploy_response_ids: deployBody.map(item => item.id), execution: deployment, state: nodeState, guest, ui_feedback: operatorAppFeedback, audit: operatorAudit }, viewer: { list_new_hidden: true, list_actions_hidden: true, deploy_button_hidden: true, save_hidden: true, app_create_http: viewerPost.status, app_put_http: viewerPut.status, app_delete_http: viewerDelete.status, app_deploy_http: viewerDeploy.status, audit: viewerAudit }, definition_unchanged: true, viewer_deploy_created_no_execution: true }, null, 2))
+      const viewerAudit = await verifyReadonlyAudit(viewer.page, account.user_id, deployAudit!.id)
+      await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR + '/role-application-permissions.json', JSON.stringify({ qa_user_id: account.user_id, account: account.username, app_id: appId, artifact_id: artifactId, node_id: nodeId, operator: { list_new_hidden: true, list_actions_hidden: true, save_hidden: true, assigned_node_checkbox_disabled: true, app_create_http: operatorPost.status, app_put_http: operatorPut.status, app_delete_http: operatorDelete.status, app_deploy_http: deployResponse.status(), app_deploy_response_ids: deployBody.map(item => item.id), execution: deployment, state: nodeState, guest, ui_feedback: operatorAppFeedback, audit: operatorAudit }, viewer: { list_new_hidden: true, list_actions_hidden: true, deploy_button_hidden: true, save_hidden: true, app_create_http: viewerPost.status, app_put_http: viewerPut.status, app_delete_http: viewerDelete.status, app_deploy_http: viewerDeploy.status, audit: viewerAudit }, definition_unchanged: true, viewer_deploy_created_no_execution: true }, null, 2))
       const logoutViewer = await closeQaRoleSession(viewer)
       viewer = undefined
       expect([200, 204]).toContain(logoutViewer)
@@ -758,7 +767,7 @@ test.describe('FULL 当前页面真实业务补测', () => {
       } finally {
         try {
           await loginViaApi(page)
-          await setQaRole(page, 'viewer')
+          await setQaRole(page, account, 'viewer')
         } finally {
           const { execFileSync } = await import('node:child_process')
           try {

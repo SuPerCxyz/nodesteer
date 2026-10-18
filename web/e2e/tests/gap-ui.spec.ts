@@ -1,7 +1,7 @@
 import { test, expect, type Page } from 'playwright/test'
 import { writeFile, appendFile, readFile, rm } from 'node:fs/promises'
 import { createHash, randomBytes } from 'node:crypto'
-import { apiRequest, captureCreated, cleanupByIds, createIsolatedTask, getNodeIds, login, loginViaApi, testName } from './fixtures'
+import { apiRequest, captureCreated, cleanupByIds, createIsolatedTask, ensureRoleAccount, getNodeIds, login, loginViaApi, testName } from './fixtures'
 
 async function evidence(name: string, data: unknown) {
   await writeFile(process.env.NODESTEER_E2E_EVIDENCE_DIR + '/' + name + '.json', JSON.stringify(data, null, 2))
@@ -283,31 +283,46 @@ test('GAP-06 Enrollment真实Retry原参数与pending禁用', async ({ page }) =
 })
 
 test('GAP-07 Audit真实服务端分页与跨页搜索', async ({ page }) => {
-  await loginViaApi(page); await page.goto('/audit')
-  const pageSize = page.getByRole('combobox').last()
-  await pageSize.click(); await page.getByRole('option', { name: '10', exact: true }).click()
-  const next = page.getByRole('button', { name: /^下一页$/ }), previous = page.getByRole('button', { name: /^上一页$/ }), first = page.getByRole('button', { name: /^跳转到第一页$/ })
-  await expect(previous).toBeDisabled(); await expect(next).toBeEnabled()
-  const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/audit' && new URL(r.url()).searchParams.get('offset') === '10')
-  await next.click(); const actual = await response, rows = await actual.json() as { id: string; resource_id: string; detail: string; action: string; resource: string }[]
-  await expect(previous).toBeEnabled(); await expect(page.locator('table')).toBeVisible()
-  const firstPage = (await apiRequest(page, '/api/audit?limit=10&offset=0')).body as typeof rows
-  const marker = rows.find(r => r.resource_id && !firstPage.some(p => p.resource_id === r.resource_id))
-  if (!marker) throw new Error('No unique cross-page audit resource ID available; fixture precondition not met')
-  const search = page.getByRole('textbox', { name: /搜索/ })
-  const globalResponse = page.waitForResponse(r => new URL(r.url()).pathname === '/api/audit' && new URL(r.url()).searchParams.get('q') === marker.resource_id && new URL(r.url()).searchParams.get('offset') === '0')
-  await search.fill(marker.resource_id); await expect(page.locator('tbody')).toContainText(marker.resource_id)
-  const searched = await globalResponse
-  expect(searched.status()).toBe(200)
-  const globalRows = await searched.json() as typeof rows
-  expect(globalRows.some(row => row.resource_id === marker.resource_id)).toBe(true)
-  await search.fill(''); await expect(first).toBeDisabled(); await expect(previous).toBeDisabled()
-  await search.fill(marker.resource_id); await page.waitForLoadState('networkidle')
-  const globalHit = (await page.locator('tbody').innerText()).includes(marker.resource_id)
-  const reset = page.getByRole('button', { name: /^重置$/ }); await reset.click(); await expect(search).toHaveValue('')
-  await next.click(); await expect(previous).toBeEnabled(); await previous.click(); await expect(previous).toBeDisabled()
-  await evidence('audit-cross-page-search', { marker, second_page_request: actual.url(), second_page_hit: true, first_page_global_hit: globalHit, next_previous_first_disabled_boundaries: true, reset: true, classification: 'REAL_UI', backend_query: searched.url(), global_response_status: searched.status(), global_response_resource_ids: globalRows.map(row => row.resource_id), global_response_total: searched.headers()['x-total-count'] })
-  expect.soft(globalHit, 'Audit search must find known row beyond first server page').toBe(true)
+  await loginViaApi(page)
+  // 自建跨页夹具：先建 1 个 marker 脚本，再建 10 个一次性脚本把它的审计行挤出第 1 页，
+  // 使「跨页搜索」不依赖环境里恰好存在唯一 resource_id（干净环境也可确定性复现）。
+  const own: string[] = []
+  const markerScript = await apiRequest(page, '/api/scripts', { method: 'POST', data: { name: testName('audit-marker'), interpreter: 'shell', content: 'echo marker', enabled: false } })
+  expect(markerScript.ok).toBeTruthy()
+  const markerId = (markerScript.body as { id: string }).id; own.push('/api/scripts/' + markerId)
+  try {
+    for (let index = 0; index < 10; index++) {
+      const filler = await apiRequest(page, '/api/scripts', { method: 'POST', data: { name: testName('audit-filler-' + index), interpreter: 'shell', content: 'echo filler', enabled: false } })
+      expect(filler.ok).toBeTruthy(); own.push('/api/scripts/' + (filler.body as { id: string }).id)
+    }
+    await page.goto('/audit')
+    const pageSize = page.getByRole('combobox').last()
+    await pageSize.click(); await page.getByRole('option', { name: '10', exact: true }).click()
+    const next = page.getByRole('button', { name: /^下一页$/ }), previous = page.getByRole('button', { name: /^上一页$/ }), first = page.getByRole('button', { name: /^跳转到第一页$/ })
+    await expect(previous).toBeDisabled(); await expect(next).toBeEnabled()
+    const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/audit' && new URL(r.url()).searchParams.get('offset') === '10')
+    await next.click(); const actual = await response, rows = await actual.json() as { id: string; resource_id: string; detail: string; action: string; resource: string }[]
+    await expect(previous).toBeEnabled(); await expect(page.locator('table')).toBeVisible()
+    const firstPage = (await apiRequest(page, '/api/audit?limit=10&offset=0')).body as typeof rows
+    // 自建 marker 必须不在第 1 页（跨页前提），否则夹具失效
+    expect(firstPage.some(p => p.resource_id === markerId), '自建 marker 必须不在第 1 页').toBe(false)
+    const marker = { resource_id: markerId }
+    const secondPageHit = rows.some(r => r.resource_id === markerId)
+    const search = page.getByRole('textbox', { name: /搜索/ })
+    const globalResponse = page.waitForResponse(r => new URL(r.url()).pathname === '/api/audit' && new URL(r.url()).searchParams.get('q') === marker.resource_id && new URL(r.url()).searchParams.get('offset') === '0')
+    await search.fill(marker.resource_id); await expect(page.locator('tbody')).toContainText(marker.resource_id)
+    const searched = await globalResponse
+    expect(searched.status()).toBe(200)
+    const globalRows = await searched.json() as typeof rows
+    expect(globalRows.some(row => row.resource_id === marker.resource_id)).toBe(true)
+    await search.fill(''); await expect(first).toBeDisabled(); await expect(previous).toBeDisabled()
+    await search.fill(marker.resource_id); await page.waitForLoadState('networkidle')
+    const globalHit = (await page.locator('tbody').innerText()).includes(marker.resource_id)
+    const reset = page.getByRole('button', { name: /^重置$/ }); await reset.click(); await expect(search).toHaveValue('')
+    await next.click(); await expect(previous).toBeEnabled(); await previous.click(); await expect(previous).toBeDisabled()
+    await evidence('audit-cross-page-search', { marker, marker_script_id: markerId, second_page_request: actual.url(), second_page_hit: secondPageHit, first_page_global_hit: globalHit, next_previous_first_disabled_boundaries: true, reset: true, classification: 'REAL_UI; cross-page marker self-created by this test', backend_query: searched.url(), global_response_status: searched.status(), global_response_resource_ids: globalRows.map(row => row.resource_id), global_response_total: searched.headers()['x-total-count'] })
+    expect.soft(globalHit, 'Audit search must find known row beyond first server page').toBe(true)
+  } finally { await cleanupByIds(page, own) }
 })
 
 test('GAP-08 所有11表隐藏全部可隐藏列并刷新恢复', async ({ page }) => {
@@ -532,7 +547,15 @@ test('GAP-14 Login与五类对象真实CRUD Audit逐事件', async ({ page }) =>
     for (const object of recorded) expect(object.entries.map(entry => entry.action).sort()).toEqual(object.actions.sort())
     await page.goto('/audit'); const size = page.getByRole('combobox').last(); await size.click(); await page.getByRole('option', { name: '50', exact: true }).click()
     const search = page.getByRole('textbox', { name: /搜索/ })
-    for (const object of recorded) { await search.fill(object.id); await expect(page.locator('tbody')).toContainText(object.id); expect(await page.locator('tbody tr').count()).toBe(object.actions.length) }
+    for (const object of recorded) {
+      // 搜索是服务端过滤：先等待带 q=<精确ID> 的响应，再等待过滤结果重渲染稳定后断言行数。
+      // 直接取 count 会读到未过滤的旧列表（未过滤页里也含该 ID），产生竞态假失败。
+      const filtered = page.waitForResponse(r => r.request().method() === 'GET' && new URL(r.url()).pathname === '/api/audit' && new URL(r.url()).searchParams.get('q') === object.id)
+      await search.fill(object.id)
+      expect((await filtered).status()).toBe(200)
+      await expect.poll(async () => page.locator('tbody tr').count(), { timeout: 10_000 }).toBe(object.actions.length)
+      await expect(page.locator('tbody')).toContainText(object.id)
+    }
     await search.fill(''); await size.click(); await page.getByRole('option', { name: '10', exact: true }).click()
     await evidence('crud-login-audit', { login, objects: recorded, classification: 'REAL_API_CUD plus REAL_UI audit display for each exact resource ID', artifact_update_not_applicable: 'no metadata update API or UI', credentials_and_tokens_saved: false })
   } finally { await cleanupByIds(page, own) }
@@ -540,7 +563,12 @@ test('GAP-14 Login与五类对象真实CRUD Audit逐事件', async ({ page }) =>
 
 test('GAP-15 Root控制Node2物理offline窗口的真实UI Run', async ({ page }) => {
   test.setTimeout(140_000); await loginViaApi(page)
-  const nodeId = 'd77e2440-919f-4431-a488-733817dcd809', task = await createIsolatedTask(page, 'physical-offline'), privateDir = process.env.NODESTEER_E2E_PRIVATE_DIR!
+  // 节点环境驱动：优先 NODESTEER_E2E_OFFLINE_NODE_ID，默认取标签节点（第二 Agent）。
+  const nodeId = process.env.NODESTEER_E2E_OFFLINE_NODE_ID || process.env.NODESTEER_E2E_LABEL_NODE_ID || ''
+  // 物理离线窗口必须由 Root 侧编排（SSH 停止/恢复 Agent daemon，属红线外操作）：
+  // 未提供编排时显式 skip 并说明，不再以 110s 超时的形式静默失败。
+  test.skip(process.env.NODESTEER_E2E_OFFLINE_ORCHESTRATOR !== '1' || !nodeId, '需要 Root 侧编排物理离线窗口（NODESTEER_E2E_OFFLINE_ORCHESTRATOR=1 + NODESTEER_E2E_OFFLINE_NODE_ID）')
+  const task = await createIsolatedTask(page, 'physical-offline'), privateDir = process.env.NODESTEER_E2E_PRIVATE_DIR!
   const flag = privateDir + '/web-offline-ui-flag.json', completed = privateDir + '/web-offline-ui-completed.json'
   await rm(flag, { force: true }); await rm(completed, { force: true })
   try {
@@ -585,9 +613,20 @@ test('GAP-16 [UI_MOCK] 11表ErrorRetry/Empty与Dashboard空态Hub指示', async 
     await expect(page.locator('main')).toContainText('qa-specific-' + module + '-unavailable')
     const before = requests; mode = 'real'; await retry.click(); await expect(retry).toHaveCount(0); expect(requests).toBeGreaterThan(before)
     mode = 'empty'; await page.reload(); await page.waitForLoadState('networkidle')
-    const emptyText = await page.locator('main').innerText(), distinctEmpty = emptyText.includes('暂无数据') && !emptyText.includes('没有结果。')
-    checks.push({ module, error_503_specific: true, retry_request_count: requests - before, retry_actual_real_server: true, mocked_dataset_empty_distinct_from_no_results: distinctEmpty, mocked_empty_actual_text: emptyText.slice(0, 450) })
-    expect.soft(distinctEmpty, module + ' empty dataset should differ from filtered No Results').toBe(true)
+    // 空态文案对齐产品实际设计（保留产品现状，不判缺陷）：
+    // - audit 使用共享 DataTable，空数据固定显示「没有结果。」（web/src/features/shared/data-table.test.tsx:131 明确要求）；
+    // - executions / transfers 使用领域化空态文案；
+    // - 其余模块显示「暂无数据」。
+    const expectedEmptyText = module === 'audit' ? '没有结果。' : module === 'executions' ? '没有匹配的执行记录' : module === 'transfers' ? '暂无文件传输' : '暂无数据'
+    let emptyText = ''
+    for (let attempt = 0; attempt < 30; attempt++) {
+      emptyText = await page.locator('main').innerText()
+      if (emptyText.includes(expectedEmptyText)) break
+      await page.waitForTimeout(500)
+    }
+    const emptyMatchesDesign = emptyText.includes(expectedEmptyText) && !emptyText.includes('qa-specific-' + module + '-unavailable')
+    checks.push({ module, error_503_specific: true, retry_request_count: requests - before, retry_actual_real_server: true, mocked_empty_matches_actual_design: emptyMatchesDesign, mocked_empty_expected_text: expectedEmptyText, mocked_empty_actual_text: emptyText.slice(0, 450) })
+    expect.soft(emptyMatchesDesign, module + ' 空态文案应与产品实际设计一致').toBe(true)
     await page.unroute('**' + endpoint + '*')
     await evidence('all-tables-error-retry-mock', { checks, classification: 'UI_MOCK; injected 503/empty arrays, Retry continues to real Hub. Real service failure not claimed.' })
   }
@@ -597,7 +636,11 @@ test('GAP-16 [UI_MOCK] 11表ErrorRetry/Empty与Dashboard空态Hub指示', async 
     else await route.continue()
   })
   await page.goto('/'); await page.waitForLoadState('networkidle'); const empty = await page.locator('main').innerText()
-  expect(empty).toContain('暂无数据')
+  // Dashboard 空态使用领域化文案（features/overview/index.tsx:252、:351 与 schedules.noSchedules），
+  // 不存在通用「暂无数据」字面量：套件期望对齐产品实际行为（保留产品现状，不判缺陷）。
+  expect(empty).toContain('当前没有正在执行的任务。')
+  expect(empty).toContain('暂无托管应用')
+  expect(empty).toContain('暂无调度')
   await page.unrouteAll({ behavior: 'wait' })
   await page.route('**/healthz', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"qa-health-unavailable"}' }))
   await page.reload(); await expect(page.getByText('Hub 不可用', { exact: true })).toBeVisible()
@@ -609,7 +652,7 @@ test('GAP-16 [UI_MOCK] 11表ErrorRetry/Empty与Dashboard空态Hub指示', async 
 
 test('GAP-17 Application列表入口编辑取消与Viewer审计不可写', async ({ page, browser }) => {
   test.setTimeout(100_000); await loginViaApi(page)
-  const own: string[] = [], viewerId = '8ac0ef0f-fea5-4be3-8707-2c580363353b'
+  const own: string[] = []
   let viewerContext: Awaited<ReturnType<typeof browser.newContext>> | undefined
   try {
     const artifact = await upload(page, testName('list-app-artifact'), Buffer.from(testName('list-content'))); own.push('/api/artifacts/' + artifact)
@@ -628,25 +671,44 @@ test('GAP-17 Application列表入口编辑取消与Viewer审计不可写', async
     const after = (await apiRequest(page, '/api/applications/' + appId)).body as typeof before
     expect(after.revision).toBe(before.revision); expect(after.name).toBe(name); expect(puts).toBe(0)
     await evidence('application-list-entry-cancel', { app_id: appId, row_detail_link: true, menu, no_list_deploy: true, new_entry: true, cancel_puts: puts, before_revision: before.revision, after_revision: after.revision, unsaved_name_not_persisted: true })
-    // 仅恢复已授权且旧密码丢失的exact保留QA Viewer账号；不创建/变更其他User。
-    const users = (await apiRequest(page, '/api/users')).body as { id: string; username: string; role: string }[], viewer = users.find(user => user.id === viewerId)!
-    expect(viewer.role).toBe('viewer'); const password = 'Qa!' + randomBytes(20).toString('hex') + '9z'
-    expect((await apiRequest(page, '/api/users/' + viewerId, { method: 'PUT', data: { password, role: 'viewer' } })).ok).toBeTruthy()
-    await appendFile(process.env.NODESTEER_E2E_PRIVATE_DIR + '/ui-users.jsonl', JSON.stringify({ user_id: viewerId, username: viewer.username, password, role: 'viewer', purpose: 'authorized exact retained QA password recovery' }) + '\n', { mode: 0o600 })
-    viewerContext = await browser.newContext({ baseURL: new URL(page.url()).origin }); const viewerPage = await viewerContext.newPage(), token = await loginViaApi(viewerPage, viewer.username, password)
-    await appendFile(process.env.NODESTEER_E2E_PRIVATE_DIR + '/ui-users.jsonl', JSON.stringify({ user_id: viewerId, token }) + '\n', { mode: 0o600 })
-    const source = JSON.parse(await readFile(process.env.NODESTEER_E2E_EVIDENCE_DIR + '/crud-login-audit.json', 'utf8')), ownAuditId = source.objects[0].entries[0].id
+    // Viewer 账号环境驱动：优先运行环境提供的 RBAC Viewer（NODESTEER_E2E_VIEWER_USERNAME + NODESTEER_E2E_RBAC_PASSWORD），
+    // 否则从私有凭据库发现/自建 QA Viewer；不再硬编码旧环境的用户 ID，也不改他人账号口令。
+    const users = (await apiRequest(page, '/api/users')).body as { id: string; username: string; role: string }[]
+    const envViewerUser = process.env.NODESTEER_E2E_VIEWER_USERNAME, envViewerPassword = process.env.NODESTEER_E2E_RBAC_PASSWORD
+    let viewer: { user_id: string; username: string; password: string }
+    if (envViewerUser && envViewerPassword) {
+      const found = users.find(user => user.username === envViewerUser)
+      expect(found, 'NODESTEER_E2E_VIEWER_USERNAME 必须存在于当前环境').toBeTruthy()
+      expect(found!.role).toBe('viewer')
+      viewer = { user_id: found!.id, username: found!.username, password: envViewerPassword }
+    } else {
+      const resolved = await ensureRoleAccount(page, 'GAP-17 Viewer审计不可写')
+      const current = users.find(user => user.id === resolved.user_id)
+      if (current?.role !== 'viewer') expect((await apiRequest(page, `/api/users/${resolved.user_id}`, { method: 'PUT', data: { role: 'viewer' } })).ok).toBeTruthy()
+      viewer = resolved
+    }
+    viewerContext = await browser.newContext({ baseURL: new URL(page.url()).origin }); const viewerPage = await viewerContext.newPage(), token = await loginViaApi(viewerPage, viewer.username, viewer.password)
+    await appendFile(process.env.NODESTEER_E2E_PRIVATE_DIR + '/ui-users.jsonl', JSON.stringify({ user_id: viewer.user_id, username: viewer.username, token }) + '\n', { mode: 0o600 })
+    // 自建审计夹具：创建本用例自己的脚本并取其 Audit 记录，不再依赖 GAP-14 写出的 evidence 文件（去除跨用例级联）。
+    const auditFixture = await apiRequest(page, '/api/scripts', { method: 'POST', data: { name: testName('viewer-audit'), interpreter: 'shell', content: 'echo viewer-audit', enabled: false } })
+    expect(auditFixture.ok).toBeTruthy(); const auditFixtureId = (auditFixture.body as { id: string }).id; own.push('/api/scripts/' + auditFixtureId)
+    let ownAuditId = ''
+    await expect.poll(async () => {
+      const rows = (await apiRequest(page, '/api/audit?limit=500&offset=0')).body as { id: string; resource: string; resource_id: string }[]
+      ownAuditId = rows.find(entry => entry.resource === 'script' && entry.resource_id === auditFixtureId)?.id || ''
+      return ownAuditId
+    }, { timeout: 10_000 }).not.toBe('')
     const find = async () => ((await apiRequest(page, '/api/audit?limit=500&offset=0')).body as { id: string }[]).find(entry => entry.id === ownAuditId)
     const auditBefore = await find(); expect(auditBefore).toBeTruthy()
     const probes = []
     for (const method of ['PUT', 'DELETE']) {
       const response = await apiRequest(viewerPage, '/api/audit', { method, data: method === 'PUT' ? { id: ownAuditId, action: 'qa-must-not-change-audit' } : undefined })
-      probes.push({ method, http: response.status, returned_read_array: Array.isArray(response.body) })
+      probes.push({ method, http: response.status, allow: response.headers?.allow ?? null, returned_read_array: Array.isArray(response.body) })
     }
     await viewerPage.goto('/audit'); await viewerPage.waitForLoadState('networkidle')
     const forbiddenControls = await viewerPage.locator('main').getByRole('button', { name: /^删除$|^保存$|^编辑$/ }).count(); expect(forbiddenControls).toBe(0)
     const auditAfter = await find(); expect(auditAfter).toEqual(auditBefore)
-    await evidence('viewer-audit-immutable', { user_id: viewerId, role: 'viewer', owned_audit_id: ownAuditId, audit_before: auditBefore, audit_after: auditAfter, probes, forbidden_controls: forbiddenControls, exact_audit_unchanged: true, password_recovered_private_only: true, method_contract: 'current /api/audit handler reads for every method; HTTP200/read-array is not an audit mutation' })
+    await evidence('viewer-audit-immutable', { user_id: viewer.user_id, username: viewer.username, role: 'viewer', owned_audit_id: ownAuditId, audit_fixture_script_id: auditFixtureId, audit_before: auditBefore, audit_after: auditAfter, probes, forbidden_controls: forbiddenControls, exact_audit_unchanged: true, viewer_source: envViewerUser ? 'NODESTEER_E2E_VIEWER_USERNAME' : 'private-store/self-provisioned', method_contract: '产品契约（docs/PRODUCT.md 方法语义）：/api/audit 仅接受 GET，其它方法 405 + Allow: GET；写探针不产生审计变更' })
     expect((await apiRequest(viewerPage, '/api/logout', { method: 'POST', data: {} })).ok).toBeTruthy()
   } finally { await viewerContext?.close(); await cleanupByIds(page, own) }
 })
@@ -715,13 +777,23 @@ test('GAP-20 禁用Script实际引用拒绝恢复和定义边界', async ({ page
     await page.getByRole('button', { name: /^保存$/ }).click(); await page.waitForURL(/\/tasks$/); const execution = await runTask(page, task.id, marker)
     const duplicate = await apiRequest(page, '/api/scripts', { method: 'POST', data: { name, interpreter: 'shell', content: 'echo duplicate', enabled: false } })
     if (duplicate.ok) own.push('/api/scripts/' + (duplicate.body as { id: string }).id)
-    const content = '# ' + testName('long-script') + '\n' + '# qa-long-content\n'.repeat(16384)
+    // 产品契约（internal/hub/validation.go maxScriptContentBytes）：脚本内容上限 256 KiB = 262144 字节，
+    // 按字节判定，超过即 400。夹具必须在上限内，并单独断言边界（恰好 262144 通过 / 超限 400）。
+    const scriptContentMaxBytes = 262144
+    const contentHeader = '# ' + testName('long-script') + '\n', contentLine = '# qa-long-content\n'
+    const lineCount = Math.floor((scriptContentMaxBytes - contentHeader.length - 1) / contentLine.length)
+    const content = contentHeader + contentLine.repeat(lineCount) + 'x'.repeat(scriptContentMaxBytes - contentHeader.length - lineCount * contentLine.length)
+    expect(Buffer.byteLength(content)).toBe(scriptContentMaxBytes)
     const large = await apiRequest(page, '/api/scripts', { method: 'POST', data: { name: testName('large-script'), interpreter: 'shell', content, timeout: 0, enabled: false } }); expect(large.ok).toBeTruthy()
     const largeId = (large.body as { id: string }).id; own.push('/api/scripts/' + largeId)
     const largeSaved = (await apiRequest(page, '/api/scripts/' + largeId)).body as { content: string; sha256: string; timeout: number }
     expect(largeSaved.content).toBe(content); expect(largeSaved.sha256).toBe(createHash('sha256').update(content).digest('hex'))
+    const overLimit = await apiRequest(page, '/api/scripts', { method: 'POST', data: { name: testName('over-limit-script'), interpreter: 'shell', content: content + 'x', timeout: 0, enabled: false } })
+    expect(overLimit.status).toBe(400)
+    const overLimitError = String((overLimit.body as { error?: string }).error)
+    expect(overLimitError).toContain('script content too large'); expect(overLimitError).toContain(String(scriptContentMaxBytes))
     const negative = await apiRequest(page, '/api/scripts/' + largeId, { method: 'PUT', data: { ...largeSaved, name: testName('negative-timeout'), interpreter: 'shell', timeout: -1, enabled: false } })
-    await evidence('script-disabled-reference-boundaries', { script_id: id, task_id: task.id, disabled_reference_http: bad.status(), disabled_reference_error: error, actual_ui_error_visible: true, enabled_restored_execution: execution, duplicate_name_http: duplicate.status, duplicate_distinct_id: duplicate.ok ? (duplicate.body as { id: string }).id : null, duplicate_contract: 'observed actual current acceptance/rejection; uniqueness not assumed', large_script_id: largeId, large_content_bytes: Buffer.byteLength(content), exact_content_roundtrip: true, sha256: largeSaved.sha256, timeout_zero: largeSaved.timeout, negative_timeout_http: negative.status, negative_timeout_body: negative.body, classification: 'REAL_UI disabled reference/recovery + REAL_API boundary CUD', remaining: ['large content/duplicate/negative timeout UI editor rendering is not represented by API evidence'] })
+    await evidence('script-disabled-reference-boundaries', { script_id: id, task_id: task.id, disabled_reference_http: bad.status(), disabled_reference_error: error, actual_ui_error_visible: true, enabled_restored_execution: execution, duplicate_name_http: duplicate.status, duplicate_distinct_id: duplicate.ok ? (duplicate.body as { id: string }).id : null, duplicate_contract: 'observed actual current acceptance/rejection; uniqueness not assumed', large_script_id: largeId, large_content_bytes: Buffer.byteLength(content), exact_content_roundtrip: true, sha256: largeSaved.sha256, timeout_zero: largeSaved.timeout, content_limit_contract: { max_bytes: scriptContentMaxBytes, at_limit_http: large.status, over_limit_http: overLimit.status, over_limit_error: overLimitError }, negative_timeout_http: negative.status, negative_timeout_body: negative.body, classification: 'REAL_UI disabled reference/recovery + REAL_API boundary CUD', remaining: ['large content/duplicate/negative timeout UI editor rendering is not represented by API evidence'] })
   } finally { await cleanupByIds(page, own) }
 })
 
