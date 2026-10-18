@@ -302,6 +302,7 @@ Dashboard
 - [ ] 确认后创建 PENDING，发送到 online Agent，最终 SUCCESS/FAILED。
 - [ ] 运行中按钮 loading/禁用。
 - [ ] offline 节点不进入无限等待，返回明确 BLOCKED/错误。
+- [ ] disabled 节点手动运行返回 400 `node X is disabled`（不是 not online 文案），且不产生执行记录。
 - [ ] command/script/application 三类任务实际运行结果。
 - [ ] 参数值、环境变量、Working Directory、Run User 实际生效。
 - [ ] 多节点执行每个 Node 一条 Execution。
@@ -313,7 +314,7 @@ Dashboard
 - [ ] 调度任务名链接、编辑、启用/禁用、删除确认。
 - [ ] Cron 表达式必填和非法表达式。
 - [ ] Interval 最小值、0、负数、小数和超大值。
-- [ ] One-Time 未来时间、过去时间、时区、空 run_at。
+- [ ] One-Time 未来时间、过去时间、时区、空 run_at；过去时间创建 → 400 `run_at must be in the future`；历史过去值记录改其它字段/禁用放行，改成新的过去值拒绝。
 - [ ] Hub Owner 和 Agent Owner。
 - [ ] `allow_offline` 与 `hub_online_required` 组合。
 - [ ] `run_once` 与 `skip` Misfire。
@@ -342,6 +343,7 @@ Dashboard
 - [ ] 应用删除确认框取消/确认，关联 Assignment/State/Revision 行为正确。
 - [ ] Artifact 不存在、节点离线、Capability 缺失、Agent 不可达。
 - [ ] 应用部署失败后 Binary、Config、Unit、Health、Deployment Journal 均可恢复。
+- [ ] Deployment Journal 的 `from_version` 等于节点实际安装版本（最近一次成功部署的 `to_version`），回滚成功不改变取值。
 
 ### P16 制品 `/artifacts`
 
@@ -355,6 +357,7 @@ Dashboard
 - [ ] 删除确认框取消/确认；被应用引用时行为明确。
 - [ ] Agent Cache 下载 `.tmp`、校验失败不安装、不污染正式缓存。
 - [ ] 下载中断后临时文件清理和重试。
+- [ ] 服务端发头后不给 body：下载在 15 分钟总时限内失败，无 0B `.tmp` 残留（30 秒响应头超时独立生效）。
 
 ### P17-P18 执行 `/executions`
 
@@ -387,7 +390,7 @@ Dashboard
 - [ ] Admin 列表、搜索、分页、角色下拉。
 - [ ] 新建用户按钮打开/关闭表单，取消恢复原状态。
 - [ ] 用户名/密码必填，角色 administrator/operator/viewer。
-- [ ] 创建成功、重复用户名、错误输入。
+- [ ] 创建成功、重复用户名（400 `username already exists`，响应体不含 unique/constraint/sqlite 原文）、错误输入。
 - [ ] 修改角色即时保存，刷新后保持。
 - [ ] 修改 admin 自身角色的锁定/降权行为。
 - [ ] Operator/Viewer 无用户管理控件，访问页面显示管理员限制。
@@ -457,7 +460,7 @@ Dashboard
 | E2E-07 | Schedule Disable | 禁用后不再产生新执行 |
 | E2E-08 | Retry/Timeout/Cancel | 次数、最终状态、进程组清理正确 |
 | E2E-09 | Local Condition | 满足执行，不满足 SKIPPED，未知不放行 |
-| E2E-10 | Remote Condition | online/last_execution、TTL 过期 Fail Closed |
+| E2E-10 | Remote Condition | online/last_execution、未观察 Fail Closed |
 | E2E-11 | Artifact → Application → Deploy → Stop | 文件、Unit、状态和健康检查正确 |
 | E2E-12 | Application Upgrade/Rollback | 成功升级；失败恢复旧版本 |
 | E2E-13 | Application Crash Recovery | 中途崩溃后由 Deployment Journal 恢复明确状态 |
@@ -493,10 +496,19 @@ Dashboard
 - 不存在资源：404。
 - 错误 JSON：400。
 - 缺少必填字段：400。
-- 非法方法：405。
+- 非法方法：405；`/api/me`、`/api/audit`、`/metrics`、`/api/logout`、`/api/users`、`/api/users/{id}`、`/api/executions/{id}`、`/api/nodes/{id}`、`/api/transfers/{id}` 须带 `Allow`；方法守卫先于角色鉴权与存在性判定（未认证仍 401）。
+- `DELETE` 不存在的 scripts/tasks/schedules/groups/artifacts/applications id：404（不得静默 200）；users/executions 的 `DELETE`：405 + `Allow`。
+- 存储忙锁：503 `storage busy, please retry`；其它内部错误：500 `internal error`（OIDC 启动失败等专用路径除外）；响应体不得出现 SQLite/驱动原文，Hub 日志须有 error 级记录。
+- `/api/me` 与 `/api/login` 的 `user`：键名 `token`/`user_id`/`username`/`role`/`expires`（可选 `avatar`），不得出现 PascalCase 键。
+- `GET /api/applications/{id}/nodes` 无绑定节点：返回 `[]` 而非 `null`。
+- `X-Total-Count` 只出现在 `/api/executions`、`/api/audit`；其余列表端点不得出现该头。
+- `POST /api/transfers` 目标=源：400 `self transfer is not allowed`，零落库。
+- `POST /api/schedules`（one_time）过去 `run_at`：400 `run_at must be in the future`；未改 `run_at` 的历史记录编辑/禁用放行。
+- `POST /api/users` 重复用户名：400 `username already exists`，响应体不含数据库层原文。
+- `/api/nodes/{id}` 存在性 oracle：`DELETE`/`POST`/`PUT` 对 operator/viewer 在存在/不存在 id 上均 403；admin 不存在 id → 404 `node not found`（无存储层原文）。
 - 成功响应结构、Content-Type、状态码。
 - 成功后的数据库、Revision、Audit、Agent 状态。
-- 重复请求的幂等性和并发安全。
+- 重复请求的幂等性和并发安全（删除类重复请求按 404 语义校验）。
 
 ### 8.3 三角色矩阵
 
@@ -519,7 +531,7 @@ Dashboard
 
 ### SYS-01 至 SYS-10：连接与同步
 
-- [ ] SYS-01 Agent 首次注册：Registration Token、Stable Agent ID、Credential、Node 记录。
+- [ ] SYS-01 Agent 首次注册：Registration Token、Stable Agent ID、Credential、Node 记录；并发纳管（多节点同时 enrollment）全部成功，不出现 `database is locked`/500/503。
 - [ ] SYS-02 已注册 Agent 重启：HELLO、Heartbeat、online/synced、ID 不变。
 - [ ] SYS-03 Hub 重启：Agent 自动重连、Session 重建、Desired State 不丢。
 - [ ] SYS-04 实时通知丢失：Revision Check 最终收敛。
@@ -532,10 +544,10 @@ Dashboard
 
 ### SYS-11 至 SYS-18：Agent 本地与离线
 
-- [ ] SYS-11 Native Agent 本地 SQLite/WAL、Identity、Revision、定义持久化。
+- [ ] SYS-11 Native Agent 本地 SQLite/WAL、Identity、Revision、定义持久化；写事务以 `_txlock=immediate` + busy_timeout 串行等待，并发写不出现 `SQLITE_BUSY`。
 - [ ] SYS-12 Docker Agent restart/recreate 后持久化 Identity、Revision、Schedule、Journal、Cache。
 - [ ] SYS-13 Agent 断网时 Allow Offline 调度继续执行。
-- [ ] SYS-14 Hub Online Required 在 Hub 不可用时不执行。
+- [ ] SYS-14 Hub Online Required 在 Hub 不可用时不执行；重连窗口（连接建立、HELLO_ACK accepted 之前）内不触发，握手完成后恢复触发。
 - [ ] SYS-15 离线 Execution 上传和 ACK 幂等，无重复。
 - [ ] SYS-16 Agent 发现旧 RUNNING 但进程不存在，按 `agent_restarted` 正确收尾。
 - [ ] SYS-17 Agent 重连前不宣告 READY，完成 Reconciliation 后再 READY。
@@ -555,7 +567,7 @@ Dashboard
 - [ ] SYS-26 Condition AND、多层结构和错误结构。
 - [ ] SYS-27 Remote online 满足/不满足。
 - [ ] SYS-28 Remote last_execution 成功/失败/不存在。
-- [ ] SYS-29 Remote State TTL 未过期、过期、未观察：UNKNOWN → BLOCKED。
+- [ ] SYS-29 Remote State 未过期、未观察：UNKNOWN → BLOCKED（TTL 过期维度不可构造：当前协议无 Agent 主动上报路径）。
 - [ ] SYS-30 Condition 不满足记录 SKIPPED，不能误执行。
 
 ### SYS-31 至 SYS-40：执行与日志
@@ -569,7 +581,7 @@ Dashboard
 - [ ] SYS-37 最大 stdout/stderr/total log 截断并标记。
 - [ ] SYS-38 Timeout 发送 SIGTERM，再按 Grace Period SIGKILL。
 - [ ] SYS-39 Cancel 清理整个进程组，不残留子进程。
-- [ ] SYS-40 Retry 次数、间隔、最终状态、每次日志和审计。
+- [ ] SYS-40 Retry 次数、间隔、最终状态、每次 attempt 双流日志 + 1 条 execute 审计（审计粒度=逻辑触发，attempt 细节只在日志）。
 
 ## 11. Artifact、Application、systemd 测试
 
@@ -599,7 +611,7 @@ Dashboard
 
 ## 12. File Relay 测试
 
-### SYS-59 至 SYS-66
+### SYS-59 至 SYS-67
 
 - [ ] SYS-59 源 Agent 身份认证、源节点只能上传。
 - [ ] SYS-60 目标 Agent 身份认证、目标只能下载自己的目标。
@@ -609,6 +621,7 @@ Dashboard
 - [ ] SYS-64 多目标并发回执一成功一失败，状态不可互相覆盖。
 - [ ] SYS-65 单目标失败重试和整体取消。
 - [ ] SYS-66 Hub 重启、Agent 重连、目标离线后状态和文件不产生半成品。
+- [ ] SYS-67 服务端自传拒绝：`POST /api/transfers` 目标=源整批 400 `self transfer is not allowed`，零落库（前端裁剪不作为服务端保证）。
 
 ## 13. 测试证据与缺陷记录
 

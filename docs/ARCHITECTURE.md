@@ -183,6 +183,8 @@ Agent Gateway: :8443
 
 Hub 内网 + Public Agent 时，只需要将 Agent Gateway 通过 NAT/Reverse Proxy 暴露。
 
+Web/API 的 CORS 为通配来源（`Access-Control-Allow-Origin: *`）且不发送 `Access-Control-Allow-Credentials`；认证统一走 `Authorization: Bearer`，不依赖 Cookie 会话，因此不构成「通配来源 + 凭据」组合。按部署形态收紧（同源部署不发 CORS 头或来源白名单）需新增配置项与部署形态裁决，属独立变更。
+
 ---
 
 ## 7. Agent 部署模式
@@ -423,6 +425,8 @@ Agent Version
 ```
 
 Session 只是当前连接，不是业务状态唯一来源。
+
+连接握手门禁：Hub 接受 HELLO（HELLO_ACK `accepted`）之前，Agent 不视为在线——Agent 侧的在线门禁取「握手完成」标志，而不是传输层连接状态；`rejected` 或负载解析失败一律按未接受处理（Fail Closed），断开与新连接均复位该标志。该门禁与「对账完成才 READY」是两道独立关卡（READY 另用于拒绝 Hub 派发/部署）。
 
 Hub 重启丢失 Session 不应破坏 Desired State 或 Execution 数据。
 
@@ -713,6 +717,8 @@ SQLite + WAL
 
 关键同步修改必须用事务。
 
+事务与锁：连接使用 `_txlock=immediate`，写事务在 BEGIN 阶段即取写锁，配合 WAL 与 `busy_timeout=5000`，避免 deferred 事务「先读后写」升级写锁时不受 busy_timeout 保护的 `SQLITE_BUSY`/`BUSY_SNAPSHOT`。
+
 ---
 
 ## 30. Local Scheduler
@@ -741,6 +747,8 @@ offline_policy
 misfire_policy
 next_run_at
 ```
+
+在线门禁与握手同源：本地调度器对 `execution_owner=AGENT` 且 `offline_policy=hub_online_required` 的调度在触发前要求握手完成（HELLO_ACK accepted）；重连窗口内不触发，避免在结果无法同步的窗口内产生执行。握手未完成时本地触发的执行（如 Allow Offline 调度）标记 `offline=true`，等重连对账补传。
 
 ---
 
@@ -817,6 +825,8 @@ Condition 不满足：
 ```text
 SKIPPED
 ```
+
+派发前门禁顺序固定为 disabled → online → capability：disabled 节点返回 `node <id> is disabled`，不产生执行记录，不得退化为 `not online` 文案；`maintenance`/`offline` 仍按 `not online` 处理。
 
 ---
 
@@ -946,13 +956,27 @@ observed_at
 expires_at
 ```
 
-Agent Offline 时只能使用仍在 TTL 内的 Cache。
+Remote State 下发字段：
+- value
+- observed_at（仅诊断，不参与新鲜度判定）
+- ttl_sec（观测窗口长度，仅诊断）
+- ttl_remaining_sec（自 Hub 判定时刻起的剩余有效秒数，向上取整）
+
+Agent 仅以 Hub 计算的 `ttl_remaining_sec` 判定新鲜度，不做跨主机时钟比较，
+彻底消除 Hub/Agent 时钟偏移误判；该字段缺失或 <= 0 一律视为未知并 Fail Closed，
+不承诺与不下发该字段的旧 Hub 兼容。
+
+Agent Offline 时只能使用仍在 TTL 内的 Cache；当前协议下 Agent 不维护独立 Cache，离线或应答不可用时条件不可评估，按 Fail Closed 处理。
 
 过期：
 
 ```text
 UNKNOWN → BLOCKED
 ```
+
+协议现状（保留分支）：`REMOTE_STATE` 目前仅作为 Hub 对 Agent `REMOTE_STATE_REQ` 的应答类型；Agent 只发送查询请求，不主动上报 `REMOTE_STATE`。因此上方「Hub 保存最新」的写入路径与缓存命中/过期分支为协议对称性与未来扩展保留，当前不是活跃路径。
+
+Remote State 实际由 Hub 在收到请求时实时解析（`online` → 节点当前状态；`last_execution` → 最近一次执行结果），有效性判定以 Hub 在应答请求时计算的 `ttl_remaining_sec` 为准。
 
 ---
 
@@ -1026,6 +1050,8 @@ Verify
  ↓
 rename → <sha>
 ```
+
+下载有界：Agent 共用载荷 HTTP 客户端设置 15 分钟总时限与 30 秒响应头超时（Go 无读空闲超时，总时限按保守链路速率覆盖大文件）；超时按失败处理，`defer` 清理 `.tmp`，不残留 0B 临时文件。Artifact 下载、Agent 自升级二进制与文件中继载荷传输均在该客户端约束内。
 
 ---
 
@@ -1210,9 +1236,22 @@ application_id
 from_version
 to_version
 phase
+completed_kind
 backup_path
+app_revision
+binary_path
+config_path
+unit_name
 started_at
 ```
+
+`app_revision` 与 `binary_path` / `config_path` / `unit_name` 为部署上下文绑定，在产生宿主副作用前写入，供恢复时校验 backup 归属。
+
+`from_version` 是该应用本次部署前实际安装的版本：取最近一次成功部署（`phase=DONE` 且 `completed_kind=deployed`）的 `to_version`，无成功部署记录时为空；回滚成功（`rolled_back`）不构成已安装版本，不参与取值。`from_version` 不取应用定义的期望版本。
+
+`completed_kind` 记录 `DONE` 的终态成因：`deployed`（成功部署）、`rolled_back`（回滚成功后收尾，含恢复重放成功）、`prepare_failed`（准备阶段失败）、`superseded`（已被同应用更晚的成功部署取代）、`stale_binding`（Journal 绑定与当前应用定义不一致，备份归属未知）、`legacy_unbound`（旧行缺绑定字段，备份归属未知）、`prepare_interrupted`（准备阶段中断，未产生宿主副作用）。旧记录缺该字段视为未知。
+
+恢复阶段判定为不可重放的记录（`superseded` / `stale_binding` / `legacy_unbound` / `prepare_interrupted`）落 `DONE` 终态并记录成因，离开活动部署集合、重启不再重复告警；四者均不构成取代依据，也不重放回滚。
 
 Phase：
 - PREPARING
@@ -1222,10 +1261,20 @@ Phase：
 - VERIFYING
 - DONE
 - ROLLING_BACK
+- ROLLBACK_FAILED
+
+`ROLLING_BACK` 含回滚中途崩溃留下的记录；`ROLLBACK_FAILED` 表示回滚已尝试且失败，两者在重启恢复时都要经下方防护校验后才决定是否重放。
 
 Agent Crash 后读取 Journal，判断继续还是 Rollback。
 
-一期默认优先安全恢复 Previous。
+重放回滚前必须通过双重防护，任一命中即不改动任何文件、不重放回滚，记录落 `DONE` 终态并记录成因（备份文件保留，供人工检查）：
+
+1. Superseded：同 application 已存在 `started_at` 更晚、`phase=DONE` 且 `completed_kind=deployed`（成功部署）的部署；准备阶段失败（`prepare_failed`）与回滚成功（`rolled_back`）不构成取代，旧记录缺 `completed_kind` 视为未知，同样不构成取代；
+2. Binding：Journal 记录的 `app_revision` 与部署时解析的 `binary_path` / `config_path` / `unit_name` 与恢复时的当前应用定义一致；记录缺失或任一不一致视为未知。
+
+通过校验后以 Journal 记录的路径重放。
+
+一期默认优先安全恢复 Previous；无法确认归属的记录不得覆盖更晚的 DONE 部署，需人工检查。
 
 ---
 
@@ -1301,6 +1350,10 @@ Definition JSON
 
 避免一期 Schema 被未来高级功能锁死。
 
+连接层：SQLite 以 WAL、`_txlock=immediate`（写事务 BEGIN 阶段即取写锁）、`busy_timeout(5000)` 与外键约束打开，消除 WAL 下 deferred 事务升级写锁时的 `SQLITE_BUSY` 随机失败，并发写按序等待而非直接报错。
+
+存储层错误不回传客户端：SQLITE_BUSY/LOCKED 家族归一化为 503 `storage busy, please retry`，其余内部错误归一化为 500 `internal error`；驱动原文只写 error 级结构化日志。
+
 ---
 
 ## 55. Hub Revision Transaction
@@ -1374,6 +1427,8 @@ HELLO 包含：
 - capabilities
 
 HELLO 首次注册使用 Registration Token；Hub 返回的 Agent Credential 持久化后用于后续连接和 Agent Artifact 请求。
+
+HELLO_ACK 语义：仅 `accepted` 表示 Hub 接受本次连接（注册/鉴权通过），Agent 据此置在线握手标志；`rejected` 或负载解析失败一律按未接受处理（Fail Closed），断开与新连接均复位标志。
 
 节点纳管命令可通过 `agent_id`、`node_name` / `node_ip`（Native YAML）或 `NODESTEER_AGENT_ID`、`NODESTEER_NODE_NAME` / `NODESTEER_NODE_IP`（Docker 环境变量）指定 HELLO 上报的身份与节点地址。节点地址支持 IPv4、IPv6 或 DNS 主机名，并在生成命令时保持原值；未指定时 Agent 继续使用本机探测值。Web 页面生成命令时使用当前页面地址作为 Hub 地址来源，并保留配置的 Agent Gateway 端口；生成成功后 Hub 会先保存一条离线待接入节点记录，Agent 首次 HELLO 时绑定该记录。
 
@@ -1468,6 +1523,8 @@ Agent：
 - Execution Logs
 - Sync Logs
 
+内部与存储层错误必须写 error 级结构化日志（至少 method、path、error 原文；不含 query，避免 `agent_token` 等敏感值），响应侧同时归一化，不回传驱动原文。
+
 NodeSteer 不建设完整监控平台。
 
 ---
@@ -1528,11 +1585,11 @@ Sync
 
 ### Artifact Download Failure
 
-仅 `.tmp`，成功 SHA256 后才 rename。
+仅 `.tmp`，成功 SHA256 后才 rename；下载受 15 分钟总时限与 30 秒响应头超时约束，超时按失败处理并清理 `.tmp`。
 
 ### Application Upgrade Crash
 
-依赖 Deployment Journal + Previous Backup 恢复。
+依赖 Deployment Journal + Previous Backup 恢复；重放前须通过 superseded 与 binding 校验，陈旧 Backup 不得覆盖更晚的 DONE 部署。
 
 ---
 
