@@ -322,3 +322,41 @@ BLOCKED 明细（正式口径：环境不可行 + 理由 + 不视为产品失败
 - **Git**：分层提交（Go / Web / 文档 / OpenSpec / 测试记录 / 会话前既有 `web/e2e` 改动），**不 push**（未授权远程操作）
 - **OpenSpec**：`repair-e2e-confirmed-defects` tasks 勾满后 Archive
 - **环境**：repair 环境保留（备份可回滚）；主环境全程未动
+
+---
+
+## 2026-10-18 交付记录（Git 提交 + OpenSpec 归档）
+
+依据用户明确授权（「git提交也归档」「裁决你做」）。**仅本地提交，未 push**（未授权远程操作）。
+
+### 提交清单（master，ahead 8）
+
+| # | Commit | 内容 |
+|---|---|---|
+| 1 | `c4e05bc` | `fix(agent,hub,store)`: Go 全量缺陷修复（64 文件，+6499） |
+| 2 | `9597a22` | `fix(web)`: Web 全量缺陷修复（60 文件，+4591） |
+| 3 | `6d7a451` | `docs`: API 契约与行为语义同步（D1/D2/D3 共 39 处） |
+| 4 | `76fc357` | `chore(openspec)`: 记录 repair-e2e-confirmed-defects change |
+| 5 | `01e04da` | `chore(e2e)`: 测试台账与修复验证证据（精选记录集 2065 文件） |
+| 6 | `1dd6778` | `chore(web/e2e)`: **会话前既有**的 Playwright 改动（非本次修复，单独提交保归属） |
+| 7 | `0245405` | `chore(openspec)`: tasks 27/27 勾选 + 归档 `2026-10-18-repair-e2e-confirmed-defects`（主 specs +18） |
+| 8 | `293dc7e` | `chore(e2e)`: 补齐结构化证据与 runner（含随目录带入的 237 张截图） |
+
+### 入库范围与实际差异（如实说明）
+
+- `.e2e` 总计约 402 MB / 10690 文件；**未入库**：493 张截图、3 个视频、`__pycache__`/`*.pyc`、`build-cache`、`ws-frame-proxy` 二进制等（保留在工作区）
+- 提交 8 因按目录 pathspec 添加，额外带入 237 张截图（约与仓库既有 `.e2e` 证据惯例一致）；提交信息中「未入库仅剩截图/视频」措辞不完全精确，实际为「未入库剩余 493 张截图与 3 个视频」
+- 仓库 `.git` 体积 45 MB → 121 MB（测试证据入库所致，符合仓库既有 `.e2e` 证据入库惯例）
+- 凭据扫描：干净（无硬编码凭据；`[redacted]`/占位/一次性测试口令除外）；repair 凭据始终只在 `/tmp`（0600）
+
+### OpenSpec 归档核验
+
+- 归档路径：`openspec/changes/archive/2026-10-18-repair-e2e-confirmed-defects/`
+- `tasks.md`：**27 勾选 / 0 未勾选**
+- 主 specs 同步：`specsUpdated=true`，新增 18 项
+- 归档后工作区除截图/视频外干净
+
+### 环境最终状态
+
+- repair 环境运行 `dddee4f0-e2e-repair-20261018-final`；备份 `*.bak-20261018-final` 保留可回滚
+- 主环境（`:8080` Hub PID 1251、4 个 nodesteer-agent.service、VM）全程未动
