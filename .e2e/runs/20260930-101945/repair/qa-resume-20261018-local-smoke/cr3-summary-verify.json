@@ -1,0 +1,51 @@
+{
+ "batch": "qa-resume-20261018-local-smoke",
+ "task": "P5 CR-3 read-only deployments summary",
+ "verdict": "PASS",
+ "checks": {
+  "file_exists": true,
+  "json_valid": true,
+  "empty_state_shape": {
+   "done_by_kind_is_empty_map": true,
+   "active_is_empty_list": true,
+   "generated_at_parsable": true,
+   "note": "first agent start with empty journal wrote a determinate empty state ({} / []), not null"
+  },
+  "nonempty_state": {
+   "done_by_kind_matches_fixture_exactly": true,
+   "deployed_excluded": true,
+   "active_rows": [
+    {
+     "id": "fx-active-01",
+     "application_id": "missing-app-def",
+     "phase": "ROLLING_BACK",
+     "started_at": "2026-10-18T06:05:00Z"
+    }
+   ],
+   "active_row_fields_complete": true,
+   "active_row_matches_fixture": true,
+   "generated_at_parsable": true
+  },
+  "refresh_on_recovery": {
+   "observed": "file rewritten on 2nd recovery with new content+generated_at (empty -> non-empty)",
+   "atomic_write_no_tmp_leftover": true,
+   "file_mode": "0o644"
+  },
+  "recovery_semantics_observed": {
+   "active_row_kept": "agent log: \"deployment recovery lacks application definition\" + WARN \"deployment journals still active after recovery\" ids=fx-active-01",
+   "done_rows_untouched": "DONE rows are outside GetActiveDeployments; counts stable across recovery"
+  },
+  "fixture_method": {
+   "how": "fixture rows inserted directly into owned agent state.db (SQLite) before 2nd agent start; real RecoverDeployments path executed on start",
+   "rows_inserted": 9,
+   "limitation": "simulates historical journal rows; not produced by real deployment flows (no Hub-side deploy performed in this batch)"
+  },
+  "evidence": {
+   "empty_state_snapshot": "evidence/cr3/deployments-summary.empty.json",
+   "nonempty_state_snapshot": "evidence/cr3/deployments-summary.nonempty.json",
+   "recovery_log": "evidence/cr3/recovery-log.txt",
+   "agent_db_copy": "evidence/cr3/state.db (fixture journal copy, post-test)"
+  }
+ },
+ "generated_at": "2026-10-18T07:35:23Z"
+}

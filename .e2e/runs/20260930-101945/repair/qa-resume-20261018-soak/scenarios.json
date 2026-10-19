@@ -1,0 +1,190 @@
+{
+ "batch": "qa-resume-20261018-soak",
+ "title": "长稳/健壮性专项（soak）：断连风暴 / 执行断连 / Hub 重启 / 传输中断恢复 / 并发压力 / Agent 重启恢复",
+ "date": "2026-10-18",
+ "environment": {
+  "type": "全本地回环隔离，零接触生产与 repair 集群",
+  "hub": {
+   "binary": "/tmp/opencode/nodesteer-build-20261018-final/nodesteer-hub-static-final",
+   "binary_sha256": "00e1f375bf67a59ad04dfc6283741cb276ac6be70ce2f21e02d25094845e7a71",
+   "build_label": "dddee4f0-e2e-repair-20261018-final（与 repair 环境部署最终构建同源）",
+   "addr": "127.0.0.1:18091",
+   "data_dir": "/var/tmp/nodesteer-qa-20261018-soak/hub/data（运行后已删除）",
+   "config_highlights": "gateway_base_url=http://127.0.0.1:18093（HTTP 故障注入代理）；revision_check_sec=2；heartbeat_timeout=30s"
+  },
+  "agents": {
+   "binary": "/tmp/opencode/nodesteer-build-20261018-final/nodesteer-agent-static",
+   "binary_sha256": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01",
+   "A": "ws://127.0.0.1:18092（WS 故障注入代理）→ 127.0.0.1:18091；data_dir=…/agent-A/data；最终全量 run nonce=181d6da0",
+   "B": "ws://127.0.0.1:18094（WS 故障注入代理）→ 127.0.0.1:18091；data_dir=…/agent-B/data"
+  },
+  "fault_injection": {
+   "tool": "evidence/tools/proxy.py（自有 TCP 代理：kill/drop/throttle 控制口）",
+   "proxy_ws_a": "127.0.0.1:18092 → 18091，控制口 18192",
+   "proxy_http": "127.0.0.1:18093 → 18091，控制口 18193（gateway_base_url，节流用于制造在飞传输）",
+   "proxy_ws_b": "127.0.0.1:18094 → 18091，控制口 18194",
+   "harness_fix_note": "首轮发现代理目标套接字误设 5s 超时导致人为 WS 抖动（已修复并用 watch 阶段复验 120s 零抖动后才产出本批次结论）"
+  },
+  "note": "本 scenarios.json 的数字取自最终全量 run（nonce=181d6da0，2026-10-18 16:17-16:23 local）；定向复现（findings 证据）为独立 run。"
+ },
+ "scenarios": [
+  {
+   "id": "S1",
+   "name": "断连风暴（20 次快速断开/重连）",
+   "verdict": "PASS",
+   "key_numbers": {
+    "kills": 20,
+    "kills_with_active_conn": 8,
+    "storm_seconds": 34.8,
+    "node_status_transitions": 15,
+    "settle_to_online_synced": true,
+    "revision_before": 5,
+    "revision_after": 6,
+    "both_agents_converged": true,
+    "non_terminal_executions": 0,
+    "hub_panic_lines": 0,
+    "hub_error_lines": 0,
+    "hub_client_5xx": 0
+   },
+   "conclusion": "20 次 WS kill（间隔 0.5-2s）后节点状态正确收敛 online/synced（17 次 offline↔online 翻转被观测），无永久卡死执行，Hub 无 500/panic，revision 变更后两端 global_revision 同步收敛。",
+   "evidence": [
+    "evidence/s1-disconnect-storm.json",
+    "evidence/raw/raw-hub.log",
+    "evidence/raw/raw-proxy-a.log"
+   ]
+  },
+  {
+   "id": "S2",
+   "name": "执行中中断连（SYS-35 语义）",
+   "verdict": "PASS",
+   "key_numbers": {
+    "outage_seconds": 12,
+    "execution_final": "SUCCESS",
+    "exit_code": 0,
+    "stdout_ticks": 15,
+    "stdout_run_starts": 1,
+    "stdout_done_marker": true,
+    "ticks_written_during_outage": 6,
+    "journal_synced": 1,
+    "node_after": "online"
+   },
+   "conclusion": "30s 长任务运行中 kill WS 并拒绝重连 12s：Agent 侧执行持续运行（断连窗口内 6 个 tick 落盘、journal 状态 RUNNING），重连后整包上报 SUCCESS + 完整 stdout（15 tick + SOAK-DONE），journal 置 synced。",
+   "evidence": [
+    "evidence/s2-exec-disconnect.json",
+    "evidence/raw/raw-agent-A.log"
+   ]
+  },
+  {
+   "id": "S3",
+   "name": "Hub 重启期间执行",
+   "verdict": "PASS",
+   "key_numbers": {
+    "hub_down_seconds": 2.5,
+    "hub_stop_graceful": true,
+    "execution_final": "SUCCESS",
+    "stdout_ticks": 15,
+    "new_execution_rows_for_task": 1,
+    "agent_journal_rows": 1,
+    "node_after": "online/synced",
+    "hub_revision_after_restart": 6
+   },
+   "conclusion": "执行运行中重启隔离 Hub（停机 2.5s，SIGTERM 优雅退出）：执行在 Agent 侧完成，重连后 SUCCESS 全量日志；按执行 id 集合核对无重复执行；节点状态与 revision 收敛；Hub 无 panic。",
+   "evidence": [
+    "evidence/s3-hub-restart.json",
+    "evidence/raw/raw-hub.log"
+   ]
+  },
+  {
+   "id": "S4",
+   "name": "传输中断/恢复（50MB，重点）",
+   "verdict": "PASS（常规路径）",
+   "sub_cases": {
+    "4a_source_ws_resume": {
+     "verdict": "PASS",
+     "detail": "源端 WS 中断 + HTTP 拒绝 12s（耗尽 Agent 重试）→ 恢复后 ResumeNode 断点续传：hub part 14.68MB→17.63MB→补传完成，SUCCESS，目标 SHA=源 SHA",
+     "evidence": "evidence/s4a-source-resume.json"
+    },
+    "4b_target_ws_resume": {
+     "verdict": "PASS",
+     "detail": "目标端 WS 中断 + 交付下载中断 → 重连后重投（ResumeNode），SUCCESS，SHA 一致",
+     "evidence": "evidence/s4b-target-resume.json"
+    },
+    "4c_cancel": {
+     "verdict": "PASS",
+     "detail": "在飞取消 → CANCELED 终态（传输+目标），part/blob 清理，目标文件不存在，5s 后仍为 CANCELED",
+     "evidence": "evidence/s4c-cancel.json"
+    },
+    "4d_agent_restart": {
+     "verdict": "PASS",
+     "detail": "传输中 SIGTERM 重启源 Agent（pid 3348347→3354271）→ 断点续传 SUCCESS，SHA 一致",
+     "evidence": "evidence/s4d-agent-restart.json"
+    },
+    "4e_ws_drop_in_flight": {
+     "verdict": "PASS",
+     "detail": "WS 中断但 HTTP 上传仍在飞 → 恢复后 SUCCESS，SHA 一致",
+     "evidence": "evidence/s4e-ws-drop-in-flight.json"
+    }
+   },
+   "finding_ref": "SOAK-20261018-01 / SOAK-20261018-02（4e 类时序的边角态：被取代的在飞尝试被当作失败上报 → 错误终态化，见 findings.json；定向复现证据 evidence/repro-superseded-upload.json）",
+   "conclusion": "50MB 源→目标传输的断点续传（ResumeNode）与取消路径全部符合预期：续传后 SHA 一致、CANCELED 终态稳定、part/blob 清理；但在“WS 中断且上传仍在飞”的时序下存在可复现的错误终态化缺陷（见 findings）。"
+  },
+  {
+   "id": "S5",
+   "name": "并发压力（5 执行 + 2 传输同时）",
+   "verdict": "PASS",
+   "key_numbers": {
+    "elapsed_seconds": 36.1,
+    "executions": 5,
+    "executions_all_success": true,
+    "transfers": 2,
+    "transfers_all_success_sha_match": true,
+    "non_terminal_left": 0,
+    "hub_client_5xx": 0,
+    "hub_panic_lines": 0,
+    "peak_rss_kb": {
+     "hub": 109108,
+     "agent-A": 15524,
+     "agent-B": 16664
+    },
+    "avg_cpu_pct": {
+     "hub": 1.11,
+     "agent-A": 0.17,
+     "agent-B": 0.58
+    }
+   },
+   "conclusion": "5 执行（3×A + 2×B）+ 2 传输（40MB/30MB，HTTP 节流 4MB/s）同时运行：36.1s 全部进入终态 SUCCESS、SHA 一致、无死锁/卡死/5xx/panic；资源占用可接受（Hub 峰值 RSS ~107MB，Agent ~16MB，CPU 均值 <1.2%）。",
+   "evidence": [
+    "evidence/s5-concurrency.json"
+   ]
+  },
+  {
+   "id": "S6",
+   "name": "Agent 重启恢复",
+   "verdict": "PASS",
+   "sub_cases": {
+    "6a_exec_sigkill": {
+     "verdict": "PASS",
+     "detail": "SIGKILL 执行中 Agent → journal 恢复将执行终态化 FAILED(agent_restarted)，重连后上报且 synced=1；执行进程组随 stdout 管道断开而终止（孤儿窗口复验无继续执行）；终态在 45s 观察窗内保持 FAILED，无重复副作用（RUN-START 仅 1 次）",
+     "evidence": "evidence/s6a-exec-restart.json"
+    },
+    "6b_source_sigkill": {
+     "verdict": "PASS",
+     "detail": "SIGKILL 源端传输中 Agent → 重连后 ResumeNode 断点续传 SUCCESS，SHA 一致（part 14.7MB 起）",
+     "evidence": "evidence/s6b-transfer-sigkill.json"
+    },
+    "6c_target_sigkill": {
+     "verdict": "PASS",
+     "detail": "SIGKILL 目标端交付中 Agent → 重连后重投 SUCCESS，SHA 一致",
+     "evidence": "evidence/s6c-target-sigkill.json"
+    }
+   },
+   "conclusion": "Agent 进程重启（SIGKILL）后的恢复行为符合设计：执行按 journal 重放规则终态化（agent_restarted）、传输按 ResumeNode 恢复且无重复副作用。"
+  }
+ ],
+ "overall": {
+  "scenarios_pass": 6,
+  "scenarios_fail": 0,
+  "new_findings": 2,
+  "notes": "所有场景基于修复后的故障注入工具（首轮代理 5s 超时为工具缺陷，已在 watch 阶段复验 120s 零抖动）；生产/repair 集群零接触；测试对象全部 owned（本地回环 + 独立 data_dir + 非默认端口）。"
+ }
+}

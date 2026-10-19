@@ -1,0 +1,16 @@
+== setup: isolated local environment ==
+setup complete: hub pid 3348300, agents 3348347/3348421
+== S1: disconnect storm ==
+[SCENARIO] S1-disconnect-storm -> PASS :: 20 次 WS kill（34.8s）：状态收敛 online/synced，翻转 15 次，revision 5→6 双方收敛，无卡死执行，无 panic
+== S2: execution survives disconnect (SYS-35) ==
+[SCENARIO] S2-exec-disconnect -> PASS :: 执行期间 WS 断开 12s：Agent 侧继续跑完（断连窗口内 6 个 tick 落盘），重连后上报 SUCCESS，Hub 双流日志完整（15 tick + SOAK-DONE），journal synced
+== S3: hub restart during execution ==
+[SCENARIO] S3-hub-restart -> PASS :: 执行中重启 Hub（停机 2.5s）：执行在 Agent 侧跑完，重连后 SUCCESS 全量日志；无重复执行（新执行 id 恰 1 条）；节点 online/synced，revision=6
+== S4: transfer interruption / resume ==
+[SCENARIO] S4-transfer-interrupt -> PASS :: 4a 源端 WS 中断+HTTP 拒绝 → ResumeNode 断点续传 SUCCESS（part 14680064→17629184）；4b 目标端 WS 中断 → 重投 SUCCESS；4c 取消 → CANCELED 终态且 part/blob 清理；4d 传输中重启 Agent → SUCCESS；4e WS 中断但上传仍在飞 → 恢复。SHA 全部一致
+== S5: concurrent pressure (5 exec + 2 transfer) ==
+[SCENARIO] S5-concurrency -> PASS :: 5 执行 + 2 传输并发：36.1s 全部终态 SUCCESS、SHA 一致、无 5xx/panic/卡死；峰值 RSS hub=109108KB agent-A=15524KB agent-B=16664KB
+== S6: agent restart recovery ==
+[SCENARIO] S6-agent-restart -> PASS :: 6a SIGKILL 执行中 → FAILED(agent_restarted) 且 journal 同步、无重复副作用；6b SIGKILL 源端传输中 → 断点续传 SUCCESS；6c SIGKILL 目标端交付中 → 重投 SUCCESS，SHA 一致
+== cleanup ==
+cleanup oracle: pass=True

@@ -1,0 +1,798 @@
+{
+ "batch": "qa-resume-20261018-final2-verify",
+ "authority": "http://192.168.100.209:18080",
+ "build_label": "dddee4f0-e2e-repair-20261018-final2",
+ "hub_sha256": "3b5eec15ea2ce7ad6cd0e0f90b7f0a2382e02db3c577c905ba7f4b6fd9c3902b",
+ "agent_sha256": "89f2a3bb4b6bcb8b208230b0c9bffa48d7fb9ddda577b491dd6f4cf317f90008",
+ "updated_at_utc": "2026-10-18T13:00:06Z",
+ "nonce": "4d2e1438",
+ "cases": [
+  {
+   "case_id": "P6-F1-16CONCURRENT-NODE-DELETE",
+   "phase": "concurrency",
+   "at_utc": "2026-10-18T11:25:26Z",
+   "status": "FIXED",
+   "conclusion": "16 并发 DELETE /api/nodes 全部 200（0.489s），且 16 个节点全部删除（GET 404）",
+   "evidence": [
+    "evidence/phase02-g2-node-delete.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "P6-F2-16CONCURRENT-SCHEDULE-DELETE",
+   "phase": "concurrency",
+   "at_utc": "2026-10-18T11:25:30Z",
+   "status": "FIXED",
+   "conclusion": "16 并发 DELETE /api/schedules 全部 200（0.570s）；无 SQLite 原文；日志 ERROR=0 / storage busy=0",
+   "evidence": [
+    "evidence/phase03-g3-schedule-delete.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "P14-MISSING-RESOURCE-404",
+   "phase": "routing",
+   "at_utc": "2026-10-18T11:25:30Z",
+   "status": "FIXED",
+   "conclusion": "6 组不存在资源端点全部 404 归一化文案，且无 sql: no rows / SQLite 原文",
+   "evidence": [
+    "evidence/phase05-g5-missing.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "P14-ARTIFACT-DOWNLOAD-METHODS",
+   "phase": "routing",
+   "at_utc": "2026-10-18T11:25:30Z",
+   "status": "FIXED",
+   "conclusion": "artifact download：GET/HEAD 200（内容 SHA 一致）；POST/PUT 405 + Allow: GET, HEAD 且不返回文件内容",
+   "evidence": [
+    "evidence/phase06-g6-download.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "P16-TERMINAL-TRANSFER-ACTIONS",
+   "phase": "terminal",
+   "at_utc": "2026-10-18T11:25:36Z",
+   "status": "FIXED",
+   "conclusion": "终态冻结：SUCCESS/FAILED 传输 Cancel 均 400 transfer already finished 且状态不被改写；SUCCESS Retry 200 不改写；FAILED Retry 200 恢复后再次终态化（唯一恢复路径）",
+   "evidence": [
+    "evidence/phase08-g8-terminal.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "P16-LATE-RECEIPT-TERMINAL-FREEZE",
+   "phase": "terminal",
+   "at_utc": "2026-10-18T11:25:38Z",
+   "status": "FIXED",
+   "conclusion": "终态冻结单测 6 项全过（TestFileTransferCancelRaceWithStaleDispatchDoesNotResurrect, TestFileTransferExplicitActionsOnTerminal, TestFileTransferExplicitActionsOnTerminal/CANCELED_idempotent_and_retry_rejected, TestFileTransferExplicitActionsOnTerminal/FAILED_cancel_rejected_and_state_preserved, TestFileTransferExplicitActionsOnTerminal/FAILED_retry_is_the_explicit_recovery_path, TestFileTransferExplicitActionsOnTerminal/SUCCESS_cancel_rejected, TestFileTransferSupersededDeliveryAttemptIgnored, TestFileTransferSupersededUploadAttemptIgnoredAndResumeCompletes, TestFileTransferTerminalStatesFrozen, TestFileTransferTerminalStatesFrozen/CANCELED, TestFileTransferTerminalStatesFrozen/FAILED, TestFileTransferTerminalStatesFrozen/SUCCESS, TestFileTransferTerminalTargetsFrozen, TestFileTransferTerminalTargetsFrozen/dispatchTarget_does_not_resurrect_terminal_targets, TestFileTransferTerminalTargetsFrozen/late_duplicate_result_cannot_flip_succeeded_target）；运行时\"迟到回执改写终态目标\"无法经公开 API 构造，引用单测证据",
+   "evidence": [
+    "evidence/phase09-g9-late-receipt.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "P14-UNKNOWN-SUBPATH-404",
+   "phase": "routing",
+   "at_utc": "2026-10-18T11:25:52Z",
+   "status": "FIXED",
+   "conclusion": "6 资源族 × GET/PUT/DELETE /api/{fam}/{id}/bogus 共 18 探针全部 404；资源本体未被改写/删除",
+   "evidence": [
+    "evidence/phase04-g4-subpath.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "P6-F6-405-ALLOW-SAMPLE",
+   "phase": "routing",
+   "at_utc": "2026-10-18T11:25:52Z",
+   "status": "FIXED",
+   "conclusion": "10 个端点抽样 405 全部携带非空 Allow（GET /api/login -> POST, PATCH /api/tasks -> GET, POST, POST /api/tasks/7efccafe-cf69-4bf5-be08-b64ba310abd7 -> GET, PUT, DELETE, GET /api/tasks/7efccafe-cf69-4bf5-be08-b64ba310abd7/run -> POST, POST /api/schedules/85d9d727-c7fd-4bae-9a82-8728b9eb19f3 -> GET, PUT, DELETE, DELETE /api/settings -> GET, PUT, GET /api/executions/d05784b8-32a8-4a1d-8c87-01a5187d0972/cancel -> POST, POST /api/applications/bcc30ed6-0e6f-4c7b-9164-1653d2d66d7d/revisions -> GET, GET /api/nodes/upgrade -> POST, PUT /api/transfers/bdeb4593-bf80-48b3-8a39-5471b1ba36ad -> GET, POST）",
+   "evidence": [
+    "evidence/phase07-g7-allow.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "P6-F1-8CONCURRENT-TRANSFERS",
+   "phase": "concurrency",
+   "at_utc": "2026-10-18T11:26:58Z",
+   "status": "FIXED",
+   "conclusion": "8 并发 GET /api/transfers × 3 轮（每线程 20 次调用）1.039s 内全部 200（每行含目标）；并发期间 GET /api/tasks 采样 18 次、最大延迟 0.037s",
+   "evidence": [
+    "evidence/phase01-g1-transfers.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261015-API-CONTRACT-ME-KEYS-UI",
+   "phase": "web",
+   "at_utc": "2026-10-18T11:32:01Z",
+   "status": "FIXED",
+   "conclusion": "UI 登录/刷新后会话正常（snake_case 会话键）；/api/me 200",
+   "evidence": [
+    "evidence/web-session-logout.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "OBS-20261010-UI-LOGOUT-NOT-REVOKED",
+   "phase": "web",
+   "at_utc": "2026-10-18T11:32:04Z",
+   "status": "FIXED",
+   "conclusion": "UI 退出后旧 token /api/me -> 401（服务端会话已撤销）",
+   "evidence": [
+    "evidence/web-session-logout.json"
+   ],
+   "extra": {
+    "at_utc": "2026-10-18T11:31:56Z",
+    "case": [
+     "OBS-20261015-API-CONTRACT-ME-KEYS-UI",
+     "OBS-20261010-UI-LOGOUT-NOT-REVOKED"
+    ],
+    "token_captured": true,
+    "me_before": {
+     "keys": [
+      "expires",
+      "role",
+      "token",
+      "user_id",
+      "username"
+     ],
+     "role": "administrator",
+     "status": 200,
+     "user_id": "cd5945f0-56b4-4cf7-8b71-c4d4751ebb09",
+     "username": "qa-repair-20260930-101945-admin"
+    },
+    "after_reload": {
+     "url": "http://192.168.100.209:18080/",
+     "token_kept": true
+    },
+    "me_after_reload": 200,
+    "open_menu": {
+     "marked": "marked",
+     "click": {
+      "rc": 0,
+      "out": "✓ Done",
+      "err": ""
+     }
+    },
+    "click_logout": {
+     "marked": "marked",
+     "click": {
+      "rc": 0,
+      "out": "✓ Done",
+      "err": ""
+     }
+    },
+    "dialog": "退出登录 | 确定退出当前会话吗？退出后需要重新登录。 | 取消 | 退出登录",
+    "click_confirm": {
+     "marked": "marked",
+     "click": {
+      "rc": 0,
+      "out": "✓ Done",
+      "err": ""
+     }
+    },
+    "url_after": "http://192.168.100.209:18080/sign-in?redirect=%2F",
+    "token_after": null,
+    "me_after_old_token": 401,
+    "screenshot": {
+     "rc": 0,
+     "path": "evidence/web-logout-after.png"
+    }
+   }
+  },
+  {
+   "case_id": "OBS-20261014-PAGESIZE-PERSISTED-OUT-OF-RANGE-BLANK",
+   "phase": "web",
+   "at_utc": "2026-10-18T11:32:20Z",
+   "status": "FIXED",
+   "conclusion": "持久化 pageSize=999 -> 下拉回退默认（select 值非空 ['10']）",
+   "evidence": [
+    "evidence/web-pagesize.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "G03-10",
+   "phase": "web",
+   "at_utc": "2026-10-18T11:32:33Z",
+   "status": "FIXED",
+   "conclusion": "Tasks 初始加载显示「加载中」而非「没有结果」；空数据「暂无数据」；恢复后真实列表可见",
+   "evidence": [
+    "evidence/web-tasks-states.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "G5-AND-CONDITION-NO-SUMMARY-NO-CLEAR",
+   "phase": "web",
+   "at_utc": "2026-10-18T11:32:38Z",
+   "status": "FIXED",
+   "conclusion": "AND 任务编辑页条件摘要含节点名 qa-final2-4d2e1438-a/qa-final2-4d2e1438-b 与 AND；一键清除后摘要消失",
+   "evidence": [
+    "evidence/web-condition-summary.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "P16-UI-FAILED-CANCEL-BUTTON",
+   "phase": "web",
+   "at_utc": "2026-10-18T11:32:48Z",
+   "status": "FIXED",
+   "conclusion": "FAILED 行无「取消」按钮（按钮：['']）；SUCCESS 行亦无（按钮：[]）",
+   "evidence": [
+    "evidence/web-transfer-buttons.json"
+   ],
+   "extra": {
+    "at_utc": "2026-10-18T11:32:38Z",
+    "case": [
+     "P16-UI-FAILED-CANCEL-BUTTON"
+    ],
+    "needles": {
+     "failed": "missing-4d2e1438.bin",
+     "success": "term-ok-4d2e1438.txt"
+    },
+    "failed_row": {
+     "buttons": [
+      ""
+     ],
+     "text": "qa-final2-4d2e1438-a\t | /var/lib/nodesteer-qa-final2-4d2e1438-a/share/missing-4d2e1438.bin | \t失败\t | source upload failed: open /var/lib/nodesteer-qa-final2-4d2e1438-a/share/missing-4d2e1438.bin: no such file or directory | \t | qa-final2-4d2"
+    },
+    "screenshot_failed": {
+     "rc": 0,
+     "path": "evidence/web-transfer-failed-row.png"
+    },
+    "success_row": {
+     "buttons": [],
+     "text": "qa-final2-4d2e1438-a\t | /var/lib/nodesteer-qa-final2-4d2e1438-a/share/term-ok-4d2e1438.txt | \t成功\t-\t | qa-final2-4d2e1438-b | 成功 | \t7分钟前\t | 查看详情"
+    }
+   }
+  },
+  {
+   "case_id": "OBS-20261014-EDITOR-SAVE-PENDING-NOT-DISABLED",
+   "phase": "web",
+   "at_utc": "2026-10-18T11:32:57Z",
+   "status": "FIXED",
+   "conclusion": "脚本编辑器保存请求在途：双击仅 1 次 PUT（count=1）、按钮禁用（aria-busy=true）",
+   "evidence": [
+    "evidence/web-editor-pending.json"
+   ],
+   "extra": {
+    "at_utc": "2026-10-18T11:32:48Z",
+    "case": [
+     "OBS-20261014-EDITOR-SAVE-PENDING-NOT-DISABLED"
+    ],
+    "patch": "patched",
+    "double_click": {
+     "count": 1,
+     "disabled_immediate": false,
+     "found": true
+    },
+    "after": {
+     "ariaBusy": "true",
+     "count": 1,
+     "disabled": true,
+     "urls": [
+      "/api/scripts/a82dbbf9-4bbc-4130-b70c-838ab9d72f98"
+     ]
+    },
+    "screenshot": {
+     "rc": 0,
+     "path": "evidence/web-editor-pending.png"
+    },
+    "release": 1,
+    "restore": "no"
+   }
+  },
+  {
+   "case_id": "P16-TERMINAL-UPLOAD-REPLAY",
+   "phase": "terminal",
+   "at_utc": "2026-10-18T11:37:22Z",
+   "status": "FIXED",
+   "conclusion": "运行时终态写拒绝：SUCCESS/FAILED 传输的续传 POST（agent 认证）均 410 Gone （terminal state 文案），状态保持终态不变；无效凭据 401 对照；Hub 日志 terminal state frozen 2→4",
+   "evidence": [
+    "evidence/phase09b-upload-replay.json"
+   ],
+   "extra": {}
+  },
+  {
+   "case_id": "P5-X13-DUAL-TAB-LOGOUT",
+   "phase": "web",
+   "at_utc": "2026-10-18T13:00:06Z",
+   "status": "FIXED",
+   "conclusion": "真实双标签登出：信号→另一标签收敛 15ms、点击→收敛 613ms；token 清空、跳转 /sign-in、旧 token 401",
+   "evidence": [
+    "evidence/dual-tab-logout.json"
+   ],
+   "extra": {
+    "at_utc": "2026-10-18T11:29:52.594Z",
+    "case": "P5-X13-DUAL-TAB-LOGOUT",
+    "base": "http://192.168.100.209:18080",
+    "login_ok": true,
+    "page2_token_present": true,
+    "page2_url": "http://192.168.100.209:18080/",
+    "token_captured": true,
+    "dialog_text": "退出登录 | 确定退出当前会话吗？退出后需要重新登录。 | 取消 | 退出登录",
+    "converged": true,
+    "click_to_converge_ms": 613,
+    "signal_at_ms": 1792322993877,
+    "converged_at_ms": 1792322993892,
+    "signal_to_converge_ms": 15,
+    "page2_url_after": "http://192.168.100.209:18080/sign-in?redirect=%2F",
+    "page2_has_redirect_param": true,
+    "page2_token_after": null,
+    "page1_url_after": "http://192.168.100.209:18080/sign-in?redirect=%2F",
+    "old_token_me_status": 401,
+    "verdict": {
+     "login_ok": true,
+     "page2_was_logged_in": true,
+     "converged": true,
+     "converged_within_1s": true,
+     "token_cleared": true,
+     "redirected_to_signin": true,
+     "old_token_revoked": true
+    },
+    "pass": true
+   }
+  },
+  {
+   "case_id": "P5-CR3-DEPLOYMENTS-SUMMARY",
+   "phase": "agent",
+   "at_utc": "2026-10-18T13:00:06Z",
+   "status": "FIXED",
+   "conclusion": "4 台真实 Agent 数据目录 deployments-summary.json 全部落盘且结构正确（RFC3339/计数映射/active 列表/无 .tmp 残留）",
+   "evidence": [
+    "evidence/deployments-summary-check.json"
+   ],
+   "extra": {
+    "at_utc": "2026-10-18T11:30:09Z",
+    "nodes": {
+     "native-1": {
+      "path": "/var/lib/nodesteer-repair-20260930-101945/native-1/deployments-summary.json",
+      "ssh_rc": 0,
+      "content": {
+       "generated_at": "2026-10-18T11:21:24Z",
+       "done_by_kind": {
+        "unknown": 2
+       },
+       "active": []
+      },
+      "stat": "644 root:root 103 2026-10-18 19:21:24.530386785 +0800",
+      "tmp_leftovers": [],
+      "mtime_epoch": "1792322484",
+      "checks": {
+       "exists": true,
+       "generated_at_rfc3339": true,
+       "done_by_kind_int_map": true,
+       "active_is_list": true,
+       "active_rows_shape": true,
+       "no_tmp_leftover": true
+      },
+      "ok": true
+     },
+     "native-2": {
+      "path": "/var/lib/nodesteer-repair-20260930-101945/native-2/deployments-summary.json",
+      "ssh_rc": 0,
+      "content": {
+       "generated_at": "2026-10-18T11:21:27Z",
+       "done_by_kind": {
+        "prepare_failed": 7,
+        "rolled_back": 5,
+        "superseded": 3,
+        "unknown": 19
+       },
+       "active": [
+        {
+         "id": "fe102eda-1d78-448b-9d6e-fb760125b9ef",
+         "application_id": "6403b0b6-6615-4c5e-ac27-9987ebea6bc1",
+         "phase": "ROLLBACK_FAILED",
+         "started_at": "2026-10-16T07:09:46.490727038Z"
+        },
+        {
+         "id": "ee814011-7a4b-4300-acf8-2378b3a7d87c",
+         "application_id": "6403b0b6-6615-4c5e-ac27-9987ebea6bc1",
+         "phase": "ROLLBACK_FAILED",
+         "started_at": "2026-10-16T07:09:50.705279635Z"
+        },
+        {
+         "id": "bde87d32-4687-4bf1-8dee-1a739efeaf44",
+         "application_id": "6403b0b6-6615-4c5e-ac27-9987ebea6bc1",
+         "phase": "ROLLBACK_FAILED",
+         "started_at": "2026-10-16T07:09:54.71921269Z"
+        },
+        {
+         "id": "2e77f047-9cc4-42c0-aee1-2d81b3b6a386",
+         "application_id": "e0291942-bcf1-40f5-b515-30e8b7feb435",
+         "phase": "ROLLBACK_FAILED",
+         "started_at": "2026-10-16T07:11:27.272228538Z"
+        },
+        {
+         "id": "e7631046-f11f-4550-9d18-8490126491df",
+         "application_id": "e0291942-bcf1-40f5-b515-30e8b7feb435",
+         "phase": "ROLLBACK_FAILED",
+         "started_at": "2026-10-16T07:11:31.21108468Z"
+        },
+        {
+         "id": "a45d8f1c-f19b-4bb3-b3e6-1acb35f44d86",
+         "application_id": "6b147fcd-e456-41bf-b4d3-f114b3756049",
+         "phase": "ROLLBACK_FAILED",
+         "started_at": "2026-10-16T07:11:37.37989461Z"
+        },
+        {
+         "id": "0619c513-34d5-4889-9d10-2d3a0a56664d",
+         "application_id": "59567cf7-0e0a-49d7-8b02-4c6d778472dc",
+         "phase": "ROLLBACK_FAILED",
+         "started_at": "2026-10-16T07:12:41.610535144Z"
+        },
+        {
+         "id": "a934b6be-d477-4c33-97e1-eb8c5a43f034",
+         "application_id": "59567cf7-0e0a-49d7-8b02-4c6d778472dc",
+         "phase": "ROLLBACK_FAILED",
+         "started_at": "2026-10-16T07:12:45.56342907Z"
+        },
+        {
+         "id": "720c81b3-e062-4e60-a5b6-70cd3d29f669",
+         "application_id": "ad16c7bf-cb59-4865-af9a-c9223d4318ba",
+         "phase": "ROLLBACK_FAILED",
+         "started_at": "2026-10-16T07:12:51.837419244Z"
+        },
+        {
+         "id": "497f8142-215a-4fa4-8fc7-7014adaab9c8",
+         "application_id": "7833475b-7c2b-4246-a747-acc62156e5ba",
+         "phase": "ROLLBACK_FAILED",
+         "started_at": "2026-10-16T10:13:00.803559838Z"
+        },
+        {
+         "id": "5bfb1393-362f-4eea-bfe9-3e7942c8eb63",
+         "application_id": "3a06545b-7f08-470d-ba92-72a351277c10",
+         "phase": "ROLLBACK_FAILED",
+         "started_at": "2026-10-16T10:14:40.00514147Z"
+        },
+        {
+         "id": "eb279bed-fae2-49a2-b0e6-fcd57cf679ae",
+         "application_id": "ce880861-dc1f-4845-a8ec-abf3c28eee12",
+         "phase": "ROLLBACK_FAILED",
+         "started_at": "2026-10-16T10:15:50.599104447Z"
+        }
+       ]
+      },
+      "stat": "644 root:root 2761 2026-10-18 19:21:27.794294328 +0800",
+      "tmp_leftovers": [],
+      "mtime_epoch": "1792322487",
+      "checks": {
+       "exists": true,
+       "generated_at_rfc3339": true,
+       "done_by_kind_int_map": true,
+       "active_is_list": true,
+       "active_rows_shape": true,
+       "no_tmp_leftover": true
+      },
+      "ok": true
+     },
+     "native-3": {
+      "path": "/var/lib/nodesteer-repair-20260930-101945/native-3/deployments-summary.json",
+      "ssh_rc": 0,
+      "content": {
+       "generated_at": "2026-10-18T11:21:31Z",
+       "done_by_kind": {
+        "unknown": 1
+       },
+       "active": []
+      },
+      "stat": "644 root:root 103 2026-10-18 19:21:31.052713850 +0800",
+      "tmp_leftovers": [],
+      "mtime_epoch": "1792322491",
+      "checks": {
+       "exists": true,
+       "generated_at_rfc3339": true,
+       "done_by_kind_int_map": true,
+       "active_is_list": true,
+       "active_rows_shape": true,
+       "no_tmp_leftover": true
+      },
+      "ok": true
+     },
+     "native-4": {
+      "path": "/var/lib/nodesteer-repair-20260930-101945/native-4/deployments-summary.json",
+      "ssh_rc": 0,
+      "content": {
+       "generated_at": "2026-10-18T11:21:34Z",
+       "done_by_kind": {},
+       "active": []
+      },
+      "stat": "644 root:root 83 2026-10-18 19:21:34.797497347 +0800",
+      "tmp_leftovers": [],
+      "mtime_epoch": "1792322494",
+      "checks": {
+       "exists": true,
+       "generated_at_rfc3339": true,
+       "done_by_kind_int_map": true,
+       "active_is_list": true,
+       "active_rows_shape": true,
+       "no_tmp_leftover": true
+      },
+      "ok": true
+     }
+    },
+    "verdict": {
+     "native-1": true,
+     "native-2": true,
+     "native-3": true,
+     "native-4": true
+    },
+    "all_ok": true
+   }
+  },
+  {
+   "case_id": "P11-P17-AXE-SAMPLE",
+   "phase": "a11y",
+   "at_utc": "2026-10-18T13:00:06Z",
+   "status": "FIXED",
+   "conclusion": "axe 注入抽样 3 页 0 critical/serious（{'nodes-list': 0, 'transfers-list': 0, 'task-editor': 0}）；侧栏为 navigation 地标（label=主导航, 13 链接）；StatusBadge 对比度最小 4.77:1（在线 5.36 / 离线 4.77）",
+   "evidence": [
+    "evidence/axe-sample.json"
+   ],
+   "extra": {
+    "at_utc": "2026-10-18T11:31:23.729Z",
+    "case": "P11-P17-AXE-SAMPLE",
+    "base": "http://192.168.100.209:18080",
+    "axe_version": "4.14.0",
+    "pages": {
+     "nodes-list": {
+      "url": "/agents",
+      "counts": {
+       "critical": 0,
+       "serious": 0,
+       "moderate": 0,
+       "minor": 0,
+       "total": 0
+      },
+      "violations": []
+     },
+     "transfers-list": {
+      "url": "/transfers",
+      "counts": {
+       "critical": 0,
+       "serious": 0,
+       "moderate": 0,
+       "minor": 0,
+       "total": 0
+      },
+      "violations": []
+     },
+     "task-editor": {
+      "url": "/tasks/7efccafe-cf69-4bf5-be08-b64ba310abd7/edit",
+      "counts": {
+       "critical": 0,
+       "serious": 0,
+       "moderate": 0,
+       "minor": 0,
+       "total": 0
+      },
+      "violations": []
+     }
+    },
+    "login_ok": true,
+    "sidebar_landmark": {
+     "exists": true,
+     "tag": "div",
+     "label": "主导航",
+     "link_count": 13
+    },
+    "badge_contrast": {
+     "found": true,
+     "count": 2,
+     "rows": [
+      {
+       "text": "在线",
+       "color": "rgb(255, 255, 255)",
+       "background": "oklch(0.508 0.118 165.612)",
+       "fg_rgb": [
+        255,
+        255,
+        255
+       ],
+       "bg_rgb": [
+        0,
+        122,
+        85
+       ],
+       "ratio": 5.36,
+       "aa_normal": true
+      },
+      {
+       "text": "离线",
+       "color": "rgb(255, 255, 255)",
+       "background": "oklch(0.577 0.245 27.325)",
+       "fg_rgb": [
+        255,
+        255,
+        255
+       ],
+       "bg_rgb": [
+        231,
+        0,
+        11
+       ],
+       "ratio": 4.77,
+       "aa_normal": true
+      }
+     ],
+     "min_ratio": 4.77,
+     "all_aa_normal": true
+    },
+    "verdict": {
+     "three_pages_scanned": true,
+     "zero_critical_serious": true,
+     "sidebar_landmark": true,
+     "badge_contrast_ok": true
+    },
+    "pass": true
+   }
+  },
+  {
+   "case_id": "P12-E2E-SUITE-FULL",
+   "phase": "e2e",
+   "at_utc": "2026-10-18T13:00:06Z",
+   "status": "DIFF",
+   "conclusion": "差异：全套 113 通过 / 2 失败 / 9 跳过（基线 116/0/8）。GAP-18=失败（本批 owned 应用 fixture 干扰该用例\"单应用\"前提；删除 fixture 后单独复跑={'passed': 1, 'failed': 0} → 环境干扰，非产品回归）。P22-02/FULL-06=['P22-02 [UI_MOCK] FAILED 传输行菜单可取消并变为 CANCELED']（P16 终态冻结有意变更：FAILED 传输不再允许 Cancel、UI 隐藏按钮；两条用例仍断言旧\"取消→CANCELED\"行为，属待更新的测试资产，非产品回归）。FULL-06 默认环境因授权节点不足 2 个而 skip（与 P12 相同需 NODESTEER_E2E_TRANSFER_TARGET_IDS）；设置该变量后运行即在上段陈旧断言处失败。",
+   "evidence": [
+    "evidence/e2e-suite/raw/final2-full-run.json",
+    "evidence/e2e-suite/raw/gap18-rerun-run.json",
+    "evidence/e2e-suite/raw/full06-rerun-run.json"
+   ],
+   "extra": {
+    "full_run": {
+     "label": "final2-full",
+     "exit_code": 1,
+     "duration_sec": 695.2,
+     "base_url": "http://192.168.100.209:18080",
+     "stderr": "",
+     "stats": {
+      "expected": 113,
+      "unexpected": 2,
+      "skipped": 9,
+      "flaky": 0,
+      "duration": 694736.482
+     },
+     "passed_count": 113,
+     "failed_count": 2,
+     "skipped_count": 9,
+     "flaky": [],
+     "failed_titles": [
+      {
+       "file": "gap-ui.spec.ts",
+       "title": "GAP-18 UI LoginDashboardAgents连续链与真实统计详情链接",
+       "status": "failed",
+       "statuses": [
+        "failed"
+       ]
+      },
+      {
+       "file": "p22-transfers.spec.ts",
+       "title": "P22-02 [UI_MOCK] FAILED 传输行菜单可取消并变为 CANCELED",
+       "status": "failed",
+       "statuses": [
+        "failed"
+       ]
+      }
+     ],
+     "skipped_titles": [
+      {
+       "file": "e2e-flows.spec.ts",
+       "title": "E2E-11 [ROOT_RBAC] 用户生命周期",
+       "status": "skipped",
+       "statuses": [
+        "skipped"
+       ]
+      },
+      {
+       "file": "full-feature-ui.spec.ts",
+       "title": "FULL-06 UI文件中继双目标与客户机文件一致、失败重试取消",
+       "status": "skipped",
+       "statuses": [
+        "skipped"
+       ]
+      },
+      {
+       "file": "full-feature-ui.spec.ts",
+       "title": "FULL-08 真实应用UI Deploy/Stop/Start/Restart/Upgrade与Unit/config/SHA",
+       "status": "skipped",
+       "statuses": [
+        "skipped"
+       ]
+      },
+      {
+       "file": "full-feature-ui.spec.ts",
+       "title": "FULL-09 App Task UI创建/运行Deploy与四操作真实Unit/config/SHA/健康",
+       "status": "skipped",
+       "statuses": [
+        "skipped"
+       ]
+      },
+      {
+       "file": "full-feature-ui.spec.ts",
+       "title": "ROLE-02 Operator真实部署自有应用但定义只读；Viewer部署与定义写入被拒",
+       "status": "skipped",
+       "statuses": [
+        "skipped"
+       ]
+      },
+      {
+       "file": "gap-ui.spec.ts",
+       "title": "GAP-15 Root控制Node2物理offline窗口的真实UI Run",
+       "status": "skipped",
+       "statuses": [
+        "skipped"
+       ]
+      },
+      {
+       "file": "p19-misc.spec.ts",
+       "title": "P21-02 [SHARED_SETTING] 保存设置",
+       "status": "skipped",
+       "statuses": [
+        "skipped"
+       ]
+      },
+      {
+       "file": "rbac.spec.ts",
+       "title": "RBAC-05 [SHARED_SETTING] Operator 用户/设置被拒",
+       "status": "skipped",
+       "statuses": [
+        "skipped"
+       ]
+      },
+      {
+       "file": "safe-ui.spec.ts",
+       "title": "SAFE-23 Script全字段/启停/Clone参数环境/删除Tombstone与Agent cache",
+       "status": "skipped",
+       "statuses": [
+        "skipped"
+       ]
+      }
+     ]
+    },
+    "gap18_rerun": {
+     "passed": 1,
+     "failed": 0
+    },
+    "full06_rerun": {
+     "passed": 0,
+     "failed": 1,
+     "skipped": 0
+    }
+   }
+  },
+  {
+   "case_id": "P15-VITEST-FULL",
+   "phase": "web",
+   "at_utc": "2026-10-18T13:00:06Z",
+   "status": "FLAKE_CLASSIFIED",
+   "conclusion": "vitest 浏览器模式全量：49 文件 / 249 用例通过、0 失败；1 个文件命中已知基建 flake，单独复跑通过（如实归类，非代码失败）。全量运行完成 48/49 文件后命中已知浏览器 provider 基建 flake（'Cannot connect to the server in 60 seconds'，与 P17 报告的 iframe/连接类 flake 同类），被 timeout 终止（exit 124）；唯一未完成文件 src/lib/navigation.test.ts 单独复跑通过（2/2）。全部 49 文件、共 249 个用例均通过，无断言失败。",
+   "evidence": [
+    "evidence/vitest-summary.json",
+    "evidence/vitest-run2.log",
+    "evidence/vitest-navigation-single.log"
+   ],
+   "extra": {
+    "mode": "full run (--browser.headless, default reporter) + individual re-run of the flaked file",
+    "num_total": 249,
+    "num_passed": 249,
+    "num_failed": 0,
+    "files_total": 49,
+    "files_passed_full_run": 48,
+    "flaked_file": "src/lib/navigation.test.ts",
+    "flaked_file_rerun": "2 passed (2)",
+    "full_run_exit": 124,
+    "success": true,
+    "status": "FLAKE_CLASSIFIED",
+    "note": "全量运行完成 48/49 文件后命中已知浏览器 provider 基建 flake（'Cannot connect to the server in 60 seconds'，与 P17 报告的 iframe/连接类 flake 同类），被 timeout 终止（exit 124）；唯一未完成文件 src/lib/navigation.test.ts 单独复跑通过（2/2）。全部 49 文件、共 249 个用例均通过，无断言失败。",
+    "log": "evidence/vitest-run2.log + evidence/vitest-navigation-single.log"
+   }
+  }
+ ]
+}

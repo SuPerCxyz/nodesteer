@@ -1,0 +1,92 @@
+{
+ "batch": "qa-resume-20261018-stress-authz",
+ "purpose": "\u5e76\u53d1\u538b\u6d4b\uff08\u5168\u5199\u7aef\u70b9 16 \u5e76\u53d1 \u00d7 3 \u8f6e + \u6df7\u5408\u8bfb\u5199\uff09+ \u5168\u7aef\u70b9\u9274\u6743\u77e9\u9635\uff083 \u89d2\u8272 \u00d7 \u5b58\u5728/\u4e0d\u5b58\u5728 id \u00d7 \u65b9\u6cd5\u63a2\u6d4b\uff09",
+ "host": "192.168.100.209",
+ "binary": {
+  "path": "/opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard",
+  "sha256": "00e1f375bf67a59ad04dfc6283741cb276ac6be70ce2f21e02d25094845e7a71",
+  "same_as_final_build": "/tmp/opencode/nodesteer-build-20261018-final/nodesteer-hub-static-final\uff08sha256 \u4e00\u81f4\uff09"
+ },
+ "instance": {
+  "web_port": 18089,
+  "gateway_port": 18090,
+  "data_dir": "/tmp/nodesteer-qa-20261018-stress-authz/data\uff08\u72ec\u7acb data_dir/config\uff0c\u672a\u590d\u7528 repair \u751f\u4ea7\u6570\u636e\uff09",
+  "config": "\u72ec\u7acb yaml\uff08web_addr 0.0.0.0:18089\uff0cgateway 127.0.0.1:18090\uff0c\u72ec\u7acb registration_token/admin\uff09",
+  "admin_user": "qa-stress-admin\uff08\u72ec\u7acb\u4e8e repair \u751f\u4ea7\u8d26\u6237\uff09",
+  "credentials": "\u672c\u5730\u751f\u6210\u30010600 \u4fdd\u5b58\u3001\u672a\u6253\u5370\u672a\u5165\u5e93\uff1b\u8dd1\u5b8c\u5df2\u5220\u9664"
+ },
+ "launch_history": [
+  {
+   "cycle": "bootstrap-1",
+   "launcher": "setsid nohup\uff0814:30\uff09",
+   "main_pid": 294685,
+   "stopped": "14:40\uff08\u91cd\u5efa\uff0c\u56e0 fixture \u4fee\u6b63\u540e\u9700\u6e05\u5e93\uff09"
+  },
+  {
+   "cycle": "bootstrap-2",
+   "launcher": "setsid nohup\uff0814:40\uff09",
+   "main_pid": 295384,
+   "stopped": "14:44\uff08\u91cd\u5efa\uff0c\u6539\u7528 systemd-run\uff09"
+  },
+  {
+   "cycle": "main",
+   "launcher": "systemd-run \u77ac\u65f6\u5355\u5143 nodesteer-qa-stress-20261018.service\uff0814:44:48\uff09",
+   "main_pid": 295735,
+   "stopped": "15:03 systemctl stop"
+  },
+  {
+   "cycle": "evidence-probe",
+   "launcher": "systemd-run \u77ac\u65f6\u5355\u5143 nodesteer-qa-stress-20261018b.service\uff0815:06:40\uff09",
+   "main_pid": 299736,
+   "stopped": "15:09 systemctl stop"
+  }
+ ],
+ "teardown_verification": {
+  "units": "nodesteer-qa-stress-20261018.service / \u2026b.service \u5747 inactive \u4e14\uff08--collect\uff09\u5df2\u4e0d\u5b58\u5728",
+  "ports_18089_18090": "closed\uff08ss -tlnp \u65e0\u76d1\u542c\uff09",
+  "processes": "\u65e0 qa-20261018-stress-authz \u76f8\u5173\u8fdb\u7a0b",
+  "data_dir": "/tmp/nodesteer-qa-20261018-stress-authz \u5df2\u5220\u9664\uff08ls: No such file or directory\uff09",
+  "verified_at": "2026-10-18T15:09+08:00"
+ },
+ "scope_guard": {
+  "repair_production_18080": "\u672a\u8bbf\u95ee\uff1b\u53ea\u8bfb\u6838\u9a8c\u5176 unit \u72b6\u6001\uff1anodesteer-hub-repair-20260930-101945.service active\uff0cMainPID=279199\uff08\u4e0e\u5f00\u6d4b\u524d\u4e00\u81f4\uff0c\u672a\u88ab\u89e6\u78b0\uff09",
+  "primary_8080": "\u672a\u8bbf\u95ee",
+  "agent_nodes": "\u672a\u8bbf\u95ee/\u672a\u89e6\u78b0",
+  "product_source": "\u672a\u4fee\u6539\u4efb\u4f55\u4ea7\u54c1\u6e90\u7801"
+ },
+ "fixture_cleanup": {
+  "method": "\u5b9e\u4f8b\u5185 API \u5220\u9664\uff08schedules/tasks/scripts/groups/applications/artifacts/nodes \u9010\u4e2a DELETE\uff1btransfers cancel\uff09",
+  "deleted": {
+   "schedules": 51,
+   "transfers_canceled": 4,
+   "tasks": 6,
+   "scripts": 2,
+   "groups": 2,
+   "applications": 2,
+   "artifacts": 2,
+   "nodes": 68
+  },
+  "failed": [],
+  "remaining_verified": {
+   "tasks": [],
+   "scripts": [],
+   "schedules": [],
+   "groups": [],
+   "applications": [],
+   "artifacts": [],
+   "nodes": [],
+   "active_transfers": []
+  },
+  "not_deletable_via_api": {
+   "users": 54,
+   "executions": 1,
+   "note": "users/executions \u65e0 DELETE \u7aef\u70b9\uff08405\uff09\uff0c\u6b8b\u7559\u4ec5\u5b58\u5728\u4e8e\u968f\u540e\u88ab\u9500\u6bc1\u7684\u9694\u79bb\u5b9e\u4f8b\u6570\u636e\u5e93\u4e2d"
+  }
+ },
+ "artifacts": {
+  "stress-results.json": "\u4efb\u52a1 A \u5168\u91cf\u7ed3\u679c\uff0881 \u6279\u6b21 + \u6df7\u5408\u8bfb\u5199 + \u5b8c\u6574\u6027\u56de\u8bfb + 5xx/SQL \u626b\u63cf\uff09",
+  "authz-matrix.json": "\u4efb\u52a1 B \u5168\u91cf\u77e9\u9635\uff08492 \u884c + 32 \u65b9\u6cd5\u63a2\u6d4b + \u5224\u5b9a\u6ce8\u91ca\uff09",
+  "findings.json": "\u7f3a\u9677\u6e05\u5355\uff08P0-P3\uff09+ \u89c2\u5bdf\u9879 + \u4eca\u65e5\u4fee\u590d\u5168\u5c40\u6838\u9a8c\u7ed3\u8bba",
+  "evidence/": "hub.log\uff08\u4e3b\u5b9e\u4f8b\uff09\u3001hub-evidence-probe.log\uff08\u6b7b\u9501\u8bc1\u636e\uff09\u3001deadlock-probe.json\u3001repro-schedules.json\u3001fixture-cleanup.json\u3001scripts/\uff08\u5168\u90e8\u590d\u73b0\u811a\u672c\uff09"
+ }
+}

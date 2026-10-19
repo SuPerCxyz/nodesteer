@@ -1,0 +1,188 @@
+{
+ "at_utc": "2026-10-18T07:03:06Z",
+ "targets": {
+  "T1_native-2": {
+   "at": "2026-10-18T07:03:06Z",
+   "steps": {
+    "stop": {
+     "rc": 0,
+     "out": "qa-resume-20261010-host-f174890c3846-host001"
+    },
+    "stop_state": {
+     "rc": 0,
+     "out": "false"
+    },
+    "rm": {
+     "rc": 0,
+     "out": "qa-resume-20261010-host-f174890c3846-host001"
+    },
+    "rm_check": {
+     "rc": 0,
+     "out": "0"
+    },
+    "volume_rm": {
+     "rc": 0,
+     "out": "qa-resume-20261010-host-f174890c3846-data-1"
+    },
+    "volume_check": {
+     "rc": 0,
+     "out": "0"
+    },
+    "dir_rm": {
+     "rc": 0,
+     "out": "rmtree done"
+    },
+    "dir_check": {
+     "exists": false
+    }
+   },
+   "guards": {
+    "container_present": true,
+    "container_owner": true,
+    "volume_present": true,
+    "dir_owner_ok": true
+   }
+  },
+  "T2_hub-209": {
+   "at": "2026-10-18T07:03:08Z",
+   "steps": {
+    "disable_now": {
+     "rc": 0,
+     "out": ""
+    },
+    "rm_unit": {
+     "rc": 0,
+     "out": "removed"
+    },
+    "daemon_reload": {
+     "rc": 0,
+     "out": "reloaded"
+    },
+    "unit_check": {
+     "rc": 0,
+     "out": "LoadState=not-found\nActiveState=inactive\nUnitFileState="
+    },
+    "rm_cfg": {
+     "rc": 0,
+     "out": "removed"
+    },
+    "rm_bak": {
+     "rc": 0,
+     "out": "removed"
+    },
+    "dir_rm": {
+     "rc": 0,
+     "out": "rmtree done"
+    },
+    "checks": {
+     "unit_file_exists": false,
+     "cfg_exists": false,
+     "bak_exists": false,
+     "dir_exists": false,
+     "port_free": true
+    }
+   },
+   "guards": {
+    "unit_file_sha_ok": true,
+    "unit_disabled": true,
+    "unit_inactive": true,
+    "port_free": true,
+    "db_sha_ok": true,
+    "cfg_sha_ok": true,
+    "bak_sha_ok": true
+   }
+  },
+  "T4_hub-209": {
+   "at": "2026-10-18T07:03:09Z",
+   "steps": {
+    "rmi": {
+     "rc": 0,
+     "out": "Untagged: qa-20260930-101945-env-agent:dddee4f0\nDeleted: sha256:93d27860a3807172e963eeb6a05b7165c47acab3c7a94a0744833501202b752a\nUntagged: qa-20260930-101945-env-hub:dddee4f0\nDeleted: sha256:664a161e53a072c9161afd2de67d1868c92627abac1ac1d5cfac57370b15c03c"
+    },
+    "check": {
+     "rc": 0,
+     "out": "0"
+    }
+   },
+   "guards": {
+    "no_containers_at_all": true,
+    "agent_img_present": true,
+    "hub_img_present": true
+   }
+  },
+  "T3_native-1": {
+   "at": "2026-10-18T07:03:10Z",
+   "steps": {
+    "disable_now": {
+     "rc": 0,
+     "out": "Removed \"/etc/systemd/system/multi-user.target.wants/qa-20260930-101945-web-app-6a32f.service\"."
+    },
+    "state_after_stop": {
+     "rc": 0,
+     "out": "MainPID=0\nActiveState=inactive\nSubState=dead\nUnitFileState=disabled"
+    },
+    "wants_link_check": {
+     "rc": 0,
+     "out": "NO_LINK"
+    },
+    "rm_unit": {
+     "rc": 0,
+     "out": "removed"
+    },
+    "daemon_reload": {
+     "rc": 0,
+     "out": "reloaded"
+    },
+    "unit_check": {
+     "rc": 0,
+     "out": "LoadState=not-found\nActiveState=inactive\nUnitFileState="
+    },
+    "dir_rm": {
+     "rc": 0,
+     "out": "rmtree done"
+    },
+    "checks": {
+     "unit_file_exists": false,
+     "dir_exists": false,
+     "procs_grep": ""
+    }
+   },
+   "guards": {
+    "unit_file_sha_ok": true,
+    "bin_sha_ok": true,
+    "unit_active": true
+   }
+  }
+ },
+ "hub": {
+  "T1_node": {
+   "precheck_nonterminal_transfers": [],
+   "precheck_active_executions": [],
+   "node_get_before": 200,
+   "node_delete_http": 200,
+   "node_delete_body": {
+    "ok": "true"
+   },
+   "node_get_after": 404,
+   "node_get_after_body": {
+    "error": "node not found"
+   }
+  },
+  "T3_app": {
+   "app_get_before": 200,
+   "assign_remove_http": 200,
+   "assign_remove_body": {
+    "ok": "true"
+   },
+   "app_nodes_after_remove": [],
+   "app_delete_http": 200,
+   "app_delete_body": {
+    "ok": "true"
+   },
+   "app_get_after": 404,
+   "app_get_after_body": {
+    "error": "application not found"
+   }
+  }
+ }
+}

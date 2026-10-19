@@ -1,0 +1,88 @@
+{
+ "batch": "qa-resume-20261018-local-smoke",
+ "date": "2026-10-18",
+ "environment": "owned local loopback only (no remote hosts touched)",
+ "source": {
+  "git_head": "075a26fd5961b632dc493d9aebde5c3c0e85a800",
+  "git_head_short": "075a26f",
+  "p5_working_tree_changes": [
+   "web/src/main.tsx (M)",
+   "web/src/stores/auth-store.ts (M)",
+   "web/src/lib/session-convergence.ts (new)",
+   "web/src/lib/session-sync.ts (new)",
+   "web/src/lib/session-sync.test.ts (new)",
+   "internal/agent/deployment_summary.go (new)",
+   "internal/agent/deployment_summary_test.go (new)",
+   "internal/agent/application.go (M)",
+   "internal/agent/store.go (M)"
+  ],
+  "note": "build from working tree incl. uncommitted P5 changes (no Git write operations performed)"
+ },
+ "web_build": {
+  "command": "cd web && npm run build",
+  "exit_code": 0,
+  "log_tail": [
+   "dist/assets/index-oWPPSV7b.js                253.09 kB │ gzip: 82.07 kB",
+   "",
+   "✓ built in 606ms",
+   "WEB_BUILD_EXIT=0"
+  ],
+  "dist_path": "/home/superc/code/nodesteer/web/dist",
+  "dist_files": 74,
+  "dist_content_sha256": "8f86f03e7975dec17a8c2a1d3210b48c0ecdcbfc0f4f31e49ecc9b4f463fe26b",
+  "p5_marker_in_bundle": {
+   "nodesteer_session_invalidated_found": true
+  },
+  "backup_of_previous_dist": {
+   "path": "/tmp/opencode/p9/dist-backup",
+   "files": 74,
+   "content_sha256": "821491eb7ea798c70dd3fc25786d0e905be4d5c0846db7f6f76ff6ddc4fab4b4",
+   "restored_after_test": true,
+   "restore_verified": "restored dist content hash == backup hash (821491eb7ea798c7, 74 files); my P5-build dist (8f86f03e7975dec1) no longer present"
+  }
+ },
+ "go_builds": {
+  "hub": {
+   "command": "go build -buildvcs=false -o /tmp/opencode/p9/bin/nodesteer-hub ./cmd/hub",
+   "exit_code": 0,
+   "sha256": "6c2992d83d210aee0ee3f08f1d079c873e2fe0115a61ee6b98c35c4804f1e878",
+   "size": 22282675,
+   "embeds_new_dist": true
+  },
+  "agent": {
+   "command": "go build -buildvcs=false -ldflags \"-X main.version=local-p9-smoke-20261018\" -o /tmp/opencode/p9/bin/nodesteer-agent ./cmd/agent",
+   "exit_code": 0,
+   "sha256": "fa472484709fc4d7b027204c402ca30330ebf8d72ac9ecc5dc93cae552bb515f",
+   "size": 16970296,
+   "version_string": "local-p9-smoke-20261018"
+  }
+ },
+ "instances": {
+  "hub": {
+   "addr": "http://127.0.0.1:18911",
+   "data_dir": "/tmp/opencode/p9/hub/data",
+   "config": "/tmp/opencode/p9/hub/hub.yaml (0600, secrets not recorded here)",
+   "heartbeat_timeout": "60s (initially 15s; corrected after observing config-induced reconnect churn)"
+  },
+  "agent": {
+   "ws": "ws://127.0.0.1:18911",
+   "data_dir": "/tmp/opencode/p9/agent/data",
+   "node_name": "qa-p9-node-01",
+   "config": "/tmp/opencode/p9/agent/agent.yaml (0600)"
+  }
+ },
+ "deviations": [
+  "Requested hub port 18901 was occupied by an unrelated long-running process (iris/fake-ai-provider.py, PIDs 415813/415198, since Oct 12); not touched. Used 127.0.0.1:18911 instead.",
+  "Initial hub heartbeat_timeout=15s was below the hub-pushed heartbeat_interval_sec=30 default, causing a checker-induced reconnect every ~30s (config artifact, not a product defect; hub code untouched by P5). Corrected to 60s and hub restarted; connection stable afterwards.",
+  "web/dist was backed up to /tmp/opencode/p9/dist-backup before rebuild; will be restored after the batch."
+ ],
+ "generated_at": "2026-10-18T07:35:09Z",
+ "cleanup": {
+  "hub_stopped": true,
+  "agent_stopped": true,
+  "port_18911_free": true,
+  "temp_workdir_removed": true,
+  "workdir": "/tmp/opencode/p9 (binaries/configs/logs/credentials destroyed)",
+  "repo_tracked_files_touched_by_this_batch": "none (only new untracked run dir .e2e/runs/.../qa-resume-20261018-local-smoke/ added)"
+ }
+}

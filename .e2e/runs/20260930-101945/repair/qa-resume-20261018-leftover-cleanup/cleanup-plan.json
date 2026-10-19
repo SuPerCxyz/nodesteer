@@ -1,0 +1,141 @@
+{
+  "task": "qa-resume-20261018-leftover-cleanup: exact cleanup of 4 confirmed-owned but still-alive QA leftovers",
+  "at_utc": "2026-10-18T07:05:00Z",
+  "authority": "http://192.168.100.209:18080 (repair hub; login via private 0600 credential files, endpoint hard-guarded to :18080)",
+  "authorization": "user-authorized full closure of the 4 items listed below; destructive actions strictly limited to these 4 items",
+  "reference_evidence": [
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261018-housekeeping/artcache-cleanup.json (retained_reported_not_deleted list)",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261018-leftover-cleanup/evidence/recon-raw.json",
+    ".e2e/runs/20260930-101945/repair/qa-resume-20261018-leftover-cleanup/evidence/predelete-inventory.json"
+  ],
+  "targets": [
+    {
+      "id": "T1",
+      "title": "native-2 docker-host fixture nonce f174890c3846 + hub node record",
+      "host": "native-2 192.168.100.206",
+      "ownership_evidence": [
+        "container qa-resume-20261010-host-f174890c3846-host001 (fc2a37d3e721): labels nodesteer-e2e-run/nodesteer.e2e.owner=qa-resume-20261010-host-f174890c3846, role=host001; image nodesteer-qa/agent-host:f174890c3846",
+        "docker volume qa-resume-20261010-host-f174890c3846-data-1 label nodesteer-e2e-run=qa-resume-20261010-host-f174890c3846",
+        "dir /opt/qa-resume-20261010-host-f174890c3846/.owner.json: run=qa-resume-20261010-host-f174890c3846 nonce=f174890c3846 authorized_image_tag=nodesteer-qa/agent-host:f174890c3846",
+        "hub node f6a79d23-2410-450c-ac39-64dd70c9daa1 hostname=qa-resume-20261010-host-f174890c3846-host001 agent_version=dddee4f0-e2e-repair-20261004"
+      ],
+      "preconditions_verified": {
+        "container_running": true,
+        "no_active_transfers": "all transfers terminal (SUCCESS/FAILED/CANCELED); 0 non-terminal overall; transfers referencing f6a79d23 all CANCELED",
+        "no_active_executions_on_node": "3 executions on node, all terminal (SUCCESS,SUCCESS,FAILED)",
+        "no_static_group_membership": "groups list empty",
+        "no_app_assignment_to_node": "only app 804e6b14 is assigned to 91f44866 (native-1), not to f6a79d23"
+      },
+      "planned_actions": [
+        "docker stop -t 10 qa-resume-20261010-host-f174890c3846-host001 (verify not running)",
+        "docker rm qa-resume-20261010-host-f174890c3846-host001 (verify absent)",
+        "docker volume rm qa-resume-20261010-host-f174890c3846-data-1 (verify absent)",
+        "rm -rf /opt/qa-resume-20261010-host-f174890c3846 (verify absent)",
+        "hub product path: DELETE /api/nodes/f6a79d23-2410-450c-ac39-64dd70c9daa1 (re-check no active transfer/execution right before; verify GET -> 404)"
+      ],
+      "postconditions": [
+        "docker ps -a has no such container; docker volume ls has no such volume; dir absent",
+        "GET /api/nodes/f6a79d23-... -> 404"
+      ],
+      "guards": [
+        "abort if container labels/owner.json nonce mismatch",
+        "abort if any non-terminal transfer or PENDING/RUNNING execution appears for the node at execution time",
+        "do NOT delete image nodesteer-qa/agent-host:f174890c3846 (not in authorized item list)"
+      ]
+    },
+    {
+      "id": "T2",
+      "title": "hub-209 ttl-ui isolated hub data dir + related files + unit",
+      "host": "hub-209 192.168.100.209",
+      "ownership_evidence": [
+        "unit nodesteer-hub-repair-20260930-101945-ttl-ui.service: Description='NodeSteer isolated TTL UI Hub 20260930-101945', fixture created 2026-10-04 by qa/ttl-ui-authority.json (FL-14, closed PASS)",
+        "data dir /var/lib/nodesteer-hub-repair-20260930-101945-ttl-ui (hub.db sha256 3a1c98fae81eddaeb12640c1c563ee65fb992ae5574214f7836adb5f84037c6b, matches housekeeping predelete-inventory)",
+        "config /etc/nodesteer/nodesteer-hub-repair-20260930-101945-ttl-ui.yaml (sha 2c8fe647...)",
+        "backup /etc/nodesteer/hub-repair-20260930-101945.yaml.pre-ttl-test (sha e594591f... == current live hub-repair config sha, byte-identical; deleting loses nothing)"
+      ],
+      "preconditions_verified": {
+        "unit_disabled": "UnitFileState=disabled, ActiveState=inactive, SubState=dead, MainPID=0",
+        "port_18995_free": "no TCP/UDP listener on 18995",
+        "no_process_or_fd_refs": "ps/fd/cwd scans empty",
+        "hashes_recorded": "all file sha256 captured in predelete-inventory.json and evidence/predelete-t2-hub209.json"
+      },
+      "planned_actions": [
+        "systemctl disable --now nodesteer-hub-repair-20260930-101945-ttl-ui.service (idempotent; already disabled+dead)",
+        "rm /etc/systemd/system/nodesteer-hub-repair-20260930-101945-ttl-ui.service; systemctl daemon-reload; verify LoadState=not-found",
+        "rm /etc/nodesteer/nodesteer-hub-repair-20260930-101945-ttl-ui.yaml (guard: sha 2c8fe647...)",
+        "rm /etc/nodesteer/hub-repair-20260930-101945.yaml.pre-ttl-test (guard: sha e594591f..., byte-identical to live config)",
+        "rm -rf /var/lib/nodesteer-hub-repair-20260930-101945-ttl-ui (guard: hub.db sha 3a1c98fa...)"
+      ],
+      "postconditions": [
+        "unit not-found; dir and both files absent; port 18995 still free; repair hub (:18080, unit nodesteer-hub-repair-20260930-101945.service) still active+healthy"
+      ],
+      "guards": [
+        "abort T2 if unit is active or port bound at execution time",
+        "do NOT touch /etc/nodesteer/hub-repair-20260930-101945.yaml (live repair hub config) or the shared binary /opt/nodesteer-repair-20260930-101945/bin/nodesteer-hub-static-login-guard"
+      ]
+    },
+    {
+      "id": "T3",
+      "title": "native-1 managed-app fixture unit+dir + hub application record",
+      "host": "native-1 192.168.100.204",
+      "ownership_evidence": [
+        "unit qa-20260930-101945-web-app-6a32f.service: Description='NodeSteer managed application 804e6b14-eb84-4dda-90de-8bcab9586c4c' == hub app id; ExecStart=/tmp/qa-repair-20260930-101945-app-web/app-6a32f/binary",
+        "dir /tmp/qa-repair-20260930-101945-app-web contains app-6a32f/binary (sha 9dbe15d4...)",
+        "hub app 804e6b14-eb84-4dda-90de-8bcab9586c4c name=qa-repair-20260930-101945-app-async-live-6a32f (QA prefix + run id), assigned node 91f44866-8a28-435e-bbda-2f2367126c00 (= protected repair node qa-repair-20260930-101945-native-1)"
+      ],
+      "preconditions_verified": {
+        "unit_running": "active/running, MainPID=637, enabled with wants symlink",
+        "no_task_references_app": "/api/tasks empty",
+        "app_nodes_readback": ["91f44866-8a28-435e-bbda-2f2367126c00"]
+      },
+      "planned_actions": [
+        "systemctl disable --now qa-20260930-101945-web-app-6a32f.service (verify inactive/dead, pid gone)",
+        "rm /etc/systemd/system/qa-20260930-101945-web-app-6a32f.service (+ wants symlink if left); systemctl daemon-reload; verify LoadState=not-found",
+        "rm -rf /tmp/qa-repair-20260930-101945-app-web (guard: binary sha 9dbe15d4...)",
+        "hub product path: POST /api/applications/804e6b14.../assign {\"node_ids\":[\"91f44866...\"],\"remove\":true} then verify GET /nodes -> []",
+        "hub product path: DELETE /api/applications/804e6b14...; verify GET -> 404"
+      ],
+      "postconditions": [
+        "unit not-found; dir absent; app GET 404; app assignment gone",
+        "protected repair node 91f44866 untouched (still online/synced)"
+      ],
+      "guards": [
+        "do NOT touch the repair agent state.db (/var/lib/nodesteer-repair-20260930-101945/native-1/state.db) which still holds agent-side registry rows for this app (out of authorized scope; report only)",
+        "do NOT touch artifact qa-repair-20260930-101945-app-async-deploy-v1 or scripts qa-web-b05-* (out of authorized item list)"
+      ]
+    },
+    {
+      "id": "T4",
+      "title": "hub-209 docker images qa-20260930-101945-env-{agent,hub}:dddee4f0",
+      "host": "hub-209 192.168.100.209",
+      "ownership_evidence": [
+        "image tags contain campaign run id 20260930-101945 and build label dddee4f0; created 2026-09-30 10:36 (campaign build window)",
+        "qa-20260930-101945-env-agent:dddee4f0 id sha256:93d27860a380..., qa-20260930-101945-env-hub:dddee4f0 id sha256:664a161e53a0..."
+      ],
+      "preconditions_verified": {
+        "no_container_references": "docker ps -a empty on hub-209; ancestor filters return nothing",
+        "rebuildable": "campaign build manifest/commit available for rebuild if needed"
+      },
+      "planned_actions": [
+        "docker rmi qa-20260930-101945-env-agent:dddee4f0 qa-20260930-101945-env-hub:dddee4f0 (re-check ps -a first; verify absent)"
+      ],
+      "postconditions": ["docker images no longer lists either tag"],
+      "guards": [
+        "abort if any container references the images",
+        "do NOT delete other hub-209 images (alpine, dex, nginx, nodesteer/agent:repair-*)"
+      ]
+    }
+  ],
+  "explicitly_out_of_scope_retained": [
+    "/root/nodesteer-e2e-20260930-101945/backup on all hosts (pre-campaign rollback backups; MUST retain)",
+    "hub node qa-resume-20261008-native4-child-c5d48ea9-da08-4123-94fb-69b11abd59a7 (offline; different batch 20261008; not in authorized list)",
+    "hub artifact qa-repair-20260930-101945-app-async-deploy-v1 (id 7b8929ed-c880-46f1-90e6-a5e9c0dab096; not in authorized list)",
+    "hub scripts qa-web-b05-original-20261010-1115 (+copy) (batch b05 20261010; not in authorized list)",
+    "native-2 docker image nodesteer-qa/agent-host:f174890c3846 (not in authorized list)",
+    "hub-209 docker images nodesteer/agent:repair-20260930-101945{,-static-cgo0} (no containers; not in authorized list)",
+    "native-1 repair agent state.db rows (applications/unit_registry/deployments) referencing the deleted app (agent-side data; out of authorized scope)",
+    "protected: :8080 primary hub, nodesteer-agent.service units, qa-repair-20260930-101945-native-1..4 nodes, other-batch fixtures (qa-20261018-stress-authz, playwright/crossbrowser dirs)"
+  ],
+  "execution_order": ["T1", "T2", "T4", "T3"],
+  "rollback_notes": "All deletions are of fixture-only artifacts; the rollback backups (/root/nodesteer-e2e-20260930-101945/backup) are retained untouched. Container/volume/dir T1 can be re-created from the campaign scripts; T2/T3 fixtures can be re-created from their batch scripts if ever needed."
+}

@@ -1,0 +1,229 @@
+--- a/src/features/catalog/index.tsx
++++ b/src/features/catalog/index.tsx
+@@ -709,12 +709,14 @@
+                   <div className='flex flex-wrap gap-2'>
+                     <Input
+                       className='h-8 w-32 font-mono text-xs'
++                      aria-label={t('nodes.labelKey')}
+                       placeholder='key'
+                       value={labelKey}
+                       onChange={(event) => setLabelKey(event.target.value)}
+                     />
+                     <Input
+                       className='h-8 w-32 font-mono text-xs'
++                      aria-label={t('nodes.labelValue')}
+                       placeholder='value'
+                       value={labelValue}
+                       onChange={(event) => setLabelValue(event.target.value)}
+--- a/src/features/editors/index.tsx
++++ b/src/features/editors/index.tsx
+@@ -664,6 +664,7 @@
+           <CardContent className='grid gap-4'>
+             <div className='grid gap-3 sm:grid-cols-[1fr_140px_1fr_auto]'>
+               <Input
++                aria-label={`${t('scripts.parameters')}: ${t('scripts.paramName')}`}
+                 placeholder={t('scripts.paramName')}
+                 value={parameter.name}
+                 onChange={(event) =>
+@@ -696,6 +697,7 @@
+               </Select>
+               <Input
+                 type={parameter.type === 'secret' ? 'password' : 'text'}
++                aria-label={`${t('scripts.parameters')}: ${t('scripts.paramDefault')}`}
+                 placeholder={t('scripts.paramDefault')}
+                 value={parameter.default || ''}
+                 onChange={(event) =>
+@@ -753,6 +755,7 @@
+           <CardContent className='grid gap-4'>
+             <div className='grid gap-3 sm:grid-cols-[1fr_1fr_auto]'>
+               <Input
++                aria-label={`${t('scripts.environment')}: ${t('common.key')}`}
+                 placeholder='KEY'
+                 value={environment.key}
+                 onChange={(event) =>
+@@ -760,6 +763,7 @@
+                 }
+               />
+               <Input
++                aria-label={`${t('scripts.environment')}: ${t('common.value')}`}
+                 placeholder='VALUE'
+                 value={environment.value}
+                 onChange={(event) =>
+@@ -1409,6 +1413,7 @@
+                       <Input
+                         required
+                         name='name'
++                        aria-label={`${t('apps.artifact')}: ${t('common.name')}`}
+                         placeholder={t('common.name')}
+                         value={uploadName}
+                         onChange={(event) => setUploadName(event.target.value)}
+@@ -1416,6 +1421,7 @@
+                       <Input
+                         required
+                         name='version'
++                        aria-label={`${t('apps.artifact')}: ${t('common.version')}`}
+                         placeholder={t('common.version')}
+                         value={uploadVersion}
+                         onChange={(event) =>
+@@ -1535,6 +1541,7 @@
+               <div className='flex items-center gap-2'>
+                 <Input
+                   className='font-mono text-xs'
++                  aria-label={t('apps.arguments')}
+                   value={arg}
+                   onChange={(event) => setArg(event.target.value)}
+                   placeholder='--port 8080'
+@@ -1576,6 +1583,7 @@
+               <div className='grid gap-2 sm:grid-cols-[1fr_1fr_auto]'>
+                 <Input
+                   className='font-mono text-xs'
++                  aria-label={`${t('apps.env')}: ${t('common.key')}`}
+                   value={env.key}
+                   onChange={(event) =>
+                     setEnv({ ...env, key: event.target.value })
+@@ -1584,6 +1592,7 @@
+                 />
+                 <Input
+                   className='font-mono text-xs'
++                  aria-label={`${t('apps.env')}: ${t('common.value')}`}
+                   value={env.value}
+                   onChange={(event) =>
+                     setEnv({ ...env, value: event.target.value })
+--- a/src/features/tasks/index.tsx
++++ b/src/features/tasks/index.tsx
+@@ -1098,6 +1098,7 @@
+           <CardContent className='grid gap-4'>
+             <div className='grid gap-3 sm:grid-cols-[1fr_140px_1fr_auto_auto]'>
+               <Input
++                aria-label={t('tasks.paramName')}
+                 placeholder={t('tasks.paramName')}
+                 value={parameter.name}
+                 onChange={(event) =>
+@@ -1129,6 +1130,7 @@
+               </Select>
+               <Input
+                 type={parameter.type === 'secret' ? 'password' : 'text'}
++                aria-label={t('tasks.paramDefault')}
+                 placeholder={t('tasks.paramDefault')}
+                 value={parameter.default || ''}
+                 onChange={(event) =>
+@@ -1251,6 +1253,7 @@
+               </SelectContent>
+             </Select>
+             <Input
++              aria-label={t('tasks.localConditionValue')}
+               placeholder='value'
+               value={localCondition.value}
+               onChange={(event) =>
+@@ -1266,6 +1269,7 @@
+               localCondition.metric === 'process_exists' ||
+               localCondition.metric === 'port_listening') && (
+               <Input
++                aria-label={t('tasks.conditionPath')}
+                 placeholder={t('tasks.conditionPath')}
+                 value={localCondition.path}
+                 onChange={(event) =>
+@@ -1278,6 +1282,7 @@
+             )}
+             {localCondition.metric === 'command_result' && (
+               <Input
++                aria-label={t('tasks.conditionCommand')}
+                 placeholder={t('tasks.conditionCommand')}
+                 value={localCondition.command}
+                 onChange={(event) =>
+@@ -1353,6 +1358,7 @@
+             {remoteCondition.property === 'last_execution' && (
+               <Input
+                 className='font-mono text-xs'
++                aria-label={t('tasks.conditionTaskId')}
+                 placeholder='task_id'
+                 value={remoteCondition.task_id}
+                 onChange={(event) =>
+@@ -1378,6 +1384,7 @@
+               </SelectContent>
+             </Select>
+             <Input
++              aria-label={t('tasks.remoteConditionValue')}
+               placeholder='value'
+               value={remoteCondition.value}
+               onChange={(event) =>
+--- a/src/features/executions/index.tsx
++++ b/src/features/executions/index.tsx
+@@ -676,6 +676,7 @@
+         <div className='flex flex-wrap items-center gap-2'>
+           <Input
+             className='h-8 max-w-sm'
++            aria-label={t('common.searchLogs')}
+             value={search}
+             onChange={(event) => setSearch(event.target.value)}
+             placeholder={t('common.searchLogs')}
+--- a/src/features/shared/ui.tsx
++++ b/src/features/shared/ui.tsx
+@@ -212,6 +212,7 @@
+     <div className='flex flex-wrap items-center gap-2'>
+       <Input
+         className='h-8 w-full sm:w-64'
++        aria-label={placeholder}
+         value={value}
+         onChange={(event) => onChange(event.target.value)}
+         placeholder={placeholder}
+--- a/src/locales/zh.ts
++++ b/src/locales/zh.ts
+@@ -54,6 +54,8 @@
+     description: '描述',
+     time: '时间',
+     type: '类型',
++    key: '键',
++    value: '值',
+     add: '添加',
+     new: '新建',
+     upload: '上传',
+@@ -270,6 +272,8 @@
+     noInventory: '暂无清单信息',
+     noLabels: '暂无标签',
+     addLabel: '添加标签',
++    labelKey: '标签键',
++    labelValue: '标签值',
+     executions: '执行',
+     noExecs: '该节点暂无执行',
+     tasks: '任务',
+@@ -464,6 +468,9 @@
+     conditionOperator: '运算符',
+     conditionProperty: '属性',
+     conditionNode: '节点',
++    conditionTaskId: '任务 ID',
++    localConditionValue: '本地条件值',
++    remoteConditionValue: '远程条件值',
+     noExecutions: '暂无执行',
+     runTitle: '运行：',
+     running: '运行中...',
+--- a/src/locales/en.ts
++++ b/src/locales/en.ts
+@@ -54,6 +54,8 @@
+     description: 'Description',
+     time: 'Time',
+     type: 'Type',
++    key: 'Key',
++    value: 'Value',
+     add: 'Add',
+     new: 'New',
+     upload: 'Upload',
+@@ -276,6 +278,8 @@
+     noInventory: 'No inventory reported',
+     noLabels: 'No labels',
+     addLabel: 'Add label',
++    labelKey: 'Label key',
++    labelValue: 'Label value',
+     executions: 'Executions',
+     noExecs: 'No executions for this node',
+     tasks: 'Tasks',
+@@ -476,6 +480,9 @@
+     conditionOperator: 'Operator',
+     conditionProperty: 'Property',
+     conditionNode: 'Agent',
++    conditionTaskId: 'Task ID',
++    localConditionValue: 'Local condition value',
++    remoteConditionValue: 'Remote condition value',
+     noExecutions: 'No executions yet',
+     runTitle: 'Run: ',
+     running: 'Running...',

@@ -1,0 +1,154 @@
+{
+  "config": {
+    "argv": [
+      "/usr/bin/node",
+      "/home/superc/code/nodesteer/web/node_modules/playwright/cli.js",
+      "test",
+      "--config",
+      "e2e/playwright.config.ts",
+      "--reporter=json",
+      "--trace=on",
+      "tests/gap-ui.spec.ts",
+      "-g",
+      "GAP-15"
+    ],
+    "configFile": "/home/superc/code/nodesteer/web/e2e/playwright.config.ts",
+    "rootDir": "/home/superc/code/nodesteer/web/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/tmp/opencode/nodesteer-pw-20261018/artifacts/trace-gap-15",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/superc/code/nodesteer/web/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "gap-ui.spec.ts",
+      "file": "gap-ui.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "GAP-15 Root控制Node2物理offline窗口的真实UI Run",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 140000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 662,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at /home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts:548:153",
+                    "location": {
+                      "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                      "column": 153,
+                      "line": 548
+                    },
+                    "snippet": "  546 |   try {\n  547 |     const current = (await apiRequest(page, '/api/tasks/' + task.id)).body as Record<string, unknown>\n> 548 |     expect((await apiRequest(page, '/api/tasks/' + task.id, { method: 'PUT', data: { ...current, target: { type: 'node', node_ids: [nodeId] } } })).ok).toBeTruthy()\n      |                                                                                                                                                         ^\n  549 |     await page.goto(`/tasks/${task.id}/run`); await page.getByRole('button', { name: /^立即运行$/ }).click(); await expect(page.getByRole('alertdialog')).toBeVisible()\n  550 |     await writeFile(privateDir + '/web-offline-ui-request.json', JSON.stringify({ task_id: task.id, node_id: nodeId, phase: 'dialog-ready', flag_path: flag, complete_path: completed, root_action: 'Root controls own Node2 daemon stop/status offline, writes offline-ready; Web clicks real dialog, then writes completed; Root restores daemon in finally' }), { mode: 0o600 })\n  551 |     await expect.poll(async () => {"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                        "column": 153,
+                        "line": 548
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n\n  546 |   try {\n  547 |     const current = (await apiRequest(page, '/api/tasks/' + task.id)).body as Record<string, unknown>\n> 548 |     expect((await apiRequest(page, '/api/tasks/' + task.id, { method: 'PUT', data: { ...current, target: { type: 'node', node_ids: [nodeId] } } })).ok).toBeTruthy()\n      |                                                                                                                                                         ^\n  549 |     await page.goto(`/tasks/${task.id}/run`); await page.getByRole('button', { name: /^立即运行$/ }).click(); await expect(page.getByRole('alertdialog')).toBeVisible()\n  550 |     await writeFile(privateDir + '/web-offline-ui-request.json', JSON.stringify({ task_id: task.id, node_id: nodeId, phase: 'dialog-ready', flag_path: flag, complete_path: completed, root_action: 'Root controls own Node2 daemon stop/status offline, writes offline-ready; Web clicks real dialog, then writes completed; Root restores daemon in finally' }), { mode: 0o600 })\n  551 |     await expect.poll(async () => {\n    at /home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts:548:153"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-18T07:24:41.606Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/tmp/opencode/nodesteer-pw-20261018/artifacts/trace-gap-15/gap-ui-GAP-15-Root控制Node2物理offline窗口的真实UI-Run-chromium/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/tmp/opencode/nodesteer-pw-20261018/artifacts/trace-gap-15/gap-ui-GAP-15-Root控制Node2物理offline窗口的真实UI-Run-chromium/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/home/superc/code/nodesteer/web/e2e/tests/gap-ui.spec.ts",
+                    "column": 153,
+                    "line": 548
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e7bf0fd7afce34bc30c5-9d82bbc9d4910dfeece2",
+          "file": "gap-ui.spec.ts",
+          "line": 541,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-18T07:24:41.034Z",
+    "duration": 1524.846,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

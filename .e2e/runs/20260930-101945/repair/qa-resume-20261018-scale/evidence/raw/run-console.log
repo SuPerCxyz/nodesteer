@@ -1,0 +1,30 @@
+== setup: isolated 8-agent local environment ==
+setup: hub ready pid=3316648, settings applied
+baseline zero_node captured
+== S1: bulk enrollment of 8 agents ==
+  enrolled+launched qa-scale-efc9321a-agent-1 (c33e9e1d) pid=3316665
+  enrolled+launched qa-scale-efc9321a-agent-2 (4c0cfeb9) pid=3316674
+  enrolled+launched qa-scale-efc9321a-agent-3 (90791f64) pid=3316691
+  enrolled+launched qa-scale-efc9321a-agent-4 (292be764) pid=3316702
+  enrolled+launched qa-scale-efc9321a-agent-5 (b2086b64) pid=3316711
+  enrolled+launched qa-scale-efc9321a-agent-6 (db25e7ba) pid=3316719
+  enrolled+launched qa-scale-efc9321a-agent-7 (81ce7d8d) pid=3316730
+  enrolled+launched qa-scale-efc9321a-agent-8 (042266e9) pid=3316771
+[SCENARIO] S1_bulk_enrollment -> PASS :: 8 agents online+synced, revision 1->2 converged=True, wall=4.79s
+baseline one_node captured
+== S2: heartbeat stability 185s ==
+[SCENARIO] S2_heartbeat_stability -> PASS :: 185 samples, 0 flapping=True, reconnects={'1': 1, '2': 1, '3': 1, '4': 1, '5': 1, '6': 1, '7': 1, '8': 1}
+== S3: fan-out execution to all 8 nodes ==
+[SCENARIO] S3_fanout_execution -> PASS :: 8 nodes: terminal_success=True, one_per_node=True, wall=4.01s
+== S4: group scheduling (8 nodes) ==
+[SCENARIO] S4_group_scheduling -> PASS :: group=8 members, fires=2 (each 8 execs=True), order_ok=True
+== S5: node jitter (kill 2 agents) ==
+[SCENARIO] S5_node_jitter -> PASS :: offline_detect=True recovery=True others_online=True hb_timeout=True rev_converge=True
+== S6: concurrent pressure 8 nodes x 3 runs = 24 ==
+[SCENARIO] S6_concurrent_pressure -> PASS :: 24 execs=True, unique=True, per_node_3=True, sidefile=True, 5xx=0
+== S7: API latency at scale (8 nodes) ==
+[SCENARIO] S7_api_latency_at_scale -> PASS :: list_correct=True, burst_errors=0
+== cleanup ==
+cleanup oracle: PASS failed=[]
+scale-results: {"total": 7, "pass": 7, "fail": 0, "findings": 0}
+total wall: 283.4s

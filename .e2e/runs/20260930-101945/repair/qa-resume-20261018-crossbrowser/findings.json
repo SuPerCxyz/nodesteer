@@ -1,0 +1,111 @@
+{
+  "batch": "qa-resume-20261018-crossbrowser",
+  "authority": "http://192.168.100.209:18080",
+  "build_label": "dddee4f0-e2e-repair-20261018-final",
+  "generated_at_utc": "2026-10-18T07:20:00Z",
+  "discipline": "read-only navigation; no business fixtures created/modified/deleted; create-form AND check never clicked 保存; in-page fetch patching is session-scoped only",
+  "summary": {
+    "verdict": "NO browser-specific defects found",
+    "browsers": {
+      "firefox": {"engine": "Gecko 151.0", "pass": 21, "skip": 1, "fail": 0, "console_errors_captured": 0},
+      "webkit": {"engine": "WebKit 605.1.15 (Playwright Safari 26.5 UA)", "pass": 21, "skip": 1, "fail": 0, "console_errors_captured": 3},
+      "chromium": {"engine": "Chromium 149 (baseline reference)", "pass": 20, "skip": 2, "fail": 0, "console_errors_captured": 3}
+    },
+    "supplementary": {
+      "schedules_detail_responsive": {
+        "status": "PASS (all 3 browsers)",
+        "fixture": "live schedule 19364ea2-d467-46fa-bc0d-94269f077332 (opportunistic, concurrent batch)",
+        "evidence": "supplementary-schedule-responsive.json + evidence/supplementary/*.png"
+      }
+    },
+    "skips": {
+      "role_entry_operator_viewer": "operator fixture login rejected (invalid credentials, see audit 06:40:00Z); admin full sidebar verified in all 3 browsers; role filter previously verified on Chromium",
+      "detail_application_chromium": "no application existed at chromium run time (long-lived app deleted 07:03:11Z by concurrent batch; audit confirmed); covered on firefox+webkit"
+    }
+  },
+  "findings": [
+    {
+      "id": "XB-20261018-01",
+      "classification": "① 浏览器兼容缺陷",
+      "status": "NONE",
+      "title": "未发现任何浏览器特有缺陷",
+      "detail": "核心路径（登录/仪表盘/侧边栏 12 入口/9 个列表页渲染+排序+筛选+分页/节点·执行·应用详情/6 项修复点/760·480 响应式）在 Firefox 151、WebKit（Safari 26.5 UA）、Chromium 149 三引擎行为一致，全部 PASS；无 FAIL 用例。",
+      "evidence": ["smoke-results.json"]
+    },
+    {
+      "id": "XB-20261018-02",
+      "classification": "③ 环境问题",
+      "status": "OBSERVED / NOT A DEFECT",
+      "title": "Chromium 应用详情用例 SKIP：长驻应用被并发批次删除",
+      "detail": "批次运行期间另一 Playwright 全套批次在同环境持续创建/删除夹具。长驻应用 qa-repair-20260930-101945-app-async-live-6a32f 于 07:03:11Z 被删除（审计记录），Chromium 段探测时 /api/applications 已为空，故 detail_application 标记 SKIP 而非 FAIL。Firefox/WebKit 段已覆盖应用详情（state 卡片 版本 v1 + <time>）。",
+      "repro": ["审计：07:03:11Z delete application（admin）", "chromium fixtures_used.app = null；detail_application extra 为空对象"],
+      "evidence": ["smoke-results.json#browsers.chromium", "console-errors.json"]
+    },
+    {
+      "id": "XB-20261018-03",
+      "classification": "② harness/选择器问题",
+      "status": "HARNESS LIMITATION",
+      "title": "Firefox 不上报资源加载失败的 console 事件（检测通道差异）",
+      "detail": "受控实验（同脚本三引擎，故意 401 登录 + 404 fetch）：Chromium/WebKit 捕获 'Failed to load resource' console.error，Firefox 0 条（Firefox 将资源加载失败写入浏览器控制台，不经 page console 暴露）。因此 Firefox 段 console_errors=0 不能等价于'无控制台错误'；未捕获异常（pageerror）三引擎均为 0，关键行为均以页内断言复核。",
+      "evidence": ["console-errors.json#entries（webkit/chromium 各 3 条均为预期/环境性 404/401）", "诊断脚本输出（本文件同级记录于批次会话）"]
+    },
+    {
+      "id": "XB-20261018-04",
+      "classification": "② harness/选择器问题",
+      "status": "NOT A PRODUCT DEFECT",
+      "title": "截图顶部出现已关闭 Select 弹层的合成残影（firefox/webkit/chromium 均有）",
+      "detail": "任务新建表单操作后截图在页面顶部显示节点下拉残影。同一时刻 DOM 检查：无 [role=listbox]、无 [data-radix-popper-content-wrapper]，elementFromPoint(700,50) 命中页面描述段落。结论：headless 截图合成残影，非 UI 缺陷；三引擎均出现（程度不同），非浏览器差异。复现脚本重放同序列亦同现象，功能断言（摘要出现/清除）全部通过。",
+      "evidence": ["evidence/{firefox,webkit,chromium}/09-condition-summary.png", "evidence/webkit/10-condition-cleared.png"]
+    },
+    {
+      "id": "XB-20261018-05",
+      "classification": "③ 环境问题",
+      "status": "COVERAGE GAP (read-only discipline)",
+      "title": "任务/调度夹具缺失时，部分修复点以只读替代路径覆盖",
+      "detail": "批次期间 tasks/schedules 长期为 0（并发批次即用即删）。采用：Tasks 三态用会话级 fetch 注入（挂起/空响应）+ 真实空态；AND 条件摘要用 /tasks/new 表单现场构建（未保存，tasks_count 前后无本批次写入）；/schedules/{id} 响应式在捕获到临时真实调度后补测通过（supplementary）。节点详情的任务/调度回链因无夹具无法在本批复核（章节渲染正常，应用回链已验证），Chromium 历史批次已覆盖。",
+      "evidence": ["smoke-results.json", "supplementary-schedule-responsive.json"]
+    },
+    {
+      "id": "XB-20261018-06",
+      "classification": "② harness/选择器问题",
+      "status": "FIXED IN HARNESS",
+      "title": "夹具选取竞态与表头选择器误点（首轮 Firefox 两处 harness 问题，已修复并复跑）",
+      "detail": "① 首轮探测 apps[0] 命中并发批次临时应用，其后被删导致 404 页 → 改为稳定夹具优先（qa-repair-20260930 前缀）+ 存活校验 + 失败重取；② 排序点击选中了表头全选 checkbox（button 无 title）→ 改为 thead button[title]。修复后 Firefox 21/21 PASS（除设计内 SKIP）。",
+      "evidence": ["crossbrowser_smoke.py（_stable_first/ensure_app/thead button[title]）"]
+    }
+  ],
+  "cross_browser_parity_positive": [
+    "Skip to Main：首个 Tab 聚焦 → Enter → 焦点落到 #content（DIV, tabindex=-1），下一次 Tab 进入正文「添加节点」按钮 —— 三引擎完全一致",
+    "Tasks 三态：挂起→「加载中...」（无「没有结果」）；空响应→「暂无数据」；恢复→真实状态 —— 三引擎一致",
+    "AND 条件摘要：'cpu_usage > AND <节点名>.online == online'，一键清除后卡片消失 —— 三引擎一致",
+    "pageSize=999 越界：下拉回退默认 10（非空白），行正常渲染 —— 三引擎一致",
+    "无效 task 深链：404 → 「任务不存在或已被删除。」+ alert + 返回入口 —— 三引擎一致",
+    "状态徽标：节点 在线/离线、传输 成功 等全中文，无原始枚举（8/8 行中文徽标） —— 三引擎一致",
+    "列表排序 aria-sort=ascending + 行序变化；筛选无匹配→空态；分页 第1页→第2页（transfers 9 页/audit 785+ 页/users 2 页） —— 三引擎一致",
+    "响应式 760/480：/scripts/{id}、/schedules/{id}（真实夹具补测）、/schedules/new 溢出均为 0px —— 三引擎一致",
+    "仪表盘：健康卡 1/1 健康、节点汇总、托管应用状态、执行徽标 —— 三引擎一致（chromium 段因应用被并发删除显示 0/0，属环境）"
+  ],
+  "console_error_classification": {
+    "total_entries": 6,
+    "by_type": {
+      "expected_401_login": "role_entry 用例故意用失效凭据登录（1 条/浏览器，webkit+chromium）",
+      "expected_404_invalid_task": "无效 task 深链用例的预期 404（1 条/浏览器，webkit+chromium）",
+      "environment_404_task_link": "执行详情引用的任务已被并发批次删除，页面降级正常（1 条/浏览器，webkit+chromium）"
+    },
+    "firefox": "0 条（检测通道差异，见 XB-20261018-03；pageerror=0）",
+    "verdict": "无应用级 console 错误；无浏览器特有错误"
+  },
+  "coverage_gaps": [
+    "节点详情的任务/调度回链：本批无任务/调度夹具（只读纪律），仅验证章节渲染与应用回链",
+    "operator/viewer 侧边栏角色过滤：旧夹具凭据失效，无法只读登录（SKIP）；admin 全量入口三引擎已验证",
+    "/schedules/{id} 响应式：通过等待并发批次的临时真实调度补测通过（非本批夹具）"
+  ],
+  "artifacts": {
+    "browser_availability": "browser-availability.json",
+    "smoke_results": "smoke-results.json",
+    "console_errors": "console-errors.json",
+    "supplementary_schedule": "supplementary-schedule-responsive.json",
+    "scripts": ["crossbrowser_smoke.py", "supplementary_schedule_responsive.py"],
+    "evidence_dir": "evidence/ (firefox|webkit|chromium 各 20+ 张关键页截图 + supplementary/)"
+  }
+}

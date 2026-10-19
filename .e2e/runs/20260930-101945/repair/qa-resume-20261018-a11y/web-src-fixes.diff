@@ -1,0 +1,805 @@
+diff --git a/web/src/components/confirm-dialog.test.tsx b/web/src/components/confirm-dialog.test.tsx
+index 8a1c90c..6a3e3c4 100644
+--- a/web/src/components/confirm-dialog.test.tsx
++++ b/web/src/components/confirm-dialog.test.tsx
+@@ -1,3 +1,4 @@
++import * as React from 'react'
+ import type { SubmitEvent } from 'react'
+ import { describe, expect, it, vi } from 'vitest'
+ import { render } from 'vitest-browser-react'
+@@ -216,3 +217,35 @@ describe('ConfirmDialog', () => {
+     expect(handleFormSubmit).not.toHaveBeenCalled()
+   })
+ })
++
++describe('ConfirmDialog 关闭后焦点恢复（P11 a11y：无 trigger 的弹窗需显式还焦点）', () => {
++  it('关闭后焦点回到打开前的触发按钮，而不是落到 body', async () => {
++    function Harness() {
++      const [open, setOpen] = React.useState(false)
++      return (
++        <div>
++          <button type='button' onClick={() => setOpen(true)}>
++            删除节点
++          </button>
++          <ConfirmDialog
++            open={open}
++            onOpenChange={setOpen}
++            title='删除节点'
++            desc='确认删除？'
++            handleConfirm={() => setOpen(false)}
++          />
++        </div>
++      )
++    }
++    const page = await render(<Harness />)
++    const trigger = page.getByRole('button', { name: '删除节点' })
++
++    await userEvent.click(trigger)
++    await expect.element(page.getByRole('alertdialog')).toBeVisible()
++
++    await userEvent.keyboard('{Escape}')
++    await expect.element(page.getByRole('alertdialog')).not.toBeInTheDocument()
++
++    expect(document.activeElement).toBe(trigger.element())
++  })
++})
+diff --git a/web/src/components/confirm-dialog.tsx b/web/src/components/confirm-dialog.tsx
+index aed089c..13ca3b3 100644
+--- a/web/src/components/confirm-dialog.tsx
++++ b/web/src/components/confirm-dialog.tsx
+@@ -1,3 +1,4 @@
++import * as React from 'react'
+ import { cn } from '@/lib/utils'
+ import {
+   AlertDialog,
+@@ -22,6 +23,8 @@ type ConfirmDialogProps = {
+   isLoading?: boolean
+   className?: string
+   children?: React.ReactNode
++  /** 关闭后显式还焦点的目标（无 trigger 的 Radix 弹窗默认会把焦点丢给 body） */
++  returnFocusTo?: React.RefObject<HTMLElement | null>
+ } & (
+   | { form: string; handleConfirm?: undefined }
+   | { form?: undefined; handleConfirm: () => void }
+@@ -40,11 +43,30 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
+     disabled = false,
+     form,
+     handleConfirm,
++    returnFocusTo,
+     ...actions
+   } = props
++  // Radix 弹窗在无 trigger 时关闭后会 preventDefault 焦点恢复，把焦点丢给 body；
++  // 这里记录打开前的焦点元素，关闭后显式恢复，保证键盘用户回到触发按钮。
++  const previouslyFocusedRef = React.useRef<HTMLElement | null>(null)
+   return (
+     <AlertDialog {...actions}>
+-      <AlertDialogContent className={cn(className && className)}>
++      <AlertDialogContent
++        className={cn(className && className)}
++        onOpenAutoFocus={() => {
++          previouslyFocusedRef.current =
++            document.activeElement instanceof HTMLElement
++              ? document.activeElement
++              : null
++        }}
++        onCloseAutoFocus={(event) => {
++          const target = returnFocusTo?.current ?? previouslyFocusedRef.current
++          if (target && target.isConnected) {
++            event.preventDefault()
++            target.focus()
++          }
++        }}
++      >
+         <AlertDialogHeader className='text-start'>
+           <AlertDialogTitle>{title}</AlertDialogTitle>
+           <AlertDialogDescription asChild>
+diff --git a/web/src/components/data-table/pagination.tsx b/web/src/components/data-table/pagination.tsx
+index 52fbeb3..5b75849 100644
+--- a/web/src/components/data-table/pagination.tsx
++++ b/web/src/components/data-table/pagination.tsx
+@@ -55,7 +55,10 @@ export function DataTablePagination<TData>({
+               table.setPageSize(Number(value))
+             }}
+           >
+-            <SelectTrigger className='h-8 w-17.5'>
++            <SelectTrigger
++              className='h-8 w-17.5'
++              aria-label={t('common.rowsPerPage')}
++            >
+               <SelectValue placeholder={currentPageSize} />
+             </SelectTrigger>
+             <SelectContent side='top'>
+diff --git a/web/src/components/layout/app-sidebar.tsx b/web/src/components/layout/app-sidebar.tsx
+index 19926dc..0761eaa 100644
+--- a/web/src/components/layout/app-sidebar.tsx
++++ b/web/src/components/layout/app-sidebar.tsx
+@@ -34,7 +34,12 @@ export function AppSidebar() {
+   }
+ 
+   return (
+-    <Sidebar collapsible={collapsible} variant={variant}>
++    <Sidebar
++      collapsible={collapsible}
++      variant={variant}
++      role='navigation'
++      aria-label={t('nav.primary')}
++    >
+       <SidebarHeader>
+         <AppTitle />
+       </SidebarHeader>
+diff --git a/web/src/components/layout/authenticated-layout.test.tsx b/web/src/components/layout/authenticated-layout.test.tsx
+index 48780cb..54baa98 100644
+--- a/web/src/components/layout/authenticated-layout.test.tsx
++++ b/web/src/components/layout/authenticated-layout.test.tsx
+@@ -1,8 +1,8 @@
+ import type { ReactNode } from 'react'
+ import i18n from '@/i18n'
+-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
++import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+ import { render } from 'vitest-browser-react'
+-import { userEvent } from 'vitest/browser'
++import { page as browserPage, userEvent } from 'vitest/browser'
+ import { setToken } from '@/lib/api'
+ import { useAuthStore } from '@/stores/auth-store'
+ import { AuthenticatedLayout } from './authenticated-layout'
+@@ -19,7 +19,15 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
+   return {
+     ...actual,
+     useNavigate: () => vi.fn(),
+-    useLocation: () => ({ pathname: '/nodes', search: '', hash: '' }),
++    useLocation: (options?: { select?: (location: { pathname: string; search: string; hash: string; href: string }) => unknown }) => {
++      const location = {
++        pathname: '/nodes',
++        search: '',
++        hash: '',
++        href: '/nodes',
++      }
++      return options?.select ? options.select(location) : location
++    },
+     Link: ({ children, to }: { children?: ReactNode; to?: string }) => (
+       <a href={typeof to === 'string' ? to : '#'}>{children}</a>
+     ),
+@@ -64,3 +72,52 @@ describe('跳转主内容链接（SkipToMain）', () => {
+     expect(document.activeElement).toBe(target)
+   })
+ })
++
++describe('侧栏导航地标（P11 a11y：内容需位于 landmark 内）', () => {
++  beforeAll(async () => {
++    await i18n.changeLanguage('zh')
++  })
++
++  // 侧栏在 md 以下断点隐藏（hidden md:block），用桌面视口验证地标
++  beforeEach(async () => {
++    await browserPage.viewport(1280, 800)
++  })
++
++  afterEach(async () => {
++    await browserPage.viewport(1280, 800)
++  })
++
++  beforeEach(() => {
++    setToken('layout-test-session')
++    useAuthStore.getState().auth.setAccessToken('layout-test-session')
++    get.mockReset()
++    get.mockResolvedValue({
++      token: 'layout-test-session',
++      user_id: 'admin',
++      username: 'admin',
++      role: 'administrator',
++      expires: '2099-01-01T00:00:00Z',
++    })
++  })
++
++  it('侧栏渲染为具名导航地标，侧栏内链接与用户菜单均在地标内', async () => {
++    const page = await render(
++      <AuthenticatedLayout>
++        <p>正文内容</p>
++      </AuthenticatedLayout>
++    )
++
++    const nav = page.getByRole('navigation', { name: i18n.t('nav.primary') })
++    await expect.element(nav).toBeVisible()
++    expect(nav.element().contains(page.getByRole('link', { name: '仪表盘' }).element())).toBe(true)
++    expect(
++      nav.element().contains(page.getByRole('button', { name: /admin/i }).element())
++    ).toBe(true)
++  })
++})
++
++// 会话写在同源 localStorage 上，跨测试文件共享；用例结束必须清理，避免污染其它测试
++afterEach(() => {
++  setToken(null)
++  useAuthStore.getState().auth.reset()
++})
+diff --git a/web/src/components/ui/badge.tsx b/web/src/components/ui/badge.tsx
+index c4d332d..3591f7a 100644
+--- a/web/src/components/ui/badge.tsx
++++ b/web/src/components/ui/badge.tsx
+@@ -9,11 +9,11 @@ const badgeVariants = cva(
+     variants: {
+       variant: {
+         default:
+-          'border-blue-600 bg-blue-600 text-white [a&]:hover:bg-blue-700 dark:border-blue-500 dark:bg-blue-500 dark:text-white [a&]:hover:bg-blue-600',
++          'border-blue-600 bg-blue-600 text-white dark:border-blue-600 dark:bg-blue-600 dark:text-white [a&]:hover:bg-blue-700',
+         secondary:
+           'border-slate-600 bg-slate-600 text-white [a&]:hover:bg-slate-700 dark:border-slate-500 dark:bg-slate-500 dark:text-white [a&]:hover:bg-slate-600',
+         destructive:
+-          'border-red-600 bg-red-600 text-white [a&]:hover:bg-red-700 focus-visible:ring-destructive/20 dark:border-red-500 dark:bg-red-500 dark:text-white [a&]:hover:bg-red-600 dark:focus-visible:ring-destructive/40',
++          'border-red-600 bg-red-600 text-white [a&]:hover:bg-red-700 focus-visible:ring-destructive/20 dark:border-red-600 dark:bg-red-600 dark:text-white [a&]:hover:bg-red-700 dark:focus-visible:ring-destructive/40',
+         outline:
+           'border-slate-600 bg-slate-600 text-white [a&]:hover:bg-slate-700 dark:border-slate-500 dark:bg-slate-500 dark:text-white [a&]:hover:bg-slate-600',
+       },
+diff --git a/web/src/components/ui/sidebar.tsx b/web/src/components/ui/sidebar.tsx
+index 9f9d75b..6c6eac1 100644
+--- a/web/src/components/ui/sidebar.tsx
++++ b/web/src/components/ui/sidebar.tsx
+@@ -179,7 +179,7 @@ function Sidebar({
+ 
+   if (isMobile) {
+     return (
+-      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
++      <Sheet open={openMobile} onOpenChange={setOpenMobile}>
+         <SheetContent
+           data-sidebar='sidebar'
+           data-slot='sidebar'
+@@ -196,7 +196,10 @@ function Sidebar({
+             <SheetTitle>Sidebar</SheetTitle>
+             <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+           </SheetHeader>
+-          <div className='flex h-full w-full flex-col'>{children}</div>
++          {/* 透传调用方属性（如 role/aria-label）到移动端侧栏容器，保持与桌面端一致的地标语义 */}
++          <div className='flex h-full w-full flex-col' {...props}>
++            {children}
++          </div>
+         </SheetContent>
+       </Sheet>
+     )
+diff --git a/web/src/features/auth/auth-layout.tsx b/web/src/features/auth/auth-layout.tsx
+index 50e38af..dab1562 100644
+--- a/web/src/features/auth/auth-layout.tsx
++++ b/web/src/features/auth/auth-layout.tsx
+@@ -3,7 +3,7 @@ import { LanguageSwitch } from '@/components/language-switch'
+ 
+ export function AuthLayout({ children }: { children: React.ReactNode }) {
+   return (
+-    <div className='relative container flex h-svh max-w-none items-center justify-center'>
++    <main className='relative container flex h-svh max-w-none items-center justify-center'>
+       <div className='absolute end-4 top-4'>
+         <LanguageSwitch />
+       </div>
+@@ -14,6 +14,6 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
+         </div>
+         {children}
+       </div>
+-    </div>
++    </main>
+   )
+ }
+diff --git a/web/src/features/auth/sign-in/index.test.tsx b/web/src/features/auth/sign-in/index.test.tsx
+index 668dd1b..d76ccef 100644
+--- a/web/src/features/auth/sign-in/index.test.tsx
++++ b/web/src/features/auth/sign-in/index.test.tsx
+@@ -79,3 +79,20 @@ describe('SignIn OIDC 状态渲染', () => {
+     await expect.element(getByLabelText('密码')).not.toBeInTheDocument()
+   })
+ })
++
++describe('登录页地标（P11 a11y：landmark-one-main / region）', () => {
++  beforeAll(() => void i18n.changeLanguage('zh'))
++  beforeEach(() => {
++    get.mockReset()
++    window.history.replaceState({}, '', '/sign-in')
++  })
++
++  it('登录表单位于 main 地标内', async () => {
++    get.mockResolvedValue({ enabled: false, local_fallback: true })
++    const page = await renderSignIn()
++
++    const main = page.getByRole('main')
++    await expect.element(main).toBeVisible()
++    expect(main.element().contains(page.getByLabelText('用户名').element())).toBe(true)
++  })
++})
+diff --git a/web/src/features/catalog/detail-routes.test.tsx b/web/src/features/catalog/detail-routes.test.tsx
+index 4a54da9..9225c99 100644
+--- a/web/src/features/catalog/detail-routes.test.tsx
++++ b/web/src/features/catalog/detail-routes.test.tsx
+@@ -190,3 +190,29 @@ describe('用户列表跳转详情（OBS-20261017-CROSSPAGE-LINK-GAPS ③）', (
+       .toHaveAttribute('href', '/users/u-1')
+   })
+ })
++
++describe('用户列表角色选择器可访问名（P11 a11y：combobox 需要作者提供的名称）', () => {
++  beforeAll(async () => {
++    await i18n.changeLanguage('zh')
++  })
++
++  beforeEach(() => {
++    get.mockReset()
++    get.mockImplementation(async (path: string) => {
++      if (path === '/users') return USERS
++      return []
++    })
++  })
++
++  it('每行角色选择器的可访问名包含用户名，不再是无名 combobox', async () => {
++    const page = await renderPage(<Users />)
++
++    await expect
++      .element(
++        page.getByRole('combobox', {
++          name: `${i18n.t('misc.role')}: alice`,
++        })
++      )
++      .toBeVisible()
++  })
++})
+diff --git a/web/src/features/catalog/index.tsx b/web/src/features/catalog/index.tsx
+index a3e6f7f..054021c 100644
+--- a/web/src/features/catalog/index.tsx
++++ b/web/src/features/catalog/index.tsx
+@@ -688,7 +688,7 @@ export function AgentDetail() {
+               </DetailGrid>
+               <Separator />
+               <section className='space-y-3'>
+-                <h3 className='text-sm font-medium'>{t('nodes.labels')}</h3>
++                <h2 className='text-sm font-medium'>{t('nodes.labels')}</h2>
+                 <div className='flex min-h-5 flex-wrap gap-x-4 gap-y-1'>
+                   {Object.keys(item.labels || {}).length ? (
+                     Object.entries(item.labels || {}).map(([key, value]) => (
+@@ -788,9 +788,9 @@ export function AgentDetail() {
+               )}
+               <Separator />
+               <section className='space-y-3'>
+-                <h3 className='text-sm font-medium'>
++                <h2 className='text-sm font-medium'>
+                   {t('nodes.capabilities')}
+-                </h3>
++                </h2>
+                 <div className='grid gap-2 sm:grid-cols-2'>
+                   {Object.entries(item.capabilities || {}).map(
+                     ([key, value]) => (
+@@ -951,7 +951,9 @@ function ExecutionRows({
+             <TableHead>{t('common.status')}</TableHead>
+             <TableHead>{t('executions.start')}</TableHead>
+             <TableHead>{t('executions.duration')}</TableHead>
+-            <TableHead />
++            <TableHead>
++              <span className='sr-only'>{t('common.actions')}</span>
++            </TableHead>
+           </TableRow>
+         </TableHeader>
+         <TableBody>
+@@ -2199,7 +2201,10 @@ export function Users() {
+             value={row.original.role}
+             onValueChange={(role) => setUserRole({ user: row.original, role })}
+           >
+-            <SelectTrigger className='h-8 w-36'>
++            <SelectTrigger
++              className='h-8 w-36'
++              aria-label={`${t('misc.role')}: ${row.original.username}`}
++            >
+               <SelectValue />
+             </SelectTrigger>
+             <SelectContent>
+diff --git a/web/src/features/editors/index.tsx b/web/src/features/editors/index.tsx
+index 063652b..c91d3f2 100644
+--- a/web/src/features/editors/index.tsx
++++ b/web/src/features/editors/index.tsx
+@@ -612,8 +612,8 @@ export function ScriptEditor() {
+                 />
+               </label>
+             </div>
+-            <div className='grid gap-2 text-sm font-medium'>
+-              <span>{t('scripts.content')}</span>
++            <label className='grid gap-2 text-sm font-medium'>
++              {t('scripts.content')}
+               <Textarea
+                 className='min-h-72 font-mono text-xs leading-6'
+                 value={form.content || ''}
+@@ -621,7 +621,7 @@ export function ScriptEditor() {
+                   setForm({ ...form, content: event.target.value })
+                 }
+               />
+-            </div>
++            </label>
+             <div className='grid gap-4 sm:grid-cols-2'>
+               <label className='grid gap-2 text-sm font-medium'>
+                 {t('scripts.workingDir')}
+@@ -676,7 +676,14 @@ export function ScriptEditor() {
+                   setParameter({ ...parameter, type: value })
+                 }
+               >
+-                <SelectTrigger className='w-full min-w-0'>
++                <SelectTrigger
++                  className='w-full min-w-0'
++                  aria-label={
++                    parameter.name
++                      ? `${t('scripts.paramType')}: ${parameter.name}`
++                      : t('scripts.paramType')
++                  }
++                >
+                   <SelectValue />
+                 </SelectTrigger>
+                 <SelectContent>
+@@ -1364,7 +1371,10 @@ export function ApplicationEditor() {
+                     })
+                   }}
+                 >
+-                  <SelectTrigger className='w-full min-w-0'>
++                  <SelectTrigger
++                    className='w-full min-w-0'
++                    aria-label={t('apps.artifact')}
++                  >
+                     <SelectValue placeholder={t('apps.selectArtifact')} />
+                   </SelectTrigger>
+                   <SelectContent>
+@@ -1759,7 +1769,7 @@ export function ApplicationEditor() {
+                     onValueChange={setOperation}
+                     disabled={!canRun}
+                   >
+-                    <SelectTrigger className='w-40'>
++                    <SelectTrigger className='w-40' aria-label={t('apps.operation')}>
+                       <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+diff --git a/web/src/features/shared/data-table.test.tsx b/web/src/features/shared/data-table.test.tsx
+index 8f65571..c5477a2 100644
+--- a/web/src/features/shared/data-table.test.tsx
++++ b/web/src/features/shared/data-table.test.tsx
+@@ -309,3 +309,30 @@ describe('DataTable 每页条数越界显示（OBS-20261014-PAGESIZE-PERSISTED-O
+     await expect.element(page.getByRole('combobox')).toHaveTextContent('20')
+   })
+ })
++
++describe('DataTable 可访问性（P11 a11y：分页选择器可访问名 / 操作列读屏表头）', () => {
++  beforeAll(async () => {
++    await i18n.changeLanguage('zh')
++  })
++
++  it('每页行数选择器具备可访问名，而不是只靠可见数字', async () => {
++    const page = await renderTable(false)
++
++    await expect
++      .element(
++        page.getByRole('combobox', { name: i18n.t('common.rowsPerPage') })
++      )
++      .toBeVisible()
++  })
++
++  it('操作列表头为空时提供读屏文案，列头可被辅助技术识别', async () => {
++    // vitest 浏览器模式的 role 查询不映射 th→columnheader，直接断言表头 DOM；
++    // 真实浏览器中的可访问名由 Playwright 扫描（keyboard/axe 复扫）覆盖。
++    const page = await renderTable(false)
++
++    const actionsTh = [...page.container.querySelectorAll('th')].find((th) =>
++      th.querySelector('.sr-only')
++    )
++    expect(actionsTh?.textContent?.trim()).toBe(i18n.t('common.actions'))
++  })
++})
+diff --git a/web/src/features/shared/data-table.tsx b/web/src/features/shared/data-table.tsx
+index 7a23866..b74024e 100644
+--- a/web/src/features/shared/data-table.tsx
++++ b/web/src/features/shared/data-table.tsx
+@@ -292,9 +292,12 @@ export function DataTable<TData>({
+                           column={header.column}
+                           title={headerDef.header as string}
+                         />
+-                      ) : (
++                      ) : headerDef.header ? (
+                         flexRender(headerDef.header, header.getContext())
+-                      )}
++                      ) : header.column.id === 'actions' ? (
++                        // 操作列无可见表头，补读屏文案，避免空表头（WCAG 1.3.1）
++                        <span className='sr-only'>{t('common.actions')}</span>
++                      ) : null}
+                     </TableHead>
+                   )
+                 })}
+diff --git a/web/src/features/shared/ui.test.tsx b/web/src/features/shared/ui.test.tsx
+index 725c1d2..3fd1194 100644
+--- a/web/src/features/shared/ui.test.tsx
++++ b/web/src/features/shared/ui.test.tsx
+@@ -1,6 +1,7 @@
+ import { describe, expect, it, beforeAll } from 'vitest'
+ import { render } from 'vitest-browser-react'
+ import i18n from '@/i18n'
++import '@/styles/index.css'
+ import { statusLabel } from '@/lib/status-labels'
+ import { ErrorState, StatusBadge } from './ui'
+ 
+@@ -63,3 +64,62 @@ describe('StatusBadge 本地化（OBS-20261014-STATUSBADGE-MAINTENANCE-DISABLED-
+     expect(statusLabel('weird_state')).toBe('weird state')
+   })
+ })
++
++/** 计算元素前景/背景对比度（背景为半透明时先与页面白底合成） */
++function contrastRatioOf(element: Element): number {
++  const canvas = document.createElement('canvas')
++  canvas.width = canvas.height = 1
++  const context = canvas.getContext('2d')!
++  // 先铺白底再画目标色：oklch()/color-mix() 与半透明色都会被画布解析为 sRGB
++  const resolveOverWhite = (css: string): [number, number, number] => {
++    context.clearRect(0, 0, 1, 1)
++    context.fillStyle = '#fff'
++    context.fillRect(0, 0, 1, 1)
++    context.fillStyle = css
++    context.fillRect(0, 0, 1, 1)
++    const [r, g, b] = context.getImageData(0, 0, 1, 1).data
++    return [r, g, b]
++  }
++  const luminance = ([r, g, b]: [number, number, number]) => {
++    const channel = (value: number) => {
++      const srgb = value / 255
++      return srgb <= 0.03928 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4
++    }
++    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
++  }
++  const style = getComputedStyle(element)
++  const foreground = resolveOverWhite(style.color)
++  const background = resolveOverWhite(style.backgroundColor)
++  const [light, dark] = [luminance(foreground), luminance(background)].sort(
++    (a, b) => b - a
++  )
++  return (light + 0.05) / (dark + 0.05)
++}
++
++describe('状态徽标与错误提示对比度（P11 a11y：WCAG 1.4.3 ≥ 4.5:1）', () => {
++  beforeAll(async () => {
++    await i18n.changeLanguage('zh')
++  })
++
++  it.each([
++    ['online', '在线'],
++    ['offline', '离线'],
++    ['running', '运行中'],
++    ['degraded', '降级'],
++  ])('%s 徽标文字与底色对比度 ≥ 4.5', async (status, label) => {
++    const page = await render(<StatusBadge status={status} />)
++    const badge = page.container.querySelector('[data-slot="badge"]')!
++
++    await expect.element(page.getByText(label, { exact: true })).toBeVisible()
++    expect(badge).not.toBeNull()
++    expect(contrastRatioOf(badge)).toBeGreaterThanOrEqual(4.5)
++  })
++
++  it('错误提示文案与底色对比度 ≥ 4.5', async () => {
++    const page = await render(<ErrorState error='请选择任务' />)
++    const alert = page.container.querySelector('[role="alert"]')!
++
++    expect(alert).not.toBeNull()
++    expect(contrastRatioOf(alert)).toBeGreaterThanOrEqual(4.5)
++  })
++})
+diff --git a/web/src/features/shared/ui.tsx b/web/src/features/shared/ui.tsx
+index 9e508c0..2c17752 100644
+--- a/web/src/features/shared/ui.tsx
++++ b/web/src/features/shared/ui.tsx
+@@ -3,6 +3,7 @@ import {
+   useCallback,
+   useContext,
+   useEffect,
++  useRef,
+   useState,
+ } from 'react'
+ import {
+@@ -62,6 +63,7 @@ export function StatusBadge({ status }: { status?: string | null }) {
+           ? 'secondary'
+           : 'outline'
+   const label = statusLabel(status)
++  // 颜色在明暗两种主题下均需满足 4.5:1（white 文字），不再使用更浅的 dark:* 底色
+   const colorClass = [
+     'online',
+     'healthy',
+@@ -70,7 +72,7 @@ export function StatusBadge({ status }: { status?: string | null }) {
+     'completed',
+     'synced',
+   ].includes(key)
+-    ? 'border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500 dark:text-white'
++    ? 'border-emerald-700 bg-emerald-700 text-white'
+     : [
+           'offline',
+           'unhealthy',
+@@ -79,11 +81,11 @@ export function StatusBadge({ status }: { status?: string | null }) {
+           'timed_out',
+           'timeout',
+         ].includes(key)
+-      ? 'border-red-600 bg-red-600 text-white dark:border-red-500 dark:bg-red-500 dark:text-white'
++      ? 'border-red-600 bg-red-600 text-white'
+       : ['running', 'busy', 'info'].includes(key)
+-        ? 'border-blue-600 bg-blue-600 text-white dark:border-blue-500 dark:bg-blue-500 dark:text-white'
++        ? 'border-blue-600 bg-blue-600 text-white'
+         : ['degraded', 'blocked', 'outdated'].includes(key)
+-          ? 'border-amber-700 bg-amber-700 text-white dark:border-amber-600 dark:bg-amber-600 dark:text-white'
++          ? 'border-amber-700 bg-amber-700 text-white'
+           : ''
+   return (
+     <Badge variant={variant} className={colorClass}>
+@@ -136,7 +138,7 @@ export function ErrorState({
+   const message = errorMessage(error) || t('common.noData')
+   return (
+     <div
+-      className='flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive'
++      className='flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-red-700 dark:text-destructive'
+       role='alert'
+     >
+       <span>{message}</span>
+@@ -286,6 +288,7 @@ export function DetailField({
+ export function MoreMenu({ children }: { children: React.ReactNode }) {
+   const { t } = useTranslation()
+   const [open, setOpen] = useState(false)
++  const triggerRef = useRef<HTMLButtonElement>(null)
+   const [confirmation, setConfirmation] = useState<{
+     title?: string
+     description?: string
+@@ -309,6 +312,7 @@ export function MoreMenu({ children }: { children: React.ReactNode }) {
+       <DropdownMenu open={open} onOpenChange={setOpen}>
+         <DropdownMenuTrigger asChild>
+           <Button
++            ref={triggerRef}
+             variant='ghost'
+             size='icon'
+             className='size-8'
+@@ -330,6 +334,7 @@ export function MoreMenu({ children }: { children: React.ReactNode }) {
+         confirmText={t('common.delete')}
+         destructive
+         handleConfirm={confirm}
++        returnFocusTo={triggerRef}
+       />
+     </MoreMenuContext.Provider>
+   )
+diff --git a/web/src/features/tasks/index.tsx b/web/src/features/tasks/index.tsx
+index 9e05292..a285bcf 100644
+--- a/web/src/features/tasks/index.tsx
++++ b/web/src/features/tasks/index.tsx
+@@ -933,7 +933,7 @@ export function TaskEditor() {
+             <Separator />
+             <div className='grid gap-3'>
+               <div>
+-                <h3 className='text-sm font-medium'>{t('tasks.targetsTab')}</h3>
++                <h2 className='text-sm font-medium'>{t('tasks.targetsTab')}</h2>
+                 <p className='text-sm text-muted-foreground'>
+                   {selectedNodes.length} {t('common.selected')}
+                 </p>
+@@ -1110,7 +1110,13 @@ export function TaskEditor() {
+                   setParameter({ ...parameter, type: value })
+                 }
+               >
+-                <SelectTrigger>
++                <SelectTrigger
++                  aria-label={
++                    parameter.name
++                      ? `${t('tasks.paramType')}: ${parameter.name}`
++                      : t('tasks.paramType')
++                  }
++                >
+                   <SelectValue />
+                 </SelectTrigger>
+                 <SelectContent>
+@@ -1207,7 +1213,7 @@ export function TaskEditor() {
+                 setLocalCondition({ ...localCondition, metric: value })
+               }
+             >
+-              <SelectTrigger>
++              <SelectTrigger aria-label={t('tasks.conditionMetric')}>
+                 <SelectValue />
+               </SelectTrigger>
+               <SelectContent>
+@@ -1233,7 +1239,7 @@ export function TaskEditor() {
+                 setLocalCondition({ ...localCondition, operator: value })
+               }
+             >
+-              <SelectTrigger>
++              <SelectTrigger aria-label={t('tasks.conditionOperator')}>
+                 <SelectValue />
+               </SelectTrigger>
+               <SelectContent>
+@@ -1317,7 +1323,7 @@ export function TaskEditor() {
+                 setRemoteCondition({ ...remoteCondition, node_id: value })
+               }
+             >
+-              <SelectTrigger>
++              <SelectTrigger aria-label={t('tasks.conditionNode')}>
+                 <SelectValue placeholder={t('tasks.selectNode')} />
+               </SelectTrigger>
+               <SelectContent>
+@@ -1334,7 +1340,7 @@ export function TaskEditor() {
+                 setRemoteCondition({ ...remoteCondition, property: value })
+               }
+             >
+-              <SelectTrigger>
++              <SelectTrigger aria-label={t('tasks.conditionProperty')}>
+                 <SelectValue />
+               </SelectTrigger>
+               <SelectContent>
+@@ -1363,7 +1369,7 @@ export function TaskEditor() {
+                 setRemoteCondition({ ...remoteCondition, operator: value })
+               }
+             >
+-              <SelectTrigger>
++              <SelectTrigger aria-label={t('tasks.conditionOperator')}>
+                 <SelectValue />
+               </SelectTrigger>
+               <SelectContent>
+diff --git a/web/src/locales/en.ts b/web/src/locales/en.ts
+index 159e1b3..41c918d 100644
+--- a/web/src/locales/en.ts
++++ b/web/src/locales/en.ts
+@@ -19,6 +19,7 @@ export default {
+     settings: 'Settings',
+     transfers: 'File Transfers',
+     logout: 'Logout',
++    primary: 'Primary navigation',
+     sections: {
+       overview: 'Overview',
+       operations: 'Operations',
+@@ -391,6 +392,7 @@ export default {
+     addParam: 'Add Param',
+     paramName: 'name',
+     paramDefault: 'default',
++    paramType: 'Parameter type',
+     optional: '(optional)',
+   },
+   // 任务
+@@ -469,6 +471,11 @@ export default {
+     executionHistory: 'Execution History',
+     paramName: 'Parameter name',
+     paramDefault: 'Default value',
++    paramType: 'Parameter type',
++    conditionMetric: 'Metric',
++    conditionOperator: 'Operator',
++    conditionProperty: 'Property',
++    conditionNode: 'Agent',
+     noExecutions: 'No executions yet',
+     runTitle: 'Run: ',
+     running: 'Running...',
+@@ -598,6 +605,7 @@ export default {
+     formDescription:
+       'Configure the release, runtime, health check, and target agents.',
+     operationTitle: 'Run application operation',
++    operation: 'Operation',
+     operationDescription:
+       'Select target agents for the operation on “{{name}}”.',
+     confirmOperation: 'Start operation',
+diff --git a/web/src/locales/zh.ts b/web/src/locales/zh.ts
+index 22664d3..a1aed5c 100644
+--- a/web/src/locales/zh.ts
++++ b/web/src/locales/zh.ts
+@@ -19,6 +19,7 @@ export default {
+     settings: '设置',
+     transfers: '文件传输',
+     logout: '退出登录',
++    primary: '主导航',
+     sections: {
+       overview: '概览',
+       operations: '运行',
+@@ -382,6 +383,7 @@ export default {
+     addParam: '添加参数',
+     paramName: '名称',
+     paramDefault: '默认值',
++    paramType: '参数类型',
+     optional: '（可选）',
+   },
+   // 任务
+@@ -457,6 +459,11 @@ export default {
+     executionHistory: '执行历史',
+     paramName: '参数名称',
+     paramDefault: '默认值',
++    paramType: '参数类型',
++    conditionMetric: '指标',
++    conditionOperator: '运算符',
++    conditionProperty: '属性',
++    conditionNode: '节点',
+     noExecutions: '暂无执行',
+     runTitle: '运行：',
+     running: '运行中...',
+@@ -580,6 +587,7 @@ export default {
+       '删除被阻止：该托管应用仍被任务引用。请先删除或修改相关任务，然后重试。',
+     formDescription: '配置发布包、运行参数、健康检查和目标 Agent。',
+     operationTitle: '执行托管应用操作',
++    operation: '操作',
+     operationDescription: '选择要对“{{name}}”执行操作的目标 Agent。',
+     confirmOperation: '开始操作',
+     operating: '执行中...',

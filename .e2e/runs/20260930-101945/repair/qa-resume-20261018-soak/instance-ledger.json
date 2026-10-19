@@ -1,0 +1,95 @@
+{
+ "batch": "qa-resume-20261018-soak",
+ "scope": "全本地回环隔离环境；未接触 192.168.100.209:18080/:8080、任何 repair/primary 节点与 unit；未执行任何 Git 操作",
+ "binaries": {
+  "hub": {
+   "path": "/tmp/opencode/nodesteer-build-20261018-final/nodesteer-hub-static-final",
+   "sha256": "00e1f375bf67a59ad04dfc6283741cb276ac6be70ce2f21e02d25094845e7a71",
+   "note": "与 repair 环境部署的最终构建同源（build label dddee4f0-e2e-repair-20261018-final）"
+  },
+  "agent": {
+   "path": "/tmp/opencode/nodesteer-build-20261018-final/nodesteer-agent-static",
+   "sha256": "c6ccfe104fec2dfdd25d2e244d60809e6db84066ee296f4a9b3167944d238d01"
+  }
+ },
+ "ports": {
+  "hub_api_web_gateway": 18091,
+  "proxy_ws_agent_a": 18092,
+  "proxy_http_gateway": 18093,
+  "proxy_ws_agent_b": 18094,
+  "proxy_control_a": 18192,
+  "proxy_control_http": 18193,
+  "proxy_control_b": 18194
+ },
+ "work_dir": "/var/tmp/nodesteer-qa-20261018-soak（root fs；因 /tmp tmpfs 用户配额不足从 /tmp/opencode 迁移；运行后已删除）",
+ "runs": [
+  {
+   "name": "watch（工具复验）",
+   "purpose": "验证修复后的故障注入代理不再引入人为抖动",
+   "hub_pid": 3280255,
+   "agents": {
+    "A": 3280377,
+    "B": 3280428
+   },
+   "result": "120s 内节点状态翻转 0 次，每 Agent 单一稳定连接"
+  },
+  {
+   "name": "full-suite（S1-S6 主证据集，nonce=4baae45e）",
+   "hub": {
+    "initial_pid": 3348300,
+    "restarted_pid_in_S3": 3350595,
+    "restart_graceful_seconds": 0.02
+   },
+   "agents": {
+    "A": {
+     "initial_pid": 3348347,
+     "restart_events": [
+      "S4d SIGTERM 重启 → 3354271",
+      "S6a SIGKILL → 3356547",
+      "S6b SIGKILL → 3357499（state 终值）"
+     ]
+    },
+    "B": {
+     "initial_pid": 3348421,
+     "restart_events": [
+      "S6c SIGKILL → 3358735（state 终值）"
+     ]
+    }
+   },
+   "proxies": "a/http/b 三进程（listen 18092/18093/18094；pid 3348330/3348331/3348332）",
+   "cleanup": "全部停止；见 final-cleanup-oracle.json（pass=true）",
+   "nonce": "181d6da0"
+  },
+  {
+   "name": "repro（SOAK-20261018-01/02 定向复现）",
+   "hub_pid": 3317405,
+   "agents": {
+    "A": 3317423,
+    "B": 3317490
+   },
+   "proxies": {
+    "a": 3317415,
+    "http": 3317416,
+    "b": 3317417
+   },
+   "evidence": "evidence/repro-superseded-upload.json",
+   "cleanup": "全部停止；final-cleanup-oracle.json 为本次 cleanup 的复验结果"
+  }
+ ],
+ "fixtures": {
+  "note": "30 个 owned fixture（2 节点、4 脚本/任务、若干传输），全部位于隔离环境内；随环境一并销毁",
+  "hub_data_dir": "已删除",
+  "agent_data_dirs": "已删除",
+  "share_files_50mb": "已删除"
+ },
+ "final_cleanup": {
+  "oracle_file": "final-cleanup-oracle.json",
+  "pass": true,
+  "verified": [
+   "端口 18091-18094/18192-18194 全部可绑定（free）",
+   "无 nodesteer-hub-static-final / nodesteer-agent-static / proxy.py 残留进程",
+   "工作目录 /var/tmp/nodesteer-qa-20261018-soak 不存在",
+   "执行进程组（side-file PID 记录）无孤儿残留"
+  ]
+ }
+}

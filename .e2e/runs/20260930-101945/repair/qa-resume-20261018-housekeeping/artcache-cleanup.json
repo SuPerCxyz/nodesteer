@@ -1,0 +1,127 @@
+{
+ "task": "OBS-20261012-ARTCACHE-QA-PARTIAL-ROOT-CLEANUP housekeeping",
+ "at_utc": "2026-10-18T06:46:53Z",
+ "authority": "http://192.168.100.209:18080",
+ "hosts_scanned": [
+  "hub-209 192.168.100.209",
+  "native-1 192.168.100.204",
+  "native-2 192.168.100.206",
+  "native-3 192.168.100.222",
+  "native-4 192.168.100.247"
+ ],
+ "method": "read-only SSH scan: /opt /var/lib /var/tmp /root /srv /data maxdepth-3 name filter *qa-*/*qa_*, /etc/systemd/system, ps, ss, docker ps/images; then CAS-style delete of confirmed-owned empty skeletons; rescan",
+ "reference_roots_from_observation_evidence": {
+  "checked_paths": [
+   "/opt/qa-resume-20261012-artcache-d430d8074305",
+   "/opt/qa-resume-20261012-artcache-99bf1fabcfa5",
+   "/opt/qa-resume-20261012-artcache-ad9bf531b28a",
+   "/opt/qa-resume-20261012-sys12-b9e47f16deb9",
+   "/opt/qa-resume-20261012-sys12-d19e0c4f3e69",
+   "/opt/qa-resume-20261009-host-tls-1358f9a990bd",
+   "/opt/qa-resume-20261009-host-tls",
+   "/opt/qa-resume-20261010-sys12-nonhost"
+  ],
+  "result": "ALL_ABSENT_ON_ALL_4_NODES",
+  "note": "observation evidence roots (attempt02 d430/attempt03 99bf/attempt04 ad9b/sys12/host-tls) were already exactly removed by the earlier authorized cleanups; no artifact-cache root remains. OBS status EXACT_FIXTURE_CLEANUP_CLOSED_CACHE_RUNTIME_VERIFIED confirmed by rescan."
+ },
+ "cleaned_confirmed_owned": [
+  {
+   "host": "native-1 (192.168.100.204)",
+   "path": "/opt/qa-appui-588e85afe10f",
+   "owned_by": "qa-resume-20261016-appui batch (nonce 588e85afe10f, campaign run 20260930-101945)",
+   "contents_before": "empty directory skeleton only (app/, app/bin/, app/config/ all empty; 0 files)",
+   "liveness_before": "no process, no mount, no unit references",
+   "deleted": true,
+   "post_verify": "absent"
+  },
+  {
+   "host": "native-1 (192.168.100.204)",
+   "path": "/opt/qa-g5-9505276f0c",
+   "owned_by": "qa-resume-20261016-g5 batch (nonce 9505276f0c)",
+   "contents_before": "empty directory skeleton only (app/, app/bin/, app/config/ all empty; 0 files)",
+   "liveness_before": "no process, no mount, no unit references",
+   "deleted": true,
+   "post_verify": "absent"
+  },
+  {
+   "host": "native-3 (192.168.100.222)",
+   "path": "/opt/nodesteer-qa-p11-05-b3ca14953c14",
+   "owned_by": "qa-resume-20261010-runtime application-ui-run b3ca14953c14 batch (nonce b3ca14953c14)",
+   "contents_before": "empty directory skeleton only (bin/ empty; 0 files; earlier helper explicitly retained these two empty dirs)",
+   "liveness_before": "no process, no mount, no unit references",
+   "deleted": true,
+   "post_verify": "absent"
+  }
+ ],
+ "retained_reported_not_deleted": [
+  {
+   "host": "native-2 (192.168.100.206)",
+   "path": "/opt/qa-resume-20261010-host-f174890c3846",
+   "classification": "LIVE QA fixture root (docker_host_integration child host001)",
+   "evidence": "running container qa-resume-20261010-host-f174890c3846-host001 (Up 3 days, labels nodesteer-e2e-run/nodesteer.e2e.owner=qa-resume-20261010-host-f174890c3846), docker volume qa-resume-20261010-host-f174890c3846-data-1, hub node f6a79d23-2410-450c-ac39-64dd70c9daa1 online (agent_version dddee4f0-e2e-repair-20261004)",
+   "reason": "still-running fixture, bind-mounted by the live container; removal needs container stop + volume + hub node deletion (product-path) — separate decision required, not a bare leftover dir"
+  },
+  {
+   "host": "hub-209 (192.168.100.209)",
+   "path": "/var/lib/nodesteer-hub-repair-20260930-101945-ttl-ui",
+   "classification": "inert QA-owned isolated TTL-test hub data dir",
+   "evidence": "created 2026-10-04 by qa/ttl-ui-authority.json fixture (FL-14, closed PASS); unit nodesteer-hub-repair-20260930-101945-ttl-ui.service disabled+not loaded, port 18995 free, no process/open-fd; contains hub.db (+shm/wal, sha256 recorded in predelete-inventory.json)",
+   "reason": "contains a hub database (test data); disposition uncertain -> report only (rule: 不确定就只报告). Related owned files also reported: /etc/nodesteer/nodesteer-hub-repair-20260930-101945-ttl-ui.yaml, /etc/nodesteer/hub-repair-20260930-101945.yaml.pre-ttl-test, unit file itself"
+  },
+  {
+   "host": "native-1 (192.168.100.204)",
+   "path": "/tmp/qa-repair-20260930-101945-app-web (dir) + unit qa-20260930-101945-web-app-6a32f.service + pid 637",
+   "classification": "LIVE managed-application fixture from qa-resume-20261010-web batch",
+   "evidence": "unit enabled/active; hub still holds app qa-repair-20260930-101945-app-async-live-6a32f + artifact",
+   "reason": "live registered fixture, not a leftover directory; report only"
+  },
+  {
+   "host": "hub-209 (192.168.100.209)",
+   "path": "docker images qa-20260930-101945-env-agent:dddee4f0, qa-20260930-101945-env-hub:dddee4f0",
+   "classification": "campaign-owned docker images, no containers",
+   "reason": "not a directory; report only (recommend separate authorization if cleanup wanted)"
+  },
+  {
+   "host": "all hosts",
+   "path": "/root/nodesteer-e2e-20260930-101945/backup (hub 15M, n2 4.7M, n1/n3/n4 8K)",
+   "classification": "pre-campaign rollback backups (hub.db/state.db/files.tar.gz/manifests; includes isolated-core private consistency backup from OBS-HARNESS-IDENTITY-POLLUTION)",
+   "reason": "backups are deliberately retained; deleting backups is out of scope"
+  }
+ ],
+ "post_cleanup_rescan": {
+  "native-1": {
+   "find_qa": [],
+   "opt": [
+    "containerd",
+    "nodesteer-repair-20260930-101945"
+   ]
+  },
+  "native-2": {
+   "find_qa": [
+    "/opt/qa-resume-20261010-host-f174890c3846",
+    "/var/lib/docker/volumes/qa-resume-20261010-host-f174890c3846-data-1"
+   ]
+  },
+  "native-3": {
+   "find_qa": [],
+   "opt": [
+    "containerd",
+    "nodesteer-repair-20260930-101945"
+   ]
+  },
+  "native-4": {
+   "find_qa": []
+  },
+  "hub-209": {
+   "find_qa": []
+  },
+  "conclusion": "the three deleted skeletons are gone; only the reported live/retained items remain"
+ },
+ "evidence_files": [
+  "evidence/predelete-inventory.json (exact pre-delete inventory of the 3 targets: dev/inode/mode/mtime, file lists; authoritative pre-cleanup evidence)",
+  "evidence/cleanup-exec.json (CAS delete results: sha/emptiness re-verified, deleted, parent listing after)",
+  "evidence/host-scan-post-cleanup.json (rescan)",
+  "scan_hosts.py, predelete_inventory.py, cleanup_artcache.py"
+ ],
+ "evidence_notes": "host-scan-raw.json currently holds the same post-cleanup rescan as host-scan-post-cleanup.json (the initial pre-cleanup scan file was overwritten by the rescan); pre-cleanup presence of the three skeletons is evidenced by predelete-inventory.json and cleanup-exec.json."
+}

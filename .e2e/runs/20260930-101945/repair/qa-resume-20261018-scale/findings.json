@@ -1,0 +1,73 @@
+{
+ "batch": "qa-resume-20261018-scale",
+ "generated_at_utc": "2026-10-18T08:21:46Z",
+ "scope": "8-node local-loopback scale test (hub 127.0.0.1:18921 + 8 owned agents). Report-only: no product code modified.",
+ "summary": {
+  "new_defects": 0,
+  "observations": 4,
+  "note": "7/7 scenarios PASS；未发现新的功能性缺陷；以下为运行时观察项。"
+ },
+ "findings": [
+  {
+   "id": "OBS-SCALE-20261018-01",
+   "severity": "info",
+   "type": "observation/transient",
+   "title": "24 并发执行刚结束时，同一瞬间抽样的 API 延迟短暂升高（未复现）",
+   "scenario": "S7_api_latency_at_scale",
+   "detail": "主轮 S7 紧接 S6（24 并发执行）之后抽样：/api/nodes p50 7.94ms/p95 14.57ms、/api/nodes/{id} p95 9.24ms、/api/executions p95 14.45ms、/healthz p95 5.18ms。同期 hub CPU 出现 37.9% 尖峰（S6 完成尾段）。受控复测（相同二进制、相同 48 条执行历史、机器 load1 4.2-4.6 更高）未复现：1 节点 vs 8 节点 p95 分别为 1.37/2.70ms，压测后尾段 p95 2.02-2.69ms。判定为瞬时尾部效应（完成风暴+GC），非稳态退化。",
+   "repro": "1) 8 节点在线；2) 3 个并发 RunManual 触发 24 执行；3) 全部终态后立即连续抽样列表/详情端点。",
+   "evidence": [
+    "evidence/raw/s7-api-latency.json",
+    "evidence/raw/s7-verification.json",
+    "evidence/raw/resource-samples.json"
+   ],
+   "impact": "低：稳态延迟不受影响（绝对值 <3ms）；仅提示“压测刚结束即抽样”会高估延迟。",
+   "suggestion": "如需对外发布延迟基线，应在压测结束后静默 ≥10s 再抽样，或注明测量条件。"
+  },
+  {
+   "id": "OBS-SCALE-20261018-02",
+   "severity": "low",
+   "type": "observation/log-noise",
+   "title": "心跳超时关闭会话时 hub 打印 ERROR 级 \"agent websocket write failed; closing connection\"",
+   "scenario": "S5_node_jitter (SIGSTOP 心跳超时探针)",
+   "detail": "对 agent-4 发送 SIGSTOP（进程存活、TCP 未断）26.0s 后 hub 正确判定 offline 并关闭会话；关闭瞬间恰有一次 NODE_STATUS 写失败，hub 记录：level=ERROR msg=\"agent websocket write failed; closing connection\" error=\"failed to write msg: failed to write frame: use of closed network connection\"。状态机结果正确（offline → SIGCONT 后 3.8s 内重连、30.0s 恢复 online+synced），但该行以 ERROR 记录会让“无错误日志”类巡检产生假阳性。",
+   "repro": "kill -STOP <agent-pid>；等待 heartbeat_timeout(20s)+checker tick(≤30s) → offline；kill -CONT <agent-pid>。",
+   "evidence": [
+    "evidence/raw/s5-jitter.json",
+    "evidence/raw/hub.log",
+    "evidence/raw/agent-4.log"
+   ],
+   "impact": "极低：仅日志级别/噪声，不影响节点状态与恢复。",
+   "suggestion": "可考虑将“会话已被超时清理后的写失败”降级为 WARN/DEBUG 并附 close 原因。"
+  },
+  {
+   "id": "OBS-SCALE-20261018-03",
+   "severity": "info",
+   "type": "environment",
+   "title": "本轮 hub 二进制未内置 agent 载荷（启动 WARN），/api/agent/binary 与自升级路径未覆盖",
+   "scenario": "environment",
+   "detail": "hub 启动时记录 level=WARN msg=\"load bundled agent payloads failed\" error=\"invalid agent bundle architecture\"（未执行 packaging 的裸构建）。本轮仅测试纳管/心跳/执行/调度/规模 API，不涉及二进制分发与自升级；该能力在裸构建下不可用，不构成产品缺陷。",
+   "repro": "直接 go build ./cmd/hub（不运行 packaging）后启动。",
+   "evidence": [
+    "evidence/raw/hub.log",
+    "evidence/source-snapshot.txt"
+   ],
+   "impact": "无（超出本轮范围）。",
+   "suggestion": "若需验证升级/分发路径，应使用 packaging 产出的 hub。"
+  },
+  {
+   "id": "OBS-SCALE-20261018-04",
+   "severity": "info",
+   "type": "observation/positive",
+   "title": "本地回环可容纳 8 个同源 Agent，无同 IP 注册限制；纳管与 revision 收敛耗时很低",
+   "scenario": "S1_bulk_enrollment",
+   "detail": "8 个 agent 全部从 127.0.0.1 连接（node_ip 10.99.0.1-8 由纳管参数指定），enroll API 1.8-4.1ms/节点，launch→online+synced 2.0-3.6s/节点，8 节点全部纳管 wall 4.79s；revision 0→1→2 全量收敛（realtime 通知 + 周期校验）。",
+   "repro": "POST /api/nodes/enrollment ×8 → 启动 agent → GET /api/nodes 校验 online/synced。",
+   "evidence": [
+    "evidence/raw/s1-enrollment.json"
+   ],
+   "impact": "正向结论：本机回环规模测试无需额外 IP 别名。",
+   "suggestion": "无需处理。"
+  }
+ ]
+}

@@ -1,0 +1,290 @@
+{
+ "hub": "http://127.0.0.1:18911",
+ "user": "qa-p9-admin",
+ "scenarios": {
+  "S1": {
+   "name": "S1_cross_tab_logout_convergence",
+   "login_token": true,
+   "b_before": {
+    "path": "/tasks",
+    "token_present": true
+   },
+   "c_before": {
+    "path": "/schedules",
+    "token_present": true
+   },
+   "a_after": {
+    "path": "/sign-in",
+    "token": null
+   },
+   "b_after": {
+    "path": "/sign-in",
+    "search": "?redirect=%2Ftasks",
+    "token": null,
+    "new_signin_navs": 1
+   },
+   "c_after": {
+    "path": "/sign-in",
+    "search": "?redirect=%2Fschedules",
+    "token": null
+   },
+   "timing": {
+    "click_epoch_ms": 1792308280578.9,
+    "b_converged_epoch_ms": 1792308280892.9,
+    "c_converged_epoch_ms": 1792308280916.7,
+    "b_e2e_ms_node_poll": 314.0,
+    "c_e2e_ms_node_poll": 337.8,
+    "b_polls": 2,
+    "c_polls": 1,
+    "b_in_page": {
+     "signal_events": [
+      {
+       "t": 1792308280850,
+       "ev": "storage",
+       "key": "nodesteer_session_invalidated",
+       "newValue": "mvdi2oeq-a8adbl6evb"
+      },
+      {
+       "t": 1792308280892,
+       "ev": "storage",
+       "key": "nodesteer_session_invalidated",
+       "newValue": "mvdi2oeq-5w32tqmtsxi"
+      }
+     ],
+     "token_events": [
+      {
+       "t": 1792308280850,
+       "ev": "storage",
+       "key": "nodesteer_token",
+       "newValue": null
+      }
+     ],
+     "signin_navs": [
+      {
+       "t": 1792308280882,
+       "ev": "replaceState",
+       "url": "/sign-in?redirect=%2Ftasks"
+      }
+     ],
+     "nav_count": 1,
+     "signal_to_nav_ms": 32,
+     "token_event_to_signal_ms": 0,
+     "click_to_signal_ms": 271.07,
+     "click_to_nav_ms": 303.07
+    },
+    "c_in_page": {
+     "signal_events": [
+      {
+       "t": 1792308280850,
+       "ev": "storage",
+       "key": "nodesteer_session_invalidated",
+       "newValue": "mvdi2oeq-a8adbl6evb"
+      },
+      {
+       "t": 1792308280912,
+       "ev": "storage",
+       "key": "nodesteer_session_invalidated",
+       "newValue": "mvdi2oeq-1f2vt4fu2px"
+      }
+     ],
+     "token_events": [
+      {
+       "t": 1792308280850,
+       "ev": "storage",
+       "key": "nodesteer_token",
+       "newValue": null
+      }
+     ],
+     "signin_navs": [
+      {
+       "t": 1792308280895,
+       "ev": "replaceState",
+       "url": "/sign-in?redirect=%2Fschedules"
+      }
+     ],
+     "nav_count": 1,
+     "signal_to_nav_ms": 45,
+     "token_event_to_signal_ms": 0,
+     "click_to_signal_ms": 271.07,
+     "click_to_nav_ms": 316.07
+    }
+   },
+   "b_protected_reentry_path": "/sign-in",
+   "checks": {
+    "b_converged_le_1s": true,
+    "c_converged_le_1s": true,
+    "b_token_cleared": true,
+    "c_token_cleared": true,
+    "b_redirect_param": true,
+    "b_single_nav": true,
+    "a_on_signin": true,
+    "b_reentry_bounced": true
+   },
+   "verdict": "PASS",
+   "elapsed_s": 2.21
+  },
+  "S2": {
+   "name": "S2_simultaneous_logout_idempotent",
+   "login_a_ui": true,
+   "tab_sessions": {
+    "a": {
+     "path": "/",
+     "token": true
+    },
+    "b": {
+     "path": "/tasks",
+     "token": true
+    },
+    "c": {
+     "path": "/schedules",
+     "token": true
+    }
+   },
+   "second_tab_logout_click": "element_gone:TimeoutError",
+   "final_paths": {
+    "a": "/sign-in",
+    "b": "/sign-in",
+    "c": "/sign-in"
+   },
+   "nav_counts_to_signin": {
+    "a": 1,
+    "b": 1,
+    "c": 1
+   },
+   "tokens": {
+    "a": null,
+    "b": null,
+    "c": null
+   },
+   "duplicate_signal": {
+    "before_nav_counts": {
+     "a": 1,
+     "b": 1,
+     "c": 1
+    },
+    "after_nav_counts": {
+     "a": 1,
+     "b": 1,
+     "c": 1
+    },
+    "no_extra_nav": true,
+    "final_paths": {
+     "a": "/sign-in",
+     "b": "/sign-in",
+     "c": "/sign-in"
+    },
+    "signal_events_a": [
+     {
+      "t": 1792308287491,
+      "ev": "storage",
+      "key": "nodesteer_session_invalidated",
+      "newValue": "mvdi2tde-wtzhtt99un"
+     },
+     {
+      "t": 1792308287491,
+      "ev": "storage",
+      "key": "nodesteer_session_invalidated",
+      "newValue": "mvdi2tde-8j9i720xp7a"
+     },
+     {
+      "t": 1792308290519,
+      "ev": "storage",
+      "key": "nodesteer_session_invalidated",
+      "newValue": "dup-0-1792308290519"
+     },
+     {
+      "t": 1792308290521,
+      "ev": "storage",
+      "key": "nodesteer_session_invalidated",
+      "newValue": "dup-1-1792308290521"
+     },
+     {
+      "t": 1792308290522,
+      "ev": "storage",
+      "key": "nodesteer_session_invalidated",
+      "newValue": "dup-2-1792308290521"
+     }
+    ]
+   },
+   "checks": {
+    "all_on_signin": true,
+    "single_convergence_per_tab": true,
+    "tokens_cleared": true,
+    "duplicate_signal_no_extra_nav": true,
+    "duplicate_signal_stable_paths": true
+   },
+   "verdict": "PASS"
+  },
+  "S3": {
+   "name": "S3_unauthenticated_tab_not_misnavigated",
+   "x_before": {
+    "path": "/sign-in",
+    "token": null
+   },
+   "x_after": {
+    "path": "/sign-in",
+    "token": null,
+    "new_nav_count": 0,
+    "signal_events": [
+     {
+      "t": 1792308293354,
+      "ev": "storage",
+      "key": "nodesteer_session_invalidated",
+      "newValue": "s3-1792308293354"
+     }
+    ]
+   },
+   "checks": {
+    "x_stayed_on_signin": true,
+    "x_no_navigation": true,
+    "x_received_signal": true
+   },
+   "verdict": "PASS"
+  }
+ },
+ "console": {
+  "errors": [
+   {
+    "tab": "S1-C",
+    "type": "console.error",
+    "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "at": "15:24:40"
+   },
+   {
+    "tab": "S1-C",
+    "type": "console.error",
+    "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "at": "15:24:40"
+   },
+   {
+    "tab": "S1-B",
+    "type": "console.error",
+    "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "at": "15:24:40"
+   },
+   {
+    "tab": "S2-B",
+    "type": "console.error",
+    "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "at": "15:24:47"
+   },
+   {
+    "tab": "S2-C",
+    "type": "console.error",
+    "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "at": "15:24:47"
+   },
+   {
+    "tab": "S2-C",
+    "type": "console.error",
+    "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "at": "15:24:47"
+   }
+  ],
+  "warnings": []
+ },
+ "started_at": "2026-10-18T07:24:37Z",
+ "browser_version": "149.0.7827.55",
+ "finished_at": "2026-10-18T07:24:55Z",
+ "overall": "PASS"
+}

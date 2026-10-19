@@ -1,0 +1,70 @@
+# P17 a11y 收尾批次 · 汇总数据（2026-10-18）
+
+环境：本地 Vite dev server（127.0.0.1:5199，代理 repair Hub API 192.168.100.209:18080）
+工具：axe-core 4.14.0（/tmp/axe/package/axe.min.js 注入）；Chromium 完整构建（channel: chromium）与 Firefox 153.0
+标签：wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa, best-practice
+
+## 1. axe 全量扫描（25 个页面场景）
+
+| 运行 | 引擎/主题 | 页面数 | critical | serious | moderate | minor | 合计节点 | 错误页 |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| before | chromium / 浅色 | 25 | 0 | 0 | 0 | 0 | 0 | 0 |
+| before | chromium / 深色 | 25 | 0 | 0 | 0 | 0 | 0 | 0 |
+| after  | chromium / 浅色 | 25 | 0 | 0 | 0 | 0 | 0 | 0 |
+| after  | firefox / 浅色  | 25 | 0 | 0 | 0 | 0 | 0 | 0 |
+| after  | chromium / 深色 | 25 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+（P11 基线：浅色 critical 50 / serious 204 / moderate 822 / minor 12；本批次维持 0。）
+
+## 2. 仅靠 placeholder 命名的输入（item 1）
+
+- 静态枚举（web/src，排除测试）：before 22 个候选（其中 2 个 transfers 输入由包裹 label 命名，实际 20 个待修）→ after 2 个候选（均为 label 包裹，实际 0）。
+- 浏览器动态探针（25+3 页面状态）：
+  - before：22 条记录（node-detail 2、task-editor-new 4、task-editor-conditions 6、task-editor-conditions-command 5、script-detail 4、execution-detail 1）
+  - after：0 条（所有成功加载页面）
+  - 未覆盖：application-detail（环境中 applications 列表已被并发批次清空，无法渲染）；SearchToolbar（组件无调用方，不在任何页面渲染路径）
+- 修复方式：统一 aria-label（与 P11 相同组件模式），视觉与 placeholder 文案未改。
+
+## 3. select-dropdown.tsx 死代码（item 2）
+
+- rg 全仓无引用；knip 判定 unused file；git 历史仅初始提交。
+- 删除前 62 行 sha256 a804cfa1da60aca76cc99a15b45558dab495dc34bd399faf686b4f87b94ab571。
+- 删除后：rg 0 引用、knip 0 命中、tsc -b exit 0、vitest 全量通过。
+
+## 4. 强制色彩 / 200% 缩放抽查（item 4，关键 5 页）
+
+| 模式 | 页面 | axe 违规 | 说明 |
+|---|---|---:|---|
+| forced-colors | dashboard | 0 | — |
+| forced-colors | nodes-list | 1 | color-contrast（假阳性，见下） |
+| forced-colors | task-editor-new | 1 | 同上 |
+| forced-colors | script-detail | 1 | 同上 |
+| forced-colors | settings | 1 | 同上 |
+| zoom-200%（720×450 视口近似） | 5 页 | 0 | 无横向溢出（scrollWidth == clientWidth） |
+
+forced-colors 假阳性证据：axe 报 fg #f8fafc / bg #ffffff = 1.04:1；同页面实测 getComputedStyle(button) 为 rgb(0,0,0) on rgb(255,255,255)（21:1），截图为强制色彩渲染。axe 经 Typed OM（computedStyleMap().get('color')）读到作者色 oklch(0.984 0.003 247.858)，未读到强制色彩替换值。代码中无 forced-color-adjust 覆盖，无可修项。
+
+## 5. 命令结果
+
+| 命令 | 结果 |
+|---|---|
+| `cd web && npx tsc -b` | exit 0 |
+| `cd web && npm run lint` | 0 errors / 3 warnings（既有警告，未新增） |
+| `cd web && npx vitest run --browser.headless` | 49 files / 249 tests 全部通过，exit 0（11.2s） |
+
+注：本主机 chrome-headless-shell 反复出现 compositor 崩溃（trap int3），导致个别尝试出现随机文件加载失败/挂起；最终标准命令一次通过。日志见 final-vitest-first-attempt-flaky.log 与 final-vitest-full.log。
+
+## 6. 反向验证
+
+- item 1（8 例，逐项撤掉 aria-label → 断言必须失败）：8/8 按预期失败（reverse-verification.log）。
+- item 2：临时恢复文件 → knip 再次报告 unused file；删除 → knip 无命中（reverse-verification.log）。
+
+## 7. 证据文件
+
+- followup-axe-before-light.json / followup-axe-before-dark.json / followup-axe-after-light.json / followup-axe-after-light-firefox.json / followup-axe-after-dark.json
+- followup-placeholder-before.json / followup-placeholder-after.json（+ 对应 probe 日志）
+- followup-contrast-zoom.json（+ contrast-zoom-scan.log）
+- reverse-verification.log、select-dropdown-deadcode-evidence.txt、deleted-select-dropdown.tsx.txt
+- p17-web-src-changes.diff（本次 web/src 变更：34 行新增、0 行删除、7 文件）
+- final-tsc-lint.log、final-vitest-full.log、final-vitest-first-attempt-flaky.log
+- 截图目录：before-light/ before-dark/ after-light/ after-light-firefox/ after-dark/ contrast-zoom/

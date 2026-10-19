@@ -1,0 +1,26 @@
+## P17 无引用证据（删除 select-dropdown.tsx 前，2026-10-18）
+
+仓库：/home/superc/code/nodesteer
+目标：web/src/components/select-dropdown.tsx（62 行，sha256 a804cfa1da60aca76cc99a15b45558dab495dc34bd399faf686b4f87b94ab571）
+
+### 1) rg -n "select-dropdown" -S .（排除 node_modules/dist/.git）
+(无匹配，仅文件名本身不被任何 import/路径引用)
+
+### 2) rg -n "SelectDropdown" web/（排除 node_modules）
+web/src/components/select-dropdown.tsx:12:type SelectDropdownProps = {
+web/src/components/select-dropdown.tsx:23:export function SelectDropdown({
+web/src/components/select-dropdown.tsx:32:}: SelectDropdownProps) {
+=> 只有该文件自身的定义，无任何调用方
+
+### 3) knip --include files --reporter compact | grep select-dropdown
+src/components/select-dropdown.tsx: src/components/select-dropdown.tsx
+=> 独立死代码检测工具 knip 同样判定为 unused file
+
+### 4) git log（该文件历史）
+5727cce feat: add Cadentra Hub-Agent platform
+=> 自初始平台提交后从未被改动/引用
+
+### 5) 备注
+- 该组件内 SelectTrigger 无可访问名（P11 报告 §7.1），因无调用方不进入渲染路径；
+- 删除后由 `npx tsc -b`（无编译引用）与全量 vitest 通过作为反向确认。
+- 原文件副本：followup/deleted-select-dropdown.tsx.txt

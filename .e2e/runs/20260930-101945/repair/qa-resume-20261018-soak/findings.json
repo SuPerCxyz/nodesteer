@@ -1,0 +1,81 @@
+{
+ "batch": "qa-resume-20261018-soak",
+ "build_label": "dddee4f0-e2e-repair-20261018-final",
+ "generated_at_utc": "2026-10-18T08:20:00Z",
+ "scope_note": "本清单仅含本轮 soak 新发现、且已用定向脚本在修复后的故障注入工具上确定性复现的产品缺陷；未修复（只报告）。",
+ "findings": [
+  {
+   "id": "SOAK-20261018-01",
+   "title": "传输断连重连：被 ResumeNode 取代的在飞上传尝试把『context canceled』当作失败上报，传输被错误终态化为 FAILED（实际续传仍在进行）",
+   "severity": "P2（中）",
+   "type": "产品行为缺陷（状态/可观测性；无数据丢失）",
+   "component": "Agent 文件传输上报 / Hub 传输状态机",
+   "environment": "隔离 Hub 127.0.0.1:18091（最终构建 00e1f375…）+ 2 owned Agent（c6ccfe10…），HTTP 代理节流 2MB/s 制造在飞上传",
+   "preconditions": "50MB 文件 A→B 传输，上传进行中（part≈5.4MB 已暂存）；仅断开 A 的 WS 一次（HTTP 上传继续在飞，未被拒绝）",
+   "steps": [
+    "1. POST /api/transfers 创建 50MB A→B 传输（HTTP 节流 2MB/s）",
+    "2. 轮询 hub part 文件至 >5MB（上传确在飞）",
+    "3. kill 源 Agent 的 WS 连接一次（不阻断 HTTP）",
+    "4. 以 0.4s 间隔轮询 GET /api/transfers/{id} 记录状态/part 大小 75s+"
+   ],
+   "expected": "重连后 ResumeNode 从 hub 已暂存偏移续传，传输保持 UPLOADING/DELIVERING 直到 SUCCESS；不应出现失败终态或失败错误文案",
+   "actual": "dt=5.22s 传输变为 FAILED，error=`source upload failed: context canceled`、目标 FAILED；而同一时刻续传请求仍在进行：part 从 15.5MB 持续增长到 52.4MB（dt=24s），随后传输被改回 DELIVERING（dt=24.47s）并最终 SUCCESS（dt=50.55s，SHA 一致）",
+   "root_cause_chain": [
+    "Agent：ResumeNode 重投的 FileUploadRequest 到达时，agent.startFileTransfer() 主动 cancel 旧上传 ctx（internal/agent/agent.go:1398-1413）",
+    "Agent：被取消的旧上传返回 ctx.Err()=context canceled，被 sendFileUploadResult 作为 OK=false 上报（internal/agent/agent.go:1236-1303, 1415-1424）",
+    "Hub：HandleUploadResult 仅豁免 CANCELED/SUCCESS/已暂存，其他一律 failTransfer → 传输+目标终态 FAILED（internal/hub/file_transfer.go:532-559）",
+    "结果：取消『被取代的旧尝试』这一正常动作被当作传输失败；随后续传完成又覆盖该终态（见 SOAK-20261018-02）"
+   ],
+   "impact": "运维/前端在断连重连窗口内会看到传输 FAILED 与误导性错误文案（可能导致人工重试/取消等错误处置）；单目标时约 19s 窗口内 API 呈现错误终态；多目标场景可能造成部分目标被标记 FAILED",
+   "repro_command": "cd .e2e/runs/20260930-101945/repair/qa-resume-20261018-soak && python3 run_soak.py repro",
+   "repro_artifact": "evidence/repro-superseded-upload.json（status_transitions 与 part_samples 全量时间线）",
+   "evidence": [
+    "evidence/repro-superseded-upload.json",
+    "evidence/raw/raw-repro-agent-A.log",
+    "evidence/raw/raw-repro-hub.log"
+   ],
+   "suggested_fix_direction": "（仅建议，未实施）Agent 对被取代而取消的上传/下载不上报失败（或上报专用『superseded』语义）；Hub 对『source upload failed: context canceled』与当前仍有活跃上传尝试的传输做去终态化处理。"
+  },
+  {
+   "id": "SOAK-20261018-02",
+   "title": "传输终态未冻结：FAILED → DELIVERING → SUCCESS 可被后续事件改写（同一机制下 SUCCESS/FAILED 双向可翻转）",
+   "severity": "P2（中）",
+   "type": "产品行为缺陷（状态机不变量）",
+   "component": "Hub 传输状态机（completeUpload / HandleDeliveryResult / updateTransferAggregate / failTransfer）",
+   "environment": "同 SOAK-20261018-01（同一复现）",
+   "preconditions": "传输已因被取代上传的取消上报而进入 FAILED（SOAK-20261018-01）；其续传请求仍在飞行",
+   "steps": [
+    "1. 复现 SOAK-20261018-01（传输 FAILED）",
+    "2. 继续轮询直至续传完成"
+   ],
+   "expected": "终态应不可回退：FAILED 后要么保持 FAILED，要么进入显式的新状态/新传输；不应无声改写为 DELIVERING/SUCCESS",
+   "actual": "dt=5.22s FAILED → dt=24.47s DELIVERING → dt=50.55s SUCCESS；同一实现下 HandleDeliveryResult 对终态传输无守卫，迟到的成功/失败结果同样可改写终态（反向翻转：SUCCESS→FAILED）",
+   "root_cause_chain": [
+    "completeUpload 不校验当前状态，直接把传输置回 DELIVERING（internal/hub/file_transfer.go:475-498）",
+    "HandleDeliveryResult 仅豁免 CANCELED/未暂存，不豁免已终态，随后 updateTransferAggregate 按目标状态重新聚合（internal/hub/file_transfer.go:586-649）",
+    "failTransfer 同样不校验当前是否已 SUCCESS（internal/hub/file_transfer.go:550-559）"
+   ],
+   "impact": "API/前端/审计看到的状态序列不自洽；终态语义（重试/取消/清理判定）不可依赖；与 WEB-LIVE-LOG 类『终态不更新』缺陷叠加时更容易误导",
+   "repro_command": "cd .e2e/runs/20260930-101945/repair/qa-resume-20261018-soak && python3 run_soak.py repro",
+   "repro_artifact": "evidence/repro-superseded-upload.json",
+   "evidence": [
+    "evidence/repro-superseded-upload.json",
+    "evidence/raw/raw-repro-agent-A.log"
+   ],
+   "suggested_fix_direction": "（仅建议，未实施）在 completeUpload / HandleDeliveryResult / failTransfer / updateTransferAggregate 入口统一加入『终态冻结』守卫（CANCELED 已冻结；FAILED/SUCCESS 亦应冻结），并明确恢复路径只能通过显式 Retry/新传输。"
+  }
+ ],
+ "observations": [
+  {
+   "id": "OBS-SOAK-HARNESS-01",
+   "title": "测试工具（非产品）：故障注入代理目标套接字误设 5s 超时导致人为 WS 抖动",
+   "detail": "首轮 run 的 proxy.py 使用 create_connection(timeout=5) 且未复位超时，使 hub→proxy 方向空闲 5s 即被判定超时断链，造成两 Agent 持续重连（观测到 120s 内 25+27 次状态翻转）。修复（settimeout(None)）后 watch 阶段复验 120s 零翻转、连接稳定；本批结论均基于修复后工具。",
+   "impact": "仅影响测试工具；修复前的运行暴露的传输异常已由 SOAK-20261018-01/02 的干净复现确认为真实产品行为。"
+  },
+  {
+   "id": "OBS-SOAK-ORPHAN-01",
+   "title": "Agent SIGKILL 后执行子进程不会成为持续孤儿（stdout 管道断开即终止）",
+   "detail": "SIGKILL 场景中脚本子进程在下一次向已断开的 stdout 写入时终止，45s 观察窗内无继续落盘；journal 已按 agent_restarted 终态化，无重复副作用。"
+  }
+ ]
+}
