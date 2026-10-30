@@ -247,12 +247,13 @@ func (m *AppManager) Deploy(ctx context.Context, appID string, nodeIDs []string,
 			TaskRevision: app.Revision,
 			NodeID:       nodeID,
 			TriggerType:  models.TriggerManual,
+			CreatedAt:    time.Now(),
 			Status:       models.ExecStatusPending,
 		}
 		if err := m.store.CreateExecution(ctx, ex); err != nil {
 			return out, err
 		}
-		if err := m.dispatchDeploy(ctx, ex, app, nodeID, operation); err != nil {
+		if err := m.dispatchDeploy(ctx, ex, app, nodeID, operation, ExecutionStrategy{}); err != nil {
 			ex.Status = models.ExecStatusFailed
 			ex.EndTime = time.Now()
 			ex.BlockReason = err.Error()
@@ -265,12 +266,17 @@ func (m *AppManager) Deploy(ctx context.Context, appID string, nodeIDs []string,
 }
 
 // DeployTask 通过任务执行链路触发应用操作，确保 Execution.TaskID 指向真实 Task。
-func (m *AppManager) DeployTask(ctx context.Context, task *models.Task, nodeIDs []string, operation string) ([]*models.Execution, error) {
+// scheduleID 非空表示从调度计划页「立即执行」，仅记录来源调度。
+func (m *AppManager) DeployTask(ctx context.Context, task *models.Task, nodeIDs []string, operation string, strategy ExecutionStrategy, scheduleID string) ([]*models.Execution, error) {
 	if task == nil || task.ApplicationID == "" {
 		return nil, fmt.Errorf("application task requires application_id")
 	}
 	if !validApplicationOperation(operation) && operation != "deploy" {
 		return nil, fmt.Errorf("invalid application operation: %s", operation)
+	}
+	strategy, err := strategy.Normalize()
+	if err != nil {
+		return nil, err
 	}
 	app, err := m.store.GetApplication(ctx, task.ApplicationID)
 	if err != nil {
@@ -297,11 +303,12 @@ func (m *AppManager) DeployTask(ctx context.Context, task *models.Task, nodeIDs 
 			return out, fmt.Errorf("node %s lacks capability %s", nodeID, models.CapApplicationDeploy)
 		}
 		ex := &models.Execution{ID: uuid.NewString(), TaskID: task.ID, TaskRevision: task.Revision,
-			NodeID: nodeID, TriggerType: models.TriggerManual, Status: models.ExecStatusPending}
+			NodeID: nodeID, ScheduleID: scheduleID, TriggerType: models.TriggerManual,
+			CreatedAt: time.Now(), Status: models.ExecStatusPending}
 		if err := m.store.CreateExecution(ctx, ex); err != nil {
 			return out, err
 		}
-		if err := m.dispatchDeploy(ctx, ex, app, nodeID, operation); err != nil {
+		if err := m.dispatchDeploy(ctx, ex, app, nodeID, operation, strategy); err != nil {
 			ex.Status = models.ExecStatusFailed
 			ex.EndTime = time.Now()
 			ex.BlockReason = err.Error()
@@ -314,7 +321,7 @@ func (m *AppManager) DeployTask(ctx context.Context, task *models.Task, nodeIDs 
 }
 
 // dispatchDeploy 下发部署请求
-func (m *AppManager) dispatchDeploy(ctx context.Context, ex *models.Execution, app *models.Application, nodeID, operation string) error {
+func (m *AppManager) dispatchDeploy(ctx context.Context, ex *models.Execution, app *models.Application, nodeID, operation string, strategy ExecutionStrategy) error {
 	conn, ok := m.sessions.Get(nodeID)
 	if !ok {
 		return ErrAgentOffline
@@ -333,20 +340,30 @@ func (m *AppManager) dispatchDeploy(ctx context.Context, ex *models.Execution, a
 		}
 	}
 	payload := protocol.DeployRequestPayload{
-		AppID:          app.ID,
-		AppVersion:     app.Version,
-		AppRevision:    app.Revision,
-		ArtifactID:     app.ArtifactID,
-		ArtifactURL:    artifactURL,
-		ArtifactSHA256: sha,
-		BinaryPath:     app.BinaryPath,
-		Arguments:      app.Arguments,
-		Environment:    app.Environment,
-		Config:         app.Config,
-		ConfigPath:     app.ConfigPath,
-		UnitName:       app.UnitName,
-		HealthCheck:    hc,
-		Operation:      operation,
+		AppID:            app.ID,
+		AppVersion:       app.Version,
+		AppRevision:      app.Revision,
+		ArtifactID:       app.ArtifactID,
+		ArtifactURL:      artifactURL,
+		ArtifactSHA256:   sha,
+		BinaryPath:       app.BinaryPath,
+		Arguments:        app.Arguments,
+		Environment:      app.Environment,
+		Config:           app.Config,
+		ConfigPath:       app.ConfigPath,
+		UnitName:         app.UnitName,
+		HealthCheck:      hc,
+		Operation:        operation,
+		TriggerType:      ex.TriggerType,
+		ScheduleID:       ex.ScheduleID,
+		ScheduleRevision: ex.ScheduleRevision,
+		Timeout:          strategy.Timeout,
+		Retry:            strategy.Retry,
+		RunUser:          strategy.RunUser,
+		OfflinePolicy:    strategy.OfflinePolicy,
+	}
+	if !ex.CreatedAt.IsZero() {
+		payload.CreatedAt = ex.CreatedAt.Format(time.RFC3339Nano)
 	}
 	if err := conn.Send(protocol.NewEnvelope(protocol.MsgDeployRequest, ex.ID, payload)); err != nil {
 		return err
@@ -355,10 +372,10 @@ func (m *AppManager) dispatchDeploy(ctx context.Context, ex *models.Execution, a
 }
 
 // OperationTask 应用操作 Task 触发（经 Task 执行管理器）
-func (m *AppManager) OperationTask(ctx context.Context, task *models.Task, nodeIDs []string) ([]*models.Execution, error) {
+func (m *AppManager) OperationTask(ctx context.Context, task *models.Task, nodeIDs []string, strategy ExecutionStrategy, scheduleID string) ([]*models.Execution, error) {
 	op := task.AppOperation
 	if op == "" {
 		op = "start"
 	}
-	return m.DeployTask(ctx, task, nodeIDs, op)
+	return m.DeployTask(ctx, task, nodeIDs, op, strategy, scheduleID)
 }

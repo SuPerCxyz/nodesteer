@@ -37,7 +37,6 @@ func TestRunBlocksDisabledScript(t *testing.T) {
 		Type:     models.TaskTypeScript,
 		ScriptID: sc.ID,
 		Enabled:  true,
-		Target:   models.Target{Type: "node", NodeIDs: []string{node.ID}},
 	}
 	if err := tm.Create(ctx, task); err != nil {
 		t.Fatalf("create task: %v", err)
@@ -50,7 +49,7 @@ func TestRunBlocksDisabledScript(t *testing.T) {
 	if err := sm.Update(ctx, sc); err != nil {
 		t.Fatalf("disable script: %v", err)
 	}
-	if _, err := em.RunManual(ctx, task, []string{node.ID}, nil); err == nil ||
+	if _, err := em.RunManual(ctx, task, []string{node.ID}, nil, ExecutionStrategy{}, nil); err == nil ||
 		!strings.Contains(err.Error(), "referenced script") || !strings.Contains(err.Error(), "is disabled") {
 		t.Fatalf("expected disabled-script rejection, got %v", err)
 	}
@@ -61,7 +60,7 @@ func TestRunBlocksDisabledScript(t *testing.T) {
 		t.Fatalf("enable script: %v", err)
 	}
 	// 重新启用后脚本校验不再拦截；本用例未建立 Agent 会话，因此后续在派发阶段失败属预期
-	if _, err := em.RunManual(ctx, task, []string{node.ID}, nil); err != nil &&
+	if _, err := em.RunManual(ctx, task, []string{node.ID}, nil, ExecutionStrategy{}, nil); err != nil &&
 		strings.Contains(err.Error(), "referenced script") {
 		t.Fatalf("script check should pass after re-enable, got %v", err)
 	}

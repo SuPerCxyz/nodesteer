@@ -49,6 +49,9 @@ type Server struct {
 	// loginFails 登录失败计数（简单限速：连续失败递增延迟，成功后重置）
 	loginFails loginFailTracker
 
+	// devNoAuth 仅本地测试使用：所有 API 请求按管理员放行。默认关闭。
+	devNoAuth bool
+
 	// RegistrationToken Agent 注册令牌，用于 Agent 身份访问（如 Artifact 下载）
 	RegistrationToken string
 	sessions          *hub.SessionManager
@@ -62,6 +65,9 @@ type Server struct {
 
 // SetMetrics 注入指标收集器
 func (s *Server) SetMetrics(m *metrics.Metrics) { s.metrics = m }
+
+// SetDevNoAuth 开启/关闭本地测试免登录模式。仅允许通过显式环境变量启用。
+func (s *Server) SetDevNoAuth(v bool) { s.devNoAuth = v }
 
 // SetRegistrationToken 设置 Agent 注册令牌
 func (s *Server) SetRegistrationToken(token string) { s.RegistrationToken = token }
@@ -116,6 +122,9 @@ func New(st store.Store, am *auth.Manager, nm *hub.NodeManager, sm *hub.ScriptMa
 // Routes 注册路由
 func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
+
+	// 认证模式探测（公开，仅返回是否启用本地测试免登录）
+	mux.HandleFunc("/api/auth-mode", s.handleAuthMode)
 
 	// 认证
 	mux.HandleFunc("/api/login", s.handleLogin)
@@ -219,6 +228,19 @@ func (s *Server) withCORS(next http.Handler) http.Handler {
 // withAuth 认证与鉴权中间件
 func (s *Server) withAuth(next http.HandlerFunc, action string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if s.devNoAuth {
+			sess := &auth.Session{
+				Token:    "dev-no-auth",
+				UserID:   "dev-no-auth",
+				Username: "dev",
+				Role:     models.RoleAdministrator,
+				Expires:  time.Now().Add(24 * time.Hour),
+			}
+			r = r.WithContext(withUser(r.Context(), sess))
+			r = r.WithContext(hub.WithAuditInfo(r.Context(), sess.UserID, sess.Username))
+			next(w, r)
+			return
+		}
 		token := bearerToken(r)
 		if token == "" {
 			writeErr(w, http.StatusUnauthorized, "unauthorized")
@@ -249,6 +271,18 @@ func (s *Server) withWriteAuth(next http.HandlerFunc, action string) http.Handle
 // 用于 Agent 部署时需要访问的端点（如 Artifact 下载）。
 func (s *Server) withAgentOrUserAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if s.devNoAuth {
+			sess := &auth.Session{
+				Token:    "dev-no-auth",
+				UserID:   "dev-no-auth",
+				Username: "dev",
+				Role:     models.RoleAdministrator,
+				Expires:  time.Now().Add(24 * time.Hour),
+			}
+			r = r.WithContext(withUser(r.Context(), sess))
+			next(w, r)
+			return
+		}
 		// 先尝试用户会话
 		if token := bearerToken(r); token != "" {
 			if sess, ok := s.auth.Authenticate(r.Context(), token); ok {
@@ -489,6 +523,15 @@ func loginFailKey(r *http.Request, username string) string {
 		host = r.RemoteAddr
 	}
 	return host + "|" + strings.ToLower(username)
+}
+
+// handleAuthMode 公开返回当前认证模式，供前端在本地测试免登录模式下跳过登录页。
+func (s *Server) handleAuthMode(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		methodNotAllowed(w, "GET")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"dev_no_auth": s.devNoAuth})
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
@@ -1542,12 +1585,17 @@ func (s *Server) handleTaskByID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleRunNow Run Now
+// handleRunNow Run Now：请求级临时目标与执行策略，不修改 Task/Schedule。
 func (s *Server) handleRunNow(w http.ResponseWriter, r *http.Request, taskID string) {
 	var req struct {
-		NodeIDs map[string]any    `json:"node_ids"`
-		Params  map[string]string `json:"params"`
-		All     bool              `json:"all"`
+		ScheduleID    string            `json:"schedule_id"`
+		Target        *models.Target    `json:"target"`
+		NodeIDs       json.RawMessage   `json:"node_ids"`
+		Params        map[string]string `json:"params"`
+		Timeout       *int              `json:"timeout"`
+		Retry         *int              `json:"retry"`
+		RunUser       string            `json:"run_user"`
+		OfflinePolicy string            `json:"offline_policy"`
 	}
 	if err := readJSON(r, &req); err != nil && err != io.EOF {
 		writeErr(w, http.StatusBadRequest, "invalid request")
@@ -1560,44 +1608,71 @@ func (s *Server) handleRunNow(w http.ResponseWriter, r *http.Request, taskID str
 		return
 	}
 
-	// 解析目标
-	nodeIDs, err := s.resolveTargetNodeIDs(r.Context(), task)
-	if err != nil {
-		s.writeInternalError(w, r, err)
+	// 从调度计划页「立即执行」：目标与策略以 Schedule 为准，并记录来源调度；
+	// 任务定义页「试运行」：使用请求级临时目标与策略。
+	var target models.Target
+	var strategy hub.ExecutionStrategy
+	var schedule *models.Schedule
+	scheduleID := strings.TrimSpace(req.ScheduleID)
+	if scheduleID != "" {
+		sc, err := s.schedules.Get(r.Context(), scheduleID)
+		if err != nil {
+			writeErr(w, http.StatusBadRequest, "schedule not found")
+			return
+		}
+		if sc.TaskID != task.ID {
+			writeErr(w, http.StatusBadRequest, "schedule does not belong to task")
+			return
+		}
+		schedule = sc
+		target = sc.Target
+		strategy = hub.StrategyFromSchedule(sc)
+	} else {
+		// 目标优先级：target > node_ids > 400。
+		if req.Target != nil {
+			target = *req.Target
+		} else {
+			ids, err := decodeRunNodeIDs(req.NodeIDs)
+			if err != nil {
+				writeErr(w, http.StatusBadRequest, "invalid node_ids")
+				return
+			}
+			if len(ids) == 0 {
+				writeErr(w, http.StatusBadRequest, "no target nodes")
+				return
+			}
+			target = models.Target{Type: "node", NodeIDs: ids}
+		}
+		strategy = hub.ExecutionStrategy{RunUser: req.RunUser, OfflinePolicy: req.OfflinePolicy}
+		if req.Timeout != nil {
+			strategy.Timeout = *req.Timeout
+		}
+		if req.Retry != nil {
+			strategy.Retry = *req.Retry
+		}
+	}
+	if err := hub.ValidateTarget(r.Context(), s.store, target); err != nil {
+		writeErr(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if len(req.NodeIDs) > 0 {
-		var explicit []string
-		for k := range req.NodeIDs {
-			explicit = append(explicit, k)
-		}
-		if len(explicit) > 0 {
-			nodeIDs = explicit
-		}
+	nodeIDs, err := s.nodes.ResolveTarget(r.Context(), target)
+	if err != nil {
+		s.writeStoreError(w, r, http.StatusBadRequest, err)
+		return
 	}
-
 	if len(nodeIDs) == 0 {
 		writeErr(w, http.StatusBadRequest, "no target nodes")
 		return
 	}
 
-	// 应用 Task 走应用管理器
-	if task.Type == models.TaskTypeAppDeploy || task.Type == models.TaskTypeAppOperation {
-		op := task.AppOperation
-		if op == "" {
-			op = "deploy"
-		}
-		execs, err := s.apps.DeployTask(r.Context(), task, nodeIDs, op)
-		if err != nil {
-			s.writeStoreError(w, r, http.StatusBadRequest, err)
-			return
-		}
-		s.audit(r, "task", taskID, "execute")
-		writeJSON(w, http.StatusOK, execs)
+	strategy, err = strategy.Normalize()
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	execs, err := s.execs.RunManual(r.Context(), task, nodeIDs, req.Params)
+	// 应用类任务也走 RUN_EXECUTION，确保条件评估、来源调度与策略一致。
+	execs, err := s.execs.RunManual(r.Context(), task, nodeIDs, req.Params, strategy, schedule)
 	if err != nil {
 		s.writeStoreError(w, r, http.StatusBadRequest, err)
 		return
@@ -1606,9 +1681,25 @@ func (s *Server) handleRunNow(w http.ResponseWriter, r *http.Request, taskID str
 	writeJSON(w, http.StatusOK, execs)
 }
 
-// resolveTargetNodeIDs 解析任务目标
-func (s *Server) resolveTargetNodeIDs(ctx context.Context, task *models.Task) ([]string, error) {
-	return s.nodes.ResolveTarget(ctx, task.Target)
+// decodeRunNodeIDs 兼容旧请求的 node_ids 对象（{"id":true}）与新请求的数组（["id"]）。
+func decodeRunNodeIDs(raw json.RawMessage) ([]string, error) {
+	if len(raw) == 0 || string(raw) == "null" {
+		return nil, nil
+	}
+	var arr []string
+	if err := json.Unmarshal(raw, &arr); err == nil {
+		return arr, nil
+	}
+	var obj map[string]any
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return nil, err
+	}
+	ids := make([]string, 0, len(obj))
+	for id := range obj {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	return ids, nil
 }
 
 // ---------- Schedules ----------
@@ -1666,12 +1757,55 @@ func (s *Server) handleScheduleByID(w http.ResponseWriter, r *http.Request) {
 			writeErr(w, http.StatusForbidden, "permission denied")
 			return
 		}
-		var sc models.Schedule
-		if err := readJSON(r, &sc); err != nil {
+		// Timeout/Retry 用指针判断字段是否提供：显式 0 必须保留为 0（timeout 再
+		// 归一为默认 300），未提供才回填既有值，不能把 retry=0 误判为缺失。
+		var req struct {
+			models.Schedule
+			Timeout   *int            `json:"timeout"`
+			Retry     *int            `json:"retry"`
+			RunUser   *string         `json:"run_user"`
+			Condition json.RawMessage `json:"condition"`
+		}
+		if err := readJSON(r, &req); err != nil {
 			writeErr(w, http.StatusBadRequest, "invalid request")
 			return
 		}
+		existing, err := s.schedules.Get(r.Context(), id)
+		if err != nil {
+			writeErr(w, http.StatusNotFound, "schedule not found")
+			return
+		}
+		sc := req.Schedule
 		sc.ID = id
+		if req.Timeout != nil {
+			sc.Timeout = *req.Timeout
+		} else {
+			sc.Timeout = existing.Timeout
+		}
+		if req.Retry != nil {
+			sc.Retry = *req.Retry
+		} else {
+			sc.Retry = existing.Retry
+		}
+		if req.RunUser != nil {
+			sc.RunUser = *req.RunUser
+		} else {
+			sc.RunUser = existing.RunUser
+		}
+		// Condition 用 RawMessage 区分「未提供」与显式 null：未提供保留旧值，
+		// null 表示清空，对象表示新远程条件。
+		if len(req.Condition) == 0 {
+			sc.Condition = existing.Condition
+		} else if string(req.Condition) == "null" {
+			sc.Condition = nil
+		} else {
+			var cond models.Condition
+			if err := json.Unmarshal(req.Condition, &cond); err != nil {
+				writeErr(w, http.StatusBadRequest, "invalid condition")
+				return
+			}
+			sc.Condition = &cond
+		}
 		if err := s.schedules.Update(r.Context(), &sc); err != nil {
 			s.writeUpdateError(w, r, "schedule not found", err)
 			return

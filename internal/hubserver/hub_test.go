@@ -71,10 +71,15 @@ func TestSyncManagerComputeDesiredState(t *testing.T) {
 	}
 	task := &models.Task{
 		Name: "t1", Type: "script", ScriptID: sc.ID, Enabled: true,
-		Target: models.Target{Type: "label", LabelKey: "env", LabelValue: "prod"},
 	}
 	if err := st.CreateTask(ctx, task); err != nil {
 		t.Fatalf("create task: %v", err)
+	}
+	if err := st.CreateSchedule(ctx, &models.Schedule{
+		TaskID: task.ID, Type: models.ScheduleTypeManual, Revision: 1, Enabled: true,
+		Target: models.Target{Type: "label", LabelKey: "env", LabelValue: "prod"},
+	}); err != nil {
+		t.Fatalf("create schedule: %v", err)
 	}
 
 	objs, err := sm.ComputeDesiredState(ctx, "node1")

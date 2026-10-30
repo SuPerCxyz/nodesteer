@@ -6,7 +6,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
 import { SidebarProvider } from '@/components/ui/sidebar'
-import { ScriptEditor, ApplicationEditor } from './index'
+import { ScriptEditor, ApplicationEditor, ScheduleEditor } from './index'
 import { TaskEditor } from '@/features/tasks'
 
 const { get } = vi.hoisted(() => ({ get: vi.fn() }))
@@ -78,6 +78,34 @@ describe('编辑器表单控件可访问名（P11 a11y：button-name / label）'
         page.getByRole('combobox', { name: i18n.t('tasks.conditionMetric') })
       )
       .toBeVisible()
+    expect(
+      page
+        .getByRole('combobox', { name: i18n.t('tasks.conditionOperator') })
+        .all()
+    ).toHaveLength(1)
+  })
+
+  it('任务编辑器：不再渲染目标与执行策略字段', async () => {
+    window.history.replaceState({}, '', '/tasks/new')
+    const page = await renderEditor(<TaskEditor />)
+
+    await expect
+      .element(page.getByRole('combobox', { name: i18n.t('targets.type') }))
+      .not.toBeInTheDocument()
+    await expect
+      .element(page.getByRole('spinbutton', { name: i18n.t('strategy.timeoutSec') }))
+      .not.toBeInTheDocument()
+    await expect
+      .element(
+        page.getByRole('combobox', { name: i18n.t('strategy.offlinePolicy') })
+      )
+      .not.toBeInTheDocument()
+  })
+
+  it('调度计划编辑器：远程条件选择器均有可访问名', async () => {
+    window.history.replaceState({}, '', '/schedules/new')
+    const page = await renderEditor(<ScheduleEditor />)
+
     await expect
       .element(
         page.getByRole('combobox', { name: i18n.t('tasks.conditionNode') })
@@ -88,24 +116,16 @@ describe('编辑器表单控件可访问名（P11 a11y：button-name / label）'
         page.getByRole('combobox', { name: i18n.t('tasks.conditionProperty') })
       )
       .toBeVisible()
-    // 本地条件与远程条件各有一个「运算符」选择器
-    expect(
-      page
-        .getByRole('combobox', { name: i18n.t('tasks.conditionOperator') })
-        .all()
-    ).toHaveLength(2)
-  })
-
-  it('任务编辑器：目标区块标题层级为 h2，避免 h1 后直接跳 h3', async () => {
-    window.history.replaceState({}, '', '/tasks/new')
-    const page = await renderEditor(<TaskEditor />)
-
     await expect
-      .element(page.getByRole('heading', { level: 2, name: i18n.t('tasks.targetsTab') }))
+      .element(
+        page.getByRole('combobox', { name: i18n.t('tasks.conditionOperator') })
+      )
       .toBeVisible()
-    expect(
-      page.container.querySelectorAll('h3').length
-    ).toBe(0)
+    await expect
+      .element(
+        page.getByRole('button', { name: i18n.t('schedules.addRemoteCondition') })
+      )
+      .toBeVisible()
   })
 
   it('应用编辑器：发布包与操作选择器有可访问名', async () => {
@@ -186,12 +206,6 @@ describe('编辑器输入框可访问名（P17 a11y：仅 placeholder 命名的�
         page.getByRole('textbox', { name: i18n.t('tasks.localConditionValue') })
       )
       .toBeVisible()
-    await expect
-      .element(
-        page.getByRole('textbox', { name: i18n.t('tasks.remoteConditionValue') })
-      )
-      .toBeVisible()
-
     // 条件输入按指标/属性动态渲染：切换到会展示输入框的取值后再断言
     await userEvent.click(
       page.getByRole('combobox', { name: i18n.t('tasks.conditionMetric') })
@@ -213,17 +227,6 @@ describe('编辑器输入框可访问名（P17 a11y：仅 placeholder 命名的�
       )
       .toBeVisible()
 
-    await userEvent.click(
-      page.getByRole('combobox', { name: i18n.t('tasks.conditionProperty') })
-    )
-    await userEvent.click(
-      page.getByRole('option', { name: i18n.t('tasks.lastExecution') })
-    )
-    await expect
-      .element(
-        page.getByRole('textbox', { name: i18n.t('tasks.conditionTaskId') })
-      )
-      .toBeVisible()
   })
 
   it('应用编辑器：发布包上传、参数与环境变量输入均有可访问名', async () => {

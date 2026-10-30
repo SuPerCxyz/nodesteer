@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -109,6 +110,23 @@ func drainHelloAck(t *testing.T, conn *wsConn) protocol.HelloAckPayload {
 	case <-time.After(2 * time.Second):
 		t.Fatal("expected HELLO ack on send channel")
 		return protocol.HelloAckPayload{}
+	}
+}
+
+// TestHelloRejectsProtocolVersionMismatch 协议版本不匹配时明确拒绝 HELLO，
+// 并在 HELLO_ACK 中给出可诊断的错误，避免旧 Agent 静默进入半兼容状态。
+func TestHelloRejectsProtocolVersionMismatch(t *testing.T) {
+	g, _, _ := newTestGateway(t)
+	conn := newHelloTestConn(t, g)
+	env := protocol.NewEnvelope(protocol.MsgHello, "hello-old", protocol.HelloPayload{
+		ProtocolVersion: protocol.ProtocolVersion - 1,
+		AgentVersion:    "old-agent",
+		DeploymentMode:  models.DeploymentModeNative,
+		Hostname:        "old-agent",
+	})
+	err := g.handleHello(context.Background(), conn, env)
+	if err == nil || !strings.Contains(err.Error(), "unsupported protocol version") {
+		t.Fatalf("expected protocol version rejection, got %v", err)
 	}
 }
 

@@ -116,6 +116,44 @@ describe('侧栏导航地标（P11 a11y：内容需位于 landmark 内）', () =
   })
 })
 
+describe('本地测试免登录模式', () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage('zh')
+  })
+
+  beforeEach(() => {
+    setToken(null)
+    useAuthStore.getState().auth.reset()
+    get.mockReset()
+    get.mockImplementation(async (path: string) => {
+      if (path === '/auth-mode') return { dev_no_auth: true }
+      if (path === '/me')
+        return {
+          token: 'dev-no-auth',
+          user_id: 'dev-no-auth',
+          username: 'dev',
+          role: 'administrator',
+          expires: '2099-01-01T00:00:00Z',
+        }
+      return {}
+    })
+  })
+
+  it('无 token 时探测 auth-mode，自动进入并显示免登录横幅', async () => {
+    const page = await render(
+      <AuthenticatedLayout>
+        <p>正文内容</p>
+      </AuthenticatedLayout>
+    )
+
+    await expect
+      .element(page.getByText(i18n.t('auth.devNoAuth')))
+      .toBeVisible()
+    await expect.element(page.getByText('正文内容')).toBeVisible()
+    expect(useAuthStore.getState().auth.accessToken).toBe('dev-no-auth')
+  })
+})
+
 // 会话写在同源 localStorage 上，跨测试文件共享；用例结束必须清理，避免污染其它测试
 afterEach(() => {
   setToken(null)

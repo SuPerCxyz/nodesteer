@@ -57,7 +57,7 @@ describe('normalizeAppOperation 类型切换', () => {
 })
 
 describe('buildTaskPayload 剔除陈旧字段（OBS-20261016-G5-STALE-PAYLOAD-FIELDS-CARRIED）', () => {
-  const staleForm: Partial<Task> = {
+  const staleForm = {
     id: 'task-1',
     revision: 7,
     created_at: '2026-10-16T08:59:33Z',
@@ -68,20 +68,17 @@ describe('buildTaskPayload 剔除陈旧字段（OBS-20261016-G5-STALE-PAYLOAD-FI
     script_id: 'sc-1',
     application_id: 'app-1',
     app_operation: 'stop',
-    target: {
-      type: 'node',
-      node_ids: ['n1'],
-      group_ids: ['g1'],
-      label_key: 'env',
-      label_value: 'prod',
-    },
     parameters: [],
     param_values: {},
-    timeout: 300,
-    retry: 0,
-    offline_policy: 'hub_online_required',
     enabled: true,
-  }
+    // 旧 Task 契约残留字段：即使调用方仍带着，也不能提交
+    target: { type: 'node', node_ids: ['n1'] },
+    timeout: 300,
+    retry: 2,
+    run_user: 'root',
+    offline_policy: 'hub_online_required',
+    schedule: { id: 'sch-1' },
+  } as Partial<Task> & Record<string, unknown>
 
   it('不提交后端管理字段与类型切换后的陈旧字段', () => {
     const payload = buildTaskPayload(staleForm)
@@ -95,37 +92,18 @@ describe('buildTaskPayload 剔除陈旧字段（OBS-20261016-G5-STALE-PAYLOAD-FI
     expect(payload.script_id).toBe('sc-1')
   })
 
-  it('目标按类型裁剪：node 只保留 node_ids', () => {
-    expect(buildTaskPayload(staleForm).target).toEqual({
-      type: 'node',
-      node_ids: ['n1'],
-    })
-  })
-
-  it('目标按类型裁剪：group/label 只保留各自字段', () => {
-    expect(
-      buildTaskPayload({
-        type: 'command',
-        target: {
-          type: 'group',
-          node_ids: ['n1'],
-          group_ids: ['g1'],
-          label_key: 'env',
-        },
-      }).target
-    ).toEqual({ type: 'group', group_ids: ['g1'] })
-    expect(
-      buildTaskPayload({
-        type: 'command',
-        target: {
-          type: 'label',
-          node_ids: ['n1'],
-          group_ids: ['g1'],
-          label_key: 'env',
-          label_value: 'prod',
-        },
-      }).target
-    ).toEqual({ type: 'label', label_key: 'env', label_value: 'prod' })
+  it('不再提交目标与执行策略字段', () => {
+    const payload = buildTaskPayload(staleForm) as Record<string, unknown>
+    for (const field of [
+      'target',
+      'schedule',
+      'timeout',
+      'retry',
+      'run_user',
+      'offline_policy',
+    ]) {
+      expect(field in payload).toBe(false)
+    }
   })
 
   it('command 类型只提交 command，app 类型只提交 application_id/app_operation', () => {
@@ -152,12 +130,10 @@ describe('buildTaskPayload 剔除陈旧字段（OBS-20261016-G5-STALE-PAYLOAD-FI
     expect('script_id' in appPayload).toBe(false)
   })
 
-  it('保留任务定义自身字段（名称/超时/启用等）', () => {
+  it('保留任务定义自身字段（名称/启用等）', () => {
     const payload = buildTaskPayload(staleForm)
     expect(payload.name).toBe('qa-task')
     expect(payload.type).toBe('script')
-    expect(payload.timeout).toBe(300)
     expect(payload.enabled).toBe(true)
-    expect(payload.offline_policy).toBe('hub_online_required')
   })
 })

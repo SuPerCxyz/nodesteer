@@ -10,14 +10,22 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ChevronLeft, Clipboard, Loader2, StopCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { api, type Execution, type Node, type Task } from '@/lib/api'
+import { api, type Execution, type Node, type Schedule, type Task } from '@/lib/api'
 import { copyText } from '@/lib/clipboard'
 import { executionLogView } from '@/lib/execution-logs'
 import { useCanRun } from '@/lib/permissions'
 import { readTablePageSize } from '@/lib/table-view'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
@@ -29,7 +37,9 @@ import {
   EmptyState,
   ErrorPage,
   ErrorState,
+  LoadingState,
   SectionCard,
+  SectionGrid,
   StatusBadge,
   TimeValue,
 } from '@/features/shared/ui'
@@ -97,6 +107,10 @@ export function Executions() {
     queryKey: ['nodes'],
     queryFn: () => api.get<Node[]>('/nodes'),
   })
+  const schedules = useQuery({
+    queryKey: ['schedules'],
+    queryFn: () => api.get<Schedule[]>('/schedules'),
+  })
   const taskNames = useMemo(
     () => new Map((tasks.data || []).map((task) => [task.id, task.name])),
     [tasks.data]
@@ -104,6 +118,13 @@ export function Executions() {
   const nodeNames = useMemo(
     () => new Map((nodes.data || []).map((node) => [node.id, node.hostname])),
     [nodes.data]
+  )
+  const scheduleNames = useMemo(
+    () =>
+      new Map(
+        (schedules.data || []).map((item) => [item.id, item.name || item.id])
+      ),
+    [schedules.data]
   )
   const update = (key: 'q' | 'status' | 'trigger', value: string) =>
     navigate({
@@ -212,6 +233,37 @@ export function Executions() {
         },
       },
       {
+        id: 'schedule',
+        accessorFn: (row) =>
+          `${scheduleNames.get(row.schedule_id || '') || ''} ${row.schedule_id || ''}`,
+        header: t('executions.sourceSchedule'),
+        size: 180,
+        minSize: 140,
+        cell: ({ row }) => {
+          const scheduleId = row.original.schedule_id
+          if (!scheduleId)
+            return (
+              <span className='block truncate text-sm text-muted-foreground'>
+                {t('executions.historicalSource')}
+              </span>
+            )
+          const name = scheduleNames.get(scheduleId)
+          return name ? (
+            <a
+              href={`/schedules/${scheduleId}`}
+              className='block truncate hover:underline'
+              title={name}
+            >
+              {name}
+            </a>
+          ) : (
+            <span className='block truncate text-sm text-muted-foreground'>
+              {t('executions.unknownSource')}
+            </span>
+          )
+        },
+      },
+      {
         accessorKey: 'start_time',
         header: t('executions.start'),
         size: 175,
@@ -258,7 +310,7 @@ export function Executions() {
         ),
       },
     ],
-    [labels, nodeNames, t, taskNames]
+    [labels, nodeNames, scheduleNames, t, taskNames]
   )
 
   return (
@@ -271,9 +323,7 @@ export function Executions() {
         {query.isError ? (
           <ErrorState error={query.error} onRetry={() => query.refetch()} />
         ) : query.isLoading ? (
-          <div className='flex min-h-32 items-center justify-center'>
-            <Loader2 className='size-4 animate-spin text-muted-foreground' />
-          </div>
+          <LoadingState />
         ) : (
           <>
             <div className='flex flex-wrap items-center gap-2'>
@@ -286,40 +336,64 @@ export function Executions() {
                   aria-label={t('executions.searchPlaceholder')}
                 />
               </div>
-              <select
-                className='h-8 rounded-md border bg-background px-2 text-sm'
-                value={search.status || ''}
-                onChange={(event) => update('status', event.target.value)}
-                aria-label={t('common.status')}
+              <Select
+                value={search.status || 'all'}
+                onValueChange={(value) =>
+                  update('status', value === 'all' ? '' : value)
+                }
               >
-                <option value=''>{t('executions.all')}</option>
-                {executionStatuses.map((status) => (
-                  <option key={status} value={status}>
-                    {
-                      executionStatusLabels[status][
-                        i18n.language === 'en' ? 'en' : 'zh'
-                      ]
-                    }
-                  </option>
-                ))}
-              </select>
-              <select
-                className='h-8 rounded-md border bg-background px-2 text-sm'
-                value={search.trigger || ''}
-                onChange={(event) => update('trigger', event.target.value)}
-                aria-label={t('executions.trigger')}
+                <SelectTrigger
+                  className='h-8 w-[150px]'
+                  aria-label={t('common.status')}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>{t('executions.all')}</SelectItem>
+                  {executionStatuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {
+                        executionStatusLabels[status][
+                          i18n.language === 'en' ? 'en' : 'zh'
+                        ]
+                      }
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={search.trigger || 'all'}
+                onValueChange={(value) =>
+                  update('trigger', value === 'all' ? '' : value)
+                }
               >
-                <option value=''>{t('executions.allTriggers')}</option>
-                {triggers.map((trigger) => (
-                  <option key={trigger} value={trigger}>
-                    {labels[trigger as keyof typeof labels] || trigger}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  className='h-8 w-[160px]'
+                  aria-label={t('executions.trigger')}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>
+                    {t('executions.allTriggers')}
+                  </SelectItem>
+                  {triggers.map((trigger) => (
+                    <SelectItem key={trigger} value={trigger}>
+                      {labels[trigger as keyof typeof labels] || trigger}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             {(query.data?.total ?? 0) === 0 ? (
               <Card>
-                <EmptyState message={t('executions.noMatching')} />
+                <EmptyState
+                  message={
+                    search.q || search.status || search.trigger
+                      ? t('executions.noMatching')
+                      : t('executions.noExecs')
+                  }
+                />
               </Card>
             ) : (
               <DataTable
@@ -367,6 +441,13 @@ export function ExecutionDetail() {
     queryFn: () => api.get<Node>(`/nodes/${execution.data?.node_id}`),
     enabled: Boolean(execution.data?.node_id),
   })
+  // 来源调度仅用于展示；解析失败不能影响执行详情本身
+  const schedule = useQuery({
+    queryKey: ['schedule', execution.data?.schedule_id],
+    queryFn: () => api.get<Schedule>(`/schedules/${execution.data?.schedule_id}`),
+    enabled: Boolean(execution.data?.schedule_id),
+    retry: false,
+  })
   const logs = useQuery({
     queryKey: ['execution-logs', id],
     queryFn: () =>
@@ -409,9 +490,7 @@ export function ExecutionDetail() {
       <>
         <NodeSteerHeader title={t('executions.executionTitle')} />
         <Main>
-          <div className='flex min-h-32 items-center justify-center'>
-            <Loader2 className='size-4 animate-spin text-muted-foreground' />
-          </div>
+          <LoadingState />
         </Main>
       </>
     )
@@ -419,6 +498,11 @@ export function ExecutionDetail() {
   const taskName = task.data?.name || t('common.unknownTask')
   const nodeName = node.data?.hostname || t('common.unknownNode')
   const exitCode = exec.exit_code ?? '-'
+  const inProgress = ['PENDING', 'RUNNING'].includes(exec.status)
+  const sourceSchedule =
+    exec.schedule_id && schedule.data?.id === exec.schedule_id
+      ? schedule.data
+      : undefined
   const trigger =
     i18n.language === 'en'
       ? { schedule: 'Schedule', manual: 'Manual', system: 'System' }[
@@ -520,6 +604,32 @@ export function ExecutionDetail() {
             </Card>
           ))}
         </div>
+        <SectionGrid>
+        <SectionCard title={t('executions.process')}>
+          <div className='grid gap-4'>
+            <ProcessTimeline
+              createdAt={exec.created_at}
+              startedAt={exec.start_time}
+              finishedAt={exec.end_time}
+            />
+            <div className='flex flex-wrap items-center gap-3 text-sm'>
+              <StatusBadge status={exec.status} />
+              {inProgress ? (
+                <span className='text-muted-foreground'>
+                  {t('executions.inProgress')}
+                </span>
+              ) : null}
+            </div>
+            {exec.block_reason ? (
+              <div className='rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm'>
+                <span className='font-medium'>
+                  {t('executions.blockReason')}:
+                </span>{' '}
+                {exec.block_reason}
+              </div>
+            ) : null}
+          </div>
+        </SectionCard>
         <SectionCard title={t('executions.metadata')}>
           <DetailGrid>
             <DetailField label={t('dashboard.task')}>
@@ -550,6 +660,27 @@ export function ExecutionDetail() {
                 </span>
               </DetailField>
             ) : null}
+            <DetailField label={t('executions.sourceSchedule')}>
+              {sourceSchedule ? (
+                <a
+                  className='hover:underline'
+                  href={`/schedules/${sourceSchedule.id}`}
+                >
+                  {sourceSchedule.name || sourceSchedule.id}
+                </a>
+              ) : exec.schedule_id ? (
+                <span>{t('executions.unknownSource')}</span>
+              ) : (
+                <span>{t('executions.historicalSource')}</span>
+              )}
+            </DetailField>
+            {exec.schedule_revision ? (
+              <DetailField label={t('executions.scheduleRevision')}>
+                <span className='font-mono text-xs'>
+                  r{exec.schedule_revision}
+                </span>
+              </DetailField>
+            ) : null}
             <DetailField label={t('dashboard.trigger')}>{trigger}</DetailField>
             <DetailField label={t('executions.offline')}>
               {exec.offline ? t('executions.yes') : t('executions.no')}
@@ -557,31 +688,42 @@ export function ExecutionDetail() {
             <DetailField label={t('executions.synced')}>
               {exec.synced ? t('executions.yes') : t('executions.no')}
             </DetailField>
-            {exec.block_reason ? (
-              <DetailField label={t('executions.blockReason')}>
-                {exec.block_reason}
-              </DetailField>
-            ) : null}
           </DetailGrid>
         </SectionCard>
-        <SectionCard title={t('executions.outputSummary')}>
-          <div className='flex flex-wrap items-center gap-x-8 gap-y-3 text-sm'>
-            <div className='flex items-center gap-3'>
-              <span className='text-muted-foreground'>stdout</span>
-              <span className='font-mono text-xs'>
-                {exec.stdout?.length || 0} {t('executions.characters')}
-              </span>
-            </div>
-            <div className='flex items-center gap-3'>
-              <span className='text-muted-foreground'>stderr</span>
-              <span className='font-mono text-xs'>
-                {exec.stderr?.length || 0} {t('executions.characters')}
-              </span>
-            </div>
+        </SectionGrid>
+        <SectionCard title={t('executions.result')}>
+          <div className='grid gap-4'>
+            <DetailGrid className='lg:grid-cols-3'>
+              <DetailField label={t('common.status')}>
+                <StatusBadge status={exec.status} />
+              </DetailField>
+              <DetailField label={t('executions.duration')}>
+                <DurationValue
+                  start={exec.start_time}
+                  end={exec.end_time}
+                  running={exec.status === 'RUNNING'}
+                />
+              </DetailField>
+              <DetailField label={t('executions.exitCode')}>
+                <span className='font-mono text-xs'>
+                  {inProgress ? '-' : exitCode}
+                </span>
+              </DetailField>
+            </DetailGrid>
+            <OutputSummary
+              stream='stdout'
+              content={exec.stdout}
+              truncated={exec.stdout_truncated}
+            />
+            <OutputSummary
+              stream='stderr'
+              content={exec.stderr}
+              truncated={exec.stderr_truncated}
+            />
             <Button
               variant='outline'
               size='sm'
-              className='ms-auto'
+              className='w-fit'
               onClick={() =>
                 document
                   .getElementById('execution-logs')
@@ -607,6 +749,70 @@ export function ExecutionDetail() {
         </div>
       </Main>
     </>
+  )
+}
+
+function ProcessTimeline({
+  createdAt,
+  startedAt,
+  finishedAt,
+}: {
+  createdAt?: string
+  startedAt?: string
+  finishedAt?: string
+}) {
+  const { t } = useTranslation()
+  const items = [
+    { key: 'createdAt', label: t('executions.createdAt'), value: createdAt },
+    { key: 'startedAt', label: t('executions.startedAt'), value: startedAt },
+    { key: 'finishedAt', label: t('executions.finishedAt'), value: finishedAt },
+  ]
+  return (
+    <ol className='ms-1.5 grid gap-4 border-s ps-5'>
+      {items.map((item) => (
+        <li className='relative' key={item.key}>
+          <span
+            className='absolute -start-[27px] top-1.5 size-2.5 rounded-full border-2 border-background bg-primary'
+            aria-hidden='true'
+          />
+          <div className='text-xs text-muted-foreground'>{item.label}</div>
+          <div className='mt-0.5 text-sm'>
+            <TimeValue value={item.value} absolute />
+          </div>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+/** 执行结果中的 stdout/stderr 摘要：展示截断标记与前 400 字符 */
+function OutputSummary({
+  stream,
+  content,
+  truncated,
+}: {
+  stream: 'stdout' | 'stderr'
+  content?: string
+  truncated?: boolean
+}) {
+  const { t } = useTranslation()
+  const text = content || ''
+  const excerpt = text.length > 400 ? `${text.slice(0, 400)}…` : text
+  return (
+    <div className='grid gap-2'>
+      <div className='flex flex-wrap items-center gap-2 text-sm'>
+        <span className='text-muted-foreground'>{stream}</span>
+        <span className='font-mono text-xs'>
+          {text.length} {t('executions.characters')}
+        </span>
+        {truncated ? (
+          <Badge variant='outline'>{t('executions.truncated')}</Badge>
+        ) : null}
+      </div>
+      <pre className='max-h-32 overflow-auto rounded-md bg-muted p-3 font-mono text-xs whitespace-pre-wrap'>
+        {excerpt || t('executions.empty')}
+      </pre>
+    </div>
   )
 }
 
@@ -681,16 +887,22 @@ function LogViewer({
             onChange={(event) => setSearch(event.target.value)}
             placeholder={t('common.searchLogs')}
           />
-          <select
-            className='h-8 rounded-md border bg-background px-2 text-xs'
+          <Select
             value={stream}
-            onChange={(event) => setStream(event.target.value as typeof stream)}
-            aria-label={t('common.allStreams')}
+            onValueChange={(value) => setStream(value as typeof stream)}
           >
-            <option value='all'>{t('common.allStreams')}</option>
-            <option value='stdout'>stdout</option>
-            <option value='stderr'>stderr</option>
-          </select>
+            <SelectTrigger
+              className='h-8 w-[130px] text-xs'
+              aria-label={t('common.allStreams')}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='all'>{t('common.allStreams')}</SelectItem>
+              <SelectItem value='stdout'>stdout</SelectItem>
+              <SelectItem value='stderr'>stderr</SelectItem>
+            </SelectContent>
+          </Select>
           <Button
             variant={wrap ? 'secondary' : 'outline'}
             size='sm'

@@ -32,9 +32,17 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
 })
 
 const TASKS = [{ id: 'task-1', name: '部署任务' }]
+const NODES = [
+  {
+    id: 'node-1',
+    hostname: 'node-a',
+    status: 'online',
+  },
+]
 
 const ON_START_SCHEDULE = {
   id: 'sch-1',
+  name: '启动时部署',
   task_id: 'task-1',
   revision: 1,
   type: 'on_start',
@@ -43,6 +51,10 @@ const ON_START_SCHEDULE = {
   run_at: '',
   timezone: 'Asia/Shanghai',
   execution_owner: 'agent',
+  target: { type: 'node', node_ids: ['node-1'] },
+  timeout: 300,
+  retry: 0,
+  run_user: '',
   offline_policy: 'allow_offline',
   misfire_policy: 'run_once',
   enabled: true,
@@ -53,6 +65,8 @@ const ON_START_SCHEDULE = {
 function mockApi(schedule: unknown = []) {
   get.mockImplementation((path: string) => {
     if (path === '/tasks') return Promise.resolve(TASKS)
+    if (path === '/nodes') return Promise.resolve(NODES)
+    if (path === '/groups') return Promise.resolve([])
     if (path.startsWith('/schedules/')) return Promise.resolve(schedule)
     return Promise.resolve([])
   })
@@ -89,7 +103,7 @@ describe('ScheduleEditor on_start 类型', () => {
     await expect.element(getByLabelText('Cron 表达式')).toBeVisible()
     await expect.element(getByLabelText('时区')).toBeVisible()
 
-    await userEvent.click(getByRole('combobox', { name: '类型' }))
+    await userEvent.click(getByRole('combobox', { name: i18n.t('schedules.triggerType') }))
     await userEvent.click(getByRole('option', { name: '节点启动时' }))
 
     await expect.element(getByLabelText('Cron 表达式')).not.toBeInTheDocument()
@@ -109,7 +123,7 @@ describe('ScheduleEditor on_start 类型', () => {
     const { getByRole, getByLabelText } = await renderEditor()
 
     await expect
-      .element(getByRole('combobox', { name: '类型' }))
+      .element(getByRole('combobox', { name: i18n.t('schedules.triggerType') }))
       .toHaveTextContent('节点启动时')
     await expect.element(getByLabelText('Cron 表达式')).not.toBeInTheDocument()
     await expect.element(getByLabelText('时区')).not.toBeInTheDocument()

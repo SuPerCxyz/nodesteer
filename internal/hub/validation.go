@@ -52,42 +52,63 @@ func isDispatchableStatus(status string) bool {
 	return status != models.NodeStatusMaintenance && status != models.NodeStatusDisabled
 }
 
-func validateTarget(ctx context.Context, st store.Store, target models.Target) error {
+// ValidateTarget 校验 node/group/label 目标。调度创建、更新与 Manual Run 共用。
+func ValidateTarget(ctx context.Context, st store.Store, target models.Target) error {
 	switch target.Type {
 	case "node":
 		if len(target.NodeIDs) == 0 {
-			return store.ErrInvalidTask("node target requires node_ids")
+			return fmt.Errorf("node target requires node_ids")
 		}
 		for _, id := range target.NodeIDs {
 			if id == "" {
-				return store.ErrInvalidTask("node target contains empty node id")
+				return fmt.Errorf("node target contains empty node id")
 			}
 			if _, err := st.GetNode(ctx, id); err != nil {
-				return store.ErrInvalidTask("target node not found")
+				return fmt.Errorf("target node not found")
 			}
 		}
 	case "group":
 		if len(target.GroupIDs) == 0 {
-			return store.ErrInvalidTask("group target requires group_ids")
+			return fmt.Errorf("group target requires group_ids")
 		}
 		for _, id := range target.GroupIDs {
 			if _, err := st.GetGroup(ctx, id); err != nil {
-				return store.ErrInvalidTask("target group not found")
+				return fmt.Errorf("target group not found")
 			}
 		}
 	case "label":
 		if strings.TrimSpace(target.LabelKey) == "" {
-			return store.ErrInvalidTask("label target requires label_key")
+			return fmt.Errorf("label target requires label_key")
 		}
 	default:
-		return store.ErrInvalidTask("target type must be node, group, or label")
+		return fmt.Errorf("target type must be node, group, or label")
 	}
 	return nil
 }
 
-func validateCondition(ctx context.Context, st store.Store, c *models.Condition) error {
+// validateCondition 按 scope 校验条件归属：
+//   - local：仅允许本地条件或本地 and（Task）
+//   - remote：仅允许远程条件或远程 and（Schedule）
+func validateCondition(ctx context.Context, st store.Store, c *models.Condition, scope string) error {
 	if c == nil {
 		return nil
+	}
+	// 条件类型归一化：旧客户端/旧数据可能只带 local/remote/and 字段而省略 type。
+	if c.Type == "" {
+		switch {
+		case c.Local != nil:
+			c.Type = "local"
+		case c.Remote != nil:
+			c.Type = "remote"
+		case len(c.And) > 0:
+			c.Type = "and"
+		}
+	}
+	scopeErr := func() error {
+		if scope == "local" {
+			return fmt.Errorf("task condition only supports local conditions")
+		}
+		return fmt.Errorf("schedule condition only supports remote conditions")
 	}
 	switch c.Type {
 	case "and":
@@ -95,11 +116,14 @@ func validateCondition(ctx context.Context, st store.Store, c *models.Condition)
 			return store.ErrInvalidTask("and condition requires at least one child")
 		}
 		for i := range c.And {
-			if err := validateCondition(ctx, st, &c.And[i]); err != nil {
+			if err := validateCondition(ctx, st, &c.And[i], scope); err != nil {
 				return err
 			}
 		}
 	case "local":
+		if scope != "local" {
+			return scopeErr()
+		}
 		if c.Local == nil {
 			return store.ErrInvalidTask("local condition is missing")
 		}
@@ -129,6 +153,9 @@ func validateCondition(ctx context.Context, st store.Store, c *models.Condition)
 			return store.ErrInvalidTask("unknown local condition metric")
 		}
 	case "remote":
+		if scope != "remote" {
+			return scopeErr()
+		}
 		if c.Remote == nil {
 			return store.ErrInvalidTask("remote condition is missing")
 		}
@@ -172,9 +199,13 @@ const protocolUnknown = "unknown"
 // 一次性调度的 run_at 必须晚于当前时刻，否则默认 misfire_policy=run_once 会立即补跑
 // 一次、skip 则留下永久启用却永不触发的空转调度（缺陷 OBS-20261014-PAST-ONETIME-SAVE-ENABLED）。
 // run_at 与既有值相同（未修改）时放行，避免修复前创建的过去时间记录被锁死无法编辑/禁用。
-func validateSchedule(s *models.Schedule, previousRunAt time.Time) error {
+// manual 类型不要求 expression/interval_sec/run_at，但仍校验时区、归属与策略。
+func validateSchedule(ctx context.Context, st store.Store, s *models.Schedule, previousRunAt time.Time) error {
 	if s.TaskID == "" {
 		return fmt.Errorf("task_id required")
+	}
+	if err := ValidateTarget(ctx, st, s.Target); err != nil {
+		return fmt.Errorf("invalid target: %w", err)
 	}
 	switch s.Type {
 	case models.ScheduleTypeCron:
@@ -195,11 +226,20 @@ func validateSchedule(s *models.Schedule, previousRunAt time.Time) error {
 		if !s.RunAt.Equal(previousRunAt) && !s.RunAt.After(time.Now()) {
 			return fmt.Errorf("run_at must be in the future")
 		}
-	case models.ScheduleTypeOnStart:
-		// on_start 由目标节点的 Agent 进程启动触发，无触发时间字段
-		// （不需要 expression / interval_sec / run_at / timezone）。
+	case models.ScheduleTypeOnStart, models.ScheduleTypeManual:
+		// on_start 由目标节点的 Agent 进程启动触发；manual 仅手动执行。
+		// 两者都不需要 expression / interval_sec / run_at。
 	default:
-		return fmt.Errorf("schedule type must be cron, interval, one_time, or on_start")
+		return fmt.Errorf("schedule type must be cron, interval, one_time, on_start, or manual")
+	}
+	if s.Timeout < 0 {
+		return fmt.Errorf("timeout cannot be negative")
+	}
+	if s.Timeout == 0 {
+		s.Timeout = 300
+	}
+	if s.Retry < 0 {
+		return fmt.Errorf("retry cannot be negative")
 	}
 	if _, err := time.LoadLocation(s.Timezone); err != nil {
 		return fmt.Errorf("invalid timezone: %w", err)
@@ -213,6 +253,10 @@ func validateSchedule(s *models.Schedule, previousRunAt time.Time) error {
 	if s.MisfirePolicy != models.MisfirePolicySkip && s.MisfirePolicy != models.MisfirePolicyRunOnce {
 		return fmt.Errorf("invalid misfire_policy")
 	}
+	if err := validateCondition(ctx, st, s.Condition, "remote"); err != nil {
+		return err
+	}
+	s.Name = strings.TrimSpace(s.Name)
 	return nil
 }
 

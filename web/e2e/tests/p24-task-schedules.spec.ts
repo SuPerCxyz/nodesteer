@@ -1,5 +1,5 @@
 import { test, expect } from 'playwright/test'
-import { apiRequest, captureCreated, cleanupByIds, createIsolatedTask, loginViaApi, TEST_URLS } from './fixtures'
+import { apiRequest, captureCreated, cleanupByIds, createIsolatedTask, getNodeIds, loginViaApi, TEST_URLS } from './fixtures'
 
 const TEST_CRON = '0 0 1 1 *' // 远未来触发；只使用本轮任务和精确创建ID。
 
@@ -18,12 +18,16 @@ test.describe('P24 独立调度与任务联动', () => {
   test('P24-02 调度新建、禁用、删除取消与确认', async ({ page }) => {
     await loginViaApi(page)
     const task = await createIsolatedTask(page, 'p2402')
+    const nodeIds = await getNodeIds(page)
+    const nodes = (await apiRequest(page, '/api/nodes')).body as { id: string; hostname: string }[]
+    const node = nodes.find((item) => item.id === nodeIds[0])!
     let scheduleId: string | undefined
     try {
       await page.goto(TEST_URLS.schedules)
       await page.getByRole('link', { name: /新建调度|new schedule/i }).click()
-      await page.getByRole('combobox', { name: /^任务$|^task$/i }).click()
+      await page.getByRole('combobox', { name: /^任务定义$|^task definition$/i }).click()
       await page.getByRole('option', { name: task.name, exact: true }).click()
+      await page.locator('label').filter({ hasText: node.hostname }).getByRole('checkbox').check()
       await page.getByRole('textbox', { name: /cron 表达式|cron expression/i }).fill(TEST_CRON)
       scheduleId = await captureCreated(page, '/api/schedules', () => page.getByRole('button', { name: /^保存$|^save$/i }).click())
       await page.waitForURL(/\/schedules$/)

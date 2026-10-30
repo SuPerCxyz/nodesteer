@@ -225,24 +225,6 @@ func (m *TaskManager) Validate(ctx context.Context, t *models.Task) error {
 	default:
 		return store.ErrInvalidTask("unknown task type")
 	}
-	if err := validateTarget(ctx, m.store, t.Target); err != nil {
-		return err
-	}
-	if t.Timeout == 0 {
-		t.Timeout = 300
-	}
-	if t.Timeout < 0 {
-		return store.ErrInvalidTask("timeout cannot be negative")
-	}
-	if t.OfflinePolicy == "" {
-		t.OfflinePolicy = models.OfflinePolicyHubOnlineRequired
-	}
-	if t.OfflinePolicy != models.OfflinePolicyHubOnlineRequired && t.OfflinePolicy != models.OfflinePolicyAllowOffline {
-		return store.ErrInvalidTask("invalid offline_policy")
-	}
-	if t.Retry < 0 {
-		return store.ErrInvalidTask("retry cannot be negative")
-	}
 	if t.Type == models.TaskTypeAppDeploy || t.Type == models.TaskTypeAppOperation {
 		if t.AppOperation == "" {
 			if t.Type == models.TaskTypeAppDeploy {
@@ -267,7 +249,7 @@ func (m *TaskManager) Validate(ctx context.Context, t *models.Task) error {
 			t.Condition.Type = "local"
 		}
 	}
-	if err := validateCondition(ctx, m.store, t.Condition); err != nil {
+	if err := validateCondition(ctx, m.store, t.Condition, "local"); err != nil {
 		return err
 	}
 	return nil
@@ -314,16 +296,6 @@ func (m *TaskManager) Create(ctx context.Context, t *models.Task) error {
 
 // Update 更新任务
 func (m *TaskManager) Update(ctx context.Context, t *models.Task) error {
-	// 目标节点可能已被删除：更新时自动剔除失效节点，避免任务无法编辑/启停（缺陷 FAIL-A-009）
-	if t.Target.Type == "node" && len(t.Target.NodeIDs) > 0 {
-		alive := make([]string, 0, len(t.Target.NodeIDs))
-		for _, id := range t.Target.NodeIDs {
-			if _, err := m.store.GetNode(ctx, id); err == nil {
-				alive = append(alive, id)
-			}
-		}
-		t.Target.NodeIDs = alive
-	}
 	if err := m.Validate(ctx, t); err != nil {
 		return err
 	}

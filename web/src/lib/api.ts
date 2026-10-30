@@ -253,7 +253,6 @@ export interface Task {
   id: string
   name: string
   type: string
-  target: Target
   parameters: Parameter[]
   param_values: Record<string, string>
   script_id?: string
@@ -261,11 +260,6 @@ export interface Task {
   application_id?: string
   app_operation?: string
   condition?: Condition
-  schedule?: Schedule
-  timeout: number
-  retry: number
-  offline_policy: string
-  run_user?: string
   enabled: boolean
   revision: number
   updated_at: string
@@ -305,6 +299,7 @@ export interface RemoteCondition {
 
 export interface Schedule {
   id: string
+  name: string
   task_id: string
   revision: number
   type: string
@@ -313,6 +308,11 @@ export interface Schedule {
   run_at: string
   timezone: string
   execution_owner: string
+  target: Target
+  condition?: Condition
+  timeout: number
+  retry: number
+  run_user?: string
   offline_policy: string
   misfire_policy: string
   enabled: boolean
@@ -374,8 +374,13 @@ export interface Execution {
   script_id: string
   script_revision: number
   node_id: string
+  /** 来源调度；手动执行与历史记录为空 */
+  schedule_id?: string
+  /** 来源调度修订号；手动执行与历史记录为 0/空 */
+  schedule_revision?: number
   trigger_type: string
   scheduled_time: string
+  created_at: string
   start_time: string
   end_time: string
   status: string
@@ -387,6 +392,20 @@ export interface Execution {
   offline: boolean
   synced: boolean
   block_reason: string
+}
+
+/** 手动执行的请求级目标与策略；不写入 Task/Schedule 定义 */
+export interface RunTaskRequest {
+  /** 从调度计划页立即执行时传入；后端使用该调度的目标与策略并记录来源 */
+  schedule_id?: string
+  target?: Target
+  /** 兼容旧请求：等价于构造 node Target */
+  node_ids?: Record<string, unknown>
+  params?: Record<string, string>
+  timeout?: number
+  retry?: number
+  run_user?: string
+  offline_policy?: string
 }
 
 export interface AuditLog {

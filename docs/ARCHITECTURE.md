@@ -439,7 +439,7 @@ Hub 是唯一权威源。
 不同 Agent 的 Desired State 可以不同。
 
 Sync Manager 根据：
-- Task Target
+- Schedule Target
 - Group
 - Label
 - Application Assignment
@@ -447,6 +447,8 @@ Sync Manager 根据：
 计算 Agent 应同步的对象。
 
 Agent 不必下载整个 Hub 数据库。
+
+Task 只描述执行内容。没有被任何 Schedule 命中的 Task 不进入该 Agent 的 Desired State；Manual Run 通过 Dispatch 载荷携带完整 Task 定义执行。
 
 ---
 
@@ -731,30 +733,44 @@ SQLite + WAL
 - Cron
 - Interval
 - One-Time
+- On-Start
+- Manual（不自动触发）
 - Timezone
 - Misfire
 - Offline Policy
+- Timeout / Retry / Run User
 
 Schedule 数据可包括：
 
 ```text
 schedule_id
+name
 task_id
 revision
 type
+target
 expression
+interval_sec
+run_at
 timezone
 execution_owner
+timeout
+retry
+run_user
 offline_policy
 misfire_policy
 next_run_at
 ```
+
+`type=manual` 的 Schedule 只承载任务、目标与策略，Agent Local Scheduler 必须跳过，不为其生成自动执行。调度目标、Timeout、Retry、Run User、Offline Policy 均以 Schedule 为准，不从 Task 读取；缺少有效 Target 的调度必须拒绝触发并回报明确错误。
 
 在线门禁与握手同源：本地调度器对 `execution_owner=AGENT` 且 `offline_policy=hub_online_required` 的调度在触发前要求握手完成（HELLO_ACK accepted）；重连窗口内不触发，避免在结果无法同步的窗口内产生执行。握手未完成时本地触发的执行（如 Allow Offline 调度）标记 `offline=true`，等重连对账补传。
 
 ---
 
 ## 31. Schedule Execution Owner
+
+Schedule 的 `target` 决定目标节点，`execution_owner` 决定自动触发的归属；`manual` 类型不自动触发。
 
 明确：
 
@@ -773,7 +789,7 @@ Hub Online Required → HUB。
 
 ## 32. Scheduled Execution Key
 
-Agent-owned Schedule 使用：
+Scheduled Execution（Hub 或 Agent 触发）使用：
 
 ```text
 Task ID
@@ -789,13 +805,26 @@ Scheduled Time
 
 Task Revision 不加入 Slot 唯一性，否则同一时间槽可能因为 Revision 变化重复执行。
 
+Schedule ID 也不进入 Key：同一 Task 的多个 Schedule 命中同一 Node 与 Scheduled Time 时仍视为同一槽位，保持既有幂等语义。Execution 记录来源 Schedule ID 仅用于展示与排障。
+
 Execution 另外记录实际 Task/Script Revision。
 
 ---
 
 ## 33. Manual Execution
 
+Manual Run 使用请求级临时目标与策略，不修改 Task 或 Schedule。
+
+目标解析优先级：
+
+```text
+schedule_id > target > node_ids > 400
+```
+
+`schedule_id` 用于调度计划页「立即执行」：后端使用该 Schedule 的 Target 与策略，并把 `schedule_id` 写入 Execution，`trigger_type` 仍为 manual。`target` 支持 node/group/label；`node_ids` 兼容旧请求，等价于构造 node Target。请求同时携带 `params` 与 `timeout`/`retry`/`run_user`/`offline_policy`，缺省使用安全默认值（300 秒、0 次、当前用户、Hub Online Required）。
+
 Hub：
+- Resolve Target
 - Create Execution UUID
 - Persist PENDING
 - Dispatch
@@ -803,6 +832,8 @@ Hub：
 Agent：
 - Dedup by Execution ID
 - Execute
+
+应用类 Task 仍走 `AppManager.DeployTask`，把请求或调度上的策略传入 Execution 与下发载荷。
 
 一期 Agent Offline 时 Manual Run 明确失败/不可执行，不实现长期 Offline Queue。
 
@@ -827,6 +858,8 @@ Condition 不满足：
 ```text
 SKIPPED
 ```
+
+执行超时按 Schedule.Timeout 或 Manual Run 请求中的 Timeout 判定；`0` 使用默认 300 秒。
 
 派发前门禁顺序固定为 disabled → online → capability：disabled 节点返回 `node <id> is disabled`，不产生执行记录，不得退化为 `not online` 文案；`maintenance`/`offline` 仍按 `not online` 处理。
 
@@ -854,6 +887,8 @@ Hub Recover：
 - synced=true
 
 Hub Execution ID 必须 UNIQUE。
+
+Journal 与 `EXECUTION_FINISHED` 上报包含可空 `schedule_id`、`schedule_revision` 与 `created_at`：调度触发/调度页立即执行时写入来源调度及版本，任务页 Manual Run 为空/0，历史记录为空/0。Hub 幂等 Upsert 时，若已有记录的 `schedule_id`/`schedule_revision` 非空而上报为空，保留已有来源。
 
 ---
 
@@ -923,6 +958,13 @@ Hub 断开不能导致日志丢失。
 
 ## 39. Condition Engine
 
+条件归属：
+- Task 只保存本地条件（`local` 或本地 `and`）。
+- Schedule 只保存远程条件（`remote` 或远程 `and`）。
+- 调度执行时 Hub/Agent 把两者合并为 `local AND remote`，本地先评估、远程后评估。
+- 任务页 Manual Run 只评估本地条件；调度页立即执行评估两者。
+- 应用类任务与命令/脚本任务走相同条件评估路径。
+
 一期：
 - AND
 - ==
@@ -947,6 +989,8 @@ Condition Engine 不直接依赖 `/proc`，应通过 State Provider 抽象，便
 ---
 
 ## 40. Remote State
+
+远程条件由 Schedule 持有，Task 不再保存远程依赖。任务页试运行不查询远程状态；调度执行与调度页立即执行会查询并评估远程条件。
 
 Hub 保存最新：
 
@@ -1342,7 +1386,7 @@ audit_logs
 
 核心索引字段关系型。
 
-Task / Application Revision 可采用：
+Task / Schedule / Application Revision 可采用：
 
 ```text
 Core Indexed Fields
@@ -1351,6 +1395,24 @@ Definition JSON
 ```
 
 避免一期 Schema 被未来高级功能锁死。
+
+`schedules` / `executions` 字段：
+
+- `schedules` 的定义 JSON 增加 `name`、`target`（node/group/label）、`timeout`、`retry`、`run_user`，`type` 增加 `manual`；`task_id` 与触发器、时区、owner、offline/misfire 策略、enabled、revision 保持。
+- `executions` 增加可空 `schedule_id` 与 `schedule_revision`，并补充必要索引；`created_at` 沿用既有列并回填空值，同时在 API 与 Agent 协议中对外暴露。`schedule_id`/`schedule_revision` 不参与 Scheduled Execution 的唯一约束。
+- Agent 本地 SQLite 的 `executions` 同步增加 `schedule_id`/`schedule_revision`，并持久化 `created_at`；Hub 与 Agent 的 schema 均由各自启动迁移自动升级。
+
+数据迁移（Hub 启动时执行，单事务内完成）：
+
+1. 读取旧 Task 定义，把 `target`、`timeout`、`retry`、`run_user`、`offline_policy` 复制到其全部 Schedule。
+2. 重写 Task 定义 JSON，移除上述旧字段；重写 Schedule 定义 JSON，补齐新字段。
+3. 对有 Target 但没有 Schedule 的旧 Task，创建一条禁用的 `manual` 迁移调度，名称为 `迁移：<task name>`，保留原目标与策略。
+4. 历史 Execution 的 `schedule_id`/`schedule_revision` 保持为空/0；`created_at` 按 `COALESCE(start_time, scheduled_time, end_time, now)` 回填。
+5. 拆分旧 Task.Condition：本地部分保留在 Task，远程部分复制到该 Task 的全部 Schedule；混合 `and` 递归拆分，不得丢失条件。
+6. 有目标无调度的旧任务，远程条件写入迁移 manual 调度；确实无法绑定时告警并保留本地部分。
+7. 迁移完成后提升 Global Revision，触发 Agent 全量对账。
+
+迁移失败时 Hub 启动报错，不继续以半迁移状态运行。旧 Hub 不支持直接读取新库；回滚必须恢复 Hub DB 备份与旧二进制。
 
 连接层：SQLite 以 WAL、`_txlock=immediate`（写事务 BEGIN 阶段即取写锁）、`busy_timeout(5000)` 与外键约束打开，消除 WAL 下 deferred 事务升级写锁时的 `SQLITE_BUSY` 随机失败，并发写按序等待而非直接报错。
 
@@ -1429,6 +1491,8 @@ SETTINGS
 ```
 
 协议必须版本化。
+
+协议版本随两次模型重构提升：1→2（Task/Schedule 模型，`schedule_id`/`created_at`），2→3（条件归属拆分与 `schedule_revision`）。当前版本为 3。`RUN_EXECUTION`/`EXECUTION_FINISHED`/`DEPLOY_REQUEST`/`DEPLOY_RESULT` 增加可选 `schedule_revision`；`schedule_id`/`schedule_revision` 不参与 Scheduled Execution Key。新 Hub 拒绝旧协议版本 Agent，旧 Hub 不识别新 Agent，Hub/Agent 必须协同升级；Web 与 Hub 同版本发布。
 
 HELLO 包含：
 - protocol_version
@@ -1748,7 +1812,14 @@ Sync
 - Change Log Window Expiry
 - Full Resync
 - Sync Dependency Failure
+- Task/Schedule Migration（目标与策略复制、迁移 manual 调度）
+- Task 无 Schedule 的不同步与 Manual Run
+- Manual Run 临时目标与策略
 - Duplicate Schedule Trigger
+- Schedule Target 变更后的 Desired State 收敛
+- Manual Schedule 不自动触发
+- Execution 来源 Schedule 与 Created At
+- Agent Protocol Version Mismatch
 - Offline Scheduled Execution
 - Execution Re-upload
 - Duplicate Execution Upload
@@ -1778,7 +1849,7 @@ Sync
 4. Notification 不承担最终一致性。
 5. Agent Revision 成功落盘后才能前进。
 6. Agent-owned Schedule 只能由 Agent 触发。
-7. Execution ID / Key 必须幂等。
+7. Execution ID / Key 必须幂等；Scheduled Key 为 Task ID + Node ID + Scheduled Time，不含 Schedule ID。
 8. Execution Start 前必须先写 Journal。
 9. Unknown Remote State 默认 Fail Closed。
 10. Artifact 校验失败禁止安装。
@@ -1790,6 +1861,8 @@ Sync
 16. Capability 不匹配不得下发 Host Operation。
 17. Commit 前不得发送 Desired State Notification。
 18. Artifact/File Payload 不走控制长连接。
+19. Task 只描述执行内容，Schedule 是任务、节点目标与执行策略的唯一绑定入口。
+20. Desired State 按 Schedule.Target 计算；无 Schedule 引用的 Task 不参与同步，但仍可 Manual Run。
 
 ---
 

@@ -54,12 +54,8 @@ const TASK = {
   name: 'qa-task',
   type: 'command',
   command: 'true',
-  target: { type: 'node', node_ids: ['node-1'] },
   parameters: [],
   param_values: {},
-  timeout: 60,
-  retry: 0,
-  offline_policy: 'hub_online_required',
   enabled: true,
   revision: 1,
   updated_at: '2026-10-17T00:00:00Z',
@@ -68,6 +64,7 @@ const TASK = {
 
 const SCHEDULE = {
   id: 'sch-1',
+  name: 'qa-schedule',
   task_id: 'task-1',
   revision: 1,
   type: 'cron',
@@ -76,6 +73,10 @@ const SCHEDULE = {
   run_at: '',
   timezone: 'UTC',
   execution_owner: 'agent',
+  target: { type: 'node', node_ids: ['node-1'] },
+  timeout: 300,
+  retry: 0,
+  run_user: '',
   offline_policy: 'allow_offline',
   misfire_policy: 'run_once',
   enabled: true,
@@ -123,20 +124,40 @@ describe('节点详情任务/调度/应用回链（OBS-20261017-CROSSPAGE-LINK-G
     })
   })
 
-  it('渲染指向该节点的任务、调度与托管应用回链', async () => {
+  it('渲染目标命中该节点的调度，并由调度反查任务与托管应用回链', async () => {
     const page = await renderDetail()
 
-    // 任务区与调度区各有一个以任务名渲染的链接
-    const taskLinks = page.getByRole('link', { name: 'qa-task' })
     await expect
-      .element(taskLinks.nth(0))
+      .element(page.getByRole('link', { name: 'qa-task' }))
       .toHaveAttribute('href', '/tasks/task-1')
     await expect
-      .element(taskLinks.nth(1))
+      .element(page.getByRole('link', { name: 'qa-schedule' }))
       .toHaveAttribute('href', '/schedules/sch-1')
     await expect
       .element(page.getByRole('link', { name: 'qa-app' }))
       .toHaveAttribute('href', '/applications/app-1')
+  })
+
+  it('目标不匹配该节点的调度不会带出任务', async () => {
+    get.mockImplementation(async (path: string) => {
+      if (path === '/nodes/node-1') return NODE
+      if (path.startsWith('/executions?')) return []
+      if (path === '/tasks') return [TASK]
+      if (path === '/groups') return []
+      if (path === '/schedules')
+        return [{ ...SCHEDULE, target: { type: 'node', node_ids: ['node-2'] } }]
+      if (path === '/applications') return [APPLICATION]
+      if (path === '/applications/app-1/nodes') return ['node-1']
+      return []
+    })
+    const page = await renderDetail()
+
+    await expect
+      .element(page.getByRole('link', { name: 'qa-task' }))
+      .not.toBeInTheDocument()
+    await expect
+      .element(page.getByRole('link', { name: 'qa-schedule' }))
+      .not.toBeInTheDocument()
   })
 })
 

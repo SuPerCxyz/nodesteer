@@ -140,8 +140,8 @@ func TestManualRunRequiresOnline(t *testing.T) {
 	if err := st.UpsertNode(ctx, n); err != nil {
 		t.Fatalf("upsert node: %v", err)
 	}
-	task := &models.Task{ID: "t1", Name: "t", Type: "command", Command: "echo", Enabled: true, Target: models.Target{Type: "node"}}
-	_, err := em.RunManual(ctx, task, []string{"n-offline"}, nil)
+	task := &models.Task{ID: "t1", Name: "t", Type: "command", Command: "echo", Enabled: true}
+	_, err := em.RunManual(ctx, task, []string{"n-offline"}, nil, ExecutionStrategy{}, nil)
 	if err == nil {
 		t.Fatalf("expected error for offline node")
 	}

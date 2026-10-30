@@ -13,10 +13,20 @@ import (
 // TestValidateScheduleOnStart on_start 无任何触发时间字段即可通过校验；
 // cron/interval/one_time 仍各自要求对应字段（回归），未知类型仍被拒绝。
 func TestValidateScheduleOnStart(t *testing.T) {
+	ctx := context.Background()
+	st, err := store.OpenInMemory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	if err := st.UpsertNode(ctx, &models.Node{ID: "task-node", AgentID: "agent-node", Hostname: "task-node"}); err != nil {
+		t.Fatal(err)
+	}
 	base := func(typ string) *models.Schedule {
 		return &models.Schedule{
 			TaskID:         "task-1",
 			Type:           typ,
+			Target:         models.Target{Type: "node", NodeIDs: []string{"task-node"}},
 			ExecutionOwner: models.ExecutionOwnerAgent,
 			OfflinePolicy:  models.OfflinePolicyAllowOffline,
 			MisfirePolicy:  models.MisfirePolicyRunOnce,
@@ -28,60 +38,60 @@ func TestValidateScheduleOnStart(t *testing.T) {
 	var noPrevious time.Time
 
 	// on_start：不提供 expression / interval_sec / run_at / timezone 也必须通过
-	if err := validateSchedule(base(models.ScheduleTypeOnStart), noPrevious); err != nil {
+	if err := validateSchedule(ctx, st, base(models.ScheduleTypeOnStart), noPrevious); err != nil {
 		t.Fatalf("on_start without time fields must validate: %v", err)
 	}
 
 	// 回归：cron 仍要求合法 expression
 	cronSch := base(models.ScheduleTypeCron)
-	if err := validateSchedule(cronSch, noPrevious); err == nil || !strings.Contains(err.Error(), "cron expression") {
+	if err := validateSchedule(ctx, st, cronSch, noPrevious); err == nil || !strings.Contains(err.Error(), "cron expression") {
 		t.Fatalf("cron without expression must fail, got %v", err)
 	}
 	cronSch.Expression = "*/5 * * * *"
-	if err := validateSchedule(cronSch, noPrevious); err != nil {
+	if err := validateSchedule(ctx, st, cronSch, noPrevious); err != nil {
 		t.Fatalf("valid cron must pass: %v", err)
 	}
 
 	// 回归：interval 仍要求 interval_sec
 	intervalSch := base(models.ScheduleTypeInterval)
-	if err := validateSchedule(intervalSch, noPrevious); err == nil || !strings.Contains(err.Error(), "interval_sec") {
+	if err := validateSchedule(ctx, st, intervalSch, noPrevious); err == nil || !strings.Contains(err.Error(), "interval_sec") {
 		t.Fatalf("interval without interval_sec must fail, got %v", err)
 	}
 	intervalSch.IntervalSec = 60
-	if err := validateSchedule(intervalSch, noPrevious); err != nil {
+	if err := validateSchedule(ctx, st, intervalSch, noPrevious); err != nil {
 		t.Fatalf("valid interval must pass: %v", err)
 	}
 
 	// 回归：one_time 仍要求 run_at
 	oneTimeSch := base(models.ScheduleTypeOneTime)
-	if err := validateSchedule(oneTimeSch, noPrevious); err == nil || !strings.Contains(err.Error(), "run_at") {
+	if err := validateSchedule(ctx, st, oneTimeSch, noPrevious); err == nil || !strings.Contains(err.Error(), "run_at") {
 		t.Fatalf("one_time without run_at must fail, got %v", err)
 	}
 	// 新建时过去时间必须拒绝（缺陷 OBS-20261014-PAST-ONETIME-SAVE-ENABLED）
 	oneTimeSch.RunAt = time.Now().Add(-time.Hour)
-	if err := validateSchedule(oneTimeSch, noPrevious); err == nil || !strings.Contains(err.Error(), "must be in the future") {
+	if err := validateSchedule(ctx, st, oneTimeSch, noPrevious); err == nil || !strings.Contains(err.Error(), "must be in the future") {
 		t.Fatalf("past one_time run_at must fail with clear message, got %v", err)
 	}
 	// 未修改既有值时放行：修复前创建的过去时间记录仍可编辑/禁用
 	past := time.Now().Add(-24 * time.Hour)
 	oneTimeSch.RunAt = past
-	if err := validateSchedule(oneTimeSch, past); err != nil {
+	if err := validateSchedule(ctx, st, oneTimeSch, past); err != nil {
 		t.Fatalf("unchanged legacy past run_at must pass: %v", err)
 	}
 	// 改为新的过去时间同样拒绝
-	if err := validateSchedule(oneTimeSch, past.Add(-time.Hour)); err == nil || !strings.Contains(err.Error(), "must be in the future") {
+	if err := validateSchedule(ctx, st, oneTimeSch, past.Add(-time.Hour)); err == nil || !strings.Contains(err.Error(), "must be in the future") {
 		t.Fatalf("changed past run_at must fail, got %v", err)
 	}
 	// 未来时间通过
 	oneTimeSch.RunAt = time.Now().Add(time.Hour)
-	if err := validateSchedule(oneTimeSch, noPrevious); err != nil {
+	if err := validateSchedule(ctx, st, oneTimeSch, noPrevious); err != nil {
 		t.Fatalf("valid one_time must pass: %v", err)
 	}
 
 	// 未知类型仍拒绝，错误信息覆盖新枚举
-	err := validateSchedule(base("every_full_moon"), noPrevious)
-	if err == nil || !strings.Contains(err.Error(), models.ScheduleTypeOnStart) {
-		t.Fatalf("unknown type must be rejected listing on_start, got %v", err)
+	err = validateSchedule(ctx, st, base("every_full_moon"), noPrevious)
+	if err == nil || !strings.Contains(err.Error(), models.ScheduleTypeManual) {
+		t.Fatalf("unknown type must be rejected listing manual, got %v", err)
 	}
 }
 
@@ -95,6 +105,7 @@ func TestRunDueHUBSkipsOnStart(t *testing.T) {
 	onStart := &models.Schedule{
 		TaskID:         "task-1",
 		Type:           models.ScheduleTypeOnStart,
+		Target:         models.Target{Type: "label", LabelKey: "env"},
 		Timezone:       "UTC",
 		ExecutionOwner: models.ExecutionOwnerHub,
 		OfflinePolicy:  models.OfflinePolicyAllowOffline,
@@ -144,8 +155,7 @@ func TestOnStartScheduleSyncedToTargetNode(t *testing.T) {
 		}
 	}
 	task := &models.Task{
-		ID: "task-1", Name: "task", Type: models.TaskTypeCommand, Command: "echo",
-		Target: models.Target{Type: "node", NodeIDs: []string{"n1"}}, Enabled: true,
+		ID: "task-1", Name: "task", Type: models.TaskTypeCommand, Command: "echo", Enabled: true,
 	}
 	if err := st.CreateTask(ctx, task); err != nil {
 		t.Fatalf("create task: %v", err)
@@ -153,6 +163,7 @@ func TestOnStartScheduleSyncedToTargetNode(t *testing.T) {
 	onStart := &models.Schedule{
 		TaskID:         task.ID,
 		Type:           models.ScheduleTypeOnStart,
+		Target:         models.Target{Type: "node", NodeIDs: []string{"n1"}},
 		Timezone:       "UTC",
 		ExecutionOwner: models.ExecutionOwnerAgent,
 		OfflinePolicy:  models.OfflinePolicyAllowOffline,

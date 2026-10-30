@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from '@/i18n'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
+import { userEvent } from 'vitest/browser'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { Executions } from './index'
 
@@ -84,12 +85,58 @@ describe('执行列表触发方式筛选枚举（OBS-20261016-P17P18-04-SYSTEM-T
       name: i18n.t('executions.trigger'),
     })
     await expect.element(select).toBeVisible()
-    const options = Array.from(
-      (select.element() as HTMLSelectElement).options
-    ).map((option) => option.textContent)
-    expect(options).toContain(i18n.t('executions.allTriggers'))
-    expect(options).toContain('手动')
-    expect(options).toContain('调度')
-    expect(options).not.toContain('系统')
+    await userEvent.click(select)
+    const options = await page.getByRole('option').all()
+    const texts = options.map((option) => option.element().textContent)
+    expect(texts).toContain(i18n.t('executions.allTriggers'))
+    expect(texts).toContain('手动')
+    expect(texts).toContain('调度')
+    expect(texts).not.toContain('系统')
+  })
+
+  it('展示来源调度链接；历史记录显示历史标记', async () => {
+    getPage.mockResolvedValue({
+      items: [
+        { ...EXECUTION, schedule_id: 'sch-1' },
+        { ...EXECUTION, id: 'exec-2', schedule_id: undefined },
+      ],
+      total: 2,
+    })
+    get.mockImplementation(async (path: string) => {
+      if (path === '/schedules')
+        return [
+          {
+            id: 'sch-1',
+            name: 'qa-schedule',
+            task_id: 'task-1',
+            revision: 1,
+            type: 'cron',
+            expression: '*/5 * * * *',
+            interval_sec: 0,
+            run_at: '',
+            timezone: 'UTC',
+            execution_owner: 'agent',
+            target: { type: 'node', node_ids: ['node-1'] },
+            timeout: 300,
+            retry: 0,
+            run_user: '',
+            offline_policy: 'allow_offline',
+            misfire_policy: 'run_once',
+            enabled: true,
+            created_at: '2026-10-17T00:00:00Z',
+            updated_at: '2026-10-17T00:00:00Z',
+          },
+        ]
+      return []
+    })
+
+    const page = await renderExecutions()
+
+    await expect
+      .element(page.getByRole('link', { name: 'qa-schedule' }))
+      .toHaveAttribute('href', '/schedules/sch-1')
+    await expect
+      .element(page.getByText(i18n.t('executions.historicalSource')))
+      .toBeVisible()
   })
 })

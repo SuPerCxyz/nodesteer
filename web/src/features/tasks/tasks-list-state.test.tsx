@@ -33,12 +33,8 @@ const TASK: Task = {
   name: 'qa-task',
   type: 'command',
   command: 'echo hi',
-  target: { type: 'node', node_ids: [] },
   parameters: [],
   param_values: {},
-  timeout: 60,
-  retry: 0,
-  offline_policy: 'hub_online_required',
   enabled: true,
   revision: 1,
   updated_at: '2026-10-17T00:00:00Z',
@@ -65,6 +61,7 @@ describe('Tasks 列表 Loading/Empty/Error 三态', () => {
 
   beforeEach(() => {
     get.mockReset()
+    localStorage.clear()
   })
 
   it('初始请求未完成时显示 Loading，不显示「没有结果」；空结果只显示空态', async () => {
@@ -83,7 +80,7 @@ describe('Tasks 列表 Loading/Empty/Error 三态', () => {
 
     resolveTasks!([])
     // 请求完成且真空：显示空态，仍不能显示「没有结果」
-    await expect.element(page.getByText('暂无数据')).toBeVisible()
+    await expect.element(page.getByText(i18n.t('tasks.noTasks'))).toBeVisible()
     await expect.element(page.getByText('没有结果。')).not.toBeInTheDocument()
   })
 
@@ -91,7 +88,7 @@ describe('Tasks 列表 Loading/Empty/Error 三态', () => {
     get.mockResolvedValue([])
     const page = await renderTasks()
 
-    await expect.element(page.getByText('暂无数据')).toBeVisible()
+    await expect.element(page.getByText(i18n.t('tasks.noTasks'))).toBeVisible()
     await expect.element(page.getByText('没有结果。')).not.toBeInTheDocument()
   })
 
@@ -114,5 +111,26 @@ describe('Tasks 列表 Loading/Empty/Error 三态', () => {
     await expect.element(page.getByRole('alert')).not.toBeInTheDocument()
     await expect.element(page.getByText('qa-task')).toBeVisible()
     expect(calls).toBeGreaterThan(1)
+  })
+
+  it('列表不再显示目标、超时与离线策略列，改为关联调度数量', async () => {
+    get.mockImplementation(async (path: string) => {
+      if (path === '/tasks') return [TASK]
+      if (path === '/schedules')
+        return [{ id: 'sch-1', task_id: TASK.id, name: 'qa-schedule' }]
+      return []
+    })
+    const page = await renderTasks()
+
+    await expect.element(page.getByText('qa-task')).toBeVisible()
+    await expect
+      .element(page.getByText(i18n.t('tasks.relatedSchedules')))
+      .toBeVisible()
+    await expect
+      .element(page.getByText(i18n.t('targets.type')))
+      .not.toBeInTheDocument()
+    await expect
+      .element(page.getByText(i18n.t('strategy.timeoutSec')))
+      .not.toBeInTheDocument()
   })
 })

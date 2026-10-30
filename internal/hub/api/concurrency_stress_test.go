@@ -248,7 +248,7 @@ func TestSchedulesDeleteConcurrentNoBusyLeak(t *testing.T) {
 	ids := make([]string, 0, concurrency)
 	for i := 0; i < concurrency; i++ {
 		rec := s.do(t, http.MethodPost, "/api/schedules",
-			fmt.Sprintf(`{"task_id":%q,"type":"interval","interval_sec":60,"execution_owner":"hub"}`, taskID))
+			fmt.Sprintf(`{"task_id":%q,"type":"interval","interval_sec":60,"target":{"type":"label","label_key":"env"},"execution_owner":"hub"}`, taskID))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("create schedule %d = %d %s", i, rec.Code, rec.Body.String())
 		}

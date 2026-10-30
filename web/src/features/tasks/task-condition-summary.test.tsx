@@ -31,13 +31,12 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
   }
 })
 
-/** 已落库的 AND 任务：本地 + 远程两个条件 */
+/** 已落库的 AND 任务：两个本地条件 */
 const AND_TASK = {
   id: 'task-1',
   name: 'qa-and-task',
   type: 'command',
   command: 'true',
-  target: { type: 'node', node_ids: ['node-1'] },
   parameters: [],
   param_values: {},
   condition: {
@@ -52,19 +51,15 @@ const AND_TASK = {
         },
       },
       {
-        type: 'remote',
-        remote: {
-          node_id: 'node-1',
-          property: 'online',
-          operator: '==',
-          value: 'online',
+        type: 'local',
+        local: {
+          metric: 'memory_usage',
+          operator: '<',
+          value: '70',
         },
       },
     ],
   },
-  timeout: 300,
-  retry: 0,
-  offline_policy: 'hub_online_required',
   enabled: true,
   revision: 3,
   updated_at: '2026-10-17T00:00:00Z',
@@ -98,7 +93,7 @@ describe('任务 AND 条件摘要与清除（OBS-20261016-G5-AND-CONDITION-NO-SU
     })
   })
 
-  it('已落库的 AND 条件组显示可读摘要（含节点名与 AND 连接），并可一键清除', async () => {
+  it('已落库的 AND 条件组显示可读摘要（本地条件与 AND 连接），并可一键清除', async () => {
     window.history.replaceState({}, '', '/tasks/task-1/edit')
     const page = await renderEditor()
 
@@ -106,7 +101,7 @@ describe('任务 AND 条件摘要与清除（OBS-20261016-G5-AND-CONDITION-NO-SU
     await expect.element(summary).toBeVisible()
     await expect.element(summary).toHaveTextContent('cpu_usage > 80')
     await expect.element(summary).toHaveTextContent('AND')
-    await expect.element(summary).toHaveTextContent('node-a.online == online')
+    await expect.element(summary).toHaveTextContent('memory_usage < 70')
 
     await userEvent.click(
       page.getByRole('button', { name: i18n.t('tasks.clearConditions') })

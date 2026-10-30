@@ -114,7 +114,7 @@ func TestAPILifecycle(t *testing.T) {
 	do("POST", "/api/tasks", `{"name":"bad","type":"script","script_id":"nonexistent","enabled":true}`, 400)
 
 	// Schedules
-	schBody := do("POST", "/api/schedules", `{"task_id":"`+task.ID+`","type":"interval","interval_sec":60,"timezone":"UTC","execution_owner":"agent","enabled":true}`, 200)
+	schBody := do("POST", "/api/schedules", `{"task_id":"`+task.ID+`","type":"interval","interval_sec":60,"target":{"type":"label","label_key":"env","label_value":"test"},"timezone":"UTC","execution_owner":"agent","enabled":true}`, 200)
 	var schedule struct {
 		ID string `json:"id"`
 	}

@@ -30,8 +30,15 @@ import {
 } from '@/lib/api'
 import { copyText, selectText } from '@/lib/clipboard'
 import { useCanRun, useCanWrite } from '@/lib/permissions'
+import { scheduleDisplayName, scheduleTriggerText } from '@/lib/schedules'
 import { readTablePageSize } from '@/lib/table-view'
+import {
+  groupsForNode,
+  targetMatchesNode,
+  targetSummary,
+} from '@/lib/targets'
 import { useTheme } from '@/context/theme-provider'
+import { buildSchedulePayload } from '@/components/cron/schedule-payload'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -75,7 +82,10 @@ import {
   DangerMenuItem,
   DropdownMenuItem,
   MoreMenu,
+  LoadingState,
   SectionCard,
+  SectionFull,
+  SectionGrid,
   StatusBadge,
   TableCard,
   TimeValue,
@@ -605,12 +615,12 @@ export function AgentDetail() {
     },
     onError: (error) => toast.error(error.message),
   })
-  const nodeTasks = (tasks.data || []).filter((task) =>
-    taskTargetsNode(task, node.data, groups.data || [])
-  )
   const nodeSchedules = (schedules.data || []).filter((schedule) =>
-    nodeTasks.some((task) => task.id === schedule.task_id)
+    targetMatchesNode(schedule.target, node.data, groups.data || [])
   )
+  // 任务通过“命中节点的调度”反查，不再依赖 Task.Target
+  const nodeTaskIds = new Set(nodeSchedules.map((schedule) => schedule.task_id))
+  const nodeTasks = (tasks.data || []).filter((task) => nodeTaskIds.has(task.id))
   if (node.isError && !node.data)
     return (
       <ErrorPage
@@ -633,7 +643,7 @@ export function AgentDetail() {
         action={<StatusBadge status={item.status} />}
       />
       <Main className='flex flex-1 flex-col'>
-        <div className='flex w-full flex-col gap-6'>
+        <SectionGrid className='w-full'>
           <Button asChild variant='ghost' className='w-fit px-0'>
             <Link to='/agents'>← {t('common.back')}</Link>
           </Button>
@@ -814,12 +824,14 @@ export function AgentDetail() {
               </section>
             </div>
           </SectionCard>
-          <SectionCard title={t('nav.executions')}>
-            <ExecutionRows
-              executions={executions.data || []}
-              tasks={tasks.data || []}
-            />
-          </SectionCard>
+          <SectionFull>
+            <SectionCard title={t('nav.executions')}>
+              <ExecutionRows
+                executions={executions.data || []}
+                tasks={tasks.data || []}
+              />
+            </SectionCard>
+          </SectionFull>
           <SectionCard title={t('nodes.tasks')}>
             {nodeTasks.length ? (
               <div className='divide-y'>
@@ -864,15 +876,37 @@ export function AgentDetail() {
                     <a
                       className='min-w-0 truncate font-medium hover:underline'
                       href={`/schedules/${schedule.id}`}
+                      title={scheduleDisplayName(schedule, t)}
                     >
+                      {scheduleDisplayName(schedule, t)}
+                    </a>
+                    <span className='min-w-0 truncate text-xs text-muted-foreground'>
                       {tasks.data?.find((task) => task.id === schedule.task_id)
                         ?.name || t('common.unknownTask')}
-                    </a>
+                    </span>
                     <span
                       className='max-w-full truncate font-mono text-xs text-muted-foreground'
-                      title={schedule.expression || `${schedule.interval_sec}s`}
+                      title={scheduleTriggerText(schedule, t)}
                     >
-                      {schedule.expression || `${schedule.interval_sec}s`}
+                      {scheduleTriggerText(schedule, t)}
+                    </span>
+                    <span className='max-w-full truncate text-xs text-muted-foreground'>
+                      {targetSummary(
+                        schedule.target,
+                        t,
+                        new Map(
+                          (node.data ? [node.data] : []).map((item) => [
+                            item.id,
+                            item.hostname,
+                          ])
+                        ),
+                        new Map(
+                          (groups.data || []).map((group) => [
+                            group.id,
+                            group.name,
+                          ])
+                        )
+                      )}
                     </span>
                     <StatusBadge
                       status={schedule.enabled ? 'enabled' : 'disabled'}
@@ -909,7 +943,7 @@ export function AgentDetail() {
               <EmptyState message={t('apps.noApps')} />
             )}
           </SectionCard>
-        </div>
+        </SectionGrid>
       </Main>
     </>
   )
@@ -1035,35 +1069,10 @@ function auditResourcePath(resource: string, id: string): string | undefined {
   }
 }
 
-/** 判断组是否包含节点：label 组按标签匹配，static 组按成员 ID 匹配 */function groupMatchesNode(group: Group, node: Node) {
-  if (group.type === 'label')
-    return node.labels?.[group.label_key] === group.label_value
-  return group.members?.includes(node.id) || false
-}
-
-/** 节点所属分组列表（复用 taskTargetsNode 的组匹配语义） */
-function groupsForNode(node: Node, groups: Group[]) {
-  return groups.filter((group) => groupMatchesNode(group, node))
-}
-
-function taskTargetsNode(task: Task, node: Node | undefined, groups: Group[]) {
-  if (!node) return false
-  if (task.target.type === 'node')
-    return task.target.node_ids?.includes(node.id) || false
-  if (task.target.type === 'label')
-    return (
-      node.labels?.[task.target.label_key || ''] === task.target.label_value
-    )
-  return (task.target.group_ids || []).some((groupId) => {
-    const group = groups.find((item) => item.id === groupId)
-    if (!group) return false
-    return groupMatchesNode(group, node)
-  })
-}
-
 export function Schedules() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const client = useQueryClient()
+  const canRun = useCanRun()
   const canWrite = useCanWrite()
   const schedules = useQuery({
     queryKey: ['schedules'],
@@ -1073,12 +1082,21 @@ export function Schedules() {
     queryKey: ['tasks'],
     queryFn: () => api.get<Task[]>('/tasks'),
   })
+  const nodes = useQuery({
+    queryKey: ['nodes'],
+    queryFn: () => api.get<Node[]>('/nodes'),
+  })
+  const groups = useQuery({
+    queryKey: ['groups'],
+    queryFn: () => api.get<Group[]>('/groups'),
+  })
+  const [runTarget, setRunTarget] = useState<Schedule | null>(null)
   const { mutate: toggleSchedule } = useMutation({
     mutationFn: (schedule: Schedule) =>
-      api.put(`/schedules/${schedule.id}`, {
-        ...schedule,
-        enabled: !schedule.enabled,
-      }),
+      api.put(
+        `/schedules/${schedule.id}`,
+        buildSchedulePayload({ ...schedule, enabled: !schedule.enabled })
+      ),
     onSuccess: () => client.invalidateQueries({ queryKey: ['schedules'] }),
     onError: (error) => toast.error(error.message),
   })
@@ -1090,20 +1108,57 @@ export function Schedules() {
     },
     onError: (error) => toast.error(error.message),
   })
+  const runSchedule = useMutation({
+    mutationFn: (schedule: Schedule) =>
+      api.post(`/tasks/${schedule.task_id}/run`, {
+        schedule_id: schedule.id,
+      }),
+    onSuccess: () => {
+      toast.success(t('schedules.runStarted'))
+      window.location.assign('/executions')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  const nodeNames = useMemo(
+    () => new Map((nodes.data || []).map((node) => [node.id, node.hostname])),
+    [nodes.data]
+  )
+  const groupNames = useMemo(
+    () => new Map((groups.data || []).map((group) => [group.id, group.name])),
+    [groups.data]
+  )
   const columns = useMemo<ColumnDef<Schedule>[]>(
     () => [
+      {
+        id: 'name',
+        accessorFn: (row: Schedule) =>
+          `${scheduleDisplayName(row, t)} ${row.id}`,
+        header: t('common.name'),
+        size: 220,
+        minSize: 170,
+        maxSize: 320,
+        cell: ({ row }: { row: { original: Schedule } }) => (
+          <a
+            href={`/schedules/${row.original.id}`}
+            className='block truncate font-medium hover:underline'
+            title={scheduleDisplayName(row.original, t)}
+          >
+            {scheduleDisplayName(row.original, t)}
+          </a>
+        ),
+      },
       {
         id: 'task',
         accessorFn: (row: Schedule) =>
           `${tasks.data?.find((task) => task.id === row.task_id)?.name || ''} ${row.task_id}`,
         header: t('schedules.task'),
-        size: 250,
-        minSize: 200,
-        maxSize: 340,
+        size: 200,
+        minSize: 150,
+        maxSize: 280,
         cell: ({ row }: { row: { original: Schedule } }) => (
           <a
-            href={`/schedules/${row.original.id}`}
-            className='block truncate font-medium hover:underline'
+            href={`/tasks/${row.original.task_id}`}
+            className='block truncate hover:underline'
             title={
               tasks.data?.find((task) => task.id === row.original.task_id)
                 ?.name || t('common.unknownTask')
@@ -1115,37 +1170,53 @@ export function Schedules() {
         ),
       },
       {
-        accessorKey: 'type',
-        header: t('common.type'),
-        size: 88,
-        minSize: 80,
-        cell: ({ row }: { row: { original: Schedule } }) =>
-          t(`schedules.types.${row.original.type}`, {
-            defaultValue: row.original.type,
-          }),
-      },
-      {
-        accessorKey: 'expression',
-        header: t('tasks.expression'),
-        size: 165,
-        minSize: 106,
+        id: 'target',
+        accessorFn: (row: Schedule) =>
+          targetSummary(row.target, t, nodeNames, groupNames),
+        header: t('schedules.target'),
+        size: 190,
+        minSize: 140,
         cell: ({ row }: { row: { original: Schedule } }) => {
-          const text =
-            row.original.type === 'interval'
-              ? `${i18n.language === 'en' ? 'Every ' : '每 '}${row.original.interval_sec}${i18n.language === 'en' ? 's' : ' 秒'}`
-              : row.original.expression || '-'
+          const text = targetSummary(
+            row.original.target,
+            t,
+            nodeNames,
+            groupNames
+          )
           return (
-            <span className='block truncate font-mono text-xs' title={text}>
+            <span className='block truncate text-sm' title={text}>
               {text}
             </span>
           )
         },
       },
       {
+        id: 'trigger',
+        accessorFn: (row: Schedule) => scheduleTriggerText(row, t),
+        header: t('schedules.expression'),
+        size: 185,
+        minSize: 130,
+        cell: ({ row }: { row: { original: Schedule } }) => {
+          const text = scheduleTriggerText(row.original, t)
+          return (
+            <div className='min-w-0'>
+              <div className='truncate text-xs text-muted-foreground'>
+                {t(`schedules.types.${row.original.type}`, {
+                  defaultValue: row.original.type,
+                })}
+              </div>
+              <span className='block truncate font-mono text-xs' title={text}>
+                {text}
+              </span>
+            </div>
+          )
+        },
+      },
+      {
         accessorKey: 'timezone',
         header: t('schedules.timezone'),
-        size: 140,
-        minSize: 126,
+        size: 130,
+        minSize: 110,
       },
       {
         accessorKey: 'execution_owner',
@@ -1160,7 +1231,7 @@ export function Schedules() {
       {
         accessorKey: 'offline_policy',
         header: t('schedules.offline'),
-        size: 150,
+        size: 145,
         minSize: 105,
         cell: ({ row }: { row: { original: Schedule } }) =>
           t(`schedules.offlinePolicies.${row.original.offline_policy}`, {
@@ -1169,9 +1240,9 @@ export function Schedules() {
       },
       {
         accessorKey: 'misfire_policy',
-        header: t('tasks.misfire'),
-        size: 140,
-        minSize: 125,
+        header: t('schedules.misfire'),
+        size: 130,
+        minSize: 105,
         cell: ({ row }: { row: { original: Schedule } }) =>
           t(`schedules.misfirePolicies.${row.original.misfire_policy}`, {
             defaultValue: row.original.misfire_policy,
@@ -1194,56 +1265,89 @@ export function Schedules() {
         minSize: 56,
         cell: ({ row }: { row: { original: Schedule } }) => {
           const schedule = row.original
-          const taskName =
-            tasks.data?.find((task) => task.id === schedule.task_id)?.name ||
-            t('common.unknownTask')
-          const expression =
-            schedule.type === 'interval'
-              ? `${i18n.language === 'en' ? 'Every ' : '每 '}${schedule.interval_sec}${i18n.language === 'en' ? 's' : ' 秒'}`
-              : schedule.expression || '-'
-          const scheduleLabel = `${taskName} · ${expression}`
-          return canWrite ? (
+          if (!canWrite && !canRun) return null
+          return (
             <MoreMenu>
-              <DropdownMenuItem asChild>
-                <a href={`/schedules/${schedule.id}`}>{t('common.edit')}</a>
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => toggleSchedule(schedule)}>
-                {schedule.enabled ? t('common.disable') : t('common.enable')}
-              </DropdownMenuItem>
-              <DangerMenuItem
-                onSelect={() => removeSchedule(schedule)}
-                title={`${t('common.delete')}: ${scheduleLabel}`}
-                description={t('schedules.confirmDelete', {
-                  name: scheduleLabel,
-                })}
-              />
+              {canRun ? (
+                <DropdownMenuItem onSelect={() => setRunTarget(schedule)}>
+                  {t('schedules.runNow')}
+                </DropdownMenuItem>
+              ) : null}
+              {canWrite ? (
+                <DropdownMenuItem asChild>
+                  <a href={`/schedules/${schedule.id}`}>{t('common.edit')}</a>
+                </DropdownMenuItem>
+              ) : null}
+              {canWrite ? (
+                <DropdownMenuItem onSelect={() => toggleSchedule(schedule)}>
+                  {schedule.enabled ? t('common.disable') : t('common.enable')}
+                </DropdownMenuItem>
+              ) : null}
+              {canWrite ? (
+                <DangerMenuItem
+                  onSelect={() => removeSchedule(schedule)}
+                  title={`${t('common.delete')}: ${scheduleDisplayName(schedule, t)}`}
+                  description={t('schedules.confirmDelete', {
+                    name: scheduleDisplayName(schedule, t),
+                  })}
+                />
+              ) : null}
             </MoreMenu>
-          ) : null
+          )
         },
       },
     ],
-    [canWrite, i18n.language, t, tasks.data, toggleSchedule, removeSchedule]
+    [
+      canRun,
+      canWrite,
+      groupNames,
+      nodeNames,
+      removeSchedule,
+      t,
+      tasks.data,
+      toggleSchedule,
+    ]
   )
   return (
-    <ListLayout
-      title={t('schedules.title')}
-      description={t('schedules.description')}
-      query={schedules}
-      columns={columns}
-      data={schedules.data || []}
-      searchPlaceholder={t('schedules.searchPlaceholder')}
-      storageKey='schedules'
-      action={
-        canWrite ? (
-          <Button asChild>
-            <Link to='/schedules/new'>
-              <Plus className='me-1 size-4' />
-              {t('schedules.newSchedule')}
-            </Link>
-          </Button>
-        ) : null
-      }
-    />
+    <>
+      <ListLayout
+        title={t('schedules.title')}
+        description={t('schedules.description')}
+        query={schedules}
+        columns={columns}
+        data={schedules.data || []}
+        searchPlaceholder={t('schedules.searchPlaceholder')}
+        storageKey='schedules'
+        emptyMessage={t('schedules.noSchedules')}
+        action={
+          canWrite ? (
+            <Button asChild>
+              <Link to='/schedules/new'>
+                <Plus className='me-1 size-4' />
+                {t('schedules.newSchedule')}
+              </Link>
+            </Button>
+          ) : null
+        }
+      />
+      <ConfirmDialog
+        open={runTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setRunTarget(null)
+        }}
+        title={t('schedules.confirmRun', {
+          name: runTarget ? scheduleDisplayName(runTarget, t) : '',
+        })}
+        desc={t('schedules.runDescription')}
+        cancelBtnText={t('common.cancel')}
+        confirmText={t('schedules.runNow')}
+        isLoading={runSchedule.isPending}
+        handleConfirm={() => {
+          if (runTarget) runSchedule.mutate(runTarget)
+          setRunTarget(null)
+        }}
+      />
+    </>
   )
 }
 
@@ -2424,7 +2528,7 @@ export function Settings() {
         description={t('misc.settingsDescription')}
       />
       <Main className='flex flex-1 flex-col gap-6'>
-        <div className='grid gap-8 lg:grid-cols-[180px_minmax(0,720px)]'>
+        <div className='grid gap-8 lg:grid-cols-[200px_minmax(0,1fr)]'>
           <nav
             className='flex gap-1 overflow-x-auto lg:flex-col'
             aria-label={t('misc.settingsTitle')}
@@ -2456,7 +2560,7 @@ export function Settings() {
                     {t('misc.runtimeSettingsDescription')}
                   </p>
                 </CardHeader>
-                <CardContent className='grid gap-4'>
+                <CardContent className='grid gap-4 sm:grid-cols-2'>
                   {query.isLoading ? (
                     <div className='h-8 animate-pulse rounded bg-muted' />
                   ) : (
@@ -2485,7 +2589,7 @@ export function Settings() {
                   )}
                   {canWrite ? (
                     <Button
-                      className='w-fit'
+                      className='w-fit sm:col-span-2'
                       onClick={() => save.mutate()}
                       disabled={save.isPending}
                     >
@@ -2548,6 +2652,7 @@ function ListLayout<TData>({
   pagination,
   filter,
   onFilterChange,
+  emptyMessage,
   enableRowSelection,
   renderBulkActions,
   bulkEntityName,
@@ -2567,6 +2672,8 @@ function ListLayout<TData>({
   extra?: React.ReactNode
   /** 表格视图持久化键（列可见性/每页条数） */
   storageKey?: string
+  /** 空态文案；缺省使用通用「暂无数据」 */
+  emptyMessage?: string
   /** 提供时启用服务端分页（页码/每页条数受控） */
   pagination?: {
     total: number
@@ -2599,13 +2706,7 @@ function ListLayout<TData>({
         {query.isError ? (
           <ErrorState error={query.error} onRetry={() => query.refetch()} />
         ) : query.isLoading ? (
-          <div className='grid gap-2'>
-            <Skeleton className='h-9 w-full' />
-            <Skeleton className='h-12 w-full' />
-            <Skeleton className='h-12 w-full' />
-            <Skeleton className='h-12 w-full' />
-            <Skeleton className='h-12 w-full' />
-          </div>
+          <LoadingState />
         ) : onFilterChange || data.length || (pagination?.total ?? 0) > 0 ? (
           <DataTable
             data={data}
@@ -2627,7 +2728,7 @@ function ListLayout<TData>({
           />
         ) : (
           <Card>
-            <EmptyState message={t('common.noData')} />
+            <EmptyState message={emptyMessage || t('common.noData')} />
           </Card>
         )}
       </Main>

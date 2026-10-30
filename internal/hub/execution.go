@@ -111,8 +111,13 @@ func scriptParameters(script *models.Script) []models.Parameter {
 	return script.Parameters
 }
 
-// RunManual 手动执行（面向在线 Agent）
-func (em *ExecutionManager) RunManual(ctx context.Context, task *models.Task, nodeIDs []string, params map[string]string) ([]*models.Execution, error) {
+// RunManual 手动执行（面向在线 Agent）。目标与策略来自请求，不写入 Task/Schedule。
+// schedule 非空表示从调度计划页「立即执行」，用于来源、远程条件与调度修订号。
+func (em *ExecutionManager) RunManual(ctx context.Context, task *models.Task, nodeIDs []string, params map[string]string, strategy ExecutionStrategy, schedule *models.Schedule) ([]*models.Execution, error) {
+	strategy, err := strategy.Normalize()
+	if err != nil {
+		return nil, err
+	}
 	if !task.Enabled {
 		return nil, fmt.Errorf("task %s is disabled", task.ID)
 	}
@@ -121,7 +126,7 @@ func (em *ExecutionManager) RunManual(ctx context.Context, task *models.Task, no
 	}
 	var out []*models.Execution
 	for _, nodeID := range nodeIDs {
-		ex, err := em.createAndDispatch(ctx, task, nodeID, models.TriggerManual, time.Time{}, params, false)
+		ex, err := em.createAndDispatch(ctx, task, nodeID, models.TriggerManual, time.Time{}, params, false, schedule, strategy)
 		if err != nil {
 			return nil, err
 		}
@@ -146,14 +151,18 @@ func (em *ExecutionManager) ensureReferencedScriptEnabled(ctx context.Context, t
 	return nil
 }
 
-// RunScheduledHub 由 Hub 触发的调度执行
-func (em *ExecutionManager) RunScheduledHub(ctx context.Context, task *models.Task, nodeIDs []string, scheduledTime time.Time) ([]*models.Execution, error) {
+// RunScheduledHub 由 Hub 触发的调度执行。来源、远程条件与策略来自 Schedule。
+func (em *ExecutionManager) RunScheduledHub(ctx context.Context, task *models.Task, nodeIDs []string, scheduledTime time.Time, schedule *models.Schedule, strategy ExecutionStrategy) ([]*models.Execution, error) {
+	strategy, err := strategy.Normalize()
+	if err != nil {
+		return nil, err
+	}
 	if err := em.ensureReferencedScriptEnabled(ctx, task); err != nil {
 		return nil, err
 	}
 	var out []*models.Execution
 	for _, nodeID := range nodeIDs {
-		ex, err := em.createAndDispatch(ctx, task, nodeID, models.TriggerSchedule, scheduledTime, nil, false)
+		ex, err := em.createAndDispatch(ctx, task, nodeID, models.TriggerSchedule, scheduledTime, nil, false, schedule, strategy)
 		if err != nil {
 			// 已存在的 Slot 幂等跳过
 			if errors.Is(err, errSlotExists) {
@@ -173,7 +182,7 @@ const reasonNodePaused = "node paused"
 
 // createPausedSkip 节点暂停（maintenance/disabled）导致调度跳过时创建 SKIPPED 执行记录，
 // 不下发到 Agent；调度 Slot 幂等，同 slot 不重复留痕。
-func (em *ExecutionManager) createPausedSkip(ctx context.Context, task *models.Task, nodeID, trigger string, schedTime time.Time) (*models.Execution, error) {
+func (em *ExecutionManager) createPausedSkip(ctx context.Context, task *models.Task, nodeID, trigger string, schedTime time.Time, schedule *models.Schedule) (*models.Execution, error) {
 	now := time.Now()
 	ex := &models.Execution{
 		ID:            uuid.NewString(),
@@ -183,11 +192,16 @@ func (em *ExecutionManager) createPausedSkip(ctx context.Context, task *models.T
 		NodeID:        nodeID,
 		TriggerType:   trigger,
 		ScheduledTime: schedTime,
+		CreatedAt:     now,
 		Status:        models.ExecStatusSkipped,
 		StartTime:     now,
 		EndTime:       now,
 		BlockReason:   reasonNodePaused,
 		Synced:        true,
+	}
+	if schedule != nil {
+		ex.ScheduleID = schedule.ID
+		ex.ScheduleRevision = schedule.Revision
 	}
 	if trigger == models.TriggerSchedule && !schedTime.IsZero() {
 		slot := schedTime.UTC().Truncate(time.Second).Format(time.RFC3339Nano)
@@ -208,7 +222,7 @@ func (em *ExecutionManager) createPausedSkip(ctx context.Context, task *models.T
 }
 
 // createAndDispatch 创建 Execution 并下发
-func (em *ExecutionManager) createAndDispatch(ctx context.Context, task *models.Task, nodeID, trigger string, schedTime time.Time, params map[string]string, offline bool) (*models.Execution, error) {
+func (em *ExecutionManager) createAndDispatch(ctx context.Context, task *models.Task, nodeID, trigger string, schedTime time.Time, params map[string]string, offline bool, schedule *models.Schedule, strategy ExecutionStrategy) (*models.Execution, error) {
 	node, err := em.nodes.GetNode(ctx, nodeID)
 	if err != nil {
 		return nil, err
@@ -216,7 +230,7 @@ func (em *ExecutionManager) createAndDispatch(ctx context.Context, task *models.
 	// 调度因暂停跳过：创建 SKIPPED 留痕（含目标节点与原因 node paused），不再静默丢弃；
 	// 其余触发与 offline/pending 维持原 online 门禁语义不变。
 	if !isDispatchableStatus(node.Status) && trigger == models.TriggerSchedule {
-		return em.createPausedSkip(ctx, task, nodeID, trigger, schedTime)
+		return em.createPausedSkip(ctx, task, nodeID, trigger, schedTime, schedule)
 	}
 	// disabled 必须先于 online 判定：否则「非 online」通用分支会先命中，
 	// 被禁用节点的派发错误文案退化为 not online（缺陷 OBS-20261017-EXEC-DISABLED-BRANCH-UNREACHABLE）。
@@ -241,8 +255,13 @@ func (em *ExecutionManager) createAndDispatch(ctx context.Context, task *models.
 		NodeID:        nodeID,
 		TriggerType:   trigger,
 		ScheduledTime: schedTime,
+		CreatedAt:     time.Now(),
 		Status:        models.ExecStatusPending,
 		Offline:       offline,
+	}
+	if schedule != nil {
+		ex.ScheduleID = schedule.ID
+		ex.ScheduleRevision = schedule.Revision
 	}
 
 	// 幂等：调度 Slot 唯一
@@ -259,7 +278,7 @@ func (em *ExecutionManager) createAndDispatch(ctx context.Context, task *models.
 		return nil, err
 	}
 
-	if err := em.dispatchToAgent(ctx, ex, task, params); err != nil {
+	if err := em.dispatchToAgent(ctx, ex, task, params, strategy, schedule); err != nil {
 		// 下发失败则标记失败
 		ex.Status = models.ExecStatusFailed
 		ex.EndTime = time.Now()
@@ -271,13 +290,13 @@ func (em *ExecutionManager) createAndDispatch(ctx context.Context, task *models.
 }
 
 // dispatchToAgent 下发执行到 Agent
-func (em *ExecutionManager) dispatchToAgent(ctx context.Context, ex *models.Execution, task *models.Task, params map[string]string) error {
+func (em *ExecutionManager) dispatchToAgent(ctx context.Context, ex *models.Execution, task *models.Task, params map[string]string, strategy ExecutionStrategy, schedule *models.Schedule) error {
 	conn, ok := em.sessions.Get(ex.NodeID)
 	if !ok {
 		return ErrAgentOffline
 	}
 
-	var scriptContent, interpreter, workingDir, runUser string
+	var scriptContent, interpreter, workingDir, scriptRunUser string
 	var script *models.Script
 	var scriptRev int64
 	if task.ScriptID != "" {
@@ -286,7 +305,7 @@ func (em *ExecutionManager) dispatchToAgent(ctx context.Context, ex *models.Exec
 			scriptContent = sc.Content
 			interpreter = sc.Interpreter
 			workingDir = sc.WorkingDir
-			runUser = sc.RunUser
+			scriptRunUser = sc.RunUser
 			scriptRev = sc.Revision
 			ex.ScriptID = sc.ID
 			ex.ScriptRevision = scriptRev
@@ -298,39 +317,50 @@ func (em *ExecutionManager) dispatchToAgent(ctx context.Context, ex *models.Exec
 		return err
 	}
 
+	// 执行策略只来自 Schedule 或 Manual Run 请求；Script.RunUser 仅作兜底。
+	runUser := strategy.RunUser
+	if runUser == "" {
+		runUser = scriptRunUser
+	}
 	payload := protocol.RunExecutionPayload{
-		ExecutionID:    ex.ID,
-		TaskID:         task.ID,
-		TaskRevision:   task.Revision,
-		ScriptID:       ex.ScriptID,
-		ScriptRevision: scriptRev,
-		Type:           task.Type,
-		Command:        task.Command,
-		ScriptContent:  scriptContent,
-		Interpreter:    interpreter,
-		WorkingDir:     workingDir,
-		RunUser:        task.RunUser,
-		Environment:    env,
-		SecretValues:   secrets,
-		Timeout:        task.Timeout,
-		Retry:          task.Retry,
-		AppID:          task.ApplicationID,
-		AppOperation:   task.AppOperation,
-		TriggerType:    ex.TriggerType,
+		ExecutionID:      ex.ID,
+		TaskID:           task.ID,
+		TaskRevision:     task.Revision,
+		ScriptID:         ex.ScriptID,
+		ScriptRevision:   scriptRev,
+		Type:             task.Type,
+		Command:          task.Command,
+		ScriptContent:    scriptContent,
+		Interpreter:      interpreter,
+		WorkingDir:       workingDir,
+		RunUser:          runUser,
+		Environment:      env,
+		SecretValues:     secrets,
+		Timeout:          strategy.Timeout,
+		Retry:            strategy.Retry,
+		AppID:            task.ApplicationID,
+		AppOperation:     task.AppOperation,
+		TriggerType:      ex.TriggerType,
+		ScheduleID:       ex.ScheduleID,
+		ScheduleRevision: ex.ScheduleRevision,
+	}
+	if !ex.CreatedAt.IsZero() {
+		payload.CreatedAt = ex.CreatedAt.Format(time.RFC3339Nano)
 	}
 	if task.ApplicationID != "" {
 		if app, err := em.store.GetApplication(ctx, task.ApplicationID); err == nil {
 			payload.ApplicationVersion = app.Version
 		}
 	}
-	if payload.RunUser == "" {
-		payload.RunUser = runUser
-	}
 	if !ex.ScheduledTime.IsZero() {
 		payload.ScheduledTime = ex.ScheduledTime.Format(time.RFC3339Nano)
 	}
-	if task.Condition != nil {
-		b, _ := json.Marshal(task.Condition)
+	var scheduleCondition *models.Condition
+	if schedule != nil {
+		scheduleCondition = schedule.Condition
+	}
+	if merged := models.MergeConditions(task.Condition, scheduleCondition); merged != nil {
+		b, _ := json.Marshal(merged)
 		payload.Condition = b
 	}
 
@@ -365,23 +395,26 @@ func (em *ExecutionManager) MarkFinished(ctx context.Context, nodeID string, p p
 		// Agent 侧创建的执行（如 Agent-owned Schedule），Hub 需幂等创建
 		if errors.Is(err, sql.ErrNoRows) {
 			newEx := &models.Execution{
-				ID:              p.ExecutionID,
-				TaskID:          p.TaskID,
-				TaskRevision:    p.TaskRevision,
-				ScriptID:        p.ScriptID,
-				ScriptRevision:  p.ScriptRevision,
-				NodeID:          p.NodeID,
-				TriggerType:     p.TriggerType,
-				Status:          p.Status,
-				ExitCode:        models.ExecutionExitCode(p.Status, p.ExitCode),
-				Stdout:          truncateLog(p.Stdout),
-				Stderr:          truncateLog(p.Stderr),
-				StdoutTruncated: p.StdoutTruncated,
-				StderrTruncated: p.StderrTruncated,
-				EndTime:         parseRFC3339OrNow(p.EndTime),
-				Offline:         p.Offline,
-				Synced:          true,
-				BlockReason:     p.BlockReason,
+				ID:               p.ExecutionID,
+				TaskID:           p.TaskID,
+				TaskRevision:     p.TaskRevision,
+				ScriptID:         p.ScriptID,
+				ScriptRevision:   p.ScriptRevision,
+				NodeID:           p.NodeID,
+				ScheduleID:       p.ScheduleID,
+				ScheduleRevision: p.ScheduleRevision,
+				TriggerType:      p.TriggerType,
+				CreatedAt:        parseRFC3339OrNow(p.CreatedAt),
+				Status:           p.Status,
+				ExitCode:         models.ExecutionExitCode(p.Status, p.ExitCode),
+				Stdout:           truncateLog(p.Stdout),
+				Stderr:           truncateLog(p.Stderr),
+				StdoutTruncated:  p.StdoutTruncated,
+				StderrTruncated:  p.StderrTruncated,
+				EndTime:          parseRFC3339OrNow(p.EndTime),
+				Offline:          p.Offline,
+				Synced:           true,
+				BlockReason:      p.BlockReason,
 			}
 			if p.StartTime != "" {
 				newEx.StartTime = parseRFC3339(p.StartTime)
@@ -424,6 +457,20 @@ func (em *ExecutionManager) MarkFinished(ctx context.Context, nodeID string, p p
 	}
 	if p.ScriptRevision != 0 {
 		ex.ScriptRevision = p.ScriptRevision
+	}
+	// 来源调度：Agent 上报非空才写入；旧 Agent / 手动执行不上报时保留 Hub 已有值。
+	if p.ScheduleID != "" {
+		ex.ScheduleID = p.ScheduleID
+	}
+	if p.ScheduleRevision > 0 {
+		ex.ScheduleRevision = p.ScheduleRevision
+	}
+	if ex.CreatedAt.IsZero() {
+		if p.CreatedAt != "" {
+			ex.CreatedAt = parseRFC3339(p.CreatedAt)
+		} else {
+			ex.CreatedAt = time.Now()
+		}
 	}
 	if p.StartTime != "" {
 		ex.StartTime = parseRFC3339(p.StartTime)
@@ -517,17 +564,20 @@ func (em *ExecutionManager) HandleDeployResult(ctx context.Context, nodeID strin
 			trigger = models.TriggerSchedule
 		}
 		newEx := &models.Execution{
-			ID:            p.ExecutionID,
-			TaskID:        taskID,
-			TaskRevision:  p.TaskRevision,
-			NodeID:        nodeID,
-			TriggerType:   trigger,
-			ScheduledTime: parseRFC3339OrZero(p.ScheduledTime),
-			Status:        status,
-			EndTime:       time.Now(),
-			BlockReason:   p.Error,
-			Offline:       false,
-			Synced:        true,
+			ID:               p.ExecutionID,
+			TaskID:           taskID,
+			TaskRevision:     p.TaskRevision,
+			NodeID:           nodeID,
+			ScheduleID:       p.ScheduleID,
+			ScheduleRevision: p.ScheduleRevision,
+			TriggerType:      trigger,
+			ScheduledTime:    parseRFC3339OrZero(p.ScheduledTime),
+			CreatedAt:        parseRFC3339OrNow(p.CreatedAt),
+			Status:           status,
+			EndTime:          time.Now(),
+			BlockReason:      p.Error,
+			Offline:          false,
+			Synced:           true,
 		}
 		if p.StartTime != "" {
 			newEx.StartTime = parseRFC3339(p.StartTime)
@@ -547,6 +597,19 @@ func (em *ExecutionManager) HandleDeployResult(ctx context.Context, nodeID strin
 		return nil
 	}
 	ex.EndTime = time.Now()
+	if p.ScheduleID != "" {
+		ex.ScheduleID = p.ScheduleID
+	}
+	if p.ScheduleRevision > 0 {
+		ex.ScheduleRevision = p.ScheduleRevision
+	}
+	if ex.CreatedAt.IsZero() {
+		if p.CreatedAt != "" {
+			ex.CreatedAt = parseRFC3339(p.CreatedAt)
+		} else {
+			ex.CreatedAt = time.Now()
+		}
+	}
 	if p.StartTime != "" {
 		ex.StartTime = parseRFC3339(p.StartTime)
 	}
@@ -632,6 +695,15 @@ func (em *ExecutionManager) UpsertFromAgent(ctx context.Context, e *models.Execu
 			existing.TaskRevision = e.TaskRevision
 			existing.ScriptID = e.ScriptID
 			existing.ScriptRevision = e.ScriptRevision
+			if e.ScheduleID != "" {
+				existing.ScheduleID = e.ScheduleID
+			}
+			if e.ScheduleRevision > 0 {
+				existing.ScheduleRevision = e.ScheduleRevision
+			}
+			if existing.CreatedAt.IsZero() && !e.CreatedAt.IsZero() {
+				existing.CreatedAt = e.CreatedAt
+			}
 			existing.StartTime = e.StartTime
 			existing.ExitCode = models.ExecutionExitCode(existing.Status, models.ExitCodeValue(e.ExitCode))
 			existing.Stdout = truncateLog(e.Stdout)
@@ -775,6 +847,7 @@ func (em *ExecutionManager) upgradeOneNode(ctx context.Context, nodeID, download
 		TaskID:      models.AgentUpgradeTaskID,
 		NodeID:      nodeID,
 		TriggerType: models.TriggerManual,
+		CreatedAt:   time.Now(),
 		Status:      models.ExecStatusPending,
 	}
 	if err := em.store.CreateExecution(ctx, ex); err != nil {
@@ -803,6 +876,7 @@ func (em *ExecutionManager) createUpgradeTerminal(ctx context.Context, nodeID, s
 		TaskID:      models.AgentUpgradeTaskID,
 		NodeID:      nodeID,
 		TriggerType: models.TriggerManual,
+		CreatedAt:   now,
 		Status:      status,
 		StartTime:   now,
 		EndTime:     now,

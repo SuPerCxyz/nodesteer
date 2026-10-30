@@ -143,6 +143,10 @@ func (s *Scheduler) checkDue(ctx context.Context, now time.Time) {
 		if sch.ExecutionOwner != models.ExecutionOwnerAgent {
 			continue
 		}
+		// manual 仅承载目标与策略，永不自动触发（不进入 executor）。
+		if sch.Type == models.ScheduleTypeManual {
+			continue
+		}
 		s.mu <- struct{}{}
 		paused := s.paused
 		online := s.online()
@@ -274,6 +278,9 @@ func (s *Scheduler) nextRun(sch *models.Schedule, now time.Time) (time.Time, boo
 	case models.ScheduleTypeOnStart:
 		// on_start 不走本地周期 tick：触发由 Agent 进程启动一次性路径负责，
 		// 这里显式返回未到期，避免被当作非法类型。
+		return time.Time{}, false, nil
+	case models.ScheduleTypeManual:
+		// manual 仅手动执行：永远未到期，不自动触发。
 		return time.Time{}, false, nil
 	}
 	return time.Time{}, false, nil

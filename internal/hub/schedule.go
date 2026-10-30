@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -52,10 +53,18 @@ func (sm *ScheduleManager) Create(ctx context.Context, s *models.Schedule) error
 	if s.Timezone == "" {
 		s.Timezone = "UTC"
 	}
-	if _, err := sm.store.GetTask(ctx, s.TaskID); err != nil {
+	// manual 不参与自动触发，owner 仅作字段完整性校验；未提供时归一为 hub。
+	if s.ExecutionOwner == "" && s.Type == models.ScheduleTypeManual {
+		s.ExecutionOwner = models.ExecutionOwnerHub
+	}
+	task, err := sm.store.GetTask(ctx, s.TaskID)
+	if err != nil {
 		return fmt.Errorf("referenced task not found")
 	}
-	if err := validateSchedule(s, time.Time{}); err != nil {
+	if strings.TrimSpace(s.Name) == "" {
+		s.Name = models.ScheduleDisplayName(task.Name, s)
+	}
+	if err := validateSchedule(ctx, sm.store, s, time.Time{}); err != nil {
 		return err
 	}
 	var rev int64
@@ -114,10 +123,45 @@ func (sm *ScheduleManager) Update(ctx context.Context, s *models.Schedule) error
 	if s.MisfirePolicy == "" {
 		s.MisfirePolicy = existing.MisfirePolicy
 	}
-	if _, err := sm.store.GetTask(ctx, s.TaskID); err != nil {
+	if strings.TrimSpace(s.Name) == "" {
+		s.Name = existing.Name
+	}
+	if s.Target.Type == "" {
+		s.Target = existing.Target
+	}
+	// 目标节点可能已被删除：更新时剔除失效节点，避免调度无法编辑/启停。
+	// 与旧 Task.Update 的修复语义一致；全部失效时仍会因 target 为空被校验拒绝。
+	if s.Target.Type == "node" && len(s.Target.NodeIDs) > 0 {
+		alive := make([]string, 0, len(s.Target.NodeIDs))
+		for _, id := range s.Target.NodeIDs {
+			if _, err := sm.store.GetNode(ctx, id); err == nil {
+				alive = append(alive, id)
+			}
+		}
+		s.Target.NodeIDs = alive
+	}
+	if s.Target.Type == "group" && len(s.Target.GroupIDs) > 0 {
+		alive := make([]string, 0, len(s.Target.GroupIDs))
+		for _, id := range s.Target.GroupIDs {
+			if _, err := sm.store.GetGroup(ctx, id); err == nil {
+				alive = append(alive, id)
+			}
+		}
+		s.Target.GroupIDs = alive
+	}
+	// RunUser 由 API 层按字段是否提供回填；这里不再把显式空串还原为旧值，
+	// 否则用户无法清空运行用户。
+	// Timeout/Retry 不做零值合并：0 是显式有效值（timeout 0 归一为默认 300、
+	// retry 0 表示不重试）。API 层用指针 DTO 判断字段是否提供，未提供时回填
+	// existing 值，避免把显式 retry=0 误判为未提供。
+	task, err := sm.store.GetTask(ctx, s.TaskID)
+	if err != nil {
 		return fmt.Errorf("referenced task not found")
 	}
-	if err := validateSchedule(s, existing.RunAt); err != nil {
+	if strings.TrimSpace(s.Name) == "" {
+		s.Name = models.ScheduleDisplayName(task.Name, s)
+	}
+	if err := validateSchedule(ctx, sm.store, s, existing.RunAt); err != nil {
 		return err
 	}
 	s.Revision = existing.Revision + 1
@@ -201,7 +245,7 @@ func (sm *ScheduleManager) RunDueHUB(ctx context.Context, now time.Time) error {
 		return err
 	}
 	for _, s := range schedules {
-		if !s.Enabled || s.ExecutionOwner != models.ExecutionOwnerHub {
+		if !s.Enabled || s.ExecutionOwner != models.ExecutionOwnerHub || s.Type == models.ScheduleTypeManual {
 			continue
 		}
 		next, due, err := sm.computeNextRun(s, now)
@@ -215,11 +259,15 @@ func (sm *ScheduleManager) RunDueHUB(ctx context.Context, now time.Time) error {
 		if err != nil || !task.Enabled {
 			continue
 		}
-		nodeIDs, err := sm.nodes.ResolveTarget(ctx, task.Target)
+		strategy, err := StrategyFromSchedule(s).Normalize()
 		if err != nil {
 			continue
 		}
-		if _, err := sm.execMgr.RunScheduledHub(ctx, task, nodeIDs, next); err != nil {
+		nodeIDs, err := sm.nodes.ResolveTarget(ctx, s.Target)
+		if err != nil {
+			continue
+		}
+		if _, err := sm.execMgr.RunScheduledHub(ctx, task, nodeIDs, next, s, strategy); err != nil {
 			// 幂等冲突忽略
 		}
 		sm.mu.Lock()
@@ -336,6 +384,9 @@ func (sm *ScheduleManager) computeNextRun(s *models.Schedule, now time.Time) (ne
 	case models.ScheduleTypeOnStart:
 		// on_start 由目标节点 Agent 的进程启动路径触发，Hub 不参与到期计算：
 		// 显式跳过（不建执行、不报错），避免被当作非法类型。
+		return time.Time{}, false, nil
+	case models.ScheduleTypeManual:
+		// manual 只用于手动执行，任何情况下都不自动触发。
 		return time.Time{}, false, nil
 	}
 	return time.Time{}, false, nil

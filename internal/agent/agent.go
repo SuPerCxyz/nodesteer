@@ -601,7 +601,7 @@ func (a *Agent) runOnStartTriggers() {
 		if err := json.Unmarshal(taskDef, &t); err != nil || !t.Enabled {
 			continue
 		}
-		if !a.onStartTargetsThisNode(&t) {
+		if !a.scheduleTargetsThisNode(&sch) {
 			continue
 		}
 		if a.logger != nil {
@@ -614,25 +614,25 @@ func (a *Agent) runOnStartTriggers() {
 	}
 }
 
-// onStartTargetsThisNode 判断 on_start 所属任务的目标是否命中本节点。
+// scheduleTargetsThisNode 判断调度目标是否命中本节点。
 // node 目标在本地精确比对；group/label 目标由 Hub 同步侧按目标过滤
-// （SyncManager.ComputeDesiredState 的 taskMatches），能下发到本地即视为命中。
-func (a *Agent) onStartTargetsThisNode(t *models.Task) bool {
-	switch t.Target.Type {
+// （ComputeDesiredState 只下发命中本节点的调度），能下发到本地即视为命中。
+// 缺少目标或未知类型一律视为未命中（不触发）。
+func (a *Agent) scheduleTargetsThisNode(sch *models.Schedule) bool {
+	switch sch.Target.Type {
 	case "group", "label":
 		return true
 	case "node":
 		if a.nodeID == "" {
 			return false
 		}
-		for _, id := range t.Target.NodeIDs {
+		for _, id := range sch.Target.NodeIDs {
 			if id == a.nodeID {
 				return true
 			}
 		}
 		return false
 	default:
-		// target 类型由 Hub 校验限定为 node|group|label，未知类型不触发
 		return false
 	}
 }
@@ -691,31 +691,7 @@ func (a *Agent) uploadExecution(e *LocalExecution) {
 	if !a.conn.IsConnected() {
 		return
 	}
-	payload := protocol.ExecutionFinishedPayload{
-		ExecutionID:          e.ID,
-		TaskID:               e.TaskID,
-		TaskRevision:         e.TaskRevision,
-		ScriptID:             e.ScriptID,
-		ScriptRevision:       e.ScriptRevision,
-		ApplicationID:        e.ApplicationID,
-		ApplicationVersion:   e.ApplicationVersion,
-		ApplicationOperation: e.ApplicationOperation,
-		ApplicationHealth:    e.ApplicationHealth,
-		StartTime:            e.StartTime,
-		NodeID:               e.NodeID,
-		TriggerType:          e.TriggerType,
-		ScheduledTime:        e.ScheduledTime,
-		Status:               e.Status,
-		ExitCode:             e.ExitCode,
-		Stdout:               e.Stdout,
-		Stderr:               e.Stderr,
-		StdoutTruncated:      e.StdoutTruncated,
-		StderrTruncated:      e.StderrTruncated,
-		EndTime:              e.EndTime,
-		Offline:              e.Offline,
-		BlockReason:          e.BlockReason,
-	}
-	a.conn.Send(protocol.NewEnvelope(protocol.MsgExecFinished, e.ID, payload))
+	a.conn.Send(protocol.NewEnvelope(protocol.MsgExecFinished, e.ID, executionFinishedPayload(e)))
 }
 
 // OnExecutionAck 只有 Hub 确认收到结果后才结束本地 Journal 的同步状态。
@@ -950,7 +926,13 @@ func (a *Agent) OnRunExecution(env protocol.Envelope) {
 		a.logger.Error("bad run execution", "error", err)
 		return
 	}
-	// 执行前先写 Journal
+	// 执行前先写 Journal。
+	// created_at 以 Hub 创建执行的时间为准（Manual Run 由 Hub 下发），缺失时用接收时间兜底；
+	// schedule_id 只有调度触发才有值，Manual Run 保持为空。
+	createdAt := p.CreatedAt
+	if createdAt == "" {
+		createdAt = time.Now().UTC().Format(time.RFC3339Nano)
+	}
 	ex := &LocalExecution{
 		ID:                 p.ExecutionID,
 		TaskID:             p.TaskID,
@@ -960,8 +942,11 @@ func (a *Agent) OnRunExecution(env protocol.Envelope) {
 		ApplicationID:      p.AppID,
 		ApplicationVersion: p.ApplicationVersion,
 		NodeID:             a.nodeID,
+		ScheduleID:         p.ScheduleID,
+		ScheduleRevision:   p.ScheduleRevision,
 		TriggerType:        p.TriggerType,
 		ScheduledTime:      p.ScheduledTime,
+		CreatedAt:          createdAt,
 		Status:             models.ExecStatusRunning,
 		StartTime:          time.Now().UTC().Format(time.RFC3339Nano),
 		Offline:            !a.conn.IsConnected(),
@@ -1180,26 +1165,39 @@ func (a *Agent) sendExecutionFinished(ex *LocalExecution) {
 	if !a.conn.IsConnected() {
 		return
 	}
-	a.conn.Send(protocol.NewEnvelope(protocol.MsgExecFinished, ex.ID, protocol.ExecutionFinishedPayload{
-		ExecutionID:     ex.ID,
-		TaskID:          ex.TaskID,
-		TaskRevision:    ex.TaskRevision,
-		ScriptID:        ex.ScriptID,
-		ScriptRevision:  ex.ScriptRevision,
-		NodeID:          ex.NodeID,
-		TriggerType:     ex.TriggerType,
-		ScheduledTime:   ex.ScheduledTime,
-		Status:          ex.Status,
-		ExitCode:        ex.ExitCode,
-		Stdout:          ex.Stdout,
-		Stderr:          ex.Stderr,
-		StdoutTruncated: ex.StdoutTruncated,
-		StderrTruncated: ex.StderrTruncated,
-		StartTime:       ex.StartTime,
-		EndTime:         ex.EndTime,
-		Offline:         ex.Offline,
-		BlockReason:     ex.BlockReason,
-	}))
+	a.conn.Send(protocol.NewEnvelope(protocol.MsgExecFinished, ex.ID, executionFinishedPayload(ex)))
+}
+
+// executionFinishedPayload 从本地 Journal 构造上报载荷。
+// schedule_id/created_at 原样上报；旧 Journal 无值时允许为空字符串（Hub 保留已有来源）。
+func executionFinishedPayload(e *LocalExecution) protocol.ExecutionFinishedPayload {
+	return protocol.ExecutionFinishedPayload{
+		ExecutionID:          e.ID,
+		TaskID:               e.TaskID,
+		TaskRevision:         e.TaskRevision,
+		ScriptID:             e.ScriptID,
+		ScriptRevision:       e.ScriptRevision,
+		ApplicationID:        e.ApplicationID,
+		ApplicationVersion:   e.ApplicationVersion,
+		ApplicationOperation: e.ApplicationOperation,
+		ApplicationHealth:    e.ApplicationHealth,
+		NodeID:               e.NodeID,
+		TriggerType:          e.TriggerType,
+		ScheduledTime:        e.ScheduledTime,
+		ScheduleID:           e.ScheduleID,
+		ScheduleRevision:     e.ScheduleRevision,
+		CreatedAt:            e.CreatedAt,
+		Status:               e.Status,
+		ExitCode:             e.ExitCode,
+		Stdout:               e.Stdout,
+		Stderr:               e.Stderr,
+		StdoutTruncated:      e.StdoutTruncated,
+		StderrTruncated:      e.StderrTruncated,
+		StartTime:            e.StartTime,
+		EndTime:              e.EndTime,
+		Offline:              e.Offline,
+		BlockReason:          e.BlockReason,
+	}
 }
 
 func (a *Agent) OnCancelExecution(env protocol.Envelope) {
@@ -1475,9 +1473,23 @@ func (a *Agent) OnDeployRequest(env protocol.Envelope) {
 	if execID == "" {
 		execID = uuid.NewString()
 	}
+	// 部署下发可能由调度触发（应用 Task）或 Manual Run：来源与创建时间原样落 Journal。
+	createdAt := p.CreatedAt
+	if createdAt == "" {
+		createdAt = time.Now().UTC().Format(time.RFC3339Nano)
+	}
+	trigger := p.TriggerType
+	if trigger == "" {
+		trigger = models.TriggerManual
+		if p.ScheduleID != "" {
+			trigger = models.TriggerSchedule
+		}
+	}
 	ex := &LocalExecution{
 		ID: execID, TaskID: p.AppID, ApplicationID: p.AppID, ApplicationVersion: p.AppVersion,
-		ApplicationOperation: p.Operation, NodeID: a.nodeID, TriggerType: models.TriggerManual,
+		ApplicationOperation: p.Operation, NodeID: a.nodeID, ScheduleID: p.ScheduleID,
+		ScheduleRevision: p.ScheduleRevision,
+		TriggerType:      trigger, CreatedAt: createdAt,
 		Status: models.ExecStatusRunning, StartTime: time.Now().UTC().Format(time.RFC3339Nano),
 		Offline: !a.conn.IsConnected(), Synced: false,
 	}
@@ -1518,6 +1530,10 @@ func (a *Agent) deployResultCallback(execID string) func(p protocol.DeployResult
 			p.TaskRevision = ex.TaskRevision
 			p.TriggerType = ex.TriggerType
 			p.ScheduledTime = ex.ScheduledTime
+			// 来源调度与创建时间以本地 Journal 为准，原样回传 Hub 以幂等写入来源。
+			p.ScheduleID = ex.ScheduleID
+			p.ScheduleRevision = ex.ScheduleRevision
+			p.CreatedAt = ex.CreatedAt
 			ex.ApplicationID = p.AppID
 			ex.ApplicationVersion = p.Version
 			ex.ApplicationOperation = p.Operation
@@ -1547,8 +1563,17 @@ func (a *Agent) OnError(env protocol.Envelope) {
 	a.logger.Error("hub error", "code", p.Code, "message", p.Message)
 }
 
-// TriggerSchedule 调度触发（实现 scheduler.Executor）
+// TriggerSchedule 调度触发（实现 scheduler.Executor）。
+// 执行策略（Timeout/Retry/RunUser）与目标唯一来源于 Schedule；manual 类型不参与自动触发。
 func (a *Agent) TriggerSchedule(ctx context.Context, sch *models.Schedule, scheduledAt time.Time) error {
+	if sch.Type == models.ScheduleTypeManual {
+		return fmt.Errorf("manual schedule %s must not be auto-triggered", sch.ID)
+	}
+	// 目标校验：Hub 只同步命中本节点的调度，node 目标仍本地复核；
+	// 缺少目标/未命中本节点时拒绝执行并返回明确错误。
+	if !a.scheduleTargetsThisNode(sch) {
+		return fmt.Errorf("schedule %s target does not match node %s", sch.ID, a.nodeID)
+	}
 	taskDef, err := a.store.GetTask(ctx, sch.TaskID)
 	if err != nil {
 		return err
@@ -1562,17 +1587,22 @@ func (a *Agent) TriggerSchedule(ctx context.Context, sch *models.Schedule, sched
 	if existing, err := a.store.FindExecutionBySlot(ctx, sch.TaskID, a.nodeID, slot); err == nil && existing != nil {
 		return nil
 	}
+	now := time.Now().UTC()
+	createdAt := now.Format(time.RFC3339Nano)
 	ex := &LocalExecution{
-		ID:            uuid.NewString(),
-		TaskID:        sch.TaskID,
-		TaskRevision:  t.Revision,
-		ScriptID:      t.ScriptID,
-		ApplicationID: t.ApplicationID,
-		NodeID:        a.nodeID,
-		TriggerType:   models.TriggerSchedule,
-		ScheduledTime: slot,
-		Status:        models.ExecStatusRunning,
-		StartTime:     time.Now().UTC().Format(time.RFC3339Nano),
+		ID:               uuid.NewString(),
+		TaskID:           sch.TaskID,
+		TaskRevision:     t.Revision,
+		ScriptID:         t.ScriptID,
+		ApplicationID:    t.ApplicationID,
+		NodeID:           a.nodeID,
+		ScheduleID:       sch.ID,
+		ScheduleRevision: sch.Revision,
+		TriggerType:      models.TriggerSchedule,
+		ScheduledTime:    slot,
+		CreatedAt:        createdAt,
+		Status:           models.ExecStatusRunning,
+		StartTime:        now.Format(time.RFC3339Nano),
 		// Offline 与调度门禁同源：握手未完成（HELLO 未被 accepted）时结果无法同步，
 		// 必须标记离线等待重连对账，避免重连窗口内产生「看似已同步」的记录。
 		Offline: !a.conn.HandshakeComplete(),
@@ -1581,7 +1611,7 @@ func (a *Agent) TriggerSchedule(ctx context.Context, sch *models.Schedule, sched
 	if err := a.store.CreateExecution(ctx, ex); err != nil {
 		return err
 	}
-	// 构建运行载荷
+	// 构建运行载荷：策略来自 Schedule，RunUser 为空时由脚本配置兜底。
 	p := protocol.RunExecutionPayload{
 		ExecutionID:        ex.ID,
 		TaskID:             t.ID,
@@ -1589,14 +1619,17 @@ func (a *Agent) TriggerSchedule(ctx context.Context, sch *models.Schedule, sched
 		ScriptID:           t.ScriptID,
 		Type:               t.Type,
 		Command:            t.Command,
-		Timeout:            t.Timeout,
-		Retry:              t.Retry,
-		RunUser:            t.RunUser,
+		Timeout:            sch.Timeout,
+		Retry:              sch.Retry,
+		RunUser:            sch.RunUser,
 		AppID:              t.ApplicationID,
 		ApplicationVersion: applicationVersion(a.store, t.ApplicationID),
 		AppOperation:       t.AppOperation,
 		TriggerType:        models.TriggerSchedule,
 		ScheduledTime:      slot,
+		ScheduleID:         sch.ID,
+		ScheduleRevision:   sch.Revision,
+		CreatedAt:          createdAt,
 	}
 	values := map[string]string{}
 	for k, v := range t.ParamValues {
@@ -1643,8 +1676,8 @@ func (a *Agent) TriggerSchedule(ctx context.Context, sch *models.Schedule, sched
 		p.Environment["NODESTEER_PARAM_"+k] = v
 	}
 	p.SecretValues = localSecretValues(t.Parameters, scriptParams, values)
-	if t.Condition != nil {
-		b, _ := json.Marshal(t.Condition)
+	if merged := models.MergeConditions(t.Condition, sch.Condition); merged != nil {
+		b, _ := json.Marshal(merged)
 		p.Condition = b
 	}
 	go a.executeTask(p, ex)

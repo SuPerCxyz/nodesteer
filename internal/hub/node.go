@@ -344,15 +344,15 @@ func (nm *NodeManager) DeleteGroup(ctx context.Context, id string) error {
 	if g, err := nm.store.GetGroup(ctx, id); err == nil {
 		groupName = g.Name
 	}
-	tasks, err := nm.store.ListTasks(ctx)
+	schedules, err := nm.store.ListSchedules(ctx)
 	if err != nil {
 		return err
 	}
-	for _, task := range tasks {
-		if task.Target.Type == "group" {
-			for _, groupID := range task.Target.GroupIDs {
+	for _, schedule := range schedules {
+		if schedule.Target.Type == "group" {
+			for _, groupID := range schedule.Target.GroupIDs {
 				if groupID == id {
-					return fmt.Errorf("group %s is referenced by task %s", id, task.ID)
+					return fmt.Errorf("group %s is referenced by schedule %s", id, schedule.ID)
 				}
 			}
 		}
@@ -501,7 +501,7 @@ func (nm *NodeManager) ResolveTarget(ctx context.Context, tgt models.Target) ([]
 		// 目标节点可能已被删除：给出可读错误而不是原始 SQL 错误（缺陷 FAIL-A-009）
 		for _, id := range tgt.NodeIDs {
 			if _, err := nm.store.GetNode(ctx, id); err != nil {
-				return nil, fmt.Errorf("target node %s no longer exists; update the task targets", id)
+				return nil, fmt.Errorf("target node %s no longer exists; update the execution target", id)
 			}
 			add([]string{id})
 		}

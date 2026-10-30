@@ -90,13 +90,13 @@
 Dashboard
   ├─ 节点列表 → 节点详情
   │               ├─ 标签 → Label Group
-  │               ├─ 任务 → Task Detail
-  │               ├─ 调度 → Schedule Detail
+  │               ├─ 调度计划 → Schedule Detail
+  │               ├─ 调度引用的任务定义 → Task Detail
   │               ├─ 托管应用 → Application Detail
-  │               └─ 执行 → Execution Detail
+  │               └─ 执行记录 → Execution Detail
   ├─ Script → Revision → Script Task
-  ├─ Group/Label → Task Target
-  ├─ Task → Run Now / Schedule → Execution → Logs → Audit
+  ├─ Group/Label → Schedule Target
+  ├─ 任务定义 → 试运行（临时目标）/ 调度计划 → 执行记录 → Logs → Audit
   ├─ Artifact → Application → Assign Node → Deploy/Upgrade/Operate
   └─ Source Agent → Hub File Relay → Multiple Target Agents
 ```
@@ -107,8 +107,8 @@ Dashboard
 2. 节点清单、节点纳管和节点标签。
 3. 分组。
 4. 脚本及脚本 Revision。
-5. Command/Script/Application Task。
-6. 调度、立即运行和执行记录。
+5. Command/Script/Application 任务定义。
+6. 调度计划（目标与策略）、Manual Run 和执行记录。
 7. 制品和应用部署。
 8. 文件中继。
 9. RBAC、Audit、Settings。
@@ -136,7 +136,7 @@ Dashboard
 - [ ] 退出后 Token、用户状态清除，刷新受限页面仍需登录。
 - [ ] 桌面端 Sidebar 折叠/展开，页面布局不溢出。
 - [ ] 移动端 Sidebar 打开/关闭，点击导航后自动关闭。
-- [ ] 验证 13 个导航项：Dashboard、Tasks、Executions、Agents、Transfers、Schedules、Scripts、Groups、Applications、Artifacts、Audit、Users、Settings。
+- [ ] 验证导航项：Dashboard、任务定义（Tasks）、执行记录（Executions）、Agents、Transfers、调度计划（Schedules）、Scripts、Groups、Applications、Audit、Settings；管理员额外验证 Users。
 - [ ] 导航 active 状态、浏览器前进后退和直接 URL 访问正确。
 
 ### G-03 DataTable
@@ -181,7 +181,7 @@ Dashboard
 
 ### P02 布局
 
-- [ ] 13 个导航项逐个打开对应页面。
+- [ ] 导航项逐个打开对应页面，确认任务定义/调度计划/执行记录命名一致。
 - [ ] Header 语言、主题、Profile、退出及确认框。
 - [ ] Sidebar 桌面/移动端操作。
 - [ ] 浏览器前进、后退、刷新、直接输入子路由。
@@ -232,14 +232,15 @@ Dashboard
 
 #### P05-B 节点详情
 
-- [ ] Overview、Executions、Tasks 三个 Tab。
+- [ ] Overview、Executions、调度计划、任务定义等分区/Tab。
 - [ ] Node ID、Agent ID、IP、OS、Version、Arch、Mode、Revision、Sync、Last Seen。
 - [ ] Inventory：OS、Kernel、CPU、Memory、Filesystem、Network。
 - [ ] Capability enabled/disabled 展示。
-- [ ] 无 Inventory、无任务、无调度、无应用、无执行的空态。
+- [ ] 无 Inventory、无调度、无关联任务、无应用、无执行的空态。
 - [ ] Labels 添加、覆盖同名 key、空 key 禁用、保存后刷新。
-- [ ] Tasks → Task Detail。
-- [ ] Schedules → Schedule Detail。
+- [ ] 调度计划按 `Schedule.Target` 命中该节点，显示目标与策略摘要。
+- [ ] 调度引用的任务定义 → Task Detail。
+- [ ] 调度计划 → Schedule Detail。
 - [ ] Managed Applications → Application Detail。
 - [ ] Execution 表中的 Task 链接，ID 是否可点击按当前设计验证。
 - [ ] 返回按钮回 `/agents`。
@@ -254,7 +255,7 @@ Dashboard
 - [ ] 类型切换后旧字段不产生错误残留。
 - [ ] 删除打开确认框；取消/确认分别验证。
 - [ ] 节点 Label 变化后 Label Group 成员刷新。
-- [ ] Group 变化后 Task Target 和 Node Detail 任务列表同步。
+- [ ] Group 变化后 Schedule Target、节点详情调度列表和执行目标同步。
 - [ ] 取消新建不发送请求。
 
 ### P07/P08 脚本 `/scripts`
@@ -271,56 +272,65 @@ Dashboard
 - [ ] 删除确认框取消/确认、Tombstone、Agent 本地删除但历史 Execution 保留。
 - [ ] 后端错误、重复名称、超长内容、超时边界。
 
-### P09-P11 任务 `/tasks`
+### P09-P11 任务定义 `/tasks`
 
 - [ ] 列表、搜索、分页、View、空态、Error/Retry。
-- [ ] Task 名称详情、编辑、立即运行入口。
+- [ ] 列表和详情使用「任务定义」命名，不再展示 Target、Timeout、Retry、Run User、Offline Policy；提供关联调度数量或入口。
+- [ ] 任务定义名称、描述、编辑、试运行入口。
 - [ ] 启用/禁用，状态和按钮反转。
-- [ ] 删除确认框取消/确认。
+- [ ] 删除确认框取消/确认；被 Schedule 引用时的删除行为按产品定义验证。
 - [ ] 类型 command：命令必填、保存、实际执行。
 - [ ] 类型 script：脚本选择、禁用脚本不可引用、保存、实际执行。
-- [ ] 类型 app_deploy：应用选择、节点目标、部署执行。
+- [ ] 类型 app_deploy：应用选择、保存；目标由调度计划或试运行请求提供。
 - [ ] 类型 app_operation：start/stop/restart/upgrade 四种操作。
-- [ ] Target node：单节点、多节点、去选节点。
-- [ ] Target group：单组、多组、去选组。
-- [ ] Target label：key/value、匹配节点变化。
-- [ ] 类型/目标切换后旧字段不误提交。
-- [ ] Timeout、Retry、Run User、Enabled、Offline Policy。
+- [ ] 创建任务定义不要求选择节点/分组/标签，保存后不因无目标被拒绝。
 - [ ] 参数添加/删除、secret 类型不在页面泄漏值。
-- [ ] Local Condition 8 种 metric、6 种 operator、设置/清除。
-- [ ] Remote Condition online、last_execution、operator、节点和 task_id 校验。
-- [ ] Condition AND 结构通过 API 或当前支持的编辑入口验证。
-- [ ] Task Detail 五个 Tab：Overview、Definition、Targets、Executions、Schedule。
+- [ ] Task 只允许本地条件：8 种 metric、6 种 operator、设置/清除。
+- [ ] Remote Condition 不再出现在任务编辑器；Task API 写入 remote 条件返回 400。
+- [ ] 本地条件 AND 结构通过 API 或编辑入口验证；混合 local+remote 条件被拒绝。
+- [ ] Task Detail 分区：Overview、Definition、关联调度（只读）、Executions；不再有 Targets 分区。
 - [ ] Definition 对 command/script/application 的链接和内容正确。
-- [ ] Execution History 链接到 Execution Detail。
-- [ ] Schedule 表链接到 Schedule Detail。
-- [ ] 空名称、空命令、无脚本、无应用、无目标、非法 ID 的错误反馈。
+- [ ] 关联调度列表链接到 Schedule Detail；执行历史链接到 Execution Detail。
+- [ ] 空名称、空命令、无脚本、无应用、非法 ID 的错误反馈。
+- [ ] 旧字段 `target`/`timeout`/`retry`/`run_user`/`offline_policy` 不出现在任务定义表单、列表和详情。
 
-#### P11 立即运行
+#### P11 试运行 / Manual Run
 
+- [ ] 运行页必须选择临时目标：单节点/多节点/分组/标签；缺目标时确认按钮禁用或提交返回 400。
+- [ ] 目标选择与参数覆盖不修改 Task 定义或任何 Schedule；返回详情后字段不变。
+- [ ] 策略字段：Timeout（默认 300 秒）、Retry（默认 0）、Run User（默认当前用户）、Offline Policy（默认 Hub Online Required）。
 - [ ] 确认弹窗取消不发请求。
 - [ ] 确认后创建 PENDING，发送到 online Agent，最终 SUCCESS/FAILED。
 - [ ] 运行中按钮 loading/禁用。
 - [ ] offline 节点不进入无限等待，返回明确 BLOCKED/错误。
 - [ ] disabled 节点手动运行返回 400 `node X is disabled`（不是 not online 文案），且不产生执行记录。
 - [ ] command/script/application 三类任务实际运行结果。
-- [ ] 参数值、环境变量、Working Directory、Run User 实际生效。
+- [ ] 参数值、环境变量、Working Directory、Run User、Timeout、Retry 实际生效。
 - [ ] 多节点执行每个 Node 一条 Execution。
 - [ ] 同一 Manual Run 重试/重复请求按 Execution ID 幂等。
+- [ ] 从调度计划页「立即执行」只传 `schedule_id`，后端使用该调度自己的目标与策略，执行记录写入来源调度，触发方式仍为 manual。
 
-### P12-P13 调度 `/schedules`
+### P12-P13 调度计划 `/schedules`
 
-- [ ] 列表、搜索、分页、类型/表达式/时区/Owner/Offline/Misfire/Enabled。
-- [ ] 调度任务名链接、编辑、启用/禁用、删除确认。
+- [ ] 列表、搜索、分页、名称、任务、目标摘要、类型/表达式/时区/Owner/Timeout/Retry/Run User/Offline/Misfire/Enabled。
+- [ ] 调度任务名链接、编辑、启用/禁用、删除确认、立即执行。
+- [ ] 创建时必须选择任务与有效目标（单节点/多节点/分组/标签）；缺目标 → 400。
+- [ ] 同一任务创建多个目标不同的调度，互不覆盖。
 - [ ] Cron 表达式必填和非法表达式。
 - [ ] Interval 最小值、0、负数、小数和超大值。
 - [ ] One-Time 未来时间、过去时间、时区、空 run_at；过去时间创建 → 400 `run_at must be in the future`；历史过去值记录改其它字段/禁用放行，改成新的过去值拒绝。
+- [ ] 类型 manual：不要求 expression/interval/run_at，保存后显示「仅手动」，自动调度器不触发，可从调度页立即执行。
+- [ ] Timeout 默认 300、0 使用默认、负数拒绝；Retry 默认 0、负数拒绝；Run User 留空使用当前用户。
+- [ ] 调度计划可配置远程条件：online/last_execution、operator、节点和 task_id 校验；写 local 条件返回 400。
+- [ ] 调度页立即执行合并 Task 本地条件与该 Schedule 远程条件；任务页试运行只评估本地条件。
 - [ ] Hub Owner 和 Agent Owner。
 - [ ] `allow_offline` 与 `hub_online_required` 组合。
 - [ ] `run_once` 与 `skip` Misfire。
 - [ ] 保存后不向非 one_time 调度提交无效 run_at。
 - [ ] 调度编辑部分字段更新不覆盖未修改字段。
-- [ ] Task Detail 调度表与 Schedule List 一致。
+- [ ] 修改 Schedule.Target 后，节点详情、任务定义关联调度、Agent 同步结果同步变化。
+- [ ] 删除调度后对应任务不再向该目标同步，任务定义本身保留。
+- [ ] Task Detail 关联调度表与 Schedule List 一致。
 - [ ] 取消编辑不发送请求。
 
 ### P14-P15 应用 `/applications`
@@ -359,23 +369,27 @@ Dashboard
 - [ ] 下载中断后临时文件清理和重试。
 - [ ] 服务端发头后不给 body：下载在 15 分钟总时限内失败，无 0B `.tmp` 残留（30 秒响应头超时独立生效）。
 
-### P17-P18 执行 `/executions`
+### P17-P18 执行记录 `/executions`
 
 - [ ] 列表字段、分页、空态、无匹配结果。
 - [ ] q 搜索：Execution ID、Task ID/名称、Node ID。
 - [ ] status：PENDING/RUNNING/SUCCESS/FAILED/SKIPPED/CANCELED/TIMED_OUT/BLOCKED。
 - [ ] trigger：manual/schedule/system。
+- [ ] 来源调度列/筛选：调度触发的执行显示 Schedule 名称或入口；Manual Run 与历史记录显示「历史记录/未知来源」。
 - [ ] status/trigger/q 清空后 URL 参数和结果正确。
-- [ ] Task、Execution、Agent 三类回链。
-- [ ] Detail 元数据：Task/Revision/Script/Node/Trigger/Offline/Synced/Exit/Duration。
-- [ ] Overview/Logs Tab。
-- [ ] stdout、stderr、all stream；日志搜索。
+- [ ] Task、Schedule、Execution、Agent 回链。
+- [ ] Detail 元数据：Task/Revision/Script/Node/Trigger/来源 Schedule/Created/Start/End/Offline/Synced/Exit/Duration。
+- [ ] 「执行过程」分区：Created → Start → End 时间线、当前状态与 block_reason；PENDING/RUNNING 也可见。
+- [ ] 「执行结果」分区：终态状态、耗时、退出码、stdout/stderr 摘要与截断标记。
+- [ ] Logs 分区：stdout、stderr、all stream；日志搜索。
 - [ ] Wrap、Follow、Copy Logs。
 - [ ] 空日志、截断日志、实时分片日志。
 - [ ] RUNNING 取消确认、取消后 CANCELED；非 RUNNING 不显示取消按钮。
 - [ ] BLOCKED 显示 block_reason。
 - [ ] Agent Offline 执行 synced=false，恢复后幂等上传为 synced=true。
 - [ ] Task/Script Revision 在 Execution 中固定记录。
+- [ ] 历史执行 `schedule_id` 为空时详情不报错，显示未知来源。
+- [ ] 调度来源执行显示 `schedule_revision`；任务页手动执行不显示修订号。
 
 ### P19 审计 `/audit`
 
@@ -431,11 +445,11 @@ Dashboard
 | 编号 | 联动路径 | 必须验证 |
 |---|---|---|
 | FL-01 | Login → Dashboard → Agents | 登录、统计、节点 View All、节点状态一致 |
-| FL-02 | Agents → Agent Detail → Task | 节点任务过滤、Task 回链、目标一致 |
-| FL-03 | Agent Label → Label Group → Task Target | Label 改变后 Group/Task/Node Detail 同步 |
+| FL-02 | Agents → Agent Detail → 调度计划/任务定义 | 按 `Schedule.Target` 过滤节点调度，任务回链与目标一致 |
+| FL-03 | Agent Label → Label Group → Schedule Target | Label 改变后 Group/Schedule/Node Detail 同步 |
 | FL-04 | Script Create/Edit/Clone → Task Script | 副本独立、Revision/SHA、任务引用正确 |
-| FL-05 | Task → Run Now → Execution → Logs | 参数、环境、stdout/stderr、状态和回链 |
-| FL-06 | Task → Schedule → Task Detail/Schedule List | 调度两处一致，删除后两处消失 |
+| FL-05 | 任务定义 → 试运行（临时目标）→ 执行记录 → Logs | 参数、环境、stdout/stderr、状态和回链 |
+| FL-06 | 任务定义 → 关联调度 → Schedule Detail | 调度两处一致，删除后两处消失 |
 | FL-07 | Execution Cancel → Audit | 取消状态和审计记录一致 |
 | FL-08 | Artifact Upload → Usage → Application | Artifact Usage 回链，应用引用正确 |
 | FL-09 | Application Assign → Agent Detail | Node Detail 托管应用与 Application 节点列表一致 |
@@ -451,16 +465,16 @@ Dashboard
 
 | 编号 | 流程 | 通过标准 |
 |---|---|---|
-| E2E-01 | Script → Script Task → Node → Run → Logs → Audit | SUCCESS、输出和审计完整 |
-| E2E-02 | Command Task 多节点运行 | 每节点一条执行，输出/状态正确 |
-| E2E-03 | Script Task 参数/环境/用户/目录 | 客户机实际读取到正确值 |
+| E2E-01 | Script → 任务定义 → 调度计划/试运行 → Execution → Logs → Audit | SUCCESS、输出和审计完整 |
+| E2E-02 | Command 任务定义多节点执行 | 通过调度目标或试运行临时目标为每节点创建一条执行，输出/状态正确 |
+| E2E-03 | Script 任务定义参数/环境/用户/目录 | 客户机实际读取到正确值，策略来自 Schedule 或 Manual Run 请求 |
 | E2E-04 | Agent-owned Interval Offline | Agent 离线继续执行，恢复后无重复 |
-| E2E-05 | Agent-owned Cron | 跨分钟准点执行且 Hub 不双触发 |
+| E2E-05 | Agent-owned Cron + Schedule Target/Strategy | 跨分钟准点执行、目标命中正确、Hub 不双触发 |
 | E2E-06 | One-Time + Timezone + Misfire | 未来、过去、补跑/跳过符合策略 |
 | E2E-07 | Schedule Disable | 禁用后不再产生新执行 |
 | E2E-08 | Retry/Timeout/Cancel | 次数、最终状态、进程组清理正确 |
-| E2E-09 | Local Condition | 满足执行，不满足 SKIPPED，未知不放行 |
-| E2E-10 | Remote Condition | online/last_execution、未观察 Fail Closed |
+| E2E-09 | Task 本地条件 | 满足执行，不满足 SKIPPED，未知不放行；任务页试运行只评估本地 |
+| E2E-10 | Schedule 远程条件 | online/last_execution、未观察 Fail Closed；调度页立即执行合并本地+远程 |
 | E2E-11 | Artifact → Application → Deploy → Stop | 文件、Unit、状态和健康检查正确 |
 | E2E-12 | Application Upgrade/Rollback | 成功升级；失败恢复旧版本 |
 | E2E-13 | Application Crash Recovery | 中途崩溃后由 Deployment Journal 恢复明确状态 |
@@ -469,6 +483,12 @@ Dashboard
 | E2E-16 | Native Enrollment | pending → HELLO → online/synced |
 | E2E-17 | Docker Enrollment | docker run/Compose Agent 真实接入并持久化 |
 | E2E-18 | Docker Recreate | 容器重建后 Identity/Revision/Journal/Cache 不丢 |
+| E2E-19 | 无目标的任务定义 | 创建成功；列表/详情不显示目标与策略；不进入节点同步 |
+| E2E-20 | 调度计划目标 + 策略 + manual | 同一任务绑定不同目标互不覆盖；manual 不自动触发但可立即执行 |
+| E2E-21 | Manual Run 临时目标 | 选择节点/分组/标签与策略后执行，Task/Schedule 定义不变 |
+| E2E-22 | 执行过程与来源 | 时间线、结果摘要、来源调度与日志一致；历史记录来源为空 |
+| E2E-23 | 旧数据迁移 | Task 目标/策略复制到全部 Schedule；无 Schedule 的任务生成禁用 manual 迁移调度；历史执行保留 |
+| E2E-24 | 协议版本不兼容 | 旧 Agent 被新 Hub 拒绝并给出明确错误；协同升级后 agent-owned 调度可触发 |
 
 ## 8. REST API 与 RBAC 测试
 
@@ -478,11 +498,11 @@ Dashboard
 - Node：`/api/nodes`、`/api/nodes/{id}`、`enrollment`、`revoke-credential`。
 - Group：`/api/groups`、`/api/groups/{id}`。
 - Script：`/api/scripts`、`/api/scripts/{id}`、`revisions`。
-- Task：`/api/tasks`、`/api/tasks/{id}`、`run`。
-- Schedule：`/api/schedules`、`/api/schedules/{id}`。
+- Task（任务定义）：`/api/tasks`、`/api/tasks/{id}`、`run`。
+- Schedule（调度计划）：`/api/schedules`、`/api/schedules/{id}`。
 - Artifact：`/api/artifacts`、`/{id}`、`download`。
 - Application：`/api/applications`、`/{id}`、`state`、`executions`、`revisions`、`nodes`、`assign`、`deploy`。
-- Execution：`/api/executions`、`/{id}`、`logs`、`cancel`。
+- Execution（执行记录）：`/api/executions`、`/{id}`、`logs`、`cancel`。
 - Transfer：`/api/transfers`、`/{id}`、`retry`、`cancel`。
 - Audit/Settings/Observability：`/api/audit`、`/api/settings`、`/metrics`、`/healthz`、`/readyz`。
 
@@ -507,6 +527,11 @@ Dashboard
 - `X-Total-Count` 只出现在 `/api/executions`、`/api/audit`；其余列表端点不得出现该头。
 - `POST /api/transfers` 目标=源：400 `self transfer is not allowed`，零落库。
 - `POST /api/schedules`（one_time）过去 `run_at`：400 `run_at must be in the future`；未改 `run_at` 的历史记录编辑/禁用放行。
+- Task 响应不含 `target`/`timeout`/`retry`/`run_user`/`offline_policy`/`schedule`；`condition` 只允许本地条件，写入 remote 返回 400。
+- Schedule 响应包含 `name`/`target`/`condition`/`timeout`/`retry`/`run_user`，`type` 支持 `manual`；`condition` 只允许远程条件，写入 local 返回 400。
+- `POST /api/schedules` / `PUT /api/schedules/{id}`：缺少有效 `target` → 400；`timeout`/`retry` 负数 → 400。
+- `POST /api/tasks/{id}/run`：按 `schedule_id` > `target` > `node_ids` 解析；无目标或解析为空 → 400；`schedule_id` 请求使用调度远程条件，任务页请求只使用本地条件，且不修改 Task/Schedule。
+- Execution 响应包含可空 `schedule_id`、`schedule_revision` 与 `created_at`；调度触发的执行来源与 Schedule 一致。
 - `POST /api/users` 重复用户名：400 `username already exists`，响应体不含数据库层原文。
 - `/api/nodes/{id}` 存在性 oracle：`DELETE`/`POST`/`PUT` 对 operator/viewer 在存在/不存在 id 上均 403；admin 不存在 id → 404 `node not found`（无存储层原文）。
 - 成功响应结构、Content-Type、状态码。
@@ -560,31 +585,31 @@ Dashboard
 
 ### SYS-19 至 SYS-30：调度与条件
 
-- [ ] SYS-19 Cron、Interval、One-Time 均由正确 owner 触发。
+- [ ] SYS-19 Cron、Interval、One-Time、On-Start 均由正确 owner 触发；manual 不被 Hub 或 Agent 自动触发。
 - [ ] SYS-20 Agent-owned Schedule 不被 Hub 重复触发。
 - [ ] SYS-21 Hub-owned Schedule 不由 Agent 本地触发。
-- [ ] SYS-22 同一 Task+Node+Scheduled Time 重复触发只产生一条 Execution。
+- [ ] SYS-22 同一 Task+Node+Scheduled Time 重复触发只产生一条 Execution；Schedule ID 不参与 Key。
 - [ ] SYS-23 Misfire `skip` 不补跑，`run_once` 只补跑一次。
 - [ ] SYS-24 Timezone/DST 边界。
-- [ ] SYS-25 Local Condition 的全部 metric/operator。
-- [ ] SYS-26 Condition AND、多层结构和错误结构。
-- [ ] SYS-27 Remote online 满足/不满足。
-- [ ] SYS-28 Remote last_execution 成功/失败/不存在。
+- [ ] SYS-25 Task 本地条件全部 metric/operator；Task 写入 remote 返回 400。
+- [ ] SYS-26 本地 AND、远程 AND、混合条件拆分迁移；混合条件直接写入被拒绝。
+- [ ] SYS-27 Schedule remote online 满足/不满足；Schedule 写入 local 返回 400。
+- [ ] SYS-28 Schedule remote last_execution 成功/失败/不存在。
 - [ ] SYS-29 Remote State 未过期、未观察：UNKNOWN → BLOCKED（TTL 过期维度不可构造：当前协议无 Agent 主动上报路径）。
-- [ ] SYS-30 Condition 不满足记录 SKIPPED，不能误执行。
+- [ ] SYS-30 Condition 不满足记录 SKIPPED，不能误执行；任务页试运行不评估远程条件。
 
 ### SYS-31 至 SYS-40：执行与日志
 
-- [ ] SYS-31 Manual Execution UUID 幂等。
-- [ ] SYS-32 Scheduled Execution Key 幂等。
-- [ ] SYS-33 Execution 开始前先写 Journal。
+- [ ] SYS-31 Manual Execution UUID 幂等，`schedule_id` 为空、`schedule_revision` 为 0。
+- [ ] SYS-32 Scheduled Execution Key 幂等，来源 `schedule_id`/`schedule_revision` 正确写入。
+- [ ] SYS-33 Execution 开始前先写 Journal，Journal 记录 `created_at`、可空 `schedule_id` 与 `schedule_revision`。
 - [ ] SYS-34 stdout/stderr 分片、顺序、stream 标记。
 - [ ] SYS-35 Hub 断开时本地日志仍完整。
-- [ ] SYS-36 Hub 恢复后日志和 Execution 幂等上传。
+- [ ] SYS-36 Hub 恢复后日志和 Execution 幂等上传，已有 `schedule_id` 不被空上报覆盖。
 - [ ] SYS-37 最大 stdout/stderr/total log 截断并标记。
-- [ ] SYS-38 Timeout 发送 SIGTERM，再按 Grace Period SIGKILL。
+- [ ] SYS-38 按 Schedule.Timeout 或 Manual Run 请求 Timeout 发送 SIGTERM，再按 Grace Period SIGKILL。
 - [ ] SYS-39 Cancel 清理整个进程组，不残留子进程。
-- [ ] SYS-40 Retry 次数、间隔、最终状态、每次 attempt 双流日志 + 1 条 execute 审计（审计粒度=逻辑触发，attempt 细节只在日志）。
+- [ ] SYS-40 按 Schedule.Retry 或 Manual Run 请求 Retry 验证次数、间隔、最终状态、每次 attempt 双流日志 + 1 条 execute 审计（审计粒度=逻辑触发，attempt 细节只在日志）。
 
 ## 11. Artifact、Application、systemd 测试
 
@@ -626,6 +651,13 @@ Dashboard
 - [ ] SYS-66 Hub 重启、Agent 重连、目标离线后状态和文件不产生半成品。
 - [ ] SYS-67 服务端自传拒绝：`POST /api/transfers` 目标=源整批 400 `self transfer is not allowed`，零落库（前端裁剪不作为服务端保证）。
 
+### SYS-68 至 SYS-71：模型迁移与协议兼容
+
+- [ ] SYS-68 旧 Task 的 `target`/`timeout`/`retry`/`run_user`/`offline_policy` 复制到其全部 Schedule，迁移后 Schedule 目标与策略正确。
+- [ ] SYS-69 有 Target 但无 Schedule 的旧 Task 生成一条禁用的 `manual` 迁移调度，名称 `迁移：<task name>`，保留原目标与策略；自动调度器不触发。
+- [ ] SYS-70 历史 Execution 的 `schedule_id` 为空，`created_at` 按可用时间回填；迁移后执行记录数量和状态不变。
+- [ ] SYS-71 旧协议版本 Agent 连接新 Hub 被拒绝并给出明确错误；旧 Hub 不识别新 Agent；协同升级后 agent-owned 调度正常触发。
+
 ## 13. 测试证据与缺陷记录
 
 每条失败必须记录：
@@ -658,8 +690,8 @@ Agent 本地 DB/Journal
 1. 记录 Git 工作区、Hub/Agent/VM 基线。
 2. 执行公共认证、布局、DataTable 和权限可见性。
 3. 创建节点、标签、分组。
-4. 创建 Script、Revision、Task。
-5. 执行 Manual Run、Schedule、Condition、Logs、Audit。
+4. 创建 Script、Revision、任务定义。
+5. 创建调度计划（目标 + 策略）或试运行，执行 Manual Run、Condition、Logs、Audit。
 6. 上传 Artifact，创建 Application，分配节点，执行部署和回滚。
 7. 执行 File Relay 多目标、重试、取消和恢复。
 8. 执行 Native/Docker/Host Integration 系统测试。
@@ -672,7 +704,9 @@ Agent 本地 DB/Journal
 - 所有纳入当前版本的页面用例均有真实结果。
 - 所有核心联动和 E2E 用例均有客户机实际效果证据。
 - P0/P1 缺陷为 0。
-- 关键不变量全部满足：Desired State 唯一权威、三层同步、Revision 原子性、Execution 幂等、Journal 先写、Fail Closed、Artifact 校验、可恢复部署、systemd 边界、Docker 持久化。
+- 关键不变量全部满足：Desired State 唯一权威、三层同步、Revision 原子性、Execution 幂等（Key 不含 Schedule ID）、Journal 先写、Fail Closed、Artifact 校验、可恢复部署、systemd 边界、Docker 持久化。
+- Task/Schedule 新模型一致：Task 无目标与策略，Schedule 是任务+节点+策略唯一绑定入口，Desired State 按 `Schedule.Target` 计算。
+- 旧数据迁移、Manual Run 临时目标、执行过程/来源展示和 Hub/Agent 协议协同升级均有真实验证结果。
 - 任何 `⛔/SKIP` 都有明确原因、影响和补测条件。
 - 测试报告不得把计划项或自动化脚本通过当作真实功能通过。
 - 代码、文档、测试结果和当前部署版本一致。

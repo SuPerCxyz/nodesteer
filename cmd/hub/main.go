@@ -41,6 +41,7 @@ type Config struct {
 	ChangelogWindow      int64           `yaml:"changelog_window"`
 	HeartbeatTimeout     time.Duration   `yaml:"heartbeat_timeout"`
 	MaxFileTransferBytes int64           `yaml:"max_file_transfer_bytes"`
+	DevNoAuth            bool            `yaml:"dev_no_auth"`
 	OIDC                 auth.OIDCConfig `yaml:"oidc"`
 }
 
@@ -107,6 +108,9 @@ func main() {
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
+	if cfg.DevNoAuth {
+		logger.Warn("DEV NO AUTH ENABLED: all API requests are treated as administrator; use only for local testing")
+	}
 	bundledAgentPayloads, err := agentbundle.LoadExecutable()
 	if err != nil {
 		logger.Warn("load bundled agent payloads failed", "error", err)
@@ -138,6 +142,7 @@ func main() {
 		RevisionCheckSec:     cfg.RevisionCheckSec,
 		ChangelogWindow:      cfg.ChangelogWindow,
 		MaxFileTransferBytes: cfg.MaxFileTransferBytes,
+		DevNoAuth:            cfg.DevNoAuth,
 		OIDC:                 cfg.OIDC,
 	}, logger)
 	if err != nil {
@@ -229,6 +234,13 @@ func applyEnv(cfg *Config) error {
 	}
 	if v := os.Getenv("NODESTEER_ADMIN_PASSWORD"); v != "" {
 		cfg.AdminPassword = v
+	}
+	if v, ok := os.LookupEnv("NODESTEER_DEV_NO_AUTH"); ok && v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return fmt.Errorf("invalid NODESTEER_DEV_NO_AUTH %q: want true or false", v)
+		}
+		cfg.DevNoAuth = b
 	}
 	if v := os.Getenv("NODESTEER_OIDC_ISSUER"); v != "" {
 		cfg.OIDC.Issuer = v

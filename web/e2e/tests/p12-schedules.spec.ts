@@ -1,5 +1,5 @@
 import { test, expect } from 'playwright/test'
-import { apiRequest, captureCreated, cleanupByIds, createIsolatedTask, loginViaApi, TEST_URLS } from './fixtures'
+import { apiRequest, captureCreated, cleanupByIds, createIsolatedTask, getNodeIds, loginViaApi, TEST_URLS } from './fixtures'
 
 test.describe('P12 调度列表', () => {
   test('P12-01 列表渲染', async ({ page }) => {
@@ -11,11 +11,16 @@ test.describe('P12 调度列表', () => {
   test('P12-04 本轮调度启用/禁用', async ({ page }) => {
     await loginViaApi(page)
     const task = await createIsolatedTask(page, 'p1204')
+    const nodeIds = await getNodeIds(page)
     let id: string | undefined
     try {
       const created = await apiRequest(page, '/api/schedules', { method: 'POST', data: {
+        name: 'p1204-schedule',
         task_id: task.id, type: 'cron', expression: '0 0 1 1 *', timezone: 'UTC',
-        execution_owner: 'agent', offline_policy: 'allow_offline', misfire_policy: 'skip', enabled: false,
+        execution_owner: 'agent',
+        target: { type: 'node', node_ids: [nodeIds[0]] },
+        timeout: 30, retry: 0,
+        offline_policy: 'allow_offline', misfire_policy: 'skip', enabled: false,
       } })
       expect(created.ok).toBeTruthy()
       id = (created.body as { id: string }).id
@@ -39,11 +44,15 @@ test.describe('P13 调度编辑器', () => {
   test('P13-01 UI新建cron调度', async ({ page }) => {
     await loginViaApi(page)
     const task = await createIsolatedTask(page, 'p1301')
+    const nodeIds = await getNodeIds(page)
+    const nodes = (await apiRequest(page, '/api/nodes')).body as { id: string; hostname: string }[]
+    const node = nodes.find((item) => item.id === nodeIds[0])!
     let id: string | undefined
     try {
       await page.goto('/schedules/new')
-      await page.getByRole('combobox', { name: /^任务$|^task$/i }).click()
+      await page.getByRole('combobox', { name: /^任务定义$|^task definition$/i }).click()
       await page.getByRole('option', { name: task.name, exact: true }).click()
+      await page.locator('label').filter({ hasText: node.hostname }).getByRole('checkbox').check()
       await page.getByRole('textbox', { name: /cron 表达式|cron expression/i }).fill('0 0 1 1 *')
       id = await captureCreated(page, '/api/schedules', () => page.getByRole('button', { name: /^保存$|^save$/i }).click())
       await page.waitForURL(/\/schedules$/)

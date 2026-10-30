@@ -31,13 +31,20 @@ Hub 是 Desired State 的唯一权威源；Agent 主动连接 Hub，缓存已同
 
 ## 核心能力
 
-- **Hub 控制平面**：Web 管理、REST API、节点/分组/标签、脚本、任务、调度、发布包、托管应用、执行记录、日志、RBAC 和审计。
+- **Hub 控制平面**：Web 管理、REST API、节点/分组/标签、脚本、任务定义、调度计划、发布包、托管应用、执行记录、日志、RBAC 和审计。
+- **任务定义 / 调度计划 / 执行记录**：任务定义只描述执行内容并可复用；调度计划绑定任务、节点目标（节点/分组/标签）与执行策略；执行记录展示来源调度、执行过程时间线与结果摘要。
 - **Agent 执行平面**：主动连接、注册认证、Heartbeat、Inventory、脚本/命令执行、Local Scheduler、离线执行、Execution Journal 和 Health Check。
-- **可靠同步**：长连接实时通知、Revision 周期校验、Reconnect Reconciliation 和 Tombstone 删除同步。
+- **可靠同步**：长连接实时通知、Revision 周期校验、Reconnect Reconciliation 和 Tombstone 删除同步；Desired State 按调度计划的目标计算。
 - **可靠执行**：Execution 幂等、执行前 Journal 持久化、实时/离线日志和断线后的结果回传。
 - **应用交付**：Artifact SHA256 校验、缓存、Prefetch、Managed Application、systemd 生命周期和基础回滚。
 - **多种部署方式**：Native Agent、Docker Agent、Docker Host Integration、Docker Compose。
 - **文件中继**：将源 Agent 文件经 Hub 校验后转发到一个或多个目标节点。
+
+运行模型：
+
+- 任务定义（Task）：命令、脚本或应用操作，包含参数、本地条件、启用状态与修订号，不绑定目标节点。
+- 调度计划（Schedule）：任务 + 目标（节点/分组/标签）+ 触发器 + Timeout/Retry/Run User/Offline Policy + 远程条件的唯一绑定入口；`manual` 类型只支持手动执行。
+- 执行记录（Execution）：Manual Run 或调度触发产生，记录来源调度、创建/开始/结束时间、状态、日志与结果。
 
 ## 架构
 
@@ -102,6 +109,14 @@ cp packaging/systemd/hub.yaml.example /etc/nodesteer/hub.yaml
 
 访问 http://localhost:8080 打开 Web UI。Agent Gateway 默认监听 :8443；单入口模式下 `gateway_addr` 与 `web_addr` 设为相同地址（如均用 `:8080`）即可同端口服务。
 
+### 本地测试免登录（仅供测试）
+
+```bash
+NODESTEER_DEV_NO_AUTH=true ./bin/nodesteer-hub --config /etc/nodesteer/hub.yaml
+```
+
+开启后所有 API 请求按管理员放行，Web UI 自动跳过登录并显示「免登录测试模式」横幅。该模式默认关闭，**不得用于生产或公网环境**；同网段任何人都能操作 Hub。删除该环境变量并重启 Hub 即可恢复登录。
+
 ### 3. 部署 Native Agent
 
 ```bash
@@ -123,6 +138,8 @@ docker compose up -d --build
 ```
 
 Compose 默认同时提供 Hub 和一个 Docker Agent。Agent 数据保存在 agent-data 卷，Hub 数据和发布包保存在 hub-data 卷。**环境变量全表、OIDC 配置与故障恢复、升级备份见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。**
+
+包含 Task/Schedule 模型重构的版本会同时提升 Hub-Agent 协议版本，Hub 与 Agent 必须协同升级。升级前备份 Hub 与 Agent 数据，按「停服 → 升级 Hub → 升级 Agent → 启动验证」顺序执行；回滚需要恢复 Hub DB 备份，旧 Hub 不支持直接读取新库。详见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) 第 5 节。
 
 纳管命令、Agent WebSocket 与文件传输地址取 `HUB_GATEWAY_BASE_URL`（**反代部署必填**，通常与 `HUB_BASE_URL` 同值；仅直连暴露且对外端口=容器端口时可留空）。节点页面可以生成 Native、docker run 和 Docker Compose 纳管命令，并携带节点身份和 Registration Token；节点地址支持 IPv4、IPv6 或 DNS 主机名。
 

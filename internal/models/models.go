@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"fmt"
+	"strings"
+	"time"
+)
 
 // Revision 相关常量
 const (
@@ -175,12 +179,11 @@ type Parameter struct {
 	Description string `json:"description,omitempty"`
 }
 
-// Task 任务
+// Task 任务定义：只描述“执行什么”，目标与执行策略由 Schedule 持有。
 type Task struct {
 	ID            string            `json:"id"`
 	Name          string            `json:"name"`
 	Type          string            `json:"type"` // command | script | app_deploy | app_operation
-	Target        Target            `json:"target"`
 	Parameters    []Parameter       `json:"parameters"`
 	ParamValues   map[string]string `json:"param_values"`
 	ScriptID      string            `json:"script_id,omitempty"`
@@ -188,11 +191,6 @@ type Task struct {
 	ApplicationID string            `json:"application_id,omitempty"`
 	AppOperation  string            `json:"app_operation,omitempty"` // start | stop | restart | upgrade
 	Condition     *Condition        `json:"condition,omitempty"`
-	Schedule      *Schedule         `json:"schedule,omitempty"`
-	Timeout       int               `json:"timeout"`
-	Retry         int               `json:"retry"`
-	OfflinePolicy string            `json:"offline_policy"` // hub_online_required | allow_offline
-	RunUser       string            `json:"run_user,omitempty"`
 	Enabled       bool              `json:"enabled"`
 	Revision      int64             `json:"revision"`
 	UpdatedAt     time.Time         `json:"updated_at"`
@@ -230,22 +228,28 @@ type Target struct {
 	LabelValue string   `json:"label_value,omitempty"`
 }
 
-// Schedule 调度
+// Schedule 调度：任务与节点绑定及执行策略的唯一来源。
 type Schedule struct {
-	ID             string    `json:"id"`
-	TaskID         string    `json:"task_id"`
-	Revision       int64     `json:"revision"`
-	Type           string    `json:"type"` // cron | interval | one_time | on_start
-	Expression     string    `json:"expression"`
-	IntervalSec    int64     `json:"interval_sec,omitempty"`
-	RunAt          time.Time `json:"run_at,omitempty"`
-	Timezone       string    `json:"timezone"`
-	ExecutionOwner string    `json:"execution_owner"` // hub | agent
-	OfflinePolicy  string    `json:"offline_policy"`
-	MisfirePolicy  string    `json:"misfire_policy"` // skip | run_once
-	Enabled        bool      `json:"enabled"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID             string     `json:"id"`
+	TaskID         string     `json:"task_id"`
+	Name           string     `json:"name"`
+	Revision       int64      `json:"revision"`
+	Target         Target     `json:"target"`
+	Condition      *Condition `json:"condition,omitempty"`
+	Type           string     `json:"type"` // cron | interval | one_time | on_start | manual
+	Timeout        int        `json:"timeout"`
+	Retry          int        `json:"retry"`
+	RunUser        string     `json:"run_user,omitempty"`
+	Expression     string     `json:"expression"`
+	IntervalSec    int64      `json:"interval_sec,omitempty"`
+	RunAt          time.Time  `json:"run_at,omitempty"`
+	Timezone       string     `json:"timezone"`
+	ExecutionOwner string     `json:"execution_owner"` // hub | agent
+	OfflinePolicy  string     `json:"offline_policy"`
+	MisfirePolicy  string     `json:"misfire_policy"` // skip | run_once
+	Enabled        bool       `json:"enabled"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
 }
 
 // 调度类型与策略
@@ -256,6 +260,9 @@ const (
 	// ScheduleTypeOnStart 目标节点上的 agent 进程每次启动后触发一次
 	// （重启再触发，仅网络重连不触发；无任何触发时间字段，由 Agent 启动路径触发）。
 	ScheduleTypeOnStart = "on_start"
+	// ScheduleTypeManual 仅手动触发：Hub 与 Agent 调度器都不会自动触发，
+	// 只承载任务、目标与执行策略。
+	ScheduleTypeManual = "manual"
 
 	ExecutionOwnerHub   = "hub"
 	ExecutionOwnerAgent = "agent"
@@ -263,6 +270,55 @@ const (
 	MisfirePolicySkip    = "skip"
 	MisfirePolicyRunOnce = "run_once"
 )
+
+// ScheduleTriggerSummary 返回调度触发器的可读摘要，用于自动生成调度名称。
+func ScheduleTriggerSummary(s *Schedule) string {
+	if s == nil {
+		return ""
+	}
+	switch s.Type {
+	case ScheduleTypeCron:
+		return "cron " + strings.TrimSpace(s.Expression)
+	case ScheduleTypeInterval:
+		return fmt.Sprintf("每 %d 秒", s.IntervalSec)
+	case ScheduleTypeOneTime:
+		if s.RunAt.IsZero() {
+			return "一次性"
+		}
+		return "一次性 " + s.RunAt.Format("2006-01-02 15:04")
+	case ScheduleTypeOnStart:
+		return "启动时"
+	case ScheduleTypeManual:
+		return "仅手动"
+	default:
+		return s.Type
+	}
+}
+
+// ScheduleDisplayName 生成可读的调度名称：任务名 + 触发器摘要。
+func ScheduleDisplayName(taskName string, s *Schedule) string {
+	summary := ScheduleTriggerSummary(s)
+	taskName = strings.TrimSpace(taskName)
+	if taskName == "" {
+		return summary
+	}
+	if summary == "" {
+		return taskName
+	}
+	return taskName + " - " + summary
+}
+
+// MergeConditions 合并任务本地条件与调度远程条件。
+// 本地条件在前、远程条件在后，保持 Agent 先评估本地、再评估远程的语义。
+func MergeConditions(local, remote *Condition) *Condition {
+	if local == nil {
+		return remote
+	}
+	if remote == nil {
+		return local
+	}
+	return &Condition{Type: "and", And: []Condition{*local, *remote}}
+}
 
 // Condition 条件
 type Condition struct {
@@ -292,17 +348,20 @@ type RemoteCondition struct {
 
 // Execution 执行
 type Execution struct {
-	ID             string    `json:"id"`
-	TaskID         string    `json:"task_id"`
-	TaskRevision   int64     `json:"task_revision"`
-	ScriptID       string    `json:"script_id,omitempty"`
-	ScriptRevision int64     `json:"script_revision,omitempty"`
-	NodeID         string    `json:"node_id"`
-	TriggerType    string    `json:"trigger_type"` // manual | schedule
-	ScheduledTime  time.Time `json:"scheduled_time,omitempty"`
-	StartTime      time.Time `json:"start_time,omitempty"`
-	EndTime        time.Time `json:"end_time,omitempty"`
-	Status         string    `json:"status"`
+	ID               string    `json:"id"`
+	TaskID           string    `json:"task_id"`
+	TaskRevision     int64     `json:"task_revision"`
+	ScriptID         string    `json:"script_id,omitempty"`
+	ScriptRevision   int64     `json:"script_revision,omitempty"`
+	NodeID           string    `json:"node_id"`
+	ScheduleID       string    `json:"schedule_id,omitempty"`
+	ScheduleRevision int64     `json:"schedule_revision,omitempty"`
+	TriggerType      string    `json:"trigger_type"` // manual | schedule
+	ScheduledTime    time.Time `json:"scheduled_time,omitempty"`
+	CreatedAt        time.Time `json:"created_at"`
+	StartTime        time.Time `json:"start_time,omitempty"`
+	EndTime          time.Time `json:"end_time,omitempty"`
+	Status           string    `json:"status"`
 	// ExitCode 为可空退出码：只有真正执行过进程的终态才带值（合法 0 必须能序列化），
 	// 未执行/未知状态为 nil，JSON 省略该字段（缺陷 OBS-20261008-EXECUTION-ZERO-EXIT-CODE）。
 	ExitCode        *int   `json:"exit_code,omitempty"`

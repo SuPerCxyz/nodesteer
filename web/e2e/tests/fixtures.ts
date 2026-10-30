@@ -195,8 +195,7 @@ export async function createIsolatedTask(page: Page, label: string) {
   if (!nodeIds.length) throw new Error('No authorized Agent is present')
   const result = await apiRequest(page, '/api/tasks', { method: 'POST', data: {
     name: testName(label), type: 'command', command: 'echo isolated-e2e',
-    target: { type: 'node', node_ids: [nodeIds[0]] },
-    enabled: true, timeout: 30, retry: 0, offline_policy: 'hub_online_required',
+    enabled: true,
   } })
   if (!result.ok) throw new Error(`Create isolated task: HTTP ${result.status}`)
   return result.body as { id: string; name: string }

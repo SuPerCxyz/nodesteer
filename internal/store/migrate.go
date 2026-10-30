@@ -25,6 +25,8 @@ var migrations = []migration{
 	{7, "execution_sync_state", schemaV7},
 	{8, "file_transfers", schemaV8},
 	{9, "user_avatar_url", schemaV9},
+	{10, "execution_schedule_created_at", schemaV10},
+	{11, "execution_schedule_revision", schemaV11},
 }
 
 // Migrate 应用所有未执行的迁移
@@ -75,6 +77,13 @@ func Migrate(db *sql.DB) error {
 		if err := tx.Commit(); err != nil {
 			return err
 		}
+	}
+	// 数据迁移在 schema 迁移之后执行；失败必须阻止 Hub 继续启动。
+	if err := migrateTaskScheduleModel(db); err != nil {
+		return fmt.Errorf("migrate task/schedule model: %w", err)
+	}
+	if err := migrateConditionSplitModel(db); err != nil {
+		return fmt.Errorf("migrate condition ownership: %w", err)
 	}
 	return nil
 }
@@ -380,6 +389,19 @@ CREATE INDEX IF NOT EXISTS idx_file_transfer_targets_node ON file_transfer_targe
 // 既有行自动回填空串，无数据回填负担。
 const schemaV9 = `
 ALTER TABLE users ADD COLUMN avatar_url TEXT NOT NULL DEFAULT '';
+`
+
+// schemaV10 Execution 记录来源调度与创建时间。created_at 自 v1 已存在，这里只回填空值；
+// 历史记录无法反查来源调度，schedule_id 保持空串。
+const schemaV10 = `
+ALTER TABLE executions ADD COLUMN schedule_id TEXT NOT NULL DEFAULT '';
+UPDATE executions SET created_at = COALESCE(NULLIF(start_time,''), NULLIF(scheduled_time,''), NULLIF(end_time,''), datetime('now')) WHERE created_at = '';
+CREATE INDEX IF NOT EXISTS idx_executions_schedule_id ON executions(schedule_id) WHERE schedule_id != '';
+`
+
+// schemaV11 Execution 记录触发时的 Schedule Revision，用于追溯远程条件/策略版本。
+const schemaV11 = `
+ALTER TABLE executions ADD COLUMN schedule_revision INTEGER NOT NULL DEFAULT 0;
 `
 
 var _ = context.Background

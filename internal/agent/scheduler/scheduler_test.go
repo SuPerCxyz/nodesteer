@@ -53,6 +53,36 @@ func TestOnStartNotTickedByLocalScheduler(t *testing.T) {
 	}
 }
 
+// TestManualNotTickedByLocalScheduler manual 仅手动执行：nextRun 永远未到期，
+// checkDue 不会把它交给 executor。
+func TestManualNotTickedByLocalScheduler(t *testing.T) {
+	exec := &mockExecutor{}
+	s := New(exec, nil)
+	now := time.Date(2026, 1, 1, 10, 0, 0, 0, time.UTC)
+	sch := &models.Schedule{
+		ID:             "s-manual",
+		TaskID:         "t1",
+		Type:           models.ScheduleTypeManual,
+		Timezone:       "UTC",
+		ExecutionOwner: models.ExecutionOwnerAgent,
+		Enabled:        true,
+		CreatedAt:      now.Add(-time.Hour),
+	}
+
+	if next, due, err := s.nextRun(sch, now); err != nil || due || !next.IsZero() {
+		t.Fatalf("manual must be explicitly not-due without error: next=%v due=%v err=%v", next, due, err)
+	}
+
+	s.UpdateSchedules([]*models.Schedule{sch})
+	s.checkDue(context.Background(), now)
+	exec.mu.Lock()
+	n := len(exec.triggers)
+	exec.mu.Unlock()
+	if n != 0 {
+		t.Fatalf("manual must not be ticked by local scheduler, got %d triggers", n)
+	}
+}
+
 // TestIntervalSkipLateSync 验证：interval+SKIP 且调度创建很久后才被加载（晚同步），
 // 不会因 anchor 停留在过去而永不触发；加载后应能按周期正常触发。
 func TestIntervalSkipLateSync(t *testing.T) {

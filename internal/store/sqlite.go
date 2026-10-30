@@ -179,6 +179,11 @@ func parseTime(s string) time.Time {
 	}
 	t, err := time.Parse(time.RFC3339Nano, s)
 	if err != nil {
+		// 迁移回填使用 SQLite datetime('now')（"2006-01-02 15:04:05"），
+		// 这里兼容读取，避免历史执行 created_at 被解析为零值。
+		if t2, err2 := time.Parse("2006-01-02 15:04:05", s); err2 == nil {
+			return t2.UTC()
+		}
 		return time.Time{}
 	}
 	return t

@@ -55,12 +55,21 @@ describe('ScheduleEditor 保存前实时校验（OBS-20261014-SCHEDULE-INTERVAL-
     window.history.replaceState({}, '', '/schedules/new')
     get.mockImplementation(async (path: string) => {
       if (path === '/tasks') return [{ id: 'task-1', name: '部署任务' }]
+      if (path === '/nodes')
+        return [{ id: 'node-1', hostname: 'node-a', status: 'online' }]
+      if (path === '/groups') return []
       return []
     })
   })
 
+  async function selectNodeTarget(
+    page: Awaited<ReturnType<typeof renderEditor>>
+  ) {
+    await userEvent.click(page.getByRole('checkbox', { name: /node-a/ }))
+  }
+
   async function selectType(page: Awaited<ReturnType<typeof renderEditor>>, label: string) {
-    await userEvent.click(page.getByRole('combobox', { name: '类型' }))
+    await userEvent.click(page.getByRole('combobox', { name: i18n.t('schedules.triggerType') }))
     await userEvent.click(page.getByRole('option', { name: label }))
   }
 
@@ -85,6 +94,7 @@ describe('ScheduleEditor 保存前实时校验（OBS-20261014-SCHEDULE-INTERVAL-
 
   it('间隔恢复合法值时错误消失、保存可用', async () => {
     const page = await renderEditor()
+    await selectNodeTarget(page)
     await selectType(page, '间隔')
 
     const interval = page.getByRole('spinbutton', {

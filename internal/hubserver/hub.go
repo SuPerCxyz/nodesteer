@@ -41,7 +41,9 @@ type Config struct {
 	RevisionCheckSec     int
 	ChangelogWindow      int64
 	MaxFileTransferBytes int64
-	OIDC                 auth.OIDCConfig
+	// DevNoAuth 仅本地测试使用：所有 API 请求按管理员放行。默认 false。
+	DevNoAuth bool
+	OIDC      auth.OIDCConfig
 }
 
 // Hub 主结构
@@ -151,6 +153,7 @@ func New(cfg Config, logger *slog.Logger) (*Hub, error) {
 	gateway.SetOnAgentConn(func(nodeID string) { transfers.ResumeNode(context.Background(), nodeID) })
 
 	apiServer := api.New(st, authMgr, nodes, scripts, tasks, schedules, artifacts, apps, execMgr, logger)
+	apiServer.SetDevNoAuth(cfg.DevNoAuth)
 	apiServer.SetFileTransfers(transfers)
 	apiServer.SetEnrollmentConfig(cfg.RegistrationToken, gatewayBaseURL)
 	apiServer.SetBaseURL(cfg.BaseURL)

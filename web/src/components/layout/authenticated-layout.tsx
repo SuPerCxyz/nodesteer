@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { sessionToUser, useAuthStore } from '@/stores/auth-store'
 import { api, ApiError, type SessionInfo } from '@/lib/api'
 import { getCookie } from '@/lib/cookies'
@@ -17,6 +18,7 @@ type AuthenticatedLayoutProps = {
 }
 
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
+  const { t } = useTranslation()
   const defaultOpen = getCookie('sidebar_state') !== 'false'
   const navigate = useNavigate()
   const location = useLocation()
@@ -26,9 +28,46 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const [checking, setChecking] = useState(true)
   const [checkError, setCheckError] = useState<Error | null>(null)
   const [retry, setRetry] = useState(0)
+  const [authModeReady, setAuthModeReady] = useState(Boolean(accessToken))
+  const [devNoAuth, setDevNoAuth] = useState(false)
   const redirecting = useRef(false)
 
+  // 本地测试免登录：无 token 时先探测 /auth-mode，避免被直接重定向到登录页。
   useEffect(() => {
+    if (authModeReady) return
+    let mounted = true
+    api
+      .get<{ dev_no_auth: boolean }>('/auth-mode')
+      .then((mode) => {
+        if (!mounted) return
+        if (mode.dev_no_auth) {
+          setDevNoAuth(true)
+          useAuthStore.getState().auth.setAccessToken('dev-no-auth')
+        } else {
+          void navigate({
+            to: '/sign-in',
+            search: { redirect: currentPath() },
+            replace: true,
+          })
+        }
+        setAuthModeReady(true)
+      })
+      .catch(() => {
+        if (!mounted) return
+        void navigate({
+          to: '/sign-in',
+          search: { redirect: currentPath() },
+          replace: true,
+        })
+        setAuthModeReady(true)
+      })
+    return () => {
+      mounted = false
+    }
+  }, [authModeReady, navigate])
+
+  useEffect(() => {
+    if (!authModeReady) return
     let mounted = true
     const redirectToSignIn = () => {
       if (redirecting.current) return
@@ -80,6 +119,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     }
   }, [
     accessToken,
+    authModeReady,
     location.pathname,
     location.search,
     location.hash,
@@ -113,8 +153,17 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   }
 
   return (
-    <LayoutProvider>
-      <SidebarProvider defaultOpen={defaultOpen}>
+    <>
+      {devNoAuth ? (
+        <div
+          className='bg-destructive px-4 py-1.5 text-center text-xs font-medium text-destructive-foreground'
+          role='status'
+        >
+          {t('auth.devNoAuth')}
+        </div>
+      ) : null}
+      <LayoutProvider>
+        <SidebarProvider defaultOpen={defaultOpen}>
         <SkipToMain />
         <AppSidebar />
         <SidebarInset
@@ -136,7 +185,8 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
         >
           {children ?? <Outlet />}
         </SidebarInset>
-      </SidebarProvider>
-    </LayoutProvider>
+        </SidebarProvider>
+      </LayoutProvider>
+    </>
   )
 }

@@ -19,7 +19,12 @@ import {
   type Target,
 } from '@/lib/api'
 import { useCanRun, useCanWrite } from '@/lib/permissions'
-import { statusLabel } from '@/lib/status-labels'
+import { scheduleDisplayName, scheduleTriggerText } from '@/lib/schedules'
+import {
+  isTargetComplete,
+  normalizeTarget,
+  targetSummary,
+} from '@/lib/targets'
 import {
   appDeployOperations,
   appOperations,
@@ -38,7 +43,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
 import {
   Table,
   TableBody,
@@ -53,6 +57,11 @@ import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import { DataTable } from '@/features/shared/data-table'
 import {
+  ScheduleStrategyFields,
+  type ExecutionStrategy,
+} from '@/features/shared/schedule-strategy-fields'
+import { TargetEditor } from '@/features/shared/target-editor'
+import {
   DetailField,
   DetailGrid,
   DangerMenuItem,
@@ -62,20 +71,12 @@ import {
   LoadingState,
   MoreMenu,
   SectionCard,
+  SectionFull,
+  SectionGrid,
   StatusBadge,
   TableCard,
   TimeValue,
 } from '@/features/shared/ui'
-
-function targetText(task: Task, translate: (key: string) => string) {
-  if (task.target.type === 'node')
-    return `${task.target.node_ids?.length || 0} ${translate('tasks.nodes')}`
-  if (task.target.type === 'group')
-    return `${task.target.group_ids?.length || 0} ${translate('tasks.groups')}`
-  return task.target.label_key
-    ? `${task.target.label_key}=${task.target.label_value || ''}`
-    : task.target.type
-}
 
 /** 条件项的可读文本；AND 组按 AND 连接（缺陷 OBS-20261016-G5-AND-CONDITION-NO-SUMMARY-NO-CLEAR） */
 function conditionItemText(
@@ -103,55 +104,6 @@ function conditionSummaryText(
   return items.map((item) => conditionItemText(item, nodeName)).join(' AND ')
 }
 
-function TargetDetails({
-  target,
-  nodes,
-  groups,
-}: {
-  target: Target
-  nodes: Node[]
-  groups: Group[]
-}) {
-  const { t } = useTranslation()
-  const nodeNames = new Map(nodes.map((node) => [node.id, node.hostname]))
-  const groupNames = new Map(groups.map((group) => [group.id, group.name]))
-  return (
-    <DetailGrid className='sm:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3'>
-      <DetailField label={t('tasks.targetType')}>
-        {t(`tasks.targetTypes.${target.type}`, {
-          defaultValue: target.type,
-        })}
-      </DetailField>
-      {target.node_ids?.length ? (
-        <DetailField label={t('tasks.nodes')}>
-          {target.node_ids
-            .map((id) => nodeNames.get(id) || t('common.unknownNode'))
-            .join(', ')}
-        </DetailField>
-      ) : null}
-      {target.group_ids?.length ? (
-        <DetailField label={t('tasks.groups')}>
-          {target.group_ids
-            .map((id) => groupNames.get(id) || t('common.noData'))
-            .join(', ')}
-        </DetailField>
-      ) : null}
-      {target.label_key ? (
-        <>
-          <DetailField label={t('tasks.labelKey')}>
-            <span className='font-mono text-xs'>{target.label_key}</span>
-          </DetailField>
-          <DetailField label={t('tasks.labelValue')}>
-            <span className='font-mono text-xs'>
-              {target.label_value || '-'}
-            </span>
-          </DetailField>
-        </>
-      ) : null}
-    </DetailGrid>
-  )
-}
-
 export function Tasks() {
   const { t } = useTranslation()
   const client = useQueryClient()
@@ -161,6 +113,17 @@ export function Tasks() {
     queryKey: ['tasks'],
     queryFn: () => api.get<Task[]>('/tasks'),
   })
+  const schedules = useQuery({
+    queryKey: ['schedules'],
+    queryFn: () => api.get<Schedule[]>('/schedules'),
+  })
+  const scheduleCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const schedule of schedules.data || []) {
+      counts.set(schedule.task_id, (counts.get(schedule.task_id) || 0) + 1)
+    }
+    return counts
+  }, [schedules.data])
   const { mutate: toggleTask } = useMutation({
     mutationFn: (task: Task) =>
       api.put<Task>(
@@ -213,40 +176,19 @@ export function Tasks() {
         ),
       },
       {
-        id: 'target',
-        accessorFn: (row) => targetText(row, t),
-        header: t('tasks.target'),
-        size: 175,
-        minSize: 145,
+        id: 'schedules',
+        accessorFn: (row) => scheduleCounts.get(row.id) || 0,
+        header: t('tasks.relatedSchedules'),
+        size: 110,
+        minSize: 96,
         cell: ({ row }) => (
-          <span
-            className='block truncate text-sm'
-            title={targetText(row.original, t)}
+          <a
+            href={`/tasks/${row.original.id}`}
+            className='font-mono text-xs hover:underline'
+            title={t('tasks.schedules')}
           >
-            {targetText(row.original, t)}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'timeout',
-        header: t('scripts.timeout'),
-        size: 80,
-        minSize: 76,
-        cell: ({ row }) => (
-          <span className='font-mono text-xs'>{row.original.timeout}s</span>
-        ),
-      },
-      {
-        accessorKey: 'offline_policy',
-        header: t('tasks.offlinePolicy'),
-        size: 165,
-        minSize: 145,
-        cell: ({ row }) => (
-          <span className='font-mono text-xs'>
-            {t(`tasks.offlinePolicies.${row.original.offline_policy}`, {
-              defaultValue: row.original.offline_policy,
-            })}
-          </span>
+            {scheduleCounts.get(row.original.id) || 0}
+          </a>
         ),
       },
       {
@@ -285,7 +227,7 @@ export function Tasks() {
         ),
       },
     ],
-    [canRun, canWrite, removeTask, t, toggleTask]
+    [canRun, canWrite, removeTask, scheduleCounts, t, toggleTask]
   )
 
   return (
@@ -315,7 +257,7 @@ export function Tasks() {
           />
         ) : (
           <Card>
-            <EmptyState message={t('common.noData')} />
+            <EmptyState message={t('tasks.noTasks')} />
           </Card>
         )}
       </Main>
@@ -410,27 +352,26 @@ export function TaskDetail() {
         </Button>
         <div className='flex flex-wrap items-center gap-3 text-xs text-muted-foreground'>
           <StatusBadge status={item.enabled ? 'enabled' : 'disabled'} />
-          <span>{targetText(item, t)}</span>
+          <span>{t(`tasks.types.${item.type}`, { defaultValue: item.type })}</span>
           <span className='font-mono'>r{item.revision}</span>
         </div>
+        <SectionGrid>
         <SectionCard title={t('tasks.overviewTab')}>
           <DetailGrid>
             <DetailField label={t('common.type')}>
               {t(`tasks.types.${item.type}`, { defaultValue: item.type })}
             </DetailField>
-            <DetailField label={t('tasks.target')}>
-              {targetText(item, t)}
+            <DetailField label={t('common.status')}>
+              <StatusBadge status={item.enabled ? 'enabled' : 'disabled'} />
             </DetailField>
-            <DetailField label={t('tasks.timeoutSec')}>
-              <span className='font-mono text-xs'>{item.timeout}s</span>
+            <DetailField label={t('tasks.revision')}>
+              <span className='font-mono text-xs'>r{item.revision}</span>
             </DetailField>
-            <DetailField label={t('tasks.retry')}>
-              <span className='font-mono text-xs'>{item.retry}</span>
+            <DetailField label={t('common.created')}>
+              <TimeValue value={item.created_at} absolute />
             </DetailField>
-            <DetailField label={t('tasks.offlinePolicy')}>
-              {t(`tasks.offlinePolicies.${item.offline_policy}`, {
-                defaultValue: item.offline_policy,
-              })}
+            <DetailField label={t('scripts.updated')}>
+              <TimeValue value={item.updated_at} absolute />
             </DetailField>
           </DetailGrid>
         </SectionCard>
@@ -460,54 +401,92 @@ export function TaskDetail() {
             </div>
           )}
         </SectionCard>
-        <SectionCard title={t('tasks.targetsTab')}>
-          <TargetDetails
-            target={item.target}
-            nodes={nodes.data || []}
-            groups={groups.data || []}
-          />
-        </SectionCard>
-        <SectionCard title={t('tasks.executionsTab')}>
-          <ExecutionHistory executions={executions.data || []} />
-        </SectionCard>
-        <SectionCard
-          title={t('tasks.scheduleTab')}
-          action={
-            canWrite ? (
-              <Button asChild variant='outline' size='sm'>
-                <Link to='/schedules/new' search={{ task_id: item.id }}>
-                  <Plus className='me-1 size-3.5' />
-                  {t('schedules.newSchedule')}
-                </Link>
-              </Button>
-            ) : null
-          }
-        >
-          {schedules.data?.length ? (
-            schedules.data.map((schedule) => (
-              <div
-                className='flex items-center justify-between border-b py-3 text-sm last:border-0'
-                key={schedule.id}
-              >
-                <a
-                  className='font-medium hover:underline'
-                  href={`/schedules/${schedule.id}`}
-                >
-                  {t(`schedules.types.${schedule.type}`, {
-                    defaultValue: schedule.type,
-                  })}
-                </a>
-                <span className='font-mono text-xs'>
-                  {schedule.expression || `${schedule.interval_sec}s`}
-                </span>
-              </div>
-            ))
+        <SectionCard title={t('tasks.conditionSection')}>
+          {item.condition ? (
+            <p className='font-mono text-xs text-muted-foreground'>
+              {conditionSummaryText(
+                item.condition,
+                (nodeId) =>
+                  (nodes.data || []).find((node) => node.id === nodeId)
+                    ?.hostname || t('common.unknownNode')
+              )}
+            </p>
           ) : (
             <div className='text-sm text-muted-foreground'>
-              {t('tasks.noSchedules')}
+              {t('tasks.noCondition')}
             </div>
           )}
         </SectionCard>
+        <div id='task-schedules' className='scroll-mt-4'>
+          <SectionCard
+            title={t('tasks.scheduleTab')}
+            action={
+              canWrite ? (
+                <Button asChild variant='outline' size='sm'>
+                  <Link to='/schedules/new' search={{ task_id: item.id }}>
+                    <Plus className='me-1 size-3.5' />
+                    {t('schedules.newSchedule')}
+                  </Link>
+                </Button>
+              ) : null
+            }
+          >
+            {schedules.data?.length ? (
+              <div className='divide-y'>
+                {schedules.data.map((schedule) => (
+                  <div
+                    className='flex flex-wrap items-center gap-x-3 gap-y-1 py-3 text-sm last:border-0'
+                    key={schedule.id}
+                  >
+                    <a
+                      className='min-w-0 truncate font-medium hover:underline'
+                      href={`/schedules/${schedule.id}`}
+                      title={scheduleDisplayName(schedule, t)}
+                    >
+                      {scheduleDisplayName(schedule, t)}
+                    </a>
+                    <span className='font-mono text-xs text-muted-foreground'>
+                      {scheduleTriggerText(schedule, t)}
+                    </span>
+                    <span className='text-xs text-muted-foreground'>
+                      {targetSummary(
+                        schedule.target,
+                        t,
+                        new Map(
+                          (nodes.data || []).map((node) => [
+                            node.id,
+                            node.hostname,
+                          ])
+                        ),
+                        new Map(
+                          (groups.data || []).map((group) => [
+                            group.id,
+                            group.name,
+                          ])
+                        )
+                      )}
+                    </span>
+                    <span className='ms-auto'>
+                      <StatusBadge
+                        status={schedule.enabled ? 'enabled' : 'disabled'}
+                      />
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className='text-sm text-muted-foreground'>
+                {t('tasks.noSchedules')}
+              </div>
+            )}
+          </SectionCard>
+        </div>
+        <SectionFull>
+          <SectionCard title={t('tasks.executionsTab')}>
+            <ExecutionHistory executions={executions.data || []} />
+          </SectionCard>
+        </SectionFull>
+        </SectionGrid>
       </Main>
     </>
   )
@@ -572,17 +551,9 @@ export function TaskEditor() {
     queryFn: () => api.get<Task>(`/tasks/${id}`),
     enabled: editing,
   })
-  const nodes = useQuery({
-    queryKey: ['nodes'],
-    queryFn: () => api.get<Node[]>('/nodes'),
-  })
   const scripts = useQuery({
     queryKey: ['scripts'],
     queryFn: () => api.get<Script[]>('/scripts'),
-  })
-  const groups = useQuery({
-    queryKey: ['groups'],
-    queryFn: () => api.get<Group[]>('/groups'),
   })
   const applications = useQuery({
     queryKey: ['applications'],
@@ -595,13 +566,8 @@ export function TaskEditor() {
     script_id: '',
     application_id: '',
     app_operation: 'start',
-    target: { type: 'node', node_ids: [] },
     parameters: [],
     param_values: {},
-    timeout: 300,
-    retry: 0,
-    run_user: '',
-    offline_policy: 'hub_online_required',
     enabled: true,
   }
   const [draft, setDraft] = useState<Partial<Task> | null>(null)
@@ -626,13 +592,6 @@ export function TaskEditor() {
     path: '',
     command: '',
   })
-  const [remoteCondition, setRemoteCondition] = useState({
-    node_id: '',
-    property: 'online',
-    task_id: '',
-    operator: '==',
-    value: 'online',
-  })
   const [andConditions, setAndConditions] = useState(false)
   useEffect(() => {
     if (!current.data || draft) return
@@ -644,7 +603,6 @@ export function TaskEditor() {
           ? [condition]
           : []
     const local = items.find((item) => item.local)?.local
-    const remote = items.find((item) => item.remote)?.remote
     // The editor controls are local draft state hydrated once the async query resolves.
     if (local)
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -655,18 +613,8 @@ export function TaskEditor() {
         path: local.path || '',
         command: local.command || '',
       })
-    if (remote)
-      setRemoteCondition({
-        node_id: remote.node_id,
-        property: remote.property,
-        task_id: remote.task_id || '',
-        operator: remote.operator,
-        value: remote.value,
-      })
     setAndConditions(items.length > 1)
   }, [current.data, draft])
-  const setTarget = (target: Target) =>
-    setForm((previous) => ({ ...previous, target }))
   const [saving, setSaving] = useState(false)
   const savingRef = useRef(false)
   const save = async () => {
@@ -690,7 +638,6 @@ export function TaskEditor() {
       setSaving(false)
     }
   }
-  const selectedNodes = form.target?.node_ids || []
   // 操作下拉的候选与当前值：按类型归一化，避免 stale 值（如 command 的 start）漏进 app_deploy。
   const currentOperation = form.app_operation || ''
   const appOperationOptions =
@@ -698,17 +645,6 @@ export function TaskEditor() {
   const selectedAppOperation = appOperationOptions.includes(currentOperation)
     ? currentOperation
     : appOperationOptions[0]
-  const nodeNames = new Map(
-    (nodes.data || []).map((node) => [node.id, node.hostname])
-  )
-  const toggleNode = (nodeId: string) =>
-    setTarget({
-      ...(form.target as Target),
-      type: 'node',
-      node_ids: selectedNodes.includes(nodeId)
-        ? selectedNodes.filter((value) => value !== nodeId)
-        : [...selectedNodes, nodeId],
-    })
   const addParameter = () => {
     if (!parameter.name) return
     setForm((previous) => ({
@@ -726,18 +662,21 @@ export function TaskEditor() {
           : previous.condition
             ? [previous.condition]
             : []
-      const items = currentItems.filter((item) => item.type !== candidate.type)
+      // 相同条件不重复追加，避免打开既有 AND 条件后点击保存造成重复。
+      if (
+        currentItems.some(
+          (item) => JSON.stringify(item) === JSON.stringify(candidate)
+        )
+      ) {
+        return previous
+      }
       return {
         ...previous,
-        condition: { type: 'and', and: [...items, candidate] },
+        condition: { type: 'and', and: [...currentItems, candidate] },
       }
     })
   const setLocal = () =>
     mergeCondition({ type: 'local', local: localCondition })
-  const setRemote = () => {
-    if (!remoteCondition.node_id) return
-    mergeCondition({ type: 'remote', remote: remoteCondition })
-  }
   const clearCondition = (type: 'local' | 'remote') =>
     setForm((previous) => {
       if (previous.condition?.type !== 'and')
@@ -783,24 +722,24 @@ export function TaskEditor() {
         description={t('tasks.formDescription')}
       />
       <Main className='flex flex-1 flex-col gap-6'>
-        <Card className='max-w-4xl'>
+        <Card className='w-full'>
           <CardHeader>
             <CardTitle className='text-base'>
               {t('tasks.definitionTab')}
             </CardTitle>
           </CardHeader>
           <CardContent className='grid gap-6'>
-            <label className='grid gap-2 text-sm font-medium'>
-              {t('common.name')}
-              <Input
-                required
-                value={form.name || ''}
-                onChange={(event) =>
-                  setForm({ ...form, name: event.target.value })
-                }
-              />
-            </label>
-            <div className='grid gap-4 sm:grid-cols-2'>
+            <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+              <label className='grid gap-2 text-sm font-medium sm:col-span-2'>
+                {t('common.name')}
+                <Input
+                  required
+                  value={form.name || ''}
+                  onChange={(event) =>
+                    setForm({ ...form, name: event.target.value })
+                  }
+                />
+              </label>
               <label className='grid gap-2 text-sm font-medium'>
                 {t('common.type')}
                 <Select
@@ -838,16 +777,14 @@ export function TaskEditor() {
                   </SelectContent>
                 </Select>
               </label>
-              <label className='grid gap-2 text-sm font-medium'>
-                {t('tasks.timeoutSec')}
-                <Input
-                  type='number'
-                  min={0}
-                  value={form.timeout ?? 0}
-                  onChange={(event) =>
-                    setForm({ ...form, timeout: Number(event.target.value) })
+              <label className='flex items-center gap-2 self-end pb-2 text-sm font-medium'>
+                <Checkbox
+                  checked={form.enabled !== false}
+                  onCheckedChange={(checked) =>
+                    setForm({ ...form, enabled: checked === true })
                   }
                 />
+                {t('common.enabled')}
               </label>
             </div>
             {form.type === 'command' && (
@@ -930,168 +867,9 @@ export function TaskEditor() {
                 )}
               </div>
             )}
-            <Separator />
-            <div className='grid gap-3'>
-              <div>
-                <h2 className='text-sm font-medium'>{t('tasks.targetsTab')}</h2>
-                <p className='text-sm text-muted-foreground'>
-                  {selectedNodes.length} {t('common.selected')}
-                </p>
-              </div>
-              <label className='grid gap-2 text-sm font-medium'>
-                {t('tasks.targetType')}
-                <Select
-                  value={form.target?.type || 'node'}
-                  onValueChange={(value) =>
-                    setTarget({
-                      ...(form.target as Target),
-                      type: value,
-                      node_ids: value === 'node' ? selectedNodes : [],
-                    })
-                  }
-                >
-                  <SelectTrigger className='w-full sm:max-w-xs'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='node'>{t('tasks.nodes')}</SelectItem>
-                    <SelectItem value='group'>{t('tasks.groups')}</SelectItem>
-                    <SelectItem value='label'>{t('tasks.label')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </label>
-              {form.target?.type === 'node' && (
-                <div className='grid max-h-56 gap-1 overflow-auto rounded-md border p-2'>
-                  {(nodes.data || []).map((node) => (
-                    <label
-                      className='flex items-center gap-2 rounded px-2 py-2 text-sm hover:bg-muted'
-                      key={node.id}
-                    >
-                      <Checkbox
-                        checked={selectedNodes.includes(node.id)}
-                        onCheckedChange={() => toggleNode(node.id)}
-                      />
-                      {node.hostname}
-                      <span className='ms-auto text-xs text-muted-foreground'>
-                        {statusLabel(node.status)}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              )}
-              {form.target?.type === 'group' && (
-                <div className='grid max-h-48 gap-1 overflow-auto rounded-md border p-2'>
-                  {(groups.data || []).map((group) => {
-                    const selected = form.target?.group_ids || []
-                    return (
-                      <label
-                        className='flex items-center gap-2 rounded px-2 py-2 text-sm hover:bg-muted'
-                        key={group.id}
-                      >
-                        <Checkbox
-                          checked={selected.includes(group.id)}
-                          onCheckedChange={(checked) =>
-                            setTarget({
-                              ...(form.target as Target),
-                              group_ids: checked
-                                ? [...selected, group.id]
-                                : selected.filter(
-                                    (value) => value !== group.id
-                                  ),
-                            })
-                          }
-                        />
-                        {group.name}
-                      </label>
-                    )
-                  })}
-                </div>
-              )}
-              {form.target?.type === 'label' && (
-                <div className='grid gap-4 sm:grid-cols-2'>
-                  <label className='grid gap-2 text-sm font-medium'>
-                    {t('tasks.labelKey')}
-                    <Input
-                      value={form.target.label_key || ''}
-                      onChange={(event) =>
-                        setTarget({
-                          ...(form.target as Target),
-                          label_key: event.target.value,
-                        })
-                      }
-                    />
-                  </label>
-                  <label className='grid gap-2 text-sm font-medium'>
-                    {t('tasks.labelValue')}
-                    <Input
-                      value={form.target.label_value || ''}
-                      onChange={(event) =>
-                        setTarget({
-                          ...(form.target as Target),
-                          label_value: event.target.value,
-                        })
-                      }
-                    />
-                  </label>
-                </div>
-              )}
-            </div>
-            <div className='grid gap-4 sm:grid-cols-2'>
-              <label className='grid gap-2 text-sm font-medium'>
-                {t('tasks.retry')}
-                <Input
-                  type='number'
-                  min={0}
-                  value={form.retry ?? 0}
-                  onChange={(event) =>
-                    setForm({ ...form, retry: Number(event.target.value) })
-                  }
-                />
-              </label>
-              <label className='grid gap-2 text-sm font-medium'>
-                {t('tasks.runUser')}
-                <Input
-                  className='font-mono text-xs'
-                  value={form.run_user || ''}
-                  onChange={(event) =>
-                    setForm({ ...form, run_user: event.target.value })
-                  }
-                />
-              </label>
-              <label className='grid gap-2 text-sm font-medium'>
-                {t('tasks.offlinePolicy')}
-                <Select
-                  value={form.offline_policy || 'hub_online_required'}
-                  onValueChange={(value) =>
-                    setForm({ ...form, offline_policy: value })
-                  }
-                >
-                  <SelectTrigger className='w-full'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='hub_online_required'>
-                      {t('tasks.hubOnlineRequired')}
-                    </SelectItem>
-                    <SelectItem value='allow_offline'>
-                      {t('tasks.allowOffline')}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </label>
-              <label className='flex items-center gap-2 self-end pb-2 text-sm font-medium'>
-                <Checkbox
-                  checked={form.enabled !== false}
-                  onCheckedChange={(checked) =>
-                    setForm({ ...form, enabled: checked === true })
-                  }
-                />
-                {t('common.enabled')}
-              </label>
-            </div>
           </CardContent>
         </Card>
-        <Card className='max-w-4xl'>
+        <Card className='w-full'>
           <CardHeader>
             <CardTitle className='text-base'>{t('tasks.parameters')}</CardTitle>
           </CardHeader>
@@ -1193,7 +971,7 @@ export function TaskEditor() {
             )}
           </CardContent>
         </Card>
-        <Card className='max-w-4xl'>
+        <Card className='w-full'>
           <CardHeader>
             <CardTitle className='text-base'>
               {t('tasks.localCondition')}
@@ -1315,100 +1093,8 @@ export function TaskEditor() {
             )}
           </CardContent>
         </Card>
-        <Card className='max-w-4xl'>
-          <CardHeader>
-            <CardTitle className='text-base'>
-              {t('tasks.remoteCondition')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className='grid gap-3 sm:grid-cols-[1fr_1fr_100px_1fr_auto]'>
-            <Select
-              value={remoteCondition.node_id}
-              onValueChange={(value) =>
-                setRemoteCondition({ ...remoteCondition, node_id: value })
-              }
-            >
-              <SelectTrigger aria-label={t('tasks.conditionNode')}>
-                <SelectValue placeholder={t('tasks.selectNode')} />
-              </SelectTrigger>
-              <SelectContent>
-                {(nodes.data || []).map((node) => (
-                  <SelectItem key={node.id} value={node.id}>
-                    {node.hostname}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={remoteCondition.property}
-              onValueChange={(value) =>
-                setRemoteCondition({ ...remoteCondition, property: value })
-              }
-            >
-              <SelectTrigger aria-label={t('tasks.conditionProperty')}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='online'>online</SelectItem>
-                <SelectItem value='last_execution'>
-                  {t('tasks.lastExecution')}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            {remoteCondition.property === 'last_execution' && (
-              <Input
-                className='font-mono text-xs'
-                aria-label={t('tasks.conditionTaskId')}
-                placeholder='task_id'
-                value={remoteCondition.task_id}
-                onChange={(event) =>
-                  setRemoteCondition({
-                    ...remoteCondition,
-                    task_id: event.target.value,
-                  })
-                }
-              />
-            )}
-            <Select
-              value={remoteCondition.operator}
-              onValueChange={(value) =>
-                setRemoteCondition({ ...remoteCondition, operator: value })
-              }
-            >
-              <SelectTrigger aria-label={t('tasks.conditionOperator')}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='=='>==</SelectItem>
-                <SelectItem value='!='>!=</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input
-              aria-label={t('tasks.remoteConditionValue')}
-              placeholder='value'
-              value={remoteCondition.value}
-              onChange={(event) =>
-                setRemoteCondition({
-                  ...remoteCondition,
-                  value: event.target.value,
-                })
-              }
-            />
-            <Button type='button' variant='outline' onClick={setRemote}>
-              {t('tasks.setRemote')}
-            </Button>
-            {form.condition?.remote && (
-              <p className='font-mono text-xs text-muted-foreground sm:col-span-5'>
-                {nodeNames.get(form.condition.remote.node_id) ||
-                  t('common.unknownNode')}
-                .{form.condition.remote.property}{' '}
-                {form.condition.remote.operator} {form.condition.remote.value}
-              </p>
-            )}
-          </CardContent>
-        </Card>
         {form.condition ? (
-          <Card className='max-w-4xl'>
+          <Card className='w-full'>
             <CardHeader>
               <CardTitle className='text-base'>
                 {t('tasks.conditionSummary')}
@@ -1419,11 +1105,7 @@ export function TaskEditor() {
                 className='font-mono text-xs text-muted-foreground'
                 data-testid='condition-summary'
               >
-                {conditionSummaryText(
-                  form.condition,
-                  (nodeId) =>
-                    nodeNames.get(nodeId) || t('common.unknownNode')
-                )}
+                {conditionSummaryText(form.condition, () => '')}
               </p>
               <Button
                 type='button'
@@ -1460,9 +1142,27 @@ export function RunTask() {
     queryKey: ['task', id],
     queryFn: () => api.get<Task>(`/tasks/${id}`),
   })
+  const nodes = useQuery({
+    queryKey: ['nodes'],
+    queryFn: () => api.get<Node[]>('/nodes'),
+  })
+  const groups = useQuery({
+    queryKey: ['groups'],
+    queryFn: () => api.get<Group[]>('/groups'),
+  })
   const [running, setRunning] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [params, setParams] = useState<Record<string, string>>({})
+  const [target, setTarget] = useState<Target>({
+    type: 'node',
+    node_ids: [],
+  })
+  const [strategy, setStrategy] = useState<ExecutionStrategy>({
+    timeout: 300,
+    retry: 0,
+    run_user: '',
+    offline_policy: 'hub_online_required',
+  })
   useEffect(() => {
     if (!task.data) return
     const defaults: Record<string, string> = {}
@@ -1491,6 +1191,7 @@ export function RunTask() {
         </Main>
       </>
     )
+  const targetValid = isTargetComplete(target)
   const run = async () => {
     const missing = (task.data?.parameters || []).find(
       (parameter) => parameter.required && !params[parameter.name]
@@ -1499,9 +1200,20 @@ export function RunTask() {
       toast.error(`${missing.name} ${t('tasks.required')}`)
       return
     }
+    if (!targetValid) {
+      toast.error(t('tasks.targetRequired'))
+      return
+    }
     setRunning(true)
     try {
-      await api.post(`/tasks/${id}/run`, { params })
+      await api.post(`/tasks/${id}/run`, {
+        target: normalizeTarget(target),
+        params,
+        timeout: strategy.timeout,
+        retry: strategy.retry,
+        run_user: strategy.run_user || undefined,
+        offline_policy: strategy.offline_policy,
+      })
       window.location.assign('/executions')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('common.noData'))
@@ -1515,49 +1227,103 @@ export function RunTask() {
         description={t('tasks.runDescription')}
       />
       <Main className='flex flex-1 flex-col gap-6'>
-        <Card className='max-w-2xl'>
+        <Card className='w-full'>
           <CardHeader>
-            <CardTitle className='text-base'>{t('tasks.runNow')}</CardTitle>
+            <CardTitle className='text-base'>{t('tasks.runTarget')}</CardTitle>
           </CardHeader>
-          <CardContent className='space-y-4'>
-            <p className='text-sm text-muted-foreground'>
-              {task.data ? targetText(task.data, t) : t('common.loading')}
-            </p>
-            {task.data?.parameters?.length ? (
-              <div className='grid gap-3'>
-                {task.data.parameters.map((parameter) => (
-                  <label
-                    key={parameter.name}
-                    className='grid gap-2 text-sm font-medium'
-                  >
-                    {parameter.name}
-                    <Input
-                      type={parameter.type === 'secret' ? 'password' : 'text'}
-                      required={parameter.required}
-                      value={params[parameter.name] || ''}
-                      onChange={(event) =>
-                        setParams({
-                          ...params,
-                          [parameter.name]: event.target.value,
-                        })
-                      }
-                    />
-                  </label>
-                ))}
-              </div>
-            ) : null}
-            <div className='flex items-center gap-2'>
-              {canRun ? (
-                <Button onClick={() => setConfirmOpen(true)} disabled={running}>
-                  {running ? t('tasks.running') : t('tasks.runNow')}
-                </Button>
-              ) : null}
-              <Button asChild variant='outline'>
-                <a href={`/tasks/${id}`}>{t('common.cancel')}</a>
-              </Button>
-            </div>
+          <CardContent className='grid gap-3'>
+            <TargetEditor
+              target={target}
+              onChange={setTarget}
+              nodes={nodes.data || []}
+              groups={groups.data || []}
+            />
+            {!targetValid ? (
+              <p className='text-xs text-destructive' role='alert'>
+                {t('tasks.targetRequired')}
+              </p>
+            ) : (
+              <p className='text-xs text-muted-foreground'>
+                {targetSummary(
+                  target,
+                  t,
+                  new Map(
+                    (nodes.data || []).map((node) => [node.id, node.hostname])
+                  ),
+                  new Map(
+                    (groups.data || []).map((group) => [
+                      group.id,
+                      group.name,
+                    ])
+                  )
+                )}
+              </p>
+            )}
           </CardContent>
         </Card>
+        {task.data?.condition ? (
+          <Card className='w-full'>
+            <CardHeader>
+              <CardTitle className='text-base'>
+                {t('tasks.localCondition')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className='font-mono text-xs text-muted-foreground'>
+                {conditionSummaryText(task.data.condition, () => '')}
+              </p>
+            </CardContent>
+          </Card>
+        ) : null}
+        <Card className='w-full'>
+          <CardHeader>
+            <CardTitle className='text-base'>{t('tasks.runStrategy')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScheduleStrategyFields value={strategy} onChange={setStrategy} />
+          </CardContent>
+        </Card>
+        {task.data?.parameters?.length ? (
+          <Card className='w-full'>
+            <CardHeader>
+              <CardTitle className='text-base'>{t('tasks.runParams')}</CardTitle>
+            </CardHeader>
+            <CardContent className='grid gap-3'>
+              {task.data.parameters.map((parameter) => (
+                <label
+                  key={parameter.name}
+                  className='grid gap-2 text-sm font-medium'
+                >
+                  {parameter.name}
+                  <Input
+                    type={parameter.type === 'secret' ? 'password' : 'text'}
+                    required={parameter.required}
+                    value={params[parameter.name] || ''}
+                    onChange={(event) =>
+                      setParams({
+                        ...params,
+                        [parameter.name]: event.target.value,
+                      })
+                    }
+                  />
+                </label>
+              ))}
+            </CardContent>
+          </Card>
+        ) : null}
+        <div className='flex items-center gap-2'>
+          {canRun ? (
+            <Button
+              onClick={() => setConfirmOpen(true)}
+              disabled={running || !targetValid}
+            >
+              {running ? t('tasks.running') : t('tasks.runNow')}
+            </Button>
+          ) : null}
+          <Button asChild variant='outline'>
+            <a href={`/tasks/${id}`}>{t('common.cancel')}</a>
+          </Button>
+        </div>
         {canRun ? (
           <ConfirmDialog
             open={confirmOpen}

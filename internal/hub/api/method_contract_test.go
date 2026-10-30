@@ -126,7 +126,7 @@ func TestMethodNotAllowedCarriesAllowHeader(t *testing.T) {
 	script := decodeResource[models.Script](t, rec)
 	rec = s.do(t, http.MethodPost, "/api/tasks", `{"name":"allow-task","type":"command","command":"true","target":{"type":"label","label_key":"env"}}`)
 	task := decodeResource[models.Task](t, rec)
-	rec = s.do(t, http.MethodPost, "/api/schedules", `{"task_id":"`+task.ID+`","type":"interval","interval_sec":60,"execution_owner":"hub"}`)
+	rec = s.do(t, http.MethodPost, "/api/schedules", `{"task_id":"`+task.ID+`","type":"interval","interval_sec":60,"target":{"type":"label","label_key":"env"},"execution_owner":"hub"}`)
 	schedule := decodeResource[models.Schedule](t, rec)
 	rec = s.do(t, http.MethodPost, "/api/groups", `{"name":"allow-group","type":"static"}`)
 	group := decodeResource[models.Group](t, rec)
@@ -229,7 +229,8 @@ func TestTaskRunRejectsNonPostMethods(t *testing.T) {
 	}
 
 	// POST 仍进入 RunNow（执行记录出现；节点无会话时按业务失败处理）。
-	rec = s.do(t, http.MethodPost, "/api/tasks/"+task.ID+"/run", "")
+	rec = s.do(t, http.MethodPost, "/api/tasks/"+task.ID+"/run",
+		`{"target":{"type":"node","node_ids":["run-node"]}}`)
 	if rec.Code == http.StatusMethodNotAllowed {
 		t.Fatalf("POST task run = 405, want RunNow path")
 	}

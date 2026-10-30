@@ -75,9 +75,13 @@ describe('窄屏（480px）长值不撑破页面', () => {
     get.mockImplementation(async (path: string) => {
       if (path === '/tasks')
         return [{ id: 'task-1', name: LONG_TASK_NAME }]
+      if (path === '/nodes')
+        return [{ id: 'node-1', hostname: 'node-a', status: 'online' }]
+      if (path === '/groups') return []
       if (path === '/schedules/sch-1')
         return {
           id: 'sch-1',
+          name: '启动时巡检',
           task_id: 'task-1',
           revision: 1,
           type: 'on_start',
@@ -86,6 +90,10 @@ describe('窄屏（480px）长值不撑破页面', () => {
           run_at: '',
           timezone: 'Asia/Shanghai',
           execution_owner: 'agent',
+          target: { type: 'node', node_ids: ['node-1'] },
+          timeout: 300,
+          retry: 0,
+          run_user: '',
           offline_policy: 'allow_offline',
           misfire_policy: 'run_once',
           enabled: true,

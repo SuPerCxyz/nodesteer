@@ -46,12 +46,18 @@ import {
 import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import {
+  ScheduleStrategyFields,
+} from '@/features/shared/schedule-strategy-fields'
+import { RemoteConditionEditor } from '@/features/shared/remote-condition-editor'
+import { TargetEditor } from '@/features/shared/target-editor'
+import {
   ErrorPage,
   ErrorState,
   LoadingState,
   StatusBadge,
   TimeValue,
 } from '@/features/shared/ui'
+import { isTargetComplete } from '@/lib/targets'
 
 function EditorShell({
   title,
@@ -66,7 +72,7 @@ function EditorShell({
     <>
       <NodeSteerHeader title={title} description={description} />
       <Main className='flex flex-1 flex-col gap-6'>
-        <div className='w-full max-w-5xl'>{children}</div>
+        <div className='w-full'>{children}</div>
       </Main>
     </>
   )
@@ -81,17 +87,26 @@ export function ScheduleEditor() {
     queryKey: ['tasks'],
     queryFn: () => api.get<Task[]>('/tasks'),
   })
+  const nodes = useQuery({
+    queryKey: ['nodes'],
+    queryFn: () => api.get<Node[]>('/nodes'),
+  })
+  const groups = useQuery({
+    queryKey: ['groups'],
+    queryFn: () => api.get<Group[]>('/groups'),
+  })
   const current = useQuery({
     queryKey: ['schedule', id],
     queryFn: () => api.get<Schedule>(`/schedules/${id}`),
     enabled: editing,
   })
   const [error, setError] = useState('')
-  // 任务详情「新建调度」入口：/schedules/new?task_id=x 预选任务并只读展示
+  // 任务定义详情「新建调度计划」入口：/schedules/new?task_id=x 预选任务并只读展示
   const presetTaskId = editing
     ? ''
     : new URLSearchParams(window.location.search).get('task_id') || ''
   const defaultForm: Partial<Schedule> = {
+    name: '',
     task_id: presetTaskId,
     type: 'cron',
     expression: '',
@@ -100,6 +115,10 @@ export function ScheduleEditor() {
     // 调度页已独立成页，默认时区由 UTC 改为浏览器时区
     timezone: browserTimeZone(),
     execution_owner: 'agent',
+    target: { type: 'node', node_ids: [] },
+    timeout: 300,
+    retry: 0,
+    run_user: '',
     offline_policy: 'allow_offline',
     misfire_policy: 'run_once',
     enabled: true,
@@ -115,6 +134,7 @@ export function ScheduleEditor() {
   const intervalInvalid =
     form.type === 'interval' &&
     (!Number.isFinite(form.interval_sec) || (form.interval_sec || 0) < 1)
+  const targetInvalid = !isTargetComplete(form.target)
   const [runAtPast, setRunAtPast] = useState(false)
   useEffect(() => {
     // run_at 可能来自异步加载的既有调度：加载/修改后同步「过去时间」校验态
@@ -130,6 +150,10 @@ export function ScheduleEditor() {
     setError('')
     if (!form.task_id) {
       setError(t('schedules.taskRequired'))
+      return
+    }
+    if (targetInvalid) {
+      setError(t('schedules.targetRequired'))
       return
     }
     if (form.type === 'cron') {
@@ -188,7 +212,7 @@ export function ScheduleEditor() {
         <LoadingState />
       </EditorShell>
     )
-  // 任务详情深链 /schedules/new?task_id=x：任务不存在时给出明确错误与返回入口
+  // 任务定义详情深链 /schedules/new?task_id=x：任务不存在时给出明确错误与返回入口
   // （缺陷 OBS-20261014-INVALID-TASK-DEEPLINK-NO-ERROR）
   if (
     !editing &&
@@ -217,8 +241,20 @@ export function ScheduleEditor() {
       description={t('schedules.formDescription')}
     >
       <Card className='max-w-none'>
-        <CardContent className='grid gap-5 pt-6'>
-          {error && <ErrorState error={error} />}
+        <CardContent className='grid gap-4 pt-6 lg:grid-cols-2'>
+          {error ? (
+            <div className='lg:col-span-2'>
+              <ErrorState error={error} />
+            </div>
+          ) : null}
+          <label className='grid gap-2 text-sm font-medium'>
+            {t('schedules.name')}
+            <Input
+              value={form.name || ''}
+              placeholder={t('schedules.namePlaceholder')}
+              onChange={(event) => setForm({ ...form, name: event.target.value })}
+            />
+          </label>
           <label className='grid gap-2 text-sm font-medium'>
             {t('schedules.task')}
             <Select
@@ -243,15 +279,41 @@ export function ScheduleEditor() {
               </span>
             ) : null}
           </label>
+          <div className='grid gap-2 lg:col-span-2'>
+            <h2 className='text-sm font-medium'>{t('schedules.target')}</h2>
+            <TargetEditor
+              target={form.target}
+              onChange={(target) => setForm({ ...form, target })}
+              nodes={nodes.data || []}
+              groups={groups.data || []}
+            />
+            {targetInvalid ? (
+              <p className='text-xs text-destructive' role='alert'>
+                {t('schedules.targetRequired')}
+              </p>
+            ) : null}
+          </div>
+          <div className='grid gap-2 lg:col-span-2'>
+            <h2 className='text-sm font-medium'>
+              {t('schedules.remoteCondition')}
+            </h2>
+            <RemoteConditionEditor
+              value={form.condition}
+              onChange={(condition) => setForm({ ...form, condition })}
+              nodes={nodes.data || []}
+              tasks={tasks.data || []}
+            />
+          </div>
+          <div className='grid gap-4 lg:col-span-2 lg:grid-cols-2'>
           <label className='grid gap-2 text-sm font-medium'>
-            {t('common.type')}
+            {t('schedules.triggerType')}
             <Select
               value={form.type || 'cron'}
               onValueChange={(value) =>
                 setForm({
                   ...form,
                   type: value,
-                  // on_start 隐藏时区输入，切换时清理非法值，避免提交后端 400 却无处可改
+                  // on_start / manual 隐藏时区输入，切换时清理非法值，避免提交后端 400 却无处可改
                   ...(value === 'on_start' &&
                   !isValidTimeZone(form.timezone || '')
                     ? { timezone: browserTimeZone() }
@@ -273,14 +335,28 @@ export function ScheduleEditor() {
                 <SelectItem value='on_start'>
                   {t('schedules.onStart')}
                 </SelectItem>
+                <SelectItem value='manual'>
+                  {t('schedules.manual')}
+                </SelectItem>
               </SelectContent>
             </Select>
           </label>
+          <p className='self-end text-xs text-muted-foreground'>
+            {t('schedules.typeHint')}
+          </p>
+          </div>
+          {form.type === 'manual' ? (
+            <div className='rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground lg:col-span-2'>
+              {t('schedules.manualHint')}
+            </div>
+          ) : null}
           {form.type === 'cron' && (
-            <CronEditor
-              value={form.expression || ''}
-              onChange={(expression) => setForm({ ...form, expression })}
-            />
+            <div className='lg:col-span-2'>
+              <CronEditor
+                value={form.expression || ''}
+                onChange={(expression) => setForm({ ...form, expression })}
+              />
+            </div>
           )}
           {form.type === 'interval' && (
             <label className='grid gap-2 text-sm font-medium'>
@@ -295,7 +371,10 @@ export function ScheduleEditor() {
                 aria-invalid={intervalInvalid}
               />
               {intervalInvalid ? (
-                <span className='text-xs font-normal text-destructive' role='alert'>
+                <span
+                  className='text-xs font-normal text-destructive'
+                  role='alert'
+                >
                   {t('schedules.intervalInvalid')}
                 </span>
               ) : null}
@@ -325,14 +404,17 @@ export function ScheduleEditor() {
                 aria-invalid={runAtPast}
               />
               {runAtPast ? (
-                <span className='text-xs font-normal text-destructive' role='alert'>
+                <span
+                  className='text-xs font-normal text-destructive'
+                  role='alert'
+                >
                   {t('schedules.runAtPast')}
                 </span>
               ) : null}
             </label>
           )}
-          {/* on_start 无触发时间：时区对它无意义，隐藏输入但保留合法默认值随 payload 上送 */}
-          {form.type !== 'on_start' && (
+          {/* on_start / manual 无触发时间：时区对它无意义，隐藏输入但保留合法默认值随 payload 上送 */}
+          {form.type !== 'on_start' && form.type !== 'manual' && (
             <label className='grid gap-2 text-sm font-medium'>
               {t('schedules.timezone')}
               <Input
@@ -344,20 +426,24 @@ export function ScheduleEditor() {
               />
             </label>
           )}
-          <NextRunsPreview
-            type={
-              form.type === 'interval' ||
-              form.type === 'one_time' ||
-              form.type === 'on_start'
-                ? form.type
-                : 'cron'
-            }
-            expression={form.expression}
-            intervalSec={form.interval_sec}
-            runAt={form.run_at}
-            timezone={form.timezone}
-          />
-          <div className='grid gap-4 sm:grid-cols-3'>
+          {form.type !== 'manual' && (
+            <div className='lg:col-span-2'>
+            <NextRunsPreview
+              type={
+                form.type === 'interval' ||
+                form.type === 'one_time' ||
+                form.type === 'on_start'
+                  ? form.type
+                  : 'cron'
+              }
+              expression={form.expression}
+              intervalSec={form.interval_sec}
+              runAt={form.run_at}
+              timezone={form.timezone}
+            />
+            </div>
+          )}
+          <div className='grid gap-4 sm:grid-cols-2 lg:col-span-2'>
             <label className='grid gap-2 text-sm font-medium'>
               {t('schedules.executionOwner')}
               <Select
@@ -372,27 +458,6 @@ export function ScheduleEditor() {
                 <SelectContent>
                   <SelectItem value='agent'>{t('schedules.agent')}</SelectItem>
                   <SelectItem value='hub'>{t('schedules.hub')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </label>
-            <label className='grid gap-2 text-sm font-medium'>
-              {t('schedules.offlinePolicy')}
-              <Select
-                value={form.offline_policy || 'allow_offline'}
-                onValueChange={(value) =>
-                  setForm({ ...form, offline_policy: value })
-                }
-              >
-                <SelectTrigger className='w-full min-w-0'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='allow_offline'>
-                    {t('tasks.allowOffline')}
-                  </SelectItem>
-                  <SelectItem value='hub_online_required'>
-                    {t('tasks.hubOnlineRequired')}
-                  </SelectItem>
                 </SelectContent>
               </Select>
             </label>
@@ -416,6 +481,18 @@ export function ScheduleEditor() {
               </Select>
             </label>
           </div>
+          <div className='grid gap-3 lg:col-span-2'>
+            <h2 className='text-sm font-medium'>{t('strategy.title')}</h2>
+            <ScheduleStrategyFields
+              value={{
+                timeout: form.timeout,
+                retry: form.retry,
+                run_user: form.run_user,
+                offline_policy: form.offline_policy,
+              }}
+              onChange={(strategy) => setForm({ ...form, ...strategy })}
+            />
+          </div>
           <label className='flex items-center gap-2 text-sm font-medium'>
             <Checkbox
               checked={form.enabled !== false}
@@ -425,12 +502,12 @@ export function ScheduleEditor() {
             />
             {t('common.enabled')}
           </label>
-          <Separator />
-          <div className='flex items-center gap-2'>
+          <Separator className='lg:col-span-2' />
+          <div className='flex items-center gap-2 lg:col-span-2'>
             {canWrite ? (
               <Button
                 onClick={save}
-                disabled={saving || intervalInvalid || runAtPast}
+                disabled={saving || intervalInvalid || runAtPast || targetInvalid}
                 aria-busy={saving}
               >
                 {saving ? <Loader2 className='animate-spin' /> : null}
@@ -561,7 +638,11 @@ export function ScriptEditor() {
             <CardTitle className='text-base'>{t('scripts.title')}</CardTitle>
           </CardHeader>
           <CardContent className='grid gap-5'>
-            {error && <ErrorState error={error} />}
+            {error ? (
+            <div className='lg:col-span-2'>
+              <ErrorState error={error} />
+            </div>
+          ) : null}
             <label className='grid gap-2 text-sm font-medium'>
               {t('common.name')}
               <Input
@@ -922,8 +1003,12 @@ export function GroupEditor() {
     >
       <div className='grid max-w-none gap-5'>
         <Card>
-          <CardContent className='grid gap-5 pt-6'>
-            {error && <ErrorState error={error} />}
+          <CardContent className='grid gap-4 pt-6 lg:grid-cols-2'>
+            {error ? (
+            <div className='lg:col-span-2'>
+              <ErrorState error={error} />
+            </div>
+          ) : null}
             <label className='grid gap-2 text-sm font-medium'>
               {t('common.name')}
               <Input
@@ -1318,7 +1403,11 @@ export function ApplicationEditor() {
             <CardTitle className='text-base'>{t('apps.title')}</CardTitle>
           </CardHeader>
           <CardContent className='grid gap-5'>
-            {error && <ErrorState error={error} />}
+            {error ? (
+            <div className='lg:col-span-2'>
+              <ErrorState error={error} />
+            </div>
+          ) : null}
             <div className='grid gap-4 sm:grid-cols-2'>
               <label className='grid gap-2 text-sm font-medium'>
                 {t('common.name')}
@@ -1965,7 +2054,11 @@ export function ArtifactEditor() {
       <Card className='max-w-none'>
         <CardContent className='pt-6'>
           <form className='grid gap-5' onSubmit={upload}>
-            {error && <ErrorState error={error} />}
+            {error ? (
+            <div className='lg:col-span-2'>
+              <ErrorState error={error} />
+            </div>
+          ) : null}
             <label className='grid gap-2 text-sm font-medium'>
               {t('common.name')}
               <Input name='name' required />

@@ -11,7 +11,7 @@
 ### 1.1 测试目标
 
 - 覆盖所有已发布页面、导航入口、列表、详情、弹窗、Tab、表单和操作菜单。
-- 覆盖添加节点、添加脚本、添加服务/Managed Application、节点绑定任务、手动执行、调度、日志和清理。
+- 覆盖添加节点、添加脚本、添加服务/Managed Application、调度计划绑定任务与节点、手动执行、日志和清理。
 - 对每个可操作按钮验证：可见性、启用/禁用状态、点击结果、重复点击行为、成功/失败反馈和最终状态。
 - 对页面中出现的 Copy 按钮逐一点击，并读取浏览器剪贴板，核对复制内容与可见内容一致。
 - 验证页面操作后的真实业务效果：Hub 状态、Agent 同步、Linux 进程/systemd、执行结果和页面最终反馈。
@@ -41,8 +41,8 @@
 2. 节点列表、节点详情、Native 节点纳管、节点状态、标签、节点与任务联动。
 3. Static Group、Label Group 的创建、编辑、成员变化和删除。
 4. Script 创建、编辑、Revision、参数、环境变量、克隆、任务引用和删除。
-5. Command Task、Script Task、Application Task 的创建、目标选择、运行、取消和删除。
-6. Cron、Interval、One-Time Schedule 的创建、启停、执行和删除。
+5. Command、Script、Application 任务定义的创建、编辑、试运行、取消和删除。
+6. Cron、Interval、One-Time、On-Start、Manual 调度计划的创建、目标与策略配置、启停、立即执行和删除。
 7. Artifact 上传、校验、下载、引用、删除。
 8. Managed Application（服务）创建、节点分配、部署、启动、停止、重启、升级、健康检查和删除。
 9. Execution 列表、过滤、详情、stdout/stderr、日志复制和取消。
@@ -106,11 +106,11 @@
 | Script clone | `qa-20260915-ui-script-clone` |
 | Group | `qa-20260915-ui-group` |
 | Label Group | `qa-20260915-ui-label-group` |
-| Command Task | `qa-20260915-ui-command-task` |
-| Script Task | `qa-20260915-ui-script-task` |
+| Command 任务定义 | `qa-20260915-ui-command-task` |
+| Script 任务定义 | `qa-20260915-ui-script-task` |
 | Application | `qa-20260915-ui-service` |
 | Artifact | `qa-20260915-ui-artifact` |
-| Schedule | `qa-20260915-ui-schedule` |
+| 调度计划 | `qa-20260915-ui-schedule` |
 
 已有的 API smoke task 仅作为基线观测，不编辑、不删除、不作为本轮页面创建结果。
 
@@ -150,11 +150,20 @@
 ### UI-002 布局、导航和主题
 
 - 逐个点击 Sidebar 一级入口，确认 URL、标题、active 状态和返回路径。
-- 验证 Dashboard、Agents、Tasks、Executions、Transfers、Schedules、Scripts、Groups、Applications、Artifacts、Audit、Users、Settings。
+- 验证 Dashboard、Agents、任务定义（Tasks）、执行记录（Executions）、Transfers、调度计划（Schedules）、Scripts、Groups、Applications、Audit、Settings；管理员额外验证 Users。
+- 确认 Sidebar、页面标题和空态使用「任务定义 / 调度计划 / 执行记录」，不再混用旧文案。
 - 点击语言切换并刷新，页面文本和偏好保持。
 - 点击 light/dark/system 主题并刷新，布局、对比度和主题保持。
 - 折叠/展开 Sidebar，移动宽度打开/关闭菜单，点击导航后菜单按预期关闭。
 - 点击所有 View All、详情链接、面包屑、返回按钮，确认没有死链和错误 redirect。
+
+#### 信息展示密度标准（全站）
+
+- 页面内容占满 `Main` 可用宽度，上限 2400px；禁止页面级 `max-w-3xl/4xl/5xl` 或 `max-w-[1600px]` 收窄内容。
+- 详情页使用两栏分区（≥1536px），日志/执行历史等宽内容占满整行；详情字段按 1/2/3/4 列展开（≥1920px 为 4 列）。
+- 编辑页使用全宽卡片；短字段使用多列栅格，长文本、目标、条件、策略使用整行。
+- 列表表格占满内容区宽度；搜索框保持可读宽度，行操作列可达。
+- 任意页面在 1920px 视口下不得出现明显的单侧大面积空白或内容被限制在窄列中。
 
 ### UI-003 公共表格和按钮
 
@@ -173,8 +182,8 @@
 
 1. 点击 Agents/Nodes，验证 5 个已纳管节点、状态、IP、OS、架构、版本、模式、Revision、Last Seen。
 2. 搜索 hostname、Node ID、IP，验证命中与无结果。
-3. 点击每个节点详情，验证 Overview、Inventory、Tasks、Schedules、Applications、Executions 等 Tab。
-4. 点击任务、调度、应用和执行回链，确认目标 Node ID 一致。
+3. 点击每个节点详情，验证 Overview、Inventory、调度计划、任务定义、Applications、Executions 等分区/Tab。
+4. 点击调度、任务、应用和执行回链，确认调度按 `Schedule.Target` 命中该节点，任务来自调度引用。
 5. 在节点详情添加、编辑、覆盖和清除 Label；刷新后验证持久化以及 Group 成员变化。
 6. 对 maintenance/online/offline 状态执行页面提供的状态按钮，确认确认框、状态变化和列表刷新。
 7. 访问无效 Node ID，验证 404/Error/Retry，不显示另一节点数据。
@@ -195,7 +204,7 @@
 - 创建 Static Group：填写名称、描述、多个节点，保存后列表和成员正确。
 - 创建 Label Group：填写 label key/value，保存后动态成员数量正确。
 - 编辑名称、描述、成员和 Label 条件，刷新后保持。
-- 修改节点 Label，回到 Group 验证动态成员变化，并验证 Task 目标随之变化。
+- 修改节点 Label，回到 Group 验证动态成员变化，并验证 Schedule.Target 随之变化。
 - 点击删除，验证取消不删除、确认后只删除本轮对象；引用关系按产品定义处理。
 
 ## 7. Script 页面
@@ -214,11 +223,11 @@
 8. 点击 Delete，分别验证取消和确认；确认后列表消失、Agent 最终删除本地副本、历史 Execution 保留。
 9. 验证重复名称、超长内容、非法超时和服务端错误提示。
 
-## 8. Task 页面
+## 8. 任务定义页面
 
 页面：`/tasks`
 
-### UI-030 创建 Task
+### UI-030 创建任务定义
 
 分别创建以下三类本轮对象：
 
@@ -228,34 +237,44 @@
 
 每类均验证：
 
-1. 名称、描述、Enabled、Timeout、Retry、Run User、Offline Policy。
-2. 单节点、多节点、Static Group、Label Group 目标；取消目标后不得残留旧 ID。
+1. 名称、描述、Enabled；表单不出现 Target、Timeout、Retry、Run User、Offline Policy。
+2. 不选择节点/分组/标签即可保存；保存后列表和详情不显示目标与策略。
 3. 参数新增/删除、类型、默认值和 secret 显示策略。
-4. Local Condition、Remote Condition 的合法值、空值、未知值和 Fail Closed 表现。
-5. 保存后列表、详情 Overview/Definition/Targets/Executions/Schedule 五个 Tab。
-6. 节点详情、Group 详情、Script 详情和 Application 详情之间的反向联动。
-7. 无名称、无命令、无 Script、无 Application、无目标、非法 ID 的错误反馈。
+4. Task 本地条件与 Schedule 远程条件的归属、合法值、空值、未知值和 Fail Closed 表现；任务页试运行只评估本地条件。
+5. 保存后列表、详情 Overview/Definition/关联调度（只读）/Executions 分区。
+6. 节点详情、Group 详情、Script 详情和 Application 详情之间的反向联动；节点详情按 Schedule.Target 匹配调度。
+7. 无名称、无命令、无 Script、无 Application、非法 ID 的错误反馈；无目标不再是任务定义错误。
+8. 旧字段 `target`/`timeout`/`retry`/`run_user`/`offline_policy` 不得出现在任务定义表单、列表或详情。
 
-### UI-031 Task 运行和取消
+### UI-031 试运行（Manual Run）和取消
 
-1. 在 Task 列表或详情点击 Run Now，验证确认框的取消分支不产生执行。
-2. 确认运行后，验证按钮 loading/禁用、PENDING → RUNNING → SUCCESS/FAILED 的页面刷新。
-3. 多节点目标必须为每个节点显示独立 Execution；目标和输出不得串线。
-4. 验证 Script 参数、环境变量、目录、Run User 在 Agent 实际生效。
-5. 对长时间任务点击 Cancel，验证确认/取消分支，最终 CANCELED 且 Agent 无残留进程。
-6. 对 offline 节点验证明确 BLOCKED/失败反馈，不无限 loading。
-7. 重复点击 Run、刷新页面和重新打开详情，验证不会重复创建非幂等执行。
+1. 在任务定义列表或详情点击 Run Now/试运行，验证运行页的取消分支不产生执行。
+2. 运行页必须选择临时目标（单节点/多节点/分组/标签）；未选择目标时不能提交或提交返回 400。
+3. 目标与参数覆盖只作用于本次执行，返回任务详情后 Task/Schedule 定义不变。
+4. 验证 Timeout（默认 300 秒）、Retry（默认 0）、Run User（默认当前用户）、Offline Policy（默认 Hub Online Required）。
+5. 确认运行后，验证按钮 loading/禁用、PENDING → RUNNING → SUCCESS/FAILED 的页面刷新。
+6. 多节点目标必须为每个节点显示独立 Execution；目标和输出不得串线。
+7. 验证 Script 参数、环境变量、目录、Run User、Timeout、Retry 在 Agent 实际生效。
+8. 对长时间任务点击 Cancel，验证确认/取消分支，最终 CANCELED 且 Agent 无残留进程。
+9. 对 offline 节点验证明确 BLOCKED/失败反馈，不无限 loading。
+10. 重复点击 Run、刷新页面和重新打开详情，验证不会重复创建非幂等执行。
+11. 从调度计划页「立即执行」使用该调度自身目标与策略，不弹出临时目标选择。
 
-## 9. Schedule 页面
+## 9. 调度计划页面
 
 页面：`/schedules`
 
-- 创建 Cron：合法表达式、非法表达式、Timezone、Owner、Enabled、Allow Offline、Misfire。
+- 创建 Cron：名称、任务、目标（节点/分组/标签）、合法/非法表达式、Timezone、Owner、Enabled、Allow Offline、Misfire。
 - 创建 Interval：最小值、0、负数、小数、超大值和单位切换。
 - 创建 One-Time：未来时间、过去时间、时区、空时间、Run Once。
-- 验证编辑只改变目标字段，不覆盖未修改字段。
+- 创建 Manual：不填表达式/间隔/时间，保存后显示「仅手动」，自动调度器不触发，可从列表立即执行。
+- 验证同一任务创建多个目标不同的调度，目标、策略和执行互不覆盖。
+- 验证目标必填；缺目标时保存返回明确错误，不产生调度。
+- 验证 Timeout 默认 300、0 使用默认、负数拒绝；Retry 默认 0、负数拒绝；Run User 留空使用当前用户。
+- 验证编辑只改变目标字段，不覆盖未修改字段；修改目标后节点详情与任务详情关联调度同步。
 - 点击启用/禁用，确认状态、按钮反转和实际执行停止/恢复。
-- 点击删除，验证取消/确认、Task Detail 和 Schedule List 同步消失。
+- 点击立即执行，使用该调度自身目标与策略创建执行，不修改调度定义。
+- 点击删除，验证取消/确认、Task Detail 和 Schedule List 同步消失；任务定义本身保留。
 - 对允许离线的调度验证由 Agent Local Scheduler 触发；不允许离线的调度不得被 Agent 双触发。
 - 对一次性调度验证成功后不重复执行，Misfire 按配置处理。
 
@@ -283,16 +302,19 @@
 9. 使用会导致健康检查失败的安全测试版本执行失败升级，验证 FAILED、旧版本恢复、systemd active/running 和回滚原因。
 10. 点击删除，验证取消/确认、Assignment/State/Revision 的产品定义行为，并确认 Agent 无残留进程/unit/file。
 
-## 11. Execution 与日志
+## 11. 执行记录与日志
 
 页面：`/executions` 和 `/executions/{id}`
 
-- 按 Execution ID、Task、Node、状态、触发类型搜索/过滤，验证 URL 参数和清空。
-- 打开每种状态的详情，核对 Task、Revision、Script、Node、Trigger、Exit Code、Duration、Sync 状态。
-- 在 Logs Tab 验证 stdout、stderr、all、搜索、Wrap、Follow、空日志和截断标记。
+- 按 Execution ID、Task、Node、状态、触发类型、来源调度搜索/过滤，验证 URL 参数和清空。
+- 打开每种状态的详情，核对 Task、Revision、Script、Node、Trigger、来源 Schedule、Created At、Start/End Time、Exit Code、Duration、Sync 状态。
+- 在「执行过程」分区验证 Created → Start → End 时间线、当前状态和 block_reason；PENDING/RUNNING 也可查看。
+- 在「执行结果」分区验证终态状态、耗时、退出码、stdout/stderr 摘要与截断标记。
+- 在 Logs 分区验证 stdout、stderr、all、搜索、Wrap、Follow、空日志和截断标记。
 - 点击 Copy Logs，读取剪贴板并核对当前选定 stream/搜索结果/换行内容。
 - 对 RUNNING 执行点击 Cancel；非 RUNNING 执行不展示或禁用取消按钮。
 - 验证 Task/Script Revision 在 Execution 中固定记录，不因后续编辑而改变历史。
+- 调度触发的执行显示来源调度名称与跳转；Manual Run 和历史记录显示为空或「历史记录/未知来源」，详情不报错。
 - 验证失败、超时、取消、阻断和成功的状态文案、错误原因、日志和 Audit。
 
 ## 12. Transfers、Audit、Users、Settings
@@ -349,17 +371,17 @@
 
 ## 14. 端到端验收流程
 
-### E2E-01 节点 → 任务 → 执行
+### E2E-01 节点 → 任务定义 → 调度计划/试运行 → 执行记录
 
-添加/选择节点 → 创建 Command Task → 绑定单节点 → 页面 Run Now → 查看 Execution → 查看日志 → 刷新节点详情。要求节点、目标、输出、状态、Audit 一致。
+选择节点 → 创建 Command 任务定义（不绑定目标）→ 创建调度计划绑定单节点与策略 → 页面立即执行或从任务定义试运行选择临时目标 → 查看 Execution 过程/结果/日志 → 刷新节点详情。要求节点、目标、输出、状态、Audit 一致。
 
-### E2E-02 Script → 多节点任务
+### E2E-02 Script → 多节点任务定义
 
-创建 Script r1 → 修改为 r2 → 创建 Script Task 引用 r2 → 绑定 5 个 Native Agent → 页面运行 → 验证每节点独立 Execution、参数/环境实际生效和 Revision 固定。
+创建 Script r1 → 修改为 r2 → 创建 Script 任务定义引用 r2 → 通过调度目标或试运行临时目标选择 5 个 Native Agent → 页面运行 → 验证每节点独立 Execution、参数/环境实际生效和 Revision 固定。
 
-### E2E-03 Group/Label → 动态目标
+### E2E-03 Group/Label → 动态调度目标
 
-给节点添加 Label → 创建 Label Group → 创建以 Group 为目标的 Task → 修改 Label → 刷新 Group/Task/Node 页面 → 运行并核对实际目标集合。
+给节点添加 Label → 创建 Label Group → 创建以 Group 或 Label 为目标的调度计划 → 修改 Label → 刷新 Group/调度计划/节点页面 → 运行并核对实际目标集合。
 
 ### E2E-04 Artifact → 服务
 
@@ -367,11 +389,15 @@
 
 ### E2E-05 Schedule → Local Scheduler
 
-创建 One-Time 或短间隔 Schedule → 页面启用 → 等待 Execution → 禁用 → 验证不再产生新执行；若设置 Allow Offline，补充 Agent 离线/恢复专项测试。
+创建 One-Time 或短间隔 Schedule（含目标与策略）→ 页面启用 → 等待 Execution → 禁用 → 验证不再产生新执行；若设置 Allow Offline，补充 Agent 离线/恢复专项测试。manual 类型必须验证不自动触发。
 
 ### E2E-06 Copy 完整链路
 
 逐页发现 Copy 按钮 → 点击 → 读取剪贴板 → 与可见内容核对 → 切换页面/Tab 后再次复制 → 记录成功或失败证据。
+
+### E2E-07 升级迁移后的页面核对
+
+使用迁移前备份的旧库升级 Hub 后：核对任务定义数量与旧字段消失、调度计划数量与目标/策略复制、无调度任务出现禁用且名称带「迁移：」的 manual 调度、历史执行记录保留且来源显示为空/未知。
 
 ## 15. 证据、判定和缺陷
 
@@ -407,8 +433,8 @@ Hub/Agent/Linux 补充证据
 2. 节点详情、节点纳管命令、Copy 和实际注册。
 3. Group/Label。
 4. Script 和 Revision。
-5. Command/Script Task、节点目标和执行日志。
-6. Schedule 和 Local Scheduler。
+5. Command/Script 任务定义、调度计划目标与策略、试运行和执行日志。
+6. 调度计划、Manual 类型和 Local Scheduler。
 7. Artifact、Managed Application、systemd 和回滚。
 8. Transfers。
 9. Audit、Users、RBAC、Settings。
@@ -421,7 +447,8 @@ Hub/Agent/Linux 补充证据
 本轮页面全量测试只有在以下条件同时满足时才能标记 `PASS`：
 
 - 必测页面和核心按钮均已执行，有明确结果。
-- 添加节点、脚本、服务、任务绑定节点和执行链路真实通过；节点无临时 VM 时明确标记 `PARTIAL`。
+- 添加节点、脚本、服务、任务定义绑定调度计划和执行链路真实通过；节点无临时 VM 时明确标记 `PARTIAL`。
+- 任务定义不显示目标/策略，调度计划是目标与策略的唯一入口；Manual Run 临时目标不修改定义。
 - 每个发现的 Copy 按钮均完成剪贴板核验。
 - 核心状态、Revision、Execution、Audit、Agent 同步和 Linux 实际效果一致。
 - P0/P1 缺陷为 0；P2/P3 缺陷均有结论和风险接受记录。

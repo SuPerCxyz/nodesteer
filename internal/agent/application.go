@@ -100,6 +100,13 @@ func (am *ApplicationManager) HandleRunOperation(ctx context.Context, p protocol
 		AppID:     p.AppID,
 		UnitName:  "nodesteer-" + p.AppID,
 		Operation: op,
+		// 由 RunExecutionPayload 进入时透传来源与策略，供 Journal/结果回执保持一致。
+		ScheduleID:       p.ScheduleID,
+		ScheduleRevision: p.ScheduleRevision,
+		CreatedAt:        p.CreatedAt,
+		Timeout:          p.Timeout,
+		Retry:            p.Retry,
+		RunUser:          p.RunUser,
 	}
 	if def := am.loadApplication(p.AppID); len(def) > 0 {
 		var app models.Application
@@ -195,6 +202,13 @@ func (am *ApplicationManager) handleDeployOperation(ctx context.Context, p proto
 		UnitName:       app.UnitName,
 		HealthCheck:    hc,
 		Operation:      op,
+		// 由 RunExecutionPayload 进入时透传来源与策略。
+		ScheduleID:       p.ScheduleID,
+		ScheduleRevision: p.ScheduleRevision,
+		CreatedAt:        p.CreatedAt,
+		Timeout:          p.Timeout,
+		Retry:            p.Retry,
+		RunUser:          p.RunUser,
 	}
 	am.deploy(ctx, req, appDef, ex.ID, cb)
 }

@@ -6,7 +6,7 @@ import (
 )
 
 // ProtocolVersion 当前协议版本
-const ProtocolVersion = 1
+const ProtocolVersion = 3
 
 // 消息类型
 const (
@@ -170,10 +170,14 @@ type RunExecutionPayload struct {
 	ApplicationVersion string            `json:"application_version,omitempty"`
 	AppOperation       string            `json:"app_operation,omitempty"`
 	ScheduledTime      string            `json:"scheduled_time,omitempty"`
-	TriggerType        string            `json:"trigger_type"`
-	Condition          json.RawMessage   `json:"condition,omitempty"`
-	ArtifactID         string            `json:"artifact_id,omitempty"`
-	TargetVersion      string            `json:"target_version,omitempty"`
+	// ScheduleID 调度触发时的来源 Schedule；Manual Run 为空。
+	ScheduleID       string          `json:"schedule_id,omitempty"`
+	ScheduleRevision int64           `json:"schedule_revision,omitempty"`
+	CreatedAt        string          `json:"created_at,omitempty"`
+	TriggerType      string          `json:"trigger_type"`
+	Condition        json.RawMessage `json:"condition,omitempty"`
+	ArtifactID       string          `json:"artifact_id,omitempty"`
+	TargetVersion    string          `json:"target_version,omitempty"`
 	// DownloadURL Agent 自升级（type=agent_upgrade）的二进制下载地址，
 	// 由 Hub 指定（既有 GET /api/agent/binary 端点）；为空时 Agent 侧按 HubURL 派生兜底。
 	DownloadURL string `json:"download_url,omitempty"`
@@ -204,16 +208,21 @@ type ExecutionFinishedPayload struct {
 	NodeID               string `json:"node_id,omitempty"`
 	TriggerType          string `json:"trigger_type,omitempty"`
 	ScheduledTime        string `json:"scheduled_time,omitempty"`
-	Status               string `json:"status"`
-	ExitCode             int    `json:"exit_code"`
-	Stdout               string `json:"stdout"`
-	Stderr               string `json:"stderr"`
-	StdoutTruncated      bool   `json:"stdout_truncated"`
-	StderrTruncated      bool   `json:"stderr_truncated"`
-	StartTime            string `json:"start_time,omitempty"`
-	EndTime              string `json:"end_time"`
-	Offline              bool   `json:"offline"`
-	BlockReason          string `json:"block_reason,omitempty"`
+	// ScheduleID 来源调度；手动执行与旧 Agent 为空。
+	ScheduleID       string `json:"schedule_id,omitempty"`
+	ScheduleRevision int64  `json:"schedule_revision,omitempty"`
+	// CreatedAt Hub 创建执行的时间（Manual Run 由 Hub 下发，调度触发由调度方写入）。
+	CreatedAt       string `json:"created_at,omitempty"`
+	Status          string `json:"status"`
+	ExitCode        int    `json:"exit_code"`
+	Stdout          string `json:"stdout"`
+	Stderr          string `json:"stderr"`
+	StdoutTruncated bool   `json:"stdout_truncated"`
+	StderrTruncated bool   `json:"stderr_truncated"`
+	StartTime       string `json:"start_time,omitempty"`
+	EndTime         string `json:"end_time"`
+	Offline         bool   `json:"offline"`
+	BlockReason     string `json:"block_reason,omitempty"`
 }
 
 // ExecutionAckPayload 执行结果接收确认
@@ -304,37 +313,48 @@ type FileTransferCancelPayload struct {
 
 // DeployRequestPayload 部署请求
 type DeployRequestPayload struct {
-	AppID          string            `json:"app_id"`
-	AppVersion     string            `json:"app_version"`
-	AppRevision    int64             `json:"app_revision"`
-	ArtifactID     string            `json:"artifact_id"`
-	ArtifactURL    string            `json:"artifact_url"`
-	ArtifactSHA256 string            `json:"artifact_sha256"`
-	BinaryPath     string            `json:"binary_path"`
-	Arguments      []string          `json:"arguments"`
-	Environment    map[string]string `json:"environment"`
-	Config         string            `json:"config"`
-	ConfigPath     string            `json:"config_path,omitempty"`
-	UnitName       string            `json:"unit_name"`
-	HealthCheck    json.RawMessage   `json:"health_check,omitempty"`
-	Operation      string            `json:"operation"` // deploy | start | stop | restart | upgrade
+	AppID            string            `json:"app_id"`
+	AppVersion       string            `json:"app_version"`
+	AppRevision      int64             `json:"app_revision"`
+	ArtifactID       string            `json:"artifact_id"`
+	ArtifactURL      string            `json:"artifact_url"`
+	ArtifactSHA256   string            `json:"artifact_sha256"`
+	BinaryPath       string            `json:"binary_path"`
+	Arguments        []string          `json:"arguments"`
+	Environment      map[string]string `json:"environment"`
+	Config           string            `json:"config"`
+	ConfigPath       string            `json:"config_path,omitempty"`
+	UnitName         string            `json:"unit_name"`
+	HealthCheck      json.RawMessage   `json:"health_check,omitempty"`
+	Operation        string            `json:"operation"` // deploy | start | stop | restart | upgrade
+	TriggerType      string            `json:"trigger_type,omitempty"`
+	ScheduleID       string            `json:"schedule_id,omitempty"`
+	ScheduleRevision int64             `json:"schedule_revision,omitempty"`
+	CreatedAt        string            `json:"created_at,omitempty"`
+	Timeout          int               `json:"timeout,omitempty"`
+	Retry            int               `json:"retry,omitempty"`
+	RunUser          string            `json:"run_user,omitempty"`
+	OfflinePolicy    string            `json:"offline_policy,omitempty"`
 }
 
 // DeployResultPayload 部署结果
 type DeployResultPayload struct {
-	AppID         string `json:"app_id"`
-	ExecutionID   string `json:"execution_id,omitempty"`
-	TaskID        string `json:"task_id,omitempty"`
-	TaskRevision  int64  `json:"task_revision,omitempty"`
-	TriggerType   string `json:"trigger_type,omitempty"`
-	ScheduledTime string `json:"scheduled_time,omitempty"`
-	Version       string `json:"version,omitempty"`
-	StartTime     string `json:"start_time,omitempty"`
-	Operation     string `json:"operation"`
-	OK            bool   `json:"ok"`
-	Health        string `json:"health,omitempty"` // healthy | unhealthy | stopped
-	Rollback      bool   `json:"rollback,omitempty"`
-	Error         string `json:"error,omitempty"`
+	AppID            string `json:"app_id"`
+	ExecutionID      string `json:"execution_id,omitempty"`
+	TaskID           string `json:"task_id,omitempty"`
+	TaskRevision     int64  `json:"task_revision,omitempty"`
+	TriggerType      string `json:"trigger_type,omitempty"`
+	ScheduledTime    string `json:"scheduled_time,omitempty"`
+	ScheduleID       string `json:"schedule_id,omitempty"`
+	ScheduleRevision int64  `json:"schedule_revision,omitempty"`
+	CreatedAt        string `json:"created_at,omitempty"`
+	Version          string `json:"version,omitempty"`
+	StartTime        string `json:"start_time,omitempty"`
+	Operation        string `json:"operation"`
+	OK               bool   `json:"ok"`
+	Health           string `json:"health,omitempty"` // healthy | unhealthy | stopped
+	Rollback         bool   `json:"rollback,omitempty"`
+	Error            string `json:"error,omitempty"`
 }
 
 // RemoteStateUnknown 远程状态不可解析标记

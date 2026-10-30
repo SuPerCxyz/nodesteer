@@ -246,10 +246,15 @@ func TestGatewaySync(t *testing.T) {
 	}
 	task := &models.Task{
 		Name: "t1", Type: "script", ScriptID: sc.ID, Enabled: true,
-		Target: models.Target{Type: "node", NodeIDs: []string{helloAck.NodeID}},
 	}
 	if err := st.CreateTask(ctx, task); err != nil {
 		t.Fatalf("create task: %v", err)
+	}
+	if err := st.CreateSchedule(ctx, &models.Schedule{
+		TaskID: task.ID, Type: models.ScheduleTypeManual, Revision: 1, Enabled: true,
+		Target: models.Target{Type: "node", NodeIDs: []string{helloAck.NodeID}},
+	}); err != nil {
+		t.Fatalf("create schedule: %v", err)
 	}
 
 	sync := protocol.NewEnvelope(protocol.MsgSyncRequest, "req2", protocol.SyncRequestPayload{Since: 0})

@@ -250,6 +250,35 @@ export function SectionCard({
   )
 }
 
+/**
+ * 详情页分区栅格：宽屏两栏，窄屏单栏。
+ * 页面级不再使用 max-w-3xl/4xl/5xl 收窄内容。
+ */
+export function SectionGrid({
+  children,
+  className,
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <div className={cn('grid gap-4 2xl:grid-cols-2', className)}>
+      {children}
+    </div>
+  )
+}
+
+/** 在 SectionGrid 中占满整行，用于日志、执行历史等宽内容。 */
+export function SectionFull({
+  children,
+  className,
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
+  return <div className={cn('2xl:col-span-2', className)}>{children}</div>
+}
+
 export function DetailGrid({
   children,
   className,
@@ -260,7 +289,7 @@ export function DetailGrid({
   return (
     <dl
       className={cn(
-        'grid gap-x-8 gap-y-4 text-sm lg:grid-cols-2 2xl:grid-cols-3',
+        'grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 xl:grid-cols-3 min-[1920px]:grid-cols-4',
         className
       )}
     >

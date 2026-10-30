@@ -18,11 +18,12 @@ import (
 )
 
 type contractServer struct {
-	server  *Server
-	handler http.Handler
-	store   *store.SQLiteStore
-	rm      *hub.RevisionManager
-	token   string
+	server   *Server
+	handler  http.Handler
+	store    *store.SQLiteStore
+	rm       *hub.RevisionManager
+	sessions *hub.SessionManager
+	token    string
 }
 
 // newContractServer 构造带全部 Manager 的真实路由 API Server，并以管理员登录。
@@ -61,11 +62,12 @@ func newContractServer(t *testing.T) *contractServer {
 		t.Fatalf("create admin: %v", err)
 	}
 	return &contractServer{
-		server:  server,
-		handler: server.Routes(),
-		store:   st,
-		rm:      rm,
-		token:   loginAs(t, server, "admin", "secret"),
+		server:   server,
+		handler:  server.Routes(),
+		store:    st,
+		rm:       rm,
+		sessions: sessions,
+		token:    loginAs(t, server, "admin", "secret"),
 	}
 }
 
@@ -176,7 +178,7 @@ func TestDefinitionPutNotFoundContract(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("create task = %d %s", rec.Code, rec.Body.String())
 	}
-	rec = c.do(t, http.MethodPost, "/api/schedules", `{"task_id":"`+task.ID+`","type":"interval","interval_sec":60,"execution_owner":"hub"}`)
+	rec = c.do(t, http.MethodPost, "/api/schedules", `{"task_id":"`+task.ID+`","type":"interval","interval_sec":60,"target":{"type":"label","label_key":"env"},"execution_owner":"hub"}`)
 	schedule := decodeResource[models.Schedule](t, rec)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("create schedule = %d %s", rec.Code, rec.Body.String())
@@ -195,7 +197,7 @@ func TestDefinitionPutNotFoundContract(t *testing.T) {
 	}{
 		{"scripts", "/api/scripts/missing-id", `{"name":"contract-script-missing","interpreter":"bash","content":"true"}`, "script not found"},
 		{"tasks", "/api/tasks/missing-id", `{"name":"contract-task-missing","type":"command","command":"true","target":{"type":"label","label_key":"env"}}`, "task not found"},
-		{"schedules", "/api/schedules/missing-id", `{"task_id":"` + task.ID + `","type":"interval","interval_sec":60,"execution_owner":"hub"}`, "schedule not found"},
+		{"schedules", "/api/schedules/missing-id", `{"task_id":"` + task.ID + `","type":"interval","interval_sec":60,"target":{"type":"label","label_key":"env"},"execution_owner":"hub"}`, "schedule not found"},
 		{"applications", "/api/applications/missing-id", `{"name":"contract-app-missing","unit_name":"contract-app-missing.service"}`, "application not found"},
 	}
 	for _, tc := range notFoundCases {
@@ -219,7 +221,7 @@ func TestDefinitionPutNotFoundContract(t *testing.T) {
 	}{
 		{"scripts", "/api/scripts/" + script.ID, `{"name":"contract-script","interpreter":"bash","content":"echo ok"}`},
 		{"tasks", "/api/tasks/" + task.ID, `{"name":"contract-task","type":"command","command":"echo ok","target":{"type":"label","label_key":"env"}}`},
-		{"schedules", "/api/schedules/" + schedule.ID, `{"task_id":"` + task.ID + `","type":"interval","interval_sec":120,"execution_owner":"hub"}`},
+		{"schedules", "/api/schedules/" + schedule.ID, `{"task_id":"` + task.ID + `","type":"interval","interval_sec":120,"target":{"type":"label","label_key":"env"},"execution_owner":"hub"}`},
 		{"applications", "/api/applications/" + app.ID, `{"name":"contract-app","unit_name":"contract-app.service"}`},
 	}
 	for _, tc := range okCases {

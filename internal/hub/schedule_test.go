@@ -19,7 +19,7 @@ func newTestScheduleManager(t *testing.T) *ScheduleManager {
 	}
 	t.Cleanup(func() { st.Close() })
 	revisions := NewRevisionManager(st)
-	if err := st.CreateTask(context.Background(), &models.Task{ID: "task-1", Name: "task", Type: models.TaskTypeCommand, Command: "echo", Target: models.Target{Type: "label", LabelKey: "env"}, Enabled: true}); err != nil {
+	if err := st.CreateTask(context.Background(), &models.Task{ID: "task-1", Name: "task", Type: models.TaskTypeCommand, Command: "echo", Enabled: true}); err != nil {
 		t.Fatalf("create task: %v", err)
 	}
 	return NewScheduleManager(st, revisions, NewSyncManager(st, revisions, NewSessionManager(), NewNodeManager(st, revisions)), NewNodeManager(st, revisions), nil)
@@ -34,6 +34,7 @@ func TestSchedulePartialUpdatePreservesFields(t *testing.T) {
 	full := &models.Schedule{
 		TaskID:         "task-1",
 		Type:           "interval",
+		Target:         models.Target{Type: "label", LabelKey: "env"},
 		IntervalSec:    60,
 		Timezone:       "UTC",
 		ExecutionOwner: "agent",
@@ -73,6 +74,48 @@ func TestSchedulePartialUpdatePreservesFields(t *testing.T) {
 	}
 }
 
+// TestScheduleUpdateHealsDeletedTargetNode 目标节点被删除后，调度更新应剔除失效节点，
+// 避免用户无法编辑/启停仍引用旧节点的调度。
+func TestScheduleUpdateHealsDeletedTargetNode(t *testing.T) {
+	ctx := context.Background()
+	sm := newTestScheduleManager(t)
+	for _, n := range []*models.Node{
+		{ID: "heal-n1", AgentID: "heal-a1", Hostname: "heal-n1", Status: models.NodeStatusOnline},
+		{ID: "heal-n2", AgentID: "heal-a2", Hostname: "heal-n2", Status: models.NodeStatusOnline},
+	} {
+		if err := sm.store.UpsertNode(ctx, n); err != nil {
+			t.Fatalf("create node: %v", err)
+		}
+	}
+	sc := &models.Schedule{
+		TaskID: "task-1", Type: models.ScheduleTypeManual,
+		Target:         models.Target{Type: "node", NodeIDs: []string{"heal-n1", "heal-n2"}},
+		Timezone:       "UTC",
+		ExecutionOwner: models.ExecutionOwnerHub,
+		OfflinePolicy:  models.OfflinePolicyAllowOffline,
+		MisfirePolicy:  models.MisfirePolicyRunOnce,
+		Enabled:        true,
+	}
+	if err := sm.Create(ctx, sc); err != nil {
+		t.Fatalf("create schedule: %v", err)
+	}
+	if err := sm.store.DeleteNode(ctx, "heal-n1"); err != nil {
+		t.Fatalf("delete node: %v", err)
+	}
+	if err := sm.Update(ctx, &models.Schedule{
+		ID: sc.ID, Target: models.Target{Type: "node", NodeIDs: []string{"heal-n1", "heal-n2"}},
+	}); err != nil {
+		t.Fatalf("update schedule: %v", err)
+	}
+	got, err := sm.store.GetSchedule(ctx, sc.ID)
+	if err != nil {
+		t.Fatalf("get schedule: %v", err)
+	}
+	if len(got.Target.NodeIDs) != 1 || got.Target.NodeIDs[0] != "heal-n2" {
+		t.Fatalf("deleted node not healed: %+v", got.Target.NodeIDs)
+	}
+}
+
 // TestOneTimeScheduleRejectsPastRunAt 一次性调度运行时间必须晚于当前时间：
 // 过去时间创建必须 400 语义拒绝；修复前创建的过去时间记录（run_at 未修改）
 // 仍可编辑/禁用，不会因修复被锁死（缺陷 OBS-20261014-PAST-ONETIME-SAVE-ENABLED）。
@@ -82,6 +125,7 @@ func TestOneTimeScheduleRejectsPastRunAt(t *testing.T) {
 
 	past := &models.Schedule{
 		TaskID: "task-1", Type: models.ScheduleTypeOneTime,
+		Target:         models.Target{Type: "label", LabelKey: "env"},
 		RunAt:          time.Now().Add(-24 * time.Hour),
 		Timezone:       "UTC",
 		ExecutionOwner: models.ExecutionOwnerHub,
@@ -125,34 +169,32 @@ func TestValidateNormalizesConditionType(t *testing.T) {
 		t.Fatalf("open store: %v", err)
 	}
 	t.Cleanup(func() { st.Close() })
-	revisions := NewRevisionManager(st)
-	tm := &TaskManager{store: st, revisions: revisions}
 	if err := st.UpsertNode(ctx, &models.Node{ID: "n1", AgentID: "a1", Hostname: "n1", Status: models.NodeStatusOnline}); err != nil {
 		t.Fatalf("create node: %v", err)
 	}
 
 	cases := []struct {
 		name      string
+		scope     string
 		condition *models.Condition
 		wantType  string
 	}{
-		{"remote empty type", &models.Condition{Remote: &models.RemoteCondition{NodeID: "n1", Property: "online", Operator: "==", Value: "ONLINE"}}, "remote"},
-		{"local empty type", &models.Condition{Local: &models.LocalCondition{Metric: "cpu_usage", Operator: ">", Value: "50"}}, "local"},
-		{"already typed", &models.Condition{Type: "and", And: []models.Condition{{Type: "local", Local: &models.LocalCondition{Metric: "cpu_usage", Operator: ">", Value: "50"}}}}, "and"},
-		{"nil condition", nil, ""},
+		{"remote empty type", "remote", &models.Condition{Remote: &models.RemoteCondition{NodeID: "n1", Property: "online", Operator: "==", Value: "ONLINE"}}, "remote"},
+		{"local empty type", "local", &models.Condition{Local: &models.LocalCondition{Metric: "cpu_usage", Operator: ">", Value: "50"}}, "local"},
+		{"already typed", "local", &models.Condition{Type: "and", And: []models.Condition{{Type: "local", Local: &models.LocalCondition{Metric: "cpu_usage", Operator: ">", Value: "50"}}}}, "and"},
+		{"nil condition", "local", nil, ""},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			task := &models.Task{ID: "t1", Name: "x", Type: models.TaskTypeCommand, Command: "echo", Target: models.Target{Type: "node", NodeIDs: []string{"n1"}}, Condition: tc.condition}
-			if err := tm.Validate(ctx, task); err != nil {
+			if err := validateCondition(ctx, st, tc.condition, tc.scope); err != nil {
 				t.Fatalf("validate: %v", err)
 			}
 			if tc.condition == nil {
 				return
 			}
-			if task.Condition.Type != tc.wantType {
-				t.Fatalf("condition type = %q, want %q", task.Condition.Type, tc.wantType)
+			if tc.condition.Type != tc.wantType {
+				t.Fatalf("condition type = %q, want %q", tc.condition.Type, tc.wantType)
 			}
 		})
 	}

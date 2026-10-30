@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/SuPerCxyz/nodesteer/internal/models"
@@ -85,9 +86,8 @@ func (sm *SyncManager) ComputeDesiredState(ctx context.Context, nodeID string) (
 			}
 		}
 	}
-	// 判断任务是否命中该节点
-	taskMatches := func(t *models.Task) bool {
-		tgt := t.Target
+	// 判断 Schedule 是否命中该节点（目标唯一来源）
+	matchesTarget := func(tgt models.Target) bool {
 		switch tgt.Type {
 		case "node":
 			for _, id := range tgt.NodeIDs {
@@ -109,46 +109,45 @@ func (sm *SyncManager) ComputeDesiredState(ctx context.Context, nodeID string) (
 		return false
 	}
 
-	// 任务集合并按 script 依赖收集 scripts
-	neededScripts := map[string]*models.Script{}
-	var tasks []*models.Task
+	// Desired State 由 Schedule 驱动：只有命中该节点且 Task 存在、启用的 Schedule
+	// 才同步 Task/Script；无 Schedule 引用的 Task 不单独同步（Manual Run 走 Dispatch 载荷）。
 	allTasks, err := sm.store.ListTasks(ctx)
 	if err != nil {
 		return nil, err
 	}
+	taskByID := make(map[string]*models.Task, len(allTasks))
 	for _, t := range allTasks {
-		if !t.Enabled {
-			continue
-		}
-		if !taskMatches(t) {
-			continue
-		}
-		tasks = append(tasks, t)
-		if t.ScriptID != "" {
-			if s, err := sm.store.GetScript(ctx, t.ScriptID); err == nil && s.Enabled {
-				neededScripts[s.ID] = s
-			}
-		}
+		taskByID[t.ID] = t
 	}
-
-	// Schedules：属于命中任务且 execution_owner 或 offline 相关
 	allSchedules, err := sm.store.ListSchedules(ctx)
 	if err != nil {
 		return nil, err
 	}
-	allowedTasks := map[string]bool{}
-	for _, t := range tasks {
-		allowedTasks[t.ID] = true
-	}
+	neededScripts := map[string]*models.Script{}
+	neededTasks := map[string]*models.Task{}
 	var schedules []*models.Schedule
 	for _, s := range allSchedules {
-		// 同步所有属于命中任务的调度（含禁用的），
-		// 让 Agent 本地 enabled 状态与 Hub 一致（禁用/启用切换可收敛）。
-		if !allowedTasks[s.TaskID] {
+		if !matchesTarget(s.Target) {
 			continue
 		}
+		t, ok := taskByID[s.TaskID]
+		if !ok || !t.Enabled {
+			continue
+		}
+		neededTasks[t.ID] = t
+		// 同步命中的全部调度（含禁用项），让 Agent 本地 enabled 状态与 Hub 一致。
 		schedules = append(schedules, s)
+		if t.ScriptID != "" {
+			if sc, err := sm.store.GetScript(ctx, t.ScriptID); err == nil && sc.Enabled {
+				neededScripts[sc.ID] = sc
+			}
+		}
 	}
+	var tasks []*models.Task
+	for _, t := range neededTasks {
+		tasks = append(tasks, t)
+	}
+	sort.Slice(tasks, func(i, j int) bool { return tasks[i].Name < tasks[j].Name })
 
 	// Applications：assignment 指定
 	var apps []*models.Application

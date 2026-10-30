@@ -12,31 +12,36 @@ import (
 
 // ---------- Executions ----------
 
+// CreateExecution 创建执行记录。CreatedAt 为零时使用当前时间。
 func (s *SQLiteStore) CreateExecution(ctx context.Context, e *models.Execution) error {
 	if e.ID == "" {
 		e.ID = uuid.NewString()
 	}
+	if e.CreatedAt.IsZero() {
+		e.CreatedAt = time.Now()
+	}
 	_, err := s.db.ExecContext(ctx, `
 		INSERT INTO executions (id, task_id, task_revision, script_id, script_revision, node_id,
-			trigger_type, scheduled_time, start_time, end_time, status, exit_code, stdout, stderr,
+			schedule_id, schedule_revision, trigger_type, scheduled_time, start_time, end_time, status, exit_code, stdout, stderr,
 			stdout_truncated, stderr_truncated, offline, synced, block_reason, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		e.ID, e.TaskID, e.TaskRevision, e.ScriptID, e.ScriptRevision, e.NodeID,
-		e.TriggerType, timeToDB(e.ScheduledTime), timeToDB(e.StartTime),
+		e.ScheduleID, e.ScheduleRevision, e.TriggerType, timeToDB(e.ScheduledTime), timeToDB(e.StartTime),
 		timeToDB(e.EndTime), e.Status, models.ExitCodeValue(e.ExitCode), e.Stdout, e.Stderr,
 		boolToInt(e.StdoutTruncated), boolToInt(e.StderrTruncated), boolToInt(e.Offline), boolToInt(e.Synced),
-		e.BlockReason, now())
+		e.BlockReason, timeToDB(e.CreatedAt))
 	return err
 }
 
+// UpdateExecution 更新执行记录。created_at 为创建时间，更新时保持不变。
 func (s *SQLiteStore) UpdateExecution(ctx context.Context, e *models.Execution) error {
 	_, err := s.db.ExecContext(ctx, `
 		UPDATE executions SET task_id=?, task_revision=?, script_id=?, script_revision=?, node_id=?,
-			trigger_type=?, scheduled_time=?, start_time=?, end_time=?, status=?, exit_code=?,
+			schedule_id=?, schedule_revision=?, trigger_type=?, scheduled_time=?, start_time=?, end_time=?, status=?, exit_code=?,
 			stdout=?, stderr=?, stdout_truncated=?, stderr_truncated=?, offline=?, synced=?, block_reason=?
 		WHERE id=?`,
 		e.TaskID, e.TaskRevision, e.ScriptID, e.ScriptRevision, e.NodeID,
-		e.TriggerType, timeToDB(e.ScheduledTime), timeToDB(e.StartTime),
+		e.ScheduleID, e.ScheduleRevision, e.TriggerType, timeToDB(e.ScheduledTime), timeToDB(e.StartTime),
 		timeToDB(e.EndTime), e.Status, models.ExitCodeValue(e.ExitCode), e.Stdout, e.Stderr,
 		boolToInt(e.StdoutTruncated), boolToInt(e.StderrTruncated), boolToInt(e.Offline), boolToInt(e.Synced),
 		e.BlockReason, e.ID)
@@ -53,18 +58,19 @@ func timeToDB(t time.Time) string {
 
 func scanExecution(sc interface{ Scan(...any) error }) (*models.Execution, error) {
 	var e models.Execution
-	var sched, start, end string
+	var sched, start, end, created string
 	var outT, errT int
 	var offline, synced int
 	var exitCode int
 	if err := sc.Scan(&e.ID, &e.TaskID, &e.TaskRevision, &e.ScriptID, &e.ScriptRevision, &e.NodeID,
-		&e.TriggerType, &sched, &start, &end, &e.Status, &exitCode, &e.Stdout, &e.Stderr,
-		&outT, &errT, &offline, &synced, &e.BlockReason); err != nil {
+		&e.ScheduleID, &e.ScheduleRevision, &e.TriggerType, &sched, &start, &end, &e.Status, &exitCode, &e.Stdout, &e.Stderr,
+		&outT, &errT, &offline, &synced, &e.BlockReason, &created); err != nil {
 		return nil, err
 	}
 	e.ScheduledTime = parseTime(sched)
 	e.StartTime = parseTime(start)
 	e.EndTime = parseTime(end)
+	e.CreatedAt = parseTime(created)
 	e.StdoutTruncated = outT == 1
 	e.StderrTruncated = errT == 1
 	e.Offline = offline == 1
@@ -75,8 +81,8 @@ func scanExecution(sc interface{ Scan(...any) error }) (*models.Execution, error
 }
 
 const execColumns = `id, task_id, task_revision, script_id, script_revision, node_id,
-	trigger_type, scheduled_time, start_time, end_time, status, exit_code, stdout, stderr,
-	stdout_truncated, stderr_truncated, offline, synced, block_reason`
+	schedule_id, schedule_revision, trigger_type, scheduled_time, start_time, end_time, status, exit_code, stdout, stderr,
+	stdout_truncated, stderr_truncated, offline, synced, block_reason, created_at`
 
 func (s *SQLiteStore) GetExecution(ctx context.Context, id string) (*models.Execution, error) {
 	row := s.db.QueryRowContext(ctx, `SELECT `+execColumns+` FROM executions WHERE id = ?`, id)

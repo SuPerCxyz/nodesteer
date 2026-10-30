@@ -10,9 +10,9 @@ test.describe('P02 布局与导航', () => {
     const navItems = [
       { name: /^节点$/, url: '/agents' },
       { name: /^脚本$/, url: '/scripts' },
-      { name: /^任务$/, url: '/tasks' },
+      { name: /^任务定义$/, url: '/tasks' },
       { name: /^应用$/, url: '/applications' },
-      { name: /^执行$/, url: '/executions' },
+      { name: /^执行记录$/, url: '/executions' },
     ]
     for (const item of navItems) {
       const link = sidebar.getByRole('link', { name: item.name }).first()
@@ -21,7 +21,7 @@ test.describe('P02 布局与导航', () => {
       await page.waitForURL(new RegExp(item.url), { timeout: 10_000 })
       await expect(page).toHaveURL(new RegExp(item.url))
     }
-    await expect(sidebar.getByRole('link', { name: /调度/ })).toBeVisible()
+    await expect(sidebar.getByRole('link', { name: /调度计划/ })).toBeVisible()
   })
 
   test('P02-05 独立调度与旧入口重定向', async ({ page }) => {

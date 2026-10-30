@@ -40,7 +40,7 @@ func TestUnknownSubpathIs404ForAllResources(t *testing.T) {
 	script := decodeResource[models.Script](t, rec)
 	rec = s.do(t, http.MethodPost, "/api/tasks", `{"name":"subpath-task","type":"command","command":"true","target":{"type":"label","label_key":"env"}}`)
 	task := decodeResource[models.Task](t, rec)
-	rec = s.do(t, http.MethodPost, "/api/schedules", `{"task_id":"`+task.ID+`","type":"interval","interval_sec":60,"execution_owner":"hub"}`)
+	rec = s.do(t, http.MethodPost, "/api/schedules", `{"task_id":"`+task.ID+`","type":"interval","interval_sec":60,"target":{"type":"label","label_key":"env"},"execution_owner":"hub"}`)
 	schedule := decodeResource[models.Schedule](t, rec)
 	rec = s.do(t, http.MethodPost, "/api/groups", `{"name":"subpath-group","type":"static"}`)
 	group := decodeResource[models.Group](t, rec)
@@ -74,7 +74,7 @@ func TestUnknownSubpathIs404ForAllResources(t *testing.T) {
 		{"nodes", "/api/nodes/" + nodeID, "node not found", `{"status":"offline"}`},
 		{"tasks", "/api/tasks/" + task.ID, "task not found", `{"name":"subpath-task-hijacked","type":"command","command":"true","target":{"type":"label","label_key":"env"}}`},
 		{"scripts", "/api/scripts/" + script.ID, "script not found", `{"name":"subpath-script-hijacked","interpreter":"bash","content":"true"}`},
-		{"schedules", "/api/schedules/" + schedule.ID, "schedule not found", `{"task_id":"` + task.ID + `","type":"interval","interval_sec":120,"execution_owner":"hub"}`},
+		{"schedules", "/api/schedules/" + schedule.ID, "schedule not found", `{"task_id":"` + task.ID + `","type":"interval","interval_sec":120,"target":{"type":"label","label_key":"env"},"execution_owner":"hub"}`},
 		{"groups", "/api/groups/" + group.ID, "group not found", `{"name":"subpath-group-hijacked","type":"static"}`},
 		{"applications", "/api/applications/" + app.ID, "application not found", `{"name":"subpath-app-hijacked","unit_name":"subpath-app.service"}`},
 		{"users", "/api/users/" + user.ID, "user not found", `{"role":"operator"}`},

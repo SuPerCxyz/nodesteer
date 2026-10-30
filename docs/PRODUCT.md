@@ -14,8 +14,8 @@ Hub 提供：
 - Web 管理
 - 节点与节点组管理
 - Script 管理
-- Task 管理
-- Schedule 管理
+- 任务定义（Task）管理
+- 调度计划（Schedule）管理
 - Condition
 - Hub → Agent 自动同步
 - Artifact 管理
@@ -60,9 +60,9 @@ Agent 负责：
 7. Agent 注册、Heartbeat、基础 Inventory
 8. Node / Group / Label 管理
 9. Script Library 与 Revision
-10. Task 管理与 Revision
-11. Manual Run
-12. Cron / Interval / One-Time Schedule
+10. 任务定义（Task）管理与 Revision
+11. Manual Run（请求级目标与策略）
+12. Cron / Interval / One-Time / On-Start / Manual Schedule
 13. Agent Local Scheduler
 14. Hub 故障期间 Offline Execution
 15. Local Condition
@@ -377,6 +377,8 @@ Object Revision 用于版本、审计和 Execution 绑定。
 
 Global Revision 用于判断 Agent 整体同步状态。
 
+Desired State 的任务集合按 `Schedule.Target` 计算：只有被命中该节点的 Schedule 引用的 Task、Script 与 Schedule 才会同步到 Agent。没有被任何 Schedule 引用的 Task 不参与节点同步，但仍可通过 Manual Run 执行。
+
 ---
 
 ## 11. 长连接实时通知
@@ -623,9 +625,9 @@ storage=fc
 - SHA256
 
 定义校验（Create/Update）：
-- `timeout < 0` → 400；`timeout == 0` 归一为默认 300s（与 Task、DB 默认值一致）
+- `timeout < 0` → 400；`timeout == 0` 归一为默认 300s（与 Schedule、Manual Run 策略和 DB 默认值一致）
 - `content` 上限 256 KiB（262144 字节，按字节数判定；超限 → 400）
-- `script.timeout` 暂不参与执行超时；执行超时以下发 Task 的 `timeout` 为准
+- `script.timeout` 暂不参与执行超时；执行超时以 Schedule.Timeout 或 Manual Run 请求中的 `timeout` 为准
 
 每次编辑产生新 Revision，并保留 Revision History。
 
@@ -647,18 +649,27 @@ Commit Revision
 
 ## 21. Task
 
+UI 名称：任务定义。
+
+Task 是可复用的执行内容定义，只描述「执行什么」，不绑定节点、触发器或执行策略。同一 Task 可以被多个 Schedule 引用。
+
 一期字段：
 - Name
 - Type
-- Target
-- Parameters
+- Parameters / Param Values
+- Script / Command / Application 与 App Operation
 - Condition
-- Schedule
-- Timeout
-- Retry
-- Offline Policy
 - Enabled
 - Revision
+- Created At / Updated At
+
+Task 不包含：
+- Target（节点/分组/标签）
+- Timeout
+- Retry
+- Run User
+- Offline Policy
+- Schedule
 
 一期 Task 类型：
 - Command
@@ -672,17 +683,23 @@ Application Operation：
 - Restart
 - Upgrade
 
-Target：
-- Single Node
-- Multiple Nodes
-- Node Group
-- Label
+节点绑定与执行策略统一由 Schedule 承载。Task 详情只读展示引用它的 Schedule 与执行历史；创建 Task 不需要选择目标节点。
 
 ---
 
 ## 22. Manual Run
 
-Web 提供 Run Now。
+Web 提供 Run Now（任务定义页「试运行」）。
+
+Manual Run 使用请求级临时目标与执行策略，不修改 Task 或 Schedule：
+
+- `schedule_id`：可选；从调度计划页「立即执行」时传入，使用该 Schedule 的目标与策略，并把来源写入 Execution
+- `target`：node / group / label 临时目标
+- `node_ids`：兼容旧请求的显式节点集合，等价于构造 node Target
+- `params`：参数覆盖
+- `timeout` / `retry` / `run_user` / `offline_policy`：本次执行的策略
+
+目标解析优先级：`schedule_id` > `target` > `node_ids` > 400；提供 `schedule_id` 时忽略请求级 target/策略。未提供目标或目标解析不出任何节点时返回 400，不创建 Execution。策略缺省值：300 秒、0 次重试、当前用户、Hub Online Required。
 
 流程：
 
@@ -698,20 +715,41 @@ Agent Dedup
 Execute
 ```
 
+同一 Manual Run 对每个目标节点创建一条 Execution；应用类 Task 仍走应用部署/操作链路，并携带本次请求的策略。
+
 一期 Agent Offline 时 Manual Run 不进入长期等待队列，明确返回不可执行。
 
 ---
 
 ## 23. Schedule
 
-一期支持：
-- Cron
-- Interval
-- One-Time
+UI 名称：调度计划。
 
-必须保存 IANA Timezone。
+Schedule 是任务、节点目标与执行策略的唯一绑定入口。
+
+一期字段：
+- Name：可选；缺省由任务名 + 触发器摘要生成
+- Task ID
+- Target：Single Node / Multiple Nodes / Node Group / Label
+- Type：Cron / Interval / One-Time / On-Start / Manual
+- Expression / Interval / Run At
+- Timezone（必须保存 IANA Timezone）
+- Execution Owner
+- Timeout：默认 300 秒；`0` 表示使用默认值；负数拒绝
+- Retry：默认 0；负数拒绝
+- Run User：可空；空表示当前用户
+- Offline Policy
+- Misfire Policy
+- Enabled
+- Revision
+
+`manual` 类型不自动触发，只承载「任务 + 目标 + 策略」，用于固定目标绑定和旧数据迁移；Hub 与 Agent 的自动调度器都跳过 manual。manual 不要求 expression、interval 或 run_at。
+
+同一 Task 可以被多个 Schedule 引用；不同 Schedule 的目标、策略和触发器互不覆盖。
 
 One-Time 的 `run_at` 必须晚于当前时间：Create 时过去时间 → 400 `run_at must be in the future`；Update 仅在 `run_at` 实际变化时校验，未修改的历史过去时间记录仍可编辑/禁用，不因该校验被锁死。
+
+创建或更新 Schedule 时必须提供可解析的 Target；缺失或无法解析 → 400。
 
 Local Scheduler 由 NodeSteer Agent 内置实现，不依赖 `/etc/cron.d`、crontab 或 systemd timer。
 
@@ -741,11 +779,13 @@ execution_owner=HUB
 
 同一 Schedule Slot 禁止 Hub 与 Agent 双重触发。
 
+`manual` Schedule 不参与自动触发，因此不产生 owner 之间的自动触发竞争；手动执行时仍使用该 Schedule 的目标与策略。
+
 ---
 
 ## 25. Offline Policy
 
-一期：
+一期策略由 Schedule 或 Manual Run 请求提供：
 - Hub Online Required
 - Allow Offline
 
@@ -773,6 +813,13 @@ RUN_ONCE
 ## 27. Condition Engine
 
 一期保持轻量。
+
+条件归属：
+- Task.Condition 只承载本地条件，作为任务自身的安全执行前提，随任务复用。
+- Schedule.Condition 只承载远程条件，作为调度依赖。
+- 调度执行时合并为 `local AND remote`，本地条件先评估、远程条件后评估。
+- 任务页「试运行」只评估 Task 本地条件；调度页「立即执行」评估 Task 本地 + Schedule 远程条件。
+- 应用类任务的手动执行同样经过条件评估，不因部署/操作路径绕过。
 
 支持 AND 与：
 - ==
@@ -803,6 +850,8 @@ systemctl is-active <service>
 ---
 
 ## 28. Remote Node Condition
+
+远程条件归属 Schedule，不写入 Task。任务页试运行不使用远程条件；调度计划页「立即执行」使用该调度的远程条件。
 
 一期支持基础：
 - `node02 == ONLINE`
@@ -835,21 +884,26 @@ BLOCKED
 
 ## 29. Execution
 
+UI 名称：执行记录。
+
 一期记录：
 - Execution ID
+- Schedule ID（可空；调度触发时记录来源，Manual Run 与历史记录为空）
+- Schedule Revision（可空；调度触发/调度页立即执行时记录来源版本，任务页 Manual Run 为 0）
 - Task ID
 - Task Revision
 - Script Revision
 - Node ID
 - Trigger Type
 - Scheduled Time
+- Created At
 - Start Time
 - End Time
 - Status
 - Exit Code
-- stdout
-- stderr
-- Offline
+- stdout / stderr（含截断标记）
+- Offline / Synced
+- Block Reason
 
 状态：
 - PENDING
@@ -859,6 +913,13 @@ BLOCKED
 - SKIPPED
 - CANCELED
 - TIMED_OUT
+- BLOCKED
+
+执行记录同时承载「执行过程」与「执行结果」：
+
+- 执行过程：Created At / Start Time / End Time / Status / Block Reason 构成的时间线；PENDING、RUNNING 等进行中状态同样可见，并保留实时日志。
+- 执行结果：终态状态、耗时、退出码、stdout/stderr 摘要与截断标记。
+- 来源调度：调度触发的执行展示 Schedule 名称与跳转；Manual Run 和历史记录显示为空或「历史记录/未知来源」。
 
 ---
 
@@ -876,6 +937,8 @@ Scheduled Time
 
 相同 Schedule Slot 只允许执行一次。
 
+Schedule ID 不进入幂等 Key。同一 Task 的多个 Schedule 命中同一节点与同一 Scheduled Time 时仍视为同一槽位，保持既有幂等语义；Execution 记录来源 Schedule ID 仅用于展示与排障。
+
 Manual Run 使用 Hub 创建的 Execution UUID，Agent 按 Execution ID 去重。
 
 ---
@@ -891,6 +954,8 @@ Start Process
 ```
 
 完成后更新结果。
+
+Journal 与上报包含可空 `schedule_id` 与 `created_at`：调度触发时记录来源调度，Manual Run 为空，历史记录为空。
 
 Hub Offline 时：
 
@@ -1248,11 +1313,11 @@ Dashboard
 Nodes
 Groups
 Scripts
-Tasks
-Schedules
+任务定义（Task）
+调度计划（Schedule）
 Applications
 Artifacts
-Executions
+执行记录（Execution）
 Settings
 ```
 
@@ -1267,10 +1332,10 @@ Node Detail：
 - Overview
 - Inventory
 - Labels
-- Tasks
-- Schedules
+- 调度计划（按 Schedule.Target 命中该节点）
+- 调度引用的任务定义
 - Managed Applications
-- Executions
+- 执行记录
 - Sync
 
 Script：
@@ -1278,18 +1343,31 @@ Script：
 - Enable/Disable/Delete
 - Revision History
 
-Task：
+任务定义（Task）：
 - Create/Edit
 - Enable/Disable
-- Run Now
-- Target
+- Run Now（试运行：选择临时目标与策略）
 - Parameters
 - Condition
-- Schedule
-- Retry
-- Timeout
-- Offline Policy
+- 关联调度（只读）
 - Execution History
+- 不提供 Target、Timeout、Retry、Run User、Offline Policy 编辑
+- 删除
+
+调度计划（Schedule）：
+- Create/Edit
+- Name
+- Task
+- Target（节点/分组/标签）
+- Type（Cron / Interval / One-Time / On-Start / Manual）
+- Expression / Interval / Run At / Timezone
+- Execution Owner
+- Timeout / Retry / Run User
+- Offline Policy / Misfire Policy
+- Enable/Disable
+- Run Now（使用调度自身目标与策略）
+- Execution History
+- 删除
 
 Application：
 - Create
@@ -1310,15 +1388,14 @@ Artifact：
 - SHA256
 - Usage
 
-Execution：
-- Metadata
-- Status
-- Duration
-- Exit Code
-- stdout
-- stderr
-- Offline
+执行记录（Execution）：
+- Metadata（含来源 Schedule）
+- 执行过程（Created At / Start Time / End Time / Status / Block Reason 时间线）
+- 执行结果（状态、耗时、退出码、stdout/stderr 摘要与截断标记）
+- 日志（实时/离线、stream 筛选、搜索、跟随、换行、复制）
+- Offline / Synced
 - Revision
+- Cancel（仅 RUNNING）
 
 所有状态必须来自真实后端，不允许永久 Fake Data。
 
@@ -1335,7 +1412,7 @@ Administrator：全部权限。
 
 Operator：
 - 查看
-- Run Task
+- Run Task / Manual Run
 - 查看日志
 - Deploy Application
 - 操作 Managed Application
@@ -1349,8 +1426,8 @@ Viewer：只读。
 一期至少记录：
 - Login
 - Script Create/Modify/Delete
-- Task Create/Modify/Delete/Execute
-- Schedule Modify
+- 任务定义（Task）Create/Modify/Delete/Execute
+- 调度计划（Schedule）Modify
 - Artifact Upload
 - Application Create/Modify/Deploy/Upgrade
 - Node Enable/Disable
@@ -1393,6 +1470,15 @@ Web UI 调用真实 API。
 - 其余端点方法不支持一律 405；方法守卫先于角色鉴权与存在性判定，不因权限差异把 405 退化为 403（未认证仍是 401）
 - 405 一律附 `Allow` 头（全端点统一，不再有例外；此前 scripts/tasks/schedules/groups/artifacts/applications/login 等端点缺失，缺陷 QA-20261018-F6 已补齐），如 `/api/users`（`GET, POST`）、`/api/users/{id}`（`PUT`）、`/api/executions/{id}`（`GET`）、`/api/nodes/{id}`（`GET, POST, PUT, DELETE`；`revoke-credential` 为 `POST`）、`/api/transfers/{id}`（`GET, POST`；动作子路径为 `POST`）
 
+运行模型契约（Task / Schedule / Execution）：
+
+- REST 路径与资源名保持不变；Task、Schedule、Execution 的 JSON 字段按新模型调整。
+- Task 响应只包含执行内容：`id`、`name`、`type`、`parameters`、`param_values`、`script_id`、`command`、`application_id`、`app_operation`、`condition`（仅本地条件）、`enabled`、`revision`、`created_at`、`updated_at`；不得再返回 `target`、`timeout`、`retry`、`run_user`、`offline_policy`、`schedule`。
+- Schedule 响应包含 `task_id`、`name`、`target`（`type=node|group|label`，以及对应的 `node_ids`、`group_ids`、`label_key`、`label_value`）、`condition`（仅远程条件）、`type`（`cron|interval|one_time|on_start|manual`）、`expression`、`interval_sec`、`run_at`、`timezone`、`execution_owner`、`timeout`、`retry`、`run_user`、`offline_policy`、`misfire_policy`、`enabled`、`revision` 与时间戳。
+- `POST /api/schedules` / `PUT /api/schedules/{id}`：缺少有效 `target` → 400；`timeout`、`retry` 为负数 → 400；`type=manual` 不要求表达式、间隔或 `run_at`；`condition` 含本地条件 → 400。
+- `POST /api/tasks/{id}/run` 接受 `schedule_id`、`target`、`node_ids`、`params`、`timeout`、`retry`、`run_user`、`offline_policy`；目标解析优先级 `schedule_id` > `target` > `node_ids`，都没有或解析为空 → 400；请求不修改 Task 或 Schedule。`schedule_id` 请求使用该调度远程条件；任务页请求只使用 Task 本地条件。
+- Execution 响应新增可空 `schedule_id`、`schedule_revision` 与 `created_at`；既有状态、`exit_code`、`stdout`/`stderr`、截断标记、`offline`、`synced`、`block_reason` 字段保持。
+
 会话与响应键名：
 - `/api/login`（本地密码登录）返回 `{"token": "...", "user": <会话对象>}`；`/api/me` 直接返回会话对象
 - 会话对象键名固定 snake_case：`token`、`user_id`、`username`、`role`、`expires`，OIDC 登录可能附带 `avatar`（空值省略）
@@ -1401,6 +1487,8 @@ Web UI 调用真实 API。
 状态码契约：
 - `PUT /api/schedules/{id}` / `/api/applications/{id}` / `/api/scripts/{id}` / `/api/tasks/{id}`：id 不存在（请求体合法）→ 404，错误体不回传底层存储错误原文；字段校验失败仍为 400
 - `POST /api/schedules`（`type=one_time`）：`run_at` 在过去 → 400 `run_at must be in the future`；`PUT /api/schedules/{id}` 仅在 `run_at` 实际变化时拒绝（未改值的历史过去时间记录放行，仍可编辑/禁用）
+- `POST /api/schedules` / `PUT /api/schedules/{id}`：缺少有效 `target` → 400；`timeout`、`retry` 为负数 → 400
+- `POST /api/tasks/{id}/run`：请求既无 `target` 也无 `node_ids`，或解析不出任何目标节点 → 400，不创建 Execution，不修改 Task/Schedule
 - `DELETE /api/scripts/{id}` / `/api/tasks/{id}` / `/api/schedules/{id}` / `/api/groups/{id}` / `/api/artifacts/{id}` / `/api/applications/{id}`：id 不存在 → 404 + 归一化 not found 文案（不再静默返回 200）；客户端删除重试必须按 404 处理
 - `/api/nodes/{id}`：`DELETE`/`POST`/`PUT` 先鉴权后存在性——operator/viewer 对存在与不存在的 id 均 403（不通过状态码差异泄露存在性）；admin 对不存在 id → 404 `node not found`
 - `POST /api/nodes`（集合写路径）：id 不存在 → 404 `node not found`（状态与标签两路径一致，不再 500 / 静默 200）；status 非法字符串 → 400 `invalid node status: <值>`
@@ -1569,6 +1657,9 @@ Heartbeat / Revision Check / Inventory 需避免形成高频负载。
 15. 宿主机差异必须通过 Host Adapter 隔离。
 16. Docker Agent 状态必须持久化。
 17. 不具备 Capability 的 Agent 不得接收对应 Host Task。
+18. Task 只描述执行内容，不承载目标与执行策略。
+19. Schedule 是任务、节点目标与执行策略的唯一绑定入口。
+20. Desired State 按 Schedule.Target 计算；无 Schedule 引用的 Task 不单独同步，但仍可 Manual Run。
 
 ---
 

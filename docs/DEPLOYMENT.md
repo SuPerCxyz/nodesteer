@@ -125,6 +125,8 @@ docker compose logs --tail 100 hub   # 确认进入 local login mode，无 init 
 
 ## 5. 升级与备份
 
+### 5.1 常规备份与升级
+
 ```bash
 # 备份（Hub 全部状态在卷里：SQLite + artifacts）
 docker compose stop hub
@@ -137,6 +139,87 @@ git pull && docker compose up -d --build
 ```
 
 数据库 schema 由 Hub 启动时自动迁移（`internal/store/migrate.go`），无需手工执行 SQL。
+
+### 5.2 Hub/Agent 协同升级（Task/Schedule 模型与协议版本变更）
+
+包含 Task/Schedule 模型重构与条件归属拆分的版本会把 Hub-Agent 协议版本由 1 提升到 2、再提升到 3：Task 不再承载目标与执行策略，Schedule 成为任务、目标与策略的唯一绑定入口；Task 只保留本地条件，Schedule 承载远程条件；`executions` 增加 `schedule_id`/`schedule_revision`。新 Hub 拒绝旧协议版本 Agent，旧 Hub 也不识别新 Agent，因此 Hub 与 Agent 必须协同升级。
+
+升级顺序固定为：
+
+```text
+备份 Hub DB 与所有 Agent 数据
+  ↓
+停止 Hub 与所有 Agent
+  ↓
+升级并启动 Hub（自动执行 schema 与数据迁移）
+  ↓
+确认 Hub 健康检查与迁移结果
+  ↓
+升级并启动所有 Agent
+  ↓
+验证同步、调度与执行记录
+```
+
+Docker Compose 示例（卷名以 `docker volume ls` 实际结果为准；单机 Native Agent 备份 `/var/lib/nodesteer`）：
+
+```bash
+# 1. 停止并备份
+docker compose stop hub agent
+docker run --rm -v nodesteer_hub-data:/data -v "$PWD":/backup alpine \
+  tar czf /backup/hub-data-$(date +%F-%H%M).tar.gz -C /data .
+docker run --rm -v nodesteer_agent-data:/data -v "$PWD":/backup alpine \
+  tar czf /backup/agent-data-$(date +%F-%H%M).tar.gz -C /data .
+
+# 2. 构建新版本
+docker compose build
+
+# 3. 先升级 Hub，确认迁移成功后再升级 Agent
+docker compose up -d hub
+docker compose logs --tail 200 hub
+curl -fsS http://localhost:8080/healthz
+curl -fsS http://localhost:8080/readyz
+
+docker compose up -d agent
+```
+
+Native Agent：
+
+```bash
+systemctl stop nodesteer-agent
+tar czf /backup/nodesteer-agent-$(date +%F-%H%M).tar.gz -C /var/lib nodesteer
+install bin/nodesteer-agent /usr/local/bin/nodesteer-agent
+systemctl restart nodesteer-agent
+systemctl status nodesteer-agent --no-pager
+```
+
+迁移内容：
+
+- `executions` 新增可空 `schedule_id`/`schedule_revision` 及必要索引；`created_at` 沿用既有列并回填空值，同时在 API 与协议中对外暴露。历史记录 `schedule_id` 为空、`schedule_revision` 为 0。
+- 旧 Task 的 `target`、`timeout`、`retry`、`run_user`、`offline_policy` 复制到其全部 Schedule。
+- Task 定义 JSON 移除目标与策略字段；Schedule 定义 JSON 补齐 `name`、`target`、`timeout`、`retry`、`run_user`。
+- 有目标但没有 Schedule 的旧 Task 生成一条禁用的 `manual` 迁移调度，名称为 `迁移：<task name>`，保留原目标与策略。
+- 旧 Task.Condition 按本地/远程拆分：本地保留在 Task，远程复制到全部 Schedule；混合 `and` 递归拆分。无调度的远程条件写入迁移 manual 调度；无法绑定时告警并保留本地部分。
+- 迁移完成后提升 Global Revision，触发 Agent 全量对账。
+- 数据迁移在单个事务内完成；失败时 Hub 启动报错，不继续以半迁移状态运行。
+
+验证点：
+
+1. Hub `/healthz`、`/readyz` 返回 200，启动日志无迁移错误。
+2. 任务定义数量与升级前一致，页面不再显示 Task 的目标与策略字段。
+3. 调度计划数量正确；抽查原 Task 的目标与策略已复制到其全部 Schedule。
+4. 原「有目标但无调度」的任务出现一条禁用的 `manual` 迁移调度，目标与策略保留。
+5. 历史执行记录数量不变，来源调度为空或显示「历史记录/未知来源」。
+6. 所有 Agent 升级后重新连接并完成同步；旧协议 Agent 被拒绝时日志给出明确版本错误。
+7. agent-owned 调度在 Agent 离线/恢复场景仍可触发，执行记录带来源调度。
+
+回滚步骤与限制：
+
+1. 停止新 Hub 与所有新 Agent。
+2. 恢复升级前的 Hub 数据卷/目录备份，并恢复旧 Hub 二进制或镜像。
+3. 恢复 Agent 数据目录/卷，或让旧 Agent 重新全量同步。
+4. 旧 Hub 不支持直接读取新库：不得只回退二进制而保留已迁移的 Hub DB。
+5. 回滚会丢失备份之后产生的执行记录与定义变更；回滚前先导出需要保留的执行记录。
+6. 旧 Hub 与新 Agent、以及新 Hub 与旧 Agent 均不兼容，回滚必须同时恢复两侧版本。
 
 ## 6. 常见启动失败
 

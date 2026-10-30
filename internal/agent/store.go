@@ -140,8 +140,11 @@ CREATE TABLE IF NOT EXISTS executions (
 	application_operation TEXT NOT NULL DEFAULT '',
 	application_health TEXT NOT NULL DEFAULT '',
 	node_id TEXT NOT NULL,
+	schedule_id TEXT NOT NULL DEFAULT '',
+	schedule_revision INTEGER NOT NULL DEFAULT 0,
 	trigger_type TEXT NOT NULL,
 	scheduled_time TEXT NOT NULL DEFAULT '',
+	created_at TEXT NOT NULL DEFAULT '',
 	status TEXT NOT NULL,
 	exit_code INTEGER NOT NULL DEFAULT 0,
 	stdout TEXT NOT NULL DEFAULT '',
@@ -216,6 +219,10 @@ func (s *LocalStore) migrate() error {
 		`ALTER TABLE executions ADD COLUMN application_version TEXT NOT NULL DEFAULT ''`,
 		`ALTER TABLE executions ADD COLUMN application_operation TEXT NOT NULL DEFAULT ''`,
 		`ALTER TABLE executions ADD COLUMN application_health TEXT NOT NULL DEFAULT ''`,
+		// 旧库迁移：执行来源调度与创建时间（schedule_id 允许为空：Manual Run/历史记录）
+		`ALTER TABLE executions ADD COLUMN schedule_id TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE executions ADD COLUMN schedule_revision INTEGER NOT NULL DEFAULT 0`,
+		`ALTER TABLE executions ADD COLUMN created_at TEXT NOT NULL DEFAULT ''`,
 	} {
 		if _, err := s.db.Exec(column); err != nil && !strings.Contains(err.Error(), "duplicate column") {
 			return err
@@ -584,8 +591,11 @@ type LocalExecution struct {
 	ApplicationOperation string
 	ApplicationHealth    string
 	NodeID               string
+	ScheduleID           string
+	ScheduleRevision     int64
 	TriggerType          string
 	ScheduledTime        string
+	CreatedAt            string
 	Status               string
 	ExitCode             int
 	Stdout               string
@@ -601,21 +611,22 @@ type LocalExecution struct {
 
 func (s *LocalStore) CreateExecution(ctx context.Context, e *LocalExecution) error {
 	_, err := s.execContext(ctx, `
-		INSERT INTO executions (id, task_id, task_revision, script_id, script_revision, application_id, application_version, application_operation, application_health, node_id, trigger_type, scheduled_time, status, exit_code,
+		INSERT INTO executions (id, task_id, task_revision, script_id, script_revision, application_id, application_version, application_operation, application_health, node_id, schedule_id, schedule_revision, trigger_type, scheduled_time, created_at, status, exit_code,
 			stdout, stderr, stdout_truncated, stderr_truncated, start_time, end_time, offline, synced, block_reason)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		e.ID, e.TaskID, e.TaskRevision, e.ScriptID, e.ScriptRevision, e.ApplicationID, e.ApplicationVersion, e.ApplicationOperation, e.ApplicationHealth, e.NodeID, e.TriggerType, e.ScheduledTime, e.Status, e.ExitCode,
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		e.ID, e.TaskID, e.TaskRevision, e.ScriptID, e.ScriptRevision, e.ApplicationID, e.ApplicationVersion, e.ApplicationOperation, e.ApplicationHealth, e.NodeID, e.ScheduleID, e.ScheduleRevision, e.TriggerType, e.ScheduledTime, e.CreatedAt, e.Status, e.ExitCode,
 		e.Stdout, e.Stderr, boolInt(e.StdoutTruncated), boolInt(e.StderrTruncated),
 		e.StartTime, e.EndTime, boolInt(e.Offline), boolInt(e.Synced), e.BlockReason)
 	return err
 }
 
 func (s *LocalStore) UpdateExecution(ctx context.Context, e *LocalExecution) error {
+	// created_at 是执行创建时刻，只在落 Journal 时写入，后续状态更新不得覆盖。
 	_, err := s.execContext(ctx, `
-		UPDATE executions SET task_revision=?, script_id=?, script_revision=?, application_id=?, application_version=?, application_operation=?, application_health=?, status=?, exit_code=?, stdout=?, stderr=?, stdout_truncated=?,
+		UPDATE executions SET task_revision=?, script_id=?, script_revision=?, application_id=?, application_version=?, application_operation=?, application_health=?, schedule_id=?, schedule_revision=?, status=?, exit_code=?, stdout=?, stderr=?, stdout_truncated=?,
 			stderr_truncated=?, start_time=?, end_time=?, offline=?, synced=?, block_reason=?
 		WHERE id=?`,
-		e.TaskRevision, e.ScriptID, e.ScriptRevision, e.ApplicationID, e.ApplicationVersion, e.ApplicationOperation, e.ApplicationHealth, e.Status, e.ExitCode, e.Stdout, e.Stderr, boolInt(e.StdoutTruncated),
+		e.TaskRevision, e.ScriptID, e.ScriptRevision, e.ApplicationID, e.ApplicationVersion, e.ApplicationOperation, e.ApplicationHealth, e.ScheduleID, e.ScheduleRevision, e.Status, e.ExitCode, e.Stdout, e.Stderr, boolInt(e.StdoutTruncated),
 		boolInt(e.StderrTruncated), e.StartTime, e.EndTime, boolInt(e.Offline),
 		boolInt(e.Synced), e.BlockReason, e.ID)
 	return err
@@ -624,7 +635,7 @@ func (s *LocalStore) UpdateExecution(ctx context.Context, e *LocalExecution) err
 func scanExec(sc interface{ Scan(...any) error }) (*LocalExecution, error) {
 	var e LocalExecution
 	var outT, errT, offline, synced int
-	if err := sc.Scan(&e.ID, &e.TaskID, &e.TaskRevision, &e.ScriptID, &e.ScriptRevision, &e.ApplicationID, &e.ApplicationVersion, &e.ApplicationOperation, &e.ApplicationHealth, &e.NodeID, &e.TriggerType, &e.ScheduledTime, &e.Status,
+	if err := sc.Scan(&e.ID, &e.TaskID, &e.TaskRevision, &e.ScriptID, &e.ScriptRevision, &e.ApplicationID, &e.ApplicationVersion, &e.ApplicationOperation, &e.ApplicationHealth, &e.NodeID, &e.ScheduleID, &e.ScheduleRevision, &e.TriggerType, &e.ScheduledTime, &e.CreatedAt, &e.Status,
 		&e.ExitCode, &e.Stdout, &e.Stderr, &outT, &errT, &e.StartTime, &e.EndTime,
 		&offline, &synced, &e.BlockReason); err != nil {
 		return nil, err
@@ -633,10 +644,18 @@ func scanExec(sc interface{ Scan(...any) error }) (*LocalExecution, error) {
 	e.StderrTruncated = errT == 1
 	e.Offline = offline == 1
 	e.Synced = synced == 1
+	// 旧记录没有 created_at：读取时回退到可用时间，避免伪造来源调度。
+	if e.CreatedAt == "" {
+		if e.StartTime != "" {
+			e.CreatedAt = e.StartTime
+		} else {
+			e.CreatedAt = e.ScheduledTime
+		}
+	}
 	return &e, nil
 }
 
-const execCols = `id, task_id, task_revision, script_id, script_revision, application_id, application_version, application_operation, application_health, node_id, trigger_type, scheduled_time, status, exit_code,
+const execCols = `id, task_id, task_revision, script_id, script_revision, application_id, application_version, application_operation, application_health, node_id, schedule_id, schedule_revision, trigger_type, scheduled_time, created_at, status, exit_code,
 	stdout, stderr, stdout_truncated, stderr_truncated, start_time, end_time, offline, synced, block_reason`
 
 func (s *LocalStore) GetExecution(ctx context.Context, id string) (*LocalExecution, error) {

@@ -193,7 +193,6 @@ func pausedScheduleTask(t *testing.T, st store.Store, id string, nodeIDs ...stri
 	t.Helper()
 	task := &models.Task{
 		ID: id, Name: id, Type: models.TaskTypeCommand, Command: "echo hi",
-		Target:  models.Target{Type: "node", NodeIDs: nodeIDs},
 		Enabled: true,
 	}
 	if err := st.CreateTask(context.Background(), task); err != nil {
@@ -212,7 +211,7 @@ func TestRunScheduledHubPausedNodeCreatesSkipped(t *testing.T) {
 	task := pausedScheduleTask(t, st, "task-pause", "n-pause-sched")
 	schedTime := time.Now().UTC().Truncate(time.Second)
 
-	out, err := em.RunScheduledHub(ctx, task, []string{"n-pause-sched"}, schedTime)
+	out, err := em.RunScheduledHub(ctx, task, []string{"n-pause-sched"}, schedTime, &models.Schedule{ID: "schedule-1"}, ExecutionStrategy{Timeout: 30})
 	if err != nil {
 		t.Fatalf("paused schedule must not error out, got %v", err)
 	}
@@ -235,7 +234,7 @@ func TestRunScheduledHubPausedNodeCreatesSkipped(t *testing.T) {
 	}
 
 	// 同 slot 再次触发：幂等不重复留痕
-	if _, err := em.RunScheduledHub(ctx, task, []string{"n-pause-sched"}, schedTime); err != nil {
+	if _, err := em.RunScheduledHub(ctx, task, []string{"n-pause-sched"}, schedTime, &models.Schedule{ID: "schedule-1"}, ExecutionStrategy{Timeout: 30}); err != nil {
 		t.Fatalf("second fire should be idempotent, got %v", err)
 	}
 	list, err := st.ListExecutions(ctx, store.ExecutionFilter{NodeID: "n-pause-sched"})
@@ -255,7 +254,7 @@ func TestRunScheduledHubDisabledNodeCreatesSkipped(t *testing.T) {
 	upsertTestNode(t, st, "n-disabled-sched", models.NodeStatusDisabled)
 	task := pausedScheduleTask(t, st, "task-disabled", "n-disabled-sched")
 
-	out, err := em.RunScheduledHub(ctx, task, []string{"n-disabled-sched"}, time.Now().UTC().Truncate(time.Second))
+	out, err := em.RunScheduledHub(ctx, task, []string{"n-disabled-sched"}, time.Now().UTC().Truncate(time.Second), &models.Schedule{ID: "schedule-1"}, ExecutionStrategy{Timeout: 30})
 	if err != nil {
 		t.Fatalf("disabled schedule must not error out, got %v", err)
 	}
@@ -273,7 +272,7 @@ func TestRunScheduledHubOfflineNodeKeepsStatusQuo(t *testing.T) {
 	upsertTestNode(t, st, "n-offline-sched", models.NodeStatusOffline)
 	task := pausedScheduleTask(t, st, "task-offline", "n-offline-sched")
 
-	_, err := em.RunScheduledHub(ctx, task, []string{"n-offline-sched"}, time.Now().UTC().Truncate(time.Second))
+	_, err := em.RunScheduledHub(ctx, task, []string{"n-offline-sched"}, time.Now().UTC().Truncate(time.Second), &models.Schedule{ID: "schedule-1"}, ExecutionStrategy{Timeout: 30})
 	if err == nil || !strings.Contains(err.Error(), "not online") {
 		t.Fatalf("offline schedule should keep failing with not-online error, got %v", err)
 	}
@@ -296,7 +295,7 @@ func TestRunScheduledHubOnlineNodeDispatches(t *testing.T) {
 	em.sessions.Register(conn)
 	task := pausedScheduleTask(t, st, "task-online", "n-online-sched")
 
-	out, err := em.RunScheduledHub(ctx, task, []string{"n-online-sched"}, time.Now().UTC().Truncate(time.Second))
+	out, err := em.RunScheduledHub(ctx, task, []string{"n-online-sched"}, time.Now().UTC().Truncate(time.Second), &models.Schedule{ID: "schedule-1"}, ExecutionStrategy{Timeout: 30})
 	if err != nil {
 		t.Fatalf("online schedule dispatch: %v", err)
 	}
@@ -321,7 +320,7 @@ func TestRunManualPausedNodeRejected(t *testing.T) {
 	upsertTestNode(t, st, "n-pause-manual", models.NodeStatusMaintenance)
 	task := pausedScheduleTask(t, st, "task-manual", "n-pause-manual")
 
-	_, err := em.RunManual(ctx, task, []string{"n-pause-manual"}, nil)
+	_, err := em.RunManual(ctx, task, []string{"n-pause-manual"}, nil, ExecutionStrategy{}, nil)
 	if err == nil || !strings.Contains(err.Error(), "not online") {
 		t.Fatalf("manual run on paused node should fail with not-online, got %v", err)
 	}
@@ -344,7 +343,7 @@ func TestRunManualDisabledNodeAccurateMessage(t *testing.T) {
 	upsertTestNode(t, st, "n-disabled-manual", models.NodeStatusDisabled)
 	task := pausedScheduleTask(t, st, "task-manual-disabled", "n-disabled-manual")
 
-	_, err := em.RunManual(ctx, task, []string{"n-disabled-manual"}, nil)
+	_, err := em.RunManual(ctx, task, []string{"n-disabled-manual"}, nil, ExecutionStrategy{}, nil)
 	if err == nil || !strings.Contains(err.Error(), "is disabled") {
 		t.Fatalf("disabled node manual run must report disabled, got %v", err)
 	}
@@ -373,6 +372,8 @@ func TestRunDueHUBPausedNodeCreatesSkipped(t *testing.T) {
 	task := pausedScheduleTask(t, st, "task-hub-sched", "n-pause-hub")
 	sched := &models.Schedule{
 		TaskID: task.ID, Type: models.ScheduleTypeInterval, IntervalSec: 60,
+		Target:  models.Target{Type: "node", NodeIDs: []string{"n-pause-hub"}},
+		Timeout: 45, Retry: 1, RunUser: "ops",
 		Timezone: "UTC", ExecutionOwner: models.ExecutionOwnerHub,
 		Enabled: true, CreatedAt: time.Now().Add(-2 * time.Hour),
 	}

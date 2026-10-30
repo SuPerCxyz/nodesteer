@@ -455,6 +455,115 @@ func TestDeploymentCompletedKindRoundTrip(t *testing.T) {
 	}
 }
 
+// TestExecutionSourceColumnsMigration 旧库（executions 无 schedule_id/created_at 列）
+// 打开时幂等加列：旧行保留、来源为空、created_at 读取时回退到 start_time；
+// 新行可写入来源与创建时间，UpdateExecution 不得覆盖 created_at。
+func TestExecutionSourceColumnsMigration(t *testing.T) {
+	dir := t.TempDir()
+	raw, err := sql.Open("sqlite", filepath.Join(dir, "state.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := raw.Exec(`
+		CREATE TABLE executions (
+			id TEXT PRIMARY KEY,
+			task_id TEXT NOT NULL,
+			task_revision INTEGER NOT NULL DEFAULT 0,
+			script_id TEXT NOT NULL DEFAULT '',
+			script_revision INTEGER NOT NULL DEFAULT 0,
+			application_id TEXT NOT NULL DEFAULT '',
+			application_version TEXT NOT NULL DEFAULT '',
+			application_operation TEXT NOT NULL DEFAULT '',
+			application_health TEXT NOT NULL DEFAULT '',
+			node_id TEXT NOT NULL,
+			trigger_type TEXT NOT NULL,
+			scheduled_time TEXT NOT NULL DEFAULT '',
+			status TEXT NOT NULL,
+			exit_code INTEGER NOT NULL DEFAULT 0,
+			stdout TEXT NOT NULL DEFAULT '',
+			stderr TEXT NOT NULL DEFAULT '',
+			stdout_truncated INTEGER NOT NULL DEFAULT 0,
+			stderr_truncated INTEGER NOT NULL DEFAULT 0,
+			start_time TEXT NOT NULL DEFAULT '',
+			end_time TEXT NOT NULL DEFAULT '',
+			offline INTEGER NOT NULL DEFAULT 0,
+			synced INTEGER NOT NULL DEFAULT 1,
+			block_reason TEXT NOT NULL DEFAULT ''
+		);
+		INSERT INTO executions (id, task_id, node_id, trigger_type, scheduled_time, status, start_time, end_time)
+		VALUES ('legacy-sched', 'task-1', 'node-1', 'schedule', '2026-01-01T00:00:00Z', 'SUCCESS',
+			'2026-01-01T00:00:01Z', '2026-01-01T00:00:02Z');
+		INSERT INTO executions (id, task_id, node_id, trigger_type, scheduled_time, status)
+		VALUES ('legacy-empty', 'task-1', 'node-1', 'manual', '', 'SUCCESS');`); err != nil {
+		t.Fatal(err)
+	}
+	if err := raw.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	s, err := OpenLocalStore(dir)
+	if err != nil {
+		t.Fatalf("open legacy store: %v", err)
+	}
+	ctx := context.Background()
+	legacy, err := s.GetExecution(ctx, "legacy-sched")
+	if err != nil || legacy == nil {
+		t.Fatalf("legacy execution = %v err=%v", legacy, err)
+	}
+	if legacy.ScheduleID != "" {
+		t.Fatalf("legacy execution must not fabricate schedule_id: %q", legacy.ScheduleID)
+	}
+	if legacy.CreatedAt != legacy.StartTime {
+		t.Fatalf("legacy created_at fallback = %q, want start_time %q", legacy.CreatedAt, legacy.StartTime)
+	}
+	empty, err := s.GetExecution(ctx, "legacy-empty")
+	if err != nil || empty == nil || empty.CreatedAt != "" {
+		t.Fatalf("legacy empty created_at must stay empty: %+v err=%v", empty, err)
+	}
+
+	createdAt := "2026-03-04T05:06:07Z"
+	if err := s.CreateExecution(ctx, &LocalExecution{
+		ID: "new-1", TaskID: "task-1", NodeID: "node-1", TriggerType: "schedule",
+		ScheduledTime: "2026-03-04T05:06:00Z", ScheduleID: "sch-1", CreatedAt: createdAt,
+		Status: "SUCCESS",
+	}); err != nil {
+		t.Fatalf("create new execution: %v", err)
+	}
+	got, err := s.GetExecution(ctx, "new-1")
+	if err != nil || got == nil || got.ScheduleID != "sch-1" || got.CreatedAt != createdAt {
+		t.Fatalf("new execution source round-trip failed: %+v err=%v", got, err)
+	}
+	// UpdateExecution 只更新过程/结果，不得覆盖创建时间。
+	got.CreatedAt = "2099-01-01T00:00:00Z"
+	got.Status = "FAILED"
+	if err := s.UpdateExecution(ctx, got); err != nil {
+		t.Fatalf("update execution: %v", err)
+	}
+	reloaded, err := s.GetExecution(ctx, "new-1")
+	if err != nil || reloaded == nil || reloaded.CreatedAt != createdAt {
+		t.Fatalf("UpdateExecution must not overwrite created_at: %+v err=%v", reloaded, err)
+	}
+	if reloaded.ScheduleID != "sch-1" || reloaded.Status != "FAILED" {
+		t.Fatalf("execution update lost fields: %+v", reloaded)
+	}
+	if err := s.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	// 再次打开：迁移幂等，旧行与新行均保留。
+	s2, err := OpenLocalStore(dir)
+	if err != nil {
+		t.Fatalf("reopen migrated store: %v", err)
+	}
+	defer s2.Close()
+	if got, err := s2.GetExecution(ctx, "legacy-sched"); err != nil || got == nil || got.ScheduleID != "" {
+		t.Fatalf("legacy row lost after reopen: %+v err=%v", got, err)
+	}
+	if got, err := s2.GetExecution(ctx, "new-1"); err != nil || got == nil || got.ScheduleID != "sch-1" {
+		t.Fatalf("new row lost after reopen: %+v err=%v", got, err)
+	}
+}
+
 // TestDeploymentCompletedKindMigration 旧库（deployments 无 completed_kind 列）打开时
 // 幂等加列：旧行原样保留、该列读为空（未知）；再次打开不报错（非破坏性迁移）。
 func TestDeploymentCompletedKindMigration(t *testing.T) {

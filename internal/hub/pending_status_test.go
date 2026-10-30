@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/SuPerCxyz/nodesteer/internal/models"
 	"github.com/SuPerCxyz/nodesteer/internal/protocol"
@@ -21,9 +22,8 @@ func TestPendingNodeNotExecutableByTask(t *testing.T) {
 	if err := st.UpsertNode(ctx, n); err != nil {
 		t.Fatalf("upsert node: %v", err)
 	}
-	task := &models.Task{ID: "t-pending", Name: "t-pending", Type: "command", Command: "echo", Enabled: true,
-		Target: models.Target{Type: "node", NodeIDs: []string{n.ID}}}
-	_, err := em.RunManual(ctx, task, []string{n.ID}, nil)
+	task := &models.Task{ID: "t-pending", Name: "t-pending", Type: "command", Command: "echo", Enabled: true}
+	_, err := em.RunManual(ctx, task, []string{n.ID}, nil, ExecutionStrategy{}, nil)
 	if err == nil || !strings.Contains(err.Error(), "not online (status=pending)") {
 		t.Fatalf("pending node must not be executable, got %v", err)
 	}
@@ -60,16 +60,19 @@ func TestRemoteOnlineConditionAcceptsPendingValue(t *testing.T) {
 	if err := st.UpsertNode(ctx, n); err != nil {
 		t.Fatalf("upsert node: %v", err)
 	}
-	tm := NewTaskManager(st, NewRevisionManager(st), nil)
-	task := &models.Task{ID: "t-cond", Name: "cond-task", Type: models.TaskTypeCommand, Command: "echo", Enabled: true,
-		Target: models.Target{Type: "node", NodeIDs: []string{n.ID}},
+	sch := &models.Schedule{TaskID: "t-cond", Type: models.ScheduleTypeManual,
+		Target:         models.Target{Type: "label", LabelKey: "env"},
+		Timezone:       "UTC",
+		ExecutionOwner: models.ExecutionOwnerHub,
+		OfflinePolicy:  models.OfflinePolicyAllowOffline,
+		MisfirePolicy:  models.MisfirePolicyRunOnce,
 		Condition: &models.Condition{Type: "remote", Remote: &models.RemoteCondition{
 			NodeID: n.ID, Property: "online", Operator: "==", Value: "pending"}}}
-	if err := tm.Validate(ctx, task); err != nil {
+	if err := validateSchedule(ctx, st, sch, time.Time{}); err != nil {
 		t.Fatalf("pending should be a legal remote online condition value: %v", err)
 	}
-	task.Condition.Remote.Value = "bogus"
-	if err := tm.Validate(ctx, task); err == nil || !strings.Contains(err.Error(), "invalid online condition value") {
+	sch.Condition.Remote.Value = "bogus"
+	if err := validateSchedule(ctx, st, sch, time.Time{}); err == nil || !strings.Contains(err.Error(), "invalid online condition value") {
 		t.Fatalf("invalid remote online condition value must still be rejected, got %v", err)
 	}
 }

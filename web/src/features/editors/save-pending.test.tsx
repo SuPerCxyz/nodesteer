@@ -48,10 +48,12 @@ function renderEditor(element: ReactElement) {
 async function expectSingleSubmit(
   element: ReactElement,
   path: string,
-  method: 'post' | 'put'
+  method: 'post' | 'put',
+  prepare?: (page: Awaited<ReturnType<typeof renderEditor>>) => Promise<void>
 ) {
   window.history.replaceState({}, '', path)
   const page = await renderEditor(element)
+  if (prepare) await prepare(page)
   const save = page.getByRole('button', { name: i18n.t('common.save') })
 
   await expect.element(save).toBeEnabled()
@@ -82,9 +84,13 @@ describe('编辑器保存 pending 期间禁用按钮', () => {
   it('调度编辑器：编辑既有调度重复点击只发一次 PUT', async () => {
     get.mockImplementation(async (path: string) => {
       if (path === '/tasks') return [{ id: 'task-1', name: '部署任务' }]
+      if (path === '/nodes')
+        return [{ id: 'node-1', hostname: 'node-a', status: 'online' }]
+      if (path === '/groups') return []
       if (path === '/schedules/sch-1')
         return {
           id: 'sch-1',
+          name: '五分钟巡检',
           task_id: 'task-1',
           revision: 1,
           type: 'cron',
@@ -93,6 +99,10 @@ describe('编辑器保存 pending 期间禁用按钮', () => {
           run_at: '',
           timezone: 'Asia/Shanghai',
           execution_owner: 'agent',
+          target: { type: 'node', node_ids: ['node-1'] },
+          timeout: 300,
+          retry: 0,
+          run_user: '',
           offline_policy: 'allow_offline',
           misfire_policy: 'run_once',
           enabled: true,

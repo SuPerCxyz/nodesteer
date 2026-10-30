@@ -202,15 +202,12 @@ func TestUserAvatarMigrationBackfillsEmpty(t *testing.T) {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	// 模拟 v1（无 avatar_url 列）时代的既有库与既有用户行
-	if _, err := db.Exec(`CREATE TABLE users (
-		id TEXT PRIMARY KEY,
-		username TEXT UNIQUE NOT NULL,
-		password_hash TEXT NOT NULL,
-		role TEXT NOT NULL DEFAULT 'viewer',
-		created_at TEXT NOT NULL
-	)`); err != nil {
-		t.Fatalf("create legacy users table: %v", err)
+	// 模拟 v1（无 avatar_url 列）时代的既有库与既有用户行：
+	// 执行 v1-v8 schema，保证后续 v10 依赖的 executions 等表存在。
+	for _, schema := range []string{schemaV1, schemaV2, schemaV3, schemaV4, schemaV5, schemaV6, schemaV7, schemaV8} {
+		if _, err := db.Exec(schema); err != nil {
+			t.Fatalf("create legacy schema: %v", err)
+		}
 	}
 	if _, err := db.Exec(`CREATE TABLE schema_migrations (
 		version INTEGER PRIMARY KEY,

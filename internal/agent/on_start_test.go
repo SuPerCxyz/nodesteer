@@ -34,19 +34,20 @@ func newOnStartTestAgent(t *testing.T, dataDir string) *Agent {
 	return a
 }
 
-// onStartTask 构造目标命中/未命中本节点的 command 任务
-func onStartTask(id, targetNode string, enabled bool) *models.Task {
+// onStartTask 构造 command 任务（目标与策略已迁到 Schedule）
+func onStartTask(id string, enabled bool) *models.Task {
 	return &models.Task{
 		ID: id, Name: id, Type: models.TaskTypeCommand, Command: "true",
-		Target:  models.Target{Type: "node", NodeIDs: []string{targetNode}},
-		Timeout: 5, Enabled: enabled, Revision: 1,
+		Enabled: enabled, Revision: 1,
 	}
 }
 
-// onStartSchedule 构造 enabled 可配的 on_start 调度（agent owner）
-func onStartSchedule(id, taskID string, enabled bool) *models.Schedule {
+// onStartSchedule 构造 enabled 可配的 on_start 调度（agent owner，node 目标）
+func onStartSchedule(id, taskID, targetNode string, enabled bool) *models.Schedule {
 	return &models.Schedule{
 		ID: id, TaskID: taskID, Type: models.ScheduleTypeOnStart,
+		Target:         models.Target{Type: "node", NodeIDs: []string{targetNode}},
+		Timeout:        5,
 		Timezone:       "UTC",
 		ExecutionOwner: models.ExecutionOwnerAgent,
 		OfflinePolicy:  models.OfflinePolicyAllowOffline,
@@ -104,8 +105,8 @@ func TestOnStartTriggersOncePerProcessStart(t *testing.T) {
 	a := newOnStartTestAgent(t, t.TempDir())
 	t.Cleanup(func() { _ = a.Close() })
 
-	task := onStartTask("task-onstart", a.nodeID, true)
-	sch := onStartSchedule("sch-onstart", task.ID, true)
+	task := onStartTask("task-onstart", true)
+	sch := onStartSchedule("sch-onstart", task.ID, a.nodeID, true)
 	env := onStartSyncEnv(t, []*models.Task{task}, []*models.Schedule{sch})
 
 	a.OnSyncResponse(env)
@@ -158,8 +159,8 @@ func TestOnStartTriggersOncePerProcessStart(t *testing.T) {
 func TestOnStartReTriggersAfterProcessRestart(t *testing.T) {
 	dir := t.TempDir()
 	a1 := newOnStartTestAgent(t, dir)
-	task := onStartTask("task-onstart-restart", a1.nodeID, true)
-	sch := onStartSchedule("sch-onstart-restart", task.ID, true)
+	task := onStartTask("task-onstart-restart", true)
+	sch := onStartSchedule("sch-onstart-restart", task.ID, a1.nodeID, true)
 	env := onStartSyncEnv(t, []*models.Task{task}, []*models.Schedule{sch})
 
 	a1.OnSyncResponse(env)
@@ -199,8 +200,8 @@ func TestOnStartSkipsWhenTargetMissesNode(t *testing.T) {
 	a := newOnStartTestAgent(t, t.TempDir())
 	t.Cleanup(func() { _ = a.Close() })
 
-	task := onStartTask("task-onstart-miss", "other-node", true)
-	sch := onStartSchedule("sch-onstart-miss", task.ID, true)
+	task := onStartTask("task-onstart-miss", true)
+	sch := onStartSchedule("sch-onstart-miss", task.ID, "other-node", true)
 	env := onStartSyncEnv(t, []*models.Task{task}, []*models.Schedule{sch})
 
 	a.OnSyncResponse(env)
@@ -213,13 +214,28 @@ func TestOnStartSkipsWhenTargetMissesNode(t *testing.T) {
 	}
 }
 
+// TestOnStartSkipsMissingTarget 缺少有效目标（空 target）不触发：
+// 调度目标已从 Task 迁到 Schedule，缺失目标不得退化为“全网执行”。
+func TestOnStartSkipsMissingTarget(t *testing.T) {
+	a := newOnStartTestAgent(t, t.TempDir())
+	t.Cleanup(func() { _ = a.Close() })
+
+	task := onStartTask("task-onstart-no-target", true)
+	sch := onStartSchedule("sch-onstart-no-target", task.ID, a.nodeID, true)
+	sch.Target = models.Target{}
+	a.OnSyncResponse(onStartSyncEnv(t, []*models.Task{task}, []*models.Schedule{sch}))
+	if n := countTaskExecutions(t, a, task.ID); n != 0 {
+		t.Fatalf("missing schedule target must not trigger, got %d", n)
+	}
+}
+
 // TestOnStartSkipsDisabled schedule/enabled=false 或任务禁用均不触发。
 func TestOnStartSkipsDisabled(t *testing.T) {
 	t.Run("schedule disabled", func(t *testing.T) {
 		a := newOnStartTestAgent(t, t.TempDir())
 		t.Cleanup(func() { _ = a.Close() })
-		task := onStartTask("task-onstart-sch-disabled", a.nodeID, true)
-		sch := onStartSchedule("sch-onstart-disabled", task.ID, false)
+		task := onStartTask("task-onstart-sch-disabled", true)
+		sch := onStartSchedule("sch-onstart-disabled", task.ID, a.nodeID, false)
 		a.OnSyncResponse(onStartSyncEnv(t, []*models.Task{task}, []*models.Schedule{sch}))
 		if n := countTaskExecutions(t, a, task.ID); n != 0 {
 			t.Fatalf("disabled schedule must not trigger, got %d", n)
@@ -228,8 +244,8 @@ func TestOnStartSkipsDisabled(t *testing.T) {
 	t.Run("task disabled", func(t *testing.T) {
 		a := newOnStartTestAgent(t, t.TempDir())
 		t.Cleanup(func() { _ = a.Close() })
-		task := onStartTask("task-onstart-task-disabled", a.nodeID, false)
-		sch := onStartSchedule("sch-onstart-task-disabled", task.ID, true)
+		task := onStartTask("task-onstart-task-disabled", false)
+		sch := onStartSchedule("sch-onstart-task-disabled", task.ID, a.nodeID, true)
 		a.OnSyncResponse(onStartSyncEnv(t, []*models.Task{task}, []*models.Schedule{sch}))
 		if n := countTaskExecutions(t, a, task.ID); n != 0 {
 			t.Fatalf("disabled task must not trigger, got %d", n)
@@ -244,8 +260,8 @@ func TestOnStartOfflineStartDefersUntilFirstSync(t *testing.T) {
 	a := newOnStartTestAgent(t, t.TempDir())
 	t.Cleanup(func() { _ = a.Close() })
 
-	task := onStartTask("task-onstart-offline", a.nodeID, true)
-	sch := onStartSchedule("sch-onstart-offline", task.ID, true)
+	task := onStartTask("task-onstart-offline", true)
+	sch := onStartSchedule("sch-onstart-offline", task.ID, a.nodeID, true)
 	// 上一进程同步遗留的本地缓存（离线启动时已存在）
 	taskRaw, err := json.Marshal(task)
 	if err != nil {
@@ -303,8 +319,8 @@ func TestOnStartDeferredWhileNodePaused(t *testing.T) {
 	a := newOnStartTestAgent(t, t.TempDir())
 	t.Cleanup(func() { _ = a.Close() })
 
-	task := onStartTask("task-onstart-paused", a.nodeID, true)
-	sch := onStartSchedule("sch-onstart-paused", task.ID, true)
+	task := onStartTask("task-onstart-paused", true)
+	sch := onStartSchedule("sch-onstart-paused", task.ID, a.nodeID, true)
 	env := onStartSyncEnv(t, []*models.Task{task}, []*models.Schedule{sch})
 
 	a.sch.SetPaused(true)

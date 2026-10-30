@@ -1,5 +1,5 @@
 import { test, expect } from 'playwright/test'
-import { apiRequest, captureCreated, cleanupByIds, getNodeIds, loginViaApi, testName } from './fixtures'
+import { captureCreated, cleanupByIds, loginViaApi, testName } from './fixtures'
 
 test.describe('P10 任务编辑器', () => {
   test('P10-01 新建 command 任务', async ({ page }) => {
@@ -15,13 +15,12 @@ test.describe('P10 任务编辑器', () => {
     await commandInput.fill('echo hello')
     const saveBtn = page.getByRole('button', { name: /save|保存/i }).first()
     await expect(saveBtn).toBeVisible()
-    const nodeIds = await getNodeIds(page)
-    expect(nodeIds.length).toBeGreaterThan(0)
-    const nodes = (await apiRequest(page, '/api/nodes')).body as { id: string; hostname: string }[]
-    const node = nodes.find((item) => item.id === nodeIds[0])!
-    await page.locator('label').filter({ hasText: node.hostname }).getByRole('checkbox').check()
+    // 任务定义不再选择目标；目标在调度计划或试运行时指定
+    await expect(
+      page.getByRole('combobox', { name: /目标类型|target type/i })
+    ).toHaveCount(0)
     const id = await captureCreated(page, '/api/tasks', () => saveBtn.click())
-    try { await page.waitForURL(/\/tasks$/); await page.getByRole('textbox', { name: /搜索任务|search tasks/i }).fill(name); await expect(page.locator(`a[href="/tasks/${id}"]`)).toBeVisible() }
+    try { await page.waitForURL(/\/tasks$/); await page.getByRole('textbox', { name: /搜索任务|search tasks/i }).fill(name); await expect(page.getByRole('link', { name, exact: true })).toBeVisible() }
     finally { await cleanupByIds(page, [`/api/tasks/${id}`]) }
   })
 

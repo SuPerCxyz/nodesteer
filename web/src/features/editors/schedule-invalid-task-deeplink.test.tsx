@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from '@/i18n'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
+import { userEvent } from 'vitest/browser'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { ScheduleEditor } from './index'
 
@@ -53,6 +54,9 @@ describe('调度新建页无效 task_id 深链（OBS-20261014-INVALID-TASK-DEEPL
     post.mockReset()
     get.mockImplementation(async (path: string) => {
       if (path === '/tasks') return [{ id: 'task-1', name: '部署任务' }]
+      if (path === '/nodes')
+        return [{ id: 'node-1', hostname: 'node-a', status: 'online' }]
+      if (path === '/groups') return []
       return []
     })
   })
@@ -82,6 +86,7 @@ describe('调度新建页无效 task_id 深链（OBS-20261014-INVALID-TASK-DEEPL
     await expect
       .element(page.getByText(i18n.t('schedules.taskPrefilled')))
       .toBeVisible()
+    await userEvent.click(page.getByRole('checkbox', { name: /node-a/ }))
     await expect
       .element(page.getByRole('button', { name: i18n.t('common.save') }))
       .toBeEnabled()

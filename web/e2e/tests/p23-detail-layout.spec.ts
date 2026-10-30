@@ -62,7 +62,7 @@ test.describe('P23 详情页单页化与内容宽度', () => {
       await page.goto(`/tasks/${task.id}`)
       await page.waitForTimeout(1500)
       await expect(page.locator('main [role=tablist]')).toHaveCount(0)
-      for (const title of [/概览|overview/i, /定义|definition/i, /目标|targets?/i, /执行|executions?/i, /调度|schedules?/i]) {
+      for (const title of [/概览|overview/i, /定义|definition/i, /运行条件|conditions?/i, /执行历史|execution history/i, /关联调度|schedules?/i]) {
         await expect(page.locator('main').getByText(title).first()).toBeVisible()
       }
       const cols = await page.evaluate(() => {
