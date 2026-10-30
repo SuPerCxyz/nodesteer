@@ -93,6 +93,8 @@ describe('登录页地标（P11 a11y：landmark-one-main / region）', () => {
 
     const main = page.getByRole('main')
     await expect.element(main).toBeVisible()
-    expect(main.element().contains(page.getByLabelText('用户名').element())).toBe(true)
+    expect(
+      main.element().contains(page.getByLabelText('用户名').element())
+    ).toBe(true)
   })
 })

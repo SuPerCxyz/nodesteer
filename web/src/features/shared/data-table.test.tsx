@@ -201,7 +201,9 @@ describe('DataTable 行选择按行 id 而非行位置', () => {
     const page = await render(tableWithProbe(pageA, seen))
 
     // 勾选第 1 行（node-a）
-    await userEvent.click(page.getByRole('checkbox', { name: '选择该行' }).nth(0))
+    await userEvent.click(
+      page.getByRole('checkbox', { name: '选择该行' }).nth(0)
+    )
     expect(seen[seen.length - 1]).toEqual(['a'])
 
     // 数据重排：node-a 从位置 0 移到位置 1
@@ -221,7 +223,9 @@ describe('DataTable 行选择按行 id 而非行位置', () => {
     const seen: string[][] = []
     const page = await render(tableWithProbe(pageA, seen))
 
-    await userEvent.click(page.getByRole('checkbox', { name: '选择该行' }).nth(0))
+    await userEvent.click(
+      page.getByRole('checkbox', { name: '选择该行' }).nth(0)
+    )
     expect(seen[seen.length - 1]).toEqual(['a'])
 
     // 翻页：新一页的同位置行不得被当成已选，批量工具条随之为空
@@ -264,7 +268,9 @@ describe('DataTable 行选择按行 id 而非行位置', () => {
       />
     )
 
-    await userEvent.click(page.getByRole('checkbox', { name: '选择该行' }).nth(1))
+    await userEvent.click(
+      page.getByRole('checkbox', { name: '选择该行' }).nth(1)
+    )
     expect(seen[seen.length - 1]).toEqual(['b'])
   })
 })

@@ -10,7 +10,13 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ChevronLeft, Clipboard, Loader2, StopCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { api, type Execution, type Node, type Schedule, type Task } from '@/lib/api'
+import {
+  api,
+  type Execution,
+  type Node,
+  type Schedule,
+  type Task,
+} from '@/lib/api'
 import { copyText } from '@/lib/clipboard'
 import { executionLogView } from '@/lib/execution-logs'
 import { useCanRun } from '@/lib/permissions'
@@ -444,7 +450,8 @@ export function ExecutionDetail() {
   // 来源调度仅用于展示；解析失败不能影响执行详情本身
   const schedule = useQuery({
     queryKey: ['schedule', execution.data?.schedule_id],
-    queryFn: () => api.get<Schedule>(`/schedules/${execution.data?.schedule_id}`),
+    queryFn: () =>
+      api.get<Schedule>(`/schedules/${execution.data?.schedule_id}`),
     enabled: Boolean(execution.data?.schedule_id),
     retry: false,
   })
@@ -605,91 +612,96 @@ export function ExecutionDetail() {
           ))}
         </div>
         <SectionGrid>
-        <SectionCard title={t('executions.process')}>
-          <div className='grid gap-4'>
-            <ProcessTimeline
-              createdAt={exec.created_at}
-              startedAt={exec.start_time}
-              finishedAt={exec.end_time}
-            />
-            <div className='flex flex-wrap items-center gap-3 text-sm'>
-              <StatusBadge status={exec.status} />
-              {inProgress ? (
-                <span className='text-muted-foreground'>
-                  {t('executions.inProgress')}
-                </span>
+          <SectionCard title={t('executions.process')}>
+            <div className='grid gap-4'>
+              <ProcessTimeline
+                createdAt={exec.created_at}
+                startedAt={exec.start_time}
+                finishedAt={exec.end_time}
+              />
+              <div className='flex flex-wrap items-center gap-3 text-sm'>
+                <StatusBadge status={exec.status} />
+                {inProgress ? (
+                  <span className='text-muted-foreground'>
+                    {t('executions.inProgress')}
+                  </span>
+                ) : null}
+              </div>
+              {exec.block_reason ? (
+                <div className='rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm'>
+                  <span className='font-medium'>
+                    {t('executions.blockReason')}:
+                  </span>{' '}
+                  {exec.block_reason}
+                </div>
               ) : null}
             </div>
-            {exec.block_reason ? (
-              <div className='rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm'>
-                <span className='font-medium'>
-                  {t('executions.blockReason')}:
-                </span>{' '}
-                {exec.block_reason}
-              </div>
-            ) : null}
-          </div>
-        </SectionCard>
-        <SectionCard title={t('executions.metadata')}>
-          <DetailGrid>
-            <DetailField label={t('dashboard.task')}>
-              {task.data ? (
-                <a className='hover:underline' href={`/tasks/${exec.task_id}`}>
-                  {taskName}
-                </a>
-              ) : (
-                <span>{taskName}</span>
-              )}
-            </DetailField>
-            <DetailField label={t('executions.taskRevision')}>
-              <span className='font-mono text-xs'>
-                r{exec.task_revision || '-'}
-              </span>
-            </DetailField>
-            {exec.script_id ? (
-              <DetailField label={t('executions.script')}>
-                <a
-                  className='font-mono text-xs hover:underline'
-                  href={`/scripts/${exec.script_id}`}
-                  title={exec.script_id}
-                >
-                  {exec.script_id}
-                </a>
-                <span className='ms-2 font-mono text-xs'>
-                  r{exec.script_revision || '-'}
-                </span>
+          </SectionCard>
+          <SectionCard title={t('executions.metadata')}>
+            <DetailGrid>
+              <DetailField label={t('dashboard.task')}>
+                {task.data ? (
+                  <a
+                    className='hover:underline'
+                    href={`/tasks/${exec.task_id}`}
+                  >
+                    {taskName}
+                  </a>
+                ) : (
+                  <span>{taskName}</span>
+                )}
               </DetailField>
-            ) : null}
-            <DetailField label={t('executions.sourceSchedule')}>
-              {sourceSchedule ? (
-                <a
-                  className='hover:underline'
-                  href={`/schedules/${sourceSchedule.id}`}
-                >
-                  {sourceSchedule.name || sourceSchedule.id}
-                </a>
-              ) : exec.schedule_id ? (
-                <span>{t('executions.unknownSource')}</span>
-              ) : (
-                <span>{t('executions.historicalSource')}</span>
-              )}
-            </DetailField>
-            {exec.schedule_revision ? (
-              <DetailField label={t('executions.scheduleRevision')}>
+              <DetailField label={t('executions.taskRevision')}>
                 <span className='font-mono text-xs'>
-                  r{exec.schedule_revision}
+                  r{exec.task_revision || '-'}
                 </span>
               </DetailField>
-            ) : null}
-            <DetailField label={t('dashboard.trigger')}>{trigger}</DetailField>
-            <DetailField label={t('executions.offline')}>
-              {exec.offline ? t('executions.yes') : t('executions.no')}
-            </DetailField>
-            <DetailField label={t('executions.synced')}>
-              {exec.synced ? t('executions.yes') : t('executions.no')}
-            </DetailField>
-          </DetailGrid>
-        </SectionCard>
+              {exec.script_id ? (
+                <DetailField label={t('executions.script')}>
+                  <a
+                    className='font-mono text-xs hover:underline'
+                    href={`/scripts/${exec.script_id}`}
+                    title={exec.script_id}
+                  >
+                    {exec.script_id}
+                  </a>
+                  <span className='ms-2 font-mono text-xs'>
+                    r{exec.script_revision || '-'}
+                  </span>
+                </DetailField>
+              ) : null}
+              <DetailField label={t('executions.sourceSchedule')}>
+                {sourceSchedule ? (
+                  <a
+                    className='hover:underline'
+                    href={`/schedules/${sourceSchedule.id}`}
+                  >
+                    {sourceSchedule.name || sourceSchedule.id}
+                  </a>
+                ) : exec.schedule_id ? (
+                  <span>{t('executions.unknownSource')}</span>
+                ) : (
+                  <span>{t('executions.historicalSource')}</span>
+                )}
+              </DetailField>
+              {exec.schedule_revision ? (
+                <DetailField label={t('executions.scheduleRevision')}>
+                  <span className='font-mono text-xs'>
+                    r{exec.schedule_revision}
+                  </span>
+                </DetailField>
+              ) : null}
+              <DetailField label={t('dashboard.trigger')}>
+                {trigger}
+              </DetailField>
+              <DetailField label={t('executions.offline')}>
+                {exec.offline ? t('executions.yes') : t('executions.no')}
+              </DetailField>
+              <DetailField label={t('executions.synced')}>
+                {exec.synced ? t('executions.yes') : t('executions.no')}
+              </DetailField>
+            </DetailGrid>
+          </SectionCard>
         </SectionGrid>
         <SectionCard title={t('executions.result')}>
           <div className='grid gap-4'>

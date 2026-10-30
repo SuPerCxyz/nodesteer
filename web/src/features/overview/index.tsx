@@ -70,20 +70,18 @@ async function loadDashboard(): Promise<DashboardData> {
     ]
   )
   const applicationStateResults = await Promise.all(
-    applications.map(
-      async (application): Promise<ApplicationStatesResult> => {
-        try {
-          return {
-            ok: true,
-            states: await api.get<ApplicationNodeState[]>(
-              `/applications/${application.id}/state`
-            ),
-          }
-        } catch (error) {
-          return { ok: false, error }
+    applications.map(async (application): Promise<ApplicationStatesResult> => {
+      try {
+        return {
+          ok: true,
+          states: await api.get<ApplicationNodeState[]>(
+            `/applications/${application.id}/state`
+          ),
         }
+      } catch (error) {
+        return { ok: false, error }
       }
-    )
+    })
   )
   const applicationHealthAvailable = applicationStateResults.every(
     (result) => result.ok

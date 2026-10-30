@@ -32,13 +32,8 @@ import { copyText, selectText } from '@/lib/clipboard'
 import { useCanRun, useCanWrite } from '@/lib/permissions'
 import { scheduleDisplayName, scheduleTriggerText } from '@/lib/schedules'
 import { readTablePageSize } from '@/lib/table-view'
-import {
-  groupsForNode,
-  targetMatchesNode,
-  targetSummary,
-} from '@/lib/targets'
+import { groupsForNode, targetMatchesNode, targetSummary } from '@/lib/targets'
 import { useTheme } from '@/context/theme-provider'
-import { buildSchedulePayload } from '@/components/cron/schedule-payload'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -69,6 +64,7 @@ import {
 } from '@/components/ui/table'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { buildSchedulePayload } from '@/components/cron/schedule-payload'
 import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import { NodeBulkActions } from '@/features/catalog/node-bulk-actions'
@@ -620,7 +616,9 @@ export function AgentDetail() {
   )
   // 任务通过“命中节点的调度”反查，不再依赖 Task.Target
   const nodeTaskIds = new Set(nodeSchedules.map((schedule) => schedule.task_id))
-  const nodeTasks = (tasks.data || []).filter((task) => nodeTaskIds.has(task.id))
+  const nodeTasks = (tasks.data || []).filter((task) =>
+    nodeTaskIds.has(task.id)
+  )
   if (node.isError && !node.data)
     return (
       <ErrorPage
@@ -2459,9 +2457,11 @@ export function UserDetail() {
     return (
       <ErrorPage
         title={t('misc.usersTitle')}
-        error={new Error(
-          t('errors.notFoundResource', { resource: t('errors.types.user') })
-        )}
+        error={
+          new Error(
+            t('errors.notFoundResource', { resource: t('errors.types.user') })
+          )
+        }
         backTo='/users'
       />
     )
@@ -2487,7 +2487,10 @@ export function UserDetail() {
               <TimeValue value={user.created_at} absolute />
             </DetailField>
             <DetailField label='ID'>
-              <span className='block truncate font-mono text-xs' title={user.id}>
+              <span
+                className='block truncate font-mono text-xs'
+                title={user.id}
+              >
                 {user.id}
               </span>
             </DetailField>

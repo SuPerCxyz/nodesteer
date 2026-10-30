@@ -26,7 +26,11 @@ export function getSidebarData(
   if (options.canAdmin) {
     systemItems.push({ title: t('nav.users'), url: '/users', icon: Users })
   }
-  systemItems.push({ title: t('nav.settings'), url: '/settings', icon: Settings })
+  systemItems.push({
+    title: t('nav.settings'),
+    url: '/settings',
+    icon: Settings,
+  })
   return {
     user: {
       name: 'NodeSteer User',

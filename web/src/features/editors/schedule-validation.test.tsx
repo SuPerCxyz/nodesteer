@@ -68,8 +68,13 @@ describe('ScheduleEditor 保存前实时校验（OBS-20261014-SCHEDULE-INTERVAL-
     await userEvent.click(page.getByRole('checkbox', { name: /node-a/ }))
   }
 
-  async function selectType(page: Awaited<ReturnType<typeof renderEditor>>, label: string) {
-    await userEvent.click(page.getByRole('combobox', { name: i18n.t('schedules.triggerType') }))
+  async function selectType(
+    page: Awaited<ReturnType<typeof renderEditor>>,
+    label: string
+  ) {
+    await userEvent.click(
+      page.getByRole('combobox', { name: i18n.t('schedules.triggerType') })
+    )
     await userEvent.click(page.getByRole('option', { name: label }))
   }
 
@@ -87,7 +92,6 @@ describe('ScheduleEditor 保存前实时校验（OBS-20261014-SCHEDULE-INTERVAL-
       .toBeVisible()
     const save = page.getByRole('button', { name: i18n.t('common.save') })
     await expect.element(save).toBeDisabled()
-
     ;(save.element() as HTMLButtonElement).click()
     expect(post).not.toHaveBeenCalled()
   })
@@ -126,7 +130,6 @@ describe('ScheduleEditor 保存前实时校验（OBS-20261014-SCHEDULE-INTERVAL-
       .toBeVisible()
     const save = page.getByRole('button', { name: i18n.t('common.save') })
     await expect.element(save).toBeDisabled()
-
     ;(save.element() as HTMLButtonElement).click()
     expect(post).not.toHaveBeenCalled()
   })

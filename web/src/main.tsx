@@ -111,7 +111,8 @@ function convergeToSignIn() {
 
 window.addEventListener('nodesteer-unauthorized', handleUnauthorized)
 // 跨标签会话失效收敛：其它标签退出 / 会话被吊销后，本标签立即清会话并跳转登录页。
-const unsubscribeCrossTabSession = installCrossTabSessionConvergence(convergeToSignIn)
+const unsubscribeCrossTabSession =
+  installCrossTabSessionConvergence(convergeToSignIn)
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     window.removeEventListener('nodesteer-unauthorized', handleUnauthorized)

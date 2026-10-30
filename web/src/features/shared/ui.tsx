@@ -289,7 +289,7 @@ export function DetailGrid({
   return (
     <dl
       className={cn(
-        'grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 xl:grid-cols-3 min-[1920px]:grid-cols-4',
+        'grid gap-x-6 gap-y-3 text-sm min-[1920px]:grid-cols-4 sm:grid-cols-2 xl:grid-cols-3',
         className
       )}
     >

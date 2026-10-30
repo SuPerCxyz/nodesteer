@@ -1,7 +1,7 @@
-import { describe, expect, it, beforeAll } from 'vitest'
-import { render } from 'vitest-browser-react'
 import i18n from '@/i18n'
 import '@/styles/index.css'
+import { describe, expect, it, beforeAll } from 'vitest'
+import { render } from 'vitest-browser-react'
 import { statusLabel } from '@/lib/status-labels'
 import { ErrorState, SearchToolbar, StatusBadge } from './ui'
 
@@ -127,11 +127,7 @@ describe('状态徽标与错误提示对比度（P11 a11y：WCAG 1.4.3 ≥ 4.5:1
 describe('SearchToolbar 输入可访问名（P17 a11y：placeholder-only 输入补 aria-label）', () => {
   it('搜索输入以 placeholder 文案作为可访问名，而非仅靠 placeholder 属性', async () => {
     const page = await render(
-      <SearchToolbar
-        value=''
-        onChange={() => {}}
-        placeholder='搜索 Agent...'
-      />
+      <SearchToolbar value='' onChange={() => {}} placeholder='搜索 Agent...' />
     )
 
     const input = page.getByRole('textbox', { name: '搜索 Agent...' })

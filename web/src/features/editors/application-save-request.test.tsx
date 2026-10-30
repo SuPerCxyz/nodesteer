@@ -29,7 +29,9 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
     ...actual,
     useNavigate: () => vi.fn(),
     useLocation: () => ({ href: window.location.pathname }),
-    Link: ({ children }: { children?: ReactElement }) => <a href='#'>{children}</a>,
+    Link: ({ children }: { children?: ReactElement }) => (
+      <a href='#'>{children}</a>
+    ),
   }
 })
 
@@ -108,9 +110,9 @@ describe('应用编辑器保存的提交条件（OBS-20261014-APP-EDITOR-SAVE-NO
       page.getByRole('button', { name: i18n.t('common.save') })
     )
 
-    await expect.element(page.getByRole('alert')).toHaveTextContent(
-      i18n.t('common.name')
-    )
+    await expect
+      .element(page.getByRole('alert'))
+      .toHaveTextContent(i18n.t('common.name'))
     expect(put).not.toHaveBeenCalled()
     expect(post).not.toHaveBeenCalled()
   })

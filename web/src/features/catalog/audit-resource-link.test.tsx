@@ -2,8 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from '@/i18n'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
-import { SidebarProvider } from '@/components/ui/sidebar'
 import type { AuditLog } from '@/lib/api'
+import { SidebarProvider } from '@/components/ui/sidebar'
 import { Audit } from './index'
 
 const { getPage } = vi.hoisted(() => ({ getPage: vi.fn() }))
@@ -25,11 +25,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
   }
 })
 
-function auditRow(
-  id: string,
-  resource: string,
-  resourceId: string
-): AuditLog {
+function auditRow(id: string, resource: string, resourceId: string): AuditLog {
   return {
     id,
     user_id: 'u1',
@@ -85,9 +81,7 @@ describe('审计列表资源 ID 跳转（OBS-20261017-CROSSPAGE-LINK-GAPS ①）
   it('无详情路由的资源 ID 保持纯文本，不产生死链', async () => {
     const page = await renderAudit()
 
-    await expect
-      .element(page.getByText('heartbeat_interval_sec'))
-      .toBeVisible()
+    await expect.element(page.getByText('heartbeat_interval_sec')).toBeVisible()
     await expect
       .element(page.getByRole('link', { name: 'heartbeat_interval_sec' }))
       .not.toBeInTheDocument()

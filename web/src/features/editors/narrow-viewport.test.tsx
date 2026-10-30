@@ -2,9 +2,17 @@ import type { ReactElement } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from '@/i18n'
 import '@/styles/index.css'
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { page } from 'vitest/browser'
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 import { render } from 'vitest-browser-react'
+import { page } from 'vitest/browser'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { ScheduleEditor, ScriptEditor } from './index'
 
@@ -26,7 +34,9 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
     ...actual,
     useNavigate: () => vi.fn(),
     useLocation: () => ({ href: window.location.pathname }),
-    Link: ({ children }: { children?: ReactElement }) => <a href='#'>{children}</a>,
+    Link: ({ children }: { children?: ReactElement }) => (
+      <a href='#'>{children}</a>
+    ),
   }
 })
 
@@ -73,8 +83,7 @@ describe('窄屏（480px）长值不撑破页面', () => {
 
   it('调度编辑器：长任务名的选择框在容器内截断', async () => {
     get.mockImplementation(async (path: string) => {
-      if (path === '/tasks')
-        return [{ id: 'task-1', name: LONG_TASK_NAME }]
+      if (path === '/tasks') return [{ id: 'task-1', name: LONG_TASK_NAME }]
       if (path === '/nodes')
         return [{ id: 'node-1', hostname: 'node-a', status: 'online' }]
       if (path === '/groups') return []
@@ -127,7 +136,12 @@ describe('窄屏（480px）长值不撑破页面', () => {
           interpreter: 'shell',
           content: `#!/bin/sh\n${LONG_LINE}\n`,
           parameters: [
-            { name: LONG_PARAM, type: 'string', required: false, default: LONG_DEFAULT },
+            {
+              name: LONG_PARAM,
+              type: 'string',
+              required: false,
+              default: LONG_DEFAULT,
+            },
           ],
           environment: { [LONG_ENV_KEY]: LONG_LINE },
           working_dir: '/tmp',
@@ -136,7 +150,14 @@ describe('窄屏（480px）长值不撑破页面', () => {
           revision: 1,
         }
       if (path === '/scripts/sc-1/revisions')
-        return [{ revision: 1, content: LONG_LINE, sha256: 'a'.repeat(64), changed_at: '2026-01-01T00:00:00Z' }]
+        return [
+          {
+            revision: 1,
+            content: LONG_LINE,
+            sha256: 'a'.repeat(64),
+            changed_at: '2026-01-01T00:00:00Z',
+          },
+        ]
       return []
     })
 
@@ -152,13 +173,13 @@ describe('窄屏（480px）长值不撑破页面', () => {
       document.querySelector('main') as HTMLElement
     ).getBoundingClientRect().width
     for (const needle of [LONG_PARAM, LONG_DEFAULT, LONG_ENV_KEY]) {
-      const element = Array.from(
-        document.querySelectorAll('main span')
-      ).find((span) => span.textContent?.includes(needle))
+      const element = Array.from(document.querySelectorAll('main span')).find(
+        (span) => span.textContent?.includes(needle)
+      )
       expect(element).toBeTruthy()
-      expect(
-        element!.getBoundingClientRect().width
-      ).toBeLessThanOrEqual(mainWidth)
+      expect(element!.getBoundingClientRect().width).toBeLessThanOrEqual(
+        mainWidth
+      )
     }
   })
 })

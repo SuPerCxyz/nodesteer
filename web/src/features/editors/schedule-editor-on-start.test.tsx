@@ -103,7 +103,9 @@ describe('ScheduleEditor on_start 类型', () => {
     await expect.element(getByLabelText('Cron 表达式')).toBeVisible()
     await expect.element(getByLabelText('时区')).toBeVisible()
 
-    await userEvent.click(getByRole('combobox', { name: i18n.t('schedules.triggerType') }))
+    await userEvent.click(
+      getByRole('combobox', { name: i18n.t('schedules.triggerType') })
+    )
     await userEvent.click(getByRole('option', { name: '节点启动时' }))
 
     await expect.element(getByLabelText('Cron 表达式')).not.toBeInTheDocument()

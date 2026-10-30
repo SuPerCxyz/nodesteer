@@ -20,6 +20,7 @@ import {
 } from '@/lib/api'
 import { useCanRun, useCanWrite } from '@/lib/permissions'
 import { statusLabel } from '@/lib/status-labels'
+import { isTargetComplete } from '@/lib/targets'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -45,10 +46,8 @@ import {
 } from '@/components/cron/timezone'
 import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
-import {
-  ScheduleStrategyFields,
-} from '@/features/shared/schedule-strategy-fields'
 import { RemoteConditionEditor } from '@/features/shared/remote-condition-editor'
+import { ScheduleStrategyFields } from '@/features/shared/schedule-strategy-fields'
 import { TargetEditor } from '@/features/shared/target-editor'
 import {
   ErrorPage,
@@ -57,7 +56,6 @@ import {
   StatusBadge,
   TimeValue,
 } from '@/features/shared/ui'
-import { isTargetComplete } from '@/lib/targets'
 
 function EditorShell({
   title,
@@ -252,7 +250,9 @@ export function ScheduleEditor() {
             <Input
               value={form.name || ''}
               placeholder={t('schedules.namePlaceholder')}
-              onChange={(event) => setForm({ ...form, name: event.target.value })}
+              onChange={(event) =>
+                setForm({ ...form, name: event.target.value })
+              }
             />
           </label>
           <label className='grid gap-2 text-sm font-medium'>
@@ -305,45 +305,45 @@ export function ScheduleEditor() {
             />
           </div>
           <div className='grid gap-4 lg:col-span-2 lg:grid-cols-2'>
-          <label className='grid gap-2 text-sm font-medium'>
-            {t('schedules.triggerType')}
-            <Select
-              value={form.type || 'cron'}
-              onValueChange={(value) =>
-                setForm({
-                  ...form,
-                  type: value,
-                  // on_start / manual 隐藏时区输入，切换时清理非法值，避免提交后端 400 却无处可改
-                  ...(value === 'on_start' &&
-                  !isValidTimeZone(form.timezone || '')
-                    ? { timezone: browserTimeZone() }
-                    : {}),
-                })
-              }
-            >
-              <SelectTrigger className='w-full min-w-0'>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='cron'>{t('schedules.cron')}</SelectItem>
-                <SelectItem value='interval'>
-                  {t('schedules.interval')}
-                </SelectItem>
-                <SelectItem value='one_time'>
-                  {t('schedules.oneTime')}
-                </SelectItem>
-                <SelectItem value='on_start'>
-                  {t('schedules.onStart')}
-                </SelectItem>
-                <SelectItem value='manual'>
-                  {t('schedules.manual')}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </label>
-          <p className='self-end text-xs text-muted-foreground'>
-            {t('schedules.typeHint')}
-          </p>
+            <label className='grid gap-2 text-sm font-medium'>
+              {t('schedules.triggerType')}
+              <Select
+                value={form.type || 'cron'}
+                onValueChange={(value) =>
+                  setForm({
+                    ...form,
+                    type: value,
+                    // on_start / manual 隐藏时区输入，切换时清理非法值，避免提交后端 400 却无处可改
+                    ...(value === 'on_start' &&
+                    !isValidTimeZone(form.timezone || '')
+                      ? { timezone: browserTimeZone() }
+                      : {}),
+                  })
+                }
+              >
+                <SelectTrigger className='w-full min-w-0'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='cron'>{t('schedules.cron')}</SelectItem>
+                  <SelectItem value='interval'>
+                    {t('schedules.interval')}
+                  </SelectItem>
+                  <SelectItem value='one_time'>
+                    {t('schedules.oneTime')}
+                  </SelectItem>
+                  <SelectItem value='on_start'>
+                    {t('schedules.onStart')}
+                  </SelectItem>
+                  <SelectItem value='manual'>
+                    {t('schedules.manual')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+            <p className='self-end text-xs text-muted-foreground'>
+              {t('schedules.typeHint')}
+            </p>
           </div>
           {form.type === 'manual' ? (
             <div className='rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground lg:col-span-2'>
@@ -428,19 +428,19 @@ export function ScheduleEditor() {
           )}
           {form.type !== 'manual' && (
             <div className='lg:col-span-2'>
-            <NextRunsPreview
-              type={
-                form.type === 'interval' ||
-                form.type === 'one_time' ||
-                form.type === 'on_start'
-                  ? form.type
-                  : 'cron'
-              }
-              expression={form.expression}
-              intervalSec={form.interval_sec}
-              runAt={form.run_at}
-              timezone={form.timezone}
-            />
+              <NextRunsPreview
+                type={
+                  form.type === 'interval' ||
+                  form.type === 'one_time' ||
+                  form.type === 'on_start'
+                    ? form.type
+                    : 'cron'
+                }
+                expression={form.expression}
+                intervalSec={form.interval_sec}
+                runAt={form.run_at}
+                timezone={form.timezone}
+              />
             </div>
           )}
           <div className='grid gap-4 sm:grid-cols-2 lg:col-span-2'>
@@ -507,7 +507,9 @@ export function ScheduleEditor() {
             {canWrite ? (
               <Button
                 onClick={save}
-                disabled={saving || intervalInvalid || runAtPast || targetInvalid}
+                disabled={
+                  saving || intervalInvalid || runAtPast || targetInvalid
+                }
                 aria-busy={saving}
               >
                 {saving ? <Loader2 className='animate-spin' /> : null}
@@ -639,10 +641,10 @@ export function ScriptEditor() {
           </CardHeader>
           <CardContent className='grid gap-5'>
             {error ? (
-            <div className='lg:col-span-2'>
-              <ErrorState error={error} />
-            </div>
-          ) : null}
+              <div className='lg:col-span-2'>
+                <ErrorState error={error} />
+              </div>
+            ) : null}
             <label className='grid gap-2 text-sm font-medium'>
               {t('common.name')}
               <Input
@@ -795,7 +797,7 @@ export function ScriptEditor() {
                 key={`${item.name}-${index}`}
               >
                 {/* 长参数名/默认值在窄屏内换行，不撑破页面 */}
-                <span className='min-w-0 break-all font-mono'>{item.name}</span>
+                <span className='min-w-0 font-mono break-all'>{item.name}</span>
                 <span className='shrink-0 text-muted-foreground'>
                   {item.type}
                 </span>
@@ -1005,10 +1007,10 @@ export function GroupEditor() {
         <Card>
           <CardContent className='grid gap-4 pt-6 lg:grid-cols-2'>
             {error ? (
-            <div className='lg:col-span-2'>
-              <ErrorState error={error} />
-            </div>
-          ) : null}
+              <div className='lg:col-span-2'>
+                <ErrorState error={error} />
+              </div>
+            ) : null}
             <label className='grid gap-2 text-sm font-medium'>
               {t('common.name')}
               <Input
@@ -1404,10 +1406,10 @@ export function ApplicationEditor() {
           </CardHeader>
           <CardContent className='grid gap-5'>
             {error ? (
-            <div className='lg:col-span-2'>
-              <ErrorState error={error} />
-            </div>
-          ) : null}
+              <div className='lg:col-span-2'>
+                <ErrorState error={error} />
+              </div>
+            ) : null}
             <div className='grid gap-4 sm:grid-cols-2'>
               <label className='grid gap-2 text-sm font-medium'>
                 {t('common.name')}
@@ -1867,7 +1869,10 @@ export function ApplicationEditor() {
                     onValueChange={setOperation}
                     disabled={!canRun}
                   >
-                    <SelectTrigger className='w-40' aria-label={t('apps.operation')}>
+                    <SelectTrigger
+                      className='w-40'
+                      aria-label={t('apps.operation')}
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -2055,10 +2060,10 @@ export function ArtifactEditor() {
         <CardContent className='pt-6'>
           <form className='grid gap-5' onSubmit={upload}>
             {error ? (
-            <div className='lg:col-span-2'>
-              <ErrorState error={error} />
-            </div>
-          ) : null}
+              <div className='lg:col-span-2'>
+                <ErrorState error={error} />
+              </div>
+            ) : null}
             <label className='grid gap-2 text-sm font-medium'>
               {t('common.name')}
               <Input name='name' required />

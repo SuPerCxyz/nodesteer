@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
+import { api } from '@/lib/api'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
 interface SignOutDialogProps {

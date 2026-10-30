@@ -20,11 +20,7 @@ import {
 } from '@/lib/api'
 import { useCanRun, useCanWrite } from '@/lib/permissions'
 import { scheduleDisplayName, scheduleTriggerText } from '@/lib/schedules'
-import {
-  isTargetComplete,
-  normalizeTarget,
-  targetSummary,
-} from '@/lib/targets'
+import { isTargetComplete, normalizeTarget, targetSummary } from '@/lib/targets'
 import {
   appDeployOperations,
   appOperations,
@@ -352,140 +348,142 @@ export function TaskDetail() {
         </Button>
         <div className='flex flex-wrap items-center gap-3 text-xs text-muted-foreground'>
           <StatusBadge status={item.enabled ? 'enabled' : 'disabled'} />
-          <span>{t(`tasks.types.${item.type}`, { defaultValue: item.type })}</span>
+          <span>
+            {t(`tasks.types.${item.type}`, { defaultValue: item.type })}
+          </span>
           <span className='font-mono'>r{item.revision}</span>
         </div>
         <SectionGrid>
-        <SectionCard title={t('tasks.overviewTab')}>
-          <DetailGrid>
-            <DetailField label={t('common.type')}>
-              {t(`tasks.types.${item.type}`, { defaultValue: item.type })}
-            </DetailField>
-            <DetailField label={t('common.status')}>
-              <StatusBadge status={item.enabled ? 'enabled' : 'disabled'} />
-            </DetailField>
-            <DetailField label={t('tasks.revision')}>
-              <span className='font-mono text-xs'>r{item.revision}</span>
-            </DetailField>
-            <DetailField label={t('common.created')}>
-              <TimeValue value={item.created_at} absolute />
-            </DetailField>
-            <DetailField label={t('scripts.updated')}>
-              <TimeValue value={item.updated_at} absolute />
-            </DetailField>
-          </DetailGrid>
-        </SectionCard>
-        <SectionCard title={t('tasks.definitionTab')}>
-          {item.command ? (
-            <pre className='overflow-auto rounded-md bg-muted p-4 font-mono text-xs leading-6'>
-              {item.command}
-            </pre>
-          ) : item.script_id ? (
-            <div className='grid gap-1 text-sm'>
-              <a
-                className='font-medium hover:underline'
-                href={`/scripts/${item.script_id}`}
-              >
-                {script.data?.name || t('common.unknownScript')}
-              </a>
-              <span className='font-mono text-xs text-muted-foreground'>
-                {script.data?.interpreter || 'script'}
-              </span>
-            </div>
-          ) : (
-            <div className='text-sm text-muted-foreground'>
-              {applications.data?.find(
-                (application) => application.id === item.application_id
-              )?.name ||
-                (item.application_id ? t('common.unknownApplication') : '-')}
-            </div>
-          )}
-        </SectionCard>
-        <SectionCard title={t('tasks.conditionSection')}>
-          {item.condition ? (
-            <p className='font-mono text-xs text-muted-foreground'>
-              {conditionSummaryText(
-                item.condition,
-                (nodeId) =>
-                  (nodes.data || []).find((node) => node.id === nodeId)
-                    ?.hostname || t('common.unknownNode')
-              )}
-            </p>
-          ) : (
-            <div className='text-sm text-muted-foreground'>
-              {t('tasks.noCondition')}
-            </div>
-          )}
-        </SectionCard>
-        <div id='task-schedules' className='scroll-mt-4'>
-          <SectionCard
-            title={t('tasks.scheduleTab')}
-            action={
-              canWrite ? (
-                <Button asChild variant='outline' size='sm'>
-                  <Link to='/schedules/new' search={{ task_id: item.id }}>
-                    <Plus className='me-1 size-3.5' />
-                    {t('schedules.newSchedule')}
-                  </Link>
-                </Button>
-              ) : null
-            }
-          >
-            {schedules.data?.length ? (
-              <div className='divide-y'>
-                {schedules.data.map((schedule) => (
-                  <div
-                    className='flex flex-wrap items-center gap-x-3 gap-y-1 py-3 text-sm last:border-0'
-                    key={schedule.id}
-                  >
-                    <a
-                      className='min-w-0 truncate font-medium hover:underline'
-                      href={`/schedules/${schedule.id}`}
-                      title={scheduleDisplayName(schedule, t)}
-                    >
-                      {scheduleDisplayName(schedule, t)}
-                    </a>
-                    <span className='font-mono text-xs text-muted-foreground'>
-                      {scheduleTriggerText(schedule, t)}
-                    </span>
-                    <span className='text-xs text-muted-foreground'>
-                      {targetSummary(
-                        schedule.target,
-                        t,
-                        new Map(
-                          (nodes.data || []).map((node) => [
-                            node.id,
-                            node.hostname,
-                          ])
-                        ),
-                        new Map(
-                          (groups.data || []).map((group) => [
-                            group.id,
-                            group.name,
-                          ])
-                        )
-                      )}
-                    </span>
-                    <span className='ms-auto'>
-                      <StatusBadge
-                        status={schedule.enabled ? 'enabled' : 'disabled'}
-                      />
-                    </span>
-                  </div>
-                ))}
+          <SectionCard title={t('tasks.overviewTab')}>
+            <DetailGrid>
+              <DetailField label={t('common.type')}>
+                {t(`tasks.types.${item.type}`, { defaultValue: item.type })}
+              </DetailField>
+              <DetailField label={t('common.status')}>
+                <StatusBadge status={item.enabled ? 'enabled' : 'disabled'} />
+              </DetailField>
+              <DetailField label={t('tasks.revision')}>
+                <span className='font-mono text-xs'>r{item.revision}</span>
+              </DetailField>
+              <DetailField label={t('common.created')}>
+                <TimeValue value={item.created_at} absolute />
+              </DetailField>
+              <DetailField label={t('scripts.updated')}>
+                <TimeValue value={item.updated_at} absolute />
+              </DetailField>
+            </DetailGrid>
+          </SectionCard>
+          <SectionCard title={t('tasks.definitionTab')}>
+            {item.command ? (
+              <pre className='overflow-auto rounded-md bg-muted p-4 font-mono text-xs leading-6'>
+                {item.command}
+              </pre>
+            ) : item.script_id ? (
+              <div className='grid gap-1 text-sm'>
+                <a
+                  className='font-medium hover:underline'
+                  href={`/scripts/${item.script_id}`}
+                >
+                  {script.data?.name || t('common.unknownScript')}
+                </a>
+                <span className='font-mono text-xs text-muted-foreground'>
+                  {script.data?.interpreter || 'script'}
+                </span>
               </div>
             ) : (
               <div className='text-sm text-muted-foreground'>
-                {t('tasks.noSchedules')}
+                {applications.data?.find(
+                  (application) => application.id === item.application_id
+                )?.name ||
+                  (item.application_id ? t('common.unknownApplication') : '-')}
               </div>
             )}
           </SectionCard>
-        </div>
-        <SectionFull>
-          <SectionCard title={t('tasks.executionsTab')}>
-            <ExecutionHistory executions={executions.data || []} />
+          <SectionCard title={t('tasks.conditionSection')}>
+            {item.condition ? (
+              <p className='font-mono text-xs text-muted-foreground'>
+                {conditionSummaryText(
+                  item.condition,
+                  (nodeId) =>
+                    (nodes.data || []).find((node) => node.id === nodeId)
+                      ?.hostname || t('common.unknownNode')
+                )}
+              </p>
+            ) : (
+              <div className='text-sm text-muted-foreground'>
+                {t('tasks.noCondition')}
+              </div>
+            )}
           </SectionCard>
-        </SectionFull>
+          <div id='task-schedules' className='scroll-mt-4'>
+            <SectionCard
+              title={t('tasks.scheduleTab')}
+              action={
+                canWrite ? (
+                  <Button asChild variant='outline' size='sm'>
+                    <Link to='/schedules/new' search={{ task_id: item.id }}>
+                      <Plus className='me-1 size-3.5' />
+                      {t('schedules.newSchedule')}
+                    </Link>
+                  </Button>
+                ) : null
+              }
+            >
+              {schedules.data?.length ? (
+                <div className='divide-y'>
+                  {schedules.data.map((schedule) => (
+                    <div
+                      className='flex flex-wrap items-center gap-x-3 gap-y-1 py-3 text-sm last:border-0'
+                      key={schedule.id}
+                    >
+                      <a
+                        className='min-w-0 truncate font-medium hover:underline'
+                        href={`/schedules/${schedule.id}`}
+                        title={scheduleDisplayName(schedule, t)}
+                      >
+                        {scheduleDisplayName(schedule, t)}
+                      </a>
+                      <span className='font-mono text-xs text-muted-foreground'>
+                        {scheduleTriggerText(schedule, t)}
+                      </span>
+                      <span className='text-xs text-muted-foreground'>
+                        {targetSummary(
+                          schedule.target,
+                          t,
+                          new Map(
+                            (nodes.data || []).map((node) => [
+                              node.id,
+                              node.hostname,
+                            ])
+                          ),
+                          new Map(
+                            (groups.data || []).map((group) => [
+                              group.id,
+                              group.name,
+                            ])
+                          )
+                        )}
+                      </span>
+                      <span className='ms-auto'>
+                        <StatusBadge
+                          status={schedule.enabled ? 'enabled' : 'disabled'}
+                        />
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className='text-sm text-muted-foreground'>
+                  {t('tasks.noSchedules')}
+                </div>
+              )}
+            </SectionCard>
+          </div>
+          <SectionFull>
+            <SectionCard title={t('tasks.executionsTab')}>
+              <ExecutionHistory executions={executions.data || []} />
+            </SectionCard>
+          </SectionFull>
         </SectionGrid>
       </Main>
     </>
@@ -1251,10 +1249,7 @@ export function RunTask() {
                     (nodes.data || []).map((node) => [node.id, node.hostname])
                   ),
                   new Map(
-                    (groups.data || []).map((group) => [
-                      group.id,
-                      group.name,
-                    ])
+                    (groups.data || []).map((group) => [group.id, group.name])
                   )
                 )}
               </p>
@@ -1277,7 +1272,9 @@ export function RunTask() {
         ) : null}
         <Card className='w-full'>
           <CardHeader>
-            <CardTitle className='text-base'>{t('tasks.runStrategy')}</CardTitle>
+            <CardTitle className='text-base'>
+              {t('tasks.runStrategy')}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ScheduleStrategyFields value={strategy} onChange={setStrategy} />
@@ -1286,7 +1283,9 @@ export function RunTask() {
         {task.data?.parameters?.length ? (
           <Card className='w-full'>
             <CardHeader>
-              <CardTitle className='text-base'>{t('tasks.runParams')}</CardTitle>
+              <CardTitle className='text-base'>
+                {t('tasks.runParams')}
+              </CardTitle>
             </CardHeader>
             <CardContent className='grid gap-3'>
               {task.data.parameters.map((parameter) => (

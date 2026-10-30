@@ -5,7 +5,12 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
 import { SidebarProvider } from '@/components/ui/sidebar'
-import { ApplicationEditor, GroupEditor, ScheduleEditor, ScriptEditor } from './index'
+import {
+  ApplicationEditor,
+  GroupEditor,
+  ScheduleEditor,
+  ScriptEditor,
+} from './index'
 
 const { get, post, put } = vi.hoisted(() => ({
   get: vi.fn(),
@@ -29,7 +34,9 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
     ...actual,
     useNavigate: () => vi.fn(),
     useLocation: () => ({ href: window.location.pathname }),
-    Link: ({ children }: { children?: ReactElement }) => <a href='#'>{children}</a>,
+    Link: ({ children }: { children?: ReactElement }) => (
+      <a href='#'>{children}</a>
+    ),
   }
 })
 
@@ -193,7 +200,11 @@ describe('编辑器保存 pending 期间禁用按钮', () => {
       return []
     })
 
-    await expectSingleSubmit(<ApplicationEditor />, '/applications/app-1', 'put')
+    await expectSingleSubmit(
+      <ApplicationEditor />,
+      '/applications/app-1',
+      'put'
+    )
     expect(put).toHaveBeenCalledWith(
       '/applications/app-1',
       expect.objectContaining({ name: '测试应用' })

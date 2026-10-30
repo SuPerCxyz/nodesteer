@@ -2,8 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from '@/i18n'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
-import { SidebarProvider } from '@/components/ui/sidebar'
 import type { Node } from '@/lib/api'
+import { SidebarProvider } from '@/components/ui/sidebar'
 import { AgentDetail } from './index'
 
 const { get } = vi.hoisted(() => ({ get: vi.fn() }))

@@ -1,8 +1,11 @@
-import { getToken } from '@/lib/api'
-import { useAuthStore } from '@/stores/auth-store'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { useAuthStore } from '@/stores/auth-store'
+import { getToken } from '@/lib/api'
 import { installCrossTabSessionConvergence } from './session-convergence'
-import { SESSION_INVALIDATION_KEY, notifySessionInvalidated } from './session-sync'
+import {
+  SESSION_INVALIDATION_KEY,
+  notifySessionInvalidated,
+} from './session-sync'
 
 /**
  * 跨标签登出即时收敛（OBS-20261016-G1-X13-CONVERGENCE-SEMANTICS）。

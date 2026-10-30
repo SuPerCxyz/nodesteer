@@ -1,10 +1,18 @@
 import type { ReactNode } from 'react'
 import i18n from '@/i18n'
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 import { render } from 'vitest-browser-react'
 import { page as browserPage, userEvent } from 'vitest/browser'
-import { setToken } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
+import { setToken } from '@/lib/api'
 import { AuthenticatedLayout } from './authenticated-layout'
 
 const { get } = vi.hoisted(() => ({ get: vi.fn() }))
@@ -19,7 +27,14 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
   return {
     ...actual,
     useNavigate: () => vi.fn(),
-    useLocation: (options?: { select?: (location: { pathname: string; search: string; hash: string; href: string }) => unknown }) => {
+    useLocation: (options?: {
+      select?: (location: {
+        pathname: string
+        search: string
+        hash: string
+        href: string
+      }) => unknown
+    }) => {
       const location = {
         pathname: '/nodes',
         search: '',
@@ -109,9 +124,15 @@ describe('侧栏导航地标（P11 a11y：内容需位于 landmark 内）', () =
 
     const nav = page.getByRole('navigation', { name: i18n.t('nav.primary') })
     await expect.element(nav).toBeVisible()
-    expect(nav.element().contains(page.getByRole('link', { name: '仪表盘' }).element())).toBe(true)
     expect(
-      nav.element().contains(page.getByRole('button', { name: /admin/i }).element())
+      nav
+        .element()
+        .contains(page.getByRole('link', { name: '仪表盘' }).element())
+    ).toBe(true)
+    expect(
+      nav
+        .element()
+        .contains(page.getByRole('button', { name: /admin/i }).element())
     ).toBe(true)
   })
 })
@@ -146,9 +167,7 @@ describe('本地测试免登录模式', () => {
       </AuthenticatedLayout>
     )
 
-    await expect
-      .element(page.getByText(i18n.t('auth.devNoAuth')))
-      .toBeVisible()
+    await expect.element(page.getByText(i18n.t('auth.devNoAuth'))).toBeVisible()
     await expect.element(page.getByText('正文内容')).toBeVisible()
     expect(useAuthStore.getState().auth.accessToken).toBe('dev-no-auth')
   })

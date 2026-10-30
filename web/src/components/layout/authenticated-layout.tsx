@@ -156,7 +156,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     <>
       {devNoAuth ? (
         <div
-          className='bg-destructive px-4 py-1.5 text-center text-xs font-medium text-destructive-foreground'
+          className='text-destructive-foreground bg-destructive px-4 py-1.5 text-center text-xs font-medium'
           role='status'
         >
           {t('auth.devNoAuth')}
@@ -164,27 +164,27 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       ) : null}
       <LayoutProvider>
         <SidebarProvider defaultOpen={defaultOpen}>
-        <SkipToMain />
-        <AppSidebar />
-        <SidebarInset
-          // 跳转链接 #content 的落点：可聚焦并随之后续 Tab 顺序进入正文
-          id='content'
-          tabIndex={-1}
-          className={cn(
-            // Set content container, so we can use container queries
-            '@container/content',
+          <SkipToMain />
+          <AppSidebar />
+          <SidebarInset
+            // 跳转链接 #content 的落点：可聚焦并随之后续 Tab 顺序进入正文
+            id='content'
+            tabIndex={-1}
+            className={cn(
+              // Set content container, so we can use container queries
+              '@container/content',
 
-            // If layout is fixed, set the height
-            // to 100svh to prevent overflow
-            'has-data-[layout=fixed]:h-svh',
+              // If layout is fixed, set the height
+              // to 100svh to prevent overflow
+              'has-data-[layout=fixed]:h-svh',
 
-            // If layout is fixed and sidebar is inset,
-            // set the height to 100svh - spacing (total margins) to prevent overflow
-            'peer-data-[variant=inset]:has-data-[layout=fixed]:h-[calc(100svh-(var(--spacing)*4))]'
-          )}
-        >
-          {children ?? <Outlet />}
-        </SidebarInset>
+              // If layout is fixed and sidebar is inset,
+              // set the height to 100svh - spacing (total margins) to prevent overflow
+              'peer-data-[variant=inset]:has-data-[layout=fixed]:h-[calc(100svh-(var(--spacing)*4))]'
+            )}
+          >
+            {children ?? <Outlet />}
+          </SidebarInset>
         </SidebarProvider>
       </LayoutProvider>
     </>

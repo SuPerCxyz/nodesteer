@@ -22,7 +22,9 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
     ...actual,
     useNavigate: () => vi.fn(),
     useLocation: () => ({ href: window.location.pathname }),
-    Link: ({ children }: { children?: ReactNode }) => <a href='#'>{children}</a>,
+    Link: ({ children }: { children?: ReactNode }) => (
+      <a href='#'>{children}</a>
+    ),
   }
 })
 
@@ -32,7 +34,8 @@ const STATE_UPDATED_AT = '2026-10-16T07:59:53.146Z'
 function healthCard(): Element | undefined {
   return Array.from(document.querySelectorAll('[data-slot=card]')).find(
     (element) =>
-      element.querySelector('[data-slot=card-title]')?.textContent === '健康检查'
+      element.querySelector('[data-slot=card-title]')?.textContent ===
+      '健康检查'
   )
 }
 

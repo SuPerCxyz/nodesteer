@@ -43,7 +43,11 @@ export function TargetEditor({
       <div className='grid gap-3 sm:grid-cols-2'>
         <label className='grid gap-2 text-sm font-medium'>
           {t('targets.type')}
-          <Select value={value.type} onValueChange={setType} disabled={disabled}>
+          <Select
+            value={value.type}
+            onValueChange={setType}
+            disabled={disabled}
+          >
             <SelectTrigger className='w-full'>
               <SelectValue />
             </SelectTrigger>

@@ -12,7 +12,9 @@ type SchedulePayload = Omit<Partial<Schedule>, 'condition'> & {
  * - 非 `one_time`：不发送 run_at（避免零值时间被写入）
  * - 目标按类型裁剪，空名称交由后端生成默认值
  */
-export function buildSchedulePayload(form: Partial<Schedule>): Partial<Schedule> {
+export function buildSchedulePayload(
+  form: Partial<Schedule>
+): Partial<Schedule> {
   const payload: SchedulePayload = { ...form }
   // 显式 null 表示清空远程条件；缺省保留旧值（后端按字段是否存在合并）。
   payload.condition = form.condition ?? null

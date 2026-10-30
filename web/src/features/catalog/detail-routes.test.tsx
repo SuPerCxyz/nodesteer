@@ -1,10 +1,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from '@/i18n'
-import { useAuthStore } from '@/stores/auth-store'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
-import { SidebarProvider } from '@/components/ui/sidebar'
+import { useAuthStore } from '@/stores/auth-store'
 import type { Artifact, User } from '@/lib/api'
+import { SidebarProvider } from '@/components/ui/sidebar'
 import { ArtifactDetail, Artifacts, UserDetail, Users } from './index'
 
 const { get } = vi.hoisted(() => ({ get: vi.fn() }))
@@ -91,7 +91,9 @@ describe('用户详情路由（OBS-20261017-CROSSPAGE-LINK-GAPS ③）', () => {
     window.history.replaceState({}, '', '/users/u-1')
     const page = await renderPage(<UserDetail />)
 
-    await expect.element(page.getByRole('heading', { name: 'alice' })).toBeVisible()
+    await expect
+      .element(page.getByRole('heading', { name: 'alice' }))
+      .toBeVisible()
     await expect
       .element(page.getByText(i18n.t('misc.operator')).first())
       .toBeVisible()

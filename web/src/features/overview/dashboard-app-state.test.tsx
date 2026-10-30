@@ -19,7 +19,9 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
     ...actual,
     useNavigate: () => vi.fn(),
     useLocation: () => ({ href: window.location.pathname }),
-    Link: ({ children }: { children?: ReactNode }) => <a href='#'>{children}</a>,
+    Link: ({ children }: { children?: ReactNode }) => (
+      <a href='#'>{children}</a>
+    ),
   }
 })
 

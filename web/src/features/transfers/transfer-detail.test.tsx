@@ -3,8 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from '@/i18n'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
-import { SidebarProvider } from '@/components/ui/sidebar'
 import type { FileTransfer, Node } from '@/lib/api'
+import { SidebarProvider } from '@/components/ui/sidebar'
 import { FileTransfers, TransferDetail } from './index'
 
 const { get, post } = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }))
@@ -95,9 +95,7 @@ describe('传输详情页与状态本地化（OBS-20261017-CROSSPAGE-LINK-GAPS �
       .toHaveAttribute('href', '/agents/node-b')
     // 传输状态与目标状态各一个徽标：都必须是中文「投递中」，不能是原始枚举
     await expect.element(page.getByText('投递中').first()).toBeVisible()
-    await expect
-      .element(page.getByText('DELIVERING'))
-      .not.toBeInTheDocument()
+    await expect.element(page.getByText('DELIVERING')).not.toBeInTheDocument()
     // 进行中的传输可取消、不可重试
     await expect
       .element(page.getByRole('button', { name: i18n.t('transfers.cancel') }))

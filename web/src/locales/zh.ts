@@ -427,8 +427,10 @@ export default {
     allStatuses: '全部状态',
     confirmDelete: '确定删除这个任务定义吗？引用它的调度计划将无法继续运行。',
     confirmRun: '确定立即运行“{{name}}”吗？本次执行将使用你选择的目标与策略。',
-    runDescription: '本次试运行不会修改任务定义或调度计划；请选择目标并确认执行策略。',
-    formDescription: '配置任务执行内容、参数与运行条件；目标与策略在调度计划或试运行时指定。',
+    runDescription:
+      '本次试运行不会修改任务定义或调度计划；请选择目标并确认执行策略。',
+    formDescription:
+      '配置任务执行内容、参数与运行条件；目标与策略在调度计划或试运行时指定。',
     overviewTab: '概览',
     definitionTab: '定义',
     executionsTab: '执行历史',
@@ -511,7 +513,8 @@ export default {
     confirmDelete: '确定删除调度计划“{{name}}”吗？',
     confirmRun: '确定立即执行调度计划“{{name}}”吗？将使用该计划的目标与策略。',
     runStarted: '调度计划已提交执行',
-    runDescription: '将使用该调度计划的目标与执行策略创建一次手动执行，不修改调度计划。',
+    runDescription:
+      '将使用该调度计划的目标与执行策略创建一次手动执行，不修改调度计划。',
     formDescription: '配置任务定义、执行目标、触发时间与执行策略。',
     newSchedule: '新建调度计划',
     noSchedules: '暂无调度计划',
@@ -533,7 +536,8 @@ export default {
     selectTask: '选择任务定义...',
     manual: '仅手动',
     manualOnly: '仅手动',
-    manualHint: '仅手动调度不会自动触发，只保留任务、目标与执行策略，可随时立即执行。',
+    manualHint:
+      '仅手动调度不会自动触发，只保留任务、目标与执行策略，可随时立即执行。',
     cron: 'Cron',
     interval: '间隔',
     oneTime: '一次性',

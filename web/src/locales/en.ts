@@ -215,7 +215,8 @@ export default {
     nodesSection: 'Nodes',
     noNodes: 'No nodes registered. Deploy an agent to get started.',
     recentExecutions: 'Recent Executions',
-    noExecutions: 'No executions yet. Run a task to see the process and result.',
+    noExecutions:
+      'No executions yet. Run a task to see the process and result.',
     recentFailures: 'Recent Failures',
     noFailures: 'No recent failures',
     task: 'Task',

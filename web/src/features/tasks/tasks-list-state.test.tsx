@@ -5,8 +5,8 @@ import '@/styles/index.css'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
-import { SidebarProvider } from '@/components/ui/sidebar'
 import type { Task } from '@/lib/api'
+import { SidebarProvider } from '@/components/ui/sidebar'
 import { Tasks } from './index'
 
 const { get } = vi.hoisted(() => ({ get: vi.fn() }))
@@ -24,7 +24,9 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
     ...actual,
     useNavigate: () => vi.fn(),
     useLocation: () => ({ href: window.location.pathname }),
-    Link: ({ children }: { children?: ReactNode }) => <a href='#'>{children}</a>,
+    Link: ({ children }: { children?: ReactNode }) => (
+      <a href='#'>{children}</a>
+    ),
   }
 })
 

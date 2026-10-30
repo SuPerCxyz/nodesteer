@@ -6,8 +6,8 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
 import { SidebarProvider } from '@/components/ui/sidebar'
-import { ScriptEditor, ApplicationEditor, ScheduleEditor } from './index'
 import { TaskEditor } from '@/features/tasks'
+import { ScriptEditor, ApplicationEditor, ScheduleEditor } from './index'
 
 const { get } = vi.hoisted(() => ({ get: vi.fn() }))
 
@@ -27,7 +27,9 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
     ...actual,
     useNavigate: () => vi.fn(),
     useLocation: () => ({ href: window.location.pathname }),
-    Link: ({ children }: { children?: ReactElement }) => <a href='#'>{children}</a>,
+    Link: ({ children }: { children?: ReactElement }) => (
+      <a href='#'>{children}</a>
+    ),
   }
 })
 
@@ -93,7 +95,9 @@ describe('编辑器表单控件可访问名（P11 a11y：button-name / label）'
       .element(page.getByRole('combobox', { name: i18n.t('targets.type') }))
       .not.toBeInTheDocument()
     await expect
-      .element(page.getByRole('spinbutton', { name: i18n.t('strategy.timeoutSec') }))
+      .element(
+        page.getByRole('spinbutton', { name: i18n.t('strategy.timeoutSec') })
+      )
       .not.toBeInTheDocument()
     await expect
       .element(
@@ -123,7 +127,9 @@ describe('编辑器表单控件可访问名（P11 a11y：button-name / label）'
       .toBeVisible()
     await expect
       .element(
-        page.getByRole('button', { name: i18n.t('schedules.addRemoteCondition') })
+        page.getByRole('button', {
+          name: i18n.t('schedules.addRemoteCondition'),
+        })
       )
       .toBeVisible()
   })
@@ -226,7 +232,6 @@ describe('编辑器输入框可访问名（P17 a11y：仅 placeholder 命名的�
         page.getByRole('textbox', { name: i18n.t('tasks.conditionCommand') })
       )
       .toBeVisible()
-
   })
 
   it('应用编辑器：发布包上传、参数与环境变量输入均有可访问名', async () => {
