@@ -352,3 +352,86 @@ Web SHALL 在本人角色修改成功后同步共享身份与当前控件，关�
 - **WHEN** 专属QA本人降为Operator/Viewer，或打开真实BLOCKED执行
 - **THEN** 当前页面权限与API一致，不残留可写表单；阻断原因与API一致，无需刷新
 
+### Requirement: 节点入站连接 UI
+
+Web UI SHALL 在添加节点表单中要求填写 `endpoint`（域名或 IP，默认端口 18444），并 SHALL 在节点列表/详情显示只读的连接方式（自动、当前出站/入站/离线）、endpoint、入站能力和证书诊断。UI SHALL NOT 提供 `connection_mode` 手动选择控件。
+
+#### Scenario: 添加节点缺少 endpoint
+- **WHEN** 用户提交添加节点表单但 endpoint 为空或非法
+- **THEN** 表单阻止提交并显示字段错误
+- **AND** 不会发送缺少 endpoint 的纳管请求
+
+#### Scenario: 显示自动连接方式
+- **WHEN** 用户查看节点列表或详情
+- **THEN** 显示“自动”策略及当前/上次出站或入站方式
+- **AND** 不存在强制入站或强制出站的下拉框
+
+#### Scenario: 旧 Agent
+- **WHEN** 节点 Agent 不支持入站
+- **THEN** 详情显示“不支持入站”，不显示可用的测试或 bundle 操作
+- **AND** 出站连接和既有节点操作保持可用
+
+#### Scenario: 入站安装包
+- **WHEN** Administrator 打开需要入站连接的节点
+- **THEN** 提供下载/轮换入站安装包的入口和适用拓扑说明
+- **AND** Operator/Viewer 看不到可执行的管理操作
+
+### Requirement: 入站诊断与数据面反馈
+
+UI SHALL 提供测试连接的分阶段结果（DNS、TCP、TLS、pin、HUB_HELLO、HELLO），并 SHALL 在文件传输、Artifact、应用部署、自升级因入站数据面不可用而返回 409/BLOCKED 时显示明确原因。UI SHALL NOT 把入站待命状态误显示为故障，也不得把 409 显示为泛化服务器错误。
+
+#### Scenario: 测试连接结果
+- **WHEN** Administrator 点击测试连接
+- **THEN** UI 展示每个阶段的成功/失败和可读原因
+- **AND** 已有会话时显示当前连接方向而不是重复测试结果
+
+#### Scenario: 数据面不可用提示
+- **WHEN** 用户尝试对缺少 `inbound_data_plane` 的节点创建传输、预取 Artifact、部署或升级
+- **THEN** UI 在提交前显示不可用提示，或展示后端返回的稳定错误码
+- **AND** 不出现长时间等待或无语义的超时
+
+#### Scenario: 出站正常时的入站待命
+- **WHEN** 节点通过出站连接且入站身份已配置
+- **THEN** UI 显示入站“待命/未使用”，不标记为错误
+- **AND** 仅在入站握手失败或证书异常时显示警告
+
+### Requirement: 统一节点显示名
+
+Web UI SHALL 通过统一的 `nodeDisplayName` 规则显示节点名称：优先非空 `display_name`，否则非空 `hostname`，否则 node ID，全部为空时使用通用未知节点文案。该规则 SHALL 应用于节点列表/详情、执行、告警、文件传输、概览、监控和目标选择等所有用户可见节点名称。节点详情 SHALL 为 Operator/Administrator 提供重命名入口，Viewer SHALL 只读。
+
+#### Scenario: 显示名优先
+
+- **WHEN** 节点同时有 `display_name` 和 `hostname`
+- **THEN** 所有用户可见位置显示 `display_name`
+- **AND** 仍可用 hostname/node ID 作为辅助信息或搜索字段
+
+#### Scenario: 空值回退
+
+- **WHEN** `display_name` 为空或仅空白
+- **THEN** 显示 `hostname`
+- **AND** hostname 也为空时显示 node ID 或未知节点文案
+
+#### Scenario: 页面一致性
+
+- **WHEN** 用户依次查看节点列表、节点详情、执行记录、告警、文件传输和概览
+- **THEN** 同一节点在这些页面显示同一个名称
+- **AND** 不会有的页面显示显示名、有的页面仍显示旧 hostname
+
+#### Scenario: 重命名入口
+
+- **WHEN** Operator 或 Administrator 打开节点详情
+- **THEN** 可以看到重命名操作，弹窗预填当前显示名并显示 64 字计数
+- **AND** 提交空值表示清除显示名，提交成功后相关页面刷新
+
+#### Scenario: Viewer 只读
+
+- **WHEN** Viewer 打开节点详情
+- **THEN** 可以查看显示名但看不到可执行的重命名操作
+- **AND** 直接调用更新接口仍被后端拒绝
+
+#### Scenario: 重命名后回退
+
+- **WHEN** 用户清除显示名
+- **THEN** 所有页面立即回退显示 hostname
+- **AND** 不需要刷新或重新登录
+
