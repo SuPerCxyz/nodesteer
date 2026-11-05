@@ -216,4 +216,28 @@ describe('Application失败反馈与会话边界', () => {
     expect(historyReads).toBeGreaterThan(2)
     expect(healthReads).toBeGreaterThan(2)
   })
+  it('does not run using unsaved configuration and restores saved configuration on explicit discard', async () => {
+    const page = await renderEditor()
+    const deploy = page.getByRole('button', { name: '部署', exact: true })
+    await expect.element(deploy).toBeEnabled()
+    const name = page.getByRole('textbox', {
+      name: i18n.t('common.name'),
+      exact: true,
+    })
+    await userEvent.fill(name, 'Unsaved configuration')
+    await expect.element(deploy).toBeDisabled()
+    await expect
+      .element(page.getByText(i18n.t('webFix.saveBeforeRun')))
+      .toBeVisible()
+    expect(post).not.toHaveBeenCalled()
+    await userEvent.click(
+      page.getByRole('button', {
+        name: i18n.t('webFix.discardConfiguration'),
+        exact: true,
+      })
+    )
+    await expect.element(name).toHaveValue('测试应用')
+    await expect.element(deploy).toBeEnabled()
+    expect(post).not.toHaveBeenCalled()
+  })
 })

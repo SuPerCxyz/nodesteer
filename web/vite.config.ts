@@ -21,6 +21,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+
   optimizeDeps: {
     // 测试与前端共用依赖：预先纳入，避免运行中途重新预构建触发页面重载导致浏览器测试挂起
     include: [
@@ -47,10 +48,13 @@ export default defineConfig({
     silent: 'passed-only',
     unstubEnvs: true,
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
-    // 应用代码在保存成功后会调用 window.location.assign（真实导航）。
-    // 浏览器模式下并行文件共享同一 iframe：任一文件触发真实导航会让同批其它文件
-    // 报 "Cannot connect to the iframe" 而整体失败（间歇性 flake，非产品缺陷）。
-    // 串行执行（约 24s）换取确定性；如后续改为在测试中 stub 导航可恢复并行。
+    // 应用代码在保存成功后会调用 window.location.assign/replace（真实导航）。
+    // 浏览器模式下文件共享同一页面/iframe：任一文件触发真实导航会让当前或后续文件
+    // 报 "Cannot connect to the iframe" / "Failed to fetch dynamically imported module"
+    // 而随机失败（非产品缺陷）。setup 文件用 Navigation API 取消跨文档导航；
+    // npm test 由 scripts/run-tests.mjs 按文件分批重启 Vitest 会话，避免单会话累计
+    // 运行多个文件后出现基础设施 flake。fileParallelism 保留为额外隔离。
+    setupFiles: ['./src/test-utils/setup.ts'],
     fileParallelism: false,
     browser: {
       enabled: true,

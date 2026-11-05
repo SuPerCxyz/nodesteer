@@ -8,8 +8,16 @@ import (
 // ProtocolVersion 当前协议版本
 const ProtocolVersion = 3
 
+// InboundProtocolVersion 入站握手协议版本。
+//
+// HUB_HELLO/HUB_HELLO_ACK 只出现在 Hub 主动拨号的入站连接上，旧 Hub/旧 Agent
+// 不会收到这些消息，因此不改变 ProtocolVersion。
+const InboundProtocolVersion = 1
+
 // 消息类型
 const (
+	MsgHubHello            = "HUB_HELLO"
+	MsgHubHelloAck         = "HUB_HELLO_ACK"
 	MsgHello               = "HELLO"
 	MsgHelloAck            = "HELLO_ACK"
 	MsgHeartbeat           = "HEARTBEAT"
@@ -40,7 +48,67 @@ const (
 	MsgFileDeliveryResult  = "FILE_DELIVERY_RESULT"
 	MsgFileTransferCancel  = "FILE_TRANSFER_CANCEL"
 	MsgError               = "ERROR"
+	MsgMonitorProbe        = "MONITOR_PROBE"
+	MsgMonitorProbeResult  = "MONITOR_PROBE_RESULT"
+	MsgNodeMetrics         = "NODE_METRICS"
 )
+
+// 数据面传输方式。空值表示沿用既有出站语义（Agent 主动访问 Hub HTTP 端点）。
+const (
+	TransportOutbound    = "outbound"
+	TransportInboundPull = "inbound_pull"
+	TransportInboundPush = "inbound_push"
+)
+
+// 入站连接稳定错误码（API 409 / Execution BLOCKED 共用）。
+const (
+	ErrorCodeInboundDataPlaneUnavailable = "inbound_data_plane_unavailable"
+	ErrorCodeInboundStageUnavailable     = "inbound_stage_unavailable"
+	ErrorCodeInboundAgentUnsupported     = "inbound_agent_unsupported"
+	ErrorCodeInboundEndpointInvalid      = "inbound_endpoint_invalid"
+	ErrorCodeInboundPinMismatch          = "inbound_pin_mismatch"
+	ErrorCodeInboundCertificateExpired   = "inbound_certificate_expired"
+	ErrorCodeInboundAuthFailed           = "inbound_auth_failed"
+	ErrorCodeInboundNotProvisioned       = "inbound_not_provisioned"
+	ErrorCodeInboundDisabled             = "inbound_disabled"
+	ErrorCodeInboundBundleAlreadyIssued  = "inbound_bundle_already_issued"
+)
+
+// NodeMetricSample 节点指标单点样本。
+// Quality 为 1 表示有效值，2 表示缺失；缺失时 Value 必须为 nil，不得用 0 代替。
+type NodeMetricSample struct {
+	Timestamp  time.Time         `json:"timestamp"`
+	Metric     string            `json:"metric"`
+	Dimensions map[string]string `json:"dimensions,omitempty"`
+	Value      *float64          `json:"value"`
+	Quality    int               `json:"quality"` // 1=valid, 2=missing
+}
+
+// NodeMetricsPayload 节点指标批次。Sequence 在同一 Agent 进程内单调递增。
+type NodeMetricsPayload struct {
+	NodeID   string             `json:"node_id"`
+	Sequence uint64             `json:"sequence"`
+	Samples  []NodeMetricSample `json:"samples"`
+}
+
+// 节点指标质量值。
+const (
+	NodeMetricQualityValid   = 1
+	NodeMetricQualityMissing = 2
+)
+
+type MonitorProbePayload struct {
+	Target       json.RawMessage `json:"target"`
+	AllowedCIDRs []string        `json:"allowed_cidrs"`
+}
+
+type MonitorProbeResultPayload struct {
+	StatusCode int             `json:"status_code"`
+	DurationNS int64           `json:"duration_ns"`
+	Value      json.RawMessage `json:"value,omitempty"`
+	HasValue   bool            `json:"has_value"`
+	ErrorCode  string          `json:"error_code,omitempty"`
+}
 
 // Envelope 统一消息信封
 type Envelope struct {
@@ -80,6 +148,9 @@ type HelloPayload struct {
 	RegistrationKey string          `json:"registration_key,omitempty"`
 	AgentCredential string          `json:"agent_credential,omitempty"`
 	LocalGlobalRev  int64           `json:"local_global_rev"`
+	// InboundEndpoint 可选：Agent 配置的对外入站地址元数据，仅用于观测；
+	// Hub 的拨号目标仍以管理员配置的节点 endpoint 为准。
+	InboundEndpoint string `json:"inbound_endpoint,omitempty"`
 }
 
 // HelloAckPayload 握手响应
@@ -92,6 +163,35 @@ type HelloAckPayload struct {
 	Settings         map[string]string `json:"settings,omitempty"`
 	Message          string            `json:"message,omitempty"`
 	NodeStatus       string            `json:"node_status,omitempty"`
+}
+
+// HubHelloPayload Hub 主动拨号时的首帧（Hub -> Agent）。
+//
+// 嵌入 HelloAckPayload 复用 accepted/node_id/agent_id/desired_global_rev/
+// settings/message/node_status 语义；JSON 字段平铺，旧客户端不会收到该消息。
+type HubHelloPayload struct {
+	HelloAckPayload
+	HubID      string    `json:"hub_id"`
+	HubVersion string    `json:"hub_version"`
+	Nonce      string    `json:"nonce"`
+	IssuedAt   time.Time `json:"issued_at"`
+	// DataPlane 表示 Hub 侧已具备入站数据面编排能力。
+	DataPlane bool `json:"data_plane"`
+	// Test 为 true 时 Agent 只完成握手探测，不注册业务会话。
+	Test bool `json:"test,omitempty"`
+}
+
+// HubHelloAckPayload Agent 对 HubHelloPayload 的响应（Agent -> Hub）。
+//
+// TokenProof 为 HMAC-SHA256(node_token, "nodesteer-inbound-v1" | hub_nonce |
+// agent_nonce | node_id)，令牌本身不在连接上传输。
+type HubHelloAckPayload struct {
+	HelloAckPayload
+	Nonce      string `json:"nonce"`
+	AgentNonce string `json:"agent_nonce"`
+	TokenProof string `json:"token_proof"`
+	DataPlane  bool   `json:"data_plane"`
+	SessionID  string `json:"session_id,omitempty"`
 }
 
 // HeartbeatPayload 心跳
@@ -178,6 +278,13 @@ type RunExecutionPayload struct {
 	Condition        json.RawMessage `json:"condition,omitempty"`
 	ArtifactID       string          `json:"artifact_id,omitempty"`
 	TargetVersion    string          `json:"target_version,omitempty"`
+	// ArtifactTransport 为空表示沿用既有出站下载；入站模式为 inbound_push。
+	ArtifactTransport string `json:"artifact_transport,omitempty"`
+	// AgentBinaryStaged/AgentBinarySHA256 仅入站自升级使用：Hub 已把二进制推送到
+	// Agent 固定 staging 路径，Agent 不再依赖 DownloadURL。
+	AgentBinaryStaged bool   `json:"agent_binary_staged,omitempty"`
+	AgentBinarySHA256 string `json:"agent_binary_sha256,omitempty"`
+	AgentBinarySize   int64  `json:"agent_binary_size,omitempty"`
 	// DownloadURL Agent 自升级（type=agent_upgrade）的二进制下载地址，
 	// 由 Hub 指定（既有 GET /api/agent/binary 端点）；为空时 Agent 侧按 HubURL 派生兜底。
 	DownloadURL string `json:"download_url,omitempty"`
@@ -258,6 +365,9 @@ type ArtifactPrefetchPayload struct {
 	URL        string `json:"url"`
 	SHA256     string `json:"sha256"`
 	Size       int64  `json:"size"`
+	// Transport 为空/outbound 表示 Agent 按 URL 下载；inbound_push 表示 Hub 会通过
+	// 入站数据面推送，URL 为空。
+	Transport string `json:"transport,omitempty"`
 }
 
 // FileUploadRequestPayload Hub 要求源 Agent 上传文件。
@@ -272,6 +382,9 @@ type FileUploadRequestPayload struct {
 	Offset     int64  `json:"offset"`
 	MaxBytes   int64  `json:"max_bytes"`
 	Attempt    uint64 `json:"attempt,omitempty"`
+	// Transport 为空/outbound 表示 Agent 向 UploadURL 上传；inbound_pull 表示
+	// Hub 通过入站数据面按 offset 拉取，UploadURL 为空。
+	Transport string `json:"transport,omitempty"`
 }
 
 // FileUploadResultPayload 源 Agent 上传结果。
@@ -295,6 +408,9 @@ type FileDeliveryRequestPayload struct {
 	DestinationPath string `json:"destination_path"`
 	Mode            uint32 `json:"mode,omitempty"`
 	Attempt         uint64 `json:"attempt,omitempty"`
+	// Transport 为空/outbound 表示 Agent 从 DownloadURL 下载；inbound_push 表示
+	// Hub 通过入站数据面推送，DownloadURL 为空。
+	Transport string `json:"transport,omitempty"`
 }
 
 // FileDeliveryResultPayload 目标 Agent 交付结果。
@@ -313,28 +429,31 @@ type FileTransferCancelPayload struct {
 
 // DeployRequestPayload 部署请求
 type DeployRequestPayload struct {
-	AppID            string            `json:"app_id"`
-	AppVersion       string            `json:"app_version"`
-	AppRevision      int64             `json:"app_revision"`
-	ArtifactID       string            `json:"artifact_id"`
-	ArtifactURL      string            `json:"artifact_url"`
-	ArtifactSHA256   string            `json:"artifact_sha256"`
-	BinaryPath       string            `json:"binary_path"`
-	Arguments        []string          `json:"arguments"`
-	Environment      map[string]string `json:"environment"`
-	Config           string            `json:"config"`
-	ConfigPath       string            `json:"config_path,omitempty"`
-	UnitName         string            `json:"unit_name"`
-	HealthCheck      json.RawMessage   `json:"health_check,omitempty"`
-	Operation        string            `json:"operation"` // deploy | start | stop | restart | upgrade
-	TriggerType      string            `json:"trigger_type,omitempty"`
-	ScheduleID       string            `json:"schedule_id,omitempty"`
-	ScheduleRevision int64             `json:"schedule_revision,omitempty"`
-	CreatedAt        string            `json:"created_at,omitempty"`
-	Timeout          int               `json:"timeout,omitempty"`
-	Retry            int               `json:"retry,omitempty"`
-	RunUser          string            `json:"run_user,omitempty"`
-	OfflinePolicy    string            `json:"offline_policy,omitempty"`
+	AppID          string `json:"app_id"`
+	AppVersion     string `json:"app_version"`
+	AppRevision    int64  `json:"app_revision"`
+	ArtifactID     string `json:"artifact_id"`
+	ArtifactURL    string `json:"artifact_url"`
+	ArtifactSHA256 string `json:"artifact_sha256"`
+	// ArtifactTransport 为空表示沿用既有出站下载；inbound_push 表示 Hub 已推送
+	// Artifact、ArtifactURL 为空，Agent 只从本地缓存取用。
+	ArtifactTransport string            `json:"artifact_transport,omitempty"`
+	BinaryPath        string            `json:"binary_path"`
+	Arguments         []string          `json:"arguments"`
+	Environment       map[string]string `json:"environment"`
+	Config            string            `json:"config"`
+	ConfigPath        string            `json:"config_path,omitempty"`
+	UnitName          string            `json:"unit_name"`
+	HealthCheck       json.RawMessage   `json:"health_check,omitempty"`
+	Operation         string            `json:"operation"` // deploy | start | stop | restart | upgrade
+	TriggerType       string            `json:"trigger_type,omitempty"`
+	ScheduleID        string            `json:"schedule_id,omitempty"`
+	ScheduleRevision  int64             `json:"schedule_revision,omitempty"`
+	CreatedAt         string            `json:"created_at,omitempty"`
+	Timeout           int               `json:"timeout,omitempty"`
+	Retry             int               `json:"retry,omitempty"`
+	RunUser           string            `json:"run_user,omitempty"`
+	OfflinePolicy     string            `json:"offline_policy,omitempty"`
 }
 
 // DeployResultPayload 部署结果
@@ -355,6 +474,8 @@ type DeployResultPayload struct {
 	Health           string `json:"health,omitempty"` // healthy | unhealthy | stopped
 	Rollback         bool   `json:"rollback,omitempty"`
 	Error            string `json:"error,omitempty"`
+	// Blocked 表示未执行且原因属于明确阻塞（如 inbound artifact 未暂存）。
+	Blocked bool `json:"blocked,omitempty"`
 }
 
 // RemoteStateUnknown 远程状态不可解析标记
@@ -397,14 +518,21 @@ type InventoryPayload struct {
 
 // Inventory 宿主机信息
 type Inventory struct {
-	OS         string           `json:"os"`
-	OSVersion  string           `json:"os_version"`
-	Kernel     string           `json:"kernel"`
-	Arch       string           `json:"arch"`
-	CPU        []InventoryCPU   `json:"cpu"`
-	Memory     *InventoryMemory `json:"memory,omitempty"`
-	Filesystem []InventoryFS    `json:"filesystem"`
-	Network    []InventoryNet   `json:"network"`
+	Hostname     string                 `json:"hostname,omitempty"`
+	OS           string                 `json:"os"`
+	OSVersion    string                 `json:"os_version"`
+	Kernel       string                 `json:"kernel"`
+	Arch         string                 `json:"arch"`
+	CPU          []InventoryCPU         `json:"cpu"`
+	Memory       *InventoryMemory       `json:"memory,omitempty"`
+	Filesystem   []InventoryFS          `json:"filesystem"`
+	Network      []InventoryNet         `json:"network"`
+	BlockDevices []InventoryBlockDevice `json:"block_devices,omitempty"`
+}
+
+type InventoryBlockDevice struct {
+	Name string `json:"name"`
+	Kind string `json:"kind"`
 }
 
 type InventoryCPU struct {

@@ -13,9 +13,11 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/SuPerCxyz/nodesteer/internal/agent/condition"
@@ -48,6 +50,17 @@ type Config struct {
 	HeartbeatSec      int
 	RevisionCheckSec  int
 	MaxLogBytes       int
+	// MetricsEnabled 是否采集并上报节点指标；cmd/agent 配置默认 true。
+	MetricsEnabled bool
+	// MetricsInterval 指标采集周期；默认 30s，运行时限制在 5s~300s。
+	MetricsInterval time.Duration
+	// ConnectionMode 自动连接模式；目前仅支持 auto（出站 + 有 bundle 时监听）。
+	ConnectionMode string
+	// Inbound 入站 listener 配置；未安装 bundle 时为空且不监听。
+	Inbound                      connection.InboundConfig
+	MonitoringAllowedCIDRs       []string
+	AllowInsecureMonitorHub      bool
+	MonitoringSecretDestinations map[string][]string
 }
 
 // Agent Agent 主结构
@@ -62,6 +75,7 @@ type Agent struct {
 	artifact         *ArtifactCache
 	appMgr           *ApplicationManager
 	upgrade          *upgradeRunner
+	dataPlane        *inboundDataPlane
 	logger           *slog.Logger
 	logState         *connection.ConnectionLogState
 	nodeID           string
@@ -72,6 +86,14 @@ type Agent struct {
 	ready            bool
 	remoteMu         sync.Mutex
 	remoteWait       map[string]chan protocol.RemoteStatePayload
+	probeSlots       chan struct{}
+	probeMu          sync.Mutex
+	probeSeen        map[string]time.Time
+	metricsCollector *metricsCollector
+	metricsQueue     *metricsQueue
+	metricsSeq       atomic.Uint64
+	inventoryMu      sync.Mutex
+	blockDevices     []models.BlockDeviceInfo
 	settingsMu       sync.RWMutex
 	transferMu       sync.Mutex
 	transferAttempts map[string]*transferAttempt
@@ -100,6 +122,15 @@ func New(cfg Config, logger *slog.Logger) (*Agent, error) {
 	if cfg.AgentVersion == "" {
 		cfg.AgentVersion = "dev"
 	}
+	if cfg.ConnectionMode == "" {
+		cfg.ConnectionMode = "auto"
+	}
+	if cfg.ConnectionMode != "auto" {
+		cancel()
+		store.Close()
+		return nil, fmt.Errorf("unsupported connection_mode %q: only auto is supported", cfg.ConnectionMode)
+	}
+	cfg.MetricsInterval = normalizeMetricsInterval(cfg.MetricsInterval)
 
 	a := &Agent{
 		cfg:              cfg,
@@ -112,6 +143,8 @@ func New(cfg Config, logger *slog.Logger) (*Agent, error) {
 		ctx:              ctx,
 		cancel:           cancel,
 		remoteWait:       map[string]chan protocol.RemoteStatePayload{},
+		probeSlots:       make(chan struct{}, 4),
+		probeSeen:        map[string]time.Time{},
 		transferAttempts: map[string]*transferAttempt{},
 		startedAt:        time.Now(),
 	}
@@ -137,8 +170,24 @@ func New(cfg Config, logger *slog.Logger) (*Agent, error) {
 		store.Close()
 		return nil, fmt.Errorf("configure agent TLS: %w", err)
 	}
+	if err := a.conn.SetInboundConfig(cfg.Inbound); err != nil {
+		store.Close()
+		return nil, fmt.Errorf("configure inbound listener: %w", err)
+	}
+	a.dataPlane = newInboundDataPlane(a)
+	a.conn.SetInboundDataPlaneHandler(a.dataPlane)
 	a.artifact.client = a.conn.HTTPClient()
 	a.conn.SetCredential(a.credential)
+	a.conn.SetNodeID(a.nodeID)
+
+	// 节点指标采集：仅在部署形态能可靠读取宿主机 /proc 时启用。
+	// 发送门禁使用 HELLO_ACK accepted（HandshakeComplete），断线期间批次保留在内存队列。
+	if cfg.MetricsEnabled && metricsSupported(cfg.DeploymentMode, cfg.HostIntegration) {
+		a.metricsCollector = newMetricsCollector(metricsRoot(cfg))
+		a.metricsQueue = newMetricsQueue(func(env protocol.Envelope) bool {
+			return a.conn != nil && a.conn.HandshakeComplete() && a.conn.Send(env)
+		})
+	}
 
 	// 自升级执行链（默认实现绑定；测试按需覆盖字段注入）
 	a.upgrade = a.defaultUpgradeRunner()
@@ -156,6 +205,9 @@ func New(cfg Config, logger *slog.Logger) (*Agent, error) {
 // Close 关闭
 func (a *Agent) Close() error {
 	a.cancel()
+	if a.dataPlane != nil {
+		a.dataPlane.close()
+	}
 	if a.conn != nil {
 		a.conn.Stop()
 	}
@@ -175,6 +227,11 @@ func (a *Agent) Run(ctx context.Context) error {
 
 	// 启动调度器（本地调度独立于连接）
 	a.sch.Start(a.ctx, 1*time.Second)
+
+	// 节点指标采集（独立 goroutine，不阻塞执行与心跳）
+	if a.cfg.MetricsEnabled && a.metricsCollector != nil {
+		go a.metricsLoop(ctx)
+	}
 
 	// 心跳与 Revision 周期校验
 	go a.periodicLoop(ctx)
@@ -204,6 +261,10 @@ func (a *Agent) helloFn() *protocol.HelloPayload {
 	if a.cfg.HostIntegration || a.cfg.DeploymentMode == models.DeploymentModeDockerHostInt {
 		hostRoot = a.host.HostRoot()
 	}
+	inboundEndpoint := ""
+	if a.conn != nil && a.conn.InboundEnabled() {
+		inboundEndpoint = a.cfg.Inbound.PublicEndpoint
+	}
 	return &protocol.HelloPayload{
 		ProtocolVersion: protocol.ProtocolVersion,
 		AgentID:         a.agentID,
@@ -216,6 +277,7 @@ func (a *Agent) helloFn() *protocol.HelloPayload {
 		OS:              readOS(hostRoot),
 		Arch:            osArch(),
 		LocalGlobalRev:  localRev,
+		InboundEndpoint: inboundEndpoint,
 	}
 }
 
@@ -223,13 +285,18 @@ func (a *Agent) helloFn() *protocol.HelloPayload {
 func (a *Agent) capabilities() map[string]bool {
 	caps := map[string]bool{
 		models.CapScript:            true,
+		models.CapMonitorProbe:      true,
+		models.CapNodeMetrics:       a.cfg.MetricsEnabled && metricsSupported(a.cfg.DeploymentMode, a.cfg.HostIntegration),
+		models.CapContainerMetrics:  false,
 		models.CapLocalScheduler:    true,
 		models.CapOfflineExecution:  true,
 		models.CapHostFilesystem:    false,
 		models.CapManagedSystemd:    false,
 		models.CapApplicationDeploy: false,
 		// 自升级仅 native 形态支持（docker / docker_host_integration 均不上报）
-		models.CapAgentUpgrade: false,
+		models.CapAgentUpgrade:      false,
+		models.CapInboundConnection: a.conn != nil && a.conn.InboundEnabled(),
+		models.CapInboundDataPlane:  a.conn != nil && a.conn.InboundEnabled(),
 	}
 	if a.cfg.DeploymentMode == models.DeploymentModeNative {
 		caps[models.CapHostFilesystem] = true
@@ -241,6 +308,12 @@ func (a *Agent) capabilities() map[string]bool {
 		caps[models.CapHostFilesystem] = true
 		caps[models.CapManagedSystemd] = true
 		caps[models.CapApplicationDeploy] = true
+	}
+	// 容器指标依赖 Docker/Podman socket；只有实际探测成功或首次采集成功才声明，
+	// socket 不存在/无权限/API 不可用时保持 false，旧 Agent 自然不声明。
+	if caps[models.CapNodeMetrics] && a.metricsCollector != nil &&
+		a.metricsCollector.containerMetricsAvailable() {
+		caps[models.CapContainerMetrics] = true
 	}
 	return caps
 }
@@ -366,6 +439,10 @@ func (a *Agent) OnHelloAck(env protocol.Envelope) {
 	}
 	if !p.Accepted {
 		a.recordConnectionFailure("hello rejected", p.Message)
+		// 入站重复/策略拒绝不代表本地 credential 失效：保持凭证，等待出站会话继续使用。
+		if a.conn.ConnectionOrigin() == models.ConnectionModeInbound {
+			return
+		}
 		// Credential 失效时下一次连接使用 Registration Token 重新换取凭证。
 		a.credential = ""
 		a.store.SetIdentity("credential", "")
@@ -386,6 +463,7 @@ func (a *Agent) OnHelloAck(env protocol.Envelope) {
 	if p.NodeID != "" {
 		a.nodeID = p.NodeID
 		a.store.SetIdentity("node_id", p.NodeID)
+		a.conn.SetNodeID(p.NodeID)
 	}
 	a.sch.SetPaused(p.NodeStatus == models.NodeStatusMaintenance || p.NodeStatus == models.NodeStatusDisabled)
 	if p.AgentID != "" {
@@ -414,6 +492,9 @@ func (a *Agent) OnHelloAck(env protocol.Envelope) {
 
 	// 上报 Inventory（低频，连接建立时）
 	a.reportInventory()
+
+	// 连接恢复：按序补发断线期间缓冲的节点指标批次。
+	a.flushMetrics()
 }
 
 func (a *Agent) applySettingsMap(values map[string]string) {
@@ -459,7 +540,26 @@ func (a *Agent) reportInventory() {
 		payload.Inventory = convertToProtocolInventory(inv)
 	}
 	if a.conn.Send(protocol.NewEnvelope(protocol.MsgInventory, "", payload)) {
+		if inv != nil {
+			a.inventoryMu.Lock()
+			a.blockDevices = inv.BlockDevices
+			a.inventoryMu.Unlock()
+		}
 		a.logState.IncInventoryReports()
+	}
+}
+
+// refreshBlockInventory reports hotplug and loss of sysfs access without waiting for the regular inventory interval.
+func (a *Agent) refreshBlockInventory() {
+	if a.conn == nil || !a.conn.IsConnected() || a.metricsCollector == nil {
+		return
+	}
+	devices := readBlockDevices(a.metricsCollector.root)
+	a.inventoryMu.Lock()
+	changed := !reflect.DeepEqual(devices, a.blockDevices)
+	a.inventoryMu.Unlock()
+	if changed {
+		a.reportInventory()
 	}
 }
 
@@ -497,7 +597,7 @@ func (a *Agent) statusLogLoop(ctx context.Context) {
 
 // convertToProtocolInventory models → protocol Inventory
 func convertToProtocolInventory(inv *models.Inventory) *protocol.Inventory {
-	m := &protocol.Inventory{OS: inv.OS, OSVersion: inv.OSVersion, Kernel: inv.Kernel, Arch: inv.Arch}
+	m := &protocol.Inventory{Hostname: inv.Hostname, OS: inv.OS, OSVersion: inv.OSVersion, Kernel: inv.Kernel, Arch: inv.Arch}
 	for _, c := range inv.CPU {
 		m.CPU = append(m.CPU, protocol.InventoryCPU{Model: c.Model, Cores: c.Cores, MHz: c.MHz})
 	}
@@ -506,6 +606,9 @@ func convertToProtocolInventory(inv *models.Inventory) *protocol.Inventory {
 	}
 	for _, f := range inv.Filesystem {
 		m.Filesystem = append(m.Filesystem, protocol.InventoryFS{Mount: f.Mount, Device: f.Device, FSType: f.FSType, TotalKB: f.TotalKB, FreeKB: f.FreeKB})
+	}
+	for _, d := range inv.BlockDevices {
+		m.BlockDevices = append(m.BlockDevices, protocol.InventoryBlockDevice{Name: d.Name, Kind: d.Kind})
 	}
 	for _, n := range inv.Network {
 		m.Network = append(m.Network, protocol.InventoryNet{Interface: n.Interface, Addresses: n.Addresses, MAC: n.MAC})
@@ -1211,6 +1314,10 @@ func (a *Agent) OnArtifactPrefetch(env protocol.Envelope) {
 	if err := json.Unmarshal(env.Payload, &p); err != nil {
 		return
 	}
+	// inbound_push 由 Hub 通过数据面 PUT 落缓存；控制消息只作预取提示。
+	if p.Transport == protocol.TransportInboundPush {
+		return
+	}
 	if err := a.artifact.Prefetch(a.ctx, p.URL, p.SHA256); err != nil {
 		a.logger.Warn("artifact prefetch failed", "id", p.ArtifactID, "error", err)
 	}
@@ -1221,6 +1328,10 @@ func (a *Agent) OnFileUploadRequest(env protocol.Envelope) {
 	var p protocol.FileUploadRequestPayload
 	if err := json.Unmarshal(env.Payload, &p); err != nil {
 		a.logger.Error("bad file upload request", "error", err)
+		return
+	}
+	if p.Transport == protocol.TransportInboundPull {
+		a.registerInboundSourceGrant(p)
 		return
 	}
 	ctx, done := a.startFileTransfer(p.TransferID)
@@ -1307,6 +1418,10 @@ func (a *Agent) OnFileDeliveryRequest(env protocol.Envelope) {
 		a.logger.Error("bad file delivery request", "error", err)
 		return
 	}
+	if p.Transport == protocol.TransportInboundPush {
+		a.registerInboundTargetGrant(p)
+		return
+	}
 	ctx, done := a.startFileTransfer(p.TransferID)
 	go func() {
 		defer done()
@@ -1386,6 +1501,9 @@ func (a *Agent) OnFileTransferCancel(env protocol.Envelope) {
 	if json.Unmarshal(env.Payload, &p) != nil {
 		return
 	}
+	if a.dataPlane != nil {
+		a.dataPlane.cancel(p.TransferID)
+	}
 	a.transferMu.Lock()
 	if attempt := a.transferAttempts[p.TransferID]; attempt != nil {
 		attempt.cancel()
@@ -1424,7 +1542,7 @@ func (a *Agent) startFileTransfer(id string) (context.Context, func()) {
 // sendFileUploadResult 上报源上传结果。attempt 为 Hub 下发请求携带的世代号，
 // 原样回传使 Hub 能忽略被取代的旧尝试结果（缺陷 SOAK-20261018-01）。
 func (a *Agent) sendFileUploadResult(id string, attempt uint64, err error) {
-	if !a.conn.IsConnected() {
+	if a.conn == nil || !a.conn.IsConnected() {
 		return
 	}
 	p := protocol.FileUploadResultPayload{TransferID: id, OK: err == nil, Attempt: attempt}
@@ -1436,7 +1554,7 @@ func (a *Agent) sendFileUploadResult(id string, attempt uint64, err error) {
 
 // sendFileDeliveryResult 上报目标交付结果，attempt 语义同 sendFileUploadResult。
 func (a *Agent) sendFileDeliveryResult(id string, attempt uint64, err error) {
-	if !a.conn.IsConnected() {
+	if a.conn == nil || !a.conn.IsConnected() {
 		return
 	}
 	p := protocol.FileDeliveryResultPayload{TransferID: id, OK: err == nil, Attempt: attempt}

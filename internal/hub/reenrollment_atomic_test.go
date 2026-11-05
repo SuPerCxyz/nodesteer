@@ -31,7 +31,7 @@ func TestReenrollmentFailurePreservesIdentityStatusAndCredentials(t *testing.T) 
 	}
 	failing := revokedDeleteFailureStore{st.(*store.SQLiteStore)}
 	nm = NewNodeManager(failing, NewRevisionManager(failing))
-	if _, err := nm.PrepareEnrollment(ctx, "changed-host", n.IP, "native"); err == nil {
+	if _, err := nm.PrepareEnrollment(ctx, "changed-host", n.IP, "192.0.2.90:18444", "native"); err == nil {
 		t.Fatal("failed revoked flag deletion must reject re-enrollment")
 	}
 	persisted, err := st.GetNode(ctx, n.ID)

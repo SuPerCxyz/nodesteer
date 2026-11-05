@@ -38,6 +38,7 @@ Hub 是 Desired State 的唯一权威源；Agent 主动连接 Hub，缓存已同
 - **可靠执行**：Execution 幂等、执行前 Journal 持久化、实时/离线日志和断线后的结果回传。
 - **应用交付**：Artifact SHA256 校验、缓存、Prefetch、Managed Application、systemd 生命周期和基础回滚。
 - **多种部署方式**：Native Agent、Docker Agent、Docker Host Integration、Docker Compose。
+- **自动双向连接**：Agent 可主动连接 Hub，也可在 Agent 无法出站时由 Hub 主动拨号；连接方向自动选择，旧出站流程保持不变。
 - **文件中继**：将源 Agent 文件经 Hub 校验后转发到一个或多个目标节点。
 
 运行模型：
@@ -77,6 +78,7 @@ Hub 是 Desired State 的唯一权威源；Agent 主动连接 Hub，缓存已同
 
 - Web UI / REST API：8080
 - Agent Gateway：8443（默认双端口；单入口模式下与 Web 同为 8080）
+- 入站连接（可选）：Agent TCP 18444，仅允许 Hub 出站访问
 
 ## 快速开始
 
@@ -127,6 +129,10 @@ cp packaging/systemd/agent.yaml.example /etc/nodesteer/agent.yaml
 
 Agent 首次连接使用 Registration Token 注册，随后获取并持久化唯一 Agent Credential。
 
+### 4. 可选：Agent 无法出站时使用入站 bundle
+
+启用 Hub 的 `inbound_enabled` 后，在「节点 → 添加节点」填写节点域名或 IP，创建后在节点详情下载「入站安装包」并复制到 Agent 主机执行 `install-inbound.sh`。Hub 将通过 TCP 18444 主动拨号 Agent；bundle 首次下载即签发，轮换后旧证书和令牌立即失效。详细步骤、防火墙、CA 备份和回滚见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) 第 7.1 节。
+
 ## 部署
 
 ### Docker Compose
@@ -174,6 +180,8 @@ Hub 的节点纳管页面不要求手动选择架构。Native 安装命令会在
 ## 网络与安全
 
 Agent 采用主动连接模型，默认不需要开放 Agent 入站管理端口。Hub 内网、Agent 公网的场景通过 NAT 或反向代理暴露**单一入口**即可：Web/API、纳管下载、Agent WebSocket 与文件传输共用 8080，**对外只需暴露 8080 单口**，Agent 以 `wss://` 经反向代理连接。
+
+当 Agent 无法主动访问 Hub、但 Hub 可以访问 Agent 时，可启用入站连接：Hub 主动拨号 Agent 的 TCP 18444，连接方向由 Hub 自动选择。此时只需在 Agent 侧放行 Hub 出口地址，不需要把 18444 映射到 Hub；双方的隔离 NAT、relay/P2P 不在当前范围，详见 `docs/DEPLOYMENT.md` 第 7.1 节。
 
 HTTPS 一律由反向代理终结，Hub 侧保持明文（`web_tls_*`/`gateway_tls_*` 恒为空）；使用公签证书时 Agent 无需 `tls_ca_file`（仅私有 CA 场景仍需为 Agent 配置）。默认双端口 `:8080/:8443` 保留为可选回退，配置与示例见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) 第 7 节。Artifact 下载与实时日志走同一入口的 HTTP 通道，不占用控制长连接。
 
@@ -232,6 +240,7 @@ openspec/            变更管理与规格文件
 - [docs/IMPLEMENTATION_PROMPT.md](docs/IMPLEMENTATION_PROMPT.md)：研发实施总控提示词
 - [docs/DEV_RULES.md](docs/DEV_RULES.md)：实现原则和项目完成门禁（AGENTS.md 分片）
 - [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)：Docker Compose 部署、环境变量与 OIDC 配置
+- [docs/INBOUND_CONNECTION.md](docs/INBOUND_CONNECTION.md)：入站 bundle 安装、轮换、排障与回滚
 
 ## 第三方声明
 

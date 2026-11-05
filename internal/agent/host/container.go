@@ -269,6 +269,14 @@ func (a *ContainerHostAdapter) Stat(ctx context.Context, p string) (os.FileInfo,
 	return os.Stat(a.MapPath(p))
 }
 
+// Lstat 返回不跟随符号链接的文件信息，供入站数据面拒绝符号链接。
+func (a *ContainerHostAdapter) Lstat(ctx context.Context, p string) (os.FileInfo, error) {
+	if err := a.validateMappedPath(p); err != nil {
+		return nil, err
+	}
+	return os.Lstat(a.MapPath(p))
+}
+
 func (a *ContainerHostAdapter) systemctl(ctx context.Context, args ...string) (string, error) {
 	// 通过 nsenter/systemctl 访问宿主 systemd
 	// 推荐：nsenter -t 1 -m -u -i -n -p systemctl

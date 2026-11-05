@@ -37,6 +37,7 @@ type Gateway struct {
 	onAgentConn     func(nodeID string)
 	transferHandler http.Handler
 	fileTransfers   *FileTransferManager
+	monitorProbes   *MonitorProbes
 	logger          *slog.Logger
 	mu              sync.Mutex
 	connMeta        map[string]*connMeta
@@ -71,6 +72,8 @@ func (g *Gateway) SetTransferHandler(h http.Handler) { g.transferHandler = h }
 
 // SetFileTransferManager 注入文件传输状态处理器。
 func (g *Gateway) SetFileTransferManager(m *FileTransferManager) { g.fileTransfers = m }
+
+func (g *Gateway) SetMonitorProbes(m *MonitorProbes) { g.monitorProbes = m }
 
 // LastSeen 实现 AgentConn 接口需要的 LastSeen
 func (g *Gateway) LastSeen() time.Time {
@@ -115,12 +118,29 @@ func (g *Gateway) handle(w http.ResponseWriter, r *http.Request) {
 		c:       c,
 		meta:    &connMeta{lastSeen: time.Now()},
 		gateway: g,
+		origin:  models.ConnectionModeOutbound,
 		sendCh:  make(chan protocol.Envelope, 256),
 		done:    make(chan struct{}),
 	}
+	g.serveConn(ctx, conn)
+}
+
+// serveConn 读取并分发已建立 WebSocket 的 Agent 会话，出站连接与 Hub 拨号入站
+// 连接共用同一读循环、消息分发、断开与会话回收路径。
+func (g *Gateway) serveConn(ctx context.Context, conn *wsConn) {
+	c := conn.c
+	// 默认读取限制需覆盖 max_log_bytes 级别的执行结果帧（JSON 编码后有开销）；
+	// 单条消息过大时再按 MaxMsgBytes 显式覆盖。
+	msgBytes := int64(8 << 20) // 8MB
+	if g.cfg.MaxMsgBytes > 0 {
+		msgBytes = g.cfg.MaxMsgBytes
+	}
+	c.SetReadLimit(msgBytes)
+
 	go conn.writeLoop(ctx)
 	defer func() {
 		conn.markUnavailable()
+		_ = conn.Close()
 		g.handleDisconnect(conn.meta.nodeID, conn)
 	}()
 
@@ -140,6 +160,10 @@ func (g *Gateway) handle(w http.ResponseWriter, r *http.Request) {
 		conn.meta.lastSeen = time.Now()
 		if err := g.dispatch(ctx, conn, env); err != nil {
 			if g.dropOrphanSession(ctx, conn.meta.nodeID, env.Type, err) {
+				return
+			}
+			if errors.Is(err, errStaleSession) {
+				g.logger.Warn("drop stale session message", "node", conn.meta.nodeID, "type", env.Type)
 				return
 			}
 			g.logger.Warn("dispatch error", "type", env.Type, "error", err)
@@ -241,7 +265,16 @@ func (g *Gateway) dropOrphanSession(ctx context.Context, nodeID, envType string,
 	return true
 }
 
+// errStaleSession 旧连接已被新会话替换：迟到消息不得污染当前会话状态。
+var errStaleSession = errors.New("stale agent session")
+
 func (g *Gateway) dispatch(ctx context.Context, conn *wsConn, env protocol.Envelope) error {
+	if conn.meta.nodeID != "" {
+		current, ok := g.sessions.Get(conn.meta.nodeID)
+		if !ok || current != conn {
+			return errStaleSession
+		}
+	}
 	switch env.Type {
 	case protocol.MsgHello:
 		return g.handleHello(ctx, conn, env)
@@ -265,12 +298,28 @@ func (g *Gateway) dispatch(ctx context.Context, conn *wsConn, env protocol.Envel
 		return g.handleRemoteStateReq(ctx, conn, env)
 	case protocol.MsgInventory:
 		return g.handleInventory(ctx, conn, env)
+	case protocol.MsgNodeMetrics:
+		return g.handleNodeMetrics(ctx, conn, env)
 	case protocol.MsgDeployResult:
 		return g.handleDeployResult(ctx, conn, env)
 	case protocol.MsgFileUploadResult:
 		return g.handleFileUploadResult(ctx, conn, env)
 	case protocol.MsgFileDeliveryResult:
 		return g.handleFileDeliveryResult(ctx, conn, env)
+	case protocol.MsgMonitorProbeResult:
+		if g.monitorProbes == nil || conn.meta.nodeID == "" {
+			return errors.New("monitoring agent session unavailable")
+		}
+		current, ok := g.sessions.Get(conn.meta.nodeID)
+		if !ok || current != conn {
+			return errors.New("monitoring agent session expired")
+		}
+		var result protocol.MonitorProbeResultPayload
+		if err := json.Unmarshal(env.Payload, &result); err != nil {
+			return err
+		}
+		g.monitorProbes.Complete(conn.meta.nodeID, env.ID, conn, result)
+		return nil
 	case protocol.MsgError:
 		g.logger.Warn("agent error", "id", env.ID, "payload", string(env.Payload))
 		return nil
@@ -340,13 +389,6 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 		if err := g.nodes.store.UpsertNode(ctx, node.Node); err != nil {
 			return err
 		}
-		// accepted：显式置 online（不依赖心跳副作用），maintenance/disabled 不被覆盖
-		if err := g.markConnected(ctx, node.Node); err != nil {
-			return err
-		}
-		if err := g.nodes.UpdateHeartbeat(ctx, existing.ID, time.Now()); err != nil {
-			return err
-		}
 	} else {
 		// 首次注册
 		if p.RegistrationKey == "" || p.RegistrationKey != g.cfg.RegistrationToken {
@@ -377,21 +419,36 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 		}
 		node = &NodeWithCred{Node: n, Cred: cred}
 		_ = isNew
-		// accepted：显式置 online（注册路径已写库，此处幂等），maintenance/disabled 不被覆盖
-		if err := g.markConnected(ctx, node.Node); err != nil {
-			return err
-		}
 	}
 
 	conn.meta.nodeID = node.Node.ID
 	conn.meta.agentID = node.Node.AgentID
-	g.sessions.Register(conn)
-	g.mu.Lock()
-	g.connMeta[node.Node.ID] = conn.meta
-	g.mu.Unlock()
+	if !g.sessions.CanRegister(conn) {
+		// 入站连接在已有会话时不得替换；出站连接按出站优先替换旧会话。
+		conn.meta.nodeID = ""
+		conn.meta.agentID = ""
+		_ = conn.sendSync(ctx, protocol.NewEnvelope(protocol.MsgHelloAck, env.ID, protocol.HelloAckPayload{
+			Accepted: false,
+			Message:  "duplicate inbound connection",
+		}))
+		return fmt.Errorf("inbound session rejected: existing session active")
+	}
+	// accepted：显式置 online（不依赖心跳副作用），maintenance/disabled 不被覆盖。
+	// 此时尚未注册新会话，NODE_STATUS 等通知不会抢在 HELLO_ACK 之前发给新连接。
+	if err := g.markConnected(ctx, node.Node); err != nil {
+		return err
+	}
+	if err := g.nodes.UpdateHeartbeat(ctx, node.Node.ID, time.Now()); err != nil {
+		return err
+	}
+	origin := SessionOrigin(conn)
+	// 只记录最近一次成功会话方向；诊断写入失败不应拒绝已认证会话。
+	if err := g.nodes.RecordConnectionMode(ctx, node.Node.ID, origin); err != nil {
+		g.logger.Warn("record connection mode failed", "node", node.Node.ID, "error", err)
+	}
 
 	cur, _ := g.syncMgr.revisions.Current(ctx)
-	conn.send(protocol.NewEnvelope(protocol.MsgHelloAck, env.ID, protocol.HelloAckPayload{
+	if err := conn.send(protocol.NewEnvelope(protocol.MsgHelloAck, env.ID, protocol.HelloAckPayload{
 		Accepted:         true,
 		NodeID:           node.Node.ID,
 		AgentID:          node.Node.AgentID,
@@ -399,7 +456,16 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 		DesiredGlobalRev: cur,
 		Settings:         g.settings(ctx),
 		NodeStatus:       node.Node.Status,
-	}))
+	})); err != nil {
+		return err
+	}
+	if !g.sessions.RegisterChecked(conn) {
+		return fmt.Errorf("session superseded during HELLO")
+	}
+	g.mu.Lock()
+	g.connMeta[node.Node.ID] = conn.meta
+	g.mu.Unlock()
+	conn.notifyAccepted()
 	if g.onAgentConn != nil {
 		g.onAgentConn(node.Node.ID)
 	}
@@ -645,10 +711,74 @@ func (g *Gateway) handleInventory(ctx context.Context, conn *wsConn, env protoco
 	return g.nodes.store.UpsertNode(ctx, node)
 }
 
+// maxNodeMetricsPayloadBytes 限制单条 NODE_METRICS 消息的原始 JSON 大小。
+// Agent 每批最多 500 个样本，2 MiB 足以覆盖带维度的高频批次，同时避免
+// 无界 JSON 解码占用内存。
+const maxNodeMetricsPayloadBytes = 2 << 20
+
+// handleNodeMetrics 接收 Agent 原生指标批次。
+// 来源节点以握手会话为准，payload.NodeID 必须一致；能力缺失的旧 Agent
+// 一律拒绝，绝不把空能力当作支持。错误只返回给 dispatch 记日志，不关闭连接。
+func (g *Gateway) handleNodeMetrics(ctx context.Context, conn *wsConn, env protocol.Envelope) error {
+	nodeID := conn.meta.nodeID
+	if nodeID == "" {
+		return errors.New("node metrics require an accepted agent session")
+	}
+	current, ok := g.sessions.Get(nodeID)
+	if !ok || current != conn {
+		return errors.New("node metrics session expired")
+	}
+	if len(env.Payload) > maxNodeMetricsPayloadBytes {
+		return errors.New("node metrics payload too large")
+	}
+	var payload protocol.NodeMetricsPayload
+	if err := json.Unmarshal(env.Payload, &payload); err != nil {
+		return errors.New("invalid node metrics payload")
+	}
+	if payload.NodeID != nodeID {
+		return errors.New("node metrics node id mismatch")
+	}
+	if len(payload.Samples) > store.NativeMaxBatchSamples {
+		return fmt.Errorf("node metrics batch too large: %d samples (max %d)", len(payload.Samples), store.NativeMaxBatchSamples)
+	}
+	if len(payload.Samples) == 0 {
+		return nil
+	}
+
+	node, err := g.nodes.GetNode(ctx, nodeID)
+	if err != nil {
+		return err
+	}
+	if !node.Capabilities[models.CapNodeMetrics] {
+		return errors.New("agent does not support node metrics")
+	}
+	nativeStore, ok := g.nodes.store.(store.NativeMetricStore)
+	if !ok {
+		return errors.New("native node metric store unavailable")
+	}
+
+	samples := make([]store.NativeSample, 0, len(payload.Samples))
+	for _, sample := range payload.Samples {
+		if sample.Quality != protocol.NodeMetricQualityValid && sample.Quality != protocol.NodeMetricQualityMissing {
+			return fmt.Errorf("invalid node metric quality %d", sample.Quality)
+		}
+		samples = append(samples, store.NativeSample{
+			NodeID:     nodeID,
+			Timestamp:  sample.Timestamp,
+			Metric:     sample.Metric,
+			Dimensions: sample.Dimensions,
+			Value:      sample.Value,
+			Quality:    sample.Quality,
+		})
+	}
+	// 存储层按 (node_id, metric, series_key, timestamp) UPSERT，重复批次幂等。
+	return nativeStore.InsertNodeMetricSamples(ctx, nodeID, samples)
+}
+
 // convertInventory protocol Inventory → models Inventory
 func convertInventory(inv *protocol.Inventory) *models.Inventory {
 	m := &models.Inventory{
-		OS: inv.OS, OSVersion: inv.OSVersion, Kernel: inv.Kernel, Arch: inv.Arch,
+		Hostname: inv.Hostname, OS: inv.OS, OSVersion: inv.OSVersion, Kernel: inv.Kernel, Arch: inv.Arch,
 	}
 	for _, c := range inv.CPU {
 		m.CPU = append(m.CPU, models.CPUInfo{Model: c.Model, Cores: c.Cores, MHz: c.MHz})
@@ -660,6 +790,9 @@ func convertInventory(inv *protocol.Inventory) *models.Inventory {
 		m.Filesystem = append(m.Filesystem, models.FilesystemInfo{
 			Mount: f.Mount, Device: f.Device, FSType: f.FSType, TotalKB: f.TotalKB, FreeKB: f.FreeKB,
 		})
+	}
+	for _, d := range inv.BlockDevices {
+		m.BlockDevices = append(m.BlockDevices, models.BlockDeviceInfo{Name: d.Name, Kind: d.Kind})
 	}
 	for _, n := range inv.Network {
 		m.Network = append(m.Network, models.NetworkInfo{Interface: n.Interface, Addresses: n.Addresses, MAC: n.MAC})
@@ -697,10 +830,20 @@ type wsConn struct {
 	c        *websocket.Conn
 	meta     *connMeta
 	gateway  *Gateway
+	origin   string
 	sendCh   chan protocol.Envelope
 	done     chan struct{}
 	once     sync.Once
 	doneOnce sync.Once
+	// onAccepted 在 HELLO 被接受并完成会话注册后调用一次（拨号器用于成功诊断）。
+	onAccepted func()
+	accepted   sync.Once
+	// 入站数据面客户端状态（仅 dialer 创建的 inbound 连接设置）。
+	dataPlane          bool
+	dataPlaneSessionID string
+	dataPlaneToken     []byte
+	dataPlaneBase      string
+	dataPlaneClient    *http.Client
 }
 
 // errConnUnavailable 写通道已判定不可用（写失败或连接关闭）时的发送错误。
@@ -787,6 +930,21 @@ func (w *wsConn) NodeID() string {
 		return ""
 	}
 	return w.meta.nodeID
+}
+
+// Origin 实现 AgentConn 的方向观测（outbound/inbound）。
+func (w *wsConn) Origin() string {
+	if w.origin == "" {
+		return models.ConnectionModeOutbound
+	}
+	return w.origin
+}
+
+func (w *wsConn) notifyAccepted() {
+	if w.onAccepted == nil {
+		return
+	}
+	w.accepted.Do(w.onAccepted)
 }
 
 // Send 实现 AgentConn

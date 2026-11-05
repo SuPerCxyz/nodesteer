@@ -5,9 +5,9 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { Link, getRouteApi } from '@tanstack/react-router'
+import { getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ChevronLeft, Clipboard, Loader2, StopCircle } from 'lucide-react'
+import { Clipboard, Loader2, StopCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import {
@@ -19,11 +19,12 @@ import {
 } from '@/lib/api'
 import { copyText } from '@/lib/clipboard'
 import { executionLogView } from '@/lib/execution-logs'
+import { nodeDisplayName } from '@/lib/node-display-name'
 import { useCanRun } from '@/lib/permissions'
 import { readTablePageSize } from '@/lib/table-view'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -84,7 +85,13 @@ export function Executions() {
     readTablePageSize('executions', 10)
   )
   // 搜索或筛选变化时重置页码，避免查询旧页造成空结果。
-  const filters = JSON.stringify([search.status, search.q, search.trigger])
+  const filters = JSON.stringify([
+    search.status,
+    search.q,
+    search.trigger,
+    search.node_id,
+    search.schedule_id,
+  ])
   const [previousFilters, setPreviousFilters] = useState(filters)
   if (previousFilters !== filters) {
     setPreviousFilters(filters)
@@ -96,12 +103,14 @@ export function Executions() {
       search.status,
       search.q,
       search.trigger,
+      search.node_id,
+      search.schedule_id,
       page,
       pageSize,
     ],
     queryFn: () =>
       api.getPage<Execution>(
-        `/executions?limit=${pageSize}&offset=${(page - 1) * pageSize}${search.status ? `&status=${encodeURIComponent(search.status)}` : ''}${search.q ? `&q=${encodeURIComponent(search.q)}` : ''}${search.trigger ? `&trigger_type=${encodeURIComponent(search.trigger)}` : ''}`
+        `/executions?limit=${pageSize}&offset=${(page - 1) * pageSize}${search.status ? `&status=${encodeURIComponent(search.status)}` : ''}${search.q ? `&q=${encodeURIComponent(search.q)}` : ''}${search.trigger ? `&trigger_type=${encodeURIComponent(search.trigger)}` : ''}${search.node_id ? `&node_id=${encodeURIComponent(search.node_id)}` : ''}${search.schedule_id ? `&schedule_id=${encodeURIComponent(search.schedule_id)}` : ''}`
       ),
     placeholderData: keepPreviousData,
   })
@@ -122,8 +131,14 @@ export function Executions() {
     [tasks.data]
   )
   const nodeNames = useMemo(
-    () => new Map((nodes.data || []).map((node) => [node.id, node.hostname])),
-    [nodes.data]
+    () =>
+      new Map(
+        (nodes.data || []).map((node) => [
+          node.id,
+          nodeDisplayName(node, t('common.unknownNode')),
+        ])
+      ),
+    [nodes.data, t]
   )
   const scheduleNames = useMemo(
     () =>
@@ -326,98 +341,129 @@ export function Executions() {
         description={t('executions.description')}
       />
       <Main className='flex flex-1 flex-col gap-6'>
-        {query.isError ? (
-          <ErrorState error={query.error} onRetry={() => query.refetch()} />
-        ) : query.isLoading ? (
-          <LoadingState />
-        ) : (
-          <>
-            <div className='flex flex-wrap items-center gap-2'>
-              <div className='relative w-full sm:w-64'>
-                <Input
-                  className='h-8'
-                  value={search.q || ''}
-                  onChange={(event) => update('q', event.target.value)}
-                  placeholder={t('executions.searchPlaceholder')}
-                  aria-label={t('executions.searchPlaceholder')}
-                />
-              </div>
-              <Select
-                value={search.status || 'all'}
-                onValueChange={(value) =>
-                  update('status', value === 'all' ? '' : value)
-                }
-              >
-                <SelectTrigger
-                  className='h-8 w-[150px]'
-                  aria-label={t('common.status')}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='all'>{t('executions.all')}</SelectItem>
-                  {executionStatuses.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {
-                        executionStatusLabels[status][
-                          i18n.language === 'en' ? 'en' : 'zh'
-                        ]
-                      }
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={search.trigger || 'all'}
-                onValueChange={(value) =>
-                  update('trigger', value === 'all' ? '' : value)
-                }
-              >
-                <SelectTrigger
-                  className='h-8 w-[160px]'
-                  aria-label={t('executions.trigger')}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='all'>
-                    {t('executions.allTriggers')}
-                  </SelectItem>
-                  {triggers.map((trigger) => (
-                    <SelectItem key={trigger} value={trigger}>
-                      {labels[trigger as keyof typeof labels] || trigger}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {(query.data?.total ?? 0) === 0 ? (
-              <Card>
-                <EmptyState
-                  message={
-                    search.q || search.status || search.trigger
-                      ? t('executions.noMatching')
-                      : t('executions.noExecs')
-                  }
-                />
-              </Card>
+        <Card data-testid='executions-workspace' className='min-w-0'>
+          <CardContent className='space-y-4'>
+            {query.isError ? (
+              <ErrorState error={query.error} onRetry={() => query.refetch()} />
+            ) : query.isLoading ? (
+              <LoadingState />
             ) : (
-              <DataTable
-                data={visible}
-                columns={columns}
-                hideSearch
-                storageKey='executions'
-                manualPagination
-                total={query.data?.total ?? 0}
-                page={page}
-                pageSize={pageSize}
-                onPageChange={setPage}
-                onPageSizeChange={setPageSize}
-                searchPlaceholder={t('executions.searchPlaceholder')}
-              />
+              <>
+                {(search.node_id || search.schedule_id) && (
+                  <div className='flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm'>
+                    <span>
+                      {search.node_id
+                        ? `${t('nav.nodes')}: ${nodeNames.get(search.node_id) || search.node_id}`
+                        : ''}{' '}
+                      {search.schedule_id
+                        ? `${t('nav.schedules')}: ${scheduleNames.get(search.schedule_id) || search.schedule_id}`
+                        : ''}
+                    </span>
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      onClick={() =>
+                        navigate({
+                          search: (previous) => ({
+                            ...previous,
+                            node_id: undefined,
+                            schedule_id: undefined,
+                          }),
+                        })
+                      }
+                    >
+                      {t('webFix.clearScope')}
+                    </Button>
+                  </div>
+                )}
+                <div className='flex flex-wrap items-center gap-2'>
+                  <div className='relative w-full sm:w-64'>
+                    <Input
+                      className='h-8'
+                      value={search.q || ''}
+                      onChange={(event) => update('q', event.target.value)}
+                      placeholder={t('executions.searchPlaceholder')}
+                      aria-label={t('executions.searchPlaceholder')}
+                    />
+                  </div>
+                  <Select
+                    value={search.status || 'all'}
+                    onValueChange={(value) =>
+                      update('status', value === 'all' ? '' : value)
+                    }
+                  >
+                    <SelectTrigger
+                      className='h-8 w-[150px]'
+                      aria-label={t('common.status')}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='all'>{t('executions.all')}</SelectItem>
+                      {executionStatuses.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {
+                            executionStatusLabels[status][
+                              i18n.language === 'en' ? 'en' : 'zh'
+                            ]
+                          }
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={search.trigger || 'all'}
+                    onValueChange={(value) =>
+                      update('trigger', value === 'all' ? '' : value)
+                    }
+                  >
+                    <SelectTrigger
+                      className='h-8 w-[160px]'
+                      aria-label={t('executions.trigger')}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='all'>
+                        {t('executions.allTriggers')}
+                      </SelectItem>
+                      {triggers.map((trigger) => (
+                        <SelectItem key={trigger} value={trigger}>
+                          {labels[trigger as keyof typeof labels] || trigger}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(query.data?.total ?? 0) === 0 ? (
+                  <EmptyState
+                    message={
+                      search.q || search.status || search.trigger
+                        ? t('executions.noMatching')
+                        : t('executions.noExecs')
+                    }
+                  />
+                ) : (
+                  <DataTable
+                    data={visible}
+                    columns={columns}
+                    hideSearch
+                    storageKey='executions'
+                    variant='rack'
+                    rackPrimaryColumnId='task'
+                    manualPagination
+                    total={query.data?.total ?? 0}
+                    page={page}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                    searchPlaceholder={t('executions.searchPlaceholder')}
+                  />
+                )}
+              </>
             )}
-          </>
-        )}
+          </CardContent>
+        </Card>
       </Main>
     </>
   )
@@ -503,7 +549,9 @@ export function ExecutionDetail() {
     )
   const exec = execution.data
   const taskName = task.data?.name || t('common.unknownTask')
-  const nodeName = node.data?.hostname || t('common.unknownNode')
+  const nodeName = node.data
+    ? nodeDisplayName(node.data, t('common.unknownNode'))
+    : t('common.unknownNode')
   const exitCode = exec.exit_code ?? '-'
   const inProgress = ['PENDING', 'RUNNING'].includes(exec.status)
   const sourceSchedule =
@@ -523,6 +571,7 @@ export function ExecutionDetail() {
       <NodeSteerHeader
         title={taskName}
         description={`${nodeName} · ${trigger}`}
+        backTo='/executions'
         action={
           exec.status === 'RUNNING' && canRun ? (
             <Button
@@ -541,12 +590,6 @@ export function ExecutionDetail() {
         }
       />
       <Main className='flex flex-1 flex-col gap-6'>
-        <Button asChild variant='ghost' className='w-fit px-0'>
-          <Link to='/executions'>
-            <ChevronLeft className='me-1 size-4' />
-            {t('common.back')}
-          </Link>
-        </Button>
         <ConfirmDialog
           open={stopOpen}
           onOpenChange={setStopOpen}
@@ -567,49 +610,6 @@ export function ExecutionDetail() {
           </span>
           <span>r{exec.task_revision || '-'}</span>
           <TimeValue value={exec.start_time} absolute />
-        </div>
-        <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-5'>
-          {[
-            ['status', <StatusBadge status={exec.status} />],
-            [
-              'node',
-              node.data ? (
-                <a
-                  className='truncate hover:underline'
-                  href={`/agents/${exec.node_id}`}
-                  title={node.data.hostname}
-                >
-                  {nodeName}
-                </a>
-              ) : (
-                <span>{nodeName}</span>
-              ),
-            ],
-            ['start', <TimeValue value={exec.start_time} absolute />],
-            [
-              'duration',
-              <DurationValue
-                start={exec.start_time}
-                end={exec.end_time}
-                running={exec.status === 'RUNNING'}
-              />,
-            ],
-            [
-              'exit',
-              <span className='font-mono text-xs'>
-                {exec.status === 'RUNNING' ? '-' : exitCode}
-              </span>,
-            ],
-          ].map(([label, value]) => (
-            <Card key={label as string}>
-              <CardHeader className='pb-2'>
-                <CardTitle className='text-xs font-medium text-muted-foreground'>
-                  {t(`executions.${label}`) || label}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>{value}</CardContent>
-            </Card>
-          ))}
         </div>
         <SectionGrid>
           <SectionCard title={t('executions.process')}>
@@ -810,6 +810,12 @@ function OutputSummary({
   const { t } = useTranslation()
   const text = content || ''
   const excerpt = text.length > 400 ? `${text.slice(0, 400)}…` : text
+  if (!text && !truncated)
+    return (
+      <p className='text-xs text-muted-foreground'>
+        {stream}: {t('executions.empty')}
+      </p>
+    )
   return (
     <div className='grid gap-2'>
       <div className='flex flex-wrap items-center gap-2 text-sm'>

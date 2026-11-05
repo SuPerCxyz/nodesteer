@@ -47,7 +47,7 @@ func newEnrollmentTestServer(t *testing.T) (*Server, string) {
 // NODESTEER_DEPLOYMENT_MODE=docker（显式 env 优先级最高）。
 func TestEnrollmentTemplateOmitsGeneratedKeys(t *testing.T) {
 	s, token := newEnrollmentTestServer(t)
-	body := `{"node_name":"enroll-node","node_ip":"192.0.2.10","hub_address":"http://hub.example:8080"}`
+	body := `{"node_name":"enroll-node","node_ip":"192.0.2.10","endpoint":"192.0.2.10","hub_address":"http://hub.example:8080"}`
 	req := httptest.NewRequest(http.MethodPost, "/api/nodes/enrollment", strings.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")

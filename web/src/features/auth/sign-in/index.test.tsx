@@ -2,14 +2,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from '@/i18n'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
+import { userEvent } from 'vitest/browser'
 import { SignIn } from './index'
 
 // vi.mock 工厂被 hoist 到文件顶部，被引用的 mock 必须在 hoisted 作用域内创建
 const get = vi.hoisted(() => vi.fn())
+const post = vi.hoisted(() => vi.fn())
 
 vi.mock('@/lib/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/api')>()
-  return { ...actual, api: { ...actual.api, get } }
+  return { ...actual, api: { ...actual.api, get, post } }
 })
 
 function renderSignIn() {
@@ -27,6 +29,7 @@ describe('SignIn OIDC 状态渲染', () => {
   beforeAll(() => void i18n.changeLanguage('zh'))
   beforeEach(() => {
     get.mockReset()
+    post.mockReset()
     window.history.replaceState({}, '', '/sign-in')
   })
 
@@ -80,10 +83,62 @@ describe('SignIn OIDC 状态渲染', () => {
   })
 })
 
+describe('空密码测试开关（allow_empty_password）', () => {
+  beforeAll(() => void i18n.changeLanguage('zh'))
+  beforeEach(() => {
+    get.mockReset()
+    post.mockReset()
+    window.history.replaceState({}, '', '/sign-in')
+  })
+
+  it('默认关闭：空密码被校验拦截，不调用登录', async () => {
+    get.mockImplementation(async (path: string) => {
+      if (path === '/auth-mode')
+        return { dev_no_auth: false, allow_empty_password: false }
+      return { enabled: false, local_fallback: true }
+    })
+    const page = await renderSignIn()
+
+    await userEvent.fill(page.getByLabelText('用户名'), 'admin')
+    await userEvent.click(page.getByRole('button', { name: '登录' }))
+
+    await expect
+      .element(page.getByLabelText('密码'))
+      .toHaveAttribute('aria-invalid', 'true')
+    expect(post).not.toHaveBeenCalled()
+    await expect
+      .element(page.getByText('测试环境允许空密码'))
+      .not.toBeInTheDocument()
+  })
+
+  it('开启时空密码通过校验并调用登录', async () => {
+    get.mockImplementation(async (path: string) => {
+      if (path === '/auth-mode')
+        return { dev_no_auth: false, allow_empty_password: true }
+      return { enabled: false, local_fallback: true }
+    })
+    post.mockRejectedValue(new Error('invalid credentials'))
+    const page = await renderSignIn()
+
+    await expect.element(page.getByText('测试环境允许空密码')).toBeVisible()
+    await userEvent.fill(page.getByLabelText('用户名'), 'admin')
+    await userEvent.click(page.getByRole('button', { name: '登录' }))
+
+    await vi.waitFor(() => {
+      expect(post).toHaveBeenCalledWith('/login', {
+        username: 'admin',
+        password: '',
+      })
+    })
+    await expect.element(page.getByText('invalid credentials')).toBeVisible()
+  })
+})
+
 describe('登录页地标（P11 a11y：landmark-one-main / region）', () => {
   beforeAll(() => void i18n.changeLanguage('zh'))
   beforeEach(() => {
     get.mockReset()
+    post.mockReset()
     window.history.replaceState({}, '', '/sign-in')
   })
 

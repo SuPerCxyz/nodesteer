@@ -22,6 +22,36 @@ import (
 	"github.com/SuPerCxyz/nodesteer/internal/models"
 )
 
+// enrollmentStringMap 兼容纳管响应中的字符串与布尔字段（如
+// inbound_bundle_available），让既有断言继续以字符串方式读取文本字段。
+type enrollmentStringMap map[string]string
+
+func (m *enrollmentStringMap) UnmarshalJSON(data []byte) error {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	out := make(enrollmentStringMap, len(raw))
+	for key, value := range raw {
+		var text string
+		if err := json.Unmarshal(value, &text); err == nil {
+			out[key] = text
+			continue
+		}
+		var scalar any
+		if err := json.Unmarshal(value, &scalar); err != nil {
+			return err
+		}
+		if scalar == nil {
+			out[key] = ""
+			continue
+		}
+		out[key] = fmt.Sprint(scalar)
+	}
+	*m = out
+	return nil
+}
+
 func testAgentBinary(t *testing.T, dir string) string {
 	t.Helper()
 	path := filepath.Join(dir, "nodesteer-agent-amd64")
@@ -122,6 +152,7 @@ func TestNodeEnrollmentMetadata(t *testing.T) {
 	params := url.Values{
 		"node_name":   {"edge-node-01"},
 		"node_ip":     {"203.0.113.10"},
+		"endpoint":    {"203.0.113.10"},
 		"hub_address": {"http://public.example:8080"},
 	}
 	req, err := http.NewRequest(http.MethodGet, ts.URL+"/api/nodes/enrollment?"+params.Encode(), nil)
@@ -138,7 +169,7 @@ func TestNodeEnrollmentMetadata(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("enrollment status %d: %s", resp.StatusCode, body)
 	}
-	var result map[string]string
+	var result enrollmentStringMap
 	if err := json.Unmarshal(body, &result); err != nil {
 		t.Fatal(err)
 	}
@@ -172,6 +203,7 @@ func TestNodeEnrollmentMetadata(t *testing.T) {
 	domainParams := url.Values{
 		"node_name":   {"edge-node-domain"},
 		"node_ip":     {"agent.example.com"},
+		"endpoint":    {"agent.example.com"},
 		"hub_address": {"http://public.example:8080"},
 	}
 	domainReq, err := http.NewRequest(http.MethodGet, ts.URL+"/api/nodes/enrollment?"+domainParams.Encode(), nil)
@@ -187,7 +219,7 @@ func TestNodeEnrollmentMetadata(t *testing.T) {
 	if domainResp.StatusCode != http.StatusOK {
 		t.Fatalf("domain enrollment status %d", domainResp.StatusCode)
 	}
-	var domainResult map[string]string
+	var domainResult enrollmentStringMap
 	if err := json.NewDecoder(domainResp.Body).Decode(&domainResult); err != nil {
 		t.Fatal(err)
 	}
@@ -235,7 +267,7 @@ func TestNodeEnrollmentCreatesPendingNode(t *testing.T) {
 	}
 	login.Body.Close()
 
-	request, err := http.NewRequest(http.MethodPost, ts.URL+"/api/nodes/enrollment", strings.NewReader(`{"node_name":"docker-node","node_ip":"203.0.113.20","hub_address":"http://public.example:8080"}`))
+	request, err := http.NewRequest(http.MethodPost, ts.URL+"/api/nodes/enrollment", strings.NewReader(`{"node_name":"docker-node","node_ip":"203.0.113.20","endpoint":"203.0.113.20","hub_address":"http://public.example:8080"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,7 +282,7 @@ func TestNodeEnrollmentCreatesPendingNode(t *testing.T) {
 		body, _ := io.ReadAll(response.Body)
 		t.Fatalf("enrollment status %d: %s", response.StatusCode, body)
 	}
-	var result map[string]string
+	var result enrollmentStringMap
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
 		t.Fatal(err)
 	}
@@ -321,8 +353,8 @@ func TestNodeEnrollmentConcurrentWritesAllSucceed(t *testing.T) {
 		go func(i int) {
 			defer wg.Done()
 			payload := fmt.Sprintf(
-				`{"node_name":"concurrent-%02d","node_ip":"203.0.113.%d","hub_address":"http://public.example:8080"}`,
-				i, 100+i)
+				`{"node_name":"concurrent-%02d","node_ip":"203.0.113.%d","endpoint":"203.0.113.%d","hub_address":"http://public.example:8080"}`,
+				i, 100+i, 100+i)
 			req, err := http.NewRequest(http.MethodPost, ts.URL+"/api/nodes/enrollment", strings.NewReader(payload))
 			if err != nil {
 				statuses[i] = -1
@@ -398,7 +430,7 @@ func TestNodeEnrollmentGeneratesWithoutLocalBinary(t *testing.T) {
 		t.Fatal(err)
 	}
 	login.Body.Close()
-	request, err := http.NewRequest(http.MethodPost, ts.URL+"/api/nodes/enrollment", strings.NewReader(`{"node_name":"missing-binary","node_ip":"203.0.113.21","hub_address":"http://public.example:8080"}`))
+	request, err := http.NewRequest(http.MethodPost, ts.URL+"/api/nodes/enrollment", strings.NewReader(`{"node_name":"missing-binary","node_ip":"203.0.113.21","endpoint":"203.0.113.21","hub_address":"http://public.example:8080"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -452,7 +484,7 @@ func TestNodeEnrollmentRejectsInvalidIdentity(t *testing.T) {
 	}
 	json.NewDecoder(login.Body).Decode(&session)
 	login.Body.Close()
-	req, err := http.NewRequest(http.MethodGet, ts.URL+"/api/nodes/enrollment?node_name=valid-node&node_ip=-invalid.example.com", nil)
+	req, err := http.NewRequest(http.MethodGet, ts.URL+"/api/nodes/enrollment?node_name=valid-node&node_ip=-invalid.example.com&endpoint=invalid.example.com", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -612,6 +644,7 @@ func TestNodeEnrollmentGatewayURLContract(t *testing.T) {
 			params := url.Values{
 				"node_name":   {"edge-contract"},
 				"node_ip":     {"203.0.113.30"},
+				"endpoint":    {"203.0.113.30"},
 				"hub_address": {tc.hubAddress},
 			}
 			req, err := http.NewRequest(http.MethodGet, ts.URL+"/api/nodes/enrollment?"+params.Encode(), nil)
@@ -628,7 +661,7 @@ func TestNodeEnrollmentGatewayURLContract(t *testing.T) {
 			if resp.StatusCode != http.StatusOK {
 				t.Fatalf("enrollment status %d: %s", resp.StatusCode, body)
 			}
-			var result map[string]string
+			var result enrollmentStringMap
 			if err := json.Unmarshal(body, &result); err != nil {
 				t.Fatal(err)
 			}

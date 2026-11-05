@@ -42,6 +42,8 @@ type Manager struct {
 	// localAllowed 登录方式互斥开关（allow_local_login 的生效值）。
 	// true=本地模式（默认），false=SSO-only 模式。不依赖 OIDC 客户端是否注入。
 	localAllowed bool
+	// allowEmptyPassword 仅测试环境使用：允许本地账号以空密码登录。默认 false。
+	allowEmptyPassword bool
 }
 
 // New 创建认证管理器（默认本地模式，localAllowed=true）
@@ -66,6 +68,20 @@ func (m *Manager) LocalLoginAllowed() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.localAllowed
+}
+
+// SetAllowEmptyPassword 设置是否允许空密码登录（仅测试环境使用，默认 false）。
+func (m *Manager) SetAllowEmptyPassword(v bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.allowEmptyPassword = v
+}
+
+// AllowEmptyPassword 返回是否允许空密码登录。
+func (m *Manager) AllowEmptyPassword() bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.allowEmptyPassword
 }
 
 // SetOIDC 设置 OIDC 客户端（仅 SSO-only 模式注入；本地登录是否禁用由 localAllowed 开关决定）
@@ -112,11 +128,12 @@ func (m *Manager) EnsureDefaultAdmin(ctx context.Context, username, password str
 
 // Login 用户登录
 func (m *Manager) Login(ctx context.Context, username, password string) (*Session, error) {
-	// 旧版本可能已经持久化空密码用户；拒绝空凭据而不改写历史数据或会话。
-	// 纯空白用户名同样拒绝：这类身份无法在 UI 中可靠输入，属无效账号
+	// 旧版本可能已经持久化空密码用户；默认拒绝空凭据而不改写历史数据或会话。
+	// 仅测试环境开关开启时允许空密码，且仍走下方 bcrypt 比对。
+	// 纯空白用户名始终拒绝：这类身份无法在 UI 中可靠输入，属无效账号
 	// （缺陷 OBS-20261016-G1-USER-INPUT-NOT-TRIMMED）。登录仍按原样精确匹配，
 	// 不改写历史账号的用户名，避免存量账号被锁定。
-	if username == "" || strings.TrimSpace(username) == "" || password == "" {
+	if username == "" || strings.TrimSpace(username) == "" || (password == "" && !m.AllowEmptyPassword()) {
 		return nil, ErrInvalidCredentials
 	}
 	u, err := m.store.GetUserByUsername(ctx, username)

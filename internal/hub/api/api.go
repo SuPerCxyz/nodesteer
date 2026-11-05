@@ -20,28 +20,41 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/SuPerCxyz/nodesteer/internal/hub"
 	"github.com/SuPerCxyz/nodesteer/internal/hub/auth"
+	"github.com/SuPerCxyz/nodesteer/internal/inbound"
 	"github.com/SuPerCxyz/nodesteer/internal/metrics"
 	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/monitoring"
 	"github.com/SuPerCxyz/nodesteer/internal/protocol"
 	"github.com/SuPerCxyz/nodesteer/internal/store"
 )
 
+// inboundDialerRuntime API 需要的拨号器能力；测试保持不注册会话。
+type inboundDialerRuntime interface {
+	Trigger(string)
+	TestConnection(context.Context, *models.Node) (*hub.InboundTestResult, error)
+}
+
 // Server REST API 服务器
 type Server struct {
-	store     store.Store
-	auth      *auth.Manager
-	nodes     *hub.NodeManager
-	scripts   *hub.ScriptManager
-	tasks     *hub.TaskManager
-	schedules *hub.ScheduleManager
-	artifacts *hub.ArtifactManager
-	apps      *hub.AppManager
-	execs     *hub.ExecutionManager
-	metrics   *metrics.Metrics
-	logger    *slog.Logger
+	store         store.Store
+	auth          *auth.Manager
+	nodes         *hub.NodeManager
+	scripts       *hub.ScriptManager
+	tasks         *hub.TaskManager
+	schedules     *hub.ScheduleManager
+	artifacts     *hub.ArtifactManager
+	apps          *hub.AppManager
+	execs         *hub.ExecutionManager
+	metrics       *metrics.Metrics
+	logger        *slog.Logger
+	monitoring    *monitoring.Repository
+	alerts        *monitoring.AlertRepository
+	alertNotifier *monitoring.AlertNotifier
 
 	// OIDC 认证客户端（仅 SSO-only 模式注入，本地模式恒为 nil）
 	oidc *auth.OIDC
@@ -61,10 +74,25 @@ type Server struct {
 	agentBinaryPaths  map[string]string
 	agentBinaryData   map[string][]byte
 	readyCheck        func(context.Context) error
+	// 入站连接：功能开关与 endpoint 端口/CIDR 策略。默认关闭，仅允许 18444。
+	inboundEnabled bool
+	inboundPolicy  *inbound.DialPolicy
+	// inboundDialer 用于 endpoint 变更后立即重新评估拨号。
+	inboundDialer inboundDialerRuntime
+	// inboundBundle 负责入站 bundle 签发/轮换。
+	inboundBundle *hub.InboundBundleService
 }
 
 // SetMetrics 注入指标收集器
 func (s *Server) SetMetrics(m *metrics.Metrics) { s.metrics = m }
+
+func (s *Server) SetMonitoring(repo *monitoring.Repository) { s.monitoring = repo }
+
+// SetAlerting 注入阈值告警仓储与通知器。
+func (s *Server) SetAlerting(repo *monitoring.AlertRepository, notifier *monitoring.AlertNotifier) {
+	s.alerts = repo
+	s.alertNotifier = notifier
+}
 
 // SetDevNoAuth 开启/关闭本地测试免登录模式。仅允许通过显式环境变量启用。
 func (s *Server) SetDevNoAuth(v bool) { s.devNoAuth = v }
@@ -85,6 +113,27 @@ func (s *Server) SetFileTransfers(m *hub.FileTransferManager) { s.transfers = m 
 func (s *Server) SetEnrollmentConfig(registrationToken, gatewayBaseURL string) {
 	s.RegistrationToken = registrationToken
 	s.gatewayBaseURL = gatewayBaseURL
+}
+
+// SetInboundConfig 设置入站连接开关与 endpoint 端口策略。
+func (s *Server) SetInboundConfig(enabled bool, policy *inbound.DialPolicy) {
+	s.inboundEnabled = enabled
+	if policy != nil {
+		s.inboundPolicy = policy
+	}
+}
+
+// SetInboundDialer 注入拨号器；endpoint 变更后触发重新评估。
+func (s *Server) SetInboundDialer(d inboundDialerRuntime) { s.inboundDialer = d }
+
+// SetInboundBundleService 注入 bundle 签发/轮换服务。
+func (s *Server) SetInboundBundleService(b *hub.InboundBundleService) { s.inboundBundle = b }
+
+func (s *Server) dialPolicy() *inbound.DialPolicy {
+	if s.inboundPolicy != nil {
+		return s.inboundPolicy
+	}
+	return inbound.DefaultDialPolicy()
 }
 
 // SetBaseURL 设置 Web/API 基址，供生成的二进制下载命令使用。
@@ -116,12 +165,29 @@ func New(st store.Store, am *auth.Manager, nm *hub.NodeManager, sm *hub.ScriptMa
 		agentBinaryPaths: map[string]string{},
 		agentBinaryData:  map[string][]byte{},
 		loginFails:       loginFailTracker{fails: map[string]*loginFailEntry{}},
+		inboundPolicy:    inbound.DefaultDialPolicy(),
 	}
 }
 
 // Routes 注册路由
 func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("/api/monitoring/latest", s.withAuth(s.handleMonitoringLatest, "read"))
+	mux.HandleFunc("/api/monitoring/http-targets", s.withAuth(s.handleMonitoringTargets, "read"))
+	mux.HandleFunc("/api/monitoring/http-targets/", s.withAuth(s.handleMonitoringTarget, "read"))
+	mux.HandleFunc("/api/monitoring/rules", s.withAuth(s.handleMonitoringRules, "read"))
+	mux.HandleFunc("/api/monitoring/rules/", s.withAuth(s.handleMonitoringRule, "read"))
+	// NodeSteer 原生指标：总览、序列、历史与最新值。
+	mux.HandleFunc("/api/monitoring/nodes/overview", s.withAuth(s.handleMonitoringNodeOverview, "read"))
+	mux.HandleFunc("/api/monitoring/nodes/", s.withAuth(s.handleMonitoringNode, "read"))
+	// 阈值告警规则、事件与通知渠道（handler 内部统一 admin-only）。
+	mux.HandleFunc("/api/monitoring/alerts/rules", s.withAuth(s.handleAlertRules, "read"))
+	mux.HandleFunc("/api/monitoring/alerts/rules/", s.withAuth(s.handleAlertRule, "read"))
+	mux.HandleFunc("/api/monitoring/alerts/events", s.withAuth(s.handleAlertEvents, "read"))
+	mux.HandleFunc("/api/monitoring/alerts/events/", s.withAuth(s.handleAlertEvent, "read"))
+	mux.HandleFunc("/api/monitoring/alerts/notifications", s.withAuth(s.handleAlertNotifications, "read"))
+	mux.HandleFunc("/api/monitoring/notification-channels", s.withAuth(s.handleNotificationChannels, "read"))
+	mux.HandleFunc("/api/monitoring/notification-channels/", s.withAuth(s.handleNotificationChannel, "read"))
 
 	// 认证模式探测（公开，仅返回是否启用本地测试免登录）
 	mux.HandleFunc("/api/auth-mode", s.handleAuthMode)
@@ -325,13 +391,42 @@ func bearerToken(r *http.Request) string {
 // ---------- 响应工具 ----------
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		// 先编码再写头，避免编码失败时已返回 200 空 body。
+		slog.Error("json response encode failed", "error", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"error":"internal error"}`))
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
+	_, _ = w.Write(data)
 }
 
 func writeErr(w http.ResponseWriter, status int, msg string) {
 	writeJSON(w, status, map[string]string{"error": msg})
+}
+
+// writeErrCode 返回稳定错误码，供入站数据面/阶段门禁使用；message 面向用户。
+func writeErrCode(w http.ResponseWriter, status int, code, msg string) {
+	writeJSON(w, status, map[string]string{"error": msg, "code": code})
+}
+
+// applyNodeConnectionView 用活跃会话计算当前连接方向，并刷新只读入站视图。
+// 离线时 connection_mode=offline，last_connection_mode 保留最近一次成功方向。
+func (s *Server) applyNodeConnectionView(node *models.Node) {
+	if node == nil {
+		return
+	}
+	node.ConnectionMode = models.ConnectionModeOffline
+	if s.sessions != nil {
+		if conn, ok := s.sessions.Get(node.ID); ok {
+			node.ConnectionMode = hub.SessionOrigin(conn)
+		}
+	}
+	node.SyncInboundView()
 }
 
 // methodNotAllowed 统一 405 响应：必须携带 Allow 头（与既有正确端点一致；
@@ -394,6 +489,16 @@ func (s *Server) writeInternalError(w http.ResponseWriter, r *http.Request, err 
 //   - 5xx 目标状态码一律走 writeInternalError（不回原文）；
 //   - 业务校验错误 → status + 原文（业务文案契约不变）。
 func (s *Server) writeStoreError(w http.ResponseWriter, r *http.Request, status int, err error) {
+	if errors.Is(err, hub.ErrInboundDataPlaneUnavailable) {
+		writeErrCode(w, http.StatusConflict, protocol.ErrorCodeInboundDataPlaneUnavailable,
+			"inbound data plane is not available yet")
+		return
+	}
+	if errors.Is(err, hub.ErrInboundStageUnavailable) {
+		writeErrCode(w, http.StatusConflict, protocol.ErrorCodeInboundStageUnavailable,
+			"inbound data plane stage is not available yet")
+		return
+	}
 	if status >= http.StatusInternalServerError || store.IsBusyError(err) || store.IsDriverError(err) {
 		s.writeInternalError(w, r, err)
 		return
@@ -525,13 +630,18 @@ func loginFailKey(r *http.Request, username string) string {
 	return host + "|" + strings.ToLower(username)
 }
 
-// handleAuthMode 公开返回当前认证模式，供前端在本地测试免登录模式下跳过登录页。
+// handleAuthMode 公开返回当前认证模式，供前端在本地测试免登录模式下跳过登录页，
+// 并在测试环境允许空密码时放开登录表单校验。
 func (s *Server) handleAuthMode(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w, "GET")
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]bool{"dev_no_auth": s.devNoAuth})
+	allowEmptyPassword := s.auth != nil && s.auth.AllowEmptyPassword()
+	writeJSON(w, http.StatusOK, map[string]bool{
+		"dev_no_auth":          s.devNoAuth,
+		"allow_empty_password": allowEmptyPassword,
+	})
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
@@ -705,6 +815,9 @@ func (s *Server) handleNodes(w http.ResponseWriter, r *http.Request) {
 			s.writeInternalError(w, r, err)
 			return
 		}
+		for _, node := range nodes {
+			s.applyNodeConnectionView(node)
+		}
 		writeJSON(w, http.StatusOK, nodes)
 	case http.MethodPost:
 		if !s.canWrite(r) {
@@ -712,12 +825,29 @@ func (s *Server) handleNodes(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var req struct {
-			ID     string            `json:"id"`
-			Status string            `json:"status"`
-			Labels map[string]string `json:"labels"`
+			ID             string            `json:"id"`
+			Status         string            `json:"status"`
+			Labels         map[string]string `json:"labels"`
+			DisplayName    *string           `json:"display_name"`
+			Endpoint       *string           `json:"endpoint"`
+			ConnectionMode json.RawMessage   `json:"connection_mode"`
 		}
 		if err := readJSON(r, &req); err != nil {
 			writeErr(w, http.StatusBadRequest, "invalid request")
+			return
+		}
+		// 显示名只允许单节点接口修改，避免无单节点上下文的批量请求误改多个节点。
+		if req.DisplayName != nil {
+			writeErr(w, http.StatusBadRequest, "display_name is not allowed on batch node update")
+			return
+		}
+		// endpoint 变更需要单节点上下文与独立审计，批量接口不接受。
+		if req.Endpoint != nil {
+			writeErr(w, http.StatusBadRequest, "endpoint is not allowed on batch node update")
+			return
+		}
+		if len(req.ConnectionMode) > 0 {
+			writeErr(w, http.StatusBadRequest, "connection_mode is read-only")
 			return
 		}
 		if req.ID == "" {
@@ -764,14 +894,14 @@ func (s *Server) handleNodeEnrollment(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusServiceUnavailable, "agent gateway enrollment is not configured")
 		return
 	}
-	nodeName, nodeIP, hubAddress, err := parseEnrollmentOptions(r)
+	nodeName, nodeIP, endpoint, hubAddress, err := s.parseEnrollmentOptions(r)
 	if err != nil {
 		writeErr(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	nodeID, agentID := "", ""
 	if r.Method == http.MethodPost {
-		node, err := s.nodes.PrepareEnrollment(r.Context(), nodeName, nodeIP, models.DeploymentModeNative)
+		node, err := s.nodes.PrepareEnrollment(r.Context(), nodeName, nodeIP, endpoint, models.DeploymentModeNative)
 		if err != nil {
 			s.writeInternalError(w, r, err)
 			return
@@ -845,6 +975,7 @@ sudo systemctl daemon-reload && sudo systemctl enable nodesteer-agent && sudo sy
 	compose := fmt.Sprintf("services:\n  nodesteer-agent:\n    image: %s\n    restart: unless-stopped\n    environment:\n      NODESTEER_HUB_URL: %q\n      NODESTEER_REGISTRATION_TOKEN: %q\n      NODESTEER_NODE_NAME: %q\n      NODESTEER_NODE_IP: %q\n%s      NODESTEER_DEPLOYMENT_MODE: docker\n    volumes:\n      - nodesteer-agent-data:/var/lib/nodesteer\n\nvolumes:\n  nodesteer-agent-data:\n", agentImage, wsURL, s.RegistrationToken, nodeName, nodeIP, agentIDCompose)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"gateway_url": wsURL, "gateway_base_url": base, "agent_image": agentImage, "node_id": nodeID, "agent_id": agentID,
+		"endpoint": endpoint, "inbound_bundle_available": s.inboundBundle != nil,
 		"native": native, "docker_run": dockerRun, "docker_compose": compose,
 	})
 }
@@ -918,42 +1049,53 @@ func normalizeArchitecture(value string) (string, error) {
 	}
 }
 
-func parseEnrollmentOptions(r *http.Request) (string, string, string, error) {
+func (s *Server) parseEnrollmentOptions(r *http.Request) (string, string, string, string, error) {
 	nodeName := strings.TrimSpace(r.URL.Query().Get("node_name"))
 	nodeIP := strings.TrimSpace(r.URL.Query().Get("node_ip"))
+	endpointRaw := strings.TrimSpace(r.URL.Query().Get("endpoint"))
 	hubAddress := strings.TrimSpace(r.URL.Query().Get("hub_address"))
 	if r.Method == http.MethodPost {
 		var req struct {
-			NodeName   string `json:"node_name"`
-			NodeIP     string `json:"node_ip"`
-			HubAddress string `json:"hub_address"`
+			NodeName       string          `json:"node_name"`
+			NodeIP         string          `json:"node_ip"`
+			Endpoint       string          `json:"endpoint"`
+			HubAddress     string          `json:"hub_address"`
+			ConnectionMode json.RawMessage `json:"connection_mode"`
 		}
 		if err := readJSON(r, &req); err != nil {
-			return "", "", "", errors.New("invalid request")
+			return "", "", "", "", errors.New("invalid request")
+		}
+		if len(req.ConnectionMode) > 0 {
+			return "", "", "", "", errors.New("connection_mode is read-only")
 		}
 		nodeName = strings.TrimSpace(req.NodeName)
 		nodeIP = strings.TrimSpace(req.NodeIP)
+		endpointRaw = strings.TrimSpace(req.Endpoint)
 		hubAddress = strings.TrimSpace(req.HubAddress)
 	}
 	if nodeName == "" || len(nodeName) > 128 {
-		return "", "", "", errors.New("node_name is required and must be at most 128 characters")
+		return "", "", "", "", errors.New("node_name is required and must be at most 128 characters")
 	}
 	for _, ch := range nodeName {
 		if (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z') &&
 			(ch < '0' || ch > '9') && ch != '-' && ch != '_' && ch != '.' {
-			return "", "", "", errors.New("node_name may contain only letters, numbers, '-', '_' and '.'")
+			return "", "", "", "", errors.New("node_name may contain only letters, numbers, '-', '_' and '.'")
 		}
 	}
 	if !validNodeAddress(nodeIP) {
-		return "", "", "", errors.New("node_ip must be a valid IP address or DNS hostname")
+		return "", "", "", "", errors.New("node_ip must be a valid IP address or DNS hostname")
+	}
+	endpoint, err := s.dialPolicy().NormalizeEndpoint(endpointRaw)
+	if err != nil {
+		return "", "", "", "", fmt.Errorf("endpoint: %w", err)
 	}
 	if hubAddress != "" {
 		u, err := url.Parse(hubAddress)
 		if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") {
-			return "", "", "", errors.New("hub_address must be an http or https URL")
+			return "", "", "", "", errors.New("hub_address must be an http or https URL")
 		}
 	}
-	return nodeName, nodeIP, hubAddress, nil
+	return nodeName, nodeIP, endpoint, hubAddress, nil
 }
 
 func validNodeAddress(value string) bool {
@@ -1008,30 +1150,67 @@ func shellQuote(value string) string {
 	return "'" + strings.ReplaceAll(value, "'", "'\"'\"'") + "'"
 }
 
+// normalizeNodeDisplayName 校验节点显示名：去首尾空白后按 Unicode 码点最多 64 个，
+// 拒绝 C0/C1 控制字符、DEL、换行与制表符；空值表示清除。
+func normalizeNodeDisplayName(raw string) (string, error) {
+	value := strings.TrimSpace(raw)
+	if utf8.RuneCountInString(value) > maxNodeDisplayNameRunes {
+		return "", fmt.Errorf("display_name must be at most %d characters", maxNodeDisplayNameRunes)
+	}
+	for _, r := range value {
+		if unicode.IsControl(r) {
+			return "", errors.New("display_name must not contain control characters")
+		}
+	}
+	return value, nil
+}
+
+const maxNodeDisplayNameRunes = 64
+
+// nodeRenameDetail 将重命名审计的 old/new 编码为稳定 JSON，避免自由文本歧义。
+func nodeRenameDetail(oldValue, newValue string) string {
+	detail, _ := json.Marshal(struct {
+		Old string `json:"old"`
+		New string `json:"new"`
+	}{Old: oldValue, New: newValue})
+	return string(detail)
+}
+
 func (s *Server) handleNodeByID(w http.ResponseWriter, r *http.Request) {
 	id, rest := splitResourcePath(r.URL.Path, "/api/nodes/")
 	if len(rest) > 0 {
-		// 唯一已知子路径 revoke-credential；其余未知子路径一律 404，
-		// 不得落入基础资源分支被当作节点本体读取/改写/删除。
-		if len(rest) != 1 || rest[0] != "revoke-credential" {
+		switch rest[0] {
+		case "revoke-credential":
+			if len(rest) != 1 {
+				writeErr(w, http.StatusNotFound, "node not found")
+				return
+			}
+			if r.Method != http.MethodPost {
+				methodNotAllowed(w, "POST")
+				return
+			}
+			if !s.canAdmin(r) {
+				writeErr(w, http.StatusForbidden, "permission denied")
+				return
+			}
+			if err := s.nodes.RevokeCredential(r.Context(), id); err != nil {
+				s.writeMutationError(w, r, http.StatusBadRequest, "node not found", err)
+				return
+			}
+			s.audit(r, "node", id, "revoke_credential")
+			writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
+			return
+		case "inbound-bundle":
+			s.handleInboundBundle(w, r, id, rest[1:])
+			return
+		case "connection-test", "test-connection":
+			s.handleNodeConnectionTest(w, r, id, rest[1:])
+			return
+		default:
+			// 未知子路径一律 404，不得落入基础资源分支被当作节点本体处理。
 			writeErr(w, http.StatusNotFound, "node not found")
 			return
 		}
-		if r.Method != http.MethodPost {
-			methodNotAllowed(w, "POST")
-			return
-		}
-		if !s.canAdmin(r) {
-			writeErr(w, http.StatusForbidden, "permission denied")
-			return
-		}
-		if err := s.nodes.RevokeCredential(r.Context(), id); err != nil {
-			s.writeMutationError(w, r, http.StatusBadRequest, "node not found", err)
-			return
-		}
-		s.audit(r, "node", id, "revoke_credential")
-		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
-		return
 	}
 	// 鉴权先于存在性：此前 GetNode 在方法分支前执行，无写权限用户对「存在 id」
 	// 得 403、对「不存在 id」得 404，可据差异枚举 node id（存在性 oracle，
@@ -1043,6 +1222,7 @@ func (s *Server) handleNodeByID(w http.ResponseWriter, r *http.Request) {
 			writeErr(w, http.StatusNotFound, "node not found")
 			return
 		}
+		s.applyNodeConnectionView(node)
 		writeJSON(w, http.StatusOK, node)
 	case http.MethodDelete:
 		if !s.canAdmin(r) {
@@ -1060,37 +1240,90 @@ func (s *Server) handleNodeByID(w http.ResponseWriter, r *http.Request) {
 		s.audit(r, "node", id, "delete")
 		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 	case http.MethodPost, http.MethodPut:
-		if !s.canWrite(r) {
+		// Viewer 只读：先于解析与存在性检查返回 403，避免通过状态码差异探测节点。
+		if !s.canRun(r) {
 			writeErr(w, http.StatusForbidden, "permission denied")
 			return
 		}
-		if _, err := s.nodes.GetNode(r.Context(), id); err != nil {
+		node, err := s.nodes.GetNode(r.Context(), id)
+		if err != nil {
 			writeErr(w, http.StatusNotFound, "node not found")
 			return
 		}
 		var req struct {
-			Status string            `json:"status"`
-			Labels map[string]string `json:"labels"`
+			Status         *string           `json:"status"`
+			Labels         map[string]string `json:"labels"`
+			DisplayName    *string           `json:"display_name"`
+			Endpoint       *string           `json:"endpoint"`
+			ConnectionMode json.RawMessage   `json:"connection_mode"`
 		}
 		if err := readJSON(r, &req); err != nil {
 			writeErr(w, http.StatusBadRequest, "invalid request")
 			return
 		}
-		if req.Status != "" {
-			if err := s.nodes.SetNodeStatus(r.Context(), id, req.Status); err != nil {
-				s.writeMutationError(w, r, http.StatusBadRequest, "node not found", err)
+		if len(req.ConnectionMode) > 0 {
+			writeErr(w, http.StatusBadRequest, "connection_mode is read-only")
+			return
+		}
+		// 字段级权限：display_name 允许 Operator，status/labels/endpoint 仍仅限 Administrator。
+		// 所有权限校验先于任何写操作，保证同请求不会部分成功。
+		if (req.Status != nil || req.Labels != nil) && !s.canWrite(r) {
+			writeErr(w, http.StatusForbidden, "permission denied")
+			return
+		}
+		if req.Endpoint != nil && !s.canAdmin(r) {
+			writeErr(w, http.StatusForbidden, "permission denied")
+			return
+		}
+		var displayName *string
+		if req.DisplayName != nil {
+			normalized, err := normalizeNodeDisplayName(*req.DisplayName)
+			if err != nil {
+				writeErr(w, http.StatusBadRequest, err.Error())
 				return
 			}
+			displayName = &normalized
 		}
-		if req.Labels != nil {
-			if err := s.nodes.SetLabels(r.Context(), id, req.Labels); err != nil {
-				// 并发删除后标签更新零行命中 → 404（不再静默 200 / 500 原文，F5 同族）。
-				s.writeMutationError(w, r, http.StatusInternalServerError, "node not found", err)
+		var endpoint *string
+		if req.Endpoint != nil {
+			normalized, err := s.dialPolicy().NormalizeEndpoint(*req.Endpoint)
+			if err != nil {
+				writeErr(w, http.StatusBadRequest, "endpoint: "+err.Error())
 				return
 			}
+			endpoint = &normalized
 		}
-		s.audit(r, "node", id, "update")
-		writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
+		if err := s.nodes.UpdateNodeFields(r.Context(), id, hub.NodeUpdateFields{
+			Status:      req.Status,
+			Labels:      req.Labels,
+			DisplayName: displayName,
+			Endpoint:    endpoint,
+		}); err != nil {
+			s.writeMutationError(w, r, http.StatusBadRequest, "node not found", err)
+			return
+		}
+		if req.Status != nil || req.Labels != nil {
+			s.audit(r, "node", id, "update")
+		}
+		if displayName != nil && *displayName != node.DisplayName {
+			s.auditDetail(r, "node", id, "rename", nodeRenameDetail(node.DisplayName, *displayName))
+		}
+		endpointChanged := endpoint != nil && *endpoint != node.Endpoint
+		if endpointChanged {
+			s.auditDetail(r, "node", id, "endpoint_update", nodeRenameDetail(node.Endpoint, *endpoint))
+			if s.inboundDialer != nil {
+				s.inboundDialer.Trigger(id)
+			}
+		}
+		response := map[string]any{"ok": "true"}
+		if endpointChanged {
+			updated, err := s.nodes.GetNode(r.Context(), id)
+			if err == nil {
+				updated.SyncInboundView()
+				response["inbound_bundle_stale"] = updated.InboundBundleStale
+			}
+		}
+		writeJSON(w, http.StatusOK, response)
 	default:
 		w.Header().Set("Allow", "GET, POST, PUT, DELETE")
 		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
@@ -2177,6 +2410,7 @@ func (s *Server) handleExecutions(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		filter := store.ExecutionFilter{
+			ScheduleID:  r.URL.Query().Get("schedule_id"),
 			NodeID:      r.URL.Query().Get("node_id"),
 			TaskID:      r.URL.Query().Get("task_id"),
 			Status:      r.URL.Query().Get("status"),

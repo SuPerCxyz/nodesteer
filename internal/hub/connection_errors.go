@@ -6,7 +6,16 @@ import (
 	"io"
 	"net"
 	"strings"
+
+	"github.com/SuPerCxyz/nodesteer/internal/protocol"
 )
+
+// ErrInboundDataPlaneUnavailable 当前会话为入站方向但数据面尚不可用。
+// Phase 2 只在控制面可用；调用方必须显式 409/BLOCKED，不得等待超时。
+var ErrInboundDataPlaneUnavailable = errors.New(protocol.ErrorCodeInboundDataPlaneUnavailable)
+
+// ErrInboundStageUnavailable 入站模式下的某个数据面阶段尚未实现。
+var ErrInboundStageUnavailable = errors.New(protocol.ErrorCodeInboundStageUnavailable)
 
 // IsConnectionGone 判定错误是否属于「连接已关闭 / 对端消失」的正常清理场景：
 // 心跳超时清理关闭连接后仍在途的写、对端断开、客户端取消等。这类错误不是服务端

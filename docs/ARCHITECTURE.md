@@ -77,12 +77,14 @@ Hub 是 Control Plane：
 - Manual Operation
 - Global State
 - Execution History
+- Native Monitoring and Metric History
 
 Agent 是 Execution Plane：
 - Local Sync
 - Scheduler
 - Condition Evaluation
 - Process Execution
+- Metrics Collection
 - Artifact Cache
 - Application Deployment
 - Host Integration
@@ -145,6 +147,9 @@ Hub
 │
 ├── Execution Manager
 ├── Execution Dispatcher
+│
+├── Monitoring Manager
+├── Metric Store
 │
 ├── Artifact Manager
 ├── Application Manager
@@ -365,7 +370,10 @@ offline_execution
 host_filesystem
 managed_systemd
 application_deploy
+node_metrics
 ```
+
+`node_metrics` 表示同一 Agent 能读取宿主机指标；Docker 基础模式只能看到容器自身 `/proc`，不声明该能力。Gateway 在 `NODE_METRICS` ingest 时校验该能力，不满足直接拒绝；查询 API 以无样本/不可用状态表达，不以零值代替。
 
 Hub 调度前执行：
 
@@ -389,13 +397,15 @@ Node ID / Agent ID 必须稳定。
 
 不能把 Hostname 或 IP 作为永久唯一标识。
 
+节点另有用户可编辑的 `display_name`，仅用于展示：默认空，空值回退 `hostname`，再回退 Node ID；不参与身份、匹配、权限、执行目标或路由，允许重名。Agent 上报的 `hostname`、HELLO 元数据刷新、重新注册与重新纳管均不覆盖显示名。显示名只通过单节点管理接口修改，变更记录 `node.rename` 审计。
+
 首次注册：
 - Registration Token
 - Authentication
 - 使用 Web 纳管命令时采用 Hub 预分配的 Stable Agent ID；直接启动时由 Agent 生成/接收 Stable ID
 - Obtain Unique Agent Credential
 
-未来可扩展 mTLS Client Certificate。
+未来可扩展 mTLS Client Certificate。入站模式已使用 Hub 自建 CA 签发的双向证书、证书指纹 pin 和每节点入站令牌完成二次认证；Agent 服务端证书 SAN 与节点 `endpoint` 绑定。
 
 ---
 
@@ -403,7 +413,7 @@ Node ID / Agent ID 必须稳定。
 
 Agent Gateway 负责：
 - Agent Auth
-- Persistent Connection
+- Persistent Connection（Agent 主动出站，或 Hub 按节点 endpoint 主动拨号入站）
 - Heartbeat
 - Realtime Notification
 - Task Dispatch
@@ -411,12 +421,15 @@ Agent Gateway 负责：
 - Realtime Logs
 - Sync Protocol
 
+两种连接方向使用同一套协议、HELLO 注册、SessionManager 和在线状态机。Session 额外记录建立方向（`outbound` / `inbound`），但所有业务发送方无需感知方向。出站会话优先：已有出站会话时 Hub 不拨号，入站会话在出站 HELLO 被接受后关闭；每个节点最多一个已认证会话。
+
 Session Manager 内存维护：
 
 ```text
 Agent ID
 Node ID
 Connection ID
+Origin（outbound / inbound）
 Connected At
 Last Heartbeat
 Remote Address
@@ -1382,7 +1395,26 @@ agent_sync_state
 revision_changes
 
 audit_logs
+
+monitoring_http_targets
+monitoring_http_observations
+monitoring_rules
+monitoring_rule_events
+monitoring_rule_steps
+monitoring_rule_samples
+
+node_metric_samples          # 原生指标 raw（schema v23）
+node_metric_rollups          # 原生指标 1m/5m/1h 聚合（schema v23）
+
+alert_rules                  # 阈值告警规则（schema v24）
+alert_states                 # 规则+节点+指标+序列当前状态
+alert_events                 # 活动/历史告警事件
+notification_channels        # 通知渠道，只存环境变量名引用
+alert_notifications          # 通知发件箱
+alert_notification_attempts  # 每次发送尝试
 ```
+
+监控相关表为增量迁移（`schema_migrations` 版本 12 起；版本 23 创建原生指标表，版本 24 创建告警/通知表）。原生指标存储、1m/5m/1h 聚合、后台周期聚合/清理、gateway `NODE_METRICS` ingest 和查询 API 已接入；告警评估、通知发件箱和渠道 API 已接入。`monitoring_node_bindings` 为旧 Nocturne 绑定遗留表，不再参与新链路，物理删除由后续独立迁移决定。升级失败按本节迁移失败处理，回退恢复 Hub DB 备份。旧 Nocturne 历史不迁移、不回填。
 
 核心索引字段关系型。
 
@@ -1477,7 +1509,13 @@ ARTIFACT_PREFETCH
 DEPLOY_REQUEST
 DEPLOY_RESULT
 SETTINGS
+
+NODE_METRICS
+MONITOR_PROBE
+MONITOR_PROBE_RESULT
 ```
+
+`NODE_METRICS` 为指标增量消息：`node_id`、`sequence`、`timestamp`、`metric`、`dimensions`、`value`、`quality`。`quality=1` 为有效，`quality=2` 为缺失且 `value=null`。旧 Agent 不发送该消息；新 Hub 消费该消息。部署时先升级 Hub 再升级 Agent。
 
 统一 Envelope：
 
@@ -1492,7 +1530,7 @@ SETTINGS
 
 协议必须版本化。
 
-协议版本随两次模型重构提升：1→2（Task/Schedule 模型，`schedule_id`/`created_at`），2→3（条件归属拆分与 `schedule_revision`）。当前版本为 3。`RUN_EXECUTION`/`EXECUTION_FINISHED`/`DEPLOY_REQUEST`/`DEPLOY_RESULT` 增加可选 `schedule_revision`；`schedule_id`/`schedule_revision` 不参与 Scheduled Execution Key。新 Hub 拒绝旧协议版本 Agent，旧 Hub 不识别新 Agent，Hub/Agent 必须协同升级；Web 与 Hub 同版本发布。
+协议版本随两次模型重构提升：1→2（Task/Schedule 模型，`schedule_id`/`created_at`），2→3（条件归属拆分与 `schedule_revision`）。当前版本为 3。`RUN_EXECUTION`/`EXECUTION_FINISHED`/`DEPLOY_REQUEST`/`DEPLOY_RESULT` 增加可选 `schedule_revision`；`schedule_id`/`schedule_revision` 不参与 Scheduled Execution Key。`NODE_METRICS`、`MONITOR_PROBE`/`MONITOR_PROBE_RESULT` 为协议 3 的增量消息，不改变既有消息语义。新 Hub 拒绝旧协议版本 Agent，旧 Hub 不识别新 Agent，Hub/Agent 必须协同升级；Web 与 Hub 同版本发布。
 
 HELLO 包含：
 - protocol_version
@@ -1532,13 +1570,18 @@ Execution 可靠性由：
 
 ## 58. 网络架构
 
-统一：
+统一控制面支持两种等价承载方式：
 
 ```text
-Agent → Hub Agent Gateway
+Agent → Hub Agent Gateway          （出站优先）
+Hub → Agent :18444 TLS listener    （Hub 在内网、Agent 在公网时的回退）
 ```
 
-支持 Hub 公网/内网及 Agent 公网/内网，只要 Gateway 可达。
+Hub 仅在以下条件同时满足时主动拨号：节点 `endpoint` 已配置、入站 bundle 已签发、节点不是 `disabled`、当前无已有会话且不在断开宽限期内。拨号目标只来自管理员配置的节点 endpoint；Hub 在拨号前重新解析 DNS，并按 CIDR/端口策略拒绝 loopback、link-local、云 metadata、multicast 和未授权端口（RFC1918 默认允许）。
+
+支持 Hub 公网/内网及 Agent 公网/内网，只要至少一个方向可达。出站会话始终优先；入站只是回退，不改变 Hub 是 Desired State 唯一权威源。
+
+控制长连接不承载大文件。入站数据面复用同一 TLS 端口，由 Hub 发起 HTTPS push/pull：源文件由 Hub 拉取、目标文件由 Hub 推送、Artifact 与 Agent 二进制由 Hub 推送，全部落临时文件并校验大小/SHA-256 后原子提交。数据面请求必须同时通过 mTLS、Hub 客户端证书 pin、每节点令牌、`session_id` 与 `node_id` 绑定；transfer 授权 5 分钟有效。能力缺失或阶段不可用时仍返回 409 `inbound_data_plane_unavailable` / `inbound_stage_unavailable` 或落 `BLOCKED`，不得静默超时。
 
 两个完全隔离且无任何网络路径的内网不属于一期解决范围。
 
@@ -1546,7 +1589,7 @@ Agent → Hub Agent Gateway
 
 ## 59. TLS 与 Agent 安全
 
-Hub-Agent 必须支持 TLS。
+Hub-Agent 必须支持 TLS；入站连接必须使用最低 TLS 1.2 的 mTLS，禁止明文回退。
 
 首次注册：
 - Registration Token
@@ -1555,8 +1598,15 @@ Hub-Agent 必须支持 TLS。
 - Unique Agent Credential
 - Revoke Capability
 
-未来：
-- mTLS Client Certificate
+入站连接：
+- Hub 自建 CA 签发 Agent 服务端证书与 Hub 客户端证书
+- 双向校验证书链、EKU 与证书指纹 pin
+- `HUB_HELLO` / `HUB_HELLO_ACK` 使用每节点入站令牌做 HMAC proof；令牌本身不在连接上传输
+- Hub 校验 Agent 证书链、SAN 与 endpoint 一致、EKU serverAuth 及节点证书指纹 pin
+- Agent 校验 Hub 客户端证书链、EKU clientAuth 与 Hub 客户端证书指纹 pin
+- 任一失败立即关闭连接，不回退明文或跳过 pin
+- 入站令牌以 AES-256-GCM 密文存储，API/日志/审计不返回明文
+- 未安装完整 bundle 时 Agent 不监听任何管理端口
 
 Artifact 一期必须 SHA256。
 
@@ -1602,7 +1652,57 @@ Agent：
 
 日志级别语义：连接已关闭/客户端取消（`context.Canceled`、`net.ErrClosed`、`io.EOF`、`use of closed network connection`、`connection reset by peer`、`broken pipe` 等，经 `hub.IsConnectionGone` 统一判定）属于正常清理场景，不是服务端错误——API 错误路径降级为 Debug（`api request canceled or connection gone`，仅 method/path；HTTP 响应仍为归一化状态码），Gateway 在途写失败降级为 WARN；真实错误（如 `io.ErrUnexpectedEOF`、websocket 写限额超限）仍保持 error 级（缺陷 QA-20261018-F8、OBS-20261018-SCALE-02）。
 
-NodeSteer 不建设完整监控平台。
+### 61.1 原生节点监控
+
+同一个 NodeSteer Agent 同时执行任务和采集节点指标，不引入第二个监控 Agent。数据流：
+
+```text
+Agent (/proc, /host/proc)
+  ↓  CPU / memory / load / disk / network, 默认 30s
+NODE_METRICS 批量样本 (node_id, sequence, timestamp, metric, dimensions, value, quality)
+  ↓
+Hub 校验 / 去重 / 排序
+  ↓
+SQLite raw (默认 7d) → 1m (90d) → 5m (1y) → 1h (2y)
+  ↓
+overview / series / metrics / latest API
+  ↓
+Web 节点总览、历史、规则求值
+```
+
+- Agent 声明 `node_metrics` 能力；Native 与 Docker Host Integration 支持，Docker 基础模式不声明。旧 Agent 不声明时页面显示不可用，规则不触发，不以 0 代替。
+- CPU：`cpu.usage` 及组成 `cpu.user`、`cpu.nice`、`cpu.system`、`cpu.idle`、`cpu.iowait`、`cpu.irq`、`cpu.softirq`、`cpu.steal`；维度 `cpu=all|<n>`，per-core 最多 32 核，`cpu=all` 始终上报。
+- 内存/Swap：`memory.usage`、`memory.total_bytes`、`memory.used_bytes`、`memory.available_bytes`、`memory.cached_bytes`、`memory.buffers_bytes`、`memory.free_bytes`（MemFree）；used 保持 total−available 的既有语义。Swap 为 `memory.swap_total_bytes/used_bytes/free_bytes/usage`。Swap 未启用时 0 是有效值。
+- 磁盘/Inode/I/O：`disk.usage`、`filesystem.total_bytes/used_bytes`、`filesystem.inodes_usage/used/free`、`disk.read_bps`、`disk.write_bps`、`disk.read_iops`、`disk.write_iops`；维度 `mount/device`。inventory.hostname 读取宿主 `/proc/sys/kernel/hostname`，不可用时未知，不以可配置节点名替代；文件系统 used 使用 Bfree，而既有 disk.usage 继续使用 Bavail；块设备分类从宿主 sysfs 采集并随 inventory 更新，不可确认时为 unknown。
+- 网络：`network.rx_bps/tx_bps`、`network.rx_errors/tx_errors`、`network.rx_dropped/tx_dropped`；维度 `interface`，速率按采样间隔换算为每秒值。
+- 系统：`system.uptime`、`system.processes`、`system.processes_running`、`system.temperature_c`、`system.fan_rpm`；无传感器或读取失败时输出缺失/无数据，不伪造 0。
+- 容器：`container.cpu.usage`、`container.memory.usage`、`container.network.rx_bps/tx_bps`，维度 `container` 和稳定 `container_id`，旧的 name-only 历史保留独立身份；自动探测 Docker/Podman socket（`/var/run/docker.sock`、`/run/docker.sock`、`/run/podman/podman.sock`、`/var/run/podman/podman.sock`），Host Integration 使用宿主根目录下的 socket。无 socket 或容器不可读时没有容器样本，不显示 0。
+- 采集上限：CPU 32 核、磁盘设备 32、网络接口 32、容器 100；容器额外枚举至 101（表示至少 101），同批同时间戳上报无维度 `container.collection.discovered_count/sampled_count/limit`。仅新鲜、对齐且有效的计数可判完整性；失败或旧 Agent 为未知。容器样本及计数同批入库，series 上限不变。
+- `quality=1` 为有效值，`quality=2` 为缺失且 `value=null`；真实 0 是有效样本，gap 不等于 0。
+- Hub 以 `node_id + metric + dimensions + timestamp` 幂等去重，`sequence` 用于排序和诊断；迟到/更正样本触发对应聚合桶重算。
+- 查询按范围选择最细可用 tier，返回 `state`、`tier`、`stepNs`、`points`、`gaps`；跨 tier 时允许 raw 精化边界。
+- `node_metric` 规则从原生样本求值，保留新鲜度、gap、乱序/冲突中断、去重、冷却、失败暂停、验证和补偿语义。外部 HTTP(S)/TCP/ICMP 探测仍是独立监控对象。
+- Nocturne 后端、路由、配置和绑定已移除；`monitoring_node_bindings` 仅作为遗留表保留，不参与新链路。旧 Nocturne 历史不迁移、不回填、不展示。
+- `overview` 的告警数当前为占位 0，规则告警汇总未接入；不得把该字段写成已实现的告警统计。
+
+NodeSteer 不建设完整可观测性平台：不采集应用日志、链路追踪或任意自定义指标；数据库/消息队列适配器仍只保留 target kind 边界。
+
+当前 Agent 采集、`NODE_METRICS` 协议、能力声明、gateway ingest、v23 存储/聚合/后台清理、原生查询 API、原生规则和前端总览/历史均已接入；真实大规模压测、ACK/重传确认、overview N+1/索引/节点删除清理等 P3 和完整 E2E 仍在进行。
+
+实现与验证进度见 `openspec/changes/unified-monitoring-automation/tasks.md`；该目标不改变本文件 §67 的核心架构不变量。
+
+### 61.2 告警与通知
+
+告警是原生指标的独立消费方，只负责通知与记录，**不触发任务**；任务联动仍由 `monitoring.Rule` 和 `/rules` 执行链负责。
+
+- schema v24 创建 `alert_rules`、`alert_states`、`alert_events`、`notification_channels`、`alert_notifications`、`alert_notification_attempts`。
+- 规则按 `rule + node + metric + series` 去重；状态为 `pending`、`firing`、`resolved`、`silenced`、`unknown`（内部正常态为 `ok`）。支持持续时间、恢复时间、冷却、severity（info/warning/critical）、启停、静默和事件确认。
+- 评估循环默认 30s；无样本、样本过期、节点离线或查询失败时 fail-closed：不触发、不恢复，活动状态保持并等待有效样本。通知发件箱默认 5s 扫描。
+- 活动事件在数据库中通过部分唯一索引保证同一规则/节点/指标/序列最多一个；重复评估不重复通知。
+- 通知渠道：webhook、Slack、钉钉、企业微信、Telegram、Email（SMTP）。配置只保存非敏感字段和环境变量名（`url_env`、`token_env`、`password_env`、`to_env`）；实际 secret 在发送时从 Hub 进程环境读取，API 和日志不回显。
+- 通知采用发件箱：评估只写事件/通知记录，独立发送循环处理；默认最多 3 次尝试、指数退避，配置/环境变量错误直接失败，测试发送不要求渠道启用。
+- API：`/api/monitoring/alerts/rules`、`/api/monitoring/alerts/events`、`/api/monitoring/alerts/events/{id}/ack`、`/api/monitoring/alerts/rules/{id}/silence`、`/api/monitoring/notification-channels`、`/api/monitoring/notification-channels/{id}/test` 等，全部 Administrator 可用；通知发送记录查询 API 尚未实现。
+- `overview.alerts` 仍为占位 0；告警页展示规则/渠道/事件，但概览的规则告警汇总未接入。
 
 ---
 
@@ -1635,9 +1735,23 @@ Recover Journal
  ↓
 Mark interrupted non-recoverable executions
  ↓
-Reconnect
+Reconnect（出站成功则优先；否则 Hub 重新拨号入站）
  ↓
 Reconciliation
+```
+
+### Inbound Session Lost
+
+```text
+入站会话断开
+ ↓
+Hub 保留节点原有 pending/offline 状态并更新 inbound_last_error
+ ↓
+宽限期后 Agent 出站优先重连
+ ↓
+出站仍不可达时 Hub 按 endpoint 重新拨号
+ ↓
+HELLO_ACK accepted 后才置 online
 ```
 
 ### Notification Lost
@@ -1844,7 +1958,7 @@ Sync
 ## 67. 核心架构不变量
 
 1. Hub 是 Desired State 唯一权威源。
-2. Agent 主动连接 Hub。
+2. Agent 必须建立或接受 Hub 发起的已认证连接；Hub 仍是唯一权威源。
 3. 同步必须是 Notify + Revision Check + Reconciliation。
 4. Notification 不承担最终一致性。
 5. Agent Revision 成功落盘后才能前进。
@@ -1872,7 +1986,7 @@ Sync
 
 后续 Rolling/Canary 应由 Hub 做 Batch Selection，再复用已有 Application Deployment。
 
-后续 Rule/Event 应触发现有 Task/Workflow，而不是重写 Agent Executor。
+后续通用 Rule/Event 能力应触发现有 Task/Workflow，而不是重写 Agent Executor；原生监控已通过专用规则复用现有 Task/Execution，并由同一 Agent 采集指标、Hub 原生存储历史，不改变该方向。
 
 后续 Distributed Lock 增加 Coordination Layer。
 

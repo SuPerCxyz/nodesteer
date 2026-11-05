@@ -43,17 +43,22 @@ const TASK: Task = {
   created_at: '2026-10-17T00:00:00Z',
 }
 
-function renderTasks() {
+async function renderTasks() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
   })
-  return render(
+  const page = await render(
     <SidebarProvider>
       <QueryClientProvider client={client}>
         <Tasks />
       </QueryClientProvider>
     </SidebarProvider>
   )
+  const workspace = page.getByTestId('tasks-workspace').element()
+  expect(workspace.getAttribute('data-slot')).toBe('card')
+  expect(workspace.querySelectorAll('[data-slot="card"]')).toHaveLength(0)
+  expect(getComputedStyle(workspace).borderTopWidth).toBe('1px')
+  return page
 }
 
 describe('Tasks 列表 Loading/Empty/Error 三态', () => {

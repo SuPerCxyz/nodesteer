@@ -139,7 +139,7 @@ func TestPreparedEnrollmentReusesNodeOnFirstHello(t *testing.T) {
 	defer st.Close()
 	nm := NewNodeManager(st, NewRevisionManager(st))
 
-	pending, err := nm.PrepareEnrollment(ctx, "pending-node", "10.0.0.10", models.DeploymentModeNative)
+	pending, err := nm.PrepareEnrollment(ctx, "pending-node", "10.0.0.10", "10.0.0.10:18444", models.DeploymentModeNative)
 	if err != nil {
 		t.Fatalf("prepare enrollment: %v", err)
 	}
@@ -225,7 +225,7 @@ func TestReenrollmentReusesExistingNodeIdentity(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	again, err := nm.PrepareEnrollment(ctx, "host-x", "10.0.0.20", models.DeploymentModeNative)
+	again, err := nm.PrepareEnrollment(ctx, "host-x", "10.0.0.20", "10.0.0.20:18444", models.DeploymentModeNative)
 	if err != nil {
 		t.Fatalf("re-enroll: %v", err)
 	}

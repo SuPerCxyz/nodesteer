@@ -20,10 +20,11 @@ func collectInventory(mode string, hostInt bool, hostRoot string) *models.Invent
 		return nil
 	}
 	root := ""
-	if hostInt && hostRoot != "" {
+	if (hostInt || mode == models.DeploymentModeDockerHostInt) && hostRoot != "" {
 		root = hostRoot
 	}
 	inv := &models.Inventory{
+		Hostname:  readHostName(root),
 		OS:        readOS(root),
 		OSVersion: readOSVersion(root),
 		Kernel:    readKernel(root),
@@ -32,10 +33,22 @@ func collectInventory(mode string, hostInt bool, hostRoot string) *models.Invent
 		Memory:    readMemInfo(root),
 	}
 	inv.Filesystem = readFilesystems(root)
+	inv.BlockDevices = readBlockDevices(root)
 	if root == "" {
 		inv.Network = readNetworks()
 	}
 	return inv
+}
+
+func readHostName(root string) string {
+	if root == "" {
+		root = "/"
+	}
+	data, err := os.ReadFile(filepath.Join(root, "proc/sys/kernel/hostname"))
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(data))
 }
 
 func readOS(root string) string {
@@ -253,4 +266,35 @@ func localIP() string {
 		}
 	}
 	return ""
+}
+
+// readBlockDevices only classifies entries confirmed by host sysfs.
+func readBlockDevices(root string) []models.BlockDeviceInfo {
+	if root == "" {
+		root = "/"
+	}
+	classDir := filepath.Join(root, "sys/class/block")
+	entries, err := os.ReadDir(classDir)
+	if err != nil {
+		return nil
+	}
+	devices := make([]models.BlockDeviceInfo, 0, len(entries))
+	for _, entry := range entries {
+		name := entry.Name()
+		kind := "unknown"
+		path := filepath.Join(classDir, name)
+		if _, err := os.Stat(path); err != nil {
+			devices = append(devices, models.BlockDeviceInfo{Name: name, Kind: kind})
+			continue
+		}
+		if _, err := os.Stat(filepath.Join(path, "partition")); err == nil {
+			kind = "partition"
+		} else if os.IsNotExist(err) {
+			if info, err := os.Stat(filepath.Join(root, "sys/block", name)); err == nil && info.IsDir() {
+				kind = "disk"
+			}
+		}
+		devices = append(devices, models.BlockDeviceInfo{Name: name, Kind: kind})
+	}
+	return devices
 }

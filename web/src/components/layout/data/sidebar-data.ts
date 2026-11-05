@@ -3,11 +3,15 @@ import {
   Activity,
   ArrowLeftRight,
   AppWindow,
+  BellRing,
   CalendarClock,
   FileCode2,
+  Package,
   History,
   LayoutDashboard,
   ListTodo,
+  ListChecks,
+  Gauge,
   Server,
   Settings,
   Users,
@@ -44,17 +48,42 @@ export function getSidebarData(
         items: [{ title: t('nav.dashboard'), url: '/', icon: LayoutDashboard }],
       },
       {
-        title: t('nav.sections.operations'),
+        title: t('nav.sections.automation'),
         items: [
           { title: t('nav.tasks'), url: '/tasks', icon: ListTodo },
           { title: t('nav.schedules'), url: '/schedules', icon: CalendarClock },
           { title: t('nav.executions'), url: '/executions', icon: Activity },
+          ...(options.canAdmin
+            ? [{ title: t('nav.rules'), url: '/rules', icon: ListChecks }]
+            : []),
           {
             title: t('nav.transfers'),
             url: '/transfers',
             icon: ArrowLeftRight,
           },
         ],
+      },
+      {
+        title: t('nav.sections.monitoring'),
+        items: options.canAdmin
+          ? [
+              {
+                title: t('nav.monitoring'),
+                url: '/monitoring',
+                icon: Gauge,
+              },
+              {
+                title: t('nav.serviceMonitoring'),
+                url: '/monitoring/services',
+                icon: Activity,
+              },
+              {
+                title: t('nav.alerts'),
+                url: '/monitoring/alerts',
+                icon: BellRing,
+              },
+            ]
+          : [],
       },
       {
         title: t('nav.sections.nodes'),
@@ -66,6 +95,7 @@ export function getSidebarData(
       {
         title: t('nav.sections.resources'),
         items: [
+          { title: t('artifacts.title'), url: '/artifacts', icon: Package },
           { title: t('nav.scripts'), url: '/scripts', icon: FileCode2 },
           {
             title: t('nav.applications'),
@@ -78,6 +108,6 @@ export function getSidebarData(
         title: t('nav.sections.system'),
         items: systemItems,
       },
-    ],
+    ].filter((group) => group.items.length > 0),
   }
 }

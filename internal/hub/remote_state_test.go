@@ -15,7 +15,7 @@ import (
 func TestResolveRemoteStateRemainingTTL(t *testing.T) {
 	ctx := t.Context()
 	g, nm, _ := newTestGateway(t)
-	node, err := nm.PrepareEnrollment(ctx, "remote-ttl", "10.0.0.87", models.DeploymentModeNative)
+	node, err := nm.PrepareEnrollment(ctx, "remote-ttl", "10.0.0.87", "10.0.0.87:18444", models.DeploymentModeNative)
 	if err != nil {
 		t.Fatalf("prepare enrollment: %v", err)
 	}

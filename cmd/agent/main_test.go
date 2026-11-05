@@ -32,7 +32,9 @@ func TestResolveAgentVersionIgnoresEnv(t *testing.T) {
 	t.Setenv("NODESTEER_AGENT_VERSION", "9.9.9")
 	cfg := DefaultConfig()
 	cfg.AgentVersion = "0.1.0"
-	applyEnv(&cfg)
+	if err := applyEnv(&cfg); err != nil {
+		t.Fatalf("applyEnv: %v", err)
+	}
 	if cfg.AgentVersion != "9.9.9" {
 		t.Fatalf("legacy env key should still parse for compat, got %q", cfg.AgentVersion)
 	}

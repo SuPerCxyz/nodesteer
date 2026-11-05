@@ -1,12 +1,16 @@
 package hub
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -21,6 +25,14 @@ import (
 // ErrAgentOffline Agent 离线
 var ErrAgentOffline = errors.New("agent offline")
 
+// executionFailureStatus 入站数据面不可用为 BLOCKED；其余下发失败保持 FAILED。
+func executionFailureStatus(err error) string {
+	if errors.Is(err, ErrInboundDataPlaneUnavailable) || errors.Is(err, ErrInboundStageUnavailable) {
+		return models.ExecStatusBlocked
+	}
+	return models.ExecStatusFailed
+}
+
 // ExecutionManager Hub 执行管理
 type ExecutionManager struct {
 	store        store.Store
@@ -33,7 +45,18 @@ type ExecutionManager struct {
 	// upgradeMu 串行化自升级触发：进程内去重判定（findActiveUpgrade）与创建下发
 	// 不被并发请求穿透（单 Hub 单进程，SQLite 单写者，无需跨进程锁）。
 	upgradeMu sync.Mutex
+	// agentBinary 返回指定架构的 Agent 二进制与 SHA-256；入站升级推送用。
+	agentBinary func(arch string) ([]byte, string, error)
+	artifacts   *ArtifactManager
 }
+
+// SetAgentBinaryProvider 注入 Agent 二进制来源（入站 push 自升级）。
+func (em *ExecutionManager) SetAgentBinaryProvider(f func(arch string) ([]byte, string, error)) {
+	em.agentBinary = f
+}
+
+// SetArtifactManager 注入 Artifact 管理器，用于入站部署前推送。
+func (em *ExecutionManager) SetArtifactManager(am *ArtifactManager) { em.artifacts = am }
 
 // SetMetrics 注入指标
 func (em *ExecutionManager) SetMetrics(m *metrics.Metrics) { em.metrics = m }
@@ -127,10 +150,14 @@ func (em *ExecutionManager) RunManual(ctx context.Context, task *models.Task, no
 	var out []*models.Execution
 	for _, nodeID := range nodeIDs {
 		ex, err := em.createAndDispatch(ctx, task, nodeID, models.TriggerManual, time.Time{}, params, false, schedule, strategy)
-		if err != nil {
-			return nil, err
+		if ex != nil {
+			// 下发失败时仍返回已创建的 execution，供监控编排区分
+			// “下发前失败”与“已下发但结果未知”。调用方仍以 err 判断失败。
+			out = append(out, ex)
 		}
-		out = append(out, ex)
+		if err != nil {
+			return out, err
+		}
 	}
 	return out, nil
 }
@@ -210,7 +237,7 @@ func (em *ExecutionManager) createPausedSkip(ctx context.Context, task *models.T
 		}
 		ex.ScheduledTime = schedTime.UTC().Truncate(time.Second)
 	}
-	if err := em.store.CreateExecution(ctx, ex); err != nil {
+	if err := em.createExecutionWithEvent(ctx, ex); err != nil {
 		return nil, err
 	}
 	em.logger.Info("execution skipped: node paused", "id", ex.ID, "node", nodeID,
@@ -274,19 +301,77 @@ func (em *ExecutionManager) createAndDispatch(ctx context.Context, task *models.
 		ex.ScheduledTime = schedTime.UTC().Truncate(time.Second)
 	}
 
-	if err := em.store.CreateExecution(ctx, ex); err != nil {
+	if err := em.createExecutionWithEvent(ctx, ex); err != nil {
 		return nil, err
 	}
 
 	if err := em.dispatchToAgent(ctx, ex, task, params, strategy, schedule); err != nil {
-		// 下发失败则标记失败
-		ex.Status = models.ExecStatusFailed
+		// 下发失败则标记失败。入站数据面不可用是明确阻塞（BLOCKED），不是执行失败。
+		ex.Status = executionFailureStatus(err)
 		ex.EndTime = time.Now()
 		ex.BlockReason = err.Error()
-		em.store.UpdateExecution(ctx, ex)
-		return nil, err
+		if updateErr := em.store.UpdateExecution(ctx, ex); updateErr != nil {
+			ex.Status = models.ExecStatusPending
+			ex.EndTime = time.Time{}
+			ex.BlockReason = ""
+			return ex, fmt.Errorf("%w: failed to persist failed status: %v", err, updateErr)
+		}
+		return ex, err
 	}
 	return ex, nil
+}
+
+func (em *ExecutionManager) createExecutionWithEvent(ctx context.Context, ex *models.Execution) error {
+	eventID := store.MonitoringEventFromContext(ctx)
+	if eventID == "" {
+		return em.store.CreateExecution(ctx, ex)
+	}
+	txStore, ok := em.store.(transactionalStore)
+	linker, linkOK := em.store.(interface {
+		LinkMonitoringExecution(context.Context, string, string) error
+		EnsureMonitoringEventEnabled(context.Context, string, string) error
+	})
+	if !ok || !linkOK {
+		return errors.New("monitoring execution requires transactional storage")
+	}
+	return txStore.WithTx(ctx, func(txCtx context.Context) error {
+		if err := linker.EnsureMonitoringEventEnabled(txCtx, eventID, ex.ScheduleID); err != nil {
+			return err
+		}
+		currentSchedule, err := em.store.GetSchedule(txCtx, ex.ScheduleID)
+		if err != nil || !currentSchedule.Enabled || currentSchedule.Revision != ex.ScheduleRevision {
+			return errors.New("monitoring schedule disabled or changed")
+		}
+		currentTask, err := em.store.GetTask(txCtx, ex.TaskID)
+		if err != nil || !currentTask.Enabled || currentTask.Revision != ex.TaskRevision {
+			return errors.New("monitoring task disabled or changed")
+		}
+		currentNode, err := em.store.GetNode(txCtx, ex.NodeID)
+		if err != nil || currentNode.Status != models.NodeStatusOnline {
+			return errors.New("monitoring node unavailable")
+		}
+		if !currentNode.Capabilities[requiredCapability(currentTask.Type)] {
+			return errors.New("monitoring node capability missing")
+		}
+		members, err := em.nodes.ResolveTarget(txCtx, currentSchedule.Target)
+		if err != nil {
+			return err
+		}
+		found := false
+		for _, id := range members {
+			if id == ex.NodeID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return errors.New("node is no longer a monitoring target")
+		}
+		if err := em.store.CreateExecution(txCtx, ex); err != nil {
+			return err
+		}
+		return linker.LinkMonitoringExecution(txCtx, eventID, ex.ID)
+	})
 }
 
 // dispatchToAgent 下发执行到 Agent
@@ -294,6 +379,22 @@ func (em *ExecutionManager) dispatchToAgent(ctx context.Context, ex *models.Exec
 	conn, ok := em.sessions.Get(ex.NodeID)
 	if !ok {
 		return ErrAgentOffline
+	}
+	artifactTransport := ""
+	if SessionIsInbound(conn) && task.Type == models.TaskTypeAppDeploy && task.ApplicationID != "" {
+		app, err := em.store.GetApplication(ctx, task.ApplicationID)
+		if err != nil {
+			return err
+		}
+		if app.ArtifactID != "" {
+			if em.artifacts == nil {
+				return ErrInboundDataPlaneUnavailable
+			}
+			if err := em.artifacts.PushInboundByID(ctx, ex.NodeID, app.ArtifactID); err != nil {
+				return err
+			}
+			artifactTransport = protocol.TransportInboundPush
+		}
 	}
 
 	var scriptContent, interpreter, workingDir, scriptRunUser string
@@ -323,26 +424,27 @@ func (em *ExecutionManager) dispatchToAgent(ctx context.Context, ex *models.Exec
 		runUser = scriptRunUser
 	}
 	payload := protocol.RunExecutionPayload{
-		ExecutionID:      ex.ID,
-		TaskID:           task.ID,
-		TaskRevision:     task.Revision,
-		ScriptID:         ex.ScriptID,
-		ScriptRevision:   scriptRev,
-		Type:             task.Type,
-		Command:          task.Command,
-		ScriptContent:    scriptContent,
-		Interpreter:      interpreter,
-		WorkingDir:       workingDir,
-		RunUser:          runUser,
-		Environment:      env,
-		SecretValues:     secrets,
-		Timeout:          strategy.Timeout,
-		Retry:            strategy.Retry,
-		AppID:            task.ApplicationID,
-		AppOperation:     task.AppOperation,
-		TriggerType:      ex.TriggerType,
-		ScheduleID:       ex.ScheduleID,
-		ScheduleRevision: ex.ScheduleRevision,
+		ExecutionID:       ex.ID,
+		TaskID:            task.ID,
+		TaskRevision:      task.Revision,
+		ScriptID:          ex.ScriptID,
+		ScriptRevision:    scriptRev,
+		Type:              task.Type,
+		Command:           task.Command,
+		ScriptContent:     scriptContent,
+		Interpreter:       interpreter,
+		WorkingDir:        workingDir,
+		RunUser:           runUser,
+		Environment:       env,
+		SecretValues:      secrets,
+		Timeout:           strategy.Timeout,
+		Retry:             strategy.Retry,
+		AppID:             task.ApplicationID,
+		AppOperation:      task.AppOperation,
+		ArtifactTransport: artifactTransport,
+		TriggerType:       ex.TriggerType,
+		ScheduleID:        ex.ScheduleID,
+		ScheduleRevision:  ex.ScheduleRevision,
 	}
 	if !ex.CreatedAt.IsZero() {
 		payload.CreatedAt = ex.CreatedAt.Format(time.RFC3339Nano)
@@ -372,16 +474,28 @@ func (em *ExecutionManager) dispatchToAgent(ctx context.Context, ex *models.Exec
 
 // MarkStarted 执行开始回调
 func (em *ExecutionManager) MarkStarted(ctx context.Context, nodeID, execID, startTime string) {
+	started := time.Now()
+	if startTime != "" {
+		started = parseRFC3339(startTime)
+	}
+	if starter, ok := em.store.(interface {
+		MarkExecutionStarted(context.Context, string, time.Time) (bool, error)
+	}); ok {
+		updated, err := starter.MarkExecutionStarted(ctx, execID, started)
+		if err != nil || !updated {
+			return
+		}
+		em.mu.Lock()
+		em.activeByNode[nodeID]++
+		em.mu.Unlock()
+		return
+	}
 	ex, err := em.store.GetExecution(ctx, execID)
-	if err != nil {
+	if err != nil || isTerminalExecution(ex.Status) {
 		return
 	}
 	ex.Status = models.ExecStatusRunning
-	if startTime != "" {
-		ex.StartTime = parseRFC3339(startTime)
-	} else {
-		ex.StartTime = time.Now()
-	}
+	ex.StartTime = started
 	em.store.UpdateExecution(ctx, ex)
 	em.mu.Lock()
 	em.activeByNode[nodeID]++
@@ -554,6 +668,9 @@ func (em *ExecutionManager) HandleDeployResult(ctx context.Context, nodeID strin
 		status := models.ExecStatusSuccess
 		if !p.OK {
 			status = models.ExecStatusFailed
+			if p.Blocked {
+				status = models.ExecStatusBlocked
+			}
 		}
 		taskID := p.TaskID
 		if taskID == "" {
@@ -617,6 +734,9 @@ func (em *ExecutionManager) HandleDeployResult(ctx context.Context, nodeID strin
 		ex.Status = models.ExecStatusSuccess
 	} else {
 		ex.Status = models.ExecStatusFailed
+		if p.Blocked {
+			ex.Status = models.ExecStatusBlocked
+		}
 		ex.BlockReason = p.Error
 	}
 	if err := em.store.UpdateExecution(ctx, ex); err != nil {
@@ -854,8 +974,8 @@ func (em *ExecutionManager) upgradeOneNode(ctx context.Context, nodeID, download
 		return UpgradeNodeResult{}, err
 	}
 	if err := em.dispatchUpgrade(ex, node, downloadBaseURL); err != nil {
-		// 下发失败 → 就地标 FAILED 终态（原因可见），不中断同批其他节点
-		ex.Status = models.ExecStatusFailed
+		// 下发失败 → 就地终态（原因可见）；入站数据面缺失为 BLOCKED。
+		ex.Status = executionFailureStatus(err)
 		ex.EndTime = time.Now()
 		ex.BlockReason = err.Error()
 		_ = em.store.UpdateExecution(ctx, ex)
@@ -917,8 +1037,43 @@ func (em *ExecutionManager) dispatchUpgrade(ex *models.Execution, node *models.N
 		ExecutionID: ex.ID,
 		TaskID:      models.AgentUpgradeTaskID,
 		Type:        models.TaskTypeAgentUpgrade,
-		DownloadURL: agentBinaryURL(downloadBaseURL, node.Arch),
 		TriggerType: models.TriggerManual,
+	}
+	if SessionIsInbound(conn) {
+		dp, err := RequireInboundDataPlane(conn)
+		if err != nil {
+			return err
+		}
+		arch := strings.ToLower(strings.TrimSpace(node.Arch))
+		if arch != "amd64" && arch != "arm64" {
+			return fmt.Errorf("cannot push agent binary: unknown architecture %q", node.Arch)
+		}
+		if em.agentBinary == nil {
+			return fmt.Errorf("agent binary provider is not configured")
+		}
+		data, sha, err := em.agentBinary(arch)
+		if err != nil {
+			return err
+		}
+		if len(data) == 0 || sha == "" {
+			return fmt.Errorf("agent binary for %s is empty", arch)
+		}
+		path := fmt.Sprintf("/agent-data/v1/agent-binary?sha256=%s&arch=%s&size=%d",
+			url.QueryEscape(sha), url.QueryEscape(arch), len(data))
+		resp, err := dp.DataPlaneRequest(context.Background(), http.MethodPut, path, bytes.NewReader(data), int64(len(data)))
+		if err != nil {
+			return err
+		}
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("push agent binary status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+		}
+		payload.AgentBinaryStaged = true
+		payload.AgentBinarySHA256 = sha
+		payload.AgentBinarySize = int64(len(data))
+	} else {
+		payload.DownloadURL = agentBinaryURL(downloadBaseURL, node.Arch)
 	}
 	return conn.Send(protocol.NewEnvelope(protocol.MsgRunExecution, ex.ID, payload))
 }

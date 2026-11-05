@@ -36,6 +36,28 @@ func NewScheduleManager(st store.Store, rm *RevisionManager, sm *SyncManager, nm
 	}
 }
 
+type monitoringScheduleReferenceCounter interface {
+	CountMonitoringRulesForSchedule(context.Context, string) (int, error)
+}
+
+// rejectMonitoringRuleReference prevents deleting or changing a schedule that
+// monitoring rules still use. The rule must be disabled/deleted first so a
+// pending event cannot become impossible to resolve.
+func (sm *ScheduleManager) rejectMonitoringRuleReference(ctx context.Context, scheduleID string) error {
+	counter, ok := sm.store.(monitoringScheduleReferenceCounter)
+	if !ok {
+		return nil
+	}
+	count, err := counter.CountMonitoringRulesForSchedule(ctx, scheduleID)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return fmt.Errorf("schedule %s is referenced by monitoring rules", scheduleID)
+	}
+	return nil
+}
+
 // Create 创建 Schedule
 func (sm *ScheduleManager) Create(ctx context.Context, s *models.Schedule) error {
 	if s.ID == "" {
@@ -94,6 +116,9 @@ func (sm *ScheduleManager) Create(ctx context.Context, s *models.Schedule) error
 func (sm *ScheduleManager) Update(ctx context.Context, s *models.Schedule) error {
 	existing, err := sm.store.GetSchedule(ctx, s.ID)
 	if err != nil {
+		return err
+	}
+	if err := sm.rejectMonitoringRuleReference(ctx, s.ID); err != nil {
 		return err
 	}
 	if s.TaskID == "" {
@@ -190,6 +215,9 @@ func (sm *ScheduleManager) Update(ctx context.Context, s *models.Schedule) error
 
 // Delete 删除 Schedule
 func (sm *ScheduleManager) Delete(ctx context.Context, id string) error {
+	if err := sm.rejectMonitoringRuleReference(ctx, id); err != nil {
+		return err
+	}
 	// 审计 detail 必须在事务外读取：runMutationTx 是 _txlock=immediate 写事务，
 	// 事务内用外层 ctx 再读会持写锁同时向连接池申请第 2 条连接；16 并发删除时
 	// 池（8）被等待写锁的事务占满，等待者 busy_timeout 5s 后 SQLITE_BUSY

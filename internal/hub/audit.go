@@ -30,3 +30,11 @@ func recordMutationAuditDetail(ctx context.Context, st store.Store, resource, re
 	a.Detail = detail
 	return st.AddAudit(ctx, &a)
 }
+
+// auditActor 返回当前变更审计上下文中的操作者用户名；无上下文时为空。
+func auditActor(ctx context.Context) string {
+	if a, ok := ctx.Value(auditContextKey{}).(models.AuditLog); ok {
+		return a.Username
+	}
+	return ""
+}

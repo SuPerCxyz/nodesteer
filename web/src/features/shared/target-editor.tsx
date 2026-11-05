@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { Group, Node, Target } from '@/lib/api'
+import { nodeDisplayName } from '@/lib/node-display-name'
 import { statusLabel } from '@/lib/status-labels'
 import { normalizeTarget } from '@/lib/targets'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -82,7 +83,7 @@ export function TargetEditor({
                     })
                   }
                 />
-                {node.hostname}
+                {nodeDisplayName(node, t('common.unknownNode'))}
                 <span className='ms-auto text-xs text-muted-foreground'>
                   {statusLabel(node.status)}
                 </span>

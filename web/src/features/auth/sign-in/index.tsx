@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -21,11 +21,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 import { AuthLayout } from '../auth-layout'
-
-const formSchema = z.object({
-  username: z.string().min(1),
-  password: z.string().min(1),
-})
 
 export function SignIn() {
   const { t } = useTranslation()
@@ -70,6 +65,21 @@ export function SignIn() {
   const showLocalForm = localFallback || !oidcEnabled
   const oidcFailed =
     new URLSearchParams(window.location.search).get('error') === 'oidc_failed'
+  // 仅测试环境开关：后端 /auth-mode 明确返回 true 时才允许空密码，
+  // 查询失败或字段缺失按 false 处理，生产校验不变。
+  const authMode = useQuery({
+    queryKey: ['auth-mode'],
+    queryFn: () => api.get<{ allow_empty_password?: boolean }>('/auth-mode'),
+  })
+  const allowEmptyPassword = authMode.data?.allow_empty_password === true
+  const formSchema = useMemo(
+    () =>
+      z.object({
+        username: z.string().min(1),
+        password: allowEmptyPassword ? z.string() : z.string().min(1),
+      }),
+    [allowEmptyPassword]
+  )
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { username: '', password: '' },
@@ -176,6 +186,11 @@ export function SignIn() {
                   </FormItem>
                 )}
               />
+              {allowEmptyPassword && (
+                <p className='-mt-2 text-xs text-muted-foreground'>
+                  {t('login.allowEmptyPassword')}
+                </p>
+              )}
               {error && (
                 <p role='alert' className='text-sm text-destructive'>
                   {error}

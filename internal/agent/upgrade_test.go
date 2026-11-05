@@ -309,3 +309,25 @@ func TestUpgradeReportsNewVersionOnHello(t *testing.T) {
 		t.Fatalf("upgraded process hello version = %q, want v0.0.2-new", got)
 	}
 }
+
+func TestCopyVerifiedStagedAgentBinary(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "staged")
+	dst := filepath.Join(dir, "new")
+	payload := []byte("staged agent binary")
+	sum := sha256.Sum256(payload)
+	sha := hex.EncodeToString(sum[:])
+	if err := os.WriteFile(src, payload, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := copyVerifiedFile(src, dst, int64(len(payload)), sha); err != nil {
+		t.Fatalf("copy verified: %v", err)
+	}
+	got, err := os.ReadFile(dst)
+	if err != nil || string(got) != string(payload) {
+		t.Fatalf("copied binary = %q err=%v", got, err)
+	}
+	if err := copyVerifiedFile(src, dst, int64(len(payload)), strings.Repeat("0", 64)); err == nil {
+		t.Fatal("sha mismatch must be rejected")
+	}
+}

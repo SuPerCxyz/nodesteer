@@ -1,15 +1,9 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import {
-  Activity,
-  ArrowUpRight,
-  CalendarClock,
-  CheckCircle2,
-  CircleAlert,
-  Server,
-} from 'lucide-react'
+import { Activity, ArrowUpRight, CalendarClock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useAuthStore } from '@/stores/auth-store'
 import {
   api,
   type Application,
@@ -19,24 +13,19 @@ import {
   type Schedule,
   type Task,
 } from '@/lib/api'
+import { nodeDisplayName } from '@/lib/node-display-name'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
+import { NodeMonitoringTable } from '@/features/monitoring/node-monitoring-table'
+import type { NodeOverview } from '@/features/monitoring/types'
+import { RackList, RackRow, RowText } from '@/features/shared/rack-list'
 import {
   DurationValue,
   EmptyState,
   ErrorState,
   LoadingState,
   StatusBadge,
-  TableCard,
   TimeValue,
 } from '@/features/shared/ui'
 
@@ -120,10 +109,21 @@ async function loadDashboard(): Promise<DashboardData> {
 
 export function Dashboard() {
   const { t, i18n } = useTranslation()
+  const isAdmin = useAuthStore(
+    (state) => state.auth.user?.role.includes('administrator') ?? false
+  )
   const query = useQuery({
     queryKey: ['dashboard'],
     queryFn: loadDashboard,
     refetchInterval: 15000,
+  })
+  const overview = useQuery({
+    queryKey: ['monitoring-nodes-overview'],
+    queryFn: () =>
+      api.get<{ nodes: NodeOverview[] }>('/monitoring/nodes/overview'),
+    enabled: isAdmin,
+    refetchInterval: 30000,
+    staleTime: 30000,
   })
   const data = query.data
   const taskName = useMemo(
@@ -131,8 +131,14 @@ export function Dashboard() {
     [data?.tasks]
   )
   const nodeName = useMemo(
-    () => new Map((data?.nodes || []).map((node) => [node.id, node.hostname])),
-    [data?.nodes]
+    () =>
+      new Map(
+        (data?.nodes || []).map((node) => [
+          node.id,
+          nodeDisplayName(node, t('common.unknownNode')),
+        ])
+      ),
+    [data?.nodes, t]
   )
   const failed = (data?.executions || []).filter((execution) =>
     ['FAILED', 'TIMED_OUT'].includes(execution.status)
@@ -152,9 +158,13 @@ export function Dashboard() {
     .slice(0, 5)
   const online =
     data?.nodes.filter((node) => node.status === 'online').length || 0
-  const offline =
-    data?.nodes.filter((node) => node.status === 'offline').length || 0
-  const degraded = (data?.nodes.length || 0) - online - offline
+  const overviewByNode = new Map(
+    (overview.data?.nodes || []).map((item) => [item.node_id, item])
+  )
+  const monitoringAvailable = overview.isSuccess && !overview.isError
+  const monitoredNodes = monitoringAvailable
+    ? (data?.nodes || []).filter((node) => overviewByNode.has(node.id)).length
+    : '—'
   const syncCounts = ['synced', 'outdated', 'error'].map((status) => ({
     status,
     count:
@@ -192,43 +202,13 @@ export function Dashboard() {
       />
       <Main className='flex flex-1 flex-col'>
         <div className='flex w-full flex-col gap-6'>
-          <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
-            <MetricCard
-              label={t('dashboard.totalNodes')}
-              value={data.nodes.length}
-              detail={`${online} ${t('dashboard.online').toLowerCase()}`}
-              icon={Server}
-            />
-            <MetricCard
-              label={t('dashboard.runningNow')}
-              value={
-                data.executions.filter(
-                  (execution) => execution.status === 'RUNNING'
-                ).length
-              }
-              detail={t('dashboard.runningExecutions')}
-              icon={Activity}
-            />
-            <MetricCard
-              label={t('dashboard.execFailed')}
-              value={failed}
-              detail={t('dashboard.recentWindow')}
-              icon={CircleAlert}
-            />
-            <MetricCard
-              label={t('dashboard.successRate')}
-              value={successRate}
-              detail={`${terminal} ${t('dashboard.completedRuns')}`}
-              icon={CheckCircle2}
-            />
-          </div>
-
-          <div className='grid grid-cols-1 items-stretch gap-4 lg:grid-cols-7'>
-            <Card className='h-full gap-3 py-4 lg:col-span-4'>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 px-5 pb-1'>
-                <CardTitle className='text-sm'>
-                  {t('dashboard.runningExecutions')}
-                </CardTitle>
+          <div className='grid grid-cols-1 items-stretch gap-4'>
+            <Card
+              data-testid='dashboard-automation-card'
+              className='flex h-full flex-col'
+            >
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-1'>
+                <CardTitle>{t('dashboard.automationTitle')}</CardTitle>
                 <Link
                   className='text-xs text-muted-foreground hover:text-foreground'
                   to='/executions'
@@ -237,88 +217,128 @@ export function Dashboard() {
                   <ArrowUpRight className='inline size-3.5' />
                 </Link>
               </CardHeader>
-              <CardContent
-                className={
-                  running.length === 0
-                    ? 'flex flex-1 items-center justify-center px-5'
-                    : 'px-5'
-                }
-              >
-                {running.length === 0 ? (
-                  <EmptyState
-                    className='min-h-20 py-4'
-                    message={t('dashboard.noRunning')}
-                  />
-                ) : (
-                  <div className='divide-y'>
-                    {running.map((execution) => (
-                      <a
-                        key={execution.id}
-                        href={`/executions/${execution.id}`}
-                        className='flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:bg-muted/30'
-                      >
-                        <Activity className='size-4 shrink-0 text-muted-foreground' />
-                        <span className='min-w-0 flex-1'>
-                          <span className='block truncate text-sm font-medium'>
-                            {taskName.get(execution.task_id) ||
-                              t('common.unknownTask')}
-                          </span>
-                          <span className='truncate text-xs text-muted-foreground'>
-                            {nodeName.get(execution.node_id) ||
-                              t('common.unknownNode')}
-                          </span>
-                        </span>
-                        <DurationValue start={execution.start_time} running />
-                        <StatusBadge status={execution.status} />
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            <Card className='h-full gap-3 py-4 lg:col-span-3'>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 px-5 pb-1'>
-                <CardTitle className='text-sm'>
-                  {t('dashboard.agentHealth')}
-                </CardTitle>
-                <Link
-                  className='text-xs text-muted-foreground hover:text-foreground'
-                  to='/agents'
-                >
-                  {t('common.viewAll')}{' '}
-                  <ArrowUpRight className='inline size-3.5' />
-                </Link>
-              </CardHeader>
-              <CardContent className='flex flex-1 flex-col justify-center px-5'>
+              <CardContent className='flex flex-1 flex-col gap-4'>
                 <div className='grid grid-cols-3 gap-2'>
-                  {[
-                    ['online', online, 'success'],
-                    ['offline', offline, 'danger'],
-                    ['degraded', degraded, 'warning'],
-                  ].map(([label, value, tone]) => (
-                    <div className='min-w-0 space-y-1' key={label as string}>
-                      <div className='flex h-4 items-center gap-1.5 text-xs leading-4 text-muted-foreground'>
-                        <span
-                          className={`size-1.5 shrink-0 self-center rounded-full ${tone === 'success' ? 'bg-emerald-500' : tone === 'danger' ? 'bg-destructive' : 'bg-amber-500'}`}
-                        />
-                        <span className='truncate'>
-                          {t(`dashboard.${label}`)}
-                        </span>
-                      </div>
-                      <strong className='text-sm font-medium'>{value}</strong>
+                  <CompactMetric
+                    testId='automation-running'
+                    label={t('dashboard.runningNow')}
+                    value={
+                      data.executions.filter(
+                        (execution) => execution.status === 'RUNNING'
+                      ).length
+                    }
+                  />
+                  <CompactMetric
+                    testId='automation-failed'
+                    label={t('dashboard.execFailed')}
+                    value={failed}
+                    detail={t('dashboard.recentWindow')}
+                  />
+                  <CompactMetric
+                    testId='automation-success-rate'
+                    label={t('dashboard.successRate')}
+                    value={successRate}
+                    detail={`${terminal} ${t('dashboard.completedRuns')}`}
+                  />
+                </div>
+                <div className='flex flex-1 flex-col gap-2'>
+                  <h3 className='text-sm font-medium'>
+                    {t('dashboard.runningExecutions')}
+                  </h3>
+                  {running.length === 0 ? (
+                    <div className='flex flex-1 items-center justify-center'>
+                      <EmptyState
+                        className='min-h-20 py-4'
+                        message={t('dashboard.noRunning')}
+                      />
                     </div>
-                  ))}
+                  ) : (
+                    <div className='divide-y'>
+                      {running.map((execution) => (
+                        <a
+                          key={execution.id}
+                          href={`/executions/${execution.id}`}
+                          className='flex min-h-[60px] min-w-0 items-center gap-3 py-2.5 hover:bg-muted/30'
+                        >
+                          <Activity className='size-4 shrink-0 text-muted-foreground' />
+                          <div className='min-w-0 flex-1'>
+                            <RowText
+                              primary={
+                                <span className='block truncate text-sm font-medium'>
+                                  {taskName.get(execution.task_id) ||
+                                    t('common.unknownTask')}
+                                </span>
+                              }
+                              secondary={
+                                <span className='text-xs text-muted-foreground'>
+                                  {nodeName.get(execution.node_id) ||
+                                    t('common.unknownNode')}
+                                </span>
+                              }
+                            />
+                          </div>
+                          <DurationValue start={execution.start_time} running />
+                          <StatusBadge status={execution.status} />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
+
+            {isAdmin && (
+              <Card data-testid='dashboard-monitoring-overview'>
+                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-1'>
+                  <CardTitle>{t('dashboard.monitoringOverview')}</CardTitle>
+                  <Link
+                    className='text-xs text-muted-foreground hover:text-foreground'
+                    to='/monitoring'
+                  >
+                    {t('dashboard.viewMonitoring')}{' '}
+                    <ArrowUpRight className='inline size-3.5' />
+                  </Link>
+                </CardHeader>
+                <CardContent className='space-y-4'>
+                  {isAdmin && (
+                    <div
+                      data-testid='dashboard-monitoring-card'
+                      className='grid grid-cols-3 gap-2'
+                    >
+                      <CompactMetric
+                        testId='monitoring-online'
+                        label={t('dashboard.online')}
+                        value={online}
+                      />
+                      <CompactMetric
+                        testId='monitoring-monitored'
+                        label={t('dashboard.monitoredNodes')}
+                        value={monitoredNodes}
+                      />
+                      <CompactMetric
+                        testId='monitoring-alerts'
+                        label={t('dashboard.activeAlerts')}
+                        value={t('webFix.alertsPending')}
+                      />
+                    </div>
+                  )}
+                  <NodeMonitoringTable
+                    nodes={data.nodes}
+                    overviewByNode={overviewByNode}
+                    loading={overview.isLoading}
+                    error={overview.error}
+                    onRetry={() => overview.refetch()}
+                    rowNavigation
+                  />
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           <div className='grid grid-cols-1 items-stretch gap-4 lg:grid-cols-7'>
-            <Card className='h-full gap-3 py-4 lg:col-span-4'>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 px-5 pb-1'>
-                <CardTitle className='text-sm'>
-                  {t('dashboard.applicationStatus')}
-                </CardTitle>
+            <Card className='h-full lg:col-span-4'>
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-1'>
+                <CardTitle>{t('dashboard.applicationStatus')}</CardTitle>
                 <div className='flex items-center gap-3'>
                   <span className='text-xs text-muted-foreground'>
                     {data.applicationHealthAvailable
@@ -334,7 +354,7 @@ export function Dashboard() {
                   </Link>
                 </div>
               </CardHeader>
-              <CardContent className='px-5'>
+              <CardContent>
                 {!data.applicationHealthAvailable ? (
                   <div className='mb-3'>
                     <ErrorState
@@ -371,11 +391,9 @@ export function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className='h-full gap-3 py-4 lg:col-span-3'>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 px-5 pb-1'>
-                <CardTitle className='text-sm'>
-                  {t('dashboard.syncStatus')}
-                </CardTitle>
+            <Card className='h-full lg:col-span-3'>
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-1'>
+                <CardTitle>{t('dashboard.syncStatus')}</CardTitle>
                 <Link
                   className='text-xs text-muted-foreground hover:text-foreground'
                   to='/agents'
@@ -384,7 +402,7 @@ export function Dashboard() {
                   <ArrowUpRight className='inline size-3.5' />
                 </Link>
               </CardHeader>
-              <CardContent className='grid flex-1 grid-cols-3 items-center gap-2 px-5'>
+              <CardContent className='grid flex-1 grid-cols-3 items-center gap-2'>
                 {syncCounts.map(({ status, count }) => (
                   <div
                     className='flex min-w-0 flex-col items-start gap-2'
@@ -398,12 +416,10 @@ export function Dashboard() {
             </Card>
           </div>
 
-          <div className='grid grid-cols-1 items-start gap-4 lg:grid-cols-7'>
-            <Card className='lg:col-span-4'>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-3'>
-                <CardTitle className='text-sm'>
-                  {t('dashboard.recentExecutions')}
-                </CardTitle>
+          <div className='flex flex-col gap-4'>
+            <Card>
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-1'>
+                <CardTitle>{t('dashboard.recentExecutions')}</CardTitle>
                 <Link
                   className='text-xs text-muted-foreground hover:text-foreground'
                   to='/executions'
@@ -412,74 +428,70 @@ export function Dashboard() {
                   <ArrowUpRight className='inline size-3.5' />
                 </Link>
               </CardHeader>
-              <CardContent className='px-0'>
-                <TableCard>
-                  <Table className='min-w-[700px] table-fixed'>
-                    <colgroup>
-                      <col className='w-[30%]' />
-                      <col className='w-[18%]' />
-                      <col className='w-[15%]' />
-                      <col className='w-[14%]' />
-                      <col className='w-[23%]' />
-                    </colgroup>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('dashboard.task')}</TableHead>
-                        <TableHead>{t('dashboard.node')}</TableHead>
-                        <TableHead>{t('common.status')}</TableHead>
-                        <TableHead>{t('dashboard.trigger')}</TableHead>
-                        <TableHead>{t('dashboard.end')}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {recent.map((execution) => (
-                        <TableRow key={execution.id}>
-                          <TableCell>
-                            <a
-                              className='block truncate font-medium hover:underline'
-                              href={`/executions/${execution.id}`}
-                              title={
-                                taskName.get(execution.task_id) ||
-                                t('common.unknownTask')
-                              }
-                            >
-                              {taskName.get(execution.task_id) ||
-                                t('common.unknownTask')}
-                            </a>
-                          </TableCell>
-                          <TableCell className='truncate text-xs'>
-                            {nodeName.get(execution.node_id) ||
-                              t('common.unknownNode')}
-                          </TableCell>
-                          <TableCell>
-                            <StatusBadge status={execution.status} />
-                          </TableCell>
-                          <TableCell>
-                            {execution.trigger_type === 'manual'
-                              ? i18n.language === 'en'
-                                ? 'Manual'
-                                : '手动'
-                              : i18n.language === 'en'
-                                ? 'Schedule'
-                                : '调度'}
-                          </TableCell>
-                          <TableCell>
-                            <TimeValue
-                              value={execution.end_time || execution.start_time}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableCard>
+              <CardContent>
+                {recent.length === 0 ? (
+                  <EmptyState message={t('dashboard.noExecutions')} />
+                ) : (
+                  <RackList testId='dashboard-recent-executions'>
+                    {recent.map((execution) => (
+                      <RackRow
+                        key={execution.id}
+                        testId={`dashboard-recent-execution-${execution.id}`}
+                        title={
+                          <a
+                            className='hover:underline'
+                            href={`/executions/${execution.id}`}
+                            title={
+                              taskName.get(execution.task_id) ||
+                              t('common.unknownTask')
+                            }
+                          >
+                            {taskName.get(execution.task_id) ||
+                              t('common.unknownTask')}
+                          </a>
+                        }
+                        fields={[
+                          {
+                            label: t('dashboard.node'),
+                            value:
+                              nodeName.get(execution.node_id) ||
+                              t('common.unknownNode'),
+                          },
+                          {
+                            label: t('common.status'),
+                            value: <StatusBadge status={execution.status} />,
+                          },
+                          {
+                            label: t('dashboard.trigger'),
+                            value:
+                              execution.trigger_type === 'manual'
+                                ? i18n.language === 'en'
+                                  ? 'Manual'
+                                  : '手动'
+                                : i18n.language === 'en'
+                                  ? 'Schedule'
+                                  : '调度',
+                          },
+                          {
+                            label: t('dashboard.end'),
+                            value: (
+                              <TimeValue
+                                value={
+                                  execution.end_time || execution.start_time
+                                }
+                              />
+                            ),
+                          },
+                        ]}
+                      />
+                    ))}
+                  </RackList>
+                )}
               </CardContent>
             </Card>
-            <Card className='lg:col-span-3'>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-3'>
-                <CardTitle className='text-sm'>
-                  {t('dashboard.upcomingSchedules')}
-                </CardTitle>
+            <Card>
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-1'>
+                <CardTitle>{t('dashboard.upcomingSchedules')}</CardTitle>
                 <Link
                   className='text-xs text-muted-foreground hover:text-foreground'
                   to='/schedules'
@@ -525,27 +537,24 @@ export function Dashboard() {
   )
 }
 
-function MetricCard({
+function CompactMetric({
   label,
   value,
   detail,
-  icon: Icon,
+  testId,
 }: {
   label: string
   value: string | number
-  detail: string
-  icon: typeof Server
+  detail?: string
+  testId?: string
 }) {
   return (
-    <Card className='gap-3 py-4'>
-      <CardHeader className='flex flex-row items-center justify-between space-y-0 px-5 pb-1'>
-        <CardTitle className='text-sm font-medium'>{label}</CardTitle>
-        <Icon className='size-4 text-muted-foreground' />
-      </CardHeader>
-      <CardContent className='px-5'>
-        <div className='text-2xl font-semibold tracking-tight'>{value}</div>
+    <div data-testid={testId} className='rounded-md border bg-muted/30 p-3'>
+      <div className='text-xs text-muted-foreground'>{label}</div>
+      <div className='text-xl font-semibold tracking-tight'>{value}</div>
+      {detail ? (
         <p className='text-xs text-muted-foreground'>{detail}</p>
-      </CardContent>
-    </Card>
+      ) : null}
+    </div>
   )
 }

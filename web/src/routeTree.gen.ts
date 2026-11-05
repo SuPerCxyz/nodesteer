@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedRulesRouteImport } from './routes/_authenticated/rules'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedTransfersIndexRouteImport } from './routes/_authenticated/transfers/index'
@@ -19,6 +20,7 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedScriptsIndexRouteImport } from './routes/_authenticated/scripts/index'
 import { Route as AuthenticatedSchedulesIndexRouteImport } from './routes/_authenticated/schedules/index'
 import { Route as AuthenticatedNodesIndexRouteImport } from './routes/_authenticated/nodes/index'
+import { Route as AuthenticatedMonitoringIndexRouteImport } from './routes/_authenticated/monitoring/index'
 import { Route as AuthenticatedGroupsIndexRouteImport } from './routes/_authenticated/groups/index'
 import { Route as AuthenticatedExecutionsIndexRouteImport } from './routes/_authenticated/executions/index'
 import { Route as AuthenticatedAuditIndexRouteImport } from './routes/_authenticated/audit/index'
@@ -34,6 +36,8 @@ import { Route as AuthenticatedScriptsScriptIdRouteImport } from './routes/_auth
 import { Route as AuthenticatedSchedulesNewRouteImport } from './routes/_authenticated/schedules/new'
 import { Route as AuthenticatedSchedulesScheduleIdRouteImport } from './routes/_authenticated/schedules/$scheduleId'
 import { Route as AuthenticatedNodesNodeIdRouteImport } from './routes/_authenticated/nodes/$nodeId'
+import { Route as AuthenticatedMonitoringServicesRouteImport } from './routes/_authenticated/monitoring/services'
+import { Route as AuthenticatedMonitoringAlertsRouteImport } from './routes/_authenticated/monitoring/alerts'
 import { Route as AuthenticatedGroupsNewRouteImport } from './routes/_authenticated/groups/new'
 import { Route as AuthenticatedGroupsGroupIdRouteImport } from './routes/_authenticated/groups/$groupId'
 import { Route as AuthenticatedExecutionsExecutionIdRouteImport } from './routes/_authenticated/executions/$executionId'
@@ -45,6 +49,7 @@ import { Route as AuthenticatedAgentsAgentIdRouteImport } from './routes/_authen
 import { Route as AuthenticatedTasksTaskIdIndexRouteImport } from './routes/_authenticated/tasks/$taskId/index'
 import { Route as AuthenticatedTasksTaskIdRunRouteImport } from './routes/_authenticated/tasks/$taskId/run'
 import { Route as AuthenticatedTasksTaskIdEditRouteImport } from './routes/_authenticated/tasks/$taskId/edit'
+import { Route as AuthenticatedMonitoringNodesNodeIdRouteImport } from './routes/_authenticated/monitoring/nodes/$nodeId'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -53,6 +58,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRulesRoute = AuthenticatedRulesRouteImport.update({
+  id: '/rules',
+  path: '/rules',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const authSignInRoute = authSignInRouteImport.update({
@@ -99,6 +109,12 @@ const AuthenticatedNodesIndexRoute = AuthenticatedNodesIndexRouteImport.update({
   path: '/nodes/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMonitoringIndexRoute =
+  AuthenticatedMonitoringIndexRouteImport.update({
+    id: '/monitoring/',
+    path: '/monitoring/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedGroupsIndexRoute =
   AuthenticatedGroupsIndexRouteImport.update({
     id: '/groups/',
@@ -186,6 +202,18 @@ const AuthenticatedNodesNodeIdRoute =
     path: '/nodes/$nodeId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMonitoringServicesRoute =
+  AuthenticatedMonitoringServicesRouteImport.update({
+    id: '/monitoring/services',
+    path: '/monitoring/services',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMonitoringAlertsRoute =
+  AuthenticatedMonitoringAlertsRouteImport.update({
+    id: '/monitoring/alerts',
+    path: '/monitoring/alerts',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedGroupsNewRoute = AuthenticatedGroupsNewRouteImport.update({
   id: '/groups/new',
   path: '/groups/new',
@@ -251,10 +279,17 @@ const AuthenticatedTasksTaskIdEditRoute =
     path: '/edit',
     getParentRoute: () => AuthenticatedTasksTaskIdRoute,
   } as any)
+const AuthenticatedMonitoringNodesNodeIdRoute =
+  AuthenticatedMonitoringNodesNodeIdRouteImport.update({
+    id: '/monitoring/nodes/$nodeId',
+    path: '/monitoring/nodes/$nodeId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/sign-in': typeof authSignInRoute
+  '/rules': typeof AuthenticatedRulesRoute
   '/agents/$agentId': typeof AuthenticatedAgentsAgentIdRoute
   '/applications/$applicationId': typeof AuthenticatedApplicationsApplicationIdRoute
   '/applications/new': typeof AuthenticatedApplicationsNewRoute
@@ -263,6 +298,8 @@ export interface FileRoutesByFullPath {
   '/executions/$executionId': typeof AuthenticatedExecutionsExecutionIdRoute
   '/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
   '/groups/new': typeof AuthenticatedGroupsNewRoute
+  '/monitoring/alerts': typeof AuthenticatedMonitoringAlertsRoute
+  '/monitoring/services': typeof AuthenticatedMonitoringServicesRoute
   '/nodes/$nodeId': typeof AuthenticatedNodesNodeIdRoute
   '/schedules/$scheduleId': typeof AuthenticatedSchedulesScheduleIdRoute
   '/schedules/new': typeof AuthenticatedSchedulesNewRoute
@@ -278,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/audit/': typeof AuthenticatedAuditIndexRoute
   '/executions/': typeof AuthenticatedExecutionsIndexRoute
   '/groups/': typeof AuthenticatedGroupsIndexRoute
+  '/monitoring/': typeof AuthenticatedMonitoringIndexRoute
   '/nodes/': typeof AuthenticatedNodesIndexRoute
   '/schedules/': typeof AuthenticatedSchedulesIndexRoute
   '/scripts/': typeof AuthenticatedScriptsIndexRoute
@@ -285,12 +323,14 @@ export interface FileRoutesByFullPath {
   '/tasks/': typeof AuthenticatedTasksIndexRoute
   '/transfers/': typeof AuthenticatedTransfersIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/monitoring/nodes/$nodeId': typeof AuthenticatedMonitoringNodesNodeIdRoute
   '/tasks/$taskId/edit': typeof AuthenticatedTasksTaskIdEditRoute
   '/tasks/$taskId/run': typeof AuthenticatedTasksTaskIdRunRoute
   '/tasks/$taskId/': typeof AuthenticatedTasksTaskIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/sign-in': typeof authSignInRoute
+  '/rules': typeof AuthenticatedRulesRoute
   '/': typeof AuthenticatedIndexRoute
   '/agents/$agentId': typeof AuthenticatedAgentsAgentIdRoute
   '/applications/$applicationId': typeof AuthenticatedApplicationsApplicationIdRoute
@@ -300,6 +340,8 @@ export interface FileRoutesByTo {
   '/executions/$executionId': typeof AuthenticatedExecutionsExecutionIdRoute
   '/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
   '/groups/new': typeof AuthenticatedGroupsNewRoute
+  '/monitoring/alerts': typeof AuthenticatedMonitoringAlertsRoute
+  '/monitoring/services': typeof AuthenticatedMonitoringServicesRoute
   '/nodes/$nodeId': typeof AuthenticatedNodesNodeIdRoute
   '/schedules/$scheduleId': typeof AuthenticatedSchedulesScheduleIdRoute
   '/schedules/new': typeof AuthenticatedSchedulesNewRoute
@@ -314,6 +356,7 @@ export interface FileRoutesByTo {
   '/audit': typeof AuthenticatedAuditIndexRoute
   '/executions': typeof AuthenticatedExecutionsIndexRoute
   '/groups': typeof AuthenticatedGroupsIndexRoute
+  '/monitoring': typeof AuthenticatedMonitoringIndexRoute
   '/nodes': typeof AuthenticatedNodesIndexRoute
   '/schedules': typeof AuthenticatedSchedulesIndexRoute
   '/scripts': typeof AuthenticatedScriptsIndexRoute
@@ -321,6 +364,7 @@ export interface FileRoutesByTo {
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/transfers': typeof AuthenticatedTransfersIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/monitoring/nodes/$nodeId': typeof AuthenticatedMonitoringNodesNodeIdRoute
   '/tasks/$taskId/edit': typeof AuthenticatedTasksTaskIdEditRoute
   '/tasks/$taskId/run': typeof AuthenticatedTasksTaskIdRunRoute
   '/tasks/$taskId': typeof AuthenticatedTasksTaskIdIndexRoute
@@ -329,6 +373,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/(auth)/sign-in': typeof authSignInRoute
+  '/_authenticated/rules': typeof AuthenticatedRulesRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/agents/$agentId': typeof AuthenticatedAgentsAgentIdRoute
   '/_authenticated/applications/$applicationId': typeof AuthenticatedApplicationsApplicationIdRoute
@@ -338,6 +383,8 @@ export interface FileRoutesById {
   '/_authenticated/executions/$executionId': typeof AuthenticatedExecutionsExecutionIdRoute
   '/_authenticated/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
   '/_authenticated/groups/new': typeof AuthenticatedGroupsNewRoute
+  '/_authenticated/monitoring/alerts': typeof AuthenticatedMonitoringAlertsRoute
+  '/_authenticated/monitoring/services': typeof AuthenticatedMonitoringServicesRoute
   '/_authenticated/nodes/$nodeId': typeof AuthenticatedNodesNodeIdRoute
   '/_authenticated/schedules/$scheduleId': typeof AuthenticatedSchedulesScheduleIdRoute
   '/_authenticated/schedules/new': typeof AuthenticatedSchedulesNewRoute
@@ -353,6 +400,7 @@ export interface FileRoutesById {
   '/_authenticated/audit/': typeof AuthenticatedAuditIndexRoute
   '/_authenticated/executions/': typeof AuthenticatedExecutionsIndexRoute
   '/_authenticated/groups/': typeof AuthenticatedGroupsIndexRoute
+  '/_authenticated/monitoring/': typeof AuthenticatedMonitoringIndexRoute
   '/_authenticated/nodes/': typeof AuthenticatedNodesIndexRoute
   '/_authenticated/schedules/': typeof AuthenticatedSchedulesIndexRoute
   '/_authenticated/scripts/': typeof AuthenticatedScriptsIndexRoute
@@ -360,6 +408,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/transfers/': typeof AuthenticatedTransfersIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/monitoring/nodes/$nodeId': typeof AuthenticatedMonitoringNodesNodeIdRoute
   '/_authenticated/tasks/$taskId/edit': typeof AuthenticatedTasksTaskIdEditRoute
   '/_authenticated/tasks/$taskId/run': typeof AuthenticatedTasksTaskIdRunRoute
   '/_authenticated/tasks/$taskId/': typeof AuthenticatedTasksTaskIdIndexRoute
@@ -369,6 +418,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/sign-in'
+    | '/rules'
     | '/agents/$agentId'
     | '/applications/$applicationId'
     | '/applications/new'
@@ -377,6 +427,8 @@ export interface FileRouteTypes {
     | '/executions/$executionId'
     | '/groups/$groupId'
     | '/groups/new'
+    | '/monitoring/alerts'
+    | '/monitoring/services'
     | '/nodes/$nodeId'
     | '/schedules/$scheduleId'
     | '/schedules/new'
@@ -392,6 +444,7 @@ export interface FileRouteTypes {
     | '/audit/'
     | '/executions/'
     | '/groups/'
+    | '/monitoring/'
     | '/nodes/'
     | '/schedules/'
     | '/scripts/'
@@ -399,12 +452,14 @@ export interface FileRouteTypes {
     | '/tasks/'
     | '/transfers/'
     | '/users/'
+    | '/monitoring/nodes/$nodeId'
     | '/tasks/$taskId/edit'
     | '/tasks/$taskId/run'
     | '/tasks/$taskId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/sign-in'
+    | '/rules'
     | '/'
     | '/agents/$agentId'
     | '/applications/$applicationId'
@@ -414,6 +469,8 @@ export interface FileRouteTypes {
     | '/executions/$executionId'
     | '/groups/$groupId'
     | '/groups/new'
+    | '/monitoring/alerts'
+    | '/monitoring/services'
     | '/nodes/$nodeId'
     | '/schedules/$scheduleId'
     | '/schedules/new'
@@ -428,6 +485,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/executions'
     | '/groups'
+    | '/monitoring'
     | '/nodes'
     | '/schedules'
     | '/scripts'
@@ -435,6 +493,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/transfers'
     | '/users'
+    | '/monitoring/nodes/$nodeId'
     | '/tasks/$taskId/edit'
     | '/tasks/$taskId/run'
     | '/tasks/$taskId'
@@ -442,6 +501,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/(auth)/sign-in'
+    | '/_authenticated/rules'
     | '/_authenticated/'
     | '/_authenticated/agents/$agentId'
     | '/_authenticated/applications/$applicationId'
@@ -451,6 +511,8 @@ export interface FileRouteTypes {
     | '/_authenticated/executions/$executionId'
     | '/_authenticated/groups/$groupId'
     | '/_authenticated/groups/new'
+    | '/_authenticated/monitoring/alerts'
+    | '/_authenticated/monitoring/services'
     | '/_authenticated/nodes/$nodeId'
     | '/_authenticated/schedules/$scheduleId'
     | '/_authenticated/schedules/new'
@@ -466,6 +528,7 @@ export interface FileRouteTypes {
     | '/_authenticated/audit/'
     | '/_authenticated/executions/'
     | '/_authenticated/groups/'
+    | '/_authenticated/monitoring/'
     | '/_authenticated/nodes/'
     | '/_authenticated/schedules/'
     | '/_authenticated/scripts/'
@@ -473,6 +536,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/'
     | '/_authenticated/transfers/'
     | '/_authenticated/users/'
+    | '/_authenticated/monitoring/nodes/$nodeId'
     | '/_authenticated/tasks/$taskId/edit'
     | '/_authenticated/tasks/$taskId/run'
     | '/_authenticated/tasks/$taskId/'
@@ -497,6 +561,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rules': {
+      id: '/_authenticated/rules'
+      path: '/rules'
+      fullPath: '/rules'
+      preLoaderRoute: typeof AuthenticatedRulesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/(auth)/sign-in': {
@@ -553,6 +624,13 @@ declare module '@tanstack/react-router' {
       path: '/nodes'
       fullPath: '/nodes/'
       preLoaderRoute: typeof AuthenticatedNodesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/monitoring/': {
+      id: '/_authenticated/monitoring/'
+      path: '/monitoring'
+      fullPath: '/monitoring/'
+      preLoaderRoute: typeof AuthenticatedMonitoringIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/groups/': {
@@ -660,6 +738,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNodesNodeIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/monitoring/services': {
+      id: '/_authenticated/monitoring/services'
+      path: '/monitoring/services'
+      fullPath: '/monitoring/services'
+      preLoaderRoute: typeof AuthenticatedMonitoringServicesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/monitoring/alerts': {
+      id: '/_authenticated/monitoring/alerts'
+      path: '/monitoring/alerts'
+      fullPath: '/monitoring/alerts'
+      preLoaderRoute: typeof AuthenticatedMonitoringAlertsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/groups/new': {
       id: '/_authenticated/groups/new'
       path: '/groups/new'
@@ -737,6 +829,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTasksTaskIdEditRouteImport
       parentRoute: typeof AuthenticatedTasksTaskIdRoute
     }
+    '/_authenticated/monitoring/nodes/$nodeId': {
+      id: '/_authenticated/monitoring/nodes/$nodeId'
+      path: '/monitoring/nodes/$nodeId'
+      fullPath: '/monitoring/nodes/$nodeId'
+      preLoaderRoute: typeof AuthenticatedMonitoringNodesNodeIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -759,6 +858,7 @@ const AuthenticatedTasksTaskIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedRulesRoute: typeof AuthenticatedRulesRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAgentsAgentIdRoute: typeof AuthenticatedAgentsAgentIdRoute
   AuthenticatedApplicationsApplicationIdRoute: typeof AuthenticatedApplicationsApplicationIdRoute
@@ -768,6 +868,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedExecutionsExecutionIdRoute: typeof AuthenticatedExecutionsExecutionIdRoute
   AuthenticatedGroupsGroupIdRoute: typeof AuthenticatedGroupsGroupIdRoute
   AuthenticatedGroupsNewRoute: typeof AuthenticatedGroupsNewRoute
+  AuthenticatedMonitoringAlertsRoute: typeof AuthenticatedMonitoringAlertsRoute
+  AuthenticatedMonitoringServicesRoute: typeof AuthenticatedMonitoringServicesRoute
   AuthenticatedNodesNodeIdRoute: typeof AuthenticatedNodesNodeIdRoute
   AuthenticatedSchedulesScheduleIdRoute: typeof AuthenticatedSchedulesScheduleIdRoute
   AuthenticatedSchedulesNewRoute: typeof AuthenticatedSchedulesNewRoute
@@ -783,6 +885,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAuditIndexRoute: typeof AuthenticatedAuditIndexRoute
   AuthenticatedExecutionsIndexRoute: typeof AuthenticatedExecutionsIndexRoute
   AuthenticatedGroupsIndexRoute: typeof AuthenticatedGroupsIndexRoute
+  AuthenticatedMonitoringIndexRoute: typeof AuthenticatedMonitoringIndexRoute
   AuthenticatedNodesIndexRoute: typeof AuthenticatedNodesIndexRoute
   AuthenticatedSchedulesIndexRoute: typeof AuthenticatedSchedulesIndexRoute
   AuthenticatedScriptsIndexRoute: typeof AuthenticatedScriptsIndexRoute
@@ -790,9 +893,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedTransfersIndexRoute: typeof AuthenticatedTransfersIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
+  AuthenticatedMonitoringNodesNodeIdRoute: typeof AuthenticatedMonitoringNodesNodeIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedRulesRoute: AuthenticatedRulesRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAgentsAgentIdRoute: AuthenticatedAgentsAgentIdRoute,
   AuthenticatedApplicationsApplicationIdRoute:
@@ -804,6 +909,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedExecutionsExecutionIdRoute,
   AuthenticatedGroupsGroupIdRoute: AuthenticatedGroupsGroupIdRoute,
   AuthenticatedGroupsNewRoute: AuthenticatedGroupsNewRoute,
+  AuthenticatedMonitoringAlertsRoute: AuthenticatedMonitoringAlertsRoute,
+  AuthenticatedMonitoringServicesRoute: AuthenticatedMonitoringServicesRoute,
   AuthenticatedNodesNodeIdRoute: AuthenticatedNodesNodeIdRoute,
   AuthenticatedSchedulesScheduleIdRoute: AuthenticatedSchedulesScheduleIdRoute,
   AuthenticatedSchedulesNewRoute: AuthenticatedSchedulesNewRoute,
@@ -819,6 +926,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAuditIndexRoute: AuthenticatedAuditIndexRoute,
   AuthenticatedExecutionsIndexRoute: AuthenticatedExecutionsIndexRoute,
   AuthenticatedGroupsIndexRoute: AuthenticatedGroupsIndexRoute,
+  AuthenticatedMonitoringIndexRoute: AuthenticatedMonitoringIndexRoute,
   AuthenticatedNodesIndexRoute: AuthenticatedNodesIndexRoute,
   AuthenticatedSchedulesIndexRoute: AuthenticatedSchedulesIndexRoute,
   AuthenticatedScriptsIndexRoute: AuthenticatedScriptsIndexRoute,
@@ -826,6 +934,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedTransfersIndexRoute: AuthenticatedTransfersIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
+  AuthenticatedMonitoringNodesNodeIdRoute:
+    AuthenticatedMonitoringNodesNodeIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

@@ -88,7 +88,7 @@ export interface PageResult<T> {
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>(path),
+  get: <T>(path: string, options?: RequestInit) => request<T>(path, options),
   /**
    * GET 列表接口并读取 X-Total-Count 响应头。
    * 后端未提供该响应头（如旧版本）时回退为 items.length。
@@ -130,6 +130,8 @@ export interface Node {
   id: string
   agent_id: string
   hostname: string
+  /** 用户可编辑的显示名；空值由前端 helper 回退 hostname。 */
+  display_name?: string
   ip: string
   os: string
   arch: string
@@ -145,6 +147,26 @@ export interface Node {
   last_seen: string
   first_seen: string
   inventory?: Inventory
+  /** Hub 主动拨号地址，规范化为 host:port；由系统自动选择连接方向。 */
+  endpoint?: string
+  /** 当前会话方向；离线时为 offline。 */
+  connection_mode?: 'outbound' | 'inbound' | 'offline'
+  /** 最近一次成功会话方向；空表示从未成功连接。 */
+  last_connection_mode?: string
+  /** endpoint 已变更但尚未重新签发 bundle。 */
+  inbound_bundle_stale?: boolean
+  endpoint_updated_at?: string
+  endpoint_updated_by?: string
+  /** 入站配置与证书诊断（只读，不包含令牌/私钥）。 */
+  inbound?: {
+    configured: boolean
+    capable: boolean
+    data_plane: boolean
+    cert_fingerprint: string
+    cert_not_after: string
+    last_handshake_at: string
+    last_error: string
+  }
 }
 
 /** 批量升级的逐节点结果（POST /nodes/upgrade） */
@@ -163,12 +185,33 @@ export interface NodeUpgradeResult {
 export interface NodeEnrollment {
   node_id?: string
   agent_id?: string
+  /** 规范化后的 Hub 拨号地址（host:port，默认端口 18444）。 */
+  endpoint?: string
+  /** 入站 bundle 是否可用；后端 bundle 接口未启用时为 false。 */
+  inbound_bundle_available?: boolean
   gateway_url: string
   gateway_base_url: string
   agent_image: string
   native: string
   docker_run: string
   docker_compose: string
+}
+
+export interface NodeConnectionTestStage {
+  name: string
+  ok: boolean
+  code?: string
+  error?: string
+  duration_ms?: number
+}
+
+export interface NodeConnectionTestResult {
+  node_id: string
+  endpoint: string
+  connected: boolean
+  origin?: string
+  test_mode: boolean
+  stages: NodeConnectionTestStage[]
 }
 
 export interface FileTransferTarget {
@@ -196,6 +239,7 @@ export interface FileTransfer {
 }
 
 export interface Inventory {
+  hostname?: string
   os: string
   os_version: string
   kernel: string
@@ -210,6 +254,7 @@ export interface Inventory {
     free_kb: number
   }[]
   network: { interface: string; addresses: string[]; mac: string }[]
+  block_devices?: { name: string; kind: 'disk' | 'partition' | 'unknown' }[]
 }
 
 export interface Group {

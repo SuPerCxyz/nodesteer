@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/SuPerCxyz/nodesteer/internal/models"
 	"github.com/SuPerCxyz/nodesteer/internal/protocol"
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
@@ -67,28 +68,79 @@ func newAgentHTTPClient(transport http.RoundTripper) *http.Client {
 // defaultAgentHTTPClient 未配置 TLS CA 时 HTTPClient() 返回的兜底客户端。
 var defaultAgentHTTPClient = newAgentHTTPClient(nil)
 
-// Manager Agent 连接管理器
+// Manager Agent 连接管理器：同时管理出站 WebSocket 与可选的入站 TLS listener。
 type Manager struct {
-	url       string
-	token     string
-	agentID   string
-	handler   Handler
-	logger    *slog.Logger
-	conn      *websocket.Conn
-	mu        sync.Mutex
-	connected bool
-	// handshake 协议级握手完成标志：仅在收到 accepted 的 HELLO_ACK 后为 true，
-	// 建立传输连接/断开时复位。transport 层 connected 早于 HELLO 往返，
-	// 不能作为「Hub 已接受本 Agent」的依据（缺陷 OBS-20261016-G23-RECONNECT-WINDOW）。
-	handshake  bool
+	url        string
+	token      string
+	agentID    string
+	nodeID     string
+	handler    Handler
+	logger     *slog.Logger
+	mu         sync.Mutex
+	outbound   *hubSession
+	inbound    *hubSession
 	credential string
 	httpClient *http.Client
-	sendCh     chan protocol.Envelope
 	stop       chan struct{}
+	stopOnce   sync.Once
+	// stateWake 唤醒出站循环重新评估自动模式门禁/退避。
+	stateWake chan struct{}
+	// inboundListener 配置了 bundle 时非 nil；未配置时不监听任何端口。
+	inboundListener *InboundListener
+	// dataPlaneHandler /agent-data/v1/* 业务处理器（Agent 注入）。
+	dataPlaneHandler http.Handler
+	// helloFn 在 Run 时注入，入站握手复用同一 HELLO 载荷构造。
+	helloFn func() *protocol.HelloPayload
 	// logState 共享日志节奏状态机（与 agent 侧 hello rejected/accepted 同一实例）
 	logState *ConnectionLogState
 	// delayFn 可注入重连退避（测试加速）；nil 用默认 2s+0~2s jitter
 	delayFn func() time.Duration
+}
+
+// hubSession 单条已建立的 Hub 控制连接（出站或被 Hub 拨号的入站）。
+type hubSession struct {
+	conn   *websocket.Conn
+	origin string
+	sendCh chan protocol.Envelope
+	done   chan struct{}
+	once   sync.Once
+	// accepted 表示收到 accepted 的 HELLO_ACK；由 Manager.mu 保护。
+	accepted  bool
+	sessionID string
+	nodeID    string
+}
+
+func newHubSession(conn *websocket.Conn, origin string) *hubSession {
+	return &hubSession{
+		conn: conn, origin: origin,
+		sendCh: make(chan protocol.Envelope, 128),
+		done:   make(chan struct{}),
+	}
+}
+
+func (s *hubSession) send(env protocol.Envelope) bool {
+	select {
+	case <-s.done:
+		return false
+	default:
+	}
+	select {
+	case s.sendCh <- env:
+		return true
+	case <-s.done:
+		return false
+	}
+}
+
+func (s *hubSession) sendSync(ctx context.Context, env protocol.Envelope) error {
+	return wsjson.Write(ctx, s.conn, env)
+}
+
+func (s *hubSession) close() {
+	s.once.Do(func() {
+		close(s.done)
+		_ = s.conn.Close(websocket.StatusNormalClosure, "close")
+	})
 }
 
 // SetTLSCA 使用指定 CA 验证 wss:// Hub 证书。
@@ -123,6 +175,13 @@ func (m *Manager) SetAgentID(id string) {
 	m.mu.Unlock()
 }
 
+// SetNodeID 设置已确认的 Node ID，用于入站 HUB_HELLO 身份校验。
+func (m *Manager) SetNodeID(id string) {
+	m.mu.Lock()
+	m.nodeID = id
+	m.mu.Unlock()
+}
+
 // SetCredential 设置 Hub 返回的稳定凭证。
 func (m *Manager) SetCredential(credential string) {
 	m.mu.Lock()
@@ -147,39 +206,45 @@ func New(url, token, agentID string, handler Handler, logger *slog.Logger, logSt
 	if logState == nil {
 		logState = NewConnectionLogState()
 	}
+	if logger == nil {
+		logger = slog.Default()
+	}
 	return &Manager{
 		url: url, token: token, agentID: agentID,
 		handler: handler, logger: logger,
-		sendCh:   make(chan protocol.Envelope, 128),
-		stop:     make(chan struct{}),
-		logState: logState,
+		stop:      make(chan struct{}),
+		stateWake: make(chan struct{}, 1),
+		logState:  logState,
 	}
 }
 
-// IsConnected 传输层是否已连接（Dial 成功即为 true，早于 HELLO 往返）。
+// IsConnected 是否至少有一条传输连接（Dial/TLS 成功即 true，早于 HELLO 往返）。
 func (m *Manager) IsConnected() bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return m.connected
+	return m.outbound != nil || m.inbound != nil
 }
 
-// HandshakeComplete Hub 是否已接受本次连接（HELLO_ACK accepted）。
-// 这是唯一可作「Hub 在线可用」依据的标志：传输层 connected 早于 HELLO 发送，
-// 在其上放行 hub_online_required 调度会落在重连窗口内。
+// HandshakeComplete 是否至少有一条连接被 Hub 接受（HELLO_ACK accepted）。
+// 这是唯一可作「Hub 在线可用」依据的标志：传输层连接早于 HELLO 发送。
 func (m *Manager) HandshakeComplete() bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return m.handshake
+	return m.acceptedLocked(m.outbound) || m.acceptedLocked(m.inbound)
 }
 
-// markHandshake 由 dispatch 在收到 HELLO_ACK 时调用（仅 accepted 置真）。
-func (m *Manager) markHandshake(accepted bool) {
-	if !accepted {
-		return
-	}
+func (m *Manager) acceptedLocked(session *hubSession) bool {
+	return session != nil && session.accepted
+}
+
+// ConnectionOrigin 返回当前优先会话的建立方向；无会话时返回空。
+func (m *Manager) ConnectionOrigin() string {
 	m.mu.Lock()
-	m.handshake = true
-	m.mu.Unlock()
+	defer m.mu.Unlock()
+	if session := m.preferredSessionLocked(); session != nil {
+		return session.origin
+	}
+	return ""
 }
 
 // helloAckAccepted 解析 HELLO_ACK 是否 accepted；解析失败按未接受处理（Fail Closed）。
@@ -191,33 +256,55 @@ func helloAckAccepted(payload []byte) bool {
 	return p.Accepted
 }
 
-// Stop 停止
+// Stop 停止出站循环与入站 listener，并关闭所有会话。
 func (m *Manager) Stop() {
-	close(m.stop)
-	m.mu.Lock()
-	if m.conn != nil {
-		m.conn.Close(websocket.StatusNormalClosure, "stopping")
+	m.stopOnce.Do(func() { close(m.stop) })
+	if m.inboundListener != nil {
+		m.inboundListener.Close()
 	}
+	m.mu.Lock()
+	out, in := m.outbound, m.inbound
 	m.mu.Unlock()
+	if out != nil {
+		out.close()
+	}
+	if in != nil && in != out {
+		in.close()
+	}
 }
 
-// Send 发送消息（已连接时）
+// Send 优先走已认证的出站会话，其次入站会话；未握手时优先出站连接。
 func (m *Manager) Send(env protocol.Envelope) bool {
 	m.mu.Lock()
-	defer m.mu.Unlock()
-	if !m.connected {
+	session := m.preferredSessionLocked()
+	m.mu.Unlock()
+	if session == nil {
 		return false
 	}
-	select {
-	case m.sendCh <- env:
-		return true
-	default:
-		return false
-	}
+	return session.send(env)
 }
 
-// Run 启动连接循环（阻塞）
+func (m *Manager) preferredSessionLocked() *hubSession {
+	if m.acceptedLocked(m.outbound) {
+		return m.outbound
+	}
+	if m.acceptedLocked(m.inbound) {
+		return m.inbound
+	}
+	if m.outbound != nil {
+		return m.outbound
+	}
+	return m.inbound
+}
+
+// Run 启动入站 listener（如已配置）与出站连接循环（阻塞）。
 func (m *Manager) Run(ctx context.Context, helloFn func() *protocol.HelloPayload) {
+	m.mu.Lock()
+	m.helloFn = helloFn
+	m.mu.Unlock()
+	if m.inboundListener != nil {
+		go m.inboundListener.Serve(ctx)
+	}
 	for {
 		select {
 		case <-ctx.Done():
@@ -226,29 +313,61 @@ func (m *Manager) Run(ctx context.Context, helloFn func() *protocol.HelloPayload
 			return
 		default:
 		}
+		if !m.waitOutboundAllowed(ctx) {
+			return
+		}
 		if err := m.connectAndServe(ctx, helloFn); err != nil {
-			// 正常停机（ctx 取消 / Stop 触发）不是连接失败：不打失败日志、不进入失败态。
 			if !m.shuttingDown(ctx) &&
 				!errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
 				m.logFailure(err)
 			}
 		}
-		m.mu.Lock()
-		m.connected = false
-		m.handshake = false
-		if m.conn != nil {
-			m.conn.Close(websocket.StatusAbnormalClosure, "reconnect")
-			m.conn = nil
+		if !m.waitReconnect(ctx) {
+			return
 		}
+	}
+}
+
+// waitOutboundAllowed 入站已认证会话存活期间暂停出站拨号，避免双连接抖动。
+func (m *Manager) waitOutboundAllowed(ctx context.Context) bool {
+	for {
+		m.mu.Lock()
+		paused := m.acceptedLocked(m.inbound)
 		m.mu.Unlock()
-		// 退避重连
+		if !paused {
+			return true
+		}
 		select {
 		case <-ctx.Done():
-			return
+			return false
 		case <-m.stop:
-			return
-		case <-time.After(m.reconnectDelay()):
+			return false
+		case <-m.stateWake:
 		}
+	}
+}
+
+// waitReconnect 出站断开后的退避；入站状态变化会提前唤醒重新评估。
+func (m *Manager) waitReconnect(ctx context.Context) bool {
+	timer := time.NewTimer(m.reconnectDelay())
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-m.stop:
+		return false
+	case <-timer.C:
+		return true
+	case <-m.stateWake:
+		return true
+	}
+}
+
+// signalState 非阻塞唤醒出站循环。
+func (m *Manager) signalState() {
+	select {
+	case m.stateWake <- struct{}{}:
+	default:
 	}
 }
 
@@ -293,6 +412,9 @@ func defaultReconnectDelay() time.Duration {
 }
 
 func (m *Manager) connectAndServe(ctx context.Context, helloFn func() *protocol.HelloPayload) error {
+	if !m.waitOutboundAllowed(ctx) {
+		return ctx.Err()
+	}
 	m.mu.Lock()
 	client := m.httpClient
 	m.mu.Unlock()
@@ -305,13 +427,14 @@ func (m *Manager) connectAndServe(ctx context.Context, helloFn func() *protocol.
 	}
 	// 与网关读取限制保持一致，避免接收大消息时被默认限制断开
 	conn.SetReadLimit(8 << 20)
+	session := newHubSession(conn, models.ConnectionModeOutbound)
 	m.mu.Lock()
-	m.conn = conn
-	m.connected = true
-	// 新连接一律从未握手态开始：HELLO 往返完成并被 accepted 前，
-	// 不得作为 Hub 在线依据。
-	m.handshake = false
+	m.outbound = session
 	m.mu.Unlock()
+	defer func() {
+		session.close()
+		m.removeSession(session)
+	}()
 
 	// 发送 HELLO
 	hello := helloFn()
@@ -324,16 +447,19 @@ func (m *Manager) connectAndServe(ctx context.Context, helloFn func() *protocol.
 	} else if m.token != "" {
 		hello.RegistrationKey = m.token
 	}
-	if err := m.sendRaw(ctx, protocol.NewEnvelope(protocol.MsgHello, "", hello)); err != nil {
+	if err := session.sendSync(ctx, protocol.NewEnvelope(protocol.MsgHello, "", hello)); err != nil {
 		return err
 	}
+	return m.serveSession(ctx, session)
+}
 
-	// 写循环
+// serveSession 写/读循环与消息分发；出站和入站会话共用。
+func (m *Manager) serveSession(ctx context.Context, session *hubSession) error {
 	writeCtx, writeCancel := context.WithCancel(ctx)
 	defer writeCancel()
-	go m.writeLoop(writeCtx)
+	go m.writeLoop(writeCtx, session)
+	defer session.close()
 
-	// 读循环
 	for {
 		select {
 		case <-ctx.Done():
@@ -342,7 +468,7 @@ func (m *Manager) connectAndServe(ctx context.Context, helloFn func() *protocol.
 			return nil
 		default:
 		}
-		_, data, err := conn.Read(ctx)
+		_, data, err := session.conn.Read(ctx)
 		if err != nil {
 			return err
 		}
@@ -350,41 +476,77 @@ func (m *Manager) connectAndServe(ctx context.Context, helloFn func() *protocol.
 		if err := json.Unmarshal(data, &env); err != nil {
 			continue
 		}
-		m.dispatch(env)
+		m.dispatch(session, env)
 	}
 }
 
-func (m *Manager) writeLoop(ctx context.Context) {
+func (m *Manager) writeLoop(ctx context.Context, session *hubSession) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case env := <-m.sendCh:
-			if err := m.sendRaw(ctx, env); err != nil {
+		case <-session.done:
+			return
+		case env := <-session.sendCh:
+			if err := session.sendSync(ctx, env); err != nil {
+				session.close()
 				return
 			}
 		}
 	}
 }
 
-func (m *Manager) sendRaw(ctx context.Context, env protocol.Envelope) error {
-	conn := m.currentConn()
-	if conn == nil {
-		return nil
-	}
-	return wsjson.Write(ctx, conn, env)
-}
-
-func (m *Manager) currentConn() *websocket.Conn {
+// removeSession 清理会话并唤醒出站循环重新评估自动模式。
+func (m *Manager) removeSession(session *hubSession) {
+	inboundChanged := false
 	m.mu.Lock()
-	defer m.mu.Unlock()
-	return m.conn
+	if m.outbound == session {
+		m.outbound = nil
+	}
+	if m.inbound == session {
+		m.inbound = nil
+		inboundChanged = true
+	}
+	m.mu.Unlock()
+	session.close()
+	if inboundChanged {
+		m.signalState()
+	}
 }
 
-func (m *Manager) dispatch(env protocol.Envelope) {
-	// 握手标志先于业务 handler 处理：即使 handler 缺失也必须正确反映协议状态。
+// acceptSession 标记 HELLO_ACK accepted。出站优先：出站接受后关闭入站会话；
+// 入站接受在已有出站已接受会话时拒绝（防御性，正常由 Hub 所有权策略拦截）。
+func (m *Manager) acceptSession(session *hubSession) bool {
+	var closeSession *hubSession
+	notify := false
+	m.mu.Lock()
+	if session.origin == models.ConnectionModeInbound && m.acceptedLocked(m.outbound) {
+		m.mu.Unlock()
+		session.close()
+		return false
+	}
+	session.accepted = true
+	if session.origin == models.ConnectionModeOutbound && m.inbound != nil && m.inbound != session {
+		closeSession = m.inbound
+	}
+	if session.origin == models.ConnectionModeInbound {
+		notify = true
+	}
+	m.mu.Unlock()
+	if closeSession != nil {
+		closeSession.close()
+	}
+	if notify {
+		m.signalState()
+	}
+	return true
+}
+
+func (m *Manager) dispatch(session *hubSession, env protocol.Envelope) {
 	if env.Type == protocol.MsgHelloAck {
-		m.markHandshake(helloAckAccepted(env.Payload))
+		if helloAckAccepted(env.Payload) {
+			m.acceptSession(session)
+		}
 	}
 	if m.handler == nil {
 		return
@@ -404,6 +566,13 @@ func (m *Manager) dispatch(env protocol.Envelope) {
 		m.handler.OnSyncAck(env)
 	case protocol.MsgRunExecution:
 		m.handler.OnRunExecution(env)
+	case protocol.MsgMonitorProbe:
+		if !m.HandshakeComplete() {
+			return
+		}
+		if handler, ok := m.handler.(interface{ OnMonitorProbe(protocol.Envelope) }); ok {
+			handler.OnMonitorProbe(env)
+		}
 	case protocol.MsgCancelExecution:
 		m.handler.OnCancelExecution(env)
 	case protocol.MsgArtifactPrefetch:

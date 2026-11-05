@@ -148,6 +148,15 @@ describe('formatApiError', () => {
     }
   })
 
+  it('入站数据面不可用错误映射为明确原因', () => {
+    expect(formatApiError('inbound_data_plane_unavailable', 409)).toContain(
+      '未声明入站数据面'
+    )
+    expect(formatApiError('inbound_stage_unavailable', 409)).toContain(
+      '不支持通过入站连接'
+    )
+  })
+
   it('重名与重复参数映射为本地化文案', () => {
     expect(formatApiError('script name already exists: demo')).toContain('demo')
     expect(formatApiError('task name already exists: demo')).toContain('demo')

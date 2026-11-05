@@ -126,6 +126,10 @@ type FileTransferManager struct {
 	attemptMu        sync.Mutex
 	uploadAttempts   map[string]uint64
 	deliveryAttempts map[string]uint64
+	// 入站数据面在飞请求取消登记（transferID / transferID+nodeID）。
+	dataPlaneMu   sync.Mutex
+	pullCancels   map[string]context.CancelFunc
+	targetCancels map[string]context.CancelFunc
 }
 
 // NewFileTransferManager 创建文件传输管理器。
@@ -138,6 +142,7 @@ func NewFileTransferManager(st store.Store, storageDir, gatewayBaseURL string, s
 		store: st, storageDir: dir, sessions: sessions, nodes: nodes,
 		logger: logger, gatewayBaseURL: normalizeHTTPBaseURL(gatewayBaseURL), maxBytes: defaultMaxFileTransferBytes,
 		uploadAttempts: map[string]uint64{}, deliveryAttempts: map[string]uint64{},
+		pullCancels: map[string]context.CancelFunc{}, targetCancels: map[string]context.CancelFunc{},
 	}, nil
 }
 
@@ -371,6 +376,11 @@ func (m *FileTransferManager) Create(ctx context.Context, sourceNodeID, sourcePa
 	if _, err := m.nodes.GetNode(ctx, sourceNodeID); err != nil {
 		return nil, fmt.Errorf("source node not found")
 	}
+	if conn, ok := m.sessions.Get(sourceNodeID); ok {
+		if _, err := RequireInboundDataPlane(conn); err != nil {
+			return nil, err
+		}
+	}
 	if len(targets) == 0 {
 		return nil, errors.New("at least one target is required")
 	}
@@ -390,6 +400,11 @@ func (m *FileTransferManager) Create(ctx context.Context, sourceNodeID, sourcePa
 		}
 		if _, err := m.nodes.GetNode(ctx, req.NodeID); err != nil {
 			return nil, fmt.Errorf("target node %s not found", req.NodeID)
+		}
+		if conn, ok := m.sessions.Get(req.NodeID); ok {
+			if _, err := RequireInboundDataPlane(conn); err != nil {
+				return nil, err
+			}
 		}
 		seen[req.NodeID] = true
 		t.Targets = append(t.Targets, &models.FileTransferTarget{
@@ -412,6 +427,175 @@ func (m *FileTransferManager) Get(ctx context.Context, id string) (*models.FileT
 // List 获取传输列表。
 func (m *FileTransferManager) List(ctx context.Context) ([]*models.FileTransfer, error) {
 	return m.store.ListFileTransfers(ctx)
+}
+
+// dispatchSourceInbound 下发 inbound_pull 指令并启动 Hub 拉取循环。
+func (m *FileTransferManager) dispatchSourceInbound(ctx context.Context, t *models.FileTransfer, conn AgentConn) {
+	if _, err := RequireInboundDataPlane(conn); err != nil {
+		_ = m.failTransfer(ctx, t, protocol.ErrorCodeInboundDataPlaneUnavailable)
+		return
+	}
+	offset := m.partSize(t.ID)
+	t.Status = models.FileTransferUploading
+	t.Error = ""
+	if err := m.store.UpdateFileTransfer(ctx, t); err != nil {
+		return
+	}
+	attempt := m.nextUploadAttempt(t.ID)
+	if err := conn.Send(protocol.NewEnvelope(protocol.MsgFileUploadRequest, t.ID, protocol.FileUploadRequestPayload{
+		TransferID: t.ID, SourcePath: t.SourcePath, Offset: offset, MaxBytes: m.maxBytes,
+		Attempt: attempt, Transport: protocol.TransportInboundPull,
+	})); err != nil {
+		t.Status = models.FileTransferPending
+		t.Error = err.Error()
+		_ = m.store.UpdateFileTransfer(ctx, t)
+		return
+	}
+	m.startInboundPull(t.ID, attempt)
+}
+
+func (m *FileTransferManager) startInboundPull(id string, attempt uint64) {
+	ctx, cancel := context.WithCancel(context.Background())
+	m.dataPlaneMu.Lock()
+	if old := m.pullCancels[id]; old != nil {
+		old()
+	}
+	m.pullCancels[id] = cancel
+	m.dataPlaneMu.Unlock()
+	go func() {
+		defer func() {
+			cancel()
+			m.dataPlaneMu.Lock()
+			delete(m.pullCancels, id)
+			m.dataPlaneMu.Unlock()
+		}()
+		m.pullInboundSource(ctx, id, attempt)
+	}()
+}
+
+func (m *FileTransferManager) pullInboundSource(ctx context.Context, id string, attempt uint64) {
+	const maxAttempts = 8
+	var lastErr error
+	for i := 0; i < maxAttempts; i++ {
+		if ctx.Err() != nil {
+			return
+		}
+		if m.currentUploadAttempt(id) != attempt {
+			return
+		}
+		t, err := m.store.GetFileTransfer(ctx, id)
+		if err != nil || isTerminalTransferStatus(t.Status) || t.SHA256 != "" {
+			return
+		}
+		conn, ok := m.sessions.Get(t.SourceNodeID)
+		if !ok {
+			return
+		}
+		dp, err := RequireInboundDataPlane(conn)
+		if err != nil {
+			_ = m.failTransfer(ctx, t, protocol.ErrorCodeInboundDataPlaneUnavailable)
+			return
+		}
+		offset := m.partSize(id)
+		resp, err := dp.DataPlaneRequest(ctx, http.MethodGet,
+			fmt.Sprintf("/agent-data/v1/transfers/%s/source?offset=%d", url.PathEscape(id), offset), nil, 0)
+		if err != nil {
+			lastErr = err
+			if !sleepRetry(ctx, i) {
+				return
+			}
+			continue
+		}
+		if resp.StatusCode == http.StatusConflict {
+			var conflict struct {
+				Offset int64 `json:"offset"`
+			}
+			_ = json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&conflict)
+			resp.Body.Close()
+			current := m.partSize(id)
+			if conflict.Offset >= 0 && conflict.Offset <= current {
+				truncateFile(m.partPath(id), conflict.Offset)
+				continue
+			}
+			lastErr = errors.New("source pull offset conflict")
+			break
+		}
+		if resp.StatusCode != http.StatusOK {
+			body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+			resp.Body.Close()
+			lastErr = fmt.Errorf("source pull status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+			if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+				break
+			}
+			if !sleepRetry(ctx, i) {
+				return
+			}
+			continue
+		}
+		total, err := strconv.ParseInt(resp.Header.Get("X-NodeSteer-File-Size"), 10, 64)
+		if err != nil || total < 0 || total > m.maxBytes {
+			resp.Body.Close()
+			lastErr = errors.New("invalid source file size")
+			break
+		}
+		if offset > total {
+			resp.Body.Close()
+			lastErr = errors.New("source pull offset exceeds file size")
+			break
+		}
+		f, err := os.OpenFile(m.partPath(id), os.O_CREATE|os.O_WRONLY, 0o600)
+		if err != nil {
+			resp.Body.Close()
+			lastErr = err
+			break
+		}
+		if _, err := f.Seek(offset, io.SeekStart); err != nil {
+			f.Close()
+			resp.Body.Close()
+			lastErr = err
+			break
+		}
+		n, copyErr := io.Copy(f, resp.Body)
+		syncErr := f.Sync()
+		closeErr := f.Close()
+		resp.Body.Close()
+		if copyErr != nil {
+			lastErr = copyErr
+			if !sleepRetry(ctx, i) {
+				return
+			}
+			continue
+		}
+		if syncErr != nil || closeErr != nil {
+			lastErr = errors.New("failed to persist source pull")
+			continue
+		}
+		written := offset + n
+		if written < total {
+			if !sleepRetry(ctx, i) {
+				return
+			}
+			continue
+		}
+		if written > total {
+			lastErr = errors.New("source pull exceeded file size")
+			break
+		}
+		if err := m.completeUpload(ctx, t, total); err != nil {
+			if errors.Is(err, errTransferTerminal) {
+				return
+			}
+			_ = m.failTransfer(ctx, t, sourceUploadErrorMessage(err.Error()))
+			return
+		}
+		m.logger.Info("inbound source pull completed", "transfer", id, "size", total)
+		return
+	}
+	if lastErr != nil {
+		if t, err := m.store.GetFileTransfer(ctx, id); err == nil && !isTerminalTransferStatus(t.Status) && t.SHA256 == "" {
+			_ = m.failTransfer(ctx, t, "inbound source pull failed: "+lastErr.Error())
+		}
+	}
 }
 
 // dispatchSource 下发源上传指令。
@@ -440,6 +624,10 @@ func (m *FileTransferManager) dispatchSource(ctx context.Context, t *models.File
 	}
 	conn, ok := m.sessions.Get(t.SourceNodeID)
 	if !ok {
+		return
+	}
+	if SessionIsInbound(conn) {
+		m.dispatchSourceInbound(ctx, t, conn)
 		return
 	}
 	offset := m.partSize(t.ID)
@@ -517,6 +705,10 @@ func (m *FileTransferManager) dispatchTarget(ctx context.Context, t *models.File
 	if !ok {
 		return
 	}
+	if SessionIsInbound(conn) {
+		m.dispatchTargetInbound(ctx, t, target, conn)
+		return
+	}
 	target.Status = models.FileTargetDelivering
 	target.Error = ""
 	if err := m.store.UpdateFileTransferTarget(ctx, target); err != nil {
@@ -539,6 +731,228 @@ func (m *FileTransferManager) dispatchTarget(ctx context.Context, t *models.File
 		target.Status = models.FileTargetPending
 		target.Error = err.Error()
 		_ = m.store.UpdateFileTransferTarget(ctx, target)
+	}
+}
+
+func (m *FileTransferManager) dispatchTargetInbound(ctx context.Context, t *models.FileTransfer, target *models.FileTransferTarget, conn AgentConn) {
+	if _, err := RequireInboundDataPlane(conn); err != nil {
+		target.Status = models.FileTargetFailed
+		target.Error = protocol.ErrorCodeInboundDataPlaneUnavailable
+		_ = m.store.UpdateFileTransferTarget(ctx, target)
+		_ = m.updateTransferAggregate(ctx, t)
+		return
+	}
+	target.Status = models.FileTargetDelivering
+	target.Error = ""
+	if err := m.store.UpdateFileTransferTarget(ctx, target); err != nil {
+		return
+	}
+	mode := target.Mode
+	if mode == 0 {
+		mode = t.SourceMode
+	}
+	if mode == 0 {
+		mode = 0o644
+	}
+	attempt := m.nextDeliveryAttempt(deliveryAttemptKey(t.ID, target.NodeID))
+	if err := conn.Send(protocol.NewEnvelope(protocol.MsgFileDeliveryRequest, t.ID, protocol.FileDeliveryRequestPayload{
+		TransferID: t.ID, SHA256: t.SHA256, Size: t.Size, DestinationPath: target.DestinationPath,
+		Mode: mode, Attempt: attempt, Transport: protocol.TransportInboundPush,
+	})); err != nil {
+		target.Status = models.FileTargetPending
+		target.Error = err.Error()
+		_ = m.store.UpdateFileTransferTarget(ctx, target)
+		return
+	}
+	m.startInboundTargetPush(t.ID, target.NodeID, attempt)
+}
+
+func (m *FileTransferManager) startInboundTargetPush(transferID, nodeID string, attempt uint64) {
+	key := deliveryAttemptKey(transferID, nodeID)
+	ctx, cancel := context.WithCancel(context.Background())
+	m.dataPlaneMu.Lock()
+	if old := m.targetCancels[key]; old != nil {
+		old()
+	}
+	m.targetCancels[key] = cancel
+	m.dataPlaneMu.Unlock()
+	go func() {
+		defer func() {
+			cancel()
+			m.dataPlaneMu.Lock()
+			delete(m.targetCancels, key)
+			m.dataPlaneMu.Unlock()
+		}()
+		m.pushInboundTarget(ctx, transferID, nodeID, attempt)
+	}()
+}
+
+func (m *FileTransferManager) pushInboundTarget(ctx context.Context, transferID, nodeID string, attempt uint64) {
+	const maxAttempts = 8
+	var lastErr error
+	offset := int64(0)
+	for i := 0; i < maxAttempts; i++ {
+		if ctx.Err() != nil {
+			return
+		}
+		if m.currentDeliveryAttempt(deliveryAttemptKey(transferID, nodeID)) != attempt {
+			return
+		}
+		t, err := m.store.GetFileTransfer(ctx, transferID)
+		if err != nil || isTerminalTransferStatus(t.Status) || t.SHA256 == "" {
+			return
+		}
+		var target *models.FileTransferTarget
+		for _, item := range t.Targets {
+			if item.NodeID == nodeID {
+				target = item
+				break
+			}
+		}
+		if target == nil || isTerminalTargetStatus(target.Status) {
+			return
+		}
+		conn, ok := m.sessions.Get(nodeID)
+		if !ok {
+			return
+		}
+		dp, err := RequireInboundDataPlane(conn)
+		if err != nil {
+			m.failInboundTarget(ctx, t, target, protocol.ErrorCodeInboundDataPlaneUnavailable)
+			return
+		}
+		if offset < 0 || offset > t.Size {
+			m.failInboundTarget(ctx, t, target, "invalid target offset")
+			return
+		}
+		blob, err := os.Open(m.blobPath(transferID))
+		if err != nil {
+			m.failInboundTarget(ctx, t, target, "staged file not found")
+			return
+		}
+		if offset > 0 {
+			if _, err := blob.Seek(offset, io.SeekStart); err != nil {
+				blob.Close()
+				m.failInboundTarget(ctx, t, target, err.Error())
+				return
+			}
+		}
+		resp, err := dp.DataPlaneRequest(ctx, http.MethodPut,
+			fmt.Sprintf("/agent-data/v1/transfers/%s/target?offset=%d", url.PathEscape(transferID), offset),
+			blob, t.Size-offset)
+		blob.Close()
+		if err != nil {
+			lastErr = err
+			if !sleepRetry(ctx, i) {
+				return
+			}
+			continue
+		}
+		if resp.StatusCode == http.StatusConflict {
+			var conflict struct {
+				Offset int64 `json:"offset"`
+			}
+			_ = json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&conflict)
+			resp.Body.Close()
+			if conflict.Offset >= 0 && conflict.Offset <= t.Size {
+				offset = conflict.Offset
+				continue
+			}
+			lastErr = errors.New("target push offset conflict")
+			continue
+		}
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			resp.Body.Close()
+			m.completeInboundTarget(ctx, t, target)
+			return
+		}
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		resp.Body.Close()
+		lastErr = fmt.Errorf("target push status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+		if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden ||
+			resp.StatusCode == http.StatusUnprocessableEntity || resp.StatusCode == http.StatusRequestEntityTooLarge {
+			break
+		}
+		if !sleepRetry(ctx, i) {
+			return
+		}
+	}
+	if lastErr != nil {
+		t, err := m.store.GetFileTransfer(ctx, transferID)
+		if err != nil {
+			return
+		}
+		for _, target := range t.Targets {
+			if target.NodeID == nodeID && !isTerminalTargetStatus(target.Status) {
+				m.failInboundTarget(ctx, t, target, "inbound target push failed: "+lastErr.Error())
+				return
+			}
+		}
+	}
+}
+
+func (m *FileTransferManager) completeInboundTarget(ctx context.Context, t *models.FileTransfer, target *models.FileTransferTarget) {
+	fresh, err := m.store.GetFileTransfer(ctx, t.ID)
+	if err != nil || isTerminalTransferStatus(fresh.Status) {
+		return
+	}
+	var current *models.FileTransferTarget
+	for _, item := range fresh.Targets {
+		if item.NodeID == target.NodeID {
+			current = item
+			break
+		}
+	}
+	if current == nil || isTerminalTargetStatus(current.Status) {
+		return
+	}
+	current.Status = models.FileTargetSuccess
+	current.Error = ""
+	if err := m.store.UpdateFileTransferTarget(ctx, current); err != nil {
+		return
+	}
+	_ = m.updateTransferAggregate(ctx, fresh)
+	m.logger.Info("inbound target push completed", "transfer", fresh.ID, "node", current.NodeID, "size", fresh.Size)
+}
+
+func (m *FileTransferManager) failInboundTarget(ctx context.Context, t *models.FileTransfer, target *models.FileTransferTarget, reason string) {
+	fresh, err := m.store.GetFileTransfer(ctx, t.ID)
+	if err != nil || isTerminalTransferStatus(fresh.Status) {
+		return
+	}
+	var current *models.FileTransferTarget
+	for _, item := range fresh.Targets {
+		if item.NodeID == target.NodeID {
+			current = item
+			break
+		}
+	}
+	if current == nil || isTerminalTargetStatus(current.Status) {
+		return
+	}
+	current.Status = models.FileTargetFailed
+	current.Error = reason
+	_ = m.store.UpdateFileTransferTarget(ctx, current)
+	_ = m.updateTransferAggregate(ctx, fresh)
+}
+
+func sleepRetry(ctx context.Context, attempt int) bool {
+	timer := time.NewTimer(time.Duration(attempt+1) * 400 * time.Millisecond)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-timer.C:
+		return true
+	}
+}
+
+func truncateFile(path string, size int64) {
+	if size < 0 {
+		return
+	}
+	if info, err := os.Stat(path); err == nil && info.Size() > size {
+		_ = os.Truncate(path, size)
 	}
 }
 
@@ -709,8 +1123,13 @@ func (m *FileTransferManager) markUploading(ctx context.Context, t *models.FileT
 }
 
 func (m *FileTransferManager) completeUpload(ctx context.Context, t *models.FileTransfer, total int64) error {
+	// 以库内最新状态为准，避免 Cancel 与拉取完成并发时复活终态。
+	if fresh, err := m.store.GetFileTransfer(ctx, t.ID); err != nil {
+		return err
+	} else {
+		t = fresh
+	}
 	// 终态冻结（纵深防御）：终态传输不得被续传完成复活为 DELIVERING。
-	// 校验必须先于任何落盘副作用（part→blob rename），避免为终态传输暂存文件。
 	if isTerminalTransferStatus(t.Status) {
 		m.logTerminalWriteRejected(t, "complete_upload")
 		return errTransferTerminal
@@ -803,6 +1222,12 @@ func (m *FileTransferManager) HandleUploadResult(ctx context.Context, nodeID str
 
 // failTransfer 将传输终结为 FAILED 并同步终结所有非终态目标，返回首个持久化错误。
 func (m *FileTransferManager) failTransfer(ctx context.Context, t *models.FileTransfer, message string) error {
+	// 以库内最新状态为准，避免并发 Cancel/完成被迟到失败改写。
+	if fresh, err := m.store.GetFileTransfer(ctx, t.ID); err != nil {
+		return err
+	} else {
+		t = fresh
+	}
 	// 终态冻结（纵深防御）：终态不可回退，迟到失败不得改写既有终态。
 	if isTerminalTransferStatus(t.Status) {
 		m.logTerminalWriteRejected(t, "fail_transfer")
@@ -1019,8 +1444,39 @@ func (m *FileTransferManager) Cancel(ctx context.Context, id string) (*models.Fi
 	if conn, ok := m.sessions.Get(t.SourceNodeID); ok {
 		_ = conn.Send(protocol.NewEnvelope(protocol.MsgFileTransferCancel, id, protocol.FileTransferCancelPayload{TransferID: id}))
 	}
+	m.cancelInboundTransfers(id)
 	m.cleanupFiles(id)
 	return m.store.GetFileTransfer(ctx, id)
+}
+
+func (m *FileTransferManager) cancelInboundTransfers(id string) {
+	m.dataPlaneMu.Lock()
+	defer m.dataPlaneMu.Unlock()
+	if cancel := m.pullCancels[id]; cancel != nil {
+		cancel()
+		delete(m.pullCancels, id)
+	}
+	prefix := id + "\x00"
+	for key, cancel := range m.targetCancels {
+		if strings.HasPrefix(key, prefix) {
+			cancel()
+			delete(m.targetCancels, key)
+		}
+	}
+}
+
+// Close 取消所有入站数据面在飞请求，供 Hub 停机使用。
+func (m *FileTransferManager) Close() {
+	m.dataPlaneMu.Lock()
+	for key, cancel := range m.pullCancels {
+		cancel()
+		delete(m.pullCancels, key)
+	}
+	for key, cancel := range m.targetCancels {
+		cancel()
+		delete(m.targetCancels, key)
+	}
+	m.dataPlaneMu.Unlock()
 }
 
 func (m *FileTransferManager) cleanupFiles(id string) {

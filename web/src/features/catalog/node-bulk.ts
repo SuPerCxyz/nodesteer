@@ -1,4 +1,5 @@
 import type { Node, NodeUpgradeResult } from '@/lib/api'
+import { inboundDataPlaneBlocked } from '@/features/shared/inbound-data-plane'
 
 /** native 部署形态；其余形态（docker_run / docker_compose 等）不支持 Agent 升级 */
 export const NATIVE_DEPLOYMENT_MODE = 'native'
@@ -8,6 +9,8 @@ export interface UpgradeTargets {
   nodeIds: string[]
   /** 被前端过滤掉、不进请求体的非 native 节点数（与后端 SKIPPED 双保险） */
   skippedDocker: number
+  /** 当前为入站会话但未声明数据面的节点数，升级会 409/BLOCKED。 */
+  blockedDataPlane: number
 }
 
 /**
@@ -15,15 +18,24 @@ export interface UpgradeTargets {
  * 勾选不限制形态（批量暂停也需要选 docker 节点），因此升级入口在此过滤。
  */
 export function splitUpgradeTargets(
-  nodes: Pick<Node, 'id' | 'deployment_mode'>[]
+  nodes: Array<
+    Pick<Node, 'id' | 'deployment_mode'> &
+      Partial<Pick<Node, 'connection_mode' | 'inbound'>>
+  >
 ): UpgradeTargets {
   const nodeIds: string[] = []
   let skippedDocker = 0
+  let blockedDataPlane = 0
   for (const node of nodes) {
-    if (node.deployment_mode === NATIVE_DEPLOYMENT_MODE) nodeIds.push(node.id)
-    else skippedDocker += 1
+    if (node.deployment_mode !== NATIVE_DEPLOYMENT_MODE) {
+      skippedDocker += 1
+    } else if (inboundDataPlaneBlocked(node as Node)) {
+      blockedDataPlane += 1
+    } else {
+      nodeIds.push(node.id)
+    }
   }
-  return { nodeIds, skippedDocker }
+  return { nodeIds, skippedDocker, blockedDataPlane }
 }
 
 export interface UpgradeSummary {

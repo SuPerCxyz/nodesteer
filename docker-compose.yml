@@ -25,6 +25,9 @@ services:
       NODESTEER_MAX_FILE_TRANSFER_BYTES: "${MAX_FILE_TRANSFER_BYTES:-10737418240}"
       NODESTEER_ADMIN_USERNAME: "${ADMIN_USERNAME:-admin}"
       NODESTEER_ADMIN_PASSWORD: "${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}"
+      # 仅隔离测试：允许空密码登录；默认不设置，生产禁用。
+      # 注意：上面的 ADMIN_PASSWORD:? 仍要求变量非空，空密码测试建议直接启动 Hub。
+      # NODESTEER_ALLOW_EMPTY_PASSWORD: "true"
       # OIDC SSO（可选，未设置 OIDC_ISSUER 时保持纯本地认证）
       NODESTEER_OIDC_ISSUER: "${OIDC_ISSUER:-}"
       NODESTEER_OIDC_CLIENT_ID: "${OIDC_CLIENT_ID:-}"
@@ -35,6 +38,26 @@ services:
       # 登录方式互斥选择器：true（默认）=本地密码登录，OIDC 完全失效；
       # false=SSO 唯一登录（必须配置 OIDC_ISSUER，密码登录一律 403）
       NODESTEER_OIDC_ALLOW_LOCAL_LOGIN: "${OIDC_ALLOW_LOCAL_LOGIN:-true}"
+      # 入站连接（可选，默认关闭）：Hub 主动拨号 Agent TCP 18444。
+      # 启用后需确保 Hub 可出站访问 Agent endpoint，并只对 Hub 出口放行该端口。
+      NODESTEER_INBOUND_ENABLED: "${INBOUND_ENABLED:-false}"
+      NODESTEER_INBOUND_ALLOWED_PORTS: "${INBOUND_ALLOWED_PORTS:-18444}"
+      # 未显式提供时在 /var/lib/nodesteer-hub/inbound 自动生成；CA 私钥需备份。
+      # NODESTEER_INBOUND_CA_FILE: /var/lib/nodesteer-hub/inbound/ca.pem
+      # NODESTEER_INBOUND_CA_KEY_FILE: /var/lib/nodesteer-hub/inbound/ca-key.pem
+      # NODESTEER_INBOUND_CLIENT_CERT_FILE: /var/lib/nodesteer-hub/inbound/client.pem
+      # NODESTEER_INBOUND_CLIENT_KEY_FILE: /var/lib/nodesteer-hub/inbound/client-key.pem
+      # NODESTEER_INBOUND_ALLOW_LOOPBACK: "false"
+      # NODESTEER_INBOUND_DENIED_CIDRS: ""
+      # NODESTEER_INBOUND_DIAL_CONCURRENCY: "16"
+      # NODESTEER_INBOUND_DIAL_TIMEOUT: "20s"
+      # NODESTEER_INBOUND_BACKOFF_INITIAL: "2s"
+      # NODESTEER_INBOUND_BACKOFF_MAX: "1m"
+      # 监控（可选）：留空表示不允许探测任何地址；原生指标保留期为代码常量，暂无配置项
+      NODESTEER_MONITOR_ALLOWED_CIDRS: "${MONITOR_ALLOWED_CIDRS:-}"
+      NODESTEER_MONITOR_WORKERS: "${MONITOR_WORKERS:-}"
+      # 告警渠道 secret 按渠道配置的 *_env 名称注入；不要在本文件写真实值。
+      # 示例：ALERT_WEBHOOK_URL / ALERT_TELEGRAM_TOKEN / ALERT_SMTP_PASSWORD / ALERT_EMAIL_TO
     volumes:
       - hub-data:/var/lib/nodesteer-hub
 
@@ -48,12 +71,21 @@ services:
     restart: unless-stopped
     depends_on:
       - hub
+    # 入站连接启用时开放 Agent listener；仅允许 Hub 出口地址访问。
+    # ports:
+    #   - "${INBOUND_PORT:-18444}:18444"
     environment:
       # 单入口模式：Gateway 与 Web 同端口
       NODESTEER_HUB_URL: "ws://hub:8080"
       NODESTEER_REGISTRATION_TOKEN: "${REGISTRATION_TOKEN:-changeme}"
       NODESTEER_DEPLOYMENT_MODE: "docker"
       NODESTEER_DATA_DIR: /var/lib/nodesteer
+      # 监控（可选）：Agent 侧允许探测的 CIDR 与敏感目的地映射
+      NODESTEER_MONITOR_ALLOWED_CIDRS: "${MONITOR_ALLOWED_CIDRS:-}"
+      NODESTEER_MONITOR_SECRET_DESTINATIONS: "${MONITOR_SECRET_DESTINATIONS:-}"
+      # 原生节点指标；Docker 基础模式不声明 node_metrics，需 Host Integration 才能读取宿主机指标
+      NODESTEER_METRICS_ENABLED: "${MONITOR_METRICS_ENABLED:-true}"
+      NODESTEER_METRICS_INTERVAL: "${MONITOR_METRICS_INTERVAL:-30s}"
     volumes:
       - agent-data:/var/lib/nodesteer
 

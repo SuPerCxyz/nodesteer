@@ -7,7 +7,16 @@ import {
 } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Check, Copy, Plus } from 'lucide-react'
+import {
+  Activity,
+  Check,
+  ChevronDown,
+  Copy,
+  Download,
+  Pencil,
+  Plus,
+  RefreshCw,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { sessionToUser, useAuthStore } from '@/stores/auth-store'
@@ -20,6 +29,7 @@ import {
   type AuditLog,
   type Group,
   type Node,
+  type NodeConnectionTestResult,
   type NodeEnrollment,
   type Schedule,
   type Script,
@@ -29,13 +39,20 @@ import {
   type User,
 } from '@/lib/api'
 import { copyText, selectText } from '@/lib/clipboard'
+import { nodeDisplayName } from '@/lib/node-display-name'
 import { useCanRun, useCanWrite } from '@/lib/permissions'
 import { scheduleDisplayName, scheduleTriggerText } from '@/lib/schedules'
 import { readTablePageSize } from '@/lib/table-view'
 import { groupsForNode, targetMatchesNode, targetSummary } from '@/lib/targets'
+import { cn } from '@/lib/utils'
 import { useTheme } from '@/context/theme-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import {
   Dialog,
   DialogContent,
@@ -54,21 +71,15 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { buildSchedulePayload } from '@/components/cron/schedule-payload'
 import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import { NodeBulkActions } from '@/features/catalog/node-bulk-actions'
+import { NodeMonitoringOverviewRow } from '@/features/monitoring/node-overview-metrics'
 import { DataTable } from '@/features/shared/data-table'
+import { RackList, RackRow, RowText } from '@/features/shared/rack-list'
 import {
   DetailField,
   DetailGrid,
@@ -83,9 +94,50 @@ import {
   SectionFull,
   SectionGrid,
   StatusBadge,
-  TableCard,
   TimeValue,
 } from '@/features/shared/ui'
+
+async function readHTTPError(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as { error?: string; code?: string }
+    return body.error || body.code || `HTTP ${response.status}`
+  } catch {
+    return `HTTP ${response.status}`
+  }
+}
+
+async function downloadInboundBundle(nodeID: string) {
+  const response = await authenticatedFetch(
+    `/api/nodes/${nodeID}/inbound-bundle`
+  )
+  if (!response.ok) throw new Error(await readHTTPError(response))
+  const disposition = response.headers.get('Content-Disposition') || ''
+  const matched = /filename="?([^";]+)"?/i.exec(disposition)
+  const filename = matched?.[1] || `nodesteer-inbound-${nodeID}.tar.gz`
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+async function rotateInboundBundle(nodeID: string) {
+  const response = await authenticatedFetch(
+    `/api/nodes/${nodeID}/inbound-bundle/rotate`,
+    { method: 'POST' }
+  )
+  if (!response.ok) throw new Error(await readHTTPError(response))
+  const disposition = response.headers.get('Content-Disposition') || ''
+  const matched = /filename="?([^";]+)"?/i.exec(disposition)
+  const filename = matched?.[1] || `nodesteer-inbound-${nodeID}.tar.gz`
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(url)
+}
 
 /** 触发发布包下载（带鉴权）；失败时抛出 HTTP 状态错误供调用方提示 */
 async function downloadArtifactFile(artifact: Artifact) {
@@ -155,22 +207,62 @@ export function Agents() {
       },
       {
         id: 'hostname',
-        accessorFn: (row) => `${row.hostname} ${row.id}`,
+        accessorFn: (row) =>
+          `${row.display_name || ''} ${row.hostname || ''} ${row.id}`,
         header: t('dashboard.hostname'),
         size: 230,
         minSize: 140,
         maxSize: 340,
-        cell: ({ row }: { row: { original: Node } }) => (
-          <div>
-            <a
-              href={`/agents/${row.original.id}`}
-              className='block truncate font-medium hover:underline'
-              title={row.original.hostname}
-            >
-              {row.original.hostname}
-            </a>
-          </div>
-        ),
+        cell: ({ row }: { row: { original: Node } }) => {
+          const name = nodeDisplayName(row.original, t('common.unknownNode'))
+          const showHostname =
+            Boolean(row.original.display_name?.trim()) &&
+            row.original.hostname !== name
+          return (
+            <RowText
+              primary={
+                <a
+                  href={`/agents/${row.original.id}`}
+                  className='block truncate font-medium hover:underline'
+                  title={
+                    showHostname
+                      ? `${name} (${row.original.hostname})`
+                      : row.original.hostname
+                  }
+                >
+                  {name}
+                </a>
+              }
+              secondary={
+                showHostname || row.original.endpoint ? (
+                  <span className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5'>
+                    {row.original.connection_mode ? (
+                      <span className='font-mono'>
+                        {row.original.connection_mode}
+                      </span>
+                    ) : null}
+                    {row.original.endpoint ? (
+                      <span
+                        className='min-w-0 truncate font-mono'
+                        title={row.original.endpoint}
+                      >
+                        {row.original.endpoint}
+                      </span>
+                    ) : null}
+                    {showHostname ? (
+                      <span
+                        className='min-w-0 truncate font-mono'
+                        title={row.original.hostname}
+                      >
+                        {row.original.hostname}
+                      </span>
+                    ) : null}
+                  </span>
+                ) : undefined
+              }
+            />
+          )
+        },
       },
       {
         accessorKey: 'os',
@@ -319,6 +411,7 @@ export function Agents() {
         data={query.data || []}
         searchPlaceholder={t('nodes.searchPlaceholder')}
         storageKey='nodes'
+        rackPrimaryColumnId='hostname'
         enableRowSelection={canWrite || canRun}
         bulkEntityName={t('nav.nodes')}
         renderBulkActions={(table) => (
@@ -360,12 +453,14 @@ function NodeEnrollmentDialog({
   >('native')
   const [nodeName, setNodeName] = useState('')
   const [nodeAddress, setNodeAddress] = useState('')
+  const [nodeEndpoint, setNodeEndpoint] = useState('')
   const [hubAddress, setHubAddress] = useState(
     typeof window === 'undefined' ? '' : window.location.origin
   )
   const [request, setRequest] = useState<{
     nodeName: string
     nodeIP: string
+    endpoint: string
     hubAddress: string
   } | null>(null)
   const [copied, setCopied] = useState(false)
@@ -375,6 +470,7 @@ function NodeEnrollmentDialog({
       api.post<NodeEnrollment>('/nodes/enrollment', {
         node_name: value.nodeName,
         node_ip: value.nodeIP,
+        endpoint: value.endpoint,
         hub_address: value.hubAddress,
       }),
     onSuccess: () => {
@@ -391,6 +487,7 @@ function NodeEnrollmentDialog({
     setMethod('native')
     setNodeName('')
     setNodeAddress('')
+    setNodeEndpoint('')
     setHubAddress(typeof window === 'undefined' ? '' : window.location.origin)
   }
   const command = enrollment.data?.[method] || ''
@@ -426,6 +523,7 @@ function NodeEnrollmentDialog({
           </DialogDescription>
         </DialogHeader>
         <form
+          data-testid='node-enrollment-form'
           className='grid gap-4 sm:grid-cols-2'
           onSubmit={(event) => {
             event.preventDefault()
@@ -433,6 +531,7 @@ function NodeEnrollmentDialog({
             const nextRequest = {
               nodeName: nodeName.trim(),
               nodeIP: nodeAddress.trim(),
+              endpoint: nodeEndpoint.trim(),
               hubAddress: hubAddress.trim(),
             }
             setRequest(nextRequest)
@@ -464,6 +563,23 @@ function NodeEnrollmentDialog({
               placeholder={t('nodes.nodeAddressPlaceholder')}
               required
             />
+          </div>
+          <div className='grid gap-2 text-sm font-medium sm:col-span-2'>
+            <Label htmlFor='enrollment-endpoint'>{t('nodes.endpoint')}</Label>
+            <Input
+              id='enrollment-endpoint'
+              data-testid='enrollment-endpoint'
+              value={nodeEndpoint}
+              onChange={(event) => {
+                setNodeEndpoint(event.target.value)
+                clearEnrollment()
+              }}
+              placeholder={t('nodes.endpointPlaceholder')}
+              required
+            />
+            <p className='text-xs font-normal text-muted-foreground'>
+              {t('nodes.endpointHint')}
+            </p>
           </div>
           <div className='grid gap-2 text-sm font-medium sm:col-span-2'>
             <Label htmlFor='enrollment-hub-address'>
@@ -543,10 +659,173 @@ function NodeEnrollmentDialog({
               {t('nodes.enrollmentGateway')}:{' '}
               <span className='font-mono'>{enrollment.data.gateway_url}</span>
             </p>
+            {enrollment.data.inbound_bundle_available &&
+            enrollment.data.node_id ? (
+              <div className='rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm'>
+                <p>{t('nodes.inboundBundleHint')}</p>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  className='mt-2'
+                  data-testid='enrollment-download-bundle'
+                  onClick={() => {
+                    if (!enrollment.data?.node_id) return
+                    void downloadInboundBundle(enrollment.data.node_id).catch(
+                      (error: Error) => toast.error(error.message)
+                    )
+                  }}
+                >
+                  <Download className='size-4' />
+                  {t('nodes.downloadBundle')}
+                </Button>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </DialogContent>
     </Dialog>
+  )
+}
+
+/** Administrator-only endpoint edit; server normalizes host:port and marks bundle stale. */
+function NodeEndpointDialog({
+  node,
+  open,
+  onOpenChange,
+}: {
+  node: Node
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const { t } = useTranslation()
+  const client = useQueryClient()
+  const [value, setValue] = useState(node.endpoint || '')
+  const [error, setError] = useState('')
+  const update = useMutation({
+    mutationFn: (endpoint: string) =>
+      api.post(`/nodes/${node.id}`, { endpoint }),
+    onSuccess: () => {
+      toast.success(t('nodes.endpointUpdated'))
+      void client.invalidateQueries({ queryKey: ['node', node.id] })
+      void client.invalidateQueries({ queryKey: ['nodes'] })
+      onOpenChange(false)
+    },
+    onError: (err) => setError(err.message),
+  })
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('nodes.editEndpoint')}</DialogTitle>
+          <DialogDescription>
+            {t('nodes.editEndpointDescription')}
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          className='grid gap-3'
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (!value.trim()) {
+              setError(t('nodes.endpointInvalid'))
+              return
+            }
+            setError('')
+            update.mutate(value.trim())
+          }}
+        >
+          <div className='grid gap-2'>
+            <Label htmlFor='node-endpoint'>
+              {t('nodes.endpoint')}
+            </Label>
+            <Input
+              id='node-endpoint'
+              data-testid='node-endpoint-input'
+              value={value}
+              onChange={(event) => {
+                setValue(event.target.value)
+                setError('')
+              }}
+              placeholder={t('nodes.endpointPlaceholder')}
+              aria-invalid={Boolean(error)}
+              required
+            />
+            <p className='text-xs text-muted-foreground'>
+              {t('nodes.editEndpointHint')}
+            </p>
+            {error ? (
+              <p className='text-xs text-destructive' role='alert'>
+                {error}
+              </p>
+            ) : null}
+          </div>
+          <div className='flex justify-end gap-2'>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => onOpenChange(false)}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type='submit' disabled={update.isPending}>
+              {t('common.save')}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function CollapsibleList({
+  title,
+  count,
+  preview,
+  children,
+}: {
+  title: string
+  count: number
+  preview: string
+  children: React.ReactNode
+}) {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className='space-y-2'>
+      <div className='flex flex-wrap items-center justify-between gap-2'>
+        <h3 className='text-sm font-medium'>
+          {title}
+          <span className='ms-1.5 font-mono text-xs text-muted-foreground'>
+            {count}
+          </span>
+        </h3>
+        <CollapsibleTrigger asChild>
+          <Button
+            variant='ghost'
+            size='sm'
+            className='h-7 px-2 text-xs'
+            aria-label={`${open ? t('common.collapse') : t('common.showAll')} ${title}`}
+          >
+            {open ? t('common.collapse') : t('common.showAll')}
+            <ChevronDown
+              className={cn(
+                'ms-1 size-3.5 transition-transform',
+                open && 'rotate-180'
+              )}
+            />
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      {!open && preview ? (
+        <p
+          className='truncate font-mono text-xs text-muted-foreground'
+          title={preview}
+        >
+          {preview}
+        </p>
+      ) : null}
+      <CollapsibleContent>{children}</CollapsibleContent>
+    </Collapsible>
   )
 }
 
@@ -555,8 +834,15 @@ export function AgentDetail() {
   const id = window.location.pathname.split('/').pop() || ''
   const client = useQueryClient()
   const canWrite = useCanWrite()
+  const canRun = useCanRun()
+  const canAdmin = useCanWrite()
+  const [renameOpen, setRenameOpen] = useState(false)
   const [labelKey, setLabelKey] = useState('')
   const [labelValue, setLabelValue] = useState('')
+  const [connectionTest, setConnectionTest] =
+    useState<NodeConnectionTestResult | null>(null)
+  const [testingConnection, setTestingConnection] = useState(false)
+  const [endpointOpen, setEndpointOpen] = useState(false)
   const node = useQuery({
     queryKey: ['node', id],
     queryFn: () => api.get<Node>(`/nodes/${id}`),
@@ -564,7 +850,7 @@ export function AgentDetail() {
   const executions = useQuery({
     queryKey: ['node-executions', id],
     queryFn: () =>
-      api.get<ExecutionLike[]>(`/executions?node_id=${id}&limit=100`),
+      api.get<ExecutionLike[]>(`/executions?node_id=${id}&limit=5`),
   })
   const tasks = useQuery({
     queryKey: ['tasks'],
@@ -611,6 +897,39 @@ export function AgentDetail() {
     },
     onError: (error) => toast.error(error.message),
   })
+  const runConnectionTest = async () => {
+    setTestingConnection(true)
+    try {
+      const result = await api.post<NodeConnectionTestResult>(
+        `/nodes/${id}/connection-test`,
+        {}
+      )
+      setConnectionTest(result)
+      void client.invalidateQueries({ queryKey: ['node', id] })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error))
+    } finally {
+      setTestingConnection(false)
+    }
+  }
+  const downloadBundle = async () => {
+    try {
+      await downloadInboundBundle(id)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error))
+    }
+  }
+  const rotateBundle = async () => {
+    if (!window.confirm(t('nodes.rotateBundleConfirm'))) return
+    try {
+      await rotateInboundBundle(id)
+      toast.success(t('nodes.rotateBundleSuccess'))
+      await client.invalidateQueries({ queryKey: ['node', id] })
+      await client.invalidateQueries({ queryKey: ['nodes'] })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error))
+    }
+  }
   const nodeSchedules = (schedules.data || []).filter((schedule) =>
     targetMatchesNode(schedule.target, node.data, groups.data || [])
   )
@@ -636,141 +955,390 @@ export function AgentDetail() {
   return (
     <>
       <NodeSteerHeader
-        title={item.hostname}
+        title={nodeDisplayName(item, t('common.unknownNode'))}
         description={item.ip || item.agent_id}
-        action={<StatusBadge status={item.status} />}
+        action={
+          <div className='flex items-center gap-2'>
+            <StatusBadge status={item.status} />
+            {canRun ? (
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setRenameOpen(true)}
+              >
+                <Pencil className='size-4' />
+                {t('nodes.rename')}
+              </Button>
+            ) : null}
+          </div>
+        }
+        backTo='/agents'
       />
-      <Main className='flex flex-1 flex-col'>
+      <Main className='flex flex-1 flex-col gap-6'>
+        {canAdmin && (
+          <NodeMonitoringOverviewRow
+            nodeId={item.id}
+            nodeName={nodeDisplayName(item, t('common.unknownNode'))}
+            status={item.status}
+          />
+        )}
+        <nav
+          aria-label={t('webFix.sections')}
+          className='flex flex-wrap gap-3 text-sm'
+        >
+          {[
+            'overview',
+            'inventory',
+            'executions',
+            'tasks',
+            'schedules',
+            'applications',
+          ].map((section) => (
+            <a
+              key={section}
+              href={`#node-${section}`}
+              className='text-primary hover:underline'
+            >
+              {t(`webFix.nodeSections.${section}`)}
+            </a>
+          ))}
+        </nav>
         <SectionGrid className='w-full'>
-          <Button asChild variant='ghost' className='w-fit px-0'>
-            <Link to='/agents'>← {t('common.back')}</Link>
-          </Button>
-          <SectionCard title={t('nodes.overview')}>
-            <div className='space-y-4'>
-              <DetailGrid>
-                <DetailField label={t('nodes.nodeId')}>
-                  <span
-                    className='block truncate font-mono text-xs'
-                    title={item.id}
-                  >
-                    {item.id}
-                  </span>
-                </DetailField>
-                <DetailField label={t('nodes.agentId')}>
-                  <span
-                    className='block truncate font-mono text-xs'
-                    title={item.agent_id}
-                  >
-                    {item.agent_id}
-                  </span>
-                </DetailField>
-                <DetailField label={t('dashboard.ip')}>
-                  <span className='font-mono text-xs'>{item.ip || '-'}</span>
-                </DetailField>
-                <DetailField label={t('dashboard.os')}>
-                  {item.os || '-'}
-                </DetailField>
-                <DetailField label={t('nodes.agentVersion')}>
-                  {item.agent_version || '-'}
-                </DetailField>
-                <DetailField label={t('nodes.architecture')}>
-                  <span className='font-mono text-xs'>{item.arch || '-'}</span>
-                </DetailField>
-                <DetailField label={t('nodes.deploymentMode')}>
-                  {item.deployment_mode || '-'}
-                </DetailField>
-                <DetailField label={t('nodes.groups')}>
-                  {nodeGroupNames || '-'}
-                </DetailField>
-                <DetailField label={t('nodes.globalRevision')}>
-                  <span className='font-mono text-xs'>
-                    r{item.global_revision}
-                  </span>
-                </DetailField>
-                <DetailField label={t('nodes.syncStatus')}>
-                  <StatusBadge status={item.sync_status || 'unknown'} />
-                </DetailField>
-                <DetailField label={t('dashboard.lastSeen')}>
-                  <TimeValue value={item.last_seen} absolute />
-                </DetailField>
-              </DetailGrid>
-              <Separator />
-              <section className='space-y-3'>
-                <h2 className='text-sm font-medium'>{t('nodes.labels')}</h2>
-                <div className='flex min-h-5 flex-wrap gap-x-4 gap-y-1'>
-                  {Object.keys(item.labels || {}).length ? (
-                    Object.entries(item.labels || {}).map(([key, value]) => (
-                      <span
-                        className='font-mono text-xs text-muted-foreground'
-                        key={key}
-                      >
-                        {key}={value}
-                      </span>
-                    ))
-                  ) : (
-                    <span className='text-sm text-muted-foreground'>
-                      {t('nodes.noLabels')}
-                    </span>
-                  )}
-                </div>
-                {canWrite ? (
-                  <div className='flex flex-wrap gap-2'>
-                    <Input
-                      className='h-8 w-32 font-mono text-xs'
-                      aria-label={t('nodes.labelKey')}
-                      placeholder='key'
-                      value={labelKey}
-                      onChange={(event) => setLabelKey(event.target.value)}
-                    />
-                    <Input
-                      className='h-8 w-32 font-mono text-xs'
-                      aria-label={t('nodes.labelValue')}
-                      placeholder='value'
-                      value={labelValue}
-                      onChange={(event) => setLabelValue(event.target.value)}
-                    />
-                    <Button
-                      size='sm'
-                      variant='outline'
-                      onClick={() => updateLabels.mutate()}
-                      disabled={!labelKey.trim() || updateLabels.isPending}
-                    >
-                      {t('nodes.addLabel')}
-                    </Button>
-                  </div>
-                ) : null}
-              </section>
-            </div>
-          </SectionCard>
-          <SectionCard title={t('nodes.inventory')}>
-            <div className='space-y-4'>
-              {item.inventory ? (
+          <SectionFull id='node-overview'>
+            <SectionCard title={t('nodes.overview')}>
+              <div className='space-y-4'>
                 <DetailGrid>
-                  <DetailField label={t('dashboard.os')}>
-                    {item.inventory.os} {item.inventory.os_version}
+                  <DetailField label={t('nodes.displayName')}>
+                    <span
+                      className='block truncate'
+                      title={nodeDisplayName(item, t('common.unknownNode'))}
+                    >
+                      {nodeDisplayName(item, t('common.unknownNode'))}
+                    </span>
                   </DetailField>
-                  <DetailField label={t('nodes.kernel')}>
+                  <DetailField label={t('dashboard.hostname')}>
                     <span
                       className='block truncate font-mono text-xs'
-                      title={item.inventory.kernel}
+                      title={item.hostname}
                     >
-                      {item.inventory.kernel || '-'}
+                      {item.hostname || '-'}
                     </span>
                   </DetailField>
-                  <DetailField label={t('nodes.cpu')}>
-                    {item.inventory.cpu
-                      ?.map((cpu) => `${cpu.model} (${cpu.cores})`)
-                      .join(', ') || '-'}
+                  <DetailField label={t('nodes.nodeId')}>
+                    <span
+                      className='block truncate font-mono text-xs'
+                      title={item.id}
+                    >
+                      {item.id}
+                    </span>
                   </DetailField>
-                  <DetailField label={t('nodes.memory')}>
-                    {item.inventory.memory
-                      ? `${Math.round(item.inventory.memory.total_kb / 1024)} MB`
-                      : '-'}
+                  <DetailField label={t('nodes.agentId')}>
+                    <span
+                      className='block truncate font-mono text-xs'
+                      title={item.agent_id}
+                    >
+                      {item.agent_id}
+                    </span>
                   </DetailField>
-                  <DetailField label={t('nodes.filesystems')}>
-                    {item.inventory.filesystem?.length ? (
-                      <ul className='space-y-1 font-mono text-xs'>
-                        {item.inventory.filesystem.map((filesystem) => (
+                  <DetailField label={t('dashboard.ip')}>
+                    <span className='font-mono text-xs'>{item.ip || '-'}</span>
+                  </DetailField>
+                  <DetailField label={t('dashboard.os')}>
+                    {item.os || '-'}
+                  </DetailField>
+                  <DetailField label={t('nodes.agentVersion')}>
+                    {item.agent_version || '-'}
+                  </DetailField>
+                  <DetailField label={t('nodes.architecture')}>
+                    <span className='font-mono text-xs'>
+                      {item.arch || '-'}
+                    </span>
+                  </DetailField>
+                  <DetailField label={t('nodes.deploymentMode')}>
+                    {item.deployment_mode || '-'}
+                  </DetailField>
+                  <DetailField label={t('nodes.groups')}>
+                    {nodeGroupNames || '-'}
+                  </DetailField>
+                  <DetailField label={t('nodes.globalRevision')}>
+                    <span className='font-mono text-xs'>
+                      r{item.global_revision}
+                    </span>
+                  </DetailField>
+                  <DetailField label={t('nodes.syncStatus')}>
+                    <StatusBadge status={item.sync_status || 'unknown'} />
+                  </DetailField>
+                  <DetailField label={t('dashboard.lastSeen')}>
+                    <TimeValue value={item.last_seen} absolute />
+                  </DetailField>
+                </DetailGrid>
+                <Separator />
+                <section className='space-y-3' data-testid='node-inbound-section'>
+                  <div className='flex flex-wrap items-center justify-between gap-2'>
+                    <h2 className='text-sm font-medium'>
+                      {t('nodes.inbound')}
+                    </h2>
+                    {canAdmin ? (
+                      <div className='flex flex-wrap gap-2'>
+                        {item.endpoint &&
+                        (!item.inbound?.configured ||
+                          item.inbound_bundle_stale) ? (
+                          <Button
+                            type='button'
+                            size='sm'
+                            variant='outline'
+                            data-testid='node-download-bundle'
+                            onClick={() => void downloadBundle()}
+                          >
+                            <Download className='size-4' />
+                            {t('nodes.downloadBundle')}
+                          </Button>
+                        ) : null}
+                        {item.endpoint && item.inbound?.configured ? (
+                          <Button
+                            type='button'
+                            size='sm'
+                            variant='outline'
+                            data-testid='node-rotate-bundle'
+                            onClick={() => void rotateBundle()}
+                          >
+                            <RefreshCw className='size-4' />
+                            {t('nodes.rotateBundle')}
+                          </Button>
+                        ) : null}
+                        <Button
+                          type='button'
+                          size='sm'
+                          variant='outline'
+                          data-testid='node-edit-endpoint'
+                          onClick={() => setEndpointOpen(true)}
+                        >
+                          <Pencil className='size-4' />
+                          {t('nodes.editEndpoint')}
+                        </Button>
+                        {item.endpoint ? (
+                          <Button
+                            type='button'
+                            size='sm'
+                            variant='outline'
+                            data-testid='node-test-connection'
+                            disabled={testingConnection}
+                            onClick={() => void runConnectionTest()}
+                          >
+                            <Activity className='size-4' />
+                            {t('nodes.testConnection')}
+                          </Button>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                  <DetailGrid>
+                    <DetailField label={t('nodes.endpoint')}>
+                      <span className='font-mono text-xs'>
+                        {item.endpoint || '-'}
+                      </span>
+                    </DetailField>
+                    <DetailField label={t('nodes.connectionMode')}>
+                      <span className='font-mono text-xs'>
+                        {item.connection_mode || '-'}
+                      </span>
+                    </DetailField>
+                    <DetailField label={t('nodes.lastConnectionMode')}>
+                      <span className='font-mono text-xs'>
+                        {item.last_connection_mode || '-'}
+                      </span>
+                    </DetailField>
+                    <DetailField label={t('nodes.inboundStatus')}>
+                      <StatusBadge
+                        status={
+                          item.inbound_bundle_stale
+                            ? 'stale'
+                            : item.inbound?.configured
+                              ? 'configured'
+                              : 'not_configured'
+                        }
+                      />
+                    </DetailField>
+                    <DetailField label={t('nodes.inboundCapable')}>
+                      {item.inbound?.capable
+                        ? t('common.yes')
+                        : t('common.no')}
+                    </DetailField>
+                    <DetailField label={t('nodes.dataPlane')}>
+                      {item.inbound?.data_plane
+                        ? t('nodes.dataPlaneAvailable')
+                        : item.connection_mode === 'outbound'
+                          ? t('nodes.dataPlaneStandby')
+                          : t('nodes.dataPlaneUnavailable')}
+                    </DetailField>
+                    <DetailField label={t('nodes.certFingerprint')}>
+                      <span
+                        className='block truncate font-mono text-xs'
+                        title={item.inbound?.cert_fingerprint || '-'}
+                      >
+                        {item.inbound?.cert_fingerprint || '-'}
+                      </span>
+                    </DetailField>
+                    <DetailField label={t('nodes.certNotAfter')}>
+                      <TimeValue value={item.inbound?.cert_not_after} />
+                    </DetailField>
+                    <DetailField label={t('nodes.lastHandshake')}>
+                      <TimeValue value={item.inbound?.last_handshake_at} />
+                    </DetailField>
+                    <DetailField label={t('nodes.lastError')}>
+                      <span className='font-mono text-xs'>
+                        {item.inbound?.last_error || '-'}
+                      </span>
+                    </DetailField>
+                  </DetailGrid>
+                  {item.inbound?.last_error === 'inbound_certificate_expired' ? (
+                    <p
+                      className='rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive'
+                      role='alert'
+                    >
+                      {t('nodes.certExpiredWarning')}
+                    </p>
+                  ) : null}
+                  {item.inbound?.last_error === 'inbound_pin_mismatch' ||
+                  item.inbound?.last_error === 'pin_mismatch' ? (
+                    <p
+                      className='rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive'
+                      role='alert'
+                    >
+                      {t('nodes.pinMismatchWarning')}
+                    </p>
+                  ) : null}
+                  {connectionTest ? (
+                    <div
+                      className='space-y-2 rounded-md border p-3'
+                      data-testid='node-connection-test-result'
+                    >
+                      <p className='text-sm font-medium'>
+                        {connectionTest.connected
+                          ? t('nodes.testConnected', {
+                              mode: connectionTest.origin || '-',
+                            })
+                          : t('nodes.testResult')}
+                      </p>
+                      <ul className='space-y-1 text-xs'>
+                        {connectionTest.stages.map((stage) => (
+                          <li
+                            key={stage.name}
+                            className='flex flex-wrap items-center gap-2 font-mono'
+                          >
+                            <span className='w-20'>{stage.name}</span>
+                            <StatusBadge
+                              status={stage.ok ? 'success' : 'failed'}
+                            />
+                            {stage.code ? <span>{stage.code}</span> : null}
+                            {stage.error ? (
+                              <span className='text-muted-foreground'>
+                                {stage.error}
+                              </span>
+                            ) : null}
+                            {stage.duration_ms ? (
+                              <span className='text-muted-foreground'>
+                                {stage.duration_ms}ms
+                              </span>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </section>
+                <Separator />
+                <section className='space-y-3'>
+                  <h2 className='text-sm font-medium'>{t('nodes.labels')}</h2>
+                  <div className='flex min-h-5 flex-wrap gap-x-4 gap-y-1'>
+                    {Object.keys(item.labels || {}).length ? (
+                      Object.entries(item.labels || {}).map(([key, value]) => (
+                        <span
+                          className='font-mono text-xs text-muted-foreground'
+                          key={key}
+                        >
+                          {key}={value}
+                        </span>
+                      ))
+                    ) : (
+                      <span className='text-sm text-muted-foreground'>
+                        {t('nodes.noLabels')}
+                      </span>
+                    )}
+                  </div>
+                  {canWrite ? (
+                    <div className='flex flex-wrap gap-2'>
+                      <Input
+                        className='h-8 w-32 font-mono text-xs'
+                        aria-label={t('nodes.labelKey')}
+                        placeholder='key'
+                        value={labelKey}
+                        onChange={(event) => setLabelKey(event.target.value)}
+                      />
+                      <Input
+                        className='h-8 w-32 font-mono text-xs'
+                        aria-label={t('nodes.labelValue')}
+                        placeholder='value'
+                        value={labelValue}
+                        onChange={(event) => setLabelValue(event.target.value)}
+                      />
+                      <Button
+                        size='sm'
+                        variant='outline'
+                        onClick={() => updateLabels.mutate()}
+                        disabled={!labelKey.trim() || updateLabels.isPending}
+                      >
+                        {t('nodes.addLabel')}
+                      </Button>
+                    </div>
+                  ) : null}
+                </section>
+              </div>
+            </SectionCard>
+          </SectionFull>
+          <SectionFull id='node-inventory'>
+            <SectionCard title={t('nodes.inventory')}>
+              <div className='space-y-4'>
+                {item.inventory ? (
+                  <>
+                    <DetailGrid>
+                      <DetailField label={t('dashboard.os')}>
+                        {item.inventory.os} {item.inventory.os_version}
+                      </DetailField>
+                      <DetailField label={t('nodes.kernel')}>
+                        <span
+                          className='block truncate font-mono text-xs'
+                          title={item.inventory.kernel}
+                        >
+                          {item.inventory.kernel || '-'}
+                        </span>
+                      </DetailField>
+                      <DetailField label={t('nodes.cpu')}>
+                        {item.inventory.cpu
+                          ?.map((cpu) => `${cpu.model} (${cpu.cores})`)
+                          .join(', ') || '-'}
+                      </DetailField>
+                      <DetailField label={t('nodes.memory')}>
+                        {item.inventory.memory
+                          ? `${Math.round(item.inventory.memory.total_kb / 1024)} MB`
+                          : '-'}
+                      </DetailField>
+                    </DetailGrid>
+                    <Separator />
+                    <CollapsibleList
+                      title={t('nodes.filesystems')}
+                      count={item.inventory.filesystem?.length || 0}
+                      preview={
+                        item.inventory.filesystem?.length
+                          ? t('nodes.filesystemPreview', {
+                              mount: item.inventory.filesystem[0].mount,
+                              count: item.inventory.filesystem.length,
+                            })
+                          : ''
+                      }
+                    >
+                      <ul className='grid gap-1 font-mono text-xs sm:grid-cols-2 xl:grid-cols-3'>
+                        {item.inventory.filesystem?.map((filesystem) => (
                           <li key={filesystem.mount} className='break-words'>
                             {filesystem.mount} ({filesystem.fs_type},{' '}
                             {Math.round(filesystem.free_kb / 1024)}/
@@ -778,172 +1346,321 @@ export function AgentDetail() {
                           </li>
                         ))}
                       </ul>
-                    ) : (
-                      '-'
-                    )}
-                  </DetailField>
-                  <DetailField label={t('nodes.network')}>
-                    <span className='font-mono text-xs'>
-                      {item.inventory.network
-                        ?.map(
-                          (network) =>
-                            `${network.interface}: ${network.addresses.join(', ')}`
-                        )
-                        .join('; ') || '-'}
-                    </span>
-                  </DetailField>
-                </DetailGrid>
-              ) : (
-                <EmptyState message={t('nodes.noInventory')} />
-              )}
-              <Separator />
-              <section className='space-y-3'>
-                <h2 className='text-sm font-medium'>
-                  {t('nodes.capabilities')}
-                </h2>
-                <div className='grid gap-2 sm:grid-cols-2'>
-                  {Object.entries(item.capabilities || {}).map(
-                    ([key, value]) => (
-                      <span
-                        className='flex min-w-0 items-center gap-2 text-sm'
-                        key={key}
-                      >
-                        <StatusBadge status={value ? 'enabled' : 'disabled'} />
+                    </CollapsibleList>
+                    <Separator />
+                    <CollapsibleList
+                      title={t('nodes.network')}
+                      count={item.inventory.network?.length || 0}
+                      preview={
+                        item.inventory.network?.length
+                          ? t('nodes.networkPreview', {
+                              interfaces: item.inventory.network
+                                .map((network) => network.interface)
+                                .join(', '),
+                              count: item.inventory.network.length,
+                            })
+                          : ''
+                      }
+                    >
+                      <ul className='grid gap-2 font-mono text-xs sm:grid-cols-2'>
+                        {item.inventory.network?.map((network) => (
+                          <li key={network.interface} className='break-words'>
+                            <span className='font-medium'>
+                              {network.interface}
+                            </span>{' '}
+                            {network.addresses.join(', ')}
+                          </li>
+                        ))}
+                      </ul>
+                    </CollapsibleList>
+                  </>
+                ) : (
+                  <EmptyState message={t('nodes.noInventory')} />
+                )}
+                <Separator />
+                <section className='space-y-3'>
+                  <h2 className='text-sm font-medium'>
+                    {t('nodes.capabilities')}
+                  </h2>
+                  <div className='grid gap-2 sm:grid-cols-2'>
+                    {Object.entries(item.capabilities || {}).map(
+                      ([key, value]) => (
                         <span
-                          className='truncate font-mono text-xs'
-                          title={key}
+                          className='flex min-w-0 items-center gap-2 text-sm'
+                          key={key}
                         >
-                          {key}
+                          <StatusBadge
+                            status={value ? 'enabled' : 'disabled'}
+                          />
+                          <span
+                            className='truncate font-mono text-xs'
+                            title={key}
+                          >
+                            {key}
+                          </span>
                         </span>
-                      </span>
-                    )
-                  )}
-                </div>
-              </section>
-            </div>
-          </SectionCard>
-          <SectionFull>
-            <SectionCard title={t('nav.executions')}>
-              <ExecutionRows
-                executions={executions.data || []}
-                tasks={tasks.data || []}
-              />
+                      )
+                    )}
+                  </div>
+                </section>
+              </div>
             </SectionCard>
           </SectionFull>
-          <SectionCard title={t('nodes.tasks')}>
-            {nodeTasks.length ? (
-              <div className='divide-y'>
-                {nodeTasks.map((task) => (
-                  <div
-                    className='flex min-w-0 items-center gap-3 py-3'
-                    key={task.id}
-                  >
-                    <a
-                      className='min-w-0 truncate font-medium hover:underline'
-                      href={`/tasks/${task.id}`}
-                      title={task.name}
+          <SectionFull id='node-executions'>
+            <SectionCard
+              title={t('nav.executions')}
+              action={
+                <Link to='/executions' search={{ node_id: id }}>
+                  {t('common.viewAll')}
+                </Link>
+              }
+            >
+              {executions.isLoading ? (
+                <LoadingState />
+              ) : executions.isError ? (
+                <ErrorState
+                  error={executions.error}
+                  onRetry={() => executions.refetch()}
+                />
+              ) : (
+                <ExecutionRows
+                  executions={executions.data || []}
+                  tasks={tasks.data || []}
+                />
+              )}
+            </SectionCard>
+          </SectionFull>
+          <SectionFull id='node-tasks'>
+            <SectionCard title={t('nodes.tasks')}>
+              {nodeTasks.length ? (
+                <div className='divide-y'>
+                  {nodeTasks.map((task) => (
+                    <div
+                      className='flex min-w-0 items-center gap-3 py-3'
+                      key={task.id}
                     >
-                      {task.name}
-                    </a>
-                    <span
-                      className='max-w-full truncate font-mono text-xs text-muted-foreground'
-                      title={task.type}
+                      <a
+                        className='min-w-0 truncate font-medium hover:underline'
+                        href={`/tasks/${task.id}`}
+                        title={task.name}
+                      >
+                        {task.name}
+                      </a>
+                      <span
+                        className='max-w-full truncate font-mono text-xs text-muted-foreground'
+                        title={task.type}
+                      >
+                        {t(`tasks.types.${task.type}`, {
+                          defaultValue: task.type,
+                        })}
+                      </span>
+                      <StatusBadge
+                        status={task.enabled ? 'enabled' : 'disabled'}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState message={t('nodes.noTasks')} />
+              )}
+            </SectionCard>
+          </SectionFull>
+          <SectionFull id='node-schedules'>
+            <SectionCard title={t('nodes.schedules')}>
+              {nodeSchedules.length ? (
+                <div className='divide-y'>
+                  {nodeSchedules.map((schedule) => (
+                    <div
+                      className='flex min-w-0 items-center gap-3 py-3'
+                      key={schedule.id}
                     >
-                      {t(`tasks.types.${task.type}`, {
-                        defaultValue: task.type,
-                      })}
-                    </span>
-                    <StatusBadge
-                      status={task.enabled ? 'enabled' : 'disabled'}
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState message={t('nodes.noTasks')} />
-            )}
-          </SectionCard>
-          <SectionCard title={t('nodes.schedules')}>
-            {nodeSchedules.length ? (
-              <div className='divide-y'>
-                {nodeSchedules.map((schedule) => (
-                  <div
-                    className='flex min-w-0 items-center gap-3 py-3'
-                    key={schedule.id}
-                  >
-                    <a
-                      className='min-w-0 truncate font-medium hover:underline'
-                      href={`/schedules/${schedule.id}`}
-                      title={scheduleDisplayName(schedule, t)}
+                      <a
+                        className='min-w-0 truncate font-medium hover:underline'
+                        href={`/schedules/${schedule.id}`}
+                        title={scheduleDisplayName(schedule, t)}
+                      >
+                        {scheduleDisplayName(schedule, t)}
+                      </a>
+                      <span className='min-w-0 truncate text-xs text-muted-foreground'>
+                        {tasks.data?.find(
+                          (task) => task.id === schedule.task_id
+                        )?.name || t('common.unknownTask')}
+                      </span>
+                      <span
+                        className='max-w-full truncate font-mono text-xs text-muted-foreground'
+                        title={scheduleTriggerText(schedule, t)}
+                      >
+                        {scheduleTriggerText(schedule, t)}
+                      </span>
+                      <span className='max-w-full truncate text-xs text-muted-foreground'>
+                        {targetSummary(
+                          schedule.target,
+                          t,
+                          new Map(
+                            (node.data ? [node.data] : []).map((item) => [
+                              item.id,
+                              nodeDisplayName(item, t('common.unknownNode')),
+                            ])
+                          ),
+                          new Map(
+                            (groups.data || []).map((group) => [
+                              group.id,
+                              group.name,
+                            ])
+                          )
+                        )}
+                      </span>
+                      <StatusBadge
+                        status={schedule.enabled ? 'enabled' : 'disabled'}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState message={t('nodes.noSchedules')} />
+              )}
+            </SectionCard>
+          </SectionFull>
+          <SectionFull id='node-applications'>
+            <SectionCard title={t('apps.title')}>
+              {applications.data?.length ? (
+                <div className='divide-y'>
+                  {applications.data.map((application) => (
+                    <div
+                      className='flex min-w-0 items-center gap-3 py-3'
+                      key={application.id}
                     >
-                      {scheduleDisplayName(schedule, t)}
-                    </a>
-                    <span className='min-w-0 truncate text-xs text-muted-foreground'>
-                      {tasks.data?.find((task) => task.id === schedule.task_id)
-                        ?.name || t('common.unknownTask')}
-                    </span>
-                    <span
-                      className='max-w-full truncate font-mono text-xs text-muted-foreground'
-                      title={scheduleTriggerText(schedule, t)}
-                    >
-                      {scheduleTriggerText(schedule, t)}
-                    </span>
-                    <span className='max-w-full truncate text-xs text-muted-foreground'>
-                      {targetSummary(
-                        schedule.target,
-                        t,
-                        new Map(
-                          (node.data ? [node.data] : []).map((item) => [
-                            item.id,
-                            item.hostname,
-                          ])
-                        ),
-                        new Map(
-                          (groups.data || []).map((group) => [
-                            group.id,
-                            group.name,
-                          ])
-                        )
-                      )}
-                    </span>
-                    <StatusBadge
-                      status={schedule.enabled ? 'enabled' : 'disabled'}
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState message={t('nodes.noSchedules')} />
-            )}
-          </SectionCard>
-          <SectionCard title={t('apps.title')}>
-            {applications.data?.length ? (
-              <div className='divide-y'>
-                {applications.data.map((application) => (
-                  <div
-                    className='flex min-w-0 items-center gap-3 py-3'
-                    key={application.id}
-                  >
-                    <a
-                      className='min-w-0 truncate font-medium hover:underline'
-                      href={`/applications/${application.id}`}
-                      title={application.name}
-                    >
-                      {application.name}
-                    </a>
-                    <span className='font-mono text-xs text-muted-foreground'>
-                      {application.version}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState message={t('apps.noApps')} />
-            )}
-          </SectionCard>
+                      <a
+                        className='min-w-0 truncate font-medium hover:underline'
+                        href={`/applications/${application.id}`}
+                        title={application.name}
+                      >
+                        {application.name}
+                      </a>
+                      <span className='font-mono text-xs text-muted-foreground'>
+                        {application.version}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState message={t('apps.noApps')} />
+              )}
+            </SectionCard>
+          </SectionFull>
         </SectionGrid>
       </Main>
+      <NodeRenameDialog
+        key={`rename:${item.id}:${renameOpen ? 'open' : 'closed'}:${item.display_name || ''}`}
+        node={item}
+        open={renameOpen}
+        onOpenChange={setRenameOpen}
+      />
+      <NodeEndpointDialog
+        key={`endpoint:${item.id}:${endpointOpen ? 'open' : 'closed'}:${item.endpoint || ''}`}
+        node={item}
+        open={endpointOpen}
+        onOpenChange={setEndpointOpen}
+      />
     </>
+  )
+}
+
+/** 节点显示名重命名：Operator/Administrator 可用，空值表示清除并回退 hostname。 */
+function NodeRenameDialog({
+  node,
+  open,
+  onOpenChange,
+}: {
+  node: Node
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const { t } = useTranslation()
+  const client = useQueryClient()
+  const [value, setValue] = useState(node.display_name || '')
+  const [error, setError] = useState('')
+  const rename = useMutation({
+    mutationFn: (displayName: string) =>
+      api.post(`/nodes/${node.id}`, { display_name: displayName }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['nodes'] })
+      void client.invalidateQueries({ queryKey: ['node', node.id] })
+      void client.invalidateQueries({ queryKey: ['monitoring-nodes-overview'] })
+      void client.invalidateQueries({ queryKey: ['dashboard'] })
+      toast.success(t('nodes.renameSuccess'))
+      onOpenChange(false)
+    },
+    onError: (mutationError: Error) => setError(mutationError.message),
+  })
+  const runeCount = Array.from(value).length
+  const tooLong = runeCount > 64
+  const hasControl = Array.from(value).some((char) => {
+    const code = char.codePointAt(0) ?? 0
+    return code <= 0x1f || (code >= 0x7f && code <= 0x9f)
+  })
+  const invalid = tooLong || hasControl
+  const submit = () => {
+    if (invalid) return
+    setError('')
+    rename.mutate(value.trim())
+  }
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('nodes.renameTitle')}</DialogTitle>
+          <DialogDescription>{t('nodes.renameDescription')}</DialogDescription>
+        </DialogHeader>
+        <form
+          className='grid gap-3'
+          onSubmit={(event) => {
+            event.preventDefault()
+            submit()
+          }}
+        >
+          <div className='grid gap-2'>
+            <Label htmlFor='node-display-name'>{t('nodes.displayName')}</Label>
+            <Input
+              id='node-display-name'
+              value={value}
+              onChange={(event) => {
+                setValue(event.target.value)
+                setError('')
+              }}
+              placeholder={node.hostname}
+              aria-invalid={invalid || Boolean(error)}
+            />
+            <div className='flex items-center justify-between gap-2 text-xs text-muted-foreground'>
+              <span>{t('nodes.renameHint')}</span>
+              <span className={tooLong ? 'text-destructive' : undefined}>
+                {runeCount}/64
+              </span>
+            </div>
+            {tooLong || hasControl || error ? (
+              <p className='text-xs text-destructive' role='alert'>
+                {error ||
+                  (tooLong
+                    ? t('nodes.renameTooLong')
+                    : t('nodes.renameControlChars'))}
+              </p>
+            ) : null}
+          </div>
+          <div className='flex justify-end gap-2'>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => onOpenChange(false)}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type='submit' disabled={invalid || rename.isPending}>
+              {t('common.save')}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -970,71 +1687,56 @@ function ExecutionRows({
   if (!executions.length)
     return <EmptyState message={t('executions.noExecs')} />
   return (
-    <TableCard>
-      <Table className='min-w-[620px] table-fixed'>
-        <colgroup>
-          <col className='w-[32%]' />
-          <col className='w-[16%]' />
-          <col className='w-[24%]' />
-          <col className='w-[14%]' />
-          <col className='w-[14%]' />
-        </colgroup>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t('dashboard.task')}</TableHead>
-            <TableHead>{t('common.status')}</TableHead>
-            <TableHead>{t('executions.start')}</TableHead>
-            <TableHead>{t('executions.duration')}</TableHead>
-            <TableHead>
-              <span className='sr-only'>{t('common.actions')}</span>
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {executions.map((execution) => (
-            <TableRow key={execution.id}>
-              <TableCell>
-                {taskNames.get(execution.task_id) ? (
-                  <a
-                    href={`/tasks/${execution.task_id}`}
-                    className='block truncate font-medium hover:underline'
-                    title={taskNames.get(execution.task_id)}
-                  >
-                    {taskNames.get(execution.task_id)}
-                  </a>
-                ) : (
-                  <span className='font-medium'>{t('common.unknownTask')}</span>
-                )}
-              </TableCell>
-              <TableCell>
-                <StatusBadge status={execution.status} />
-              </TableCell>
-              <TableCell>
-                <TimeValue value={execution.start_time} />
-              </TableCell>
-              <TableCell>
-                {execution.end_time
-                  ? new Date(
-                      new Date(execution.end_time).getTime() -
-                        new Date(execution.start_time).getTime()
-                    )
-                      .toISOString()
-                      .slice(11, 19)
-                  : '-'}
-              </TableCell>
-              <TableCell>
-                <a
-                  className='text-sm text-primary hover:underline'
-                  href={`/executions/${execution.id}`}
-                >
-                  {t('common.viewDetails')}
-                </a>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableCard>
+    <RackList testId='node-executions-rack'>
+      {executions.map((execution) => (
+        <RackRow
+          key={execution.id}
+          testId={`node-execution-${execution.id}`}
+          title={
+            taskNames.get(execution.task_id) ? (
+              <a
+                href={`/tasks/${execution.task_id}`}
+                className='hover:underline'
+                title={taskNames.get(execution.task_id)}
+              >
+                {taskNames.get(execution.task_id)}
+              </a>
+            ) : (
+              t('common.unknownTask')
+            )
+          }
+          fields={[
+            {
+              label: t('common.status'),
+              value: <StatusBadge status={execution.status} />,
+            },
+            {
+              label: t('executions.start'),
+              value: <TimeValue value={execution.start_time} />,
+            },
+            {
+              label: t('executions.duration'),
+              value: execution.end_time
+                ? new Date(
+                    new Date(execution.end_time).getTime() -
+                      new Date(execution.start_time).getTime()
+                  )
+                    .toISOString()
+                    .slice(11, 19)
+                : '-',
+            },
+          ]}
+          actions={
+            <a
+              className='text-sm text-primary hover:underline'
+              href={`/executions/${execution.id}`}
+            >
+              {t('common.viewDetails')}
+            </a>
+          }
+        />
+      ))}
+    </RackList>
   )
 }
 
@@ -1118,8 +1820,14 @@ export function Schedules() {
     onError: (error) => toast.error(error.message),
   })
   const nodeNames = useMemo(
-    () => new Map((nodes.data || []).map((node) => [node.id, node.hostname])),
-    [nodes.data]
+    () =>
+      new Map(
+        (nodes.data || []).map((node) => [
+          node.id,
+          nodeDisplayName(node, t('common.unknownNode')),
+        ])
+      ),
+    [nodes.data, t]
   )
   const groupNames = useMemo(
     () => new Map((groups.data || []).map((group) => [group.id, group.name])),
@@ -1401,23 +2109,27 @@ export function Scripts() {
         minSize: 220,
         maxSize: 360,
         cell: ({ row }: { row: { original: Script } }) => (
-          <div>
-            <a
-              href={`/scripts/${row.original.id}`}
-              className='block truncate font-medium hover:underline'
-              title={row.original.name}
-            >
-              {row.original.name}
-            </a>
-            {row.original.description ? (
-              <span
-                className='block truncate text-xs text-muted-foreground'
-                title={row.original.description}
+          <RowText
+            primary={
+              <a
+                href={`/scripts/${row.original.id}`}
+                className='block truncate font-medium hover:underline'
+                title={row.original.name}
               >
-                {row.original.description}
-              </span>
-            ) : null}
-          </div>
+                {row.original.name}
+              </a>
+            }
+            secondary={
+              row.original.description ? (
+                <span
+                  className='block truncate text-xs text-muted-foreground'
+                  title={row.original.description}
+                >
+                  {row.original.description}
+                </span>
+              ) : undefined
+            }
+          />
         ),
       },
       {
@@ -2041,6 +2753,7 @@ export function ArtifactDetail() {
       <NodeSteerHeader
         title={item.name}
         description={`${item.version || '-'} · ${item.architecture || '-'}`}
+        backTo='/artifacts'
         action={
           <div className='flex items-center gap-2'>
             <Button variant='outline' onClick={() => void download()}>
@@ -2055,9 +2768,6 @@ export function ArtifactDetail() {
         }
       />
       <Main className='flex flex-1 flex-col gap-6'>
-        <Button asChild variant='ghost' className='w-fit px-0'>
-          <Link to='/artifacts'>← {t('common.back')}</Link>
-        </Button>
         <ConfirmDialog
           open={deleteOpen}
           onOpenChange={setDeleteOpen}
@@ -2470,11 +3180,9 @@ export function UserDetail() {
       <NodeSteerHeader
         title={user.username}
         description={t(`misc.${user.role}`, { defaultValue: user.role })}
+        backTo='/users'
       />
       <Main className='flex flex-1 flex-col gap-6'>
-        <Button asChild variant='ghost' className='w-fit px-0'>
-          <Link to='/users'>← {t('common.back')}</Link>
-        </Button>
         <SectionCard title={t('misc.usersTitle')}>
           <DetailGrid>
             <DetailField label={t('misc.username')}>
@@ -2564,8 +3272,15 @@ export function Settings() {
                   </p>
                 </CardHeader>
                 <CardContent className='grid gap-4 sm:grid-cols-2'>
-                  {query.isLoading ? (
+                  {query.isError ? (
+                    <ErrorState
+                      error={query.error}
+                      onRetry={() => query.refetch()}
+                    />
+                  ) : query.isLoading ? (
                     <div className='h-8 animate-pulse rounded bg-muted' />
+                  ) : !Object.keys(settings).length ? (
+                    <EmptyState message={t('common.noData')} />
                   ) : (
                     Object.entries(settings).map(([key, value]) => (
                       <label
@@ -2594,7 +3309,12 @@ export function Settings() {
                     <Button
                       className='w-fit sm:col-span-2'
                       onClick={() => save.mutate()}
-                      disabled={save.isPending}
+                      disabled={
+                        save.isPending ||
+                        query.isError ||
+                        query.isLoading ||
+                        !Object.keys(settings).length
+                      }
                     >
                       {t('common.save')}
                     </Button>
@@ -2652,6 +3372,7 @@ function ListLayout<TData>({
   action,
   extra,
   storageKey,
+  rackPrimaryColumnId,
   pagination,
   filter,
   onFilterChange,
@@ -2675,6 +3396,8 @@ function ListLayout<TData>({
   extra?: React.ReactNode
   /** 表格视图持久化键（列可见性/每页条数） */
   storageKey?: string
+  /** rack 视图下作为行标题的列 id；缺省取第一个业务列。 */
+  rackPrimaryColumnId?: string
   /** 空态文案；缺省使用通用「暂无数据」 */
   emptyMessage?: string
   /** 提供时启用服务端分页（页码/每页条数受控） */
@@ -2716,6 +3439,8 @@ function ListLayout<TData>({
             columns={columns}
             searchPlaceholder={searchPlaceholder}
             storageKey={storageKey}
+            variant='rack'
+            rackPrimaryColumnId={rackPrimaryColumnId}
             manualPagination={Boolean(pagination)}
             manualFiltering={Boolean(onFilterChange)}
             filter={filter}

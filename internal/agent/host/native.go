@@ -161,6 +161,14 @@ func (a *NativeHostAdapter) Stat(ctx context.Context, p string) (os.FileInfo, er
 	return os.Stat(p)
 }
 
+// Lstat 返回不跟随符号链接的文件信息，供入站数据面拒绝符号链接。
+func (a *NativeHostAdapter) Lstat(ctx context.Context, p string) (os.FileInfo, error) {
+	if err := a.ValidatePath(p); err != nil {
+		return nil, err
+	}
+	return os.Lstat(p)
+}
+
 func (a *NativeHostAdapter) systemdCtx(ctx context.Context) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(ctx, 60*1000_000_000/1000) // 60s
 }

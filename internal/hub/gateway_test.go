@@ -21,6 +21,7 @@ import (
 type fakeAgentConn struct {
 	nodeID string
 	closed bool
+	origin string
 }
 
 func (f *fakeAgentConn) NodeID() string { return f.nodeID }
@@ -28,6 +29,12 @@ func (f *fakeAgentConn) Send(msg protocol.Envelope) error {
 	return nil
 }
 func (f *fakeAgentConn) Close() error { f.closed = true; return nil }
+func (f *fakeAgentConn) Origin() string {
+	if f.origin == "" {
+		return models.ConnectionModeOutbound
+	}
+	return f.origin
+}
 
 func newTestGateway(t *testing.T) (*Gateway, *NodeManager, *SessionManager) {
 	t.Helper()
@@ -304,7 +311,7 @@ func TestHelloRejectedInvalidCredentialDemotesOnline(t *testing.T) {
 func TestHelloRejectedKeepsPendingNode(t *testing.T) {
 	ctx := context.Background()
 	g, nm, _ := newTestGateway(t)
-	pending, err := nm.PrepareEnrollment(ctx, "pending-reject", "10.0.0.82", models.DeploymentModeNative)
+	pending, err := nm.PrepareEnrollment(ctx, "pending-reject", "10.0.0.82", "10.0.0.82:18444", models.DeploymentModeNative)
 	if err != nil {
 		t.Fatalf("prepare enrollment: %v", err)
 	}
@@ -488,7 +495,7 @@ func TestHelloRejectedInvalidTokenDemotesOnline(t *testing.T) {
 
 	t.Run("pending node stays pending", func(t *testing.T) {
 		g, nm, _ := newTestGateway(t)
-		pending, err := nm.PrepareEnrollment(ctx, "pending-token-rej", "10.0.0.88", models.DeploymentModeNative)
+		pending, err := nm.PrepareEnrollment(ctx, "pending-token-rej", "10.0.0.88", "10.0.0.88:18444", models.DeploymentModeNative)
 		if err != nil {
 			t.Fatalf("prepare enrollment: %v", err)
 		}

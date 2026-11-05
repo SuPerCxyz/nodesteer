@@ -18,6 +18,7 @@ import {
   type Task,
   type Target,
 } from '@/lib/api'
+import { nodeDisplayName } from '@/lib/node-display-name'
 import { useCanRun, useCanWrite } from '@/lib/permissions'
 import { scheduleDisplayName, scheduleTriggerText } from '@/lib/schedules'
 import { isTargetComplete, normalizeTarget, targetSummary } from '@/lib/targets'
@@ -39,19 +40,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import { DataTable } from '@/features/shared/data-table'
+import { RackList, RackRow } from '@/features/shared/rack-list'
 import {
   ScheduleStrategyFields,
   type ExecutionStrategy,
@@ -70,7 +64,6 @@ import {
   SectionFull,
   SectionGrid,
   StatusBadge,
-  TableCard,
   TimeValue,
 } from '@/features/shared/ui'
 
@@ -240,22 +233,25 @@ export function Tasks() {
         }
       />
       <Main className='flex flex-1 flex-col gap-6'>
-        {query.isError ? (
-          <ErrorState error={query.error} onRetry={() => query.refetch()} />
-        ) : query.isLoading ? (
-          <LoadingState />
-        ) : query.data?.length ? (
-          <DataTable
-            data={query.data}
-            columns={columns}
-            storageKey='tasks'
-            searchPlaceholder={t('tasks.searchPlaceholder')}
-          />
-        ) : (
-          <Card>
-            <EmptyState message={t('tasks.noTasks')} />
-          </Card>
-        )}
+        <Card data-testid='tasks-workspace' className='min-w-0'>
+          <CardContent>
+            {query.isError ? (
+              <ErrorState error={query.error} onRetry={() => query.refetch()} />
+            ) : query.isLoading ? (
+              <LoadingState />
+            ) : query.data?.length ? (
+              <DataTable
+                data={query.data}
+                columns={columns}
+                storageKey='tasks'
+                variant='rack'
+                searchPlaceholder={t('tasks.searchPlaceholder')}
+              />
+            ) : (
+              <EmptyState message={t('tasks.noTasks')} />
+            )}
+          </CardContent>
+        </Card>
       </Main>
     </>
   )
@@ -321,7 +317,7 @@ export function TaskDetail() {
     <>
       <NodeSteerHeader
         title={item.name}
-        description={`${item.type} · r${item.revision}`}
+        backTo='/tasks'
         action={
           canRun || canWrite ? (
             <div className='flex items-center gap-2'>
@@ -343,16 +339,6 @@ export function TaskDetail() {
         }
       />
       <Main className='flex flex-1 flex-col gap-6'>
-        <Button asChild variant='ghost' className='w-fit px-0'>
-          <Link to='/tasks'>← {t('common.back')}</Link>
-        </Button>
-        <div className='flex flex-wrap items-center gap-3 text-xs text-muted-foreground'>
-          <StatusBadge status={item.enabled ? 'enabled' : 'disabled'} />
-          <span>
-            {t(`tasks.types.${item.type}`, { defaultValue: item.type })}
-          </span>
-          <span className='font-mono'>r{item.revision}</span>
-        </div>
         <SectionGrid>
           <SectionCard title={t('tasks.overviewTab')}>
             <DetailGrid>
@@ -399,86 +385,92 @@ export function TaskDetail() {
               </div>
             )}
           </SectionCard>
-          <SectionCard title={t('tasks.conditionSection')}>
-            {item.condition ? (
-              <p className='font-mono text-xs text-muted-foreground'>
-                {conditionSummaryText(
-                  item.condition,
-                  (nodeId) =>
-                    (nodes.data || []).find((node) => node.id === nodeId)
-                      ?.hostname || t('common.unknownNode')
-                )}
-              </p>
-            ) : (
-              <div className='text-sm text-muted-foreground'>
-                {t('tasks.noCondition')}
-              </div>
-            )}
-          </SectionCard>
-          <div id='task-schedules' className='scroll-mt-4'>
-            <SectionCard
-              title={t('tasks.scheduleTab')}
-              action={
-                canWrite ? (
-                  <Button asChild variant='outline' size='sm'>
-                    <Link to='/schedules/new' search={{ task_id: item.id }}>
-                      <Plus className='me-1 size-3.5' />
-                      {t('schedules.newSchedule')}
-                    </Link>
-                  </Button>
-                ) : null
-              }
-            >
-              {schedules.data?.length ? (
-                <div className='divide-y'>
-                  {schedules.data.map((schedule) => (
-                    <div
-                      className='flex flex-wrap items-center gap-x-3 gap-y-1 py-3 text-sm last:border-0'
-                      key={schedule.id}
-                    >
-                      <a
-                        className='min-w-0 truncate font-medium hover:underline'
-                        href={`/schedules/${schedule.id}`}
-                        title={scheduleDisplayName(schedule, t)}
-                      >
-                        {scheduleDisplayName(schedule, t)}
-                      </a>
-                      <span className='font-mono text-xs text-muted-foreground'>
-                        {scheduleTriggerText(schedule, t)}
-                      </span>
-                      <span className='text-xs text-muted-foreground'>
-                        {targetSummary(
-                          schedule.target,
-                          t,
-                          new Map(
-                            (nodes.data || []).map((node) => [
-                              node.id,
-                              node.hostname,
-                            ])
-                          ),
-                          new Map(
-                            (groups.data || []).map((group) => [
-                              group.id,
-                              group.name,
-                            ])
-                          )
-                        )}
-                      </span>
-                      <span className='ms-auto'>
-                        <StatusBadge
-                          status={schedule.enabled ? 'enabled' : 'disabled'}
-                        />
-                      </span>
-                    </div>
-                  ))}
-                </div>
+          <SectionFull>
+            <SectionCard title={t('tasks.conditionSection')}>
+              {item.condition ? (
+                <p className='font-mono text-xs text-muted-foreground'>
+                  {conditionSummaryText(item.condition, (nodeId) =>
+                    nodeDisplayName(
+                      (nodes.data || []).find((node) => node.id === nodeId) ?? {
+                        id: nodeId,
+                      },
+                      t('common.unknownNode')
+                    )
+                  )}
+                </p>
               ) : (
                 <div className='text-sm text-muted-foreground'>
-                  {t('tasks.noSchedules')}
+                  {t('tasks.noCondition')}
                 </div>
               )}
             </SectionCard>
-          </div>
+          </SectionFull>
+          <SectionFull>
+            <div id='task-schedules' className='scroll-mt-4'>
+              <SectionCard
+                title={t('tasks.scheduleTab')}
+                action={
+                  canWrite ? (
+                    <Button asChild variant='outline' size='sm'>
+                      <Link to='/schedules/new' search={{ task_id: item.id }}>
+                        <Plus className='me-1 size-3.5' />
+                        {t('schedules.newSchedule')}
+                      </Link>
+                    </Button>
+                  ) : null
+                }
+              >
+                {schedules.data?.length ? (
+                  <div className='divide-y'>
+                    {schedules.data.map((schedule) => (
+                      <div
+                        className='flex flex-wrap items-center gap-x-3 gap-y-1 py-3 text-sm last:border-0'
+                        key={schedule.id}
+                      >
+                        <a
+                          className='min-w-0 truncate font-medium hover:underline'
+                          href={`/schedules/${schedule.id}`}
+                          title={scheduleDisplayName(schedule, t)}
+                        >
+                          {scheduleDisplayName(schedule, t)}
+                        </a>
+                        <span className='font-mono text-xs text-muted-foreground'>
+                          {scheduleTriggerText(schedule, t)}
+                        </span>
+                        <span className='text-xs text-muted-foreground'>
+                          {targetSummary(
+                            schedule.target,
+                            t,
+                            new Map(
+                              (nodes.data || []).map((node) => [
+                                node.id,
+                                nodeDisplayName(node, t('common.unknownNode')),
+                              ])
+                            ),
+                            new Map(
+                              (groups.data || []).map((group) => [
+                                group.id,
+                                group.name,
+                              ])
+                            )
+                          )}
+                        </span>
+                        <span className='ms-auto'>
+                          <StatusBadge
+                            status={schedule.enabled ? 'enabled' : 'disabled'}
+                          />
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className='text-sm text-muted-foreground'>
+                    {t('tasks.noSchedules')}
+                  </div>
+                )}
+              </SectionCard>
+            </div>
+          </SectionFull>
           <SectionFull>
             <SectionCard title={t('tasks.executionsTab')}>
               <ExecutionHistory executions={executions.data || []} />
@@ -499,42 +491,29 @@ function ExecutionHistory({ executions }: { executions: Execution[] }) {
       </div>
     )
   return (
-    <TableCard>
-      <Table className='min-w-[460px] table-fixed'>
-        <colgroup>
-          <col className='w-[22%]' />
-          <col className='w-[56%]' />
-          <col className='w-[22%]' />
-        </colgroup>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t('common.status')}</TableHead>
-            <TableHead>{t('executions.start')}</TableHead>
-            <TableHead />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {executions.map((execution) => (
-            <TableRow key={execution.id}>
-              <TableCell>
-                <StatusBadge status={execution.status} />
-              </TableCell>
-              <TableCell>
-                <TimeValue value={execution.start_time} />
-              </TableCell>
-              <TableCell>
-                <a
-                  className='text-sm text-primary hover:underline'
-                  href={`/executions/${execution.id}`}
-                >
-                  {t('common.viewDetails')}
-                </a>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableCard>
+    <RackList testId='task-execution-history'>
+      {executions.map((execution) => (
+        <RackRow
+          key={execution.id}
+          testId={`task-execution-${execution.id}`}
+          title={<TimeValue value={execution.start_time} />}
+          fields={[
+            {
+              label: t('common.status'),
+              value: <StatusBadge status={execution.status} />,
+            },
+          ]}
+          actions={
+            <a
+              className='text-sm text-primary hover:underline'
+              href={`/executions/${execution.id}`}
+            >
+              {t('common.viewDetails')}
+            </a>
+          }
+        />
+      ))}
+    </RackList>
   )
 }
 
@@ -707,6 +686,7 @@ export function TaskEditor() {
         <NodeSteerHeader
           title={t('tasks.editTitle')}
           description={t('tasks.formDescription')}
+          backTo='/tasks'
         />
         <Main>
           <LoadingState />
@@ -718,6 +698,7 @@ export function TaskEditor() {
       <NodeSteerHeader
         title={editing ? t('tasks.editTitle') : t('tasks.newTitle')}
         description={t('tasks.formDescription')}
+        backTo='/tasks'
       />
       <Main className='flex flex-1 flex-col gap-6'>
         <Card className='w-full'>
@@ -1183,7 +1164,7 @@ export function RunTask() {
   if (!task.data)
     return (
       <>
-        <NodeSteerHeader title={t('tasks.runNow')} />
+        <NodeSteerHeader title={t('tasks.runNow')} backTo='/tasks' />
         <Main>
           <LoadingState />
         </Main>
@@ -1223,6 +1204,7 @@ export function RunTask() {
       <NodeSteerHeader
         title={`${t('tasks.runTitle')}${task.data?.name || id}`}
         description={t('tasks.runDescription')}
+        backTo='/tasks'
       />
       <Main className='flex flex-1 flex-col gap-6'>
         <Card className='w-full'>
@@ -1246,7 +1228,10 @@ export function RunTask() {
                   target,
                   t,
                   new Map(
-                    (nodes.data || []).map((node) => [node.id, node.hostname])
+                    (nodes.data || []).map((node) => [
+                      node.id,
+                      nodeDisplayName(node, t('common.unknownNode')),
+                    ])
                   ),
                   new Map(
                     (groups.data || []).map((group) => [group.id, group.name])

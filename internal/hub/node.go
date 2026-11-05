@@ -37,14 +37,19 @@ func NewNodeManager(st store.Store, rm *RevisionManager) *NodeManager {
 
 // RegisterAgent 注册新 Agent（返回 node/agent id 与凭证）
 func (nm *NodeManager) RegisterAgent(ctx context.Context, hostname, ip, os, arch, agentVersion, mode string, hostInt bool, caps map[string]bool) (*models.Node, string, error) {
-	return nm.createNode(ctx, hostname, ip, os, arch, agentVersion, mode, hostInt, caps, models.NodeStatusOnline, "outdated")
+	return nm.createNode(ctx, hostname, ip, "", os, arch, agentVersion, mode, hostInt, caps, models.NodeStatusOnline, "outdated")
 }
 
 // PrepareEnrollment 创建待接入节点，并预分配 Agent 身份供首次 HELLO 绑定。
 // 版本、架构和部署模式必须等首次 HELLO 后再以 Agent 实际上报值为准。
+// endpoint 是管理员配置的拨号地址，创建时必填；重新纳管时仅当地址变化才更新
+// 并暂停旧入站身份，相同地址保留既有证书/令牌密文。
 // 若同名（忽略大小写）或同地址的节点已存在，则复用其 Node ID / Agent ID 并重新签发凭证，
 // 避免「撤销凭证 → 重新纳管」产生重复节点记录；既有标签与历史保留。
-func (nm *NodeManager) PrepareEnrollment(ctx context.Context, hostname, ip string, _ string) (*models.Node, error) {
+func (nm *NodeManager) PrepareEnrollment(ctx context.Context, hostname, ip, endpoint string, _ string) (*models.Node, error) {
+	if strings.TrimSpace(endpoint) == "" {
+		return nil, errors.New("endpoint is required")
+	}
 	var pending *models.Node
 	err := runMutationTx(ctx, nm.store, func(txCtx context.Context) error {
 		existing, err := nm.findEnrollableNode(txCtx, hostname, ip)
@@ -52,7 +57,7 @@ func (nm *NodeManager) PrepareEnrollment(ctx context.Context, hostname, ip strin
 			return err
 		}
 		if existing == nil {
-			pending, _, err = nm.createNode(txCtx, hostname, ip, "", "", "", "", false, nil, models.NodeStatusPending, "pending")
+			pending, _, err = nm.createNode(txCtx, hostname, ip, endpoint, "", "", "", "", false, nil, models.NodeStatusPending, "pending")
 			return err
 		}
 		existing.Hostname = hostname
@@ -70,6 +75,14 @@ func (nm *NodeManager) PrepareEnrollment(ctx context.Context, hostname, ip strin
 		existing.Capabilities = nil
 		if err := nm.store.UpsertNode(txCtx, existing); err != nil {
 			return err
+		}
+		if endpoint != "" && endpoint != existing.Endpoint {
+			if err := nm.store.UpdateNodeEndpoint(txCtx, existing.ID, endpoint, auditActor(ctx), time.Now()); err != nil {
+				return err
+			}
+			existing.Endpoint = endpoint
+			existing.InboundProvisioned = false
+			existing.SyncInboundView()
 		}
 		// 普通Upsert保留人工状态；仅重新纳管明确进入pending。
 		if err := nm.store.UpdateNodeStatus(txCtx, existing.ID, existing.Status); err != nil {
@@ -119,12 +132,13 @@ func (nm *NodeManager) findEnrollableNode(ctx context.Context, hostname, ip stri
 	return nil, nil
 }
 
-func (nm *NodeManager) createNode(ctx context.Context, hostname, ip, os, arch, agentVersion, mode string, hostInt bool, caps map[string]bool, status, syncStatus string) (*models.Node, string, error) {
+func (nm *NodeManager) createNode(ctx context.Context, hostname, ip, endpoint, os, arch, agentVersion, mode string, hostInt bool, caps map[string]bool, status, syncStatus string) (*models.Node, string, error) {
 	now := time.Now()
 	n := &models.Node{
 		ID:              uuid.NewString(),
 		AgentID:         "agent-" + uuid.NewString(),
 		Hostname:        hostname,
+		Endpoint:        endpoint,
 		IP:              ip,
 		OS:              os,
 		Arch:            arch,
@@ -202,6 +216,12 @@ func (nm *NodeManager) ListNodes(ctx context.Context) ([]*models.Node, error) {
 	return nm.store.ListNodes(ctx)
 }
 
+// ListInboundCandidates 返回可尝试入站拨号的节点（store 层已按 endpoint/
+// inbound_provisioned/disabled 过滤，不含会话与退避判断）。
+func (nm *NodeManager) ListInboundCandidates(ctx context.Context) ([]*models.Node, error) {
+	return nm.store.ListInboundCandidateNodes(ctx)
+}
+
 // SetNodeStatus 设置节点状态
 func (nm *NodeManager) SetNodeStatus(ctx context.Context, id, status string) error {
 	if !validNodeStatus(status) {
@@ -254,6 +274,14 @@ func (nm *NodeManager) UpdateSyncState(ctx context.Context, id string, rev int64
 	return nm.store.UpdateNodeSyncState(ctx, id, rev, syncStatus)
 }
 
+// RecordConnectionMode 记录最近一次成功会话方向；未知方向拒绝写入。
+func (nm *NodeManager) RecordConnectionMode(ctx context.Context, id, mode string) error {
+	if mode != models.ConnectionModeOutbound && mode != models.ConnectionModeInbound {
+		return fmt.Errorf("invalid connection mode: %s", mode)
+	}
+	return nm.store.UpdateNodeLastConnectionMode(ctx, id, mode)
+}
+
 // SetLabels 设置标签
 func (nm *NodeManager) SetLabels(ctx context.Context, id string, labels map[string]string) error {
 	var rev int64
@@ -270,6 +298,70 @@ func (nm *NodeManager) SetLabels(ctx context.Context, id string, labels map[stri
 	_ = rev
 	if nm.syncMgr != nil {
 		nm.syncMgr.NotifyAll(ctx)
+	}
+	return nil
+}
+
+// NodeUpdateFields 描述单节点更新请求中实际出现的字段。
+// nil 指针/ nil map 表示请求未提交该字段；DisplayName 指向空字符串表示清除。
+type NodeUpdateFields struct {
+	Status      *string
+	Labels      map[string]string
+	DisplayName *string
+	// Endpoint 为规范化后的 host:port；仅 Administrator 可提交，变更会暂停入站身份。
+	Endpoint *string
+}
+
+// UpdateNodeFields 在同一事务内应用状态、标签、显示名与 endpoint，任一字段失败不产生部分修改。
+// 显示名只影响展示，不推进 Desired State Revision；标签仍按既有语义记录目标变更。
+// endpoint 变更不推进 Desired State Revision，由 API 单独记录 node.endpoint_update 审计。
+func (nm *NodeManager) UpdateNodeFields(ctx context.Context, id string, fields NodeUpdateFields) error {
+	if fields.Status != nil && !validNodeStatus(*fields.Status) {
+		return fmt.Errorf("invalid node status: %s", *fields.Status)
+	}
+	if fields.Status != nil || fields.Labels != nil || fields.DisplayName != nil || fields.Endpoint != nil {
+		if err := runMutationTx(ctx, nm.store, func(txctx context.Context) error {
+			if fields.Endpoint != nil {
+				existing, err := nm.store.GetNode(txctx, id)
+				if err != nil {
+					return err
+				}
+				if existing.Endpoint != *fields.Endpoint {
+					if err := nm.store.UpdateNodeEndpoint(txctx, id, *fields.Endpoint, auditActor(ctx), time.Now()); err != nil {
+						return err
+					}
+				}
+			}
+			if fields.Status != nil {
+				if err := nm.store.UpdateNodeStatus(txctx, id, *fields.Status); err != nil {
+					return err
+				}
+			}
+			if fields.Labels != nil {
+				if err := nm.store.SetNodeLabels(txctx, id, fields.Labels); err != nil {
+					return err
+				}
+				if _, err := nm.recordTargetChange(txctx, models.ObjectNode, id, "labels"); err != nil {
+					return err
+				}
+			}
+			if fields.DisplayName != nil {
+				if err := nm.store.UpdateNodeDisplayName(txctx, id, *fields.DisplayName); err != nil {
+					return err
+				}
+			}
+			return nil
+		}); err != nil {
+			return err
+		}
+	}
+	if nm.syncMgr != nil {
+		if fields.Labels != nil {
+			nm.syncMgr.NotifyAll(ctx)
+		}
+		if fields.Status != nil {
+			nm.syncMgr.NotifyNodeStatus(ctx, id, *fields.Status)
+		}
 	}
 	return nil
 }

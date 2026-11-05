@@ -161,6 +161,57 @@ func TestApplicationDeploymentRollsBackPreviousFiles(t *testing.T) {
 	}
 }
 
+// TestApplicationDeployUsesInboundStagedArtifact 入站部署不访问 Hub URL，只从本地缓存取 Artifact。
+func TestApplicationDeployUsesInboundStagedArtifact(t *testing.T) {
+	ctx := context.Background()
+	st := newTestAgentStore(t)
+	h := &testHost{root: t.TempDir()}
+	cache := NewArtifactCache(filepath.Join(t.TempDir(), "artifacts"), st, discardLogger(), "")
+	am := NewApplicationManager(st, h, cache, discardLogger())
+	app := models.Application{ID: "app-inbound", Name: "app", Version: "1.0", ArtifactID: "artifact-1", BinaryPath: "/usr/local/bin/app", UnitName: "nodesteer-app-inbound.service"}
+	def, _ := json.Marshal(app)
+	if err := st.BeginSync(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.UpsertApplication(ctx, app.ID, def, 1); err != nil {
+		st.RollbackSync()
+		t.Fatal(err)
+	}
+	if err := st.CommitSync(); err != nil {
+		t.Fatal(err)
+	}
+	payload := []byte("inbound artifact binary")
+	sum := sha256.Sum256(payload)
+	sha := hex.EncodeToString(sum[:])
+	var missingResult protocol.DeployResultPayload
+	am.deploy(ctx, protocol.DeployRequestPayload{
+		AppID: app.ID, AppVersion: app.Version, ArtifactID: "artifact-1",
+		ArtifactSHA256: strings.Repeat("1", 64), ArtifactTransport: protocol.TransportInboundPush,
+		BinaryPath: app.BinaryPath, UnitName: app.UnitName,
+		HealthCheck: []byte(`{"type":"command","target":"true"}`), Operation: "deploy",
+	}, def, "exec-missing", func(p protocol.DeployResultPayload) { missingResult = p })
+	if !missingResult.Blocked || !strings.Contains(missingResult.Error, "artifact_not_staged") {
+		t.Fatalf("missing artifact result = %+v, want BLOCKED artifact_not_staged", missingResult)
+	}
+	if err := cache.StoreReader(ctx, sha, int64(len(payload)), strings.NewReader(string(payload))); err != nil {
+		t.Fatalf("stage artifact: %v", err)
+	}
+	var result protocol.DeployResultPayload
+	am.deploy(ctx, protocol.DeployRequestPayload{
+		AppID: app.ID, AppVersion: app.Version, ArtifactID: "artifact-1",
+		ArtifactSHA256: sha, ArtifactTransport: protocol.TransportInboundPush,
+		BinaryPath: app.BinaryPath, UnitName: app.UnitName,
+		HealthCheck: []byte(`{"type":"command","target":"true"}`), Operation: "deploy",
+	}, def, "exec-inbound", func(p protocol.DeployResultPayload) { result = p })
+	if !result.OK || result.Health != "healthy" {
+		t.Fatalf("deploy result = %+v", result)
+	}
+	got, err := h.ReadFile(ctx, app.BinaryPath)
+	if err != nil || string(got) != string(payload) {
+		t.Fatalf("installed binary = %q err=%v", got, err)
+	}
+}
+
 // TestDeploymentJournalRecordsInstalledFromVersion from_version 必须记录本节点
 // 实际安装版本（最近一次成功部署的 to_version），而不是 Hub 当前应用定义版本
 // （缺陷 OBS-20261016-JOURNAL-FROM-VERSION）。

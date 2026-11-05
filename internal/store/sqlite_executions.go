@@ -20,7 +20,7 @@ func (s *SQLiteStore) CreateExecution(ctx context.Context, e *models.Execution) 
 	if e.CreatedAt.IsZero() {
 		e.CreatedAt = time.Now()
 	}
-	_, err := s.db.ExecContext(ctx, `
+	_, err := s.execer(ctx).ExecContext(ctx, `
 		INSERT INTO executions (id, task_id, task_revision, script_id, script_revision, node_id,
 			schedule_id, schedule_revision, trigger_type, scheduled_time, start_time, end_time, status, exit_code, stdout, stderr,
 			stdout_truncated, stderr_truncated, offline, synced, block_reason, created_at)
@@ -46,6 +46,23 @@ func (s *SQLiteStore) UpdateExecution(ctx context.Context, e *models.Execution) 
 		boolToInt(e.StdoutTruncated), boolToInt(e.StderrTruncated), boolToInt(e.Offline), boolToInt(e.Synced),
 		e.BlockReason, e.ID)
 	return err
+}
+
+// MarkExecutionStarted transitions a non-terminal execution to RUNNING. It
+// returns false for terminal rows so a late ExecutionStarted cannot revive an
+// abandoned or finished execution.
+func (s *SQLiteStore) MarkExecutionStarted(ctx context.Context, id string, started time.Time) (bool, error) {
+	result, err := s.db.ExecContext(ctx, `UPDATE executions SET status = ?, start_time = ?
+		WHERE id = ? AND status NOT IN ('SUCCESS', 'FAILED', 'SKIPPED', 'CANCELED', 'TIMED_OUT', 'BLOCKED')`,
+		models.ExecStatusRunning, timeToDB(started), id)
+	if err != nil {
+		return false, err
+	}
+	count, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return count == 1, nil
 }
 
 // timeToDB 零值时间写空串，避免 0001-01-01T00:00:00Z 占用唯一索引
@@ -97,6 +114,10 @@ func (s *SQLiteStore) GetExecution(ctx context.Context, id string) (*models.Exec
 func executionFilterWhere(filter ExecutionFilter) (string, []any) {
 	query := ` WHERE 1=1`
 	var args []any
+	if filter.ScheduleID != "" {
+		query += ` AND schedule_id = ?`
+		args = append(args, filter.ScheduleID)
+	}
 	if filter.NodeID != "" {
 		query += ` AND node_id = ?`
 		args = append(args, filter.NodeID)

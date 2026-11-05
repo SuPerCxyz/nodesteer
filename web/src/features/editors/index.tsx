@@ -18,6 +18,7 @@ import {
   type Script,
   type Task,
 } from '@/lib/api'
+import { nodeDisplayName } from '@/lib/node-display-name'
 import { useCanRun, useCanWrite } from '@/lib/permissions'
 import { statusLabel } from '@/lib/status-labels'
 import { isTargetComplete } from '@/lib/targets'
@@ -46,6 +47,10 @@ import {
 } from '@/components/cron/timezone'
 import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
+import { blockedInboundNodes } from '@/features/shared/inbound-data-plane'
+import { InboundDataPlaneBanner } from '@/features/shared/inbound-data-plane-banner'
+import { RowText } from '@/features/shared/rack-list'
+import { RecentExecutions } from '@/features/shared/recent-executions'
 import { RemoteConditionEditor } from '@/features/shared/remote-condition-editor'
 import { ScheduleStrategyFields } from '@/features/shared/schedule-strategy-fields'
 import { TargetEditor } from '@/features/shared/target-editor'
@@ -60,15 +65,21 @@ import {
 function EditorShell({
   title,
   description,
+  backTo,
   children,
 }: {
   title: string
   description: string
+  backTo: string
   children: React.ReactNode
 }) {
   return (
     <>
-      <NodeSteerHeader title={title} description={description} />
+      <NodeSteerHeader
+        title={title}
+        description={description}
+        backTo={backTo}
+      />
       <Main className='flex flex-1 flex-col gap-6'>
         <div className='w-full'>{children}</div>
       </Main>
@@ -204,6 +215,7 @@ export function ScheduleEditor() {
   if (editing && current.isPending && !draft)
     return (
       <EditorShell
+        backTo='/schedules'
         title={t('schedules.editTitle')}
         description={t('schedules.formDescription')}
       >
@@ -220,6 +232,7 @@ export function ScheduleEditor() {
   )
     return (
       <EditorShell
+        backTo='/schedules'
         title={t('schedules.newTitle')}
         description={t('schedules.formDescription')}
       >
@@ -235,6 +248,7 @@ export function ScheduleEditor() {
     )
   return (
     <EditorShell
+      backTo='/schedules'
       title={editing ? t('schedules.editTitle') : t('schedules.newTitle')}
       description={t('schedules.formDescription')}
     >
@@ -522,6 +536,11 @@ export function ScheduleEditor() {
           </div>
         </CardContent>
       </Card>
+      {editing && (
+        <div className='mt-6'>
+          <RecentExecutions scheduleId={id} />
+        </div>
+      )}
     </EditorShell>
   )
 }
@@ -623,6 +642,7 @@ export function ScriptEditor() {
   if (editing && current.isPending && !draft)
     return (
       <EditorShell
+        backTo='/scripts'
         title={t('scripts.editTitle')}
         description={t('scripts.formDescription')}
       >
@@ -631,6 +651,7 @@ export function ScriptEditor() {
     )
   return (
     <EditorShell
+      backTo='/scripts'
       title={editing ? t('scripts.editTitle') : t('scripts.newTitle')}
       description={t('scripts.formDescription')}
     >
@@ -991,6 +1012,7 @@ export function GroupEditor() {
   if (editing && current.isPending && !draft)
     return (
       <EditorShell
+        backTo='/groups'
         title={t('groups.editTitle')}
         description={t('groups.description')}
       >
@@ -1000,6 +1022,7 @@ export function GroupEditor() {
   const members = form.members || []
   return (
     <EditorShell
+      backTo='/groups'
       title={editing ? t('groups.editTitle') : t('groups.newGroup')}
       description={t('groups.description')}
     >
@@ -1088,7 +1111,7 @@ export function GroupEditor() {
                           })
                         }
                       />
-                      {node.hostname}
+                      {nodeDisplayName(node, t('common.unknownNode'))}
                       <span className='ms-auto text-xs text-muted-foreground'>
                         {statusLabel(node.status)}
                       </span>
@@ -1138,7 +1161,10 @@ export function ApplicationEditor() {
     queryFn: () => api.get<Node[]>('/nodes'),
   })
   const nodeNames = new Map(
-    (nodes.data || []).map((node) => [node.id, node.hostname])
+    (nodes.data || []).map((node) => [
+      node.id,
+      nodeDisplayName(node, t('common.unknownNode')),
+    ])
   )
   const [trackedExecutions, setTrackedExecutions] = useState<string[]>([])
   const [dispatching, setDispatching] = useState(false)
@@ -1240,6 +1266,10 @@ export function ApplicationEditor() {
         }
       : defaultForm)
   const setForm = (next: Partial<Application>) => setDraft(next)
+  const configurationDirty =
+    editing &&
+    draft !== null &&
+    JSON.stringify(draft) !== JSON.stringify(current.data)
   const selectedArtifact = (artifacts.data || []).find(
     (item) => item.id === form.artifact_id
   )
@@ -1256,7 +1286,15 @@ export function ApplicationEditor() {
   )
   const selectedNodes = selectedNodesDraft || assignedNodes.data || []
   const setSelectedNodes = (next: string[]) => setSelectedNodesDraft(next)
+  const blockedNodes = blockedInboundNodes(
+    selectedNodes.map((nodeID) =>
+      (nodes.data || []).find((node) => node.id === nodeID)
+    )
+  )
   const [operation, setOperation] = useState('deploy')
+  const dataPlaneBlocksOperation =
+    blockedNodes.length > 0 &&
+    (operation === 'deploy' || operation === 'upgrade')
   const [error, setError] = useState('')
   // 保存期间禁用按钮：避免重复点击发出第二次 POST/PUT（参照任务编辑器）
   const [saving, setSaving] = useState(false)
@@ -1302,7 +1340,8 @@ export function ApplicationEditor() {
       !editing ||
       !selectedNodes.length ||
       dispatchingRef.current ||
-      operationInProgress
+      operationInProgress ||
+      configurationDirty
     )
       return
     dispatchingRef.current = true
@@ -1388,6 +1427,7 @@ export function ApplicationEditor() {
   if (editing && current.isPending && !draft)
     return (
       <EditorShell
+        backTo='/applications'
         title={t('apps.editTitle')}
         description={t('apps.formDescription')}
       >
@@ -1396,11 +1436,96 @@ export function ApplicationEditor() {
     )
   return (
     <EditorShell
+      backTo='/applications'
       title={editing ? t('apps.editTitle') : t('apps.newTitle')}
       description={t('apps.formDescription')}
     >
       <div className='grid max-w-none gap-6'>
-        <Card>
+        {editing && (
+          <nav
+            aria-label={t('webFix.sections')}
+            className='flex flex-wrap gap-3 text-sm'
+          >
+            {canRun && (
+              <a href='#app-operations' className='text-primary'>
+                {t('webFix.operations')}
+              </a>
+            )}
+            <a href='#app-configuration' className='text-primary'>
+              {t('webFix.configuration')}
+            </a>
+            <a href='#app-history' className='text-primary'>
+              {t('apps.executionHistory')}
+            </a>
+          </nav>
+        )}
+
+        {editing && canRun ? (
+          <Card id='app-operations' className='scroll-mt-24'>
+            <CardHeader>
+              <CardTitle className='text-base'>{t('apps.deploy')}</CardTitle>
+            </CardHeader>
+            <CardContent className='flex flex-wrap gap-2'>
+              <p className='w-full text-sm text-muted-foreground'>
+                {t('webFix.savedConfiguration')}
+              </p>
+              <div className='w-full'>
+                <InboundDataPlaneBanner
+                  nodes={selectedNodes.map((nodeID) =>
+                    (nodes.data || []).find((node) => node.id === nodeID)
+                  )}
+                />
+              </div>
+              {configurationDirty && (
+                <div className='w-full space-y-2' role='status'>
+                  <p>{t('webFix.saveBeforeRun')}</p>
+                  <Button variant='outline' onClick={() => setDraft(null)}>
+                    {t('webFix.discardConfiguration')}
+                  </Button>
+                </div>
+              )}
+              <Select
+                value={operation}
+                onValueChange={setOperation}
+                disabled={!canRun}
+              >
+                <SelectTrigger
+                  className='w-40'
+                  aria-label={t('apps.operation')}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {['deploy', 'start', 'stop', 'restart', 'upgrade'].map(
+                    (value) => (
+                      <SelectItem key={value} value={value}>
+                        {value}
+                      </SelectItem>
+                    )
+                  )}
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={deploy}
+                disabled={
+                  configurationDirty ||
+                  !canRun ||
+                  !selectedNodes.length ||
+                  dispatching ||
+                  operationInProgress ||
+                  dataPlaneBlocksOperation
+                }
+                aria-busy={dispatching || operationInProgress}
+              >
+                {dispatching || operationInProgress ? (
+                  <Loader2 className='animate-spin' />
+                ) : null}
+                {t('apps.deploy')}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : null}
+        <Card id='app-configuration' className='scroll-mt-24'>
           <CardHeader>
             <CardTitle className='text-base'>{t('apps.title')}</CardTitle>
           </CardHeader>
@@ -1846,7 +1971,7 @@ export function ApplicationEditor() {
                     )
                   }
                 />
-                {node.hostname}
+                {nodeDisplayName(node, t('common.unknownNode'))}
                 <span className='ms-auto text-xs text-muted-foreground'>
                   {statusLabel(node.status)}
                 </span>
@@ -1856,53 +1981,6 @@ export function ApplicationEditor() {
         </Card>
         {editing && (
           <>
-            {canRun ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle className='text-base'>
-                    {t('apps.deploy')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className='flex flex-wrap gap-2'>
-                  <Select
-                    value={operation}
-                    onValueChange={setOperation}
-                    disabled={!canRun}
-                  >
-                    <SelectTrigger
-                      className='w-40'
-                      aria-label={t('apps.operation')}
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {['deploy', 'start', 'stop', 'restart', 'upgrade'].map(
-                        (value) => (
-                          <SelectItem key={value} value={value}>
-                            {value}
-                          </SelectItem>
-                        )
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    onClick={deploy}
-                    disabled={
-                      !canRun ||
-                      !selectedNodes.length ||
-                      dispatching ||
-                      operationInProgress
-                    }
-                    aria-busy={dispatching || operationInProgress}
-                  >
-                    {dispatching || operationInProgress ? (
-                      <Loader2 className='animate-spin' />
-                    ) : null}
-                    {t('apps.deploy')}
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : null}
             <Card>
               <CardHeader>
                 <CardTitle className='text-base'>{t('apps.health')}</CardTitle>
@@ -1945,7 +2023,7 @@ export function ApplicationEditor() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle className='text-base'>
+                <CardTitle id='app-history' className='scroll-mt-24 text-base'>
                   {t('apps.executionHistory')}
                 </CardTitle>
               </CardHeader>
@@ -1960,18 +2038,28 @@ export function ApplicationEditor() {
                   <div className='divide-y'>
                     {executions.data.map((execution) => (
                       <div
-                        className='grid grid-cols-[1fr_auto] gap-2 py-2 text-sm'
+                        className='flex min-h-[60px] min-w-0 items-center justify-between gap-3 py-2.5 text-sm'
                         key={execution.id}
                       >
-                        <span className='text-sm'>
-                          {t('executions.executionTitle')}
-                        </span>
+                        <RowText
+                          primary={
+                            <Link
+                              className='text-sm text-primary hover:underline'
+                              to='/executions/$executionId'
+                              params={{ executionId: execution.id }}
+                            >
+                              {t('executions.executionTitle')}
+                            </Link>
+                          }
+                          secondary={
+                            <span className='text-xs text-muted-foreground'>
+                              {nodeNames.get(execution.node_id) ||
+                                t('common.unknownNode')}{' '}
+                              <TimeValue value={execution.start_time} />
+                            </span>
+                          }
+                        />
                         <StatusText value={execution.status} />
-                        <span className='text-xs text-muted-foreground'>
-                          {nodeNames.get(execution.node_id) ||
-                            t('common.unknownNode')}{' '}
-                          <TimeValue value={execution.start_time} />
-                        </span>
                       </div>
                     ))}
                   </div>
@@ -2053,6 +2141,7 @@ export function ArtifactEditor() {
   }
   return (
     <EditorShell
+      backTo='/artifacts'
       title={t('common.upload')}
       description={t('artifacts.description')}
     >

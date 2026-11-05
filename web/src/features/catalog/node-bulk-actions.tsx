@@ -50,6 +50,11 @@ export function NodeBulkActions({
         targets.skippedDocker
           ? t('nodes.bulkUpgradeSkipDocker', { count: targets.skippedDocker })
           : '',
+        targets.blockedDataPlane
+          ? t('nodes.bulkUpgradeSkipDataPlane', {
+              count: targets.blockedDataPlane,
+            })
+          : '',
         summary.reasons.length
           ? t('nodes.bulkUpgradeReasons', {
               reasons: summary.reasons.join('、'),
@@ -151,6 +156,13 @@ export function NodeBulkActions({
               <p className='text-amber-600 dark:text-amber-500'>
                 {t('nodes.bulkUpgradeSkipDocker', {
                   count: targets.skippedDocker,
+                })}
+              </p>
+            ) : null}
+            {targets.blockedDataPlane > 0 ? (
+              <p className='text-amber-600 dark:text-amber-500'>
+                {t('nodes.bulkUpgradeSkipDataPlane', {
+                  count: targets.blockedDataPlane,
                 })}
               </p>
             ) : null}

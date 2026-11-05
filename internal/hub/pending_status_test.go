@@ -82,7 +82,7 @@ func TestRemoteOnlineConditionAcceptsPendingValue(t *testing.T) {
 func TestResolveRemoteStateReportsPending(t *testing.T) {
 	ctx := context.Background()
 	g, nm, _ := newTestGateway(t)
-	node, err := nm.PrepareEnrollment(ctx, "pending-remote", "10.0.0.86", models.DeploymentModeNative)
+	node, err := nm.PrepareEnrollment(ctx, "pending-remote", "10.0.0.86", "10.0.0.86:18444", models.DeploymentModeNative)
 	if err != nil {
 		t.Fatalf("prepare enrollment: %v", err)
 	}

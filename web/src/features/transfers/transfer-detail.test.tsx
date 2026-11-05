@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from '@/i18n'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
+import { userEvent } from 'vitest/browser'
 import type { FileTransfer, Node } from '@/lib/api'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { FileTransfers, TransferDetail } from './index'
@@ -111,5 +112,125 @@ describe('传输详情页与状态本地化（OBS-20261017-CROSSPAGE-LINK-GAPS �
     await expect
       .element(page.getByRole('link', { name: i18n.t('common.viewDetails') }))
       .toHaveAttribute('href', '/transfers/tr-1')
+  })
+  it('locks the transfer draft and new action until a delayed create request settles', async () => {
+    let release!: (value: FileTransfer) => void
+    post.mockImplementationOnce(
+      () =>
+        new Promise<FileTransfer>((resolve) => {
+          release = resolve
+        })
+    )
+    const page = await renderPage(<FileTransfers />)
+    const newButton = page.getByRole('button', {
+      name: i18n.t('transfers.newTransfer'),
+      exact: true,
+    })
+    await userEvent.click(newButton)
+    await userEvent.click(
+      page.getByRole('combobox', {
+        name: i18n.t('transfers.source'),
+        exact: true,
+      })
+    )
+    await userEvent.click(page.getByRole('option', { name: 'agent-a' }))
+    await userEvent.fill(
+      page.getByRole('textbox', { name: i18n.t('transfers.sourcePath') }),
+      '/tmp/a'
+    )
+    await userEvent.click(
+      page.getByRole('combobox', {
+        name: i18n.t('transfers.target'),
+        exact: true,
+      })
+    )
+    await userEvent.click(page.getByRole('option', { name: 'agent-b' }))
+    await userEvent.fill(
+      page.getByRole('textbox', { name: i18n.t('transfers.destinationPath') }),
+      '/tmp/b'
+    )
+    await userEvent.click(
+      page.getByRole('button', {
+        name: i18n.t('transfers.addTarget'),
+        exact: true,
+      })
+    )
+    await userEvent.click(
+      page.getByRole('button', { name: i18n.t('transfers.start'), exact: true })
+    )
+    await expect.poll(() => post.mock.calls.length).toBe(1)
+    await expect.element(newButton).toBeDisabled()
+    await expect
+      .element(
+        page.getByRole('textbox', { name: i18n.t('transfers.sourcePath') })
+      )
+      .toBeDisabled()
+    await expect
+      .element(
+        page
+          .getByRole('region')
+          .getByRole('button', { name: i18n.t('common.cancel'), exact: true })
+      )
+      .toBeDisabled()
+    release(TRANSFER)
+    await expect.element(newButton).toBeEnabled()
+    expect(page.getByRole('region').elements()).toHaveLength(0)
+  })
+})
+
+describe('入站数据面不可用提示', () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage('zh')
+  })
+
+  beforeEach(() => {
+    get.mockReset()
+    post.mockReset()
+    window.history.replaceState({}, '', '/transfers')
+    get.mockImplementation(async (path: string) => {
+      if (path === '/transfers') return []
+      if (path === '/nodes') {
+        return [
+          {
+            ...NODES[0],
+            connection_mode: 'inbound',
+            inbound: {
+              configured: true,
+              capable: true,
+              data_plane: false,
+              cert_fingerprint: '',
+              cert_not_after: '',
+              last_handshake_at: '',
+              last_error: '',
+            },
+          },
+          NODES[1],
+        ]
+      }
+      return []
+    })
+  })
+
+  it('选中入站无数据面节点时显示 banner 并禁用提交', async () => {
+    const page = await renderPage(<FileTransfers />)
+    await userEvent.click(
+      page.getByRole('button', {
+        name: i18n.t('transfers.newTransfer'),
+        exact: true,
+      })
+    )
+    await userEvent.click(
+      page.getByRole('combobox', {
+        name: i18n.t('transfers.source'),
+        exact: true,
+      })
+    )
+    await userEvent.click(page.getByRole('option', { name: 'agent-a' }))
+    await expect
+      .element(page.getByTestId('inbound-data-plane-banner'))
+      .toBeVisible()
+    await expect
+      .element(page.getByRole('button', { name: i18n.t('transfers.start') }))
+      .toBeDisabled()
   })
 })

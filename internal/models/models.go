@@ -54,6 +54,9 @@ const (
 // Capability 键
 const (
 	CapScript            = "script"
+	CapMonitorProbe      = "monitor_probe"
+	CapNodeMetrics       = "node_metrics"
+	CapContainerMetrics  = "container_metrics"
 	CapLocalScheduler    = "local_scheduler"
 	CapOfflineExecution  = "offline_execution"
 	CapHostFilesystem    = "host_filesystem"
@@ -63,13 +66,27 @@ const (
 	// 仅作能力广而告知（UI/调用方可用）；升级下发的硬门禁是 deployment_mode
 	// （存量旧 Agent 未上报该能力，若以其为门禁会形成"无法升级到能升级的版本"死锁）。
 	CapAgentUpgrade = "agent_upgrade"
+	// CapInboundConnection Agent 具备入站 listener 与 HUB_HELLO 握手。
+	CapInboundConnection = "inbound_connection"
+	// CapInboundDataPlane Agent 具备入站 HTTPS push/pull 数据面。
+	CapInboundDataPlane = "inbound_data_plane"
+)
+
+// 连接方式观测值。connection_mode 不是策略，只表示当前/最近一次成功会话的
+// 建立方向；API 的当前值由活跃会话实时计算，离线时为 offline。
+const (
+	ConnectionModeOutbound = "outbound"
+	ConnectionModeInbound  = "inbound"
+	ConnectionModeOffline  = "offline"
 )
 
 // Node 节点
 type Node struct {
-	ID              string            `json:"id"`
-	AgentID         string            `json:"agent_id"`
-	Hostname        string            `json:"hostname"`
+	ID       string `json:"id"`
+	AgentID  string `json:"agent_id"`
+	Hostname string `json:"hostname"`
+	// DisplayName 是用户可编辑的展示名，默认空；不参与身份、匹配或执行目标。
+	DisplayName     string            `json:"display_name"`
 	IP              string            `json:"ip"`
 	OS              string            `json:"os"`
 	Arch            string            `json:"arch"`
@@ -84,18 +101,83 @@ type Node struct {
 	LastSeen        time.Time         `json:"last_seen"`
 	FirstSeen       time.Time         `json:"first_seen"`
 	Inventory       *Inventory        `json:"inventory,omitempty"`
+
+	// Endpoint Hub 主动拨号地址，规范化为 host:port；只由管理员配置。
+	Endpoint string `json:"endpoint"`
+	// ConnectionMode 当前会话方向（outbound/inbound/offline），由 API 实时计算。
+	ConnectionMode string `json:"connection_mode"`
+	// LastConnectionMode 最近一次成功会话方向；空表示从未成功连接。
+	LastConnectionMode string `json:"last_connection_mode"`
+	// Inbound 是入站配置/诊断的只读视图。
+	Inbound NodeInboundInfo `json:"inbound"`
+	// InboundBundleStale 表示 endpoint 已变更但未重新签发 bundle。
+	InboundBundleStale bool `json:"inbound_bundle_stale"`
+	// EndpointUpdatedAt/By 记录管理员最近一次 endpoint 变更。
+	EndpointUpdatedAt string `json:"endpoint_updated_at,omitempty"`
+	EndpointUpdatedBy string `json:"endpoint_updated_by,omitempty"`
+
+	// 以下字段仅内部使用，绝不通过 JSON 返回。
+	InboundProvisioned     bool   `json:"-"`
+	InboundCertFingerprint string `json:"-"`
+	InboundCertSerial      string `json:"-"`
+	InboundCertNotAfter    string `json:"-"`
+	InboundTokenEnc        string `json:"-"`
+	InboundLastHandshake   string `json:"-"`
+	InboundLastError       string `json:"-"`
+}
+
+// NodeInboundInfo 节点入站能力与证书诊断（只读）。
+type NodeInboundInfo struct {
+	Configured      bool   `json:"configured"`
+	Capable         bool   `json:"capable"`
+	DataPlane       bool   `json:"data_plane"`
+	CertFingerprint string `json:"cert_fingerprint"`
+	CertNotAfter    string `json:"cert_not_after"`
+	LastHandshakeAt string `json:"last_handshake_at"`
+	LastError       string `json:"last_error"`
+}
+
+// InboundBundleStale 判定 endpoint 变更后是否还需重新签发 bundle。
+func (n *Node) InboundBundleIsStale() bool {
+	return !n.InboundProvisioned && n.Endpoint != "" &&
+		(n.InboundCertFingerprint != "" || n.InboundTokenEnc != "")
+}
+
+// SyncInboundView 由数据库字段与能力集刷新只读入站视图，避免各读取路径重复拼装。
+func (n *Node) SyncInboundView() {
+	fingerprint := n.InboundCertFingerprint
+	if fingerprint != "" && !strings.HasPrefix(fingerprint, "sha256:") {
+		fingerprint = "sha256:" + fingerprint
+	}
+	n.Inbound = NodeInboundInfo{
+		Configured:      n.InboundProvisioned,
+		Capable:         n.Capabilities[CapInboundConnection],
+		DataPlane:       n.Capabilities[CapInboundDataPlane],
+		CertFingerprint: fingerprint,
+		CertNotAfter:    n.InboundCertNotAfter,
+		LastHandshakeAt: n.InboundLastHandshake,
+		LastError:       n.InboundLastError,
+	}
+	n.InboundBundleStale = n.InboundBundleIsStale()
 }
 
 // Inventory 节点硬件信息
 type Inventory struct {
-	OS         string           `json:"os"`
-	OSVersion  string           `json:"os_version"`
-	Kernel     string           `json:"kernel"`
-	Arch       string           `json:"arch"`
-	CPU        []CPUInfo        `json:"cpu"`
-	Memory     *MemoryInfo      `json:"memory,omitempty"`
-	Filesystem []FilesystemInfo `json:"filesystem"`
-	Network    []NetworkInfo    `json:"network"`
+	Hostname     string            `json:"hostname,omitempty"`
+	OS           string            `json:"os"`
+	OSVersion    string            `json:"os_version"`
+	Kernel       string            `json:"kernel"`
+	Arch         string            `json:"arch"`
+	CPU          []CPUInfo         `json:"cpu"`
+	Memory       *MemoryInfo       `json:"memory,omitempty"`
+	Filesystem   []FilesystemInfo  `json:"filesystem"`
+	Network      []NetworkInfo     `json:"network"`
+	BlockDevices []BlockDeviceInfo `json:"block_devices,omitempty"`
+}
+
+type BlockDeviceInfo struct {
+	Name string `json:"name"`
+	Kind string `json:"kind"`
 }
 
 type CPUInfo struct {

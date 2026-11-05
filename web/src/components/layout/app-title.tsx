@@ -19,22 +19,27 @@ export function AppTitle() {
       <SidebarMenuItem>
         <SidebarMenuButton
           size='lg'
-          className='gap-0 py-0 hover:bg-transparent active:bg-transparent'
+          className='relative block h-auto min-h-12 gap-0 py-0 group-data-[collapsible=icon]:min-h-8 hover:bg-transparent active:bg-transparent'
           asChild
         >
           <div>
             <Link
               to='/'
               onClick={() => setOpenMobile(false)}
-              className='grid flex-1 text-start text-sm leading-tight'
+              className='grid w-full min-w-0 text-start text-sm leading-tight group-data-[collapsible=icon]:hidden'
             >
-              <span className='flex items-center gap-2 truncate font-bold'>
+              <span className='flex h-8 min-w-0 items-center gap-2 pe-8 font-bold'>
                 <Logo className='size-5 text-primary' />
                 {t('brand.name')}
               </span>
-              <span className='truncate text-xs'>{t('brand.subtitle')}</span>
+              <span
+                data-slot='brand-subtitle'
+                className='min-w-0 text-xs leading-4 [overflow-wrap:anywhere] whitespace-normal'
+              >
+                {t('brand.subtitle')}
+              </span>
             </Link>
-            <ToggleSidebar />
+            <ToggleSidebar className='absolute inset-e-0 top-0' />
           </div>
         </SidebarMenuButton>
       </SidebarMenuItem>

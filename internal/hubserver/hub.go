@@ -2,10 +2,16 @@ package hubserver
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
 	"fmt"
+	"golang.org/x/sys/unix"
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -13,60 +19,90 @@ import (
 	"github.com/SuPerCxyz/nodesteer/internal/hub"
 	"github.com/SuPerCxyz/nodesteer/internal/hub/api"
 	"github.com/SuPerCxyz/nodesteer/internal/hub/auth"
+	"github.com/SuPerCxyz/nodesteer/internal/inbound"
 	"github.com/SuPerCxyz/nodesteer/internal/metrics"
 	"github.com/SuPerCxyz/nodesteer/internal/models"
+	"github.com/SuPerCxyz/nodesteer/internal/monitoring"
 	"github.com/SuPerCxyz/nodesteer/internal/store"
 )
 
 // Config Hub 配置
 type Config struct {
-	WebAddr              string
-	GatewayAddr          string
-	GatewayBaseURL       string
-	WebTLSCert           string
-	WebTLSKey            string
-	GatewayTLSCert       string
-	GatewayTLSKey        string
-	RegistrationToken    string
-	DataDir              string
-	ArtifactDir          string
-	AgentBinaryAMD64Path string
-	AgentBinaryARM64Path string
-	AgentBinaryPayloads  map[string][]byte
-	BaseURL              string
-	HeartbeatTimeout     time.Duration
-	AdminUsername        string
-	AdminPassword        string
-	SessionTTL           time.Duration
-	RevisionCheckSec     int
-	ChangelogWindow      int64
-	MaxFileTransferBytes int64
+	WebAddr                string
+	GatewayAddr            string
+	GatewayBaseURL         string
+	WebTLSCert             string
+	WebTLSKey              string
+	GatewayTLSCert         string
+	GatewayTLSKey          string
+	RegistrationToken      string
+	DataDir                string
+	ArtifactDir            string
+	AgentBinaryAMD64Path   string
+	AgentBinaryARM64Path   string
+	AgentBinaryPayloads    map[string][]byte
+	BaseURL                string
+	HeartbeatTimeout       time.Duration
+	AdminUsername          string
+	AdminPassword          string
+	SessionTTL             time.Duration
+	RevisionCheckSec       int
+	ChangelogWindow        int64
+	MaxFileTransferBytes   int64
+	MonitoringAllowedCIDRs []string
+	MonitoringWorkers      int
+	// 入站连接（Hub 主动拨号）配置。默认关闭；启用后未提供 CA/客户端证书路径
+	// 时在 DataDir/inbound 下自动生成（私钥 0600）。
+	InboundEnabled         bool
+	InboundCAFile          string
+	InboundCAKeyFile       string
+	InboundClientCertFile  string
+	InboundClientKeyFile   string
+	InboundDialConcurrency int
+	InboundDialTimeout     time.Duration
+	InboundBackoffInitial  time.Duration
+	InboundBackoffMax      time.Duration
+	InboundAllowedPorts    []int
+	InboundDeniedCIDRs     []string
+	InboundAllowLoopback   bool
 	// DevNoAuth 仅本地测试使用：所有 API 请求按管理员放行。默认 false。
 	DevNoAuth bool
-	OIDC      auth.OIDCConfig
+	// AllowEmptyPassword 仅测试环境使用：允许本地账号以空密码登录。默认 false。
+	AllowEmptyPassword bool
+	OIDC               auth.OIDCConfig
 }
 
 // Hub 主结构
 type Hub struct {
-	cfg       Config
-	store     store.Store
-	auth      *auth.Manager
-	revisions *hub.RevisionManager
-	sessions  *hub.SessionManager
-	nodes     *hub.NodeManager
-	scripts   *hub.ScriptManager
-	tasks     *hub.TaskManager
-	schedules *hub.ScheduleManager
-	syncMgr   *hub.SyncManager
-	execMgr   *hub.ExecutionManager
-	artifacts *hub.ArtifactManager
-	apps      *hub.AppManager
-	transfers *hub.FileTransferManager
-	gateway   *hub.Gateway
-	api       *api.Server
-	metrics   *metrics.Metrics
-	logger    *slog.Logger
-	webFS     fs.FS
+	cfg              Config
+	store            store.Store
+	auth             *auth.Manager
+	revisions        *hub.RevisionManager
+	sessions         *hub.SessionManager
+	nodes            *hub.NodeManager
+	scripts          *hub.ScriptManager
+	tasks            *hub.TaskManager
+	schedules        *hub.ScheduleManager
+	syncMgr          *hub.SyncManager
+	execMgr          *hub.ExecutionManager
+	artifacts        *hub.ArtifactManager
+	apps             *hub.AppManager
+	transfers        *hub.FileTransferManager
+	gateway          *hub.Gateway
+	inboundDialer    *hub.InboundDialer
+	api              *api.Server
+	metrics          *metrics.Metrics
+	inboundPolicy    *inbound.DialPolicy
+	inboundAuthority *inbound.Authority
+	inboundEnabled   bool
+	monitoring       *monitoring.Scheduler
+	alertEvaluator   *monitoring.AlertEvaluator
+	monitorLock      *os.File
+	monitorDone      chan struct{}
+	metricDone       chan struct{}
+	alertDone        chan struct{}
+	logger           *slog.Logger
+	webFS            fs.FS
 	// singlePort 单端口模式：GatewayAddr == WebAddr（零新配置项的触发条件）。
 	// 此模式下不起独立 Gateway listener，由 Web 最外层 middleware 分流。
 	singlePort bool
@@ -76,11 +112,20 @@ type Hub struct {
 
 // New 组装 Hub
 func New(cfg Config, logger *slog.Logger) (*Hub, error) {
+	monitorNetwork, err := monitoring.NewNetworkPolicy(cfg.MonitoringAllowedCIDRs)
+	if err != nil {
+		return nil, err
+	}
+	monitorTransport := monitorNetwork.Transport()
 	if (cfg.WebTLSCert == "") != (cfg.WebTLSKey == "") {
 		return nil, fmt.Errorf("web_tls_cert and web_tls_key must be configured together")
 	}
 	if (cfg.GatewayTLSCert == "") != (cfg.GatewayTLSKey == "") {
 		return nil, fmt.Errorf("gateway_tls_cert and gateway_tls_key must be configured together")
+	}
+	inboundRuntime, err := prepareInbound(cfg, logger)
+	if err != nil {
+		return nil, err
 	}
 	singlePort := cfg.GatewayAddr == cfg.WebAddr
 	if singlePort && cfg.GatewayTLSCert != "" {
@@ -94,6 +139,7 @@ func New(cfg Config, logger *slog.Logger) (*Hub, error) {
 	}
 
 	authMgr := auth.New(st, cfg.SessionTTL)
+	authMgr.SetAllowEmptyPassword(cfg.AllowEmptyPassword)
 	allowLocal := cfg.OIDC.LocalLoginAllowed()
 	authMgr.SetLocalLoginAllowed(allowLocal)
 	if allowLocal {
@@ -127,6 +173,9 @@ func New(cfg Config, logger *slog.Logger) (*Hub, error) {
 	m := metrics.New()
 	execMgr := hub.NewExecutionManager(st, sessions, nodes, logger)
 	execMgr.SetMetrics(m)
+	execMgr.SetAgentBinaryProvider(func(arch string) ([]byte, string, error) {
+		return loadAgentBinaryForArch(cfg, arch)
+	})
 	scripts := hub.NewScriptManager(st, revisions, syncMgr)
 	tasks := hub.NewTaskManager(st, revisions, syncMgr)
 
@@ -134,6 +183,7 @@ func New(cfg Config, logger *slog.Logger) (*Hub, error) {
 	if err != nil {
 		return nil, err
 	}
+	execMgr.SetArtifactManager(artifacts)
 	apps := hub.NewAppManager(st, revisions, sessions, artifacts, execMgr, cfg.BaseURL)
 	apps.SetSyncMgr(syncMgr)
 	schedules := hub.NewScheduleManager(st, revisions, syncMgr, nodes, execMgr)
@@ -152,16 +202,62 @@ func New(cfg Config, logger *slog.Logger) (*Hub, error) {
 	gateway.SetTransferHandler(http.HandlerFunc(transfers.HandleAgentHTTP))
 	gateway.SetOnAgentConn(func(nodeID string) { transfers.ResumeNode(context.Background(), nodeID) })
 
+	var inboundDialer *hub.InboundDialer
+	if inboundRuntime.enabled && inboundRuntime.authority != nil {
+		inboundDialer = hub.NewInboundDialer(hub.InboundDialerConfig{
+			Concurrency:      cfg.InboundDialConcurrency,
+			HandshakeTimeout: cfg.InboundDialTimeout,
+			BackoffInitial:   cfg.InboundBackoffInitial,
+			BackoffMax:       cfg.InboundBackoffMax,
+			Authority:        inboundRuntime.authority,
+			Policy:           inboundRuntime.policy,
+			Metrics:          m,
+		}, gateway, logger)
+	}
+
 	apiServer := api.New(st, authMgr, nodes, scripts, tasks, schedules, artifacts, apps, execMgr, logger)
 	apiServer.SetDevNoAuth(cfg.DevNoAuth)
 	apiServer.SetFileTransfers(transfers)
+	if inboundDialer != nil {
+		apiServer.SetInboundDialer(inboundDialer)
+	}
+	if inboundRuntime.enabled && inboundRuntime.authority != nil {
+		apiServer.SetInboundBundleService(hub.NewInboundBundleService(
+			inboundRuntime.authority, nodes, sessions, cfg.RegistrationToken, gatewayBaseURL, cfg.BaseURL, logger))
+	}
 	apiServer.SetEnrollmentConfig(cfg.RegistrationToken, gatewayBaseURL)
+	apiServer.SetInboundConfig(inboundRuntime.enabled, inboundRuntime.policy)
 	apiServer.SetBaseURL(cfg.BaseURL)
 	apiServer.SetAgentBinaryPaths(cfg.AgentBinaryAMD64Path, cfg.AgentBinaryARM64Path)
 	apiServer.SetAgentBinaryPayloads(cfg.AgentBinaryPayloads)
 	apiServer.SetMetrics(m)
 	apiServer.SetRegistrationToken(cfg.RegistrationToken)
 	apiServer.SetSessions(sessions)
+	monitorRepo := monitoring.NewRepository(st.DB())
+	apiServer.SetMonitoring(monitorRepo)
+	monitorScheduler := monitoring.NewScheduler(monitorRepo, monitorTransport, logger)
+	if cfg.MonitoringWorkers != 0 {
+		if err := monitorScheduler.SetWorkers(cfg.MonitoringWorkers); err != nil {
+			_ = st.Close()
+			return nil, err
+		}
+	}
+	monitorScheduler.SetNodeMetricProbe(func(ctx context.Context, target monitoring.Target) (monitoring.HTTPObservation, error) {
+		return observeNativeNodeMetric(ctx, nodes, st, target, time.Now().UTC())
+	})
+	monitorScheduler.SetNetwork(monitorNetwork)
+	monitorProbes := hub.NewMonitorProbes(sessions, nodes, cfg.MonitoringAllowedCIDRs)
+	gateway.SetMonitorProbes(monitorProbes)
+	monitorScheduler.SetRemoteProbe(monitorProbes.Probe)
+	monitorScheduler.SetTrigger(func(ctx context.Context, rule monitoring.Rule, claim string) error {
+		return runMonitoringRule(ctx, rule, claim, st, nodes, tasks, schedules, execMgr)
+	})
+	// 阈值告警：规则评估与通知发件箱相互独立，通知失败不阻塞评估。
+	alertRepo := monitoring.NewAlertRepository(st.DB())
+	alertNotifier := monitoring.NewAlertNotifier(alertRepo, logger)
+	alertEvaluator := monitoring.NewAlertEvaluator(alertRepo, st, alertNotifier, logger)
+	alertEvaluator.SetInterval(alertEvaluationInterval)
+	apiServer.SetAlerting(alertRepo, alertNotifier)
 	apiServer.SetReadyCheck(func(ctx context.Context) error {
 		_, err := st.CurrentGlobalRevision(ctx)
 		return err
@@ -177,8 +273,46 @@ func New(cfg Config, logger *slog.Logger) (*Hub, error) {
 		sessions: sessions, nodes: nodes, scripts: scripts, tasks: tasks,
 		schedules: schedules, syncMgr: syncMgr, execMgr: execMgr,
 		artifacts: artifacts, apps: apps, transfers: transfers, gateway: gateway, api: apiServer,
-		metrics: m, logger: logger, singlePort: singlePort, ctx: ctx, cancel: cancel,
+		inboundDialer: inboundDialer,
+		metrics:       m, monitoring: monitorScheduler, alertEvaluator: alertEvaluator,
+		inboundEnabled: inboundRuntime.enabled, inboundPolicy: inboundRuntime.policy,
+		inboundAuthority: inboundRuntime.authority,
+		logger:           logger, singlePort: singlePort, ctx: ctx, cancel: cancel,
 	}, nil
+}
+
+var errMonitoringStepFailed = errors.New("monitoring execution did not succeed")
+
+type monitoringStepFailure struct{ status string }
+
+func (e *monitoringStepFailure) Error() string {
+	return "monitoring execution did not succeed: " + e.status
+}
+
+func (e *monitoringStepFailure) Unwrap() error { return errMonitoringStepFailed }
+
+// waitMonitoringExecution prevents a later node from starting until the
+// previous node reports success. An unknown or non-success state stops it.
+func waitMonitoringExecution(ctx context.Context, st store.Store, id string) error {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	for {
+		execution, err := st.GetExecution(ctx, id)
+		if err != nil {
+			return err
+		}
+		switch execution.Status {
+		case models.ExecStatusSuccess:
+			return nil
+		case models.ExecStatusFailed, models.ExecStatusSkipped, models.ExecStatusCanceled, models.ExecStatusTimedOut, models.ExecStatusBlocked:
+			return &monitoringStepFailure{status: execution.Status}
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+		}
+	}
 }
 
 // SetWebFS 设置内嵌前端
@@ -264,6 +398,18 @@ func (h *Hub) Artifacts() *hub.ArtifactManager { return h.artifacts }
 // Transfers 暴露文件传输管理器。
 func (h *Hub) Transfers() *hub.FileTransferManager { return h.transfers }
 
+// InboundEnabled 入站连接总开关是否启用。
+func (h *Hub) InboundEnabled() bool { return h.inboundEnabled }
+
+// InboundPolicy 暴露入站拨号 endpoint/端口/CIDR 策略。
+func (h *Hub) InboundPolicy() *inbound.DialPolicy { return h.inboundPolicy }
+
+// InboundAuthority 暴露入站 PKI；未启用入站时为 nil。
+func (h *Hub) InboundAuthority() *inbound.Authority { return h.inboundAuthority }
+
+// InboundDialer 暴露 Hub 主动拨号器；未启用入站时为 nil。
+func (h *Hub) InboundDialer() *hub.InboundDialer { return h.inboundDialer }
+
 // GatewayHandler 暴露 Agent Gateway HTTP Handler
 func (h *Hub) GatewayHandler() http.Handler { return h.gateway.Handler() }
 
@@ -321,6 +467,24 @@ func (h *Hub) resetOrphanOnlineNodes(ctx context.Context) {
 
 // Start 启动所有服务
 func (h *Hub) Start() error {
+	lock, err := os.OpenFile(filepath.Join(h.cfg.DataDir, "monitoring.lock"), os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil {
+		return fmt.Errorf("open monitoring lock: %w", err)
+	}
+	if err := unix.Flock(int(lock.Fd()), unix.LOCK_EX|unix.LOCK_NB); err != nil {
+		lock.Close()
+		return fmt.Errorf("monitoring already active: %w", err)
+	}
+	h.monitorLock, h.monitorDone = lock, make(chan struct{})
+	go func() { defer close(h.monitorDone); h.monitoring.Run(h.ctx) }()
+	// 原生指标聚合/清理：仅当存储实现 NativeMetricStore 时启动；错误只记日志。
+	if nativeStore, ok := h.store.(store.NativeMetricStore); ok {
+		h.metricDone = startNativeMetricMaintenance(h.ctx, nativeMetricMaintenanceInterval,
+			nativeStore.AggregateNodeMetrics, nativeStore.PruneNodeMetrics, h.logger)
+	}
+	if h.alertEvaluator != nil {
+		h.alertDone = startAlertEvaluation(h.ctx, h.alertEvaluator)
+	}
 	// 启动复位：进程刚起、内存会话表为空，DB 中残留 status=online 的节点没有
 	// 对应活跃会话（孤儿 online），一次性复位 offline；maintenance/disabled 不受影响。
 	h.resetOrphanOnlineNodes(h.ctx)
@@ -333,6 +497,10 @@ func (h *Hub) Start() error {
 
 	interval := time.Duration(h.cfg.RevisionCheckSec) * time.Second
 	h.schedules.StartHubScheduler(h.ctx, interval)
+
+	if h.inboundDialer != nil {
+		h.inboundDialer.Start(h.ctx)
+	}
 
 	// Change Log 定期清理（保留 changelog_window 窗口内的记录）
 	go func() {
@@ -419,7 +587,49 @@ func (h *Hub) serve(addr string, handler http.Handler, cert, key string) error {
 // Close 关闭
 func (h *Hub) Close() error {
 	h.cancel()
+	if h.inboundDialer != nil {
+		h.inboundDialer.Stop()
+	}
+	if h.transfers != nil {
+		h.transfers.Close()
+	}
+	if h.metricDone != nil {
+		<-h.metricDone
+	}
+	if h.alertDone != nil {
+		<-h.alertDone
+	}
+	if h.monitorDone != nil {
+		<-h.monitorDone
+	}
+	if h.monitorLock != nil {
+		_ = unix.Flock(int(h.monitorLock.Fd()), unix.LOCK_UN)
+		_ = h.monitorLock.Close()
+	}
 	return h.store.Close()
+}
+
+// loadAgentBinaryForArch 返回内置或磁盘上的 Agent 二进制及 SHA-256。
+func loadAgentBinaryForArch(cfg Config, arch string) ([]byte, string, error) {
+	var data []byte
+	if payload := cfg.AgentBinaryPayloads[arch]; len(payload) > 0 {
+		data = payload
+	} else {
+		path := cfg.AgentBinaryAMD64Path
+		if arch == "arm64" {
+			path = cfg.AgentBinaryARM64Path
+		}
+		if path == "" {
+			return nil, "", fmt.Errorf("agent binary for %s is not configured", arch)
+		}
+		loaded, err := os.ReadFile(path)
+		if err != nil {
+			return nil, "", err
+		}
+		data = loaded
+	}
+	sum := sha256.Sum256(data)
+	return data, hex.EncodeToString(sum[:]), nil
 }
 
 // spaHandler SPA 回退：非 /api 路径若文件不存在则返回 index.html

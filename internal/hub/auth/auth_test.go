@@ -55,6 +55,59 @@ func TestLoginRejectsEmptyCredentialsInLegacyUsers(t *testing.T) {
 	}
 }
 
+// allow_empty_password 仅测试环境开关：默认拒绝空密码，开启后空密码仍走 bcrypt 比对，
+// 用户名与错误密码校验、会话建立不受影响。
+func TestAllowEmptyPasswordLogin(t *testing.T) {
+	m, st := newAuthTestManager(t)
+	ctx := context.Background()
+	if err := m.EnsureDefaultAdmin(ctx, "empty-admin", ""); err != nil {
+		t.Fatalf("ensure empty-password admin: %v", err)
+	}
+
+	// 默认关闭：空密码仍拒绝。
+	if session, err := m.Login(ctx, "empty-admin", ""); session != nil || !errors.Is(err, ErrInvalidCredentials) {
+		t.Fatalf("empty password accepted by default: session=%t err=%v", session != nil, err)
+	}
+
+	m.SetAllowEmptyPassword(true)
+	if !m.AllowEmptyPassword() {
+		t.Fatal("setter did not enable allow_empty_password")
+	}
+	sess, err := m.Login(ctx, "empty-admin", "")
+	if err != nil || sess == nil {
+		t.Fatalf("empty password login with switch on: session=%v err=%v", sess, err)
+	}
+	if sess.Role != models.RoleAdministrator {
+		t.Fatalf("empty password login role = %q, want administrator", sess.Role)
+	}
+	if got, ok := m.Authenticate(ctx, sess.Token); !ok || got.Username != "empty-admin" {
+		t.Fatalf("session from empty password login invalid: ok=%t user=%+v", ok, got)
+	}
+
+	// 用户名仍拒绝空/纯空白（即使存量库中存在此类账号）。
+	for _, username := range []string{"", "   "} {
+		createTestUser(t, st, username, "secret", models.RoleViewer)
+		if session, err := m.Login(ctx, username, "secret"); session != nil || !errors.Is(err, ErrInvalidCredentials) {
+			t.Fatalf("username %q accepted with switch on: session=%t err=%v", username, session != nil, err)
+		}
+	}
+
+	// 非空密码账号与错误密码行为不变。
+	createTestUser(t, st, "normal", "secret", models.RoleOperator)
+	if _, err := m.Login(ctx, "normal", "secret"); err != nil {
+		t.Fatalf("non-empty password login failed with switch on: %v", err)
+	}
+	if session, err := m.Login(ctx, "empty-admin", "wrong"); session != nil || !errors.Is(err, ErrInvalidCredentials) {
+		t.Fatalf("wrong password accepted: session=%t err=%v", session != nil, err)
+	}
+
+	// 关闭开关后恢复拒绝空密码。
+	m.SetAllowEmptyPassword(false)
+	if session, err := m.Login(ctx, "empty-admin", ""); session != nil || !errors.Is(err, ErrInvalidCredentials) {
+		t.Fatalf("empty password accepted after switch off: session=%t err=%v", session != nil, err)
+	}
+}
+
 // 角色变更（含降权）必须对已登录会话立即生效，且不改写共享 Session。
 func TestAuthenticateUsesCurrentRoleFromStore(t *testing.T) {
 	m, st := newAuthTestManager(t)

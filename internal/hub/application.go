@@ -3,6 +3,7 @@ package hub
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -254,7 +255,7 @@ func (m *AppManager) Deploy(ctx context.Context, appID string, nodeIDs []string,
 			return out, err
 		}
 		if err := m.dispatchDeploy(ctx, ex, app, nodeID, operation, ExecutionStrategy{}); err != nil {
-			ex.Status = models.ExecStatusFailed
+			ex.Status = deploymentFailureStatus(err)
 			ex.EndTime = time.Now()
 			ex.BlockReason = err.Error()
 			m.store.UpdateExecution(ctx, ex)
@@ -309,7 +310,7 @@ func (m *AppManager) DeployTask(ctx context.Context, task *models.Task, nodeIDs 
 			return out, err
 		}
 		if err := m.dispatchDeploy(ctx, ex, app, nodeID, operation, strategy); err != nil {
-			ex.Status = models.ExecStatusFailed
+			ex.Status = deploymentFailureStatus(err)
 			ex.EndTime = time.Now()
 			ex.BlockReason = err.Error()
 			_ = m.store.UpdateExecution(ctx, ex)
@@ -326,41 +327,60 @@ func (m *AppManager) dispatchDeploy(ctx context.Context, ex *models.Execution, a
 	if !ok {
 		return ErrAgentOffline
 	}
+	// 入站数据面：部署前把 Artifact 推到 Agent 本地缓存，部署请求不再携带 Hub URL。
+	// 数据面未声明时 PushInboundByID 返回 ErrInboundDataPlaneUnavailable，由上层落 BLOCKED/409。
+	inbound := SessionIsInbound(conn)
+	if inbound && app.ArtifactID != "" {
+		if m.artifacts == nil {
+			return ErrInboundDataPlaneUnavailable
+		}
+		if err := m.artifacts.PushInboundByID(ctx, nodeID, app.ArtifactID); err != nil {
+			return err
+		}
+	}
 	var hc json.RawMessage
 	if app.HealthCheck != nil {
 		b, _ := json.Marshal(app.HealthCheck)
 		hc = b
 	}
-	var artifactURL, sha string
+	var artifactURL, sha, artifactTransport string
 	if app.ArtifactID != "" {
 		art, err := m.store.GetArtifact(ctx, app.ArtifactID)
 		if err == nil {
-			artifactURL = fmt.Sprintf("%s/api/artifacts/%s/download", m.baseURL, art.ID)
+			if !inbound {
+				artifactURL = fmt.Sprintf("%s/api/artifacts/%s/download", m.baseURL, art.ID)
+			}
 			sha = art.SHA256
+			if inbound {
+				artifactTransport = protocol.TransportInboundPush
+			}
+		} else if inbound {
+			return err
 		}
 	}
 	payload := protocol.DeployRequestPayload{
-		AppID:            app.ID,
-		AppVersion:       app.Version,
-		AppRevision:      app.Revision,
-		ArtifactID:       app.ArtifactID,
-		ArtifactURL:      artifactURL,
-		ArtifactSHA256:   sha,
-		BinaryPath:       app.BinaryPath,
-		Arguments:        app.Arguments,
-		Environment:      app.Environment,
-		Config:           app.Config,
-		ConfigPath:       app.ConfigPath,
-		UnitName:         app.UnitName,
-		HealthCheck:      hc,
-		Operation:        operation,
-		TriggerType:      ex.TriggerType,
-		ScheduleID:       ex.ScheduleID,
-		ScheduleRevision: ex.ScheduleRevision,
-		Timeout:          strategy.Timeout,
-		Retry:            strategy.Retry,
-		RunUser:          strategy.RunUser,
-		OfflinePolicy:    strategy.OfflinePolicy,
+		AppID:             app.ID,
+		AppVersion:        app.Version,
+		AppRevision:       app.Revision,
+		ArtifactID:        app.ArtifactID,
+		ArtifactURL:       artifactURL,
+		ArtifactSHA256:    sha,
+		ArtifactTransport: artifactTransport,
+		BinaryPath:        app.BinaryPath,
+		Arguments:         app.Arguments,
+		Environment:       app.Environment,
+		Config:            app.Config,
+		ConfigPath:        app.ConfigPath,
+		UnitName:          app.UnitName,
+		HealthCheck:       hc,
+		Operation:         operation,
+		TriggerType:       ex.TriggerType,
+		ScheduleID:        ex.ScheduleID,
+		ScheduleRevision:  ex.ScheduleRevision,
+		Timeout:           strategy.Timeout,
+		Retry:             strategy.Retry,
+		RunUser:           strategy.RunUser,
+		OfflinePolicy:     strategy.OfflinePolicy,
 	}
 	if !ex.CreatedAt.IsZero() {
 		payload.CreatedAt = ex.CreatedAt.Format(time.RFC3339Nano)
@@ -369,6 +389,14 @@ func (m *AppManager) dispatchDeploy(ctx context.Context, ex *models.Execution, a
 		return err
 	}
 	return nil
+}
+
+// deploymentFailureStatus 入站数据面不可用属于明确阻塞，而非执行失败。
+func deploymentFailureStatus(err error) string {
+	if errors.Is(err, ErrInboundDataPlaneUnavailable) || errors.Is(err, ErrInboundStageUnavailable) {
+		return models.ExecStatusBlocked
+	}
+	return models.ExecStatusFailed
 }
 
 // OperationTask 应用操作 Task 触发（经 Task 执行管理器）

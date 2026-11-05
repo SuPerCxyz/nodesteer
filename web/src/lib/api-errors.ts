@@ -125,6 +125,15 @@ function localize(raw: string, status?: number): string | null {
       resource: typeLabel(resourceNotFound[1]),
     })
   }
+  if (
+    raw === 'inbound_data_plane_unavailable' ||
+    /inbound data plane/i.test(raw)
+  ) {
+    return translate('errors.inboundDataPlaneUnavailable')
+  }
+  if (raw === 'inbound_stage_unavailable' || /inbound stage/i.test(raw)) {
+    return translate('errors.inboundStageUnavailable')
+  }
   if (status === 403 && PERMISSION_DENIED_PATTERN.test(raw)) {
     return translate('errors.permissionDenied')
   }

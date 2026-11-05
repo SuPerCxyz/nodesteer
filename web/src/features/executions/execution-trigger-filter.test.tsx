@@ -1,12 +1,20 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from '@/i18n'
+import '@/styles/index.css'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { Executions } from './index'
 
-const { getPage, get } = vi.hoisted(() => ({ getPage: vi.fn(), get: vi.fn() }))
+const { getPage, get, scope } = vi.hoisted(() => ({
+  getPage: vi.fn(),
+  get: vi.fn(),
+  scope: {
+    search: {} as Record<string, string>,
+    listeners: new Set<() => void>(),
+  },
+}))
 
 vi.mock('@/lib/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/api')>()
@@ -20,13 +28,32 @@ vi.mock('@/lib/permissions', () => ({
 
 vi.mock('@tanstack/react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@tanstack/react-router')>()
+  const { useSyncExternalStore } = await import('react')
   return {
     ...actual,
     useNavigate: () => vi.fn(),
     useLocation: () => ({ href: window.location.pathname }),
     getRouteApi: () => ({
-      useSearch: () => ({}),
-      useNavigate: () => vi.fn(),
+      useSearch: () =>
+        useSyncExternalStore(
+          (listen) => {
+            scope.listeners.add(listen)
+            return () => {
+              scope.listeners.delete(listen)
+            }
+          },
+          () => scope.search
+        ),
+      useNavigate:
+        () =>
+        ({
+          search,
+        }: {
+          search: (previous: Record<string, string>) => Record<string, string>
+        }) => {
+          scope.search = search(scope.search)
+          scope.listeners.forEach((listen) => listen())
+        },
     }),
   }
 })
@@ -57,13 +84,18 @@ async function renderExecutions() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
   })
-  return await render(
+  const page = await render(
     <SidebarProvider>
       <QueryClientProvider client={client}>
         <Executions />
       </QueryClientProvider>
     </SidebarProvider>
   )
+  const workspace = page.getByTestId('executions-workspace').element()
+  expect(workspace.getAttribute('data-slot')).toBe('card')
+  expect(workspace.querySelectorAll('[data-slot="card"]')).toHaveLength(0)
+  expect(getComputedStyle(workspace).borderTopWidth).toBe('1px')
+  return page
 }
 
 describe('执行列表触发方式筛选枚举（OBS-20261016-P17P18-04-SYSTEM-TRIGGER-NO-SOURCE）', () => {
@@ -72,6 +104,7 @@ describe('执行列表触发方式筛选枚举（OBS-20261016-P17P18-04-SYSTEM-T
   })
 
   beforeEach(() => {
+    scope.search = {}
     getPage.mockReset()
     get.mockReset()
     getPage.mockResolvedValue({ items: [EXECUTION], total: 1 })
@@ -138,5 +171,46 @@ describe('执行列表触发方式筛选枚举（OBS-20261016-P17P18-04-SYSTEM-T
     await expect
       .element(page.getByText(i18n.t('executions.historicalSource')))
       .toBeVisible()
+  })
+  it('keeps exact object filters through pagination and clears them with offset reset', async () => {
+    scope.search = {
+      node_id: 'node-1',
+      schedule_id: 'sch-1',
+      status: 'SUCCESS',
+      q: 'task',
+    }
+    getPage.mockResolvedValue({ items: [EXECUTION], total: 30 })
+    const page = await renderExecutions()
+    await expect.poll(() => getPage.mock.calls.length).toBeGreaterThan(0)
+    expect(getPage.mock.calls[getPage.mock.calls.length - 1]?.[0]).toContain(
+      'node_id=node-1&schedule_id=sch-1'
+    )
+    await userEvent.click(
+      page.getByRole('button', { name: i18n.t('common.nextPage'), exact: true })
+    )
+    await expect
+      .poll(() =>
+        String(getPage.mock.calls[getPage.mock.calls.length - 1]?.[0])
+      )
+      .toContain('offset=10')
+    await userEvent.click(
+      page.getByRole('button', {
+        name: i18n.t('webFix.clearScope'),
+        exact: true,
+      })
+    )
+    await expect
+      .poll(() =>
+        String(getPage.mock.calls[getPage.mock.calls.length - 1]?.[0])
+      )
+      .not.toContain('schedule_id')
+    const url = new URL(
+      String(getPage.mock.calls[getPage.mock.calls.length - 1]?.[0]),
+      'http://localhost'
+    )
+    expect(url.searchParams.get('node_id')).toBeNull()
+    expect(url.searchParams.get('offset')).toBe('0')
+    expect(url.searchParams.get('status')).toBe('SUCCESS')
+    expect(url.searchParams.get('q')).toBe('task')
   })
 })

@@ -23,7 +23,8 @@ test('SAFE-01 所有11表格搜索/无结果/Reset/排序/列持久化/分页',a
     names.audit=((await apiRequest(page,'/api/audit?limit=1')).body as {username:string}[])[0].username
     names.transfers=((await apiRequest(page,'/api/transfers')).body as {id:string}[])[0].id
     const task=await createIsolatedTask(page,'table-task');owned.unshift('/api/tasks/'+task.id);names.tasks=task.name
-    const schedule=await apiRequest(page,'/api/schedules',{method:'POST',data:{task_id:task.id,type:'cron',expression:'0 0 1 1 *',timezone:'UTC',execution_owner:'agent',offline_policy:'allow_offline',misfire_policy:'skip',enabled:false}})
+    const scheduleTarget=(await getNodeIds(page))[0]
+    const schedule=await apiRequest(page,'/api/schedules',{method:'POST',data:{task_id:task.id,target:{type:'node',node_ids:[scheduleTarget]},type:'cron',expression:'0 0 1 1 *',timezone:'UTC',execution_owner:'agent',offline_policy:'allow_offline',misfire_policy:'skip',enabled:false}})
     expect(schedule.ok).toBeTruthy();owned.unshift('/api/schedules/'+(schedule.body as {id:string}).id);names.schedules=task.name
     await page.goto('/artifacts/new');names.artifacts=testName('table-artifact')
     await page.getByLabel(/^名称$|^name$/i).fill(names.artifacts);await page.getByLabel(/^版本$|^version$/i).fill('v1')
@@ -586,16 +587,25 @@ test('SAFE-17 详情深链刷新前后退/不存在资源ErrorRetry与Definition
 test('SAFE-18 Execution状态触发筛选URL/清空与Transfer目标草稿反向操作',async({page})=>{
   await loginViaApi(page);await page.goto('/executions');const checks:unknown[]=[]
   const status=page.getByRole('combobox',{name:'状态',exact:true}),trigger=page.getByRole('combobox',{name:'触发方式',exact:true})
-  for(const value of ['PENDING','RUNNING','SUCCESS','FAILED','SKIPPED','CANCELED','TIMED_OUT','BLOCKED']) {
-    await status.selectOption(value);await expect(page).toHaveURL(new RegExp('status='+value))
-    await page.waitForLoadState('networkidle');await expect(status).toHaveValue(value);checks.push({status:value,url:page.url(),rows:await page.locator('main').innerText()})
+  const statuses=[['PENDING','等待中'],['RUNNING','运行中'],['SUCCESS','成功'],['FAILED','失败'],['SKIPPED','已跳过'],['CANCELED','已取消'],['TIMED_OUT','超时'],['BLOCKED','已阻断']] as const
+  for(const [value,label] of statuses) {
+    await status.click();await page.getByRole('option',{name:label,exact:true}).click()
+    await expect.poll(()=>new URL(page.url()).searchParams.get('status')).toBe(value)
+    await page.waitForLoadState('networkidle');await expect(status).toHaveText(label);checks.push({status:value,url:page.url(),rows:await page.locator('main').innerText()})
   }
-  await status.selectOption('');await expect(page).not.toHaveURL(/status=/)
-  const available=await trigger.locator('option').evaluateAll(o=>o.map(x=>(x as HTMLOptionElement).value).filter(Boolean))
-  for(const value of available){await trigger.selectOption(value);await expect(page).toHaveURL(new RegExp('trigger='+value));await expect(trigger).toHaveValue(value)}
-  await trigger.selectOption('');await page.getByRole('textbox',{name:/搜索/}).fill('qa-query');await expect(page).toHaveURL(/q=qa-query/)
+  await status.click();await page.getByRole('option',{name:'全部状态',exact:true}).click()
+  await expect(page).not.toHaveURL(/status=/);await expect(status).toHaveText('全部状态')
+  await trigger.click();const triggerLabels=(await page.getByRole('option').allTextContents()).filter(text=>text!=='全部触发方式');await page.keyboard.press('Escape')
+  const triggerValues=triggerLabels.map(label=>({手动:'manual',调度:'schedule',系统:'system'} as Record<string,string>)[label]||label)
+  for(let index=0;index<triggerLabels.length;index++) {
+    await trigger.click();await page.getByRole('option',{name:triggerLabels[index],exact:true}).click()
+    await expect.poll(()=>new URL(page.url()).searchParams.get('trigger')).toBe(triggerValues[index]);await expect(trigger).toHaveText(triggerLabels[index])
+  }
+  await trigger.click();await page.getByRole('option',{name:'全部触发方式',exact:true}).click()
+  await expect(page).not.toHaveURL(/trigger=/);await expect(trigger).toHaveText('全部触发方式')
+  await page.getByRole('textbox',{name:/搜索/}).fill('qa-query');await expect(page).toHaveURL(/q=qa-query/)
   await page.getByRole('textbox',{name:/搜索/}).fill('');await expect(page).not.toHaveURL(/[?&](q|trigger|status)=/)
-  await page.waitForLoadState('networkidle');await evidence('execution-filters',{statuses:checks,triggers_available:available,filters_cleared:true})
+  await page.waitForLoadState('networkidle');await evidence('execution-filters',{statuses:checks,triggers_available:triggerValues,trigger_labels:triggerLabels,filters_cleared:true})
   await loginViaApi(page);await page.goto('/transfers');await page.waitForLoadState('networkidle');const nodes=(await apiRequest(page,'/api/nodes')).body as {id:string;hostname:string}[]
   const source=nodes.find(n=>n.id===(process.env.NODESTEER_E2E_NODE_IDS||'').split(',')[0])!,target=nodes.find(n=>n.id===process.env.NODESTEER_E2E_LABEL_NODE_ID)!
   const combos=page.getByRole('combobox'),add=page.getByRole('button',{name:/^添加目标$/}),start=page.getByRole('button',{name:/^开始传输$/})
@@ -609,7 +619,7 @@ test('SAFE-18 Execution状态触发筛选URL/清空与Transfer目标草稿反向
   await combos.nth(0).click();await page.getByRole('option',{name:target.hostname,exact:true}).click()
   const selfEnabled=await start.isEnabled(),retained=await page.locator('main').getByText(path,{exact:true}).isVisible()
   await combos.nth(1).click();const selfOptionCount=await page.getByRole('option',{name:target.hostname,exact:true}).count();await page.keyboard.press('Escape')
-  await evidence('execution-filter-transfer-draft',{statuses:checks,triggers_available:available,filters_cleared:true,source_before:source.id,target_before:target.id,source_after:target.id,retained_target_node:target.id,retained_target_path:path,target_remains:retained,target_selector_source_option_count:selfOptionCount,source_excluded_initially:true,add_required:true,remove_zero_post:true,source_change_self_start_enabled:selfEnabled,posts_after_source_change:0,linked_actual_request:'evidence/transfer-source-change-self.json',api_self_transfer_contract:'allowed; UI constraint consistency only'})
+  await evidence('execution-filter-transfer-draft',{statuses:checks,triggers_available:triggerValues,trigger_labels:triggerLabels,filters_cleared:true,source_before:source.id,target_before:target.id,source_after:target.id,retained_target_node:target.id,retained_target_path:path,target_remains:retained,target_selector_source_option_count:selfOptionCount,source_excluded_initially:true,add_required:true,remove_zero_post:true,source_change_self_start_enabled:selfEnabled,posts_after_source_change:0,linked_actual_request:'evidence/transfer-source-change-self.json',api_self_transfer_contract:'allowed; UI constraint consistency only'})
   if(process.env.NODESTEER_E2E_EVIDENCE_DIR)await page.screenshot({path:process.env.NODESTEER_E2E_EVIDENCE_DIR+'/transfer-source-change-ui.png'})
   expect(retained&&selfEnabled).toBe(false)
 })

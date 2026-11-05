@@ -8,6 +8,8 @@
 
 NodeSteer 是一套面向 Linux 服务器的轻量级 Hub-Agent 自动化管理、任务调度与二进制应用部署平台。
 
+监控与联动是已确认的扩展目标：同一个 NodeSteer Agent 采集节点指标并由 Hub 原生保存历史，统一展示 Linux 节点与外部服务监控；通过人工或规则触发既有节点任务，支持跨节点批次、验证和显式补偿。HTTP(S)、TCP、ICMP 和通用 HTTP 字段采集已接入；数据库、消息队列等服务保留后续扩展边界。Nocturne 已移除，已有 Nocturne 历史不迁移、不展示。当前实现与剩余验收以 `openspec/changes/unified-monitoring-automation/tasks.md` 和实际代码、验证为准。
+
 系统由 Hub 和 Agent 两部分组成。
 
 Hub 提供：
@@ -31,6 +33,7 @@ Agent 负责：
 - 自动同步 Hub Desired State
 - 本地缓存 Script/Task/Schedule/Application
 - Script/Command 执行
+- 节点指标采集（CPU、内存、负载、磁盘、网络）
 - Local Scheduler
 - Hub 故障期间 Offline Execution
 - Execution Journal
@@ -102,12 +105,13 @@ Agent 只保存 Hub 下发的本地副本。
 
 Agent 不允许永久自行修改 Hub 管理的配置。
 
-### 3.2 Agent 主动连接 Hub
+### 3.2 Hub-Agent 双向连接
 
-统一通信模型：
+统一通信模型支持两种方向，出站优先：
 
 ```text
-Agent ─────────────→ Hub
+Agent ─────────────→ Hub Agent Gateway
+Hub ───────────────→ Agent :18444 TLS listener
 ```
 
 连接建立后为双向控制通道：
@@ -116,7 +120,7 @@ Agent ─────────────→ Hub
 Hub ⇄ Agent
 ```
 
-Agent 默认不需要开放远程管理端口，也不依赖 Hub SSH 登录节点。
+Agent 默认优先主动连接 Hub，不需要开放远程管理端口；当 Hub 位于内网、Agent 位于公网时，管理员签发入站 bundle 后，Agent 开放一个仅接受 Hub mTLS 拨号的 TLS listener，由 Hub 按节点 `endpoint` 主动建立连接。两种方向共用同一协议、注册和在线状态机，每个节点最多一个已认证会话。
 
 ### 3.3 Hub 不是离线 Schedule 的单点
 
@@ -274,6 +278,7 @@ offline_execution=true
 host_filesystem=true
 managed_systemd=true
 application_deploy=true
+node_metrics=true
 ```
 
 Docker 基础模式可以：
@@ -281,7 +286,10 @@ Docker 基础模式可以：
 ```text
 managed_systemd=false
 application_deploy=false
+node_metrics=false
 ```
+
+`node_metrics` 表示同一 Agent 能读取宿主机指标；Docker 基础模式只能看到容器自身 `/proc`，不声明该能力。Docker Host Integration 和 Native 模式可声明。旧 Agent 不声明时，监控显示不可用，不以零值代替。`node_metrics` 不参与 Task/Deployment 下发，仅用于监控查询和指标规则求值。
 
 Hub 在 Task/Deployment 下发前校验 Required Capability。
 
@@ -304,21 +312,19 @@ BLOCKED
 | 内网 | 同一内网 | 是 |
 | 公网 | 内网 | 是 |
 | 公网 | 公网 | 是 |
-| 内网 | 公网 | 是，Agent Gateway 需可达 |
+| 内网 | 公网 | 是，Agent 提供入站 TLS listener，Hub 主动拨号 |
 | 内网 A | 内网 B | 网络本身已互通时支持 |
 | 隔离内网 A | 隔离内网 B | 一期不负责打通 |
 
 Hub 内网 + 公网 Agent：
 
 ```text
-Public Agent
-     ↓
-NAT / Reverse Proxy / Public Entry
-     ↓
-Hub Agent Gateway
+Hub（内网）
+     ↓ 主动拨号 wss://<node.endpoint>:18444
+公网 Agent TLS listener（mTLS + 每节点令牌）
 ```
 
-Hub Web UI 可以继续仅暴露在内网。
+Hub Web UI 可以继续仅暴露在内网。入站模式默认关闭；只有管理员签发 bundle 并显式启用后，Agent 才监听 18444/tcp。
 
 一期不实现：
 - P2P
@@ -343,6 +349,8 @@ Agent Gateway: 0.0.0.0:8443
 允许只将 Agent Gateway 映射到公网。
 
 Web/API 与 Agent Gateway 均支持可配置 TLS；启用 TLS 后 Agent 使用 `wss://` 连接，Artifact 下载使用对应的 `https://` Base URL。
+
+入站模式额外使用 Agent 的 `18444/tcp`（可配置）：Hub 通过 `wss://<node.endpoint>` 拨号，TLS 最低 1.2，必须通过 mTLS、证书指纹 pin、节点令牌和来源 CIDR 校验。Hub 不需要对该端口做入站映射，只需能出站访问节点 endpoint。
 
 ---
 
@@ -548,8 +556,20 @@ ROLLBACK
 
 节点页面提供管理员纳管向导。管理员必须指定节点名称和节点地址（IPv4/IPv6 或 DNS 域名），Hub 地址默认使用当前 Web 页面地址；向导生成的 Native、Docker 和 Compose 命令均包含节点身份及 Registration Token。
 
+节点支持独立的显示名 `display_name`，与 Agent 上报的 `hostname` 解耦：
+
+- 新节点显示名默认为空，页面回退显示 `hostname`；`hostname` 也为空时回退节点 ID。
+- Operator 和 Administrator 可通过 `POST/PUT /api/nodes/{id}` 设置或清除显示名；Viewer 只读。批量 `POST /api/nodes` 不接受显示名。
+- 显示名去除首尾空白后最多 64 个 Unicode 码点，拒绝控制字符；空值表示清除。显示名不要求唯一。
+- 重新注册、HELLO 元数据刷新和重新纳管不会覆盖或清空显示名。
+- 显示名只用于展示，不参与节点身份、Agent ID、hostname 匹配、权限、执行目标或路由；所有内部关联继续使用节点 ID。
+- 显示名实际变化时记录 `node.rename` 审计（旧值、新值、操作者和时间）。
+
+节点纳管必须填写 `endpoint`（域名或 IP，缺省端口 `18444`），作为 Hub 主动拨号地址；`endpoint` 与 `node_ip` 分离，仅 Administrator 可修改。系统自动选择出站或入站，`connection_mode` 只读。新增字段：当前/上次连接方式、入站 bundle 状态、证书指纹/有效期、最近握手/错误。入站数据面支持 Hub pull 源文件、push 目标文件、push Artifact 与 Agent 二进制；只有真实能力缺失或阶段不可用时才返回明确 409/BLOCKED。
+
 Node 页面显示至少：
 - Node ID
+- Display Name
 - Hostname
 - IP 或域名
 - OS
@@ -1049,6 +1069,8 @@ artifacts/<sha256>
 
 下载有界：Agent 侧下载 Artifact 与自升级二进制共用载荷 HTTP 客户端，设置 15 分钟总时限与 30 秒响应头超时；超时按失败处理并由 `defer` 清理 `.tmp`，不长期残留 0B 临时文件。
 
+入站模式：Hub 通过 Agent 的 HTTPS 数据面推送 Artifact（`PUT /agent-data/v1/artifacts/{id}`），Agent 按 SHA-256 写入本地内容寻址缓存；控制消息只携带 `transport=inbound_push` 和元数据，不依赖 Hub base URL。
+
 ---
 
 ## 34. Artifact Prefetch
@@ -1073,6 +1095,8 @@ Hub 可提前发送 PREFETCH，让 Agent 在真正执行前下载并校验 Artif
 - Agent 身份认证、路径策略和文件大小限制
 
 二进制使用 Agent Gateway 的 HTTPS 数据端点，控制长连接只传输元数据和状态。
+
+入站模式：源 Agent 为 inbound 时由 Hub 通过 `GET /agent-data/v1/transfers/{id}/source` 拉取到 staging；目标为 inbound 时由 Hub 通过 `PUT /agent-data/v1/transfers/{id}/target` 推送。混合方向仍以 Hub staging 中转，支持 offset 续传、大小/SHA-256 校验、临时文件和原子替换。
 
 数据端点方法固定：`/agent/transfers/{id}/upload` 仅 `POST`、`/agent/transfers/{id}/download` 仅 `GET`；其它方法 → 405 + `Allow: POST` / `Allow: GET`；未知动作或多余路径段 → 404（不得被当作已知动作执行）。
 
@@ -1192,6 +1216,8 @@ start
 Health Check
 ```
 
+入站模式下 `ArtifactURL` 为空，Agent 只从本地 Artifact 缓存取文件；缓存缺失时部署返回 `BLOCKED artifact_not_staged`，不得尝试访问不可达的 Hub URL。自升级由 Hub 先推送二进制到 Agent 固定 staging，再由 `RUN_EXECUTION(agent_binary_staged=true)` 触发本地替换。
+
 ---
 
 ## 39. Application Upgrade
@@ -1310,6 +1336,8 @@ Agent Crash/Restart 后必须识别半完成部署并恢复到明确状态。
 
 ```text
 Dashboard
+Monitoring
+Rules（联动规则）
 Nodes
 Groups
 Scripts
@@ -1322,14 +1350,36 @@ Settings
 ```
 
 Dashboard：
-- Nodes Online/Offline
-- Execution Running/Success/Failed
-- Sync Synced/Outdated/Error
-- Application Healthy/Unhealthy
-- Recent Failures
+- 顶部按单列分区：自动化控制（运行中/执行失败/成功率、正在执行的任务）在上，节点监控概览（在线节点/有指标节点/活动告警、一行式节点指标表）在下；两区分别占满主内容区可用宽度，保留侧栏、页边距与 2400px 最大内容宽度；活动告警汇总尚未接入，显示“未接入”，不将占位值显示为健康结论
+- 下方：托管应用状态、同步状态、最近执行、即将执行的调度
+- 左侧导航分为“自动化控制（任务/调度/执行/联动规则）”“监控（节点监控/服务监控/告警）”“节点（节点/分组）”等分组
+- 节点指标不可用、无样本或过期时显示不可用/等待，不以 0 代替
+
+Monitoring（导航分组：节点监控 / 服务监控 / 告警）：
+- 节点监控页（`/monitoring`）：
+  - 节点概览：仪表盘与 `/monitoring` 共用一行式表格，直接遍历 NodeSteer 节点，显示在线状态、CPU、内存、磁盘、负载 1/5/15、网络、温度、运行时长和最近采样；不维护“监控节点绑定”。活动告警汇总尚未接入，显示“未接入”。
+  - 节点详情（`/monitoring/nodes/{id}`）：顶栏显示节点状态和主机信息（实际 inventory hostname、运行时长、发行版、内核、CPU、内存，缺失显示未知，不以可配置节点名冒充 hostname）、时间范围和节点操作；CPU 默认显示总量并可展开分核，内存显示五条独立曲线，文件系统按挂载点和设备显示真实已用和总容量，IOPS 仅显示已确认整块设备。容器图按稳定 ID 显示各容器曲线及采集完整性；旧身份和未知设备分类明确提示。图表保留 gap/断点，不补 0。
+  - 时间范围：1h/3h/6h/12h/24h/7d + 自定义范围（最大 30 天），默认 1h。
+  - 节点操作：跳转 `/agents/{id}`，复用现有节点详情、任务和调度入口；`/agents` 列表不再重复显示监控卡，详情顶部显示一行监控概览。
+- 服务监控页（`/monitoring/services`）：
+  - 外部目标：HTTP(S)、TCP、ICMP 探测，记录探测位置、可用状态与响应耗时。
+  - 观察记录：最新观察与历史观察，包含状态、值、错误与耗时。
+  - 服务目标管理：创建/编辑/删除、凭据引用、采集间隔/超时/最大延迟。
+- 告警页（`/monitoring/alerts`）：
+  - 规则页签：节点/指标/序列、操作符/阈值、持续时间、恢复时间、冷却、severity（info/warning/critical）、通知渠道、启停、静默和事件查看；评估周期默认 30s，无样本/过期/离线不触发。
+  - 通知渠道页签：webhook、Slack、钉钉、企业微信、Telegram、Email（SMTP）；敏感值只保存环境变量名（`url_env`/`token_env`/`password_env`/`to_env`），API 不回显；支持测试发送。
+  - 事件页签：pending/firing/resolved/silenced/unknown；支持确认（ack）和静默；告警只通知/记录，不触发任务。
+- 自动化控制（`/rules`）：
+  - 联动规则：基于监控目标/原生指标的条件触发、条件恢复、事件及关联执行。
+  - 人工触发（复用现有 Task 手动执行）与规则自动触发。
+  - 跨节点批次、验证与显式补偿；未知结果停止自动推进并要求人工确认。
+
+一期 Monitoring 页面、告警页、通知渠道和 `/api/monitoring/*` 仅 Administrator 可见；普通角色直接访问相关页面时，在发起监控请求前显示权限反馈；Operator/Viewer 的只读访问不在本期范围。Node 指标不可用、无样本或样本过期时显示不可用/等待，不以 0 代替。
 
 Node Detail：
+- 顶部一行监控概览（与 `/monitoring` 节点表一致）；`/agents` 列表不再重复显示监控卡
 - Overview
+- Metrics（原生指标与历史）
 - Inventory
 - Labels
 - 调度计划（按 Schedule.Target 命中该节点）
@@ -1366,7 +1416,7 @@ Script：
 - Offline Policy / Misfire Policy
 - Enable/Disable
 - Run Now（使用调度自身目标与策略）
-- Execution History
+- Execution History（详情显示近期执行，查看全部按来源 Schedule 精确筛选）
 - 删除
 
 Application：
@@ -1408,7 +1458,7 @@ Artifact：
 - Operator
 - Viewer
 
-Administrator：全部权限。
+Administrator：全部权限，含原生监控页面、节点指标历史、告警/通知渠道与监控规则配置。
 
 Operator：
 - 查看
@@ -1418,6 +1468,10 @@ Operator：
 - 操作 Managed Application
 
 Viewer：只读。
+
+入站连接相关：修改节点 `endpoint`、下载/轮换入站 bundle、测试连接仅限 Administrator；Operator/Viewer 可查看 endpoint、连接方向、证书指纹和有效期，任何角色都不能读取令牌明文或私钥。
+
+一期监控页面与 `/api/monitoring/*` 仅 Administrator 可用，Operator/Viewer 的只读访问不在本期范围。
 
 ---
 
@@ -1431,6 +1485,10 @@ Viewer：只读。
 - Artifact Upload
 - Application Create/Modify/Deploy/Upgrade
 - Node Enable/Disable
+- 监控 target/rule Create/Modify/Delete
+- 告警规则/通知渠道 Create/Modify/Delete、测试发送、静默、事件确认
+
+监控规则触发执行通过 `monitoring_rule_events` 追溯，事件保存规则快照、观察值及关联 execution；该链路不重复写 `audit_logs`。节点指标采集本身不逐点写审计。告警只通知/记录，不触发任务；告警规则/渠道/确认/静默/测试发送写审计。
 
 审计记录以逻辑触发为单位：一次 Manual Run 只产生一条 `execute` 审计记录（`resource=task`），与执行内部按 Retry 重试的次数无关；每次 attempt 的细节只体现在执行双流日志（stdout/stderr）中，不产生额外审计行。
 
@@ -1439,6 +1497,8 @@ Viewer：只读。
 ## 46. REST API
 
 API-first。
+
+`GET /api/executions` 支持可选 `schedule_id`、`node_id` 精确过滤，可组合使用，并保持分页列表与总数一致；不传或空值保持原查询行为。
 
 至少：
 
@@ -1456,9 +1516,22 @@ API-first。
 /api/executions
 /api/audit
 /api/settings
+/api/monitoring/latest
+/api/monitoring/http-targets
+/api/monitoring/rules
+/api/monitoring/nodes/overview
+/api/monitoring/nodes/{id}/series
+/api/monitoring/nodes/{id}/metrics
+/api/monitoring/nodes/{id}/latest
+/api/monitoring/alerts/rules
+/api/monitoring/alerts/events
+/api/monitoring/alerts/events/{id}/ack
+/api/monitoring/alerts/rules/{id}/silence
+/api/monitoring/notification-channels
+/api/monitoring/notification-channels/{id}/test
 ```
 
-Web UI 调用真实 API。
+Web UI 调用真实 API。`/api/monitoring/nodes/*` 原生查询 API 已实现；Nocturne 后端、路由、配置和绑定已移除，遗留 `monitoring_node_bindings` 表保留但不参与新链路。告警 API 和通知渠道仅 Administrator 可用；`overview` 的告警数当前为占位 0，规则告警汇总未接入。
 
 方法语义：
 - `/api/audit`、`/api/me`、`/metrics` 仅接受 `GET`（其它方法 → 405 + `Allow: GET`）
@@ -1564,13 +1637,15 @@ Heartbeat / Revision Check / Inventory 需避免形成高频负载。
 
 以下属于后续规划，一期不实现：
 
+原生监控与联动相关的 Rule/Event、跨节点编排和显式补偿已纳入已确认的扩展范围，具体实现状态以 `unified-monitoring-automation` change 和实际行为为准；以下列表的其他能力仍维持原有范围。
+
 - Workflow DAG
 - Task Dependency
 - Parallel Execution
 - Conditional Branch
-- Rule Engine
-- Event Engine
-- Self-Healing
+- 通用 Rule Engine（原生监控规则除外）
+- 通用 Event Engine（原生监控事件除外）
+- Self-Healing（已确认的原生监控联动及显式补偿除外）
 - Complex Condition DSL
 - Aggregated Cluster Condition
 - Strong Condition
@@ -1617,9 +1692,9 @@ Heartbeat / Revision Check / Inventory 需避免形成高频负载。
 ### V1.2
 - Workflow DAG
 - Parallel / Branch
-- Rule Engine
-- Event Engine
-- Self-Healing
+- Rule Engine（通用能力仍为后续；原生监控规则在一期以专用规则承载，节点指标原生数据源已接入）
+- Event Engine（通用能力仍为后续；原生监控事件在一期以专用规则承载）
+- Self-Healing（通用能力仍为后续；原生监控联动及显式补偿在一期承载）
 - Dynamic Groups
 
 ### V2

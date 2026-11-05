@@ -79,8 +79,62 @@ describe('侧边栏导航按角色过滤（OBS-20261014-NAV-ROLE-UNFILTERED）',
     expect(navUrls(false)).not.toContain('/users')
     // 其他入口不因角色过滤而丢失
     expect(navUrls(false)).toEqual(
-      expect.arrayContaining(['/audit', '/settings', '/agents', '/tasks'])
+      expect.arrayContaining([
+        '/audit',
+        '/settings',
+        '/agents',
+        '/groups',
+        '/tasks',
+      ])
     )
+  })
+
+  it('导航分组：监控组仅管理员可见，节点组对所有角色可见', () => {
+    const adminGroups = getSidebarData(i18n.t, {
+      canAdmin: true,
+    }).navGroups
+    const automation = adminGroups.find(
+      (group) => group.title === i18n.t('nav.sections.automation')
+    )
+    const monitoring = adminGroups.find(
+      (group) => group.title === i18n.t('nav.sections.monitoring')
+    )
+    const nodes = adminGroups.find(
+      (group) => group.title === i18n.t('nav.sections.nodes')
+    )
+    expect(automation?.items.map((item) => item.url)).toEqual([
+      '/tasks',
+      '/schedules',
+      '/executions',
+      '/rules',
+      '/transfers',
+    ])
+    expect(monitoring?.items.map((item) => item.url)).toEqual([
+      '/monitoring',
+      '/monitoring/services',
+      '/monitoring/alerts',
+    ])
+    expect(nodes?.items.map((item) => item.url)).toEqual(['/agents', '/groups'])
+
+    const viewerGroups = getSidebarData(i18n.t, {
+      canAdmin: false,
+    }).navGroups
+    expect(
+      viewerGroups.find(
+        (group) => group.title === i18n.t('nav.sections.monitoring')
+      )
+    ).toBeUndefined()
+    expect(
+      viewerGroups
+        .find((group) => group.title === i18n.t('nav.sections.nodes'))
+        ?.items.map((item) => item.url)
+    ).toEqual(['/agents', '/groups'])
+    expect(navUrls(false)).not.toContain('/monitoring')
+    expect(navUrls(false)).not.toContain('/monitoring/services')
+    expect(navUrls(false)).not.toContain('/monitoring/alerts')
+    expect(navUrls(true)).toContain('/rules')
+    expect(navUrls(false)).not.toContain('/rules')
+    expect(navUrls(false)).toContain('/tasks')
   })
 
   it('operator 渲染侧边栏时不出现「用户」入口', async () => {
@@ -91,6 +145,30 @@ describe('侧边栏导航按角色过滤（OBS-20261014-NAV-ROLE-UNFILTERED）',
       .element(page.getByRole('link', { name: '用户' }))
       .not.toBeInTheDocument()
     await expect.element(page.getByRole('link', { name: '审计' })).toBeVisible()
+    await expect
+      .element(page.getByRole('link', { name: '节点监控' }))
+      .not.toBeInTheDocument()
+    await expect
+      .element(page.getByRole('link', { name: '服务监控' }))
+      .not.toBeInTheDocument()
+    await expect
+      .element(page.getByRole('link', { name: '告警' }))
+      .not.toBeInTheDocument()
+    await expect
+      .element(page.getByRole('link', { name: '联动规则' }))
+      .not.toBeInTheDocument()
+    await expect
+      .element(page.getByText('监控', { exact: true }))
+      .not.toBeInTheDocument()
+    await expect
+      .element(page.getByText('自动化控制', { exact: true }))
+      .toBeVisible()
+    await expect
+      .element(page.getByRole('link', { name: '节点', exact: true }))
+      .toBeVisible()
+    await expect
+      .element(page.getByRole('link', { name: '分组', exact: true }))
+      .toBeVisible()
   })
 
   it('viewer 渲染侧边栏时不出现「用户」入口', async () => {
@@ -107,5 +185,25 @@ describe('侧边栏导航按角色过滤（OBS-20261014-NAV-ROLE-UNFILTERED）',
     const page = await renderSidebar('administrator')
 
     await expect.element(page.getByRole('link', { name: '用户' })).toBeVisible()
+    await expect
+      .element(page.getByText('自动化控制', { exact: true }))
+      .toBeVisible()
+    await expect.element(page.getByText('监控', { exact: true })).toBeVisible()
+    await expect
+      .element(page.getByRole('link', { name: '节点监控' }))
+      .toBeVisible()
+    await expect
+      .element(page.getByRole('link', { name: '服务监控' }))
+      .toBeVisible()
+    await expect.element(page.getByRole('link', { name: '告警' })).toBeVisible()
+    await expect
+      .element(page.getByRole('link', { name: '联动规则' }))
+      .toBeVisible()
+    await expect
+      .element(page.getByRole('link', { name: '节点', exact: true }))
+      .toBeVisible()
+    await expect
+      .element(page.getByRole('link', { name: '分组', exact: true }))
+      .toBeVisible()
   })
 })

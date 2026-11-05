@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 )
 
@@ -37,6 +38,58 @@ func (c *ArtifactCache) SetIdentity(agentID, token string) {
 func NewArtifactCache(dir string, st *LocalStore, logger *slog.Logger, token string) *ArtifactCache {
 	os.MkdirAll(dir, 0o755)
 	return &ArtifactCache{dir: dir, store: st, logger: logger, token: token, client: http.DefaultClient}
+}
+
+// StoreReader 从数据面写入内容寻址缓存：临时文件、大小/SHA 校验、原子 rename。
+func (c *ArtifactCache) StoreReader(ctx context.Context, sha string, size int64, r io.Reader) error {
+	sha = strings.ToLower(strings.TrimSpace(sha))
+	if len(sha) != 64 {
+		return fmt.Errorf("invalid artifact sha256")
+	}
+	if _, err := hex.DecodeString(sha); err != nil {
+		return fmt.Errorf("invalid artifact sha256")
+	}
+	if size < 0 {
+		return fmt.Errorf("invalid artifact size")
+	}
+	if c.Has(sha) {
+		return nil
+	}
+	tmp, err := os.CreateTemp(c.dir, sha+".tmp-*")
+	if err != nil {
+		return err
+	}
+	tmpPath := tmp.Name()
+	defer os.Remove(tmpPath)
+	h := sha256.New()
+	n, copyErr := io.Copy(io.MultiWriter(tmp, h), io.LimitReader(r, size+1))
+	if copyErr != nil {
+		tmp.Close()
+		return copyErr
+	}
+	if n != size {
+		tmp.Close()
+		return fmt.Errorf("artifact size mismatch: expected %d got %d", size, n)
+	}
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	got := hex.EncodeToString(h.Sum(nil))
+	if got != sha {
+		return fmt.Errorf("artifact sha256 mismatch: expected %s got %s", sha, got)
+	}
+	if err := os.Rename(tmpPath, c.Path(sha)); err != nil {
+		return err
+	}
+	if err := c.store.RegisterArtifact(sha, c.Path(sha)); err != nil {
+		return err
+	}
+	c.logger.Info("artifact cached via inbound data plane", "sha", sha, "size", size)
+	return nil
 }
 
 // Path 返回 sha 对应缓存路径

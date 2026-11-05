@@ -24,7 +24,11 @@ describe('splitUpgradeTargets docker 过滤', () => {
 
   it('全 native 集合不产生跳过数', () => {
     const targets = splitUpgradeTargets([node('n1', 'native')])
-    expect(targets).toEqual({ nodeIds: ['n1'], skippedDocker: 0 })
+    expect(targets).toEqual({
+      nodeIds: ['n1'],
+      skippedDocker: 0,
+      blockedDataPlane: 0,
+    })
   })
 
   it('全 docker 集合请求集为空（升级入口据此隐藏）', () => {
@@ -40,6 +44,43 @@ describe('splitUpgradeTargets docker 过滤', () => {
     const targets = splitUpgradeTargets([node('n1', ''), node('n2', 'podman')])
     expect(targets.nodeIds).toEqual([])
     expect(targets.skippedDocker).toBe(2)
+  })
+})
+
+describe('splitUpgradeTargets 入站数据面过滤', () => {
+  it('入站且未声明数据面的节点不进升级请求', () => {
+    const targets = splitUpgradeTargets([
+      {
+        id: 'n1',
+        deployment_mode: 'native',
+        connection_mode: 'inbound',
+        inbound: {
+          configured: true,
+          capable: true,
+          data_plane: false,
+          cert_fingerprint: '',
+          cert_not_after: '',
+          last_handshake_at: '',
+          last_error: '',
+        },
+      },
+      {
+        id: 'n2',
+        deployment_mode: 'native',
+        connection_mode: 'inbound',
+        inbound: {
+          configured: true,
+          capable: true,
+          data_plane: true,
+          cert_fingerprint: '',
+          cert_not_after: '',
+          last_handshake_at: '',
+          last_error: '',
+        },
+      },
+    ])
+    expect(targets.nodeIds).toEqual(['n2'])
+    expect(targets.blockedDataPlane).toBe(1)
   })
 })
 

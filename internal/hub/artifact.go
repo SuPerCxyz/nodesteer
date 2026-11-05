@@ -8,8 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/SuPerCxyz/nodesteer/internal/models"
 	"github.com/SuPerCxyz/nodesteer/internal/protocol"
@@ -154,12 +158,68 @@ func (am *ArtifactManager) Prefetch(ctx context.Context, nodeID, artifactID, bas
 	if !ok {
 		return ErrAgentOffline
 	}
+	if SessionIsInbound(conn) {
+		if _, err := RequireInboundDataPlane(conn); err != nil {
+			return err
+		}
+		if err := conn.Send(protocol.NewEnvelope(protocol.MsgArtifactPrefetch, "", protocol.ArtifactPrefetchPayload{
+			ArtifactID: a.ID, SHA256: a.SHA256, Size: a.Size, Transport: protocol.TransportInboundPush,
+		})); err != nil {
+			return err
+		}
+		return am.PushInbound(ctx, conn, nodeID, a)
+	}
 	return conn.Send(protocol.NewEnvelope(protocol.MsgArtifactPrefetch, "", protocol.ArtifactPrefetchPayload{
 		ArtifactID: a.ID,
 		URL:        url,
 		SHA256:     a.SHA256,
 		Size:       a.Size,
 	}))
+}
+
+// PushInbound 通过入站数据面把 Artifact 推送到 Agent 内容寻址缓存。
+func (am *ArtifactManager) PushInbound(ctx context.Context, conn AgentConn, nodeID string, artifact *models.Artifact) error {
+	dp, err := RequireInboundDataPlane(conn)
+	if err != nil {
+		return err
+	}
+	if artifact == nil || artifact.SHA256 == "" {
+		return errors.New("artifact sha256 is required")
+	}
+	f, err := os.Open(artifact.StoragePath)
+	if err != nil {
+		return fmt.Errorf("open artifact: %w", err)
+	}
+	defer f.Close()
+	path := fmt.Sprintf("/agent-data/v1/artifacts/%s?sha256=%s&size=%d",
+		url.PathEscape(artifact.ID), url.QueryEscape(strings.ToLower(artifact.SHA256)), artifact.Size)
+	resp, err := dp.DataPlaneRequest(ctx, http.MethodPut, path, f, artifact.Size)
+	if err != nil {
+		return fmt.Errorf("push artifact: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated {
+		slog.Default().Info("inbound artifact pushed", "node", nodeID, "artifact", artifact.ID, "size", artifact.Size)
+		return nil
+	}
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+	return fmt.Errorf("push artifact status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+}
+
+// PushInboundByID 按 Artifact ID 推送到指定的入站节点。
+func (am *ArtifactManager) PushInboundByID(ctx context.Context, nodeID, artifactID string) error {
+	conn, ok := am.sessions.Get(nodeID)
+	if !ok {
+		return ErrAgentOffline
+	}
+	if !SessionIsInbound(conn) {
+		return nil
+	}
+	a, err := am.store.GetArtifact(ctx, artifactID)
+	if err != nil {
+		return err
+	}
+	return am.PushInbound(ctx, conn, nodeID, a)
 }
 
 // PrefetchToNodes 预取到多节点

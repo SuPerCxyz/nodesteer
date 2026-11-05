@@ -2,6 +2,8 @@ package metrics
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 	"sync"
 )
 
@@ -16,11 +18,16 @@ type Metrics struct {
 	executionTotal map[string]int64
 	// artifactDownloadBytes 制品下载字节
 	artifactDownloadBytes int64
+	// inboundDialTotal 入站拨号次数，key 为 stage/result。
+	inboundDialTotal map[string]int64
 }
 
 // New 创建指标收集器
 func New() *Metrics {
-	return &Metrics{executionTotal: map[string]int64{}}
+	return &Metrics{
+		executionTotal:   map[string]int64{},
+		inboundDialTotal: map[string]int64{},
+	}
 }
 
 // SetConnectedAgents 设置在线 Agent 数
@@ -41,6 +48,20 @@ func (m *Metrics) IncSyncErrors() {
 func (m *Metrics) AddExecution(status string) {
 	m.mu.Lock()
 	m.executionTotal[status]++
+	m.mu.Unlock()
+}
+
+// IncInboundDial 记录一次入站拨号尝试。stage 为成功/失败阶段码，ok 表示连接被接受。
+func (m *Metrics) IncInboundDial(stage string, ok bool) {
+	if stage == "" {
+		stage = "unknown"
+	}
+	result := "failure"
+	if ok {
+		result = "success"
+	}
+	m.mu.Lock()
+	m.inboundDialTotal[stage+"/"+result]++
 	m.mu.Unlock()
 }
 
@@ -72,6 +93,18 @@ func (m *Metrics) Render() string {
 	out += fmt.Sprintf("nodesteer_execution_failed %d\n", m.executionTotal["FAILED"])
 	out += fmt.Sprintf("nodesteer_execution_total_all %d\n", total(m.executionTotal))
 	out += fmt.Sprintf("nodesteer_active_executions %d\n", m.executionTotal["RUNNING"])
+
+	out += "# HELP nodesteer_inbound_dial_total Inbound dial attempts by stage and result\n"
+	out += "# TYPE nodesteer_inbound_dial_total counter\n"
+	keys := make([]string, 0, len(m.inboundDialTotal))
+	for key := range m.inboundDialTotal {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		parts := strings.SplitN(key, "/", 2)
+		out += fmt.Sprintf("nodesteer_inbound_dial_total{stage=%q,result=%q} %d\n", parts[0], parts[1], m.inboundDialTotal[key])
+	}
 
 	out += "# HELP nodesteer_artifact_download_bytes Artifact download bytes\n"
 	out += "# TYPE nodesteer_artifact_download_bytes counter\n"

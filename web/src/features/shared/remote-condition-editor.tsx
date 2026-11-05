@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Condition, Node, RemoteCondition, Task } from '@/lib/api'
+import { nodeDisplayName } from '@/lib/node-display-name'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -65,9 +66,12 @@ export function RemoteConditionEditor({
           {remoteItems.map((item, index) => {
             const remote = item.remote
             if (!remote) return null
-            const nodeName =
-              nodes.find((node) => node.id === remote.node_id)?.hostname ||
-              remote.node_id
+            const nodeName = nodeDisplayName(
+              nodes.find((node) => node.id === remote.node_id) ?? {
+                id: remote.node_id,
+              },
+              t('common.unknownNode')
+            )
             const taskName =
               tasks.find((task) => task.id === remote.task_id)?.name ||
               remote.task_id
@@ -114,7 +118,7 @@ export function RemoteConditionEditor({
             <SelectContent>
               {nodes.map((node) => (
                 <SelectItem key={node.id} value={node.id}>
-                  {node.hostname}
+                  {nodeDisplayName(node, t('common.unknownNode'))}
                 </SelectItem>
               ))}
             </SelectContent>

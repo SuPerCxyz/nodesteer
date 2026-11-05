@@ -71,16 +71,19 @@ func (a *Agent) runAgentUpgrade(p protocol.RunExecutionPayload) {
 		return
 	}
 
-	// 下载源：Hub 指定的既有 GET /api/agent/binary；未携带时按 HubURL 派生兜底。
-	url := p.DownloadURL
-	if url == "" {
-		if base := agentHTTPBase(a.cfg.HubURL); base != "" {
-			url = base + "/api/agent/binary?architecture=" + osArch()
+	// 下载源：出站模式使用 Hub binary 端点；入站模式使用 Hub 已推送的固定 staging 文件。
+	var url string
+	if !p.AgentBinaryStaged {
+		url = p.DownloadURL
+		if url == "" {
+			if base := agentHTTPBase(a.cfg.HubURL); base != "" {
+				url = base + "/api/agent/binary?architecture=" + osArch()
+			}
 		}
-	}
-	if url == "" {
-		fail("hub download url is not configured")
-		return
+		if url == "" {
+			fail("hub download url is not configured")
+			return
+		}
 	}
 
 	ctx, cancel := context.WithTimeout(a.ctx, upgradeTimeout)
@@ -97,8 +100,17 @@ func (a *Agent) runAgentUpgrade(p protocol.RunExecutionPayload) {
 	tmp := exe + ".new"
 	defer os.Remove(tmp) // 成功替换后 tmp 已被 rename，此处移除无害
 
-	// 下载 + SHA256 必须校验（对照 Hub 响应头）；失败不动当前二进制
-	if err := a.upgrade.download(ctx, url, tmp); err != nil {
+	if p.AgentBinaryStaged {
+		if p.AgentBinarySHA256 == "" {
+			fail("staged agent binary sha256 is missing")
+			return
+		}
+		if err := copyVerifiedFile(a.agentBinaryStagingPath(), tmp, p.AgentBinarySize, p.AgentBinarySHA256); err != nil {
+			fail("verify staged agent binary: " + err.Error())
+			return
+		}
+	} else if err := a.upgrade.download(ctx, url, tmp); err != nil {
+		// 下载 + SHA256 必须校验（对照 Hub 响应头）；失败不动当前二进制
 		fail("download agent binary: " + err.Error())
 		return
 	}
@@ -206,6 +218,52 @@ func (a *Agent) downloadAgentBinary(ctx context.Context, url, dst string) error 
 	if hex.EncodeToString(hash.Sum(nil)) != headerSHA {
 		os.Remove(dst)
 		return errors.New("sha256 mismatch")
+	}
+	return nil
+}
+
+// copyVerifiedFile 把入站数据面 staging 二进制复制到升级临时路径，并校验大小/SHA。
+func copyVerifiedFile(src, dst string, expectedSize int64, expectedSHA string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	info, err := in.Stat()
+	if err != nil {
+		return err
+	}
+	if !info.Mode().IsRegular() || info.Size() <= 0 {
+		return errors.New("staged agent binary is not a regular non-empty file")
+	}
+	if expectedSize > 0 && info.Size() != expectedSize {
+		return fmt.Errorf("staged agent binary size mismatch: expected %d got %d", expectedSize, info.Size())
+	}
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o755)
+	if err != nil {
+		return err
+	}
+	h := sha256.New()
+	n, copyErr := io.Copy(io.MultiWriter(out, h), in)
+	syncErr := out.Sync()
+	closeErr := out.Close()
+	if copyErr != nil || syncErr != nil || closeErr != nil {
+		_ = os.Remove(dst)
+		if copyErr != nil {
+			return copyErr
+		}
+		if syncErr != nil {
+			return syncErr
+		}
+		return closeErr
+	}
+	if expectedSize > 0 && n != expectedSize {
+		_ = os.Remove(dst)
+		return fmt.Errorf("staged agent binary size mismatch: expected %d got %d", expectedSize, n)
+	}
+	if !strings.EqualFold(hex.EncodeToString(h.Sum(nil)), strings.TrimPrefix(strings.ToLower(expectedSHA), "sha256:")) {
+		_ = os.Remove(dst)
+		return errors.New("staged agent binary sha256 mismatch")
 	}
 	return nil
 }

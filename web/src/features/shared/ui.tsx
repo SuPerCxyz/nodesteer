@@ -63,7 +63,7 @@ export function StatusBadge({ status }: { status?: string | null }) {
           ? 'secondary'
           : 'outline'
   const label = statusLabel(status)
-  // 颜色在明暗两种主题下均需满足 4.5:1（white 文字），不再使用更浅的 dark:* 底色
+  // 实色填充 + 白字：边框与填充同色，明暗主题均满足 4.5:1（white 文字）
   const colorClass = [
     'online',
     'healthy',
@@ -183,14 +183,10 @@ export function ErrorPage({
   onRetry?: () => void
   backTo: string
 }) {
-  const { t } = useTranslation()
   return (
     <>
-      <NodeSteerHeader title={title} />
+      <NodeSteerHeader title={title} backTo={backTo} />
       <Main className='flex flex-1 flex-col gap-6'>
-        <Button asChild variant='ghost' className='w-fit px-0'>
-          <a href={backTo}>← {t('common.back')}</a>
-        </Button>
         <ErrorState error={error} onRetry={onRetry} />
       </Main>
     </>
@@ -222,14 +218,6 @@ export function SearchToolbar({
   )
 }
 
-export function TableCard({ children }: { children: React.ReactNode }) {
-  return (
-    <div className='overflow-hidden border'>
-      <div className='overflow-x-auto'>{children}</div>
-    </div>
-  )
-}
-
 export function SectionCard({
   title,
   children,
@@ -241,8 +229,8 @@ export function SectionCard({
 }) {
   return (
     <Card>
-      <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-3'>
-        <CardTitle className='text-sm'>{title}</CardTitle>
+      <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-1'>
+        <CardTitle>{title}</CardTitle>
         {action}
       </CardHeader>
       <CardContent>{children}</CardContent>
@@ -262,7 +250,7 @@ export function SectionGrid({
   className?: string
 }) {
   return (
-    <div className={cn('grid gap-4 2xl:grid-cols-2', className)}>
+    <div className={cn('grid grid-cols-1 gap-4 2xl:grid-cols-2', className)}>
       {children}
     </div>
   )
@@ -272,11 +260,17 @@ export function SectionGrid({
 export function SectionFull({
   children,
   className,
+  id,
 }: {
   children: React.ReactNode
   className?: string
+  id?: string
 }) {
-  return <div className={cn('2xl:col-span-2', className)}>{children}</div>
+  return (
+    <div id={id} className={cn('scroll-mt-24 2xl:col-span-2', className)}>
+      {children}
+    </div>
+  )
 }
 
 export function DetailGrid({

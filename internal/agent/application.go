@@ -188,20 +188,21 @@ func (am *ApplicationManager) handleDeployOperation(ctx context.Context, p proto
 		hc = b
 	}
 	req := protocol.DeployRequestPayload{
-		AppID:          app.ID,
-		AppVersion:     app.Version,
-		AppRevision:    app.Revision,
-		ArtifactID:     app.ArtifactID,
-		ArtifactURL:    app.ArtifactURL,
-		ArtifactSHA256: app.ArtifactSHA256,
-		BinaryPath:     app.BinaryPath,
-		Arguments:      app.Arguments,
-		Environment:    app.Environment,
-		Config:         app.Config,
-		ConfigPath:     app.ConfigPath,
-		UnitName:       app.UnitName,
-		HealthCheck:    hc,
-		Operation:      op,
+		AppID:             app.ID,
+		AppVersion:        app.Version,
+		AppRevision:       app.Revision,
+		ArtifactID:        app.ArtifactID,
+		ArtifactURL:       app.ArtifactURL,
+		ArtifactSHA256:    app.ArtifactSHA256,
+		ArtifactTransport: p.ArtifactTransport,
+		BinaryPath:        app.BinaryPath,
+		Arguments:         app.Arguments,
+		Environment:       app.Environment,
+		Config:            app.Config,
+		ConfigPath:        app.ConfigPath,
+		UnitName:          app.UnitName,
+		HealthCheck:       hc,
+		Operation:         op,
 		// 由 RunExecutionPayload 进入时透传来源与策略。
 		ScheduleID:       p.ScheduleID,
 		ScheduleRevision: p.ScheduleRevision,
@@ -333,18 +334,24 @@ func (am *ApplicationManager) deploy(ctx context.Context, p protocol.DeployReque
 	// 准备阶段失败还没有修改宿主文件，不能调用破坏性的回滚。
 	prepareFailed := func(reason string) {
 		res.Error = reason
+		res.Blocked = reason == "artifact_not_staged"
 		if err := am.store.CompleteDeployment(ctx, deploymentID, CompletedKindPrepareFailed, ""); err != nil {
 			res.Error += "; finish preparation journal failed: " + err.Error()
 		}
 		cb(res)
 	}
 	artifactPath := ""
-	if p.ArtifactURL != "" {
+	if p.ArtifactURL != "" || p.ArtifactSHA256 != "" {
 		if p.ArtifactSHA256 == "" || am.artifact == nil {
 			prepareFailed("artifact sha256/cache is missing")
 			return
 		}
-		if err := am.artifact.Prefetch(ctx, p.ArtifactURL, p.ArtifactSHA256); err != nil {
+		if p.ArtifactTransport == protocol.TransportInboundPush || p.ArtifactURL == "" {
+			if !am.artifact.Has(p.ArtifactSHA256) {
+				prepareFailed("artifact_not_staged")
+				return
+			}
+		} else if err := am.artifact.Prefetch(ctx, p.ArtifactURL, p.ArtifactSHA256); err != nil {
 			prepareFailed("artifact download failed: " + err.Error())
 			return
 		}

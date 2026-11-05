@@ -34,6 +34,12 @@ type Store interface {
 	UpdateNodeSyncState(ctx context.Context, id string, rev int64, syncStatus string) error
 	UpdateNodeHeartbeat(ctx context.Context, id string, lastSeen time.Time) error
 	SetNodeLabels(ctx context.Context, id string, labels map[string]string) error
+	UpdateNodeDisplayName(ctx context.Context, id, value string) error
+	UpdateNodeEndpoint(ctx context.Context, id, endpoint, updatedBy string, updatedAt time.Time) error
+	UpdateNodeInboundIdentity(ctx context.Context, id string, provisioned bool, fingerprint, serial string, notAfter time.Time, tokenEnc string) error
+	UpdateNodeInboundDiagnostics(ctx context.Context, id string, lastHandshake time.Time, lastError string) error
+	UpdateNodeLastConnectionMode(ctx context.Context, id, mode string) error
+	ListInboundCandidateNodes(ctx context.Context) ([]*models.Node, error)
 	DeleteNode(ctx context.Context, id string) error
 
 	// Groups
@@ -139,6 +145,7 @@ type Store interface {
 
 // ExecutionFilter 执行过滤
 type ExecutionFilter struct {
+	ScheduleID  string
 	NodeID      string
 	TaskID      string
 	Status      string

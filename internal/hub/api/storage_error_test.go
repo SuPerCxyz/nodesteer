@@ -84,7 +84,7 @@ func TestEnrollmentStorageErrorNormalizedAndLogged(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			s, token, buf := newStorageErrorServer(t, tc.injected)
 			req := httptest.NewRequest(http.MethodPost, "/api/nodes/enrollment",
-				strings.NewReader(`{"node_name":"storage-fail","node_ip":"192.0.2.9"}`))
+				strings.NewReader(`{"node_name":"storage-fail","node_ip":"192.0.2.9","endpoint":"192.0.2.9"}`))
 			req.Header.Set("Authorization", "Bearer "+token)
 			req.Header.Set("Content-Type", "application/json")
 			rec := httptest.NewRecorder()

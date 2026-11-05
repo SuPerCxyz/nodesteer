@@ -9,40 +9,58 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/SuPerCxyz/nodesteer/internal/hub/agentbundle"
 	"github.com/SuPerCxyz/nodesteer/internal/hub/auth"
 	"github.com/SuPerCxyz/nodesteer/internal/hubserver"
+	"github.com/SuPerCxyz/nodesteer/internal/inbound"
 	"github.com/SuPerCxyz/nodesteer/web"
 	"gopkg.in/yaml.v3"
 )
 
 // Config 命令行配置
 type Config struct {
-	WebAddr              string          `yaml:"web_addr"`
-	GatewayAddr          string          `yaml:"gateway_addr"`
-	GatewayBaseURL       string          `yaml:"gateway_base_url"`
-	WebTLSCert           string          `yaml:"web_tls_cert"`
-	WebTLSKey            string          `yaml:"web_tls_key"`
-	GatewayTLSCert       string          `yaml:"gateway_tls_cert"`
-	GatewayTLSKey        string          `yaml:"gateway_tls_key"`
-	RegistrationToken    string          `yaml:"registration_token"`
-	DataDir              string          `yaml:"data_dir"`
-	ArtifactDir          string          `yaml:"artifact_dir"`
-	AgentBinaryAMD64Path string          `yaml:"agent_binary_amd64_path"`
-	AgentBinaryARM64Path string          `yaml:"agent_binary_arm64_path"`
-	BaseURL              string          `yaml:"base_url"`
-	AdminUsername        string          `yaml:"admin_username"`
-	AdminPassword        string          `yaml:"admin_password"`
-	SessionTTL           time.Duration   `yaml:"session_ttl"`
-	RevisionCheckSec     int             `yaml:"revision_check_sec"`
-	ChangelogWindow      int64           `yaml:"changelog_window"`
-	HeartbeatTimeout     time.Duration   `yaml:"heartbeat_timeout"`
-	MaxFileTransferBytes int64           `yaml:"max_file_transfer_bytes"`
-	DevNoAuth            bool            `yaml:"dev_no_auth"`
-	OIDC                 auth.OIDCConfig `yaml:"oidc"`
+	WebAddr                string        `yaml:"web_addr"`
+	GatewayAddr            string        `yaml:"gateway_addr"`
+	GatewayBaseURL         string        `yaml:"gateway_base_url"`
+	WebTLSCert             string        `yaml:"web_tls_cert"`
+	WebTLSKey              string        `yaml:"web_tls_key"`
+	GatewayTLSCert         string        `yaml:"gateway_tls_cert"`
+	GatewayTLSKey          string        `yaml:"gateway_tls_key"`
+	RegistrationToken      string        `yaml:"registration_token"`
+	DataDir                string        `yaml:"data_dir"`
+	ArtifactDir            string        `yaml:"artifact_dir"`
+	AgentBinaryAMD64Path   string        `yaml:"agent_binary_amd64_path"`
+	AgentBinaryARM64Path   string        `yaml:"agent_binary_arm64_path"`
+	BaseURL                string        `yaml:"base_url"`
+	AdminUsername          string        `yaml:"admin_username"`
+	AdminPassword          string        `yaml:"admin_password"`
+	SessionTTL             time.Duration `yaml:"session_ttl"`
+	RevisionCheckSec       int           `yaml:"revision_check_sec"`
+	ChangelogWindow        int64         `yaml:"changelog_window"`
+	HeartbeatTimeout       time.Duration `yaml:"heartbeat_timeout"`
+	MaxFileTransferBytes   int64         `yaml:"max_file_transfer_bytes"`
+	MonitoringAllowedCIDRs []string      `yaml:"monitoring_allowed_cidrs"`
+	MonitoringWorkers      int           `yaml:"monitoring_workers"`
+	// 入站连接（Hub 主动拨号）配置；默认关闭。
+	InboundEnabled         bool            `yaml:"inbound_enabled"`
+	InboundCAFile          string          `yaml:"inbound_ca_file"`
+	InboundCAKeyFile       string          `yaml:"inbound_ca_key_file"`
+	InboundClientCertFile  string          `yaml:"inbound_client_cert_file"`
+	InboundClientKeyFile   string          `yaml:"inbound_client_key_file"`
+	InboundDialConcurrency int             `yaml:"inbound_dial_concurrency"`
+	InboundDialTimeout     time.Duration   `yaml:"inbound_dial_timeout"`
+	InboundBackoffInitial  time.Duration   `yaml:"inbound_backoff_initial"`
+	InboundBackoffMax      time.Duration   `yaml:"inbound_backoff_max"`
+	InboundAllowedPorts    []int           `yaml:"inbound_allowed_ports"`
+	InboundDeniedCIDRs     []string        `yaml:"inbound_denied_cidrs"`
+	InboundAllowLoopback   bool            `yaml:"inbound_allow_loopback"`
+	DevNoAuth              bool            `yaml:"dev_no_auth"`
+	AllowEmptyPassword     bool            `yaml:"allow_empty_password"` // 仅测试环境使用：允许空管理员密码，默认 false
+	OIDC                   auth.OIDCConfig `yaml:"oidc"`
 }
 
 // DefaultConfig 默认配置
@@ -62,6 +80,13 @@ func DefaultConfig() Config {
 		ChangelogWindow:      5000,
 		HeartbeatTimeout:     90 * time.Second,
 		MaxFileTransferBytes: 10 << 30,
+		// 入站连接默认关闭；只允许默认端口 18444，保留 RFC1918。
+		InboundEnabled:         false,
+		InboundDialConcurrency: 16,
+		InboundDialTimeout:     20 * time.Second,
+		InboundBackoffInitial:  2 * time.Second,
+		InboundBackoffMax:      60 * time.Second,
+		InboundAllowedPorts:    []int{18444},
 	}
 }
 
@@ -91,6 +116,10 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+	if err := validateInboundConfig(cfg); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 	// OIDC 空字段回填默认值
 	defOIDC := auth.DefaultOIDCConfig()
 	if len(cfg.OIDC.Scopes) == 0 {
@@ -111,6 +140,9 @@ func main() {
 	if cfg.DevNoAuth {
 		logger.Warn("DEV NO AUTH ENABLED: all API requests are treated as administrator; use only for local testing")
 	}
+	if cfg.AllowEmptyPassword {
+		logger.Warn("ALLOW EMPTY PASSWORD ENABLED: local accounts may sign in with an empty password; use only for testing")
+	}
 	bundledAgentPayloads, err := agentbundle.LoadExecutable()
 	if err != nil {
 		logger.Warn("load bundled agent payloads failed", "error", err)
@@ -121,29 +153,44 @@ func main() {
 	os.MkdirAll(cfg.ArtifactDir, 0o755)
 
 	h, err := hubserver.New(hubserver.Config{
-		WebAddr:              cfg.WebAddr,
-		GatewayAddr:          cfg.GatewayAddr,
-		GatewayBaseURL:       cfg.GatewayBaseURL,
-		WebTLSCert:           cfg.WebTLSCert,
-		WebTLSKey:            cfg.WebTLSKey,
-		GatewayTLSCert:       cfg.GatewayTLSCert,
-		GatewayTLSKey:        cfg.GatewayTLSKey,
-		RegistrationToken:    cfg.RegistrationToken,
-		DataDir:              cfg.DataDir,
-		ArtifactDir:          cfg.ArtifactDir,
-		AgentBinaryAMD64Path: cfg.AgentBinaryAMD64Path,
-		AgentBinaryARM64Path: cfg.AgentBinaryARM64Path,
-		AgentBinaryPayloads:  bundledAgentPayloads,
-		BaseURL:              cfg.BaseURL,
-		HeartbeatTimeout:     cfg.HeartbeatTimeout,
-		AdminUsername:        cfg.AdminUsername,
-		AdminPassword:        cfg.AdminPassword,
-		SessionTTL:           cfg.SessionTTL,
-		RevisionCheckSec:     cfg.RevisionCheckSec,
-		ChangelogWindow:      cfg.ChangelogWindow,
-		MaxFileTransferBytes: cfg.MaxFileTransferBytes,
-		DevNoAuth:            cfg.DevNoAuth,
-		OIDC:                 cfg.OIDC,
+		WebAddr:                cfg.WebAddr,
+		GatewayAddr:            cfg.GatewayAddr,
+		GatewayBaseURL:         cfg.GatewayBaseURL,
+		WebTLSCert:             cfg.WebTLSCert,
+		WebTLSKey:              cfg.WebTLSKey,
+		GatewayTLSCert:         cfg.GatewayTLSCert,
+		GatewayTLSKey:          cfg.GatewayTLSKey,
+		RegistrationToken:      cfg.RegistrationToken,
+		DataDir:                cfg.DataDir,
+		ArtifactDir:            cfg.ArtifactDir,
+		AgentBinaryAMD64Path:   cfg.AgentBinaryAMD64Path,
+		AgentBinaryARM64Path:   cfg.AgentBinaryARM64Path,
+		AgentBinaryPayloads:    bundledAgentPayloads,
+		BaseURL:                cfg.BaseURL,
+		HeartbeatTimeout:       cfg.HeartbeatTimeout,
+		AdminUsername:          cfg.AdminUsername,
+		AdminPassword:          cfg.AdminPassword,
+		SessionTTL:             cfg.SessionTTL,
+		RevisionCheckSec:       cfg.RevisionCheckSec,
+		ChangelogWindow:        cfg.ChangelogWindow,
+		MaxFileTransferBytes:   cfg.MaxFileTransferBytes,
+		MonitoringAllowedCIDRs: cfg.MonitoringAllowedCIDRs,
+		MonitoringWorkers:      cfg.MonitoringWorkers,
+		InboundEnabled:         cfg.InboundEnabled,
+		InboundCAFile:          cfg.InboundCAFile,
+		InboundCAKeyFile:       cfg.InboundCAKeyFile,
+		InboundClientCertFile:  cfg.InboundClientCertFile,
+		InboundClientKeyFile:   cfg.InboundClientKeyFile,
+		InboundDialConcurrency: cfg.InboundDialConcurrency,
+		InboundDialTimeout:     cfg.InboundDialTimeout,
+		InboundBackoffInitial:  cfg.InboundBackoffInitial,
+		InboundBackoffMax:      cfg.InboundBackoffMax,
+		InboundAllowedPorts:    cfg.InboundAllowedPorts,
+		InboundDeniedCIDRs:     cfg.InboundDeniedCIDRs,
+		InboundAllowLoopback:   cfg.InboundAllowLoopback,
+		DevNoAuth:              cfg.DevNoAuth,
+		AllowEmptyPassword:     cfg.AllowEmptyPassword,
+		OIDC:                   cfg.OIDC,
 	}, logger)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "init hub: %v\n", err)
@@ -178,6 +225,12 @@ func main() {
 }
 
 func validateAdminCredentials(cfg Config) error {
+	if cfg.AllowEmptyPassword {
+		if cfg.AdminUsername == "" {
+			return fmt.Errorf("admin username must be configured")
+		}
+		return nil
+	}
 	if cfg.AdminUsername == "" || cfg.AdminPassword == "" {
 		return fmt.Errorf("admin username and password must be configured")
 	}
@@ -212,6 +265,16 @@ func applyEnv(cfg *Config) error {
 	if v := os.Getenv("NODESTEER_DATA_DIR"); v != "" {
 		cfg.DataDir = v
 	}
+	if v := os.Getenv("NODESTEER_MONITOR_ALLOWED_CIDRS"); v != "" {
+		cfg.MonitoringAllowedCIDRs = strings.Split(v, ",")
+	}
+	if v := os.Getenv("NODESTEER_MONITOR_WORKERS"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 1 || n > 128 {
+			return fmt.Errorf("NODESTEER_MONITOR_WORKERS must be between 1 and 128")
+		}
+		cfg.MonitoringWorkers = n
+	}
 	if v := os.Getenv("NODESTEER_ARTIFACT_DIR"); v != "" {
 		cfg.ArtifactDir = v
 	}
@@ -242,6 +305,13 @@ func applyEnv(cfg *Config) error {
 		}
 		cfg.DevNoAuth = b
 	}
+	if v, ok := os.LookupEnv("NODESTEER_ALLOW_EMPTY_PASSWORD"); ok && v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return fmt.Errorf("invalid NODESTEER_ALLOW_EMPTY_PASSWORD %q: want true or false", v)
+		}
+		cfg.AllowEmptyPassword = b
+	}
 	if v := os.Getenv("NODESTEER_OIDC_ISSUER"); v != "" {
 		cfg.OIDC.Issuer = v
 	}
@@ -268,6 +338,132 @@ func applyEnv(cfg *Config) error {
 			return fmt.Errorf("invalid NODESTEER_OIDC_ALLOW_LOCAL_LOGIN %q: want true or false", v)
 		}
 		cfg.OIDC.AllowLocalLogin = &b
+	}
+	if err := applyInboundEnv(cfg); err != nil {
+		return err
+	}
+	return nil
+}
+
+func applyInboundEnv(cfg *Config) error {
+	if v, ok := os.LookupEnv("NODESTEER_INBOUND_ENABLED"); ok && v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return fmt.Errorf("invalid NODESTEER_INBOUND_ENABLED %q: want true or false", v)
+		}
+		cfg.InboundEnabled = b
+	}
+	if v := os.Getenv("NODESTEER_INBOUND_CA_FILE"); v != "" {
+		cfg.InboundCAFile = v
+	}
+	if v := os.Getenv("NODESTEER_INBOUND_CA_KEY_FILE"); v != "" {
+		cfg.InboundCAKeyFile = v
+	}
+	if v := os.Getenv("NODESTEER_INBOUND_CLIENT_CERT_FILE"); v != "" {
+		cfg.InboundClientCertFile = v
+	}
+	if v := os.Getenv("NODESTEER_INBOUND_CLIENT_KEY_FILE"); v != "" {
+		cfg.InboundClientKeyFile = v
+	}
+	if v := os.Getenv("NODESTEER_INBOUND_DIAL_CONCURRENCY"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			return fmt.Errorf("invalid NODESTEER_INBOUND_DIAL_CONCURRENCY %q: want an integer", v)
+		}
+		cfg.InboundDialConcurrency = n
+	}
+	if v := os.Getenv("NODESTEER_INBOUND_DIAL_TIMEOUT"); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil {
+			return fmt.Errorf("invalid NODESTEER_INBOUND_DIAL_TIMEOUT %q: %w", v, err)
+		}
+		cfg.InboundDialTimeout = d
+	}
+	if v := os.Getenv("NODESTEER_INBOUND_BACKOFF_INITIAL"); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil {
+			return fmt.Errorf("invalid NODESTEER_INBOUND_BACKOFF_INITIAL %q: %w", v, err)
+		}
+		cfg.InboundBackoffInitial = d
+	}
+	if v := os.Getenv("NODESTEER_INBOUND_BACKOFF_MAX"); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil {
+			return fmt.Errorf("invalid NODESTEER_INBOUND_BACKOFF_MAX %q: %w", v, err)
+		}
+		cfg.InboundBackoffMax = d
+	}
+	if v := os.Getenv("NODESTEER_INBOUND_ALLOWED_PORTS"); v != "" {
+		ports, err := parsePortList(v)
+		if err != nil {
+			return fmt.Errorf("invalid NODESTEER_INBOUND_ALLOWED_PORTS: %w", err)
+		}
+		cfg.InboundAllowedPorts = ports
+	}
+	if v := os.Getenv("NODESTEER_INBOUND_DENIED_CIDRS"); v != "" {
+		cfg.InboundDeniedCIDRs = splitCSV(v)
+	}
+	if v, ok := os.LookupEnv("NODESTEER_INBOUND_ALLOW_LOOPBACK"); ok && v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return fmt.Errorf("invalid NODESTEER_INBOUND_ALLOW_LOOPBACK %q: want true or false", v)
+		}
+		cfg.InboundAllowLoopback = b
+	}
+	return nil
+}
+
+func parsePortList(value string) ([]int, error) {
+	parts := splitCSV(value)
+	if len(parts) == 0 {
+		return nil, fmt.Errorf("at least one port is required")
+	}
+	ports := make([]int, 0, len(parts))
+	for _, part := range parts {
+		port, err := strconv.Atoi(part)
+		if err != nil {
+			return nil, fmt.Errorf("%q is not an integer", part)
+		}
+		ports = append(ports, port)
+	}
+	return ports, nil
+}
+
+func splitCSV(value string) []string {
+	parts := strings.Split(value, ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
+}
+
+// validateInboundConfig 校验入站开关、PKI 路径成对性、端口/CIDR 与拨号参数。
+// 默认关闭时也校验显式配置，避免安全开关或策略被静默忽略。
+func validateInboundConfig(cfg Config) error {
+	if (cfg.InboundCAFile == "") != (cfg.InboundCAKeyFile == "") {
+		return fmt.Errorf("inbound_ca_file and inbound_ca_key_file must be configured together")
+	}
+	if (cfg.InboundClientCertFile == "") != (cfg.InboundClientKeyFile == "") {
+		return fmt.Errorf("inbound_client_cert_file and inbound_client_key_file must be configured together")
+	}
+	if _, err := inbound.NewDialPolicy(cfg.InboundAllowedPorts, cfg.InboundDeniedCIDRs, cfg.InboundAllowLoopback); err != nil {
+		return err
+	}
+	if !cfg.InboundEnabled {
+		return nil
+	}
+	if cfg.InboundDialConcurrency < 1 || cfg.InboundDialConcurrency > 256 {
+		return fmt.Errorf("inbound_dial_concurrency must be between 1 and 256")
+	}
+	if cfg.InboundDialTimeout <= 0 {
+		return fmt.Errorf("inbound_dial_timeout must be positive")
+	}
+	if cfg.InboundBackoffInitial <= 0 || cfg.InboundBackoffMax < cfg.InboundBackoffInitial {
+		return fmt.Errorf("inbound backoff must satisfy 0 < initial <= max")
 	}
 	return nil
 }
