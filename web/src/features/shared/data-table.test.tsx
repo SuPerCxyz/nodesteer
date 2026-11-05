@@ -342,3 +342,80 @@ describe('DataTable 可访问性（P11 a11y：分页选择器可访问名 / 操�
     expect(actionsTh?.textContent?.trim()).toBe(i18n.t('common.actions'))
   })
 })
+
+describe('DataTable rack 列表形态', () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage('zh')
+  })
+
+  type RackRowData = Row & { role: string }
+  const rackColumns: ColumnDef<RackRowData>[] = [
+    { accessorKey: 'name', header: '名称' },
+    { accessorKey: 'role', header: '角色' },
+    {
+      id: 'actions',
+      header: '',
+      enableHiding: false,
+      cell: () => <button type='button'>查看</button>,
+    },
+  ]
+  const rackData: RackRowData[] = [
+    { id: 'a', name: 'node-a', role: 'admin' },
+  ]
+
+  it('渲染无表头的机架行，保留标题、字段和操作', async () => {
+    const page = await render(
+      <DataTable
+        data={rackData}
+        columns={rackColumns}
+        hideSearch
+        variant='rack'
+      />
+    )
+
+    await expect.element(page.getByRole('list')).toBeVisible()
+    await expect.element(page.getByRole('listitem')).toBeVisible()
+    await expect.element(page.getByText('node-a')).toBeVisible()
+    await expect.element(page.getByText('角色')).toBeVisible()
+    await expect.element(page.getByText('admin')).toBeVisible()
+    await expect.element(page.getByRole('button', { name: '查看' })).toBeVisible()
+    expect(page.container.querySelector('table')).toBeNull()
+    expect(
+      page.container.querySelectorAll('[data-testid="data-table-rack-row"]')
+    ).toHaveLength(1)
+  })
+
+  it('保留行多选与批量操作', async () => {
+    const page = await render(
+      <DataTable
+        data={rackData}
+        columns={rackColumns}
+        hideSearch
+        variant='rack'
+        enableRowSelection
+        bulkEntityName='节点'
+        renderBulkActions={(table) => (
+          <span>已选 {table.getSelectedRowModel().rows.length} 行</span>
+        )}
+      />
+    )
+
+    await userEvent.click(page.getByRole('checkbox', { name: '选择该行' }))
+    await expect.element(page.getByRole('toolbar')).toBeVisible()
+    await expect.element(page.getByText('已选 1 行')).toBeVisible()
+  })
+
+  it('加载态与空态不渲染表格', async () => {
+    const loading = await render(
+      <DataTable data={[]} columns={rackColumns} hideSearch variant='rack' isLoading />
+    )
+    await expect.element(loading.getByText('加载中...')).toBeVisible()
+    expect(loading.container.querySelector('table')).toBeNull()
+
+    const empty = await render(
+      <DataTable data={[]} columns={rackColumns} hideSearch variant='rack' />
+    )
+    await expect.element(empty.getByText('没有结果。')).toBeVisible()
+    expect(empty.container.querySelector('table')).toBeNull()
+  })
+})

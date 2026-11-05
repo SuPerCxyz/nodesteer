@@ -69,7 +69,7 @@ export function NavUser({ user }: NavUserProps) {
                   />
                   <AvatarFallback className='rounded-lg'>C</AvatarFallback>
                 </Avatar>
-                <div className='grid flex-1 text-start text-sm leading-tight'>
+                <div className='grid min-w-0 flex-1 text-start text-sm leading-tight'>
                   <span className='truncate font-semibold'>{user.name}</span>
                   <span className='truncate text-xs'>{user.email}</span>
                 </div>

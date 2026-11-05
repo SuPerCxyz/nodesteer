@@ -42,7 +42,7 @@ export function DataTablePagination<TData>({
   return (
     <div
       className={cn(
-        'flex flex-col gap-3 overflow-clip px-2 sm:flex-row sm:items-center sm:justify-between',
+        'flex flex-col gap-3 overflow-clip px-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between',
         className
       )}
       style={{ overflowClipMargin: 1 }}
@@ -83,11 +83,11 @@ export function DataTablePagination<TData>({
         </div>
       </div>
 
-      <div className='flex items-center justify-end gap-3'>
+      <div className='flex min-w-0 flex-wrap items-center justify-end gap-3'>
         <div className='hidden text-sm font-medium sm:block'>
           {t('common.pageOf', { current: currentPage, total: totalPages })}
         </div>
-        <div className='flex items-center gap-2'>
+        <div className='flex flex-wrap items-center justify-end gap-2'>
           <Button
             variant='outline'
             className='size-8 p-0 @max-md/content:hidden'

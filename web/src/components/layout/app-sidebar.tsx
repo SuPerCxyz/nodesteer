@@ -43,7 +43,7 @@ export function AppSidebar() {
       <SidebarHeader>
         <AppTitle />
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className='nodesteer-navigation'>
         {sidebarData.navGroups.map((props) => (
           <NavGroup key={props.title} {...props} />
         ))}

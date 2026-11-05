@@ -37,6 +37,7 @@ import {
   DataTablePagination,
   DataTableToolbar,
 } from '@/components/data-table'
+import { RackList, RackRow } from './rack-list'
 
 /** 前置多选列：独立于业务列，注入后不改变业务列的顺序与相对宽度权重 */
 function selectColumn<TData>(): ColumnDef<TData> {
@@ -125,12 +126,18 @@ export function DataTable<TData>({
   getRowId,
   renderBulkActions,
   bulkEntityName = '',
+  variant = 'table',
+  rackPrimaryColumnId,
 }: {
   data: TData[]
   columns: ColumnDef<TData>[]
   searchPlaceholder?: string
   className?: string
   hideSearch?: boolean
+  /** 列表形态：table 保留原表格；rack 使用紧凑机架行（无表头/列线）。 */
+  variant?: 'table' | 'rack'
+  /** rack 形态下作为标题的列 id；缺省取第一个非选择/操作列。 */
+  rackPrimaryColumnId?: string
   /** 服务端分页：data 仅为当前页，分页状态由 page/pageSize 受控传入 */
   manualPagination?: boolean
   /** 服务端搜索时禁用当前页本地过滤，并受控同步搜索框。 */
@@ -244,6 +251,105 @@ export function DataTable<TData>({
     .getVisibleLeafColumns()
     .reduce((sum, column) => sum + (column.columnDef.minSize ?? 60), 0)
   const columnWidth = (minSize?: number) => `${minSize ?? 60}px`
+
+  if (variant === 'rack') {
+    const rows = table.getRowModel().rows
+    return (
+      <div className={`flex flex-1 flex-col gap-3 ${className}`}>
+        <DataTableToolbar
+          table={table}
+          searchPlaceholder={searchPlaceholder}
+          hideSearch={hideSearch}
+        />
+        <RackList testId='data-table-rack'>
+          {rows.length ? (
+            rows.map((row) => {
+              const cells = row.getVisibleCells()
+              const actionsCell = cells.find(
+                (cell) => cell.column.id === 'actions'
+              )
+              const businessCells = cells.filter(
+                (cell) =>
+                  cell.column.id !== 'select' && cell.column.id !== 'actions'
+              )
+              const titleCell =
+                businessCells.find(
+                  (cell) => cell.column.id === rackPrimaryColumnId
+                ) ?? businessCells[0]
+              const fieldCells = businessCells.filter(
+                (cell) => cell !== titleCell
+              )
+              return (
+                <RackRow
+                  key={row.id}
+                  testId='data-table-rack-row'
+                  selected={enableRowSelection ? row.getIsSelected() : undefined}
+                  onSelectedChange={
+                    enableRowSelection
+                      ? (selected) => row.toggleSelected(selected)
+                      : undefined
+                  }
+                  selectLabel={t('common.selectRow')}
+                  title={
+                    titleCell
+                      ? flexRender(
+                          titleCell.column.columnDef.cell,
+                          titleCell.getContext()
+                        )
+                      : null
+                  }
+                  fields={fieldCells.map((cell) => {
+                    const header = cell.column.columnDef.header
+                    return {
+                      label:
+                        typeof header === 'string' && header
+                          ? header
+                          : cell.column.id,
+                      value: flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      ),
+                    }
+                  })}
+                  actions={
+                    actionsCell
+                      ? flexRender(
+                          actionsCell.column.columnDef.cell,
+                          actionsCell.getContext()
+                        )
+                      : undefined
+                  }
+                />
+              )
+            })
+          ) : (
+            <div
+              className='flex h-24 items-center justify-center text-sm text-muted-foreground'
+              aria-busy={isLoading || undefined}
+            >
+              {isLoading ? (
+                <span className='inline-flex items-center gap-2'>
+                  <Loader2 className='size-4 animate-spin' />
+                  {t('common.loading')}
+                </span>
+              ) : (
+                t('common.noResults')
+              )}
+            </div>
+          )}
+        </RackList>
+        {enableRowSelection && renderBulkActions ? (
+          <DataTableBulkActions table={table} entityName={bulkEntityName}>
+            {renderBulkActions(table)}
+          </DataTableBulkActions>
+        ) : null}
+        <DataTablePagination
+          table={table}
+          totalRows={manualPagination ? total : undefined}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className={`flex flex-1 flex-col gap-4 ${className}`}>
