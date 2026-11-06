@@ -27,6 +27,33 @@ type GatewayConfig struct {
 	MaxMsgBytes       int64
 }
 
+// busyRetryDelays 是 SQLite 忙锁的短退避序列。busy_timeout 已提供 15s
+// 锁等待，这里的重试只覆盖超时后仍偶发的瞬时 BUSY_SNAPSHOT/LOCKED。
+var busyRetryDelays = []time.Duration{100 * time.Millisecond, 250 * time.Millisecond, 500 * time.Millisecond}
+
+// retryBusy 仅对 store.IsBusyError 重试；认证/协议/节点不存在等错误立即返回，
+// 避免把真正的会话失效当成锁竞争。
+func (g *Gateway) retryBusy(ctx context.Context, operation string, fn func() error) error {
+	var err error
+	for attempt := 0; ; attempt++ {
+		err = fn()
+		if !store.IsBusyError(err) || attempt >= len(busyRetryDelays) {
+			return err
+		}
+		if g.logger != nil {
+			g.logger.Warn("sqlite busy; retrying gateway write",
+				"operation", operation, "attempt", attempt+1, "error", err)
+		}
+		timer := time.NewTimer(busyRetryDelays[attempt])
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return err
+		case <-timer.C:
+		}
+	}
+}
+
 // Gateway Agent Gateway 服务
 type Gateway struct {
 	cfg             GatewayConfig
@@ -184,8 +211,13 @@ func (g *Gateway) handleDisconnect(nodeID string, conn AgentConn) {
 	}
 	cur, ok := g.sessions.Get(nodeID)
 	if !ok {
-		// 会话已不存在（例如已被 heartbeat checker 清理），确保状态标记为 offline
-		if err := g.markDisconnected(context.Background(), nodeID); err != nil {
+		// 会话已不存在（例如已被 heartbeat checker 清理），确保状态标记为 offline。
+		// 瞬时 BUSY 只重试写操作，不把会话重新放回；重试仍失败只记日志。
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if err := g.retryBusy(ctx, "disconnect offline", func() error {
+			return g.markDisconnected(ctx, nodeID)
+		}); err != nil {
 			g.logger.Warn("mark offline on disconnect failed", "node", nodeID, "error", err)
 		}
 		return
@@ -195,7 +227,11 @@ func (g *Gateway) handleDisconnect(nodeID string, conn AgentConn) {
 		return
 	}
 	g.sessions.Unregister(nodeID)
-	if err := g.markDisconnected(context.Background(), nodeID); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if err := g.retryBusy(ctx, "disconnect offline", func() error {
+		return g.markDisconnected(ctx, nodeID)
+	}); err != nil {
 		g.logger.Warn("mark offline on disconnect failed", "node", nodeID, "error", err)
 	}
 }
@@ -227,21 +263,23 @@ func (g *Gateway) markConnected(ctx context.Context, n *models.Node) error {
 // 不降级，避免 ≤30s 假离线。注意本守卫只属于拒绝降级路径：
 // markDisconnected（连接断开 defer 路径，断开即会话终结）不得引入此守卫。
 func (g *Gateway) markDisconnectedIfOnline(ctx context.Context, nodeID string) error {
-	if _, ok := g.sessions.Get(nodeID); ok {
-		// 节点仍有活跃合法会话，其 online 是真实状态，拒绝不构成降级依据。
-		return nil
-	}
-	node, err := g.nodes.GetNode(ctx, nodeID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+	return g.retryBusy(ctx, "rejected hello offline", func() error {
+		if _, ok := g.sessions.Get(nodeID); ok {
+			// 节点仍有活跃合法会话，其 online 是真实状态，拒绝不构成降级依据。
 			return nil
 		}
-		return err
-	}
-	if node.Status != models.NodeStatusOnline {
-		return nil
-	}
-	return g.nodes.SetNodeStatus(ctx, nodeID, models.NodeStatusOffline)
+		node, err := g.nodes.GetNode(ctx, nodeID)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil
+			}
+			return err
+		}
+		if node.Status != models.NodeStatusOnline {
+			return nil
+		}
+		return g.nodes.SetNodeStatus(ctx, nodeID, models.NodeStatusOffline)
+	})
 }
 
 // nodeMissing 判定节点的记录是否已不存在。
@@ -386,7 +424,9 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 		// deployment_mode）会滞留旧值。仅覆盖上报非空的字段（见 refreshNodeAgentMeta）；
 		// UpsertNode 的 ON CONFLICT 不写 status/last_seen，m/d 状态与心跳语义不受影响。
 		refreshNodeAgentMeta(node.Node, p)
-		if err := g.nodes.store.UpsertNode(ctx, node.Node); err != nil {
+		if err := g.retryBusy(ctx, "hello upsert", func() error {
+			return g.nodes.store.UpsertNode(ctx, node.Node)
+		}); err != nil {
 			return err
 		}
 	} else {
@@ -412,8 +452,20 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 			g.logger.Info("normalized deployment mode from hello", "agent", p.AgentID,
 				"reported", p.DeploymentMode, "normalized", mode)
 		}
-		n, cred, isNew, err := g.nodes.RegisterOrUpdate(ctx, p.AgentID, p.Hostname, p.IP, p.OS, p.Arch,
-			p.AgentVersion, mode, p.HostIntegration, p.Capabilities)
+		n, cred, isNew, err := func() (*models.Node, string, bool, error) {
+			var (
+				n     *models.Node
+				cred  string
+				isNew bool
+				err   error
+			)
+			err = g.retryBusy(ctx, "hello register", func() error {
+				n, cred, isNew, err = g.nodes.RegisterOrUpdate(ctx, p.AgentID, p.Hostname, p.IP, p.OS, p.Arch,
+					p.AgentVersion, mode, p.HostIntegration, p.Capabilities)
+				return err
+			})
+			return n, cred, isNew, err
+		}()
 		if err != nil {
 			return err
 		}
@@ -435,15 +487,21 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 	}
 	// accepted：显式置 online（不依赖心跳副作用），maintenance/disabled 不被覆盖。
 	// 此时尚未注册新会话，NODE_STATUS 等通知不会抢在 HELLO_ACK 之前发给新连接。
-	if err := g.markConnected(ctx, node.Node); err != nil {
+	if err := g.retryBusy(ctx, "markConnected", func() error {
+		return g.markConnected(ctx, node.Node)
+	}); err != nil {
 		return err
 	}
-	if err := g.nodes.UpdateHeartbeat(ctx, node.Node.ID, time.Now()); err != nil {
+	if err := g.retryBusy(ctx, "hello heartbeat", func() error {
+		return g.nodes.UpdateHeartbeat(ctx, node.Node.ID, time.Now())
+	}); err != nil {
 		return err
 	}
 	origin := SessionOrigin(conn)
 	// 只记录最近一次成功会话方向；诊断写入失败不应拒绝已认证会话。
-	if err := g.nodes.RecordConnectionMode(ctx, node.Node.ID, origin); err != nil {
+	if err := g.retryBusy(ctx, "record connection mode", func() error {
+		return g.nodes.RecordConnectionMode(ctx, node.Node.ID, origin)
+	}); err != nil {
 		g.logger.Warn("record connection mode failed", "node", node.Node.ID, "error", err)
 	}
 
@@ -456,6 +514,7 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 		DesiredGlobalRev: cur,
 		Settings:         g.settings(ctx),
 		NodeStatus:       node.Node.Status,
+		Capabilities:     map[string]bool{protocol.CapabilityNodeMetricsAck: true},
 	})); err != nil {
 		return err
 	}
@@ -496,8 +555,21 @@ func (g *Gateway) handleHeartbeat(ctx context.Context, conn *wsConn, env protoco
 		return err
 	}
 	p.NodeID = conn.meta.nodeID
-	if err := g.nodes.UpdateHeartbeat(ctx, p.NodeID, time.Now()); err != nil {
+	if err := g.retryBusy(ctx, "heartbeat", func() error {
+		return g.nodes.UpdateHeartbeat(ctx, p.NodeID, time.Now())
+	}); err != nil {
 		return err
+	}
+	if g.logger != nil && (p.MetricsBufferBatches > 0 || p.WSQueueDepth > 0 || p.MetricsAckTimeouts > 0) {
+		g.logger.Debug("agent runtime queue stats",
+			"node", p.NodeID,
+			"metrics_batches", p.MetricsBufferBatches,
+			"metrics_bytes", p.MetricsBufferBytes,
+			"metrics_oldest_pending_sec", p.MetricsOldestPendingSec,
+			"metrics_dropped", p.MetricsDroppedTotal,
+			"metrics_ack_timeouts", p.MetricsAckTimeouts,
+			"ws_queue_depth", p.WSQueueDepth,
+			"ws_queue_bytes", p.WSQueueBytes)
 	}
 	if p.GlobalRev > 0 {
 		cur, _ := g.syncMgr.revisions.Current(ctx)
@@ -566,7 +638,25 @@ func (g *Gateway) handleSyncRequest(ctx context.Context, conn *wsConn, env proto
 	if err != nil {
 		return err
 	}
+	if err := validateSyncResponseSize(resp); err != nil {
+		return err
+	}
 	conn.send(protocol.NewEnvelope(protocol.MsgSyncResponse, env.ID, resp))
+	return nil
+}
+
+// maxAgentControlPayloadBytes 与 Agent 控制消息读限制保持一致（2MiB）。
+// 同步响应超限时返回明确错误，避免 Agent 因读超限被静默断开。
+const maxAgentControlPayloadBytes = 2 << 20
+
+func validateSyncResponseSize(resp *protocol.SyncResponsePayload) error {
+	data, err := json.Marshal(resp)
+	if err != nil {
+		return err
+	}
+	if len(data)+(4<<10) > maxAgentControlPayloadBytes {
+		return fmt.Errorf("sync response too large: %d bytes (agent limit %d)", len(data), maxAgentControlPayloadBytes)
+	}
 	return nil
 }
 
@@ -772,7 +862,16 @@ func (g *Gateway) handleNodeMetrics(ctx context.Context, conn *wsConn, env proto
 		})
 	}
 	// 存储层按 (node_id, metric, series_key, timestamp) UPSERT，重复批次幂等。
-	return nativeStore.InsertNodeMetricSamples(ctx, nodeID, samples)
+	if err := g.retryBusy(ctx, "node metrics insert", func() error {
+		return nativeStore.InsertNodeMetricSamples(ctx, nodeID, samples)
+	}); err != nil {
+		return err
+	}
+	// 仅在本批次事务提交成功后确认；旧 Agent 忽略该消息。
+	conn.send(protocol.NewEnvelope(protocol.MsgNodeMetricsAck, "", protocol.NodeMetricsAckPayload{
+		NodeID: nodeID, Sequence: payload.Sequence, OK: true,
+	}))
+	return nil
 }
 
 // convertInventory protocol Inventory → models Inventory

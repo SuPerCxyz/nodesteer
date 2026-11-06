@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"math"
@@ -59,6 +60,72 @@ type nativeSeriesResponse struct {
 	Series []store.NativeSeries `json:"series"`
 }
 
+type nativeSeriesBatchItem struct {
+	Metric string               `json:"metric"`
+	Series []store.NativeSeries `json:"series"`
+}
+
+type nativeSeriesBatchResponse struct {
+	Items []nativeSeriesBatchItem `json:"items"`
+}
+
+type nativeHistoryBatchItem struct {
+	Metric  string                    `json:"metric"`
+	Series  string                    `json:"series"`
+	History *monitoring.NativeHistory `json:"history"`
+}
+
+type nativeHistoryBatchResponse struct {
+	Items []nativeHistoryBatchItem `json:"items"`
+}
+
+// overviewNativeMetrics 是 Dashboard/监控列表实际渲染的指标集合。
+// per-core、容器、磁盘明细等 series 不进入 overview 查询。
+var overviewNativeMetrics = []string{
+	"cpu.usage",
+	"memory.usage",
+	"load.1",
+	"load.5",
+	"load.15",
+	"disk.usage",
+	"network.rx_bps",
+	"network.tx_bps",
+	"system.uptime",
+	"system.temperature_c",
+}
+
+// overviewMetricsWindow 限制 latest 查询回看窗口；15 分钟覆盖 5s–300s 采样。
+const overviewMetricsWindow = 15 * time.Minute
+
+type nativeMetricGenerationReader interface {
+	NativeMetricGeneration() uint64
+}
+
+func (s *Server) cachedOverviewMetrics(ctx context.Context, nativeStore store.NativeMetricStore, nodeIDs []string, now time.Time) (map[string][]store.NativeSample, map[string]time.Duration, error) {
+	generation := uint64(0)
+	if reader, ok := s.store.(nativeMetricGenerationReader); ok {
+		generation = reader.NativeMetricGeneration()
+	}
+	key := overviewCacheKey(nodeIDs)
+	if s.overviewCache != nil {
+		if samples, intervals, ok := s.overviewCache.get(key, generation, now); ok {
+			return samples, intervals, nil
+		}
+	}
+	samples, err := nativeStore.LatestNodeMetricSamplesForMetricsBatch(ctx, nodeIDs, overviewNativeMetrics, now.Add(-overviewMetricsWindow))
+	if err != nil {
+		return nil, nil, err
+	}
+	intervals, err := nativeStore.NodeMetricSampleIntervals(ctx, nodeIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+	if s.overviewCache != nil {
+		s.overviewCache.put(key, generation, samples, intervals, now)
+	}
+	return samples, intervals, nil
+}
+
 // handleMonitoringNodeOverview 返回节点列表与每节点最新原生指标。
 // 无样本字段为 null，缺失值不会被伪造成 0。
 func (s *Server) handleMonitoringNodeOverview(w http.ResponseWriter, r *http.Request) {
@@ -85,13 +152,8 @@ func (s *Server) handleMonitoringNodeOverview(w http.ResponseWriter, r *http.Req
 	for _, node := range nodes {
 		nodeIDs = append(nodeIDs, node.ID)
 	}
-	// 批量查询所有节点的最新样本与采样周期，避免逐节点查询的 N+1。
-	samplesByNode, err := nativeStore.LatestNodeMetricSamplesBatch(r.Context(), nodeIDs)
-	if err != nil {
-		s.writeInternalError(w, r, err)
-		return
-	}
-	intervals, err := nativeStore.NodeMetricSampleIntervals(r.Context(), nodeIDs)
+	// 只取 overview 需要的 metric 与最近 15 分钟；15s 缓存按指标 generation 失效。
+	samplesByNode, intervals, err := s.cachedOverviewMetrics(r.Context(), nativeStore, nodeIDs, now)
 	if err != nil {
 		s.writeInternalError(w, r, err)
 		return
@@ -101,6 +163,22 @@ func (s *Server) handleMonitoringNodeOverview(w http.ResponseWriter, r *http.Req
 		items = append(items, buildNativeOverview(node, samplesByNode[node.ID], intervals[node.ID], now))
 	}
 	writeJSON(w, http.StatusOK, nativeOverviewResponse{Nodes: items})
+}
+
+// handleMonitoringNodeOverviewSingle 返回单节点摘要，供节点详情避免拉取全量 overview。
+func (s *Server) handleMonitoringNodeOverviewSingle(w http.ResponseWriter, r *http.Request, node *models.Node) {
+	nativeStore, ok := s.store.(store.NativeMetricStore)
+	if !ok {
+		writeErr(w, http.StatusServiceUnavailable, "native monitoring unavailable")
+		return
+	}
+	now := time.Now().UTC()
+	samplesByNode, intervals, err := s.cachedOverviewMetrics(r.Context(), nativeStore, []string{node.ID}, now)
+	if err != nil {
+		s.writeInternalError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, buildNativeOverview(node, samplesByNode[node.ID], intervals[node.ID], now))
 }
 
 func buildNativeOverview(node *models.Node, samples []store.NativeSample, interval time.Duration, now time.Time) nativeOverviewNode {
@@ -266,7 +344,11 @@ func (s *Server) handleMonitoringNode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id, rest := splitResourcePath(r.URL.Path, "/api/monitoring/nodes/")
-	if id == "" || len(rest) != 1 {
+	if id == "" || len(rest) == 0 || len(rest) > 2 {
+		writeErr(w, http.StatusNotFound, "node not found")
+		return
+	}
+	if len(rest) == 2 && rest[1] != "batch" {
 		writeErr(w, http.StatusNotFound, "node not found")
 		return
 	}
@@ -279,6 +361,17 @@ func (s *Server) handleMonitoringNode(w http.ResponseWriter, r *http.Request) {
 		s.writeInternalError(w, r, err)
 		return
 	}
+	if len(rest) == 2 {
+		switch rest[0] {
+		case "series":
+			s.handleMonitoringNodeSeriesBatch(w, r, node)
+		case "history":
+			s.handleMonitoringNodeHistoryBatch(w, r, node)
+		default:
+			writeErr(w, http.StatusNotFound, "node not found")
+		}
+		return
+	}
 	switch rest[0] {
 	case "series":
 		s.handleMonitoringNodeSeries(w, r, node)
@@ -286,14 +379,15 @@ func (s *Server) handleMonitoringNode(w http.ResponseWriter, r *http.Request) {
 		s.handleMonitoringNodeMetrics(w, r, node)
 	case "latest":
 		s.handleMonitoringNodeLatest(w, r, node)
+	case "overview":
+		s.handleMonitoringNodeOverviewSingle(w, r, node)
 	default:
 		writeErr(w, http.StatusNotFound, "node not found")
 	}
 }
 
 func (s *Server) handleMonitoringNodeSeries(w http.ResponseWriter, r *http.Request, node *models.Node) {
-	nativeStore, ok := s.store.(store.NativeMetricStore)
-	if !ok {
+	if _, ok := s.store.(store.NativeMetricStore); !ok {
 		writeErr(w, http.StatusServiceUnavailable, "native monitoring unavailable")
 		return
 	}
@@ -302,15 +396,83 @@ func (s *Server) handleMonitoringNodeSeries(w http.ResponseWriter, r *http.Reque
 		writeErr(w, http.StatusBadRequest, "invalid metric")
 		return
 	}
-	series, err := nativeStore.NodeMetricSeries(r.Context(), node.ID, metric)
+	seriesByMetric, err := s.cachedNodeMetricSeries(r.Context(), node.ID, []string{metric})
 	if err != nil {
 		s.writeInternalError(w, r, err)
 		return
 	}
+	series := seriesByMetric[metric]
 	if series == nil {
 		series = []store.NativeSeries{}
 	}
 	writeJSON(w, http.StatusOK, nativeSeriesResponse{Series: series})
+}
+
+func (s *Server) handleMonitoringNodeSeriesBatch(w http.ResponseWriter, r *http.Request, node *models.Node) {
+	if _, ok := s.store.(store.NativeMetricStore); !ok {
+		writeErr(w, http.StatusServiceUnavailable, "native monitoring unavailable")
+		return
+	}
+	metrics, ok := normalizedBatchMetrics(r.URL.Query()["metric"])
+	if !ok {
+		writeErr(w, http.StatusBadRequest, "metric is required (max 64)")
+		return
+	}
+	seriesByMetric, err := s.cachedNodeMetricSeries(r.Context(), node.ID, metrics)
+	if err != nil {
+		s.writeInternalError(w, r, err)
+		return
+	}
+	items := make([]nativeSeriesBatchItem, 0, len(metrics))
+	for _, metric := range metrics {
+		series := seriesByMetric[metric]
+		if series == nil {
+			series = []store.NativeSeries{}
+		}
+		items = append(items, nativeSeriesBatchItem{Metric: metric, Series: series})
+	}
+	writeJSON(w, http.StatusOK, nativeSeriesBatchResponse{Items: items})
+}
+
+func normalizedBatchMetrics(metrics []string) ([]string, bool) {
+	if len(metrics) == 0 || len(metrics) > 64 {
+		return nil, false
+	}
+	seen := make(map[string]bool, len(metrics))
+	out := make([]string, 0, len(metrics))
+	for _, metric := range metrics {
+		if !store.ValidNativeMetric(metric) || seen[metric] {
+			continue
+		}
+		seen[metric] = true
+		out = append(out, metric)
+	}
+	if len(out) == 0 {
+		return nil, false
+	}
+	return out, true
+}
+
+func (s *Server) cachedNodeMetricSeries(ctx context.Context, nodeID string, metrics []string) (map[string][]store.NativeSeries, error) {
+	nativeStore, ok := s.store.(store.NativeMetricStore)
+	if !ok {
+		return nil, errors.New("native monitoring unavailable")
+	}
+	key := seriesCacheKey(nodeID, metrics)
+	now := time.Now()
+	if s.seriesCache != nil {
+		if cached, ok := s.seriesCache.get(key, now); ok {
+			return cached, nil
+		}
+	}
+	series, err := nativeStore.NodeMetricSeriesBatch(ctx, nodeID, metrics)
+	if err != nil {
+		return nil, err
+	}
+	if s.seriesCache != nil {
+		s.seriesCache.put(key, series, now)
+	}
+	return series, nil
 }
 
 func (s *Server) handleMonitoringNodeMetrics(w http.ResponseWriter, r *http.Request, node *models.Node) {
@@ -355,7 +517,7 @@ func (s *Server) handleMonitoringNodeMetrics(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	history, err := monitoring.QueryNativeHistory(r.Context(), reader, monitoring.NativeQuery{
+	history, err := s.queryNodeMetricHistory(r.Context(), reader, monitoring.NativeQuery{
 		NodeID:    node.ID,
 		Metric:    metric,
 		SeriesKey: seriesKey,
@@ -378,6 +540,106 @@ func (s *Server) handleMonitoringNodeMetrics(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	writeJSON(w, http.StatusOK, history)
+}
+
+func (s *Server) queryNodeMetricHistory(ctx context.Context, reader store.NativeMetricReader, query monitoring.NativeQuery) (*monitoring.NativeHistory, error) {
+	key := historyCacheKey(query.NodeID, query.Metric, query.SeriesKey, query.Start, query.End, query.Step, query.Offline)
+	now := time.Now()
+	if s.historyCache != nil {
+		if history, ok := s.historyCache.get(key, now); ok {
+			return history, nil
+		}
+	}
+	history, err := monitoring.QueryNativeHistory(ctx, reader, query)
+	if err != nil {
+		return nil, err
+	}
+	if s.historyCache != nil {
+		s.historyCache.put(key, history, now)
+	}
+	return history, nil
+}
+
+func (s *Server) handleMonitoringNodeHistoryBatch(w http.ResponseWriter, r *http.Request, node *models.Node) {
+	reader, ok := s.store.(store.NativeMetricReader)
+	if !ok {
+		writeErr(w, http.StatusServiceUnavailable, "native monitoring unavailable")
+		return
+	}
+	values := r.URL.Query()
+	metrics := values["metric"]
+	seriesKeys := values["series"]
+	if len(metrics) == 0 || len(metrics) > 64 || len(metrics) != len(seriesKeys) {
+		writeErr(w, http.StatusBadRequest, "metric and series pairs are required (max 64)")
+		return
+	}
+	start, hasStart, err := parseNativeTimeParam(values.Get("start"))
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, "invalid start")
+		return
+	}
+	end, hasEnd, err := parseNativeTimeParam(values.Get("end"))
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, "invalid end")
+		return
+	}
+	if hasStart && hasEnd && !start.Before(end) {
+		writeErr(w, http.StatusBadRequest, "invalid time range")
+		return
+	}
+	step, _, err := parseNativeStepParam(values.Get("step"))
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, "invalid step")
+		return
+	}
+	offline := nativeNodeOffline(node.Status)
+	now := time.Now()
+	items := make([]nativeHistoryBatchItem, 0, len(metrics))
+	for index, metric := range metrics {
+		seriesKey := seriesKeys[index]
+		if !store.ValidNativeMetric(metric) {
+			writeErr(w, http.StatusBadRequest, "invalid metric")
+			return
+		}
+		if seriesKey == "" || len(seriesKey) > 1024 || hasControlCharacters(seriesKey) {
+			writeErr(w, http.StatusBadRequest, "invalid series")
+			return
+		}
+		key := historyCacheKey(node.ID, metric, seriesKey, start, end, step, offline)
+		var history *monitoring.NativeHistory
+		if s.historyCache != nil {
+			history, _ = s.historyCache.get(key, now)
+		}
+		if history == nil {
+			history, err = monitoring.QueryNativeHistory(r.Context(), reader, monitoring.NativeQuery{
+				NodeID:    node.ID,
+				Metric:    metric,
+				SeriesKey: seriesKey,
+				Start:     start,
+				End:       end,
+				Step:      step,
+				Offline:   offline,
+			})
+			if err != nil {
+				switch {
+				case errors.Is(err, monitoring.ErrNativeInvalidRange):
+					writeErr(w, http.StatusBadRequest, "invalid time range")
+				case errors.Is(err, monitoring.ErrNativeRangeTooLarge):
+					writeErr(w, http.StatusBadRequest, "time range is too large")
+				case errors.Is(err, monitoring.ErrNativeInvalidQuery):
+					writeErr(w, http.StatusBadRequest, "invalid query")
+				default:
+					s.writeInternalError(w, r, err)
+				}
+				return
+			}
+			if s.historyCache != nil {
+				s.historyCache.put(key, history, now)
+			}
+		}
+		items = append(items, nativeHistoryBatchItem{Metric: metric, Series: seriesKey, History: history})
+	}
+	writeJSON(w, http.StatusOK, nativeHistoryBatchResponse{Items: items})
 }
 
 func (s *Server) handleMonitoringNodeLatest(w http.ResponseWriter, r *http.Request, node *models.Node) {

@@ -51,7 +51,13 @@ const (
 	MsgMonitorProbe        = "MONITOR_PROBE"
 	MsgMonitorProbeResult  = "MONITOR_PROBE_RESULT"
 	MsgNodeMetrics         = "NODE_METRICS"
+	// MsgNodeMetricsAck Hub 在指标批次提交成功后确认；旧 Agent 忽略未知消息。
+	MsgNodeMetricsAck = "NODE_METRICS_ACK"
 )
+
+// CapabilityNodeMetricsAck 由 Hub 在 HELLO_ACK/HUB_HELLO 中声明。
+// Agent 未看到该能力时回退为“WebSocket 写成功即出队”，保持旧 Hub 兼容。
+const CapabilityNodeMetricsAck = "node_metrics_ack"
 
 // 数据面传输方式。空值表示沿用既有出站语义（Agent 主动访问 Hub HTTP 端点）。
 const (
@@ -89,6 +95,16 @@ type NodeMetricsPayload struct {
 	NodeID   string             `json:"node_id"`
 	Sequence uint64             `json:"sequence"`
 	Samples  []NodeMetricSample `json:"samples"`
+}
+
+// NodeMetricsAckPayload Hub 对指标批次的提交确认。
+// OK=false 表示 Hub 拒绝该批次（校验失败）；Agent 可保留并等待人工/重试，
+// 当前实现只在成功提交后发送 OK=true。
+type NodeMetricsAckPayload struct {
+	NodeID   string `json:"node_id"`
+	Sequence uint64 `json:"sequence"`
+	OK       bool   `json:"ok"`
+	Error    string `json:"error,omitempty"`
 }
 
 // 节点指标质量值。
@@ -163,6 +179,8 @@ type HelloAckPayload struct {
 	Settings         map[string]string `json:"settings,omitempty"`
 	Message          string            `json:"message,omitempty"`
 	NodeStatus       string            `json:"node_status,omitempty"`
+	// Capabilities 是 Hub 侧可选能力声明（如 node_metrics_ack）；旧 Agent 忽略。
+	Capabilities map[string]bool `json:"capabilities,omitempty"`
 }
 
 // HubHelloPayload Hub 主动拨号时的首帧（Hub -> Agent）。
@@ -199,6 +217,14 @@ type HeartbeatPayload struct {
 	NodeID       string `json:"node_id"`
 	GlobalRev    int64  `json:"global_rev"`
 	RunningExecs int    `json:"running_execs"`
+	// 以下为 Agent 运行统计，旧 Hub 忽略未知字段。
+	MetricsBufferBatches    int    `json:"metrics_buffer_batches,omitempty"`
+	MetricsBufferBytes      int    `json:"metrics_buffer_bytes,omitempty"`
+	MetricsOldestPendingSec int64  `json:"metrics_oldest_pending_sec,omitempty"`
+	MetricsDroppedTotal     uint64 `json:"metrics_dropped_total,omitempty"`
+	MetricsAckTimeouts      uint64 `json:"metrics_ack_timeouts,omitempty"`
+	WSQueueDepth            int    `json:"ws_queue_depth,omitempty"`
+	WSQueueBytes            int    `json:"ws_queue_bytes,omitempty"`
 }
 
 // ChangeNotificationPayload 变更通知

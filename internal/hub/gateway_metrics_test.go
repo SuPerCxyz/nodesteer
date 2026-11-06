@@ -182,6 +182,50 @@ func TestGatewayNodeMetricsRejectsInvalidQuality(t *testing.T) {
 	}
 }
 
+func TestGatewayNodeMetricsAckAfterCommit(t *testing.T) {
+	ctx := context.Background()
+	g, nm, sm := newTestGateway(t)
+	node, _, _, err := nm.RegisterOrUpdate(ctx, "agent-metrics", "host-m", "10.0.0.27", "linux", "amd64", "1.0", models.DeploymentModeNative, false, map[string]bool{models.CapNodeMetrics: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	conn := gatewayMetricConn(g, sm, node.ID)
+	batch := gatewayMetricBatch(node.ID, []protocol.NodeMetricSample{
+		{Timestamp: time.Now().UTC().Add(-time.Minute), Metric: "cpu.usage", Value: gatewayMetricValue(1), Quality: protocol.NodeMetricQualityValid},
+	})
+	if err := g.handleNodeMetrics(ctx, conn, batch); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case ackEnv := <-conn.sendCh:
+		if ackEnv.Type != protocol.MsgNodeMetricsAck {
+			t.Fatalf("ack type = %q", ackEnv.Type)
+		}
+		var ack protocol.NodeMetricsAckPayload
+		if err := json.Unmarshal(ackEnv.Payload, &ack); err != nil {
+			t.Fatal(err)
+		}
+		if !ack.OK || ack.NodeID != node.ID || ack.Sequence != 1 {
+			t.Fatalf("ack = %+v", ack)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("no NODE_METRICS_ACK after commit")
+	}
+
+	// 校验失败不得确认。
+	bad := gatewayMetricBatch(node.ID, []protocol.NodeMetricSample{
+		{Timestamp: time.Now().UTC().Add(-time.Minute), Metric: "cpu.usage", Value: gatewayMetricValue(1), Quality: 9},
+	})
+	if err := g.handleNodeMetrics(ctx, conn, bad); err == nil {
+		t.Fatal("invalid quality accepted")
+	}
+	select {
+	case ackEnv := <-conn.sendCh:
+		t.Fatalf("unexpected ack after rejected batch: %s", ackEnv.Type)
+	case <-time.After(50 * time.Millisecond):
+	}
+}
+
 func TestConvertInventoryHostIdentityAndBlockDevices(t *testing.T) {
 	inv := convertInventory(&protocol.Inventory{Hostname: "real-host", BlockDevices: []protocol.InventoryBlockDevice{{Name: "vda", Kind: "disk"}, {Name: "vda2", Kind: "partition"}}})
 	if inv.Hostname != "real-host" || len(inv.BlockDevices) != 2 || inv.BlockDevices[1].Kind != "partition" {

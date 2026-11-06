@@ -707,7 +707,7 @@ func TestNativeMonitoringStaleSamplesAreDataGap(t *testing.T) {
 	handler := s.Routes()
 	admin := loginAs(t, s, "admin", "password")
 	createNativeAPINode(t, st, "node-1", models.NodeStatusOnline)
-	old := time.Now().UTC().Add(-2 * time.Hour)
+	old := time.Now().UTC().Add(-10 * time.Minute)
 	if err := st.InsertNodeMetricSamples(t.Context(), "node-1", []store.NativeSample{
 		nativeAPISample(old, "cpu.usage", nil, 10),
 	}); err != nil {

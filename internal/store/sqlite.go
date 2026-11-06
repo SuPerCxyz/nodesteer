@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	sqlite "modernc.org/sqlite"
@@ -15,6 +16,12 @@ import (
 // SQLiteStore SQLite 实现
 type SQLiteStore struct {
 	db *sql.DB
+	// nativeLateWindow 是原生指标迟到重算窗口；零值使用 NativeLateWindow。
+	nativeLateWindow time.Duration
+	// nativeLateSamples 记录入库时早于迟到窗口的样本数（只观测，不删除）。
+	nativeLateSamples atomic.Uint64
+	// metricGeneration 在 raw 写入/清理提交后递增，供 API 缓存失效。
+	metricGeneration atomic.Uint64
 }
 
 type txContextKey struct{}
@@ -61,17 +68,32 @@ func (s *SQLiteStore) WithTx(ctx context.Context, fn func(context.Context) error
 	return tx.Commit()
 }
 
+// SQLiteOptions 控制 SQLite 打开参数；零值使用默认 15s busy_timeout。
+type SQLiteOptions struct {
+	BusyTimeout time.Duration
+}
+
 // OpenSQLite 打开 SQLite 数据库并应用迁移。
 //
 // _txlock=immediate：写事务（WithTx）在 BEGIN 阶段即取写锁，而不是 WAL 下
 // deferred 事务的「先读后写再升级」。升级路径一旦发现其它连接已推进快照，
 // SQLite 会立刻返回 SQLITE_BUSY/BUSY_SNAPSHOT，且不受 busy_timeout 保护，
 // 表现为并发纳管等写路径随机 500（缺陷 OBS-20261016-G1-ENROLL-TRANSIENT-500）。
-// 改为 immediate 后锁等待统一走 busy_timeout（5s），并发写按序完成。
+// 改为 immediate 后锁等待统一走 busy_timeout（默认 15s），并发写按序完成。
 func OpenSQLite(path string) (*SQLiteStore, error) {
+	return OpenSQLiteWithOptions(path, SQLiteOptions{})
+}
+
+// OpenSQLiteWithOptions 使用显式 busy_timeout 打开 Hub 数据库。
+func OpenSQLiteWithOptions(path string, options SQLiteOptions) (*SQLiteStore, error) {
+	busyTimeout := options.BusyTimeout
+	if busyTimeout <= 0 {
+		busyTimeout = 15 * time.Second
+	}
 	dsn := path
 	if path != ":memory:" {
-		dsn = path + "?_txlock=immediate&_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"
+		dsn = fmt.Sprintf("%s?_txlock=immediate&_pragma=journal_mode(WAL)&_pragma=busy_timeout(%d)&_pragma=foreign_keys(1)",
+			path, busyTimeout.Milliseconds())
 	}
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {

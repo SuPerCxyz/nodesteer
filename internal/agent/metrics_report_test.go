@@ -1,7 +1,10 @@
 package agent
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -142,9 +145,9 @@ func TestMetricsSequenceIncrements(t *testing.T) {
 func TestMetricsQueueBuffersAndFlushesInOrder(t *testing.T) {
 	connected := false
 	var sent []protocol.NodeMetricsPayload
-	queue := newMetricsQueue(func(env protocol.Envelope) bool {
+	queue := newMetricsQueue(func(_ context.Context, env protocol.Envelope) error {
 		if !connected {
-			return false
+			return errMetricsOffline
 		}
 		if env.Type != protocol.MsgNodeMetrics {
 			t.Fatalf("message type = %q, want %q", env.Type, protocol.MsgNodeMetrics)
@@ -154,11 +157,11 @@ func TestMetricsQueueBuffersAndFlushesInOrder(t *testing.T) {
 			t.Fatalf("decode payload: %v", err)
 		}
 		sent = append(sent, payload)
-		return true
-	})
+		return nil
+	}, 0)
 
 	for i := uint64(1); i <= 3; i++ {
-		if dropped := queue.enqueue(protocol.NodeMetricsPayload{NodeID: "node-1", Sequence: i}); dropped != 0 {
+		if dropped, _ := queue.enqueue(protocol.NodeMetricsPayload{NodeID: "node-1", Sequence: i}); dropped != 0 {
 			t.Fatalf("unexpected drop: %d", dropped)
 		}
 	}
@@ -167,7 +170,7 @@ func TestMetricsQueueBuffersAndFlushesInOrder(t *testing.T) {
 	}
 
 	connected = true
-	if got := queue.flush(); got != 3 {
+	if got := queue.flush(context.Background()); got != 3 {
 		t.Fatalf("flushed = %d, want 3", got)
 	}
 	if queue.pending() != 0 {
@@ -180,34 +183,162 @@ func TestMetricsQueueBuffersAndFlushesInOrder(t *testing.T) {
 	}
 }
 
-func TestMetricsQueueDropsOldestAtCapacity(t *testing.T) {
-	queue := newMetricsQueue(func(protocol.Envelope) bool { return false })
+func TestMetricsQueueDropsOldestAtDefaultCapacity(t *testing.T) {
+	queue := newMetricsQueue(func(context.Context, protocol.Envelope) error { return errMetricsOffline }, 0)
+	if queue.maxBatches != defaultMetricsBufferBatch {
+		t.Fatalf("default capacity = %d, want %d", queue.maxBatches, defaultMetricsBufferBatch)
+	}
 	totalDropped := 0
-	for i := uint64(1); i <= metricsMaxBufferedBatches+2; i++ {
-		totalDropped += queue.enqueue(protocol.NodeMetricsPayload{NodeID: "node-1", Sequence: i})
+	for i := uint64(1); i <= uint64(defaultMetricsBufferBatch)+2; i++ {
+		dropped, _ := queue.enqueue(protocol.NodeMetricsPayload{NodeID: "node-1", Sequence: i})
+		totalDropped += dropped
 	}
 	if totalDropped != 2 {
 		t.Fatalf("dropped = %d, want 2", totalDropped)
 	}
-	if queue.pending() != metricsMaxBufferedBatches {
-		t.Fatalf("pending = %d, want %d", queue.pending(), metricsMaxBufferedBatches)
+	if queue.pending() != defaultMetricsBufferBatch {
+		t.Fatalf("pending = %d, want %d", queue.pending(), defaultMetricsBufferBatch)
+	}
+	if dropped, _ := queue.droppedCounts(); dropped != 2 {
+		t.Fatalf("dropped counter = %d, want 2", dropped)
 	}
 
 	var sequences []uint64
-	queue.send = func(env protocol.Envelope) bool {
+	queue.mu.Lock()
+	queue.send = func(_ context.Context, env protocol.Envelope) error {
 		var payload protocol.NodeMetricsPayload
 		if err := json.Unmarshal(env.Payload, &payload); err != nil {
 			t.Fatalf("decode payload: %v", err)
 		}
 		sequences = append(sequences, payload.Sequence)
-		return true
+		return nil
 	}
-	queue.flush()
-	if len(sequences) != metricsMaxBufferedBatches {
-		t.Fatalf("sent = %d, want %d", len(sequences), metricsMaxBufferedBatches)
+	queue.mu.Unlock()
+	queue.flush(context.Background())
+	if len(sequences) != defaultMetricsBufferBatch {
+		t.Fatalf("sent = %d, want %d", len(sequences), defaultMetricsBufferBatch)
 	}
-	if sequences[0] != 3 || sequences[len(sequences)-1] != uint64(metricsMaxBufferedBatches+2) {
+	if sequences[0] != 3 || sequences[len(sequences)-1] != uint64(defaultMetricsBufferBatch)+2 {
 		t.Fatalf("sequences = %v, want oldest dropped and order preserved", sequences)
+	}
+}
+
+func TestMetricsQueueCapsConfiguredBatchesAt60(t *testing.T) {
+	queue := newMetricsQueue(func(context.Context, protocol.Envelope) error { return errMetricsOffline }, 1000)
+	if queue.maxBatches != maxMetricsBufferBatches {
+		t.Fatalf("maxBatches = %d, want %d", queue.maxBatches, maxMetricsBufferBatches)
+	}
+	queue = newMetricsQueue(func(context.Context, protocol.Envelope) error { return errMetricsOffline }, 60)
+	if queue.maxBatches != 60 {
+		t.Fatalf("maxBatches = %d, want 60", queue.maxBatches)
+	}
+}
+
+func TestMetricsQueueByteLimitEvictsOldest(t *testing.T) {
+	queue := newMetricsQueue(func(context.Context, protocol.Envelope) error { return errMetricsOffline }, maxMetricsBufferBatches)
+	big := strings.Repeat("x", 1<<20)
+	droppedTotal := 0
+	for i := uint64(1); i <= 5; i++ {
+		payload := protocol.NodeMetricsPayload{
+			NodeID: "node-1", Sequence: i,
+			Samples: []protocol.NodeMetricSample{{
+				Metric: "test.metric", Dimensions: map[string]string{"pad": big}, Quality: 1,
+			}},
+		}
+		dropped, _ := queue.enqueue(payload)
+		droppedTotal += dropped
+	}
+	if droppedTotal == 0 {
+		t.Fatal("expected byte-limit eviction")
+	}
+	if queue.pendingBytes() > metricsMaxBufferBytes {
+		t.Fatalf("pending bytes = %d, want <= %d", queue.pendingBytes(), metricsMaxBufferBytes)
+	}
+	if queue.pending() > 4 {
+		t.Fatalf("pending batches = %d, want <= 4 for ~1MiB batches", queue.pending())
+	}
+}
+
+func TestMetricsQueueRetainsBatchOnWriteFailure(t *testing.T) {
+	attempts := 0
+	queue := newMetricsQueue(func(context.Context, protocol.Envelope) error {
+		attempts++
+		return errors.New("half-open")
+	}, 0)
+	if dropped, _ := queue.enqueue(protocol.NodeMetricsPayload{NodeID: "node-1", Sequence: 1}); dropped != 0 {
+		t.Fatalf("unexpected drop: %d", dropped)
+	}
+	queue.flush(context.Background())
+	if queue.pending() != 1 {
+		t.Fatalf("pending = %d, want batch retained after write failure", queue.pending())
+	}
+	if attempts < 2 {
+		t.Fatalf("send attempts = %d, want enqueue + flush attempts", attempts)
+	}
+}
+
+func TestMetricsQueueAckModeWaitsForAck(t *testing.T) {
+	sent := 0
+	queue := newMetricsQueue(func(context.Context, protocol.Envelope) error {
+		sent++
+		return nil
+	}, 0)
+	queue.setAckMode(true)
+	queue.enqueue(protocol.NodeMetricsPayload{NodeID: "node-1", Sequence: 7})
+	if queue.pending() != 1 {
+		t.Fatalf("pending after write = %d, want 1 before ACK", queue.pending())
+	}
+	queue.ack(6, true)
+	if queue.pending() != 1 {
+		t.Fatalf("wrong sequence ack removed batch")
+	}
+	queue.ack(7, true)
+	if queue.pending() != 0 {
+		t.Fatalf("pending after ack = %d, want 0", queue.pending())
+	}
+	if sent != 1 {
+		t.Fatalf("sent = %d, want 1", sent)
+	}
+}
+
+func TestMetricsQueueAckTimeoutRetries(t *testing.T) {
+	sent := 0
+	queue := newMetricsQueue(func(context.Context, protocol.Envelope) error {
+		sent++
+		return nil
+	}, 0)
+	queue.setAckMode(true)
+	queue.enqueue(protocol.NodeMetricsPayload{NodeID: "node-1", Sequence: 9})
+	queue.mu.Lock()
+	queue.batches[0].sentAt = time.Now().Add(-metricsAckTimeout - time.Second)
+	queue.mu.Unlock()
+	queue.flush(context.Background())
+	if sent != 2 {
+		t.Fatalf("sent = %d, want retry after ACK timeout", sent)
+	}
+	if got := queue.ackTimeoutCount(); got != 1 {
+		t.Fatalf("ack timeouts = %d, want 1", got)
+	}
+	if queue.pending() != 1 {
+		t.Fatalf("pending = %d, want batch retained until ACK", queue.pending())
+	}
+}
+
+func TestMetricsQueueAckModeResetAllowsImmediateResend(t *testing.T) {
+	queue := newMetricsQueue(func(context.Context, protocol.Envelope) error { return nil }, 0)
+	queue.setAckMode(true)
+	queue.enqueue(protocol.NodeMetricsPayload{NodeID: "node-1", Sequence: 11})
+	queue.mu.Lock()
+	if queue.batches[0].sentAt.IsZero() {
+		queue.mu.Unlock()
+		t.Fatal("expected in-flight marker after write")
+	}
+	queue.mu.Unlock()
+	queue.setAckMode(true)
+	queue.mu.Lock()
+	defer queue.mu.Unlock()
+	if !queue.batches[0].sentAt.IsZero() {
+		t.Fatal("new session must clear in-flight markers for old connection")
 	}
 }
 
@@ -218,17 +349,17 @@ func TestCollectAndReportMetricsBuffersUntilReconnect(t *testing.T) {
 
 	connected := false
 	var sent []protocol.NodeMetricsPayload
-	queue := newMetricsQueue(func(env protocol.Envelope) bool {
+	queue := newMetricsQueue(func(_ context.Context, env protocol.Envelope) error {
 		if !connected {
-			return false
+			return errMetricsOffline
 		}
 		var payload protocol.NodeMetricsPayload
 		if err := json.Unmarshal(env.Payload, &payload); err != nil {
 			t.Fatalf("decode payload: %v", err)
 		}
 		sent = append(sent, payload)
-		return true
-	})
+		return nil
+	}, 0)
 	a := &Agent{
 		cfg:              Config{MetricsEnabled: true, MetricsInterval: 30 * time.Second},
 		nodeID:           "node-1",
@@ -243,7 +374,9 @@ func TestCollectAndReportMetricsBuffersUntilReconnect(t *testing.T) {
 	}
 
 	connected = true
-	a.flushMetrics()
+	if got := queue.flush(context.Background()); got != 2 {
+		t.Fatalf("flushed = %d, want 2", got)
+	}
 	if queue.pending() != 0 {
 		t.Fatalf("pending after reconnect = %d, want 0", queue.pending())
 	}
@@ -266,7 +399,7 @@ func TestCollectAndReportMetricsBuffersUntilReconnect(t *testing.T) {
 func TestCollectAndReportMetricsWithoutNodeIDDoesNotBuffer(t *testing.T) {
 	root := t.TempDir()
 	writeProcFixture(t, root, "meminfo", "MemTotal: 1000 kB\nMemAvailable: 250 kB\n")
-	queue := newMetricsQueue(func(protocol.Envelope) bool { return false })
+	queue := newMetricsQueue(func(context.Context, protocol.Envelope) error { return errMetricsOffline }, 0)
 	a := &Agent{
 		cfg:              Config{MetricsEnabled: true},
 		metricsCollector: newMetricsCollector(root),

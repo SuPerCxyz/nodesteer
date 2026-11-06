@@ -54,6 +54,8 @@ type Config struct {
 	MetricsEnabled bool
 	// MetricsInterval 指标采集周期；默认 30s，运行时限制在 5s~300s。
 	MetricsInterval time.Duration
+	// MetricsBufferBatches 断连补报批次数；默认 20，最大 60。
+	MetricsBufferBatches int
 	// ConnectionMode 自动连接模式；目前仅支持 auto（出站 + 有 bundle 时监听）。
 	ConnectionMode string
 	// Inbound 入站 listener 配置；未安装 bundle 时为空且不监听。
@@ -92,6 +94,8 @@ type Agent struct {
 	metricsCollector *metricsCollector
 	metricsQueue     *metricsQueue
 	metricsSeq       atomic.Uint64
+	// metricsStatsAt 限制补报队列观测日志频率。
+	metricsStatsAt   time.Time
 	inventoryMu      sync.Mutex
 	blockDevices     []models.BlockDeviceInfo
 	settingsMu       sync.RWMutex
@@ -184,9 +188,17 @@ func New(cfg Config, logger *slog.Logger) (*Agent, error) {
 	// 发送门禁使用 HELLO_ACK accepted（HandshakeComplete），断线期间批次保留在内存队列。
 	if cfg.MetricsEnabled && metricsSupported(cfg.DeploymentMode, cfg.HostIntegration) {
 		a.metricsCollector = newMetricsCollector(metricsRoot(cfg))
-		a.metricsQueue = newMetricsQueue(func(env protocol.Envelope) bool {
-			return a.conn != nil && a.conn.HandshakeComplete() && a.conn.Send(env)
-		})
+		interval := normalizeMetricsInterval(cfg.MetricsInterval)
+		if interval < 30*time.Second {
+			interval = 30 * time.Second
+		}
+		a.metricsCollector.containerScanInterval = interval
+		a.metricsQueue = newMetricsQueue(func(ctx context.Context, env protocol.Envelope) error {
+			if a.conn == nil || !a.conn.HandshakeComplete() {
+				return errMetricsOffline
+			}
+			return a.conn.SendWait(ctx, env)
+		}, cfg.MetricsBufferBatches)
 	}
 
 	// 自升级执行链（默认实现绑定；测试按需覆盖字段注入）
@@ -393,10 +405,23 @@ func (a *Agent) sendHeartbeat() {
 		return
 	}
 	localRev, _ := a.store.GetGlobalRevision()
-	if a.conn.Send(protocol.NewEnvelope(protocol.MsgHeartbeat, "", protocol.HeartbeatPayload{
+	payload := protocol.HeartbeatPayload{
 		NodeID:    a.nodeID,
 		GlobalRev: localRev,
-	})) {
+	}
+	if a.metricsQueue != nil {
+		payload.MetricsBufferBatches = a.metricsQueue.pending()
+		payload.MetricsBufferBytes = a.metricsQueue.pendingBytes()
+		if age := a.metricsQueue.oldestPendingAge(time.Now()); age > 0 {
+			payload.MetricsOldestPendingSec = int64(age / time.Second)
+		}
+		payload.MetricsDroppedTotal, _ = a.metricsQueue.droppedCounts()
+		payload.MetricsAckTimeouts = a.metricsQueue.ackTimeoutCount()
+	}
+	if a.conn != nil {
+		payload.WSQueueDepth, payload.WSQueueBytes = a.conn.QueueStats()
+	}
+	if a.conn.Send(protocol.NewEnvelope(protocol.MsgHeartbeat, "", payload)) {
 		a.logState.IncHeartbeatSent()
 	}
 }
@@ -478,6 +503,10 @@ func (a *Agent) OnHelloAck(env protocol.Envelope) {
 		a.artifact.SetIdentity(a.agentID, p.AgentCredential)
 	}
 	a.applySettingsMap(p.Settings)
+	// ACK 能力随 HELLO_ACK 协商；旧 Hub 未声明时回退“写成功即出队”。
+	if a.metricsQueue != nil {
+		a.metricsQueue.setAckMode(p.Capabilities[protocol.CapabilityNodeMetricsAck])
+	}
 
 	// Reconnect Reconciliation：配置对账
 	localRev, _ := a.store.GetGlobalRevision()
@@ -1156,6 +1185,10 @@ func (a *Agent) executeTask(p protocol.RunExecutionPayload, ex *LocalExecution) 
 	maxBytes := a.cfg.MaxLogBytes
 	if maxBytes <= 0 {
 		maxBytes = 1 << 20
+	}
+	// 单流输出硬上限 512KiB，总计 1MiB；降低结果 JSON 复制峰值。
+	if maxBytes > 512<<10 {
+		maxBytes = 512 << 10
 	}
 	timeout := time.Duration(p.Timeout) * time.Second
 	if timeout <= 0 {

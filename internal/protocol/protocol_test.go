@@ -76,6 +76,17 @@ func TestNodeMetricsZeroValueIsSerialized(t *testing.T) {
 	}
 }
 
+func TestNodeMetricsAckRoundTrip(t *testing.T) {
+	env := NewEnvelope(MsgNodeMetricsAck, "", NodeMetricsAckPayload{NodeID: "node-1", Sequence: 7, OK: true})
+	var ack NodeMetricsAckPayload
+	if err := json.Unmarshal(env.Payload, &ack); err != nil {
+		t.Fatal(err)
+	}
+	if ack.NodeID != "node-1" || ack.Sequence != 7 || !ack.OK {
+		t.Fatalf("ack = %+v", ack)
+	}
+}
+
 func TestNodeMetricsEnvelope(t *testing.T) {
 	if MsgNodeMetrics != "NODE_METRICS" {
 		t.Fatalf("MsgNodeMetrics = %q", MsgNodeMetrics)

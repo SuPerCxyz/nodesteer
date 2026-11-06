@@ -678,6 +678,180 @@ func TestNativeMetricSeriesLimitAllowsExistingUpdates(t *testing.T) {
 	}
 }
 
+func TestLatestNodeMetricSamplesForMetricsBatchFilters(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Second)
+	if err := st.InsertNodeMetricSamples(ctx, "node-1", []NativeSample{
+		nativeValidSample(now.Add(-10*time.Minute), "cpu.usage", nil, 1),
+		nativeValidSample(now.Add(-time.Minute), "cpu.usage", nil, 42),
+		nativeValidSample(now.Add(-time.Minute), "memory.usage", nil, 70),
+		nativeValidSample(now.Add(-time.Minute), "container.cpu.usage", nil, 5),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := st.LatestNodeMetricSamplesForMetricsBatch(ctx, []string{"node-1"}, []string{"cpu.usage"}, now.Add(-5*time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	samples := result["node-1"]
+	if len(samples) != 1 || samples[0].Metric != "cpu.usage" {
+		t.Fatalf("filtered samples = %+v, want only cpu.usage", samples)
+	}
+	requireNativeFloat(t, samples[0].Value, 42)
+
+	// 窗口外的最新样本不应泄漏到 overview。
+	result, err = st.LatestNodeMetricSamplesForMetricsBatch(ctx, []string{"node-1"}, []string{"cpu.usage"}, now.Add(-30*time.Second))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result["node-1"]) != 0 {
+		t.Fatalf("outside-window samples = %+v", result["node-1"])
+	}
+}
+
+func TestNodeMetricSampleIntervalsUsesRecentWindow(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+	now := time.Now().UTC()
+	if err := st.InsertNodeMetricSamples(ctx, "node-1", []NativeSample{
+		nativeValidSample(now.Add(-6*time.Hour), "cpu.usage", nil, 1),
+		nativeValidSample(now.Add(-2*time.Minute), "cpu.usage", nil, 2),
+		nativeValidSample(now.Add(-time.Minute), "cpu.usage", nil, 3),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	intervals, err := st.NodeMetricSampleIntervals(ctx, []string{"node-1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if intervals["node-1"] != time.Minute {
+		t.Fatalf("interval = %v, want 1m", intervals["node-1"])
+	}
+}
+
+func TestNodeMetricSeriesBatchGroupsMetrics(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+	now := time.Now().UTC()
+	if err := st.InsertNodeMetricSamples(ctx, "node-1", []NativeSample{
+		nativeValidSample(now, "cpu.usage", map[string]string{"cpu": "all"}, 1),
+		nativeValidSample(now, "cpu.usage", map[string]string{"cpu": "0"}, 2),
+		nativeValidSample(now, "memory.usage", nil, 3),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := st.NodeMetricSeriesBatch(ctx, "node-1", []string{"cpu.usage", "memory.usage"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result["cpu.usage"]) != 2 || len(result["memory.usage"]) != 1 {
+		t.Fatalf("series batch = %+v", result)
+	}
+}
+
+func TestLatestMetricsBatchQueryPlanUsesIndex(t *testing.T) {
+	st := newTestStore(t)
+	now := time.Now().UTC()
+	plan := nativeQueryPlanDetails(t, st, `SELECT node_id, metric, series_key, MAX(timestamp)
+		FROM node_metric_samples
+		WHERE node_id IN (?) AND metric IN (?) AND timestamp >= ?
+		GROUP BY node_id, metric, series_key`,
+		"node-1", "cpu.usage", formatNativeTime(now.Add(-15*time.Minute)))
+	if !strings.Contains(plan, "USING INDEX") {
+		t.Fatalf("overview latest query does not use an index:\n%s", plan)
+	}
+	if strings.Contains(plan, "SCAN node_metric_samples") {
+		t.Fatalf("overview latest query performs a full table scan:\n%s", plan)
+	}
+}
+
+func TestNativeMetricAggregationRecomputesLateSamples(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Minute)
+	if now.Minute() >= 59 {
+		// 避免 -59min 与当前时间落在同一小时，导致 1h 桶尚未闭合。
+		now = now.Add(-20 * time.Minute)
+	}
+	current := now.Add(-time.Minute)
+	backfill15 := now.Add(-15 * time.Minute)
+	backfill59 := now.Add(-59 * time.Minute)
+	series := BuildSeriesKey("cpu.usage", nil)
+
+	insert := func(timestamp time.Time, value float64) {
+		t.Helper()
+		if err := st.InsertNodeMetricSamples(ctx, "node-1", []NativeSample{
+			nativeValidSample(timestamp, "cpu.usage", nil, value),
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	insert(current, 10)
+	if err := st.AggregateNodeMetrics(ctx, now); err != nil {
+		t.Fatal(err)
+	}
+	insert(backfill15, 20)
+	insert(backfill59, 30)
+	if err := st.AggregateNodeMetrics(ctx, now); err != nil {
+		t.Fatal(err)
+	}
+
+	expectBucket := func(tier string, bucket time.Time, want float64) {
+		t.Helper()
+		start := bucket.Truncate(time.Hour).Add(-2 * time.Hour)
+		rollups, err := st.QueryNodeMetricRollups(ctx, "node-1", "cpu.usage", series, tier, start, now.Add(time.Hour), 1000)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, rollup := range rollups {
+			if rollup.BucketStart.Equal(bucket) {
+				if rollup.Count == 0 || rollup.Max != want {
+					t.Fatalf("%s bucket %s = %+v, want max %v", tier, bucket, rollup, want)
+				}
+				return
+			}
+		}
+		t.Fatalf("%s bucket %s missing; rollups=%+v", tier, bucket, rollups)
+	}
+	expectBucket(NativeTier1m, backfill15, 20)
+	expectBucket(NativeTier1m, backfill59, 30)
+	expectBucket(NativeTier5m, backfill15.Truncate(5*time.Minute), 20)
+	expectBucket(NativeTier1h, backfill59.Truncate(time.Hour), 30)
+
+	// 重复补报必须幂等：同一时间戳 UPSERT 后重算不改变计数。
+	insert(backfill15, 21)
+	if err := st.AggregateNodeMetrics(ctx, now); err != nil {
+		t.Fatal(err)
+	}
+	expectBucket(NativeTier1m, backfill15, 21)
+
+	// 超过 1h 窗口：raw 保留，但 rollup 不再向前扩展。
+	beyond := now.Add(-2 * time.Hour)
+	insert(beyond, 99)
+	if err := st.AggregateNodeMetrics(ctx, now); err != nil {
+		t.Fatal(err)
+	}
+	rollups, err := st.QueryNodeMetricRollups(ctx, "node-1", "cpu.usage", series, NativeTier1m, beyond.Add(-time.Minute), beyond.Add(time.Minute), 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rollups) != 0 {
+		t.Fatalf("beyond-window sample must not create rollup: %+v", rollups)
+	}
+	var rawCount int
+	if err := st.DB().QueryRow(`SELECT COUNT(*) FROM node_metric_samples WHERE node_id = ? AND timestamp = ?`,
+		"node-1", formatNativeTime(beyond)).Scan(&rawCount); err != nil {
+		t.Fatal(err)
+	}
+	if rawCount != 1 {
+		t.Fatalf("raw sample count = %d, want retained", rawCount)
+	}
+	if got := st.LateSampleCount(); got == 0 {
+		t.Fatal("late sample counter not incremented")
+	}
+}
+
 func TestNativeMetricAggregationExpectedUsesSampleInterval(t *testing.T) {
 	for _, tc := range []struct {
 		name     string

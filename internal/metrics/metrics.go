@@ -20,6 +20,9 @@ type Metrics struct {
 	artifactDownloadBytes int64
 	// inboundDialTotal 入站拨号次数，key 为 stage/result。
 	inboundDialTotal map[string]int64
+	// apiRequests / apiSlowRequests 是 API 请求总数与慢请求数。
+	apiRequests     int64
+	apiSlowRequests int64
 }
 
 // New 创建指标收集器
@@ -48,6 +51,16 @@ func (m *Metrics) IncSyncErrors() {
 func (m *Metrics) AddExecution(status string) {
 	m.mu.Lock()
 	m.executionTotal[status]++
+	m.mu.Unlock()
+}
+
+// AddAPIRequest 记录一次 API 请求；slow 表示超过阈值。
+func (m *Metrics) AddAPIRequest(slow bool) {
+	m.mu.Lock()
+	m.apiRequests++
+	if slow {
+		m.apiSlowRequests++
+	}
 	m.mu.Unlock()
 }
 
@@ -93,6 +106,13 @@ func (m *Metrics) Render() string {
 	out += fmt.Sprintf("nodesteer_execution_failed %d\n", m.executionTotal["FAILED"])
 	out += fmt.Sprintf("nodesteer_execution_total_all %d\n", total(m.executionTotal))
 	out += fmt.Sprintf("nodesteer_active_executions %d\n", m.executionTotal["RUNNING"])
+
+	out += "# HELP nodesteer_api_requests_total API requests\n"
+	out += "# TYPE nodesteer_api_requests_total counter\n"
+	out += fmt.Sprintf("nodesteer_api_requests_total %d\n", m.apiRequests)
+	out += "# HELP nodesteer_api_slow_total API requests over the slow threshold\n"
+	out += "# TYPE nodesteer_api_slow_total counter\n"
+	out += fmt.Sprintf("nodesteer_api_slow_total %d\n", m.apiSlowRequests)
 
 	out += "# HELP nodesteer_inbound_dial_total Inbound dial attempts by stage and result\n"
 	out += "# TYPE nodesteer_inbound_dial_total counter\n"

@@ -40,6 +40,45 @@ func TestNativeMetricMaintenanceRunsImmediatelyAndStops(t *testing.T) {
 	}
 }
 
+func TestNativeMetricMaintenanceDelaysInitialRun(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var aggregateCalls atomic.Int32
+	done := startNativeMetricMaintenanceWithDelay(ctx, time.Hour, 50*time.Millisecond,
+		func(context.Context, time.Time) error { aggregateCalls.Add(1); return nil },
+		nil, logger)
+	defer func() {
+		cancel()
+		<-done
+	}()
+
+	time.Sleep(20 * time.Millisecond)
+	if got := aggregateCalls.Load(); got != 0 {
+		t.Fatalf("aggregate ran before initial delay: %d", got)
+	}
+	deadline := time.Now().Add(time.Second)
+	for time.Now().Before(deadline) && aggregateCalls.Load() == 0 {
+		time.Sleep(time.Millisecond)
+	}
+	if aggregateCalls.Load() == 0 {
+		t.Fatal("aggregate did not run after initial delay")
+	}
+}
+
+func TestNativeMetricMaintenanceCancelDuringInitialDelay(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	ctx, cancel := context.WithCancel(context.Background())
+	done := startNativeMetricMaintenanceWithDelay(ctx, time.Hour, time.Hour,
+		func(context.Context, time.Time) error { return nil }, nil, logger)
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("maintenance did not stop when canceled during initial delay")
+	}
+}
+
 func TestNativeMetricMaintenanceSkipsPruneAfterAggregateError(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	ctx, cancel := context.WithCancel(context.Background())

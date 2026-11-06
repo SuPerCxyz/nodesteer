@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/SuPerCxyz/nodesteer/internal/models"
@@ -101,36 +102,136 @@ type Manager struct {
 type hubSession struct {
 	conn   *websocket.Conn
 	origin string
-	sendCh chan protocol.Envelope
-	done   chan struct{}
-	once   sync.Once
+	// sendCh 仅承载待写帧；容量与字节预算共同限制单会话内存。
+	sendCh     chan outboundFrame
+	done       chan struct{}
+	sendBytes  atomic.Int64
+	sendNotify chan struct{}
+	once       sync.Once
 	// accepted 表示收到 accepted 的 HELLO_ACK；由 Manager.mu 保护。
 	accepted  bool
 	sessionID string
 	nodeID    string
 }
 
+// outboundFrame 是发送队列中的一帧；result 非空时写循环回报真实写结果。
+type outboundFrame struct {
+	env    protocol.Envelope
+	size   int64
+	result chan error
+}
+
+const (
+	// agentSendQueueFrames / agentSendQueueBytes 限制单会话发送队列，
+	// 避免慢 Hub 或半开连接让 Agent 内存随消息量增长。
+	agentSendQueueFrames = 32
+	agentSendQueueBytes  = 1 << 20
+	// agentControlReadLimit 是握手后单条控制消息读取上限。Hub 单脚本上限
+	// 为 256KiB，同步响应在 Hub 侧另行检查；2MiB 足以覆盖控制消息。
+	agentControlReadLimit = 2 << 20
+	agentPingInterval     = 20 * time.Second
+	agentPingTimeout      = 10 * time.Second
+)
+
 func newHubSession(conn *websocket.Conn, origin string) *hubSession {
 	return &hubSession{
 		conn: conn, origin: origin,
-		sendCh: make(chan protocol.Envelope, 128),
-		done:   make(chan struct{}),
+		sendCh:     make(chan outboundFrame, agentSendQueueFrames),
+		done:       make(chan struct{}),
+		sendNotify: make(chan struct{}, 1),
 	}
 }
 
-func (s *hubSession) send(env protocol.Envelope) bool {
+// envelopeBytes 用可靠估算计费：payload 实际长度 + 信封字段开销。
+func envelopeBytes(env protocol.Envelope) int64 {
+	return int64(len(env.Payload)) + int64(len(env.Type)) + int64(len(env.ID)) + 96
+}
+
+// reserve 原子预留发送字节预算。wait=false 时预算不足立即失败；
+// wait=true 时等待写循环释放预算或连接结束。
+func (s *hubSession) reserve(size int64, wait bool) bool {
+	for {
+		select {
+		case <-s.done:
+			return false
+		default:
+		}
+		current := s.sendBytes.Load()
+		if current+size <= agentSendQueueBytes {
+			if s.sendBytes.CompareAndSwap(current, current+size) {
+				return true
+			}
+			continue
+		}
+		if !wait {
+			return false
+		}
+		select {
+		case <-s.sendNotify:
+		case <-s.done:
+			return false
+		}
+	}
+}
+
+func (s *hubSession) release(size int64) {
+	s.sendBytes.Add(-size)
 	select {
-	case <-s.done:
-		return false
+	case s.sendNotify <- struct{}{}:
 	default:
 	}
+}
+
+// send 尽力发送：控制消息阻塞等待预算；指标与日志预算不足时返回 false，
+// 由调用方保留或丢弃（指标队列会保留，日志本身是尽力而为）。
+func (s *hubSession) send(env protocol.Envelope) bool {
+	priority := env.Type != protocol.MsgNodeMetrics && env.Type != protocol.MsgLogChunk
+	size := envelopeBytes(env)
+	if !s.reserve(size, priority) {
+		return false
+	}
+	frame := outboundFrame{env: env, size: size}
 	select {
-	case s.sendCh <- env:
+	case s.sendCh <- frame:
 		return true
 	case <-s.done:
+		s.release(size)
 		return false
 	}
 }
+
+// sendWait 在 WebSocket 真正写成功后返回 nil；半开/写失败/超时返回错误。
+// 预算不足或队列关闭时立即失败，调用方保留批次并稍后重试。
+func (s *hubSession) sendWait(ctx context.Context, env protocol.Envelope) error {
+	size := envelopeBytes(env)
+	if !s.reserve(size, false) {
+		return errSendQueueFull
+	}
+	result := make(chan error, 1)
+	frame := outboundFrame{env: env, size: size, result: result}
+	select {
+	case s.sendCh <- frame:
+	case <-s.done:
+		s.release(size)
+		return errSessionClosed
+	case <-ctx.Done():
+		s.release(size)
+		return ctx.Err()
+	}
+	select {
+	case err := <-result:
+		return err
+	case <-s.done:
+		return errSessionClosed
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+var (
+	errSendQueueFull = errors.New("agent send queue budget exhausted")
+	errSessionClosed = errors.New("agent session closed")
+)
 
 func (s *hubSession) sendSync(ctx context.Context, env protocol.Envelope) error {
 	return wsjson.Write(ctx, s.conn, env)
@@ -141,6 +242,11 @@ func (s *hubSession) close() {
 		close(s.done)
 		_ = s.conn.Close(websocket.StatusNormalClosure, "close")
 	})
+}
+
+// queueStats 返回当前发送队列深度与已预留字节，用于运行观测。
+func (s *hubSession) queueStats() (int, int) {
+	return len(s.sendCh), int(s.sendBytes.Load())
 }
 
 // SetTLSCA 使用指定 CA 验证 wss:// Hub 证书。
@@ -284,6 +390,28 @@ func (m *Manager) Send(env protocol.Envelope) bool {
 	return session.send(env)
 }
 
+// SendWait 等待 WebSocket 真正写成功；用于指标批次“写成功才出队”语义。
+func (m *Manager) SendWait(ctx context.Context, env protocol.Envelope) error {
+	m.mu.Lock()
+	session := m.preferredSessionLocked()
+	m.mu.Unlock()
+	if session == nil {
+		return errSessionClosed
+	}
+	return session.sendWait(ctx, env)
+}
+
+// QueueStats 返回当前优先会话的发送队列深度与预留字节。
+func (m *Manager) QueueStats() (int, int) {
+	m.mu.Lock()
+	session := m.preferredSessionLocked()
+	m.mu.Unlock()
+	if session == nil {
+		return 0, 0
+	}
+	return session.queueStats()
+}
+
 func (m *Manager) preferredSessionLocked() *hubSession {
 	if m.acceptedLocked(m.outbound) {
 		return m.outbound
@@ -425,8 +553,8 @@ func (m *Manager) connectAndServe(ctx context.Context, helloFn func() *protocol.
 	if err != nil {
 		return err
 	}
-	// 与网关读取限制保持一致，避免接收大消息时被默认限制断开
-	conn.SetReadLimit(8 << 20)
+	// 控制消息读取上限与 Hub 同步响应检查保持一致（2MiB）。
+	conn.SetReadLimit(agentControlReadLimit)
 	session := newHubSession(conn, models.ConnectionModeOutbound)
 	m.mu.Lock()
 	m.outbound = session
@@ -458,6 +586,7 @@ func (m *Manager) serveSession(ctx context.Context, session *hubSession) error {
 	writeCtx, writeCancel := context.WithCancel(ctx)
 	defer writeCancel()
 	go m.writeLoop(writeCtx, session)
+	go m.pingLoop(writeCtx, session)
 	defer session.close()
 
 	for {
@@ -487,8 +616,39 @@ func (m *Manager) writeLoop(ctx context.Context, session *hubSession) {
 			return
 		case <-session.done:
 			return
-		case env := <-session.sendCh:
-			if err := session.sendSync(ctx, env); err != nil {
+		case frame := <-session.sendCh:
+			err := session.sendSync(ctx, frame.env)
+			session.release(frame.size)
+			if frame.result != nil {
+				frame.result <- err
+			}
+			if err != nil {
+				session.close()
+				return
+			}
+		}
+	}
+}
+
+// pingLoop 用 WebSocket ping/pong 探测半开连接：Hub 进程消失但没有 FIN 时，
+// 写入可能继续成功，只有 ping 超时能在大约 20~30s 内发现。30s 心跳不受影响。
+func (m *Manager) pingLoop(ctx context.Context, session *hubSession) {
+	ticker := time.NewTicker(agentPingInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-session.done:
+			return
+		case <-ticker.C:
+			pingCtx, cancel := context.WithTimeout(ctx, agentPingTimeout)
+			err := session.conn.Ping(pingCtx)
+			cancel()
+			if err != nil {
+				if m.logger != nil && ctx.Err() == nil {
+					m.logger.Warn("agent websocket ping failed; closing session", "error", err)
+				}
 				session.close()
 				return
 			}
@@ -593,6 +753,14 @@ func (m *Manager) dispatch(session *hubSession, env protocol.Envelope) {
 		m.handler.OnNodeStatus(env)
 	case protocol.MsgRemoteState:
 		m.handler.OnRemoteState(env)
+	case protocol.MsgNodeMetrics:
+		if handler, ok := m.handler.(interface{ OnNodeMetrics(protocol.Envelope) }); ok {
+			handler.OnNodeMetrics(env)
+		}
+	case protocol.MsgNodeMetricsAck:
+		if handler, ok := m.handler.(interface{ OnNodeMetricsAck(protocol.Envelope) }); ok {
+			handler.OnNodeMetricsAck(env)
+		}
 	case protocol.MsgError:
 		m.handler.OnError(env)
 	}

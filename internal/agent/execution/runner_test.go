@@ -26,6 +26,26 @@ func TestRunCommandSuccess(t *testing.T) {
 	}
 }
 
+func TestRunOutputHardLimit(t *testing.T) {
+	r := New()
+	res, err := r.Run(context.Background(), "limit", RunConfig{
+		Command:        "head -c 2000000 /dev/zero | tr '\\0' 'a'",
+		Timeout:        10 * time.Second,
+		MaxStdoutBytes: 4 << 20,
+		MaxStderrBytes: 4 << 20,
+		MaxTotalBytes:  8 << 20,
+	})
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if len(res.Stdout) > 512<<10 {
+		t.Fatalf("stdout = %d bytes, want <= 512KiB", len(res.Stdout))
+	}
+	if !res.StdoutTruncated {
+		t.Fatal("stdout must be marked truncated")
+	}
+}
+
 func TestRunCommandFailure(t *testing.T) {
 	r := New()
 	res, err := r.Run(context.Background(), "t1", RunConfig{

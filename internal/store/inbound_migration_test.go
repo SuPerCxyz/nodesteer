@@ -90,8 +90,8 @@ func TestMigrationV27AddsInboundColumns(t *testing.T) {
 	if err := db.QueryRow(`SELECT MAX(version) FROM schema_migrations`).Scan(&version); err != nil {
 		t.Fatalf("read schema version: %v", err)
 	}
-	if version != 27 {
-		t.Fatalf("schema version = %d, want 27", version)
+	if version != 28 {
+		t.Fatalf("schema version = %d, want 28", version)
 	}
 	columns := nodeColumnSet(t, db)
 	for _, column := range []string{

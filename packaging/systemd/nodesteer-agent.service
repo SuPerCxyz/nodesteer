@@ -6,6 +6,12 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+# 小节点内存默认值；/etc/nodesteer/agent.env 可覆盖同名变量。
+# 不设置 GOMAXPROCS：1–2 核节点交给 Go 运行时按 CPU 配额自行决定。
+Environment=GOGC=50
+Environment=GOMEMLIMIT=8MiB
+Environment=GODEBUG=disablethp=1
+EnvironmentFile=-/etc/nodesteer/agent.env
 ExecStart=/usr/local/bin/nodesteer-agent --config /etc/nodesteer/agent.yaml
 Restart=on-failure
 RestartSec=5

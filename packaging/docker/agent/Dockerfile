@@ -15,5 +15,9 @@ FROM alpine:3.20
 RUN apk add --no-cache ca-certificates tzdata bash coreutils procps iproute2 util-linux
 COPY --from=builder /out/nodesteer-agent /usr/local/bin/nodesteer-agent
 RUN mkdir -p /var/lib/nodesteer
+# 小节点内存默认值；容器运行时可用 -e 覆盖。
+ENV GOGC=50 \
+    GOMEMLIMIT=8MiB \
+    GODEBUG=disablethp=1
 VOLUME ["/var/lib/nodesteer"]
 ENTRYPOINT ["/usr/local/bin/nodesteer-agent"]

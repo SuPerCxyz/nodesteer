@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -292,7 +293,7 @@ func TestContainerMetricsCapabilityAPIError(t *testing.T) {
 func TestContainerCollectionCompletenessAndIdentity(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/containers/json", func(w http.ResponseWriter, r *http.Request) {
-		if got := r.URL.Query().Get("limit"); got != "101" {
+		if got := r.URL.Query().Get("limit"); got != "33" {
 			t.Errorf("limit = %q", got)
 		}
 		containers := make([]dockerContainer, 150)
@@ -312,7 +313,7 @@ func TestContainerCollectionCompletenessAndIdentity(t *testing.T) {
 	c.containerSocketPath = newDockerFixtureServer(t, mux)
 	now := time.Now().UTC()
 	samples := c.containerSamples(now)
-	for metric, want := range map[string]float64{"container.collection.discovered_count": 101, "container.collection.sampled_count": 99, "container.collection.limit": 100} {
+	for metric, want := range map[string]float64{"container.collection.discovered_count": 33, "container.collection.sampled_count": 31, "container.collection.limit": 32} {
 		sample := findMetricSample(samples, metric, nil)
 		if sample == nil || sample.Value == nil || *sample.Value != want || !sample.Timestamp.Equal(now) {
 			t.Fatalf("%s = %+v", metric, sample)
@@ -320,6 +321,74 @@ func TestContainerCollectionCompletenessAndIdentity(t *testing.T) {
 	}
 	if findMetricSample(samples, "container.memory.usage", map[string]string{"container": "same", "container_id": "id000"}) == nil || findMetricSample(samples, "container.memory.usage", map[string]string{"container": "same", "container_id": "id002"}) == nil {
 		t.Fatal("same-name containers must retain distinct IDs")
+	}
+}
+
+func TestContainerScanThrottlesHighContainerNodes(t *testing.T) {
+	var scans atomic.Int32
+	mux := http.NewServeMux()
+	mux.HandleFunc("/containers/json", func(w http.ResponseWriter, r *http.Request) {
+		scans.Add(1)
+		containers := make([]dockerContainer, 17)
+		for i := range containers {
+			containers[i] = dockerContainer{ID: fmt.Sprintf("id%03d", i), Names: []string{"/c"}, State: "running"}
+		}
+		writeJSONResponse(t, w, containers)
+	})
+	mux.HandleFunc("/containers/", func(w http.ResponseWriter, r *http.Request) {
+		writeJSONResponse(t, w, dockerStats{MemoryStats: dockerMemoryStats{Usage: 1, Limit: 2}})
+	})
+	c := newMetricsCollector(t.TempDir())
+	c.containerSocketPath = newDockerFixtureServer(t, mux)
+	c.containerScanInterval = 30 * time.Second
+	now := time.Now().UTC()
+
+	first := c.containerSamples(now)
+	if scans.Load() != 1 {
+		t.Fatalf("first scans = %d, want 1", scans.Load())
+	}
+	if sample := findMetricSample(first, "container.collection.discovered_count", nil); sample == nil || sample.Value == nil || *sample.Value != 17 {
+		t.Fatalf("first discovered = %+v", sample)
+	}
+	// >16 容器：30s 内不重复完整扫描，但仍上报汇总。
+	second := c.containerSamples(now.Add(29 * time.Second))
+	if scans.Load() != 1 {
+		t.Fatalf("scan within 60s window = %d, want 1", scans.Load())
+	}
+	if len(second) != 3 {
+		t.Fatalf("cached summary samples = %d, want completeness triple", len(second))
+	}
+	if sample := findMetricSample(second, "container.collection.discovered_count", nil); sample == nil || sample.Value == nil || *sample.Value != 17 {
+		t.Fatalf("cached discovered = %+v", sample)
+	}
+	c.containerSamples(now.Add(61 * time.Second))
+	if scans.Load() != 2 {
+		t.Fatalf("scans after 60s = %d, want 2", scans.Load())
+	}
+}
+
+func TestContainerScanKeeps30sForSmallNodes(t *testing.T) {
+	var scans atomic.Int32
+	mux := http.NewServeMux()
+	mux.HandleFunc("/containers/json", func(w http.ResponseWriter, r *http.Request) {
+		scans.Add(1)
+		writeJSONResponse(t, w, []dockerContainer{{ID: "one", Names: []string{"/c"}, State: "running"}})
+	})
+	mux.HandleFunc("/containers/", func(w http.ResponseWriter, r *http.Request) {
+		writeJSONResponse(t, w, dockerStats{MemoryStats: dockerMemoryStats{Usage: 1, Limit: 2}})
+	})
+	c := newMetricsCollector(t.TempDir())
+	c.containerSocketPath = newDockerFixtureServer(t, mux)
+	c.containerScanInterval = 30 * time.Second
+	now := time.Now().UTC()
+	c.containerSamples(now)
+	c.containerSamples(now.Add(15 * time.Second))
+	if scans.Load() != 1 {
+		t.Fatalf("scans within 30s = %d, want 1", scans.Load())
+	}
+	c.containerSamples(now.Add(31 * time.Second))
+	if scans.Load() != 2 {
+		t.Fatalf("scans after 30s = %d, want 2", scans.Load())
 	}
 }
 

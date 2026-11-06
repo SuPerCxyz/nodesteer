@@ -112,6 +112,11 @@ type metricsCollector struct {
 	containerNetInit    bool
 	// containerCapable 记录 Docker/Podman API 是否已探测/采集成功，供 HELLO 能力上报。
 	containerCapable atomic.Bool
+	// containerScanInterval 为 0 时不节流（测试）；生产由 Agent 按采集周期设置。
+	containerScanInterval time.Duration
+	containerLastScan     time.Time
+	containerLastSeen     int
+	containerLastSampled  int
 }
 
 func newMetricsCollector(root string) *metricsCollector {

@@ -33,6 +33,11 @@ func (s *nativeQueryCountingStore) LatestNodeMetricSamplesBatch(ctx context.Cont
 	return s.SQLiteStore.LatestNodeMetricSamplesBatch(ctx, nodeIDs)
 }
 
+func (s *nativeQueryCountingStore) LatestNodeMetricSamplesForMetricsBatch(ctx context.Context, nodeIDs, metrics []string, since time.Time) (map[string][]store.NativeSample, error) {
+	s.latestBatch++
+	return s.SQLiteStore.LatestNodeMetricSamplesForMetricsBatch(ctx, nodeIDs, metrics, since)
+}
+
 func (s *nativeQueryCountingStore) NodeMetricSampleInterval(ctx context.Context, nodeID string) (time.Duration, error) {
 	s.intervalSingle++
 	return s.SQLiteStore.NodeMetricSampleInterval(ctx, nodeID)
@@ -53,6 +58,44 @@ func newCountingNativeServer(t *testing.T) (*Server, *nativeQueryCountingStore) 
 	counting := &nativeQueryCountingStore{SQLiteStore: st}
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	return New(counting, auth.New(counting, time.Hour), nil, nil, nil, nil, nil, nil, nil, logger), counting
+}
+
+func TestNativeOverviewCacheInvalidatesOnMetricWrite(t *testing.T) {
+	s, counting := newCountingNativeServer(t)
+	seedMonitoringUsers(t, counting.SQLiteStore)
+	handler := s.Routes()
+	admin := loginAs(t, s, "admin", "password")
+	createNativeAPINode(t, counting.SQLiteStore, "node-1", models.NodeStatusOnline)
+	base := time.Now().UTC().Add(-time.Minute)
+	if err := counting.InsertNodeMetricSamples(t.Context(), "node-1", []store.NativeSample{
+		nativeAPISample(base, "cpu.usage", nil, 10),
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	counting.latestBatch = 0
+	for i := 0; i < 2; i++ {
+		recorder := nativeAPIRequest(handler, http.MethodGet, "/api/monitoring/nodes/overview", admin)
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("overview = %d %s", recorder.Code, recorder.Body.String())
+		}
+	}
+	if counting.latestBatch != 1 {
+		t.Fatalf("cache miss count = %d, want 1", counting.latestBatch)
+	}
+
+	if err := counting.InsertNodeMetricSamples(t.Context(), "node-1", []store.NativeSample{
+		nativeAPISample(base.Add(30*time.Second), "cpu.usage", nil, 20),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	recorder := nativeAPIRequest(handler, http.MethodGet, "/api/monitoring/nodes/overview", admin)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("overview after write = %d %s", recorder.Code, recorder.Body.String())
+	}
+	if counting.latestBatch != 2 {
+		t.Fatalf("cache invalidation miss count = %d, want 2", counting.latestBatch)
+	}
 }
 
 func TestNativeOverviewUsesBatchQueries(t *testing.T) {

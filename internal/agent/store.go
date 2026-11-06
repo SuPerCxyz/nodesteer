@@ -49,12 +49,15 @@ func OpenLocalStore(dir string) (*LocalStore, error) {
 	}
 	// _txlock=immediate 与 Hub 侧同因：写事务在 BEGIN 即取锁，锁等待走 busy_timeout，
 	// 避免 WAL 下 deferred 事务读→写升级直接返回 SQLITE_BUSY（见 internal/store/sqlite.go）。
-	dsn := filepath.Join(dir, "state.db") + "?_txlock=immediate&_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"
+	// cache_size 为负值表示 KiB；约 512KiB，限制小节点页缓存。
+	dsn := filepath.Join(dir, "state.db") + "?_txlock=immediate&_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)&_pragma=cache_size(-512)"
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxOpenConns(4)
+	// 2 条连接足够覆盖读写并发，降低每连接页缓存与内存峰值。
+	db.SetMaxOpenConns(2)
+	db.SetMaxIdleConns(2)
 	if err := db.Ping(); err != nil {
 		db.Close()
 		return nil, err

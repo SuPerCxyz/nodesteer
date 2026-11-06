@@ -89,13 +89,23 @@ func (r *Runner) Run(ctx context.Context, execID string, cfg RunConfig) (*Result
 	// 并在 Wait() 中等待拷贝完成，避免 StdoutPipe+异步读 的 fd 关闭竞态导致输出丢失。
 	var outBuf, errBuf limitedBuffer
 	if cfg.MaxStdoutBytes <= 0 {
-		cfg.MaxStdoutBytes = 1 << 20
+		cfg.MaxStdoutBytes = 512 << 10
 	}
 	if cfg.MaxStderrBytes <= 0 {
-		cfg.MaxStderrBytes = 1 << 20
+		cfg.MaxStderrBytes = 512 << 10
 	}
 	if cfg.MaxTotalBytes <= 0 {
-		cfg.MaxTotalBytes = 2 << 20
+		cfg.MaxTotalBytes = 1 << 20
+	}
+	// 硬上限：即使配置更大也不让单次执行结果超过 1MiB（每流 512KiB）。
+	if cfg.MaxStdoutBytes > 512<<10 {
+		cfg.MaxStdoutBytes = 512 << 10
+	}
+	if cfg.MaxStderrBytes > 512<<10 {
+		cfg.MaxStderrBytes = 512 << 10
+	}
+	if cfg.MaxTotalBytes > 1<<20 {
+		cfg.MaxTotalBytes = 1 << 20
 	}
 	totalUsed := int64(0)
 	outBuf.limit = int64(cfg.MaxStdoutBytes)

@@ -734,7 +734,7 @@ SQLite + WAL
 
 只读运维查询面：每次部署恢复结束后，Agent 把部署 journal 摘要原子写入 `<data_dir>/deployments-summary.json`（先写 `.tmp` 再 rename）——含「非 `deployed` 的 `DONE` 行按 `completed_kind` 计数」与「仍活动行的 id/应用/阶段/`started_at`」，供运维直接查看不可重放记录（CR-3 终态化后的可见性出口；写失败只记 ERROR，不影响恢复）。
 
-事务与锁：连接使用 `_txlock=immediate`，写事务在 BEGIN 阶段即取写锁，配合 WAL 与 `busy_timeout=5000`，避免 deferred 事务「先读后写」升级写锁时不受 busy_timeout 保护的 `SQLITE_BUSY`/`BUSY_SNAPSHOT`。
+事务与锁：连接使用 `_txlock=immediate`，写事务在 BEGIN 阶段即取写锁，配合 WAL 与 `busy_timeout=15000`（Hub 配置 `sqlite_busy_timeout` 可覆盖），避免 deferred 事务「先读后写」升级写锁时不受 busy_timeout 保护的 `SQLITE_BUSY`/`BUSY_SNAPSHOT`。Gateway 对 HELLO 连线状态、心跳和断连 offline 写入的瞬时 BUSY 做短退避重试，只有认证/协议/会话失效才关闭连接或置 offline。
 
 ---
 
@@ -1414,7 +1414,7 @@ alert_notifications          # 通知发件箱
 alert_notification_attempts  # 每次发送尝试
 ```
 
-监控相关表为增量迁移（`schema_migrations` 版本 12 起；版本 23 创建原生指标表，版本 24 创建告警/通知表）。原生指标存储、1m/5m/1h 聚合、后台周期聚合/清理、gateway `NODE_METRICS` ingest 和查询 API 已接入；告警评估、通知发件箱和渠道 API 已接入。`monitoring_node_bindings` 为旧 Nocturne 绑定遗留表，不再参与新链路，物理删除由后续独立迁移决定。升级失败按本节迁移失败处理，回退恢复 Hub DB 备份。旧 Nocturne 历史不迁移、不回填。
+监控相关表为增量迁移（`schema_migrations` 版本 12 起；版本 23 创建原生指标表，版本 24 创建告警/通知表，版本 28 增加列表查询索引）。原生指标存储、1m/5m/1h 聚合、后台周期聚合/清理、gateway `NODE_METRICS` ingest 和查询 API 已接入；告警评估、通知发件箱和渠道 API 已接入。`monitoring_node_bindings` 为旧 Nocturne 绑定遗留表，不再参与新链路，物理删除由后续独立迁移决定。升级失败按本节迁移失败处理，回退恢复 Hub DB 备份。旧 Nocturne 历史不迁移、不回填。
 
 核心索引字段关系型。
 
@@ -1446,7 +1446,7 @@ Definition JSON
 
 迁移失败时 Hub 启动报错，不继续以半迁移状态运行。旧 Hub 不支持直接读取新库；回滚必须恢复 Hub DB 备份与旧二进制。
 
-连接层：SQLite 以 WAL、`_txlock=immediate`（写事务 BEGIN 阶段即取写锁）、`busy_timeout(5000)` 与外键约束打开，消除 WAL 下 deferred 事务升级写锁时的 `SQLITE_BUSY` 随机失败，并发写按序等待而非直接报错。
+连接层：SQLite 以 WAL、`_txlock=immediate`（写事务 BEGIN 阶段即取写锁）、`busy_timeout(15000)` 与外键约束打开，消除 WAL 下 deferred 事务升级写锁时的 `SQLITE_BUSY` 随机失败，并发写按序等待而非直接报错。
 
 存储层错误不回传客户端：SQLITE_BUSY/LOCKED 家族归一化为 503 `storage busy, please retry`，其余内部错误归一化为 500 `internal error`；驱动原文只写 error 级结构化日志。
 
@@ -1671,23 +1671,28 @@ Web 节点总览、历史、规则求值
 ```
 
 - Agent 声明 `node_metrics` 能力；Native 与 Docker Host Integration 支持，Docker 基础模式不声明。旧 Agent 不声明时页面显示不可用，规则不触发，不以 0 代替。
+- 补报缓冲为纯内存：默认 20 批、配置最大 60 批、硬上限 4MiB（序列化字节计费），任一上限先到即淘汰最旧并记录丢弃；不落盘、不建指标表。WebSocket 写成功或收到 `NODE_METRICS_ACK` 后才出队；旧 Hub 未声明 `node_metrics_ack` 能力时回退写成功即出队。ACK 超时/写失败保留批次并按最旧优先重发，Hub 主键 UPSERT 保证幂等。Agent WebSocket 发送队列 32 帧 + 1MiB 估算字节、读限制 2MiB；Hub 同步响应超过 2MiB 时返回明确错误而不是静默断链。
 - CPU：`cpu.usage` 及组成 `cpu.user`、`cpu.nice`、`cpu.system`、`cpu.idle`、`cpu.iowait`、`cpu.irq`、`cpu.softirq`、`cpu.steal`；维度 `cpu=all|<n>`，per-core 最多 32 核，`cpu=all` 始终上报。
 - 内存/Swap：`memory.usage`、`memory.total_bytes`、`memory.used_bytes`、`memory.available_bytes`、`memory.cached_bytes`、`memory.buffers_bytes`、`memory.free_bytes`（MemFree）；used 保持 total−available 的既有语义。Swap 为 `memory.swap_total_bytes/used_bytes/free_bytes/usage`。Swap 未启用时 0 是有效值。
 - 磁盘/Inode/I/O：`disk.usage`、`filesystem.total_bytes/used_bytes`、`filesystem.inodes_usage/used/free`、`disk.read_bps`、`disk.write_bps`、`disk.read_iops`、`disk.write_iops`；维度 `mount/device`。inventory.hostname 读取宿主 `/proc/sys/kernel/hostname`，不可用时未知，不以可配置节点名替代；文件系统 used 使用 Bfree，而既有 disk.usage 继续使用 Bavail；块设备分类从宿主 sysfs 采集并随 inventory 更新，不可确认时为 unknown。
 - 网络：`network.rx_bps/tx_bps`、`network.rx_errors/tx_errors`、`network.rx_dropped/tx_dropped`；维度 `interface`，速率按采样间隔换算为每秒值。
 - 系统：`system.uptime`、`system.processes`、`system.processes_running`、`system.temperature_c`、`system.fan_rpm`；无传感器或读取失败时输出缺失/无数据，不伪造 0。
 - 容器：`container.cpu.usage`、`container.memory.usage`、`container.network.rx_bps/tx_bps`，维度 `container` 和稳定 `container_id`，旧的 name-only 历史保留独立身份；自动探测 Docker/Podman socket（`/var/run/docker.sock`、`/run/docker.sock`、`/run/podman/podman.sock`、`/var/run/podman/podman.sock`），Host Integration 使用宿主根目录下的 socket。无 socket 或容器不可读时没有容器样本，不显示 0。
-- 采集上限：CPU 32 核、磁盘设备 32、网络接口 32、容器 100；容器额外枚举至 101（表示至少 101），同批同时间戳上报无维度 `container.collection.discovered_count/sampled_count/limit`。仅新鲜、对齐且有效的计数可判完整性；失败或旧 Agent 为未知。容器样本及计数同批入库，series 上限不变。
+- 采集上限：CPU 32 核、磁盘设备 32、网络接口 32、容器 32；容器额外枚举至 33（表示至少 33），同批同时间戳上报无维度 `container.collection.discovered_count/sampled_count/limit`。超过 16 个容器时完整扫描周期至少 60s，≤16 时至少 30s；两次扫描之间仍上报汇总。仅新鲜、对齐且有效的计数可判完整性；失败或旧 Agent 为未知。容器样本及计数同批入库，series 上限不变。
 - `quality=1` 为有效值，`quality=2` 为缺失且 `value=null`；真实 0 是有效样本，gap 不等于 0。
-- Hub 以 `node_id + metric + dimensions + timestamp` 幂等去重，`sequence` 用于排序和诊断；迟到/更正样本触发对应聚合桶重算。
+- Hub 以 `node_id + metric + dimensions + timestamp` 幂等去重，`sequence` 用于排序和诊断；迟到/更正样本触发对应聚合桶重算。聚合增量范围取「最后桶向前 10 桶」与「`now-1h` 迟到窗口」的并集，按 15 分钟分块提交事务；超过 1h 窗口的样本保留 raw 但不扩展 rollup 重算，并记录截断。连续断档继续由空桶/gap 表达。Hub 启动后首轮聚合延迟 30s，先允许 Agent HELLO/心跳完成。
 - 查询按范围选择最细可用 tier，返回 `state`、`tier`、`stepNs`、`points`、`gaps`；跨 tier 时允许 raw 精化边界。
+- overview 只查询页面渲染所需的 10 个 metric，latest 与采样周期推导窗口均限制为最近 15 分钟；结果按节点集合缓存 15s，raw 写入/清理 generation 变化立即失效。节点状态不进入缓存。
+- 新增单节点 `GET /api/monitoring/nodes/{id}/overview`、批量 `series/batch` 与 `history/batch`；旧 `series`/`metrics`/`latest`/`overview` 契约不变。series 目录缓存 60s，history 缓存 30s。
+- Hub API JSON 在客户端接受 gzip 时压缩（`Content-Encoding: gzip`、`Vary: Accept-Encoding`）；二进制/SSE/304 不压缩。静态资源运行时 gzip、可选预压缩 brotli；HTML `no-cache`，哈希资源一年 immutable，其余静态资源短缓存，ETag/Last-Modified 支持 304。
+- schema v28 增加 executions/file_transfers/audit_logs 的 `created_at` 查询索引；API >500ms 与原生指标 SQL >200ms 记录慢日志和计数，日志不包含查询值或敏感信息。
 - `node_metric` 规则从原生样本求值，保留新鲜度、gap、乱序/冲突中断、去重、冷却、失败暂停、验证和补偿语义。外部 HTTP(S)/TCP/ICMP 探测仍是独立监控对象。
 - Nocturne 后端、路由、配置和绑定已移除；`monitoring_node_bindings` 仅作为遗留表保留，不参与新链路。旧 Nocturne 历史不迁移、不回填、不展示。
 - `overview` 的告警数当前为占位 0，规则告警汇总未接入；不得把该字段写成已实现的告警统计。
 
 NodeSteer 不建设完整可观测性平台：不采集应用日志、链路追踪或任意自定义指标；数据库/消息队列适配器仍只保留 target kind 边界。
 
-当前 Agent 采集、`NODE_METRICS` 协议、能力声明、gateway ingest、v23 存储/聚合/后台清理、原生查询 API、原生规则和前端总览/历史均已接入；真实大规模压测、ACK/重传确认、overview N+1/索引/节点删除清理等 P3 和完整 E2E 仍在进行。
+当前 Agent 采集、`NODE_METRICS` 协议与 ACK、能力声明、gateway ingest、v23 存储/聚合/后台清理、原生查询 API、原生规则和前端总览/历史均已接入；真实大规模压测、overview N+1/索引/节点删除清理等 P3 和完整回归矩阵仍在进行。
 
 实现与验证进度见 `openspec/changes/unified-monitoring-automation/tasks.md`；该目标不改变本文件 §67 的核心架构不变量。
 

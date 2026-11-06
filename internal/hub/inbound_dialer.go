@@ -413,9 +413,10 @@ func (d *InboundDialer) dialOnce(ctx context.Context, node *models.Node) error {
 	}
 	hubHello := protocol.HubHelloPayload{
 		HelloAckPayload: protocol.HelloAckPayload{
-			Accepted: true,
-			NodeID:   node.ID,
-			AgentID:  node.AgentID,
+			Accepted:     true,
+			NodeID:       node.ID,
+			AgentID:      node.AgentID,
+			Capabilities: map[string]bool{protocol.CapabilityNodeMetricsAck: true},
 		},
 		HubID:      "nodesteer-hub",
 		HubVersion: "dev",

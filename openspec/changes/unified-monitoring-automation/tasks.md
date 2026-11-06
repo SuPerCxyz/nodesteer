@@ -6,7 +6,7 @@
 ## 2. Agent 采集与协议
 
 - [x] 2.1 实现 CPU、内存、负载、磁盘、网络采集；处理缺失、真实零值、伪文件系统、只读挂载、网络计数器回绕和挂载点上限。
-- [x] 2.2 默认 30s、运行时限制 5s–300s；单批最多 500 样本；断线有界缓冲（10 批）并按序重传，溢出丢弃最旧批次且保留缺口可见。
+- [x] 2.2 默认 30s、运行时限制 5s–300s；单批最多 500 样本；断线内存补报默认 20 批、最大 60 批、4MiB 硬上限（见 `harden-monitoring-transport-memory`），溢出丢弃最旧批次且保留缺口可见。
 - [x] 2.3 声明 `node_metrics` 能力；Native 与 Docker Host Integration 支持，Docker 基础模式不声明。
 - [x] 2.4 定义 `NODE_METRICS` 批量协议（node_id、sequence、timestamp、metric、dimensions、value、quality）及质量常量。
 - [x] 2.5 旧 Agent 无 `node_metrics` 时：gateway 拒绝 `NODE_METRICS` ingest；查询无样本显示 `no_data`，规则不触发，不以 0 代替。
@@ -75,7 +75,7 @@
 
 ## 当前实现与验证记录
 
-- Agent：`internal/agent/metrics.go` 采集 CPU/内存/负载/磁盘/网络；`internal/agent/metrics_report.go` 负责 30s 默认周期、5s–300s 限制、500/批、10 批有界队列和断线重传；`internal/protocol/protocol.go` 定义 `NODE_METRICS`；`internal/agent/agent.go` 声明 `node_metrics`。
+- Agent：`internal/agent/metrics.go` 采集 CPU/内存/负载/磁盘/网络；`internal/agent/metrics_report.go` 负责 30s 默认周期、5s–300s 限制、500/批、20/60 批与 4MiB 内存补报队列和断线重传；`internal/protocol/protocol.go` 定义 `NODE_METRICS`；`internal/agent/agent.go` 声明 `node_metrics`。
 - Hub：schema v23 创建 `node_metric_samples` / `node_metric_rollups`；`internal/store/native_metrics.go` 实现 raw→1m→5m→1h 聚合、保留清理、序列/最新/范围查询；`internal/hubserver/native_metrics_maintenance.go` 每分钟执行聚合/清理；`internal/hub/gateway.go` 接入 `NODE_METRICS`；`internal/hubserver/native_metric_probe.go` 为 `node_metric` 规则提供原生样本。
 - API/Web：`internal/hub/api/monitoring_native.go` 提供 `/api/monitoring/nodes/overview|series|metrics|latest`，admin-only，`metrics` 强制 `series`；前端总览遍历 NodeSteer 节点，历史支持 1h/6h/24h/7d（默认 1h），节点操作 `/agents/{id}`；Nocturne 绑定/自动匹配 UI 已删除。
 - Nocturne：后端、路由、配置和绑定已移除；v25 迁移已 `DROP TABLE monitoring_node_bindings` 并创建 rollup 索引；旧历史不迁移、不回填、不展示。升级前需备份 Hub DB（旧绑定元数据不自动备份）。

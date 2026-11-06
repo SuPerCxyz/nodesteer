@@ -49,8 +49,8 @@ func TestMigrationV25DropsLegacyBindingsAndAddsRollupIndex(t *testing.T) {
 	if err := db.QueryRow(`SELECT MAX(version) FROM schema_migrations`).Scan(&version); err != nil {
 		t.Fatalf("read schema version: %v", err)
 	}
-	if version != 27 {
-		t.Fatalf("schema version = %d, want 27", version)
+	if version != 28 {
+		t.Fatalf("schema version = %d, want 28", version)
 	}
 	var legacyTable int
 	if err := db.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'monitoring_node_bindings'`).Scan(&legacyTable); err != nil {

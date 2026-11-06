@@ -28,27 +28,29 @@ import (
 
 // Config Hub 配置
 type Config struct {
-	WebAddr                string
-	GatewayAddr            string
-	GatewayBaseURL         string
-	WebTLSCert             string
-	WebTLSKey              string
-	GatewayTLSCert         string
-	GatewayTLSKey          string
-	RegistrationToken      string
-	DataDir                string
-	ArtifactDir            string
-	AgentBinaryAMD64Path   string
-	AgentBinaryARM64Path   string
-	AgentBinaryPayloads    map[string][]byte
-	BaseURL                string
-	HeartbeatTimeout       time.Duration
-	AdminUsername          string
-	AdminPassword          string
-	SessionTTL             time.Duration
-	RevisionCheckSec       int
-	ChangelogWindow        int64
-	MaxFileTransferBytes   int64
+	WebAddr              string
+	GatewayAddr          string
+	GatewayBaseURL       string
+	WebTLSCert           string
+	WebTLSKey            string
+	GatewayTLSCert       string
+	GatewayTLSKey        string
+	RegistrationToken    string
+	DataDir              string
+	ArtifactDir          string
+	AgentBinaryAMD64Path string
+	AgentBinaryARM64Path string
+	AgentBinaryPayloads  map[string][]byte
+	BaseURL              string
+	HeartbeatTimeout     time.Duration
+	AdminUsername        string
+	AdminPassword        string
+	SessionTTL           time.Duration
+	RevisionCheckSec     int
+	ChangelogWindow      int64
+	MaxFileTransferBytes int64
+	// SQLiteBusyTimeout 是 Hub SQLite busy_timeout；零值默认 15s。
+	SQLiteBusyTimeout      time.Duration
 	MonitoringAllowedCIDRs []string
 	MonitoringWorkers      int
 	// 入站连接（Hub 主动拨号）配置。默认关闭；启用后未提供 CA/客户端证书路径
@@ -133,7 +135,9 @@ func New(cfg Config, logger *slog.Logger) (*Hub, error) {
 		logger.Warn("single-port gateway mode: gateway TLS config is unused, terminate HTTPS at the reverse proxy",
 			"gateway_tls_cert", cfg.GatewayTLSCert, "addr", cfg.WebAddr)
 	}
-	st, err := store.OpenSQLite(cfg.DataDir + "/hub.db")
+	st, err := store.OpenSQLiteWithOptions(cfg.DataDir+"/hub.db", store.SQLiteOptions{
+		BusyTimeout: cfg.SQLiteBusyTimeout,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -326,7 +330,7 @@ func (h *Hub) webMux() http.Handler {
 	if h.webFS == nil {
 		return h.api.Routes()
 	}
-	fsHandler := http.FileServer(http.FS(h.webFS))
+	fsHandler := newStaticHandler(h.webFS)
 	mux := http.NewServeMux()
 	// API 由 api.Server.Routes 处理，前端静态文件用独立 mux 包装
 	root := h.api.Routes()
@@ -335,7 +339,7 @@ func (h *Hub) webMux() http.Handler {
 	mux.Handle("/healthz", root)
 	mux.Handle("/readyz", root)
 	mux.Handle("/metrics", root)
-	mux.Handle("/", spaHandler(h.webFS, fsHandler))
+	mux.Handle("/", fsHandler)
 	return mux
 }
 
@@ -479,7 +483,7 @@ func (h *Hub) Start() error {
 	go func() { defer close(h.monitorDone); h.monitoring.Run(h.ctx) }()
 	// 原生指标聚合/清理：仅当存储实现 NativeMetricStore 时启动；错误只记日志。
 	if nativeStore, ok := h.store.(store.NativeMetricStore); ok {
-		h.metricDone = startNativeMetricMaintenance(h.ctx, nativeMetricMaintenanceInterval,
+		h.metricDone = startNativeMetricMaintenanceWithDelay(h.ctx, nativeMetricMaintenanceInterval, nativeMetricInitialDelay,
 			nativeStore.AggregateNodeMetrics, nativeStore.PruneNodeMetrics, h.logger)
 	}
 	if h.alertEvaluator != nil {
@@ -630,23 +634,4 @@ func loadAgentBinaryForArch(cfg Config, arch string) ([]byte, string, error) {
 	}
 	sum := sha256.Sum256(data)
 	return data, hex.EncodeToString(sum[:]), nil
-}
-
-// spaHandler SPA 回退：非 /api 路径若文件不存在则返回 index.html
-func spaHandler(fsys fs.FS, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := strings.TrimPrefix(r.URL.Path, "/")
-		if path != "" && !strings.Contains(path, ".") {
-			if _, err := fs.Stat(fsys, path); err != nil {
-				// 回退到 index.html
-				data, err := fs.ReadFile(fsys, "index.html")
-				if err == nil {
-					w.Header().Set("Content-Type", "text/html; charset=utf-8")
-					w.Write(data)
-					return
-				}
-			}
-		}
-		next.ServeHTTP(w, r)
-	})
 }

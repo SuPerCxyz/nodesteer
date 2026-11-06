@@ -43,7 +43,19 @@ var migrations = []migration{
 	{25, "native_metrics_rollup_index_and_legacy_binding_cleanup", schemaV25},
 	{26, "node_display_name", schemaV26},
 	{27, "agent_inbound_connection", schemaV27},
+	{28, "query_performance_indexes", schemaV28},
 }
+
+// schemaV28 列表查询索引：执行、文件传输、审计按 created_at 倒序分页；
+// 只创建索引，不改表、不回填数据。
+const schemaV28 = `
+CREATE INDEX IF NOT EXISTS idx_executions_created_at ON executions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_executions_node_created_at ON executions(node_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_executions_status_created_at ON executions(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_file_transfers_created_at ON file_transfers(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_file_transfers_source_created_at ON file_transfers(source_node_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
+`
 
 // schemaV27 Hub 主动拨号入站连接所需的节点配置与诊断列。
 //

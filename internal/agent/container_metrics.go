@@ -17,7 +17,9 @@ import (
 )
 
 const (
-	maxContainerMetrics     = 100
+	// maxContainerMetrics 是单轮容器采集上限；高容器节点降低扫描频率而不是无限增长。
+	maxContainerMetrics     = 32
+	containerHighWatermark  = 16
 	containerCollectTimeout = 5 * time.Second
 	containerStatsTimeout   = 2 * time.Second
 	containerProbeTimeout   = time.Second
@@ -71,6 +73,10 @@ type dockerStats struct {
 // containerSamples 通过 Docker/Podman 兼容的 Unix socket API 采集运行中容器指标。
 // socket 不存在、权限不足或 API 不可用时静默跳过，不伪造 0 值。
 func (c *metricsCollector) containerSamples(now time.Time) []protocol.NodeMetricSample {
+	if c.shouldSkipContainerScan(now) {
+		// 高容器节点在两次完整扫描之间保留汇总能力，但不重复枚举/读取 stats。
+		return containerCollectionSamples(now, c.containerLastSeen, c.containerLastSampled)
+	}
 	socket := c.firstContainerSocket()
 	if socket == "" {
 		return c.missingContainerCollection(now)
@@ -83,6 +89,7 @@ func (c *metricsCollector) containerSamples(now time.Time) []protocol.NodeMetric
 
 	var containers []dockerContainer
 	if err := dockerGet(ctx, client, "/containers/json?limit="+fmt.Sprint(maxContainerMetrics+1), &containers); err != nil {
+		c.containerLastScan = now
 		return c.missingContainerCollection(now)
 	}
 	// 首次成功访问 Docker/Podman API 即可确认容器指标可用；空容器列表也算可用。
@@ -100,6 +107,8 @@ func (c *metricsCollector) containerSamples(now time.Time) []protocol.NodeMetric
 	if discovered > maxContainerMetrics+1 {
 		discovered = maxContainerMetrics + 1
 	}
+	c.containerLastScan = now
+	c.containerLastSeen = discovered
 	if len(containers) > maxContainerMetrics {
 		containers = containers[:maxContainerMetrics]
 	}
@@ -107,6 +116,7 @@ func (c *metricsCollector) containerSamples(now time.Time) []protocol.NodeMetric
 		c.containerNetPrev = map[string]containerNetCounters{}
 		c.containerNetPrevAt = now
 		c.containerNetInit = false
+		c.containerLastSampled = 0
 		return containerCollectionSamples(now, 0, 0)
 	}
 
@@ -158,7 +168,26 @@ func (c *metricsCollector) containerSamples(now time.Time) []protocol.NodeMetric
 	c.containerNetPrev = currentNet
 	c.containerNetPrevAt = now
 	c.containerNetInit = true
+	c.containerLastSampled = sampled
 	return append(samples, containerCollectionSamples(now, discovered, sampled)...)
+}
+
+// shouldSkipContainerScan 在两次完整扫描之间返回 true。
+// 超过 16 个容器时周期至少 60s；否则至少 30s。测试将 interval 置 0 关闭节流。
+func (c *metricsCollector) shouldSkipContainerScan(now time.Time) bool {
+	if c.containerScanInterval <= 0 || c.containerLastScan.IsZero() {
+		return false
+	}
+	interval := c.containerScanInterval
+	if interval < 30*time.Second {
+		interval = 30 * time.Second
+	}
+	if c.containerLastSeen > containerHighWatermark {
+		if interval < 60*time.Second {
+			interval = 60 * time.Second
+		}
+	}
+	return now.Sub(c.containerLastScan) < interval
 }
 
 func containerCollectionSamples(now time.Time, discovered, sampled int) []protocol.NodeMetricSample {

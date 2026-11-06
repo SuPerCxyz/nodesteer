@@ -81,6 +81,10 @@ type Server struct {
 	inboundDialer inboundDialerRuntime
 	// inboundBundle 负责入站 bundle 签发/轮换。
 	inboundBundle *hub.InboundBundleService
+
+	overviewCache *overviewMetricsCache
+	seriesCache   *seriesCache
+	historyCache  *historyCache
 }
 
 // SetMetrics 注入指标收集器
@@ -166,6 +170,9 @@ func New(st store.Store, am *auth.Manager, nm *hub.NodeManager, sm *hub.ScriptMa
 		agentBinaryData:  map[string][]byte{},
 		loginFails:       loginFailTracker{fails: map[string]*loginFailEntry{}},
 		inboundPolicy:    inbound.DefaultDialPolicy(),
+		overviewCache:    newOverviewMetricsCache(),
+		seriesCache:      newSeriesCache(),
+		historyCache:     newHistoryCache(),
 	}
 }
 
@@ -272,7 +279,7 @@ func (s *Server) Routes() http.Handler {
 	})
 	mux.HandleFunc("/metrics", s.withAuth(s.handleMetrics, "read"))
 
-	return s.withCORS(mux)
+	return s.withRequestInstrumentation(withGzipJSON(s.withCORS(mux)))
 }
 
 // ---------- 中间件 ----------

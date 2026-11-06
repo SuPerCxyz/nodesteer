@@ -444,8 +444,8 @@ func (m *Manager) handleInboundControl(ctx context.Context, l *InboundListener, 
 	if err := session.sendSync(handshakeCtx, protocol.NewEnvelope(protocol.MsgHello, "", helloPayload)); err != nil {
 		return
 	}
-	// 握手完成后放宽到与出站 Gateway 一致的控制消息上限。
-	c.SetReadLimit(8 << 20)
+	// 握手完成后使用与其他控制会话一致的 2MiB 上限。
+	c.SetReadLimit(agentControlReadLimit)
 	// HUB_HELLO 之后的 HELLO 往返受同一握手总时限约束。
 	timer := time.AfterFunc(l.cfg.HandshakeTimeout, func() {
 		m.mu.Lock()

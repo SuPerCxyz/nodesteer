@@ -56,6 +56,7 @@ const (
 	CapScript            = "script"
 	CapMonitorProbe      = "monitor_probe"
 	CapNodeMetrics       = "node_metrics"
+	CapNodeMetricsAck    = "node_metrics_ack"
 	CapContainerMetrics  = "container_metrics"
 	CapLocalScheduler    = "local_scheduler"
 	CapOfflineExecution  = "offline_execution"

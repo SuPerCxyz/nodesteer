@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"syscall"
@@ -50,6 +51,8 @@ type Config struct {
 	MetricsEnabled bool `yaml:"metrics_enabled"`
 	// MetricsInterval 采集周期，默认 30s，运行时限制在 5s~300s。
 	MetricsInterval time.Duration `yaml:"metrics_interval"`
+	// MetricsBufferBatches 断连补报批次数，默认 20，最大 60。
+	MetricsBufferBatches int `yaml:"metrics_buffer_batches"`
 }
 
 // InboundConfig Agent 入站 listener YAML 配置。
@@ -73,14 +76,15 @@ type InboundConfig struct {
 func DefaultConfig() Config {
 	return Config{
 		// DeploymentMode 留空：未显式配置时由 resolveDeploymentMode 自动探测（显式配置优先）
-		DataDir:          "/var/lib/nodesteer",
-		ConnectionMode:   "auto",
-		HeartbeatSec:     30,
-		RevisionCheckSec: 45,
-		MaxLogBytes:      1 << 20,
-		HostRoot:         "/host",
-		MetricsEnabled:   true,
-		MetricsInterval:  30 * time.Second,
+		DataDir:              "/var/lib/nodesteer",
+		ConnectionMode:       "auto",
+		HeartbeatSec:         30,
+		RevisionCheckSec:     45,
+		MaxLogBytes:          1 << 20,
+		HostRoot:             "/host",
+		MetricsEnabled:       true,
+		MetricsInterval:      30 * time.Second,
+		MetricsBufferBatches: 20,
 		Inbound: InboundConfig{
 			ListenAddr:       "0.0.0.0:18444",
 			MaxConnections:   8,
@@ -89,7 +93,20 @@ func DefaultConfig() Config {
 	}
 }
 
+// applyRuntimeMemoryDefaults 为未显式配置的运行环境提供小节点默认值。
+// 环境变量优先（systemd/docker 已注入），因此仍可覆盖；GODEBUG=disablethp
+// 必须由进程启动前的 Environment 提供，代码运行期无法修改。
+func applyRuntimeMemoryDefaults() {
+	if os.Getenv("GOGC") == "" {
+		debug.SetGCPercent(50)
+	}
+	if os.Getenv("GOMEMLIMIT") == "" {
+		debug.SetMemoryLimit(8 << 20)
+	}
+}
+
 func main() {
+	applyRuntimeMemoryDefaults()
 	var configPath string
 	flag.StringVar(&configPath, "config", "", "config file path (yaml)")
 	flag.Parse()
@@ -163,6 +180,7 @@ func main() {
 		MaxLogBytes:                  cfg.MaxLogBytes,
 		MetricsEnabled:               cfg.MetricsEnabled,
 		MetricsInterval:              cfg.MetricsInterval,
+		MetricsBufferBatches:         cfg.MetricsBufferBatches,
 	}, logger)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "init agent: %v\n", err)
@@ -245,6 +263,11 @@ func applyEnv(cfg *Config) error {
 	if v := os.Getenv("NODESTEER_METRICS_INTERVAL"); v != "" {
 		if interval, err := time.ParseDuration(v); err == nil {
 			cfg.MetricsInterval = interval
+		}
+	}
+	if v := os.Getenv("NODESTEER_METRICS_BUFFER_BATCHES"); v != "" {
+		if batches, err := strconv.Atoi(v); err == nil {
+			cfg.MetricsBufferBatches = batches
 		}
 	}
 	return applyInboundEnv(cfg)

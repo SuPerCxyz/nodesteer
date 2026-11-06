@@ -42,6 +42,7 @@ type Config struct {
 	RevisionCheckSec       int           `yaml:"revision_check_sec"`
 	ChangelogWindow        int64         `yaml:"changelog_window"`
 	HeartbeatTimeout       time.Duration `yaml:"heartbeat_timeout"`
+	SQLiteBusyTimeout      time.Duration `yaml:"sqlite_busy_timeout"`
 	MaxFileTransferBytes   int64         `yaml:"max_file_transfer_bytes"`
 	MonitoringAllowedCIDRs []string      `yaml:"monitoring_allowed_cidrs"`
 	MonitoringWorkers      int           `yaml:"monitoring_workers"`
@@ -79,6 +80,7 @@ func DefaultConfig() Config {
 		RevisionCheckSec:     30,
 		ChangelogWindow:      5000,
 		HeartbeatTimeout:     90 * time.Second,
+		SQLiteBusyTimeout:    15 * time.Second,
 		MaxFileTransferBytes: 10 << 30,
 		// 入站连接默认关闭；只允许默认端口 18444，保留 RFC1918。
 		InboundEnabled:         false,
@@ -174,6 +176,7 @@ func main() {
 		RevisionCheckSec:       cfg.RevisionCheckSec,
 		ChangelogWindow:        cfg.ChangelogWindow,
 		MaxFileTransferBytes:   cfg.MaxFileTransferBytes,
+		SQLiteBusyTimeout:      cfg.SQLiteBusyTimeout,
 		MonitoringAllowedCIDRs: cfg.MonitoringAllowedCIDRs,
 		MonitoringWorkers:      cfg.MonitoringWorkers,
 		InboundEnabled:         cfg.InboundEnabled,
@@ -246,6 +249,11 @@ func applyEnv(cfg *Config) error {
 	}
 	if v := os.Getenv("NODESTEER_GATEWAY_BASE_URL"); v != "" {
 		cfg.GatewayBaseURL = v
+	}
+	if v := os.Getenv("NODESTEER_SQLITE_BUSY_TIMEOUT"); v != "" {
+		if timeout, err := time.ParseDuration(v); err == nil && timeout > 0 {
+			cfg.SQLiteBusyTimeout = timeout
+		}
 	}
 	if v := os.Getenv("NODESTEER_WEB_TLS_CERT"); v != "" {
 		cfg.WebTLSCert = v

@@ -7,6 +7,32 @@ import (
 	"time"
 )
 
+func TestSQLiteBusyTimeoutDefaultAndOverride(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		opts SQLiteOptions
+		want int
+	}{
+		{name: "default", opts: SQLiteOptions{}, want: 15000},
+		{name: "override", opts: SQLiteOptions{BusyTimeout: 3 * time.Second}, want: 3000},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			st, err := OpenSQLiteWithOptions(filepath.Join(t.TempDir(), "hub.db"), tc.opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer st.Close()
+			var got int
+			if err := st.DB().QueryRow(`PRAGMA busy_timeout`).Scan(&got); err != nil {
+				t.Fatal(err)
+			}
+			if got != tc.want {
+				t.Fatalf("busy_timeout = %d, want %d", got, tc.want)
+			}
+		})
+	}
+}
+
 // TestWriteTxWaitsForBusyTimeout 核验 DSN 修复的两个要点：
 //  1. _txlock=immediate：WithTx 在 BEGIN 即取写锁，读→写不再走 WAL 快照升级；
 //  2. busy_timeout 生效：另一个连接持写锁时，写事务等待锁释放而不是立即
