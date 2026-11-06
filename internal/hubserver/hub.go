@@ -49,10 +49,16 @@ type Config struct {
 	RevisionCheckSec     int
 	ChangelogWindow      int64
 	MaxFileTransferBytes int64
-	// SQLiteBusyTimeout 是 Hub SQLite busy_timeout；零值默认 15s。
-	SQLiteBusyTimeout      time.Duration
-	MonitoringAllowedCIDRs []string
-	MonitoringWorkers      int
+	// SQLiteBusyTimeout 是 Hub SQLite busy_timeout；零值默认 5s。
+	SQLiteBusyTimeout time.Duration
+	// NativeMetricsInterval 是原生指标聚合/清理周期；零值默认 5m。
+	NativeMetricsInterval time.Duration
+	// NativeMetricsLateWindow 是迟到重算窗口；零值默认 15m。
+	NativeMetricsLateWindow time.Duration
+	// NativeMetricsAggregateBudget 是每轮聚合时间预算；零值默认 10s。
+	NativeMetricsAggregateBudget time.Duration
+	MonitoringAllowedCIDRs       []string
+	MonitoringWorkers            int
 	// 入站连接（Hub 主动拨号）配置。默认关闭；启用后未提供 CA/客户端证书路径
 	// 时在 DataDir/inbound 下自动生成（私钥 0600）。
 	InboundEnabled         bool
@@ -483,8 +489,32 @@ func (h *Hub) Start() error {
 	go func() { defer close(h.monitorDone); h.monitoring.Run(h.ctx) }()
 	// 原生指标聚合/清理：仅当存储实现 NativeMetricStore 时启动；错误只记日志。
 	if nativeStore, ok := h.store.(store.NativeMetricStore); ok {
-		h.metricDone = startNativeMetricMaintenanceWithDelay(h.ctx, nativeMetricMaintenanceInterval, nativeMetricInitialDelay,
-			nativeStore.AggregateNodeMetrics, nativeStore.PruneNodeMetrics, h.logger)
+		if tuner, ok := h.store.(store.NativeMetricTuner); ok {
+			tuner.SetNativeLateWindow(h.cfg.NativeMetricsLateWindow)
+			tuner.SetNativeAggregateBudget(h.cfg.NativeMetricsAggregateBudget)
+		}
+		interval := h.cfg.NativeMetricsInterval
+		if interval <= 0 {
+			interval = nativeMetricMaintenanceInterval
+		}
+		aggregate := nativeStore.AggregateNodeMetrics
+		if reporter, ok := h.store.(store.NativeAggregateReporter); ok {
+			aggregate = func(ctx context.Context, now time.Time) error {
+				err := nativeStore.AggregateNodeMetrics(ctx, now)
+				stats := reporter.LastNativeAggregateStats()
+				if h.logger != nil {
+					h.logger.Info("native metric aggregate round",
+						"duration", stats.Duration,
+						"series", stats.Series,
+						"transactions", stats.Transactions,
+						"busy_errors", stats.BusyErrors,
+						"truncated", stats.Truncated)
+				}
+				return err
+			}
+		}
+		h.metricDone = startNativeMetricMaintenanceWithDelay(h.ctx, interval, nativeMetricInitialDelay,
+			aggregate, nativeStore.PruneNodeMetrics, h.logger)
 	}
 	if h.alertEvaluator != nil {
 		h.alertDone = startAlertEvaluation(h.ctx, h.alertEvaluator)

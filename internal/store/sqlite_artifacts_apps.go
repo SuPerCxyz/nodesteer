@@ -24,7 +24,7 @@ func (s *SQLiteStore) CreateArtifact(ctx context.Context, a *models.Artifact) er
 }
 
 func (s *SQLiteStore) GetArtifact(ctx context.Context, id string) (*models.Artifact, error) {
-	row := s.db.QueryRowContext(ctx, `
+	row := s.queryer(ctx).QueryRowContext(ctx, `
 		SELECT id, name, version, architecture, filename, size, sha256, storage_path, uploaded_at
 		FROM artifacts WHERE id = ?`, id)
 	var a models.Artifact
@@ -38,7 +38,7 @@ func (s *SQLiteStore) GetArtifact(ctx context.Context, id string) (*models.Artif
 }
 
 func (s *SQLiteStore) ListArtifacts(ctx context.Context) ([]*models.Artifact, error) {
-	rows, err := s.db.QueryContext(ctx, `
+	rows, err := s.queryer(ctx).QueryContext(ctx, `
 		SELECT id, name, version, architecture, filename, size, sha256, storage_path, uploaded_at
 		FROM artifacts ORDER BY uploaded_at DESC`)
 	if err != nil {
@@ -186,7 +186,7 @@ func (s *SQLiteStore) ListApplications(ctx context.Context) ([]*models.Applicati
 
 // ListApplicationRevisions 应用历史版本
 func (s *SQLiteStore) ListApplicationRevisions(ctx context.Context, id string) ([]*ApplicationRevisionEntry, error) {
-	rows, err := s.db.QueryContext(ctx,
+	rows, err := s.queryer(ctx).QueryContext(ctx,
 		`SELECT revision, definition_json, changed_at FROM application_revisions WHERE id = ? ORDER BY revision DESC`, id)
 	if err != nil {
 		return nil, err
@@ -288,7 +288,7 @@ func (s *SQLiteStore) DeleteApplicationNodeState(ctx context.Context, appID, nod
 
 // ListApplicationNodeStates 查询应用的节点状态。
 func (s *SQLiteStore) ListApplicationNodeStates(ctx context.Context, appID string) ([]*models.ApplicationNodeState, error) {
-	rows, err := s.db.QueryContext(ctx, `
+	rows, err := s.queryer(ctx).QueryContext(ctx, `
 		SELECT application_id, node_id, version, operation, health, error, updated_at
 		FROM application_node_state WHERE application_id = ? ORDER BY node_id`, appID)
 	if err != nil {

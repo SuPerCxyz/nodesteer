@@ -141,12 +141,60 @@ func TestGatewayDisconnectRetriesBusyWithoutDroppingSessionSemantics(t *testing.
 func TestRetryBusyDoesNotRetryNonBusy(t *testing.T) {
 	g := &Gateway{logger: slog.New(slog.DiscardHandler)}
 	calls := 0
-	err := g.retryBusy(context.Background(), "test", func() error {
+	err := g.retryBusy(context.Background(), "test", func(context.Context) error {
 		calls++
 		return errors.New("invalid credential")
 	})
 	if err == nil || calls != 1 {
 		t.Fatalf("calls = %d err = %v, want single non-busy failure", calls, err)
+	}
+}
+
+func TestBusyRetryBudgetBelowAgentTimeout(t *testing.T) {
+	if busyRetryBudget >= 10*time.Second {
+		t.Fatalf("busyRetryBudget = %v, want < 10s", busyRetryBudget)
+	}
+}
+
+func TestRetryBusyStopsAtBudget(t *testing.T) {
+	oldBudget := busyRetryBudget
+	busyRetryBudget = 300 * time.Millisecond
+	defer func() { busyRetryBudget = oldBudget }()
+	g := &Gateway{logger: slog.New(slog.DiscardHandler)}
+	started := time.Now()
+	err := g.retryBusy(context.Background(), "test", func(ctx context.Context) error {
+		<-ctx.Done()
+		return errors.New("database is locked (5) (SQLITE_BUSY)")
+	})
+	if err == nil {
+		t.Fatal("expected busy error")
+	}
+	if elapsed := time.Since(started); elapsed > 2*time.Second {
+		t.Fatalf("retryBusy took %v, want bounded by budget", elapsed)
+	}
+}
+
+func TestRetryBusyStopsWhenSessionCloses(t *testing.T) {
+	conn := &wsConn{done: make(chan struct{})}
+	ctx, cancel := conn.sessionContext(context.Background())
+	defer cancel()
+	started := time.Now()
+	done := make(chan error, 1)
+	go func() {
+		done <- (&Gateway{logger: slog.New(slog.DiscardHandler)}).retryBusy(ctx, "test", func(ctx context.Context) error {
+			<-ctx.Done()
+			return errors.New("database is locked (5) (SQLITE_BUSY)")
+		})
+	}()
+	time.Sleep(20 * time.Millisecond)
+	close(conn.done)
+	select {
+	case <-done:
+		if elapsed := time.Since(started); elapsed > time.Second {
+			t.Fatalf("retryBusy did not stop promptly on conn.done: %v", elapsed)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("retryBusy blocked after conn.done")
 	}
 }
 

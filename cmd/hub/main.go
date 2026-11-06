@@ -17,35 +17,39 @@ import (
 	"github.com/SuPerCxyz/nodesteer/internal/hub/auth"
 	"github.com/SuPerCxyz/nodesteer/internal/hubserver"
 	"github.com/SuPerCxyz/nodesteer/internal/inbound"
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 	"github.com/SuPerCxyz/nodesteer/web"
 	"gopkg.in/yaml.v3"
 )
 
 // Config 命令行配置
 type Config struct {
-	WebAddr                string        `yaml:"web_addr"`
-	GatewayAddr            string        `yaml:"gateway_addr"`
-	GatewayBaseURL         string        `yaml:"gateway_base_url"`
-	WebTLSCert             string        `yaml:"web_tls_cert"`
-	WebTLSKey              string        `yaml:"web_tls_key"`
-	GatewayTLSCert         string        `yaml:"gateway_tls_cert"`
-	GatewayTLSKey          string        `yaml:"gateway_tls_key"`
-	RegistrationToken      string        `yaml:"registration_token"`
-	DataDir                string        `yaml:"data_dir"`
-	ArtifactDir            string        `yaml:"artifact_dir"`
-	AgentBinaryAMD64Path   string        `yaml:"agent_binary_amd64_path"`
-	AgentBinaryARM64Path   string        `yaml:"agent_binary_arm64_path"`
-	BaseURL                string        `yaml:"base_url"`
-	AdminUsername          string        `yaml:"admin_username"`
-	AdminPassword          string        `yaml:"admin_password"`
-	SessionTTL             time.Duration `yaml:"session_ttl"`
-	RevisionCheckSec       int           `yaml:"revision_check_sec"`
-	ChangelogWindow        int64         `yaml:"changelog_window"`
-	HeartbeatTimeout       time.Duration `yaml:"heartbeat_timeout"`
-	SQLiteBusyTimeout      time.Duration `yaml:"sqlite_busy_timeout"`
-	MaxFileTransferBytes   int64         `yaml:"max_file_transfer_bytes"`
-	MonitoringAllowedCIDRs []string      `yaml:"monitoring_allowed_cidrs"`
-	MonitoringWorkers      int           `yaml:"monitoring_workers"`
+	WebAddr                      string        `yaml:"web_addr"`
+	GatewayAddr                  string        `yaml:"gateway_addr"`
+	GatewayBaseURL               string        `yaml:"gateway_base_url"`
+	WebTLSCert                   string        `yaml:"web_tls_cert"`
+	WebTLSKey                    string        `yaml:"web_tls_key"`
+	GatewayTLSCert               string        `yaml:"gateway_tls_cert"`
+	GatewayTLSKey                string        `yaml:"gateway_tls_key"`
+	RegistrationToken            string        `yaml:"registration_token"`
+	DataDir                      string        `yaml:"data_dir"`
+	ArtifactDir                  string        `yaml:"artifact_dir"`
+	AgentBinaryAMD64Path         string        `yaml:"agent_binary_amd64_path"`
+	AgentBinaryARM64Path         string        `yaml:"agent_binary_arm64_path"`
+	BaseURL                      string        `yaml:"base_url"`
+	AdminUsername                string        `yaml:"admin_username"`
+	AdminPassword                string        `yaml:"admin_password"`
+	SessionTTL                   time.Duration `yaml:"session_ttl"`
+	RevisionCheckSec             int           `yaml:"revision_check_sec"`
+	ChangelogWindow              int64         `yaml:"changelog_window"`
+	HeartbeatTimeout             time.Duration `yaml:"heartbeat_timeout"`
+	SQLiteBusyTimeout            time.Duration `yaml:"sqlite_busy_timeout"`
+	NativeMetricsInterval        time.Duration `yaml:"native_metrics_interval"`
+	NativeMetricsLateWindow      time.Duration `yaml:"native_metrics_late_window"`
+	NativeMetricsAggregateBudget time.Duration `yaml:"native_metrics_aggregate_budget"`
+	MaxFileTransferBytes         int64         `yaml:"max_file_transfer_bytes"`
+	MonitoringAllowedCIDRs       []string      `yaml:"monitoring_allowed_cidrs"`
+	MonitoringWorkers            int           `yaml:"monitoring_workers"`
 	// 入站连接（Hub 主动拨号）配置；默认关闭。
 	InboundEnabled         bool            `yaml:"inbound_enabled"`
 	InboundCAFile          string          `yaml:"inbound_ca_file"`
@@ -67,21 +71,24 @@ type Config struct {
 // DefaultConfig 默认配置
 func DefaultConfig() Config {
 	return Config{
-		WebAddr:              ":8080",
-		GatewayAddr:          ":8443",
-		GatewayBaseURL:       "",
-		DataDir:              "/var/lib/nodesteer-hub",
-		ArtifactDir:          "/var/lib/nodesteer-hub/artifacts",
-		AgentBinaryAMD64Path: "/usr/local/bin/nodesteer-agent",
-		BaseURL:              "http://localhost:8080",
-		AdminUsername:        "admin",
-		AdminPassword:        "",
-		SessionTTL:           24 * time.Hour,
-		RevisionCheckSec:     30,
-		ChangelogWindow:      5000,
-		HeartbeatTimeout:     90 * time.Second,
-		SQLiteBusyTimeout:    15 * time.Second,
-		MaxFileTransferBytes: 10 << 30,
+		WebAddr:                      ":8080",
+		GatewayAddr:                  ":8443",
+		GatewayBaseURL:               "",
+		DataDir:                      "/var/lib/nodesteer-hub",
+		ArtifactDir:                  "/var/lib/nodesteer-hub/artifacts",
+		AgentBinaryAMD64Path:         "/usr/local/bin/nodesteer-agent",
+		BaseURL:                      "http://localhost:8080",
+		AdminUsername:                "admin",
+		AdminPassword:                "",
+		SessionTTL:                   24 * time.Hour,
+		RevisionCheckSec:             30,
+		ChangelogWindow:              5000,
+		HeartbeatTimeout:             90 * time.Second,
+		SQLiteBusyTimeout:            5 * time.Second,
+		NativeMetricsInterval:        5 * time.Minute,
+		NativeMetricsLateWindow:      15 * time.Minute,
+		NativeMetricsAggregateBudget: 10 * time.Second,
+		MaxFileTransferBytes:         10 << 30,
 		// 入站连接默认关闭；只允许默认端口 18444，保留 RFC1918。
 		InboundEnabled:         false,
 		InboundDialConcurrency: 16,
@@ -95,6 +102,10 @@ func DefaultConfig() Config {
 func main() {
 	var configPath string
 	flag.StringVar(&configPath, "config", "", "config file path (yaml)")
+	backfillFrom := flag.String("backfill-native-from", "", "one-shot native metric backfill start (RFC3339)")
+	backfillTo := flag.String("backfill-native-to", "", "one-shot native metric backfill end (RFC3339, default now)")
+	backfillChunk := flag.Duration("backfill-native-chunk", 15*time.Minute, "backfill transaction chunk")
+	backfillPause := flag.Duration("backfill-native-pause", 10*time.Millisecond, "pause between backfill chunks")
 	flag.Parse()
 
 	cfg := DefaultConfig()
@@ -113,6 +124,13 @@ func main() {
 	if err := applyEnv(&cfg); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
+	}
+	if *backfillFrom != "" {
+		if err := runNativeBackfill(cfg, *backfillFrom, *backfillTo, *backfillChunk, *backfillPause); err != nil {
+			fmt.Fprintf(os.Stderr, "native backfill: %v\n", err)
+			os.Exit(1)
+		}
+		return
 	}
 	if err := validateAdminCredentials(cfg); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -155,45 +173,48 @@ func main() {
 	os.MkdirAll(cfg.ArtifactDir, 0o755)
 
 	h, err := hubserver.New(hubserver.Config{
-		WebAddr:                cfg.WebAddr,
-		GatewayAddr:            cfg.GatewayAddr,
-		GatewayBaseURL:         cfg.GatewayBaseURL,
-		WebTLSCert:             cfg.WebTLSCert,
-		WebTLSKey:              cfg.WebTLSKey,
-		GatewayTLSCert:         cfg.GatewayTLSCert,
-		GatewayTLSKey:          cfg.GatewayTLSKey,
-		RegistrationToken:      cfg.RegistrationToken,
-		DataDir:                cfg.DataDir,
-		ArtifactDir:            cfg.ArtifactDir,
-		AgentBinaryAMD64Path:   cfg.AgentBinaryAMD64Path,
-		AgentBinaryARM64Path:   cfg.AgentBinaryARM64Path,
-		AgentBinaryPayloads:    bundledAgentPayloads,
-		BaseURL:                cfg.BaseURL,
-		HeartbeatTimeout:       cfg.HeartbeatTimeout,
-		AdminUsername:          cfg.AdminUsername,
-		AdminPassword:          cfg.AdminPassword,
-		SessionTTL:             cfg.SessionTTL,
-		RevisionCheckSec:       cfg.RevisionCheckSec,
-		ChangelogWindow:        cfg.ChangelogWindow,
-		MaxFileTransferBytes:   cfg.MaxFileTransferBytes,
-		SQLiteBusyTimeout:      cfg.SQLiteBusyTimeout,
-		MonitoringAllowedCIDRs: cfg.MonitoringAllowedCIDRs,
-		MonitoringWorkers:      cfg.MonitoringWorkers,
-		InboundEnabled:         cfg.InboundEnabled,
-		InboundCAFile:          cfg.InboundCAFile,
-		InboundCAKeyFile:       cfg.InboundCAKeyFile,
-		InboundClientCertFile:  cfg.InboundClientCertFile,
-		InboundClientKeyFile:   cfg.InboundClientKeyFile,
-		InboundDialConcurrency: cfg.InboundDialConcurrency,
-		InboundDialTimeout:     cfg.InboundDialTimeout,
-		InboundBackoffInitial:  cfg.InboundBackoffInitial,
-		InboundBackoffMax:      cfg.InboundBackoffMax,
-		InboundAllowedPorts:    cfg.InboundAllowedPorts,
-		InboundDeniedCIDRs:     cfg.InboundDeniedCIDRs,
-		InboundAllowLoopback:   cfg.InboundAllowLoopback,
-		DevNoAuth:              cfg.DevNoAuth,
-		AllowEmptyPassword:     cfg.AllowEmptyPassword,
-		OIDC:                   cfg.OIDC,
+		WebAddr:                      cfg.WebAddr,
+		GatewayAddr:                  cfg.GatewayAddr,
+		GatewayBaseURL:               cfg.GatewayBaseURL,
+		WebTLSCert:                   cfg.WebTLSCert,
+		WebTLSKey:                    cfg.WebTLSKey,
+		GatewayTLSCert:               cfg.GatewayTLSCert,
+		GatewayTLSKey:                cfg.GatewayTLSKey,
+		RegistrationToken:            cfg.RegistrationToken,
+		DataDir:                      cfg.DataDir,
+		ArtifactDir:                  cfg.ArtifactDir,
+		AgentBinaryAMD64Path:         cfg.AgentBinaryAMD64Path,
+		AgentBinaryARM64Path:         cfg.AgentBinaryARM64Path,
+		AgentBinaryPayloads:          bundledAgentPayloads,
+		BaseURL:                      cfg.BaseURL,
+		HeartbeatTimeout:             cfg.HeartbeatTimeout,
+		AdminUsername:                cfg.AdminUsername,
+		AdminPassword:                cfg.AdminPassword,
+		SessionTTL:                   cfg.SessionTTL,
+		RevisionCheckSec:             cfg.RevisionCheckSec,
+		ChangelogWindow:              cfg.ChangelogWindow,
+		MaxFileTransferBytes:         cfg.MaxFileTransferBytes,
+		SQLiteBusyTimeout:            cfg.SQLiteBusyTimeout,
+		NativeMetricsInterval:        cfg.NativeMetricsInterval,
+		NativeMetricsLateWindow:      cfg.NativeMetricsLateWindow,
+		NativeMetricsAggregateBudget: cfg.NativeMetricsAggregateBudget,
+		MonitoringAllowedCIDRs:       cfg.MonitoringAllowedCIDRs,
+		MonitoringWorkers:            cfg.MonitoringWorkers,
+		InboundEnabled:               cfg.InboundEnabled,
+		InboundCAFile:                cfg.InboundCAFile,
+		InboundCAKeyFile:             cfg.InboundCAKeyFile,
+		InboundClientCertFile:        cfg.InboundClientCertFile,
+		InboundClientKeyFile:         cfg.InboundClientKeyFile,
+		InboundDialConcurrency:       cfg.InboundDialConcurrency,
+		InboundDialTimeout:           cfg.InboundDialTimeout,
+		InboundBackoffInitial:        cfg.InboundBackoffInitial,
+		InboundBackoffMax:            cfg.InboundBackoffMax,
+		InboundAllowedPorts:          cfg.InboundAllowedPorts,
+		InboundDeniedCIDRs:           cfg.InboundDeniedCIDRs,
+		InboundAllowLoopback:         cfg.InboundAllowLoopback,
+		DevNoAuth:                    cfg.DevNoAuth,
+		AllowEmptyPassword:           cfg.AllowEmptyPassword,
+		OIDC:                         cfg.OIDC,
 	}, logger)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "init hub: %v\n", err)
@@ -227,6 +248,59 @@ func main() {
 	logger.Info("nodesteer hub stopping")
 }
 
+func runNativeBackfill(cfg Config, fromRaw, toRaw string, chunk, pause time.Duration) error {
+	from, err := parseBackfillTime(fromRaw)
+	if err != nil {
+		return fmt.Errorf("invalid --backfill-native-from: %w", err)
+	}
+	to := time.Now().UTC()
+	if toRaw != "" {
+		to, err = parseBackfillTime(toRaw)
+		if err != nil {
+			return fmt.Errorf("invalid --backfill-native-to: %w", err)
+		}
+	}
+	if !from.Before(to) {
+		return fmt.Errorf("backfill start must be before end")
+	}
+	if err := os.MkdirAll(cfg.DataDir, 0o755); err != nil {
+		return err
+	}
+	st, err := store.OpenSQLiteWithOptions(cfg.DataDir+"/hub.db", store.SQLiteOptions{BusyTimeout: cfg.SQLiteBusyTimeout})
+	if err != nil {
+		return err
+	}
+	defer st.Close()
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger.Info("native backfill starting", "from", from, "to", to, "chunk", chunk, "pause", pause)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+	err = st.BackfillNativeMetrics(ctx, from, to, store.NativeBackfillOptions{
+		Chunk: chunk,
+		Pause: pause,
+		Progress: func(tier string, done, total int) {
+			logger.Info("native backfill progress", "tier", tier, "series_done", done, "series_total", total)
+		},
+	})
+	if err != nil {
+		return err
+	}
+	stats := st.LastNativeBackfillStats()
+	logger.Info("native backfill complete", "from", from, "to", to,
+		"duration", stats.Duration, "series", stats.Series,
+		"transactions", stats.Transactions, "busy_errors", stats.BusyErrors)
+	return nil
+}
+
+func parseBackfillTime(value string) (time.Time, error) {
+	for _, layout := range []string{time.RFC3339Nano, time.RFC3339, "2006-01-02T15:04:05", "2006-01-02 15:04:05"} {
+		if parsed, err := time.Parse(layout, value); err == nil {
+			return parsed.UTC(), nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("unrecognized time %q", value)
+}
+
 func validateAdminCredentials(cfg Config) error {
 	if cfg.AllowEmptyPassword {
 		if cfg.AdminUsername == "" {
@@ -253,6 +327,21 @@ func applyEnv(cfg *Config) error {
 	if v := os.Getenv("NODESTEER_SQLITE_BUSY_TIMEOUT"); v != "" {
 		if timeout, err := time.ParseDuration(v); err == nil && timeout > 0 {
 			cfg.SQLiteBusyTimeout = timeout
+		}
+	}
+	if v := os.Getenv("NODESTEER_NATIVE_METRICS_INTERVAL"); v != "" {
+		if interval, err := time.ParseDuration(v); err == nil && interval > 0 {
+			cfg.NativeMetricsInterval = interval
+		}
+	}
+	if v := os.Getenv("NODESTEER_NATIVE_METRICS_LATE_WINDOW"); v != "" {
+		if window, err := time.ParseDuration(v); err == nil && window > 0 {
+			cfg.NativeMetricsLateWindow = window
+		}
+	}
+	if v := os.Getenv("NODESTEER_NATIVE_METRICS_AGGREGATE_BUDGET"); v != "" {
+		if budget, err := time.ParseDuration(v); err == nil && budget > 0 {
+			cfg.NativeMetricsAggregateBudget = budget
 		}
 	}
 	if v := os.Getenv("NODESTEER_WEB_TLS_CERT"); v != "" {

@@ -13,7 +13,7 @@ func TestSQLiteBusyTimeoutDefaultAndOverride(t *testing.T) {
 		opts SQLiteOptions
 		want int
 	}{
-		{name: "default", opts: SQLiteOptions{}, want: 15000},
+		{name: "default", opts: SQLiteOptions{}, want: 5000},
 		{name: "override", opts: SQLiteOptions{BusyTimeout: 3 * time.Second}, want: 3000},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 )
 
 // nativeMetricMaintenanceInterval 是原生指标聚合/清理周期。
-const nativeMetricMaintenanceInterval = time.Minute
+const nativeMetricMaintenanceInterval = 5 * time.Minute
 
 // nativeMetricInitialDelay 延迟 Hub 启动后的首轮聚合，先让 Agent HELLO/心跳
 // 完成，避免启动瞬间的聚合写锁与连接写路径竞争。

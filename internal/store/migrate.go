@@ -44,7 +44,28 @@ var migrations = []migration{
 	{26, "node_display_name", schemaV26},
 	{27, "agent_inbound_connection", schemaV27},
 	{28, "query_performance_indexes", schemaV28},
+	{29, "native_metric_series_directory", schemaV29},
 }
+
+// schemaV29 建立原生指标 series 目录，避免每批 NODE_METRICS 写事务内
+// UNION 扫描该节点全部 raw/rollup。目录按 (node_id, metric, series_key)
+// 唯一，迁移时从现有 raw/rollup 一次性回填；之后由写入路径维护。
+const schemaV29 = `
+CREATE TABLE IF NOT EXISTS node_metric_series (
+	node_id TEXT NOT NULL,
+	metric TEXT NOT NULL,
+	series_key TEXT NOT NULL,
+	dimensions_json TEXT NOT NULL DEFAULT '{}',
+	updated_at TEXT NOT NULL DEFAULT '',
+	PRIMARY KEY (node_id, metric, series_key)
+);
+INSERT OR IGNORE INTO node_metric_series (node_id, metric, series_key, dimensions_json, updated_at)
+	SELECT node_id, metric, series_key, MAX(dimensions_json), '' FROM node_metric_samples
+	GROUP BY node_id, metric, series_key;
+INSERT OR IGNORE INTO node_metric_series (node_id, metric, series_key, dimensions_json, updated_at)
+	SELECT node_id, metric, series_key, '{}', '' FROM node_metric_rollups
+	GROUP BY node_id, metric, series_key;
+`
 
 // schemaV28 列表查询索引：执行、文件传输、审计按 created_at 倒序分页；
 // 只创建索引，不改表、不回填数据。

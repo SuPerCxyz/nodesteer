@@ -301,6 +301,7 @@ func (s *SQLiteStore) DeleteNode(ctx context.Context, id string) error {
 		// 原生指标随节点删除清理，避免孤儿样本被后续批量查询/聚合继续扫描。
 		`DELETE FROM node_metric_samples WHERE node_id = ?`,
 		`DELETE FROM node_metric_rollups WHERE node_id = ?`,
+		`DELETE FROM node_metric_series WHERE node_id = ?`,
 	} {
 		if _, err := execer.ExecContext(ctx, query, id); err != nil {
 			return err

@@ -86,7 +86,7 @@ func (s *SQLiteStore) UpdateScript(ctx context.Context, sc *models.Script, prevR
 }
 
 func (s *SQLiteStore) GetScript(ctx context.Context, id string) (*models.Script, error) {
-	row := s.db.QueryRowContext(ctx, `
+	row := s.queryer(ctx).QueryRowContext(ctx, `
 		SELECT id, name, description, interpreter, content, parameters_json, environment_json,
 			working_dir, run_user, timeout, enabled, revision, sha256, updated_at, created_at FROM scripts WHERE id = ?`, id)
 	var sc models.Script
@@ -106,7 +106,7 @@ func (s *SQLiteStore) GetScript(ctx context.Context, id string) (*models.Script,
 }
 
 func (s *SQLiteStore) ListScripts(ctx context.Context) ([]*models.Script, error) {
-	rows, err := s.db.QueryContext(ctx, `
+	rows, err := s.queryer(ctx).QueryContext(ctx, `
 		SELECT id, name, description, interpreter, content, parameters_json, environment_json,
 			working_dir, run_user, timeout, enabled, revision, sha256, updated_at, created_at FROM scripts ORDER BY name`)
 	if err != nil {
@@ -138,7 +138,7 @@ func (s *SQLiteStore) DeleteScript(ctx context.Context, id string) error {
 }
 
 func (s *SQLiteStore) GetScriptRevision(ctx context.Context, id string, revision int64) (*ScriptRevisionEntry, error) {
-	row := s.db.QueryRowContext(ctx,
+	row := s.queryer(ctx).QueryRowContext(ctx,
 		`SELECT revision, content, sha256, changed_at FROM script_revisions WHERE id = ? AND revision = ?`, id, revision)
 	var e ScriptRevisionEntry
 	var changed string
@@ -150,7 +150,7 @@ func (s *SQLiteStore) GetScriptRevision(ctx context.Context, id string, revision
 }
 
 func (s *SQLiteStore) ListScriptRevisions(ctx context.Context, id string) ([]*ScriptRevisionEntry, error) {
-	rows, err := s.db.QueryContext(ctx,
+	rows, err := s.queryer(ctx).QueryContext(ctx,
 		`SELECT revision, content, sha256, changed_at FROM script_revisions WHERE id = ? ORDER BY revision DESC`, id)
 	if err != nil {
 		return nil, err
@@ -264,7 +264,7 @@ func (s *SQLiteStore) GetTask(ctx context.Context, id string) (*models.Task, err
 }
 
 func (s *SQLiteStore) ListTasks(ctx context.Context) ([]*models.Task, error) {
-	rows, err := s.db.QueryContext(ctx,
+	rows, err := s.queryer(ctx).QueryContext(ctx,
 		`SELECT id, name, definition_json, revision, updated_at, created_at FROM tasks ORDER BY name`)
 	if err != nil {
 		return nil, err
@@ -340,7 +340,7 @@ func (s *SQLiteStore) GetSchedule(ctx context.Context, id string) (*models.Sched
 }
 
 func (s *SQLiteStore) ListSchedules(ctx context.Context) ([]*models.Schedule, error) {
-	rows, err := s.db.QueryContext(ctx,
+	rows, err := s.queryer(ctx).QueryContext(ctx,
 		`SELECT id, task_id, revision, definition_json, enabled, updated_at, created_at FROM schedules ORDER BY created_at`)
 	if err != nil {
 		return nil, err

@@ -734,7 +734,7 @@ SQLite + WAL
 
 只读运维查询面：每次部署恢复结束后，Agent 把部署 journal 摘要原子写入 `<data_dir>/deployments-summary.json`（先写 `.tmp` 再 rename）——含「非 `deployed` 的 `DONE` 行按 `completed_kind` 计数」与「仍活动行的 id/应用/阶段/`started_at`」，供运维直接查看不可重放记录（CR-3 终态化后的可见性出口；写失败只记 ERROR，不影响恢复）。
 
-事务与锁：连接使用 `_txlock=immediate`，写事务在 BEGIN 阶段即取写锁，配合 WAL 与 `busy_timeout=15000`（Hub 配置 `sqlite_busy_timeout` 可覆盖），避免 deferred 事务「先读后写」升级写锁时不受 busy_timeout 保护的 `SQLITE_BUSY`/`BUSY_SNAPSHOT`。Gateway 对 HELLO 连线状态、心跳和断连 offline 写入的瞬时 BUSY 做短退避重试，只有认证/协议/会话失效才关闭连接或置 offline。
+事务与锁：连接使用 `_txlock=immediate`，写事务在 BEGIN 阶段即取写锁，配合 WAL 与 `busy_timeout=5000`（Hub 配置 `sqlite_busy_timeout` 可覆盖），避免 deferred 事务「先读后写」升级写锁时不受 busy_timeout 保护的 `SQLITE_BUSY`/`BUSY_SNAPSHOT`。Gateway 对 HELLO 连线状态、心跳和断连 offline 写入的瞬时 BUSY 做短退避重试（总预算 8s，连接关闭立即取消），只有认证/协议/会话失效才关闭连接或置 offline。
 
 ---
 
@@ -1414,7 +1414,7 @@ alert_notifications          # 通知发件箱
 alert_notification_attempts  # 每次发送尝试
 ```
 
-监控相关表为增量迁移（`schema_migrations` 版本 12 起；版本 23 创建原生指标表，版本 24 创建告警/通知表，版本 28 增加列表查询索引）。原生指标存储、1m/5m/1h 聚合、后台周期聚合/清理、gateway `NODE_METRICS` ingest 和查询 API 已接入；告警评估、通知发件箱和渠道 API 已接入。`monitoring_node_bindings` 为旧 Nocturne 绑定遗留表，不再参与新链路，物理删除由后续独立迁移决定。升级失败按本节迁移失败处理，回退恢复 Hub DB 备份。旧 Nocturne 历史不迁移、不回填。
+监控相关表为增量迁移（`schema_migrations` 版本 12 起；版本 23 创建原生指标表，版本 24 创建告警/通知表，版本 28 增加列表查询索引，版本 29 增加原生指标 series 目录）。原生指标存储、1m/5m/1h 聚合、后台周期聚合/清理、gateway `NODE_METRICS` ingest 和查询 API 已接入；告警评估、通知发件箱和渠道 API 已接入。`monitoring_node_bindings` 为旧 Nocturne 绑定遗留表，不再参与新链路，物理删除由后续独立迁移决定。升级失败按本节迁移失败处理，回退恢复 Hub DB 备份。旧 Nocturne 历史不迁移、不回填。
 
 核心索引字段关系型。
 
@@ -1680,12 +1680,15 @@ Web 节点总览、历史、规则求值
 - 容器：`container.cpu.usage`、`container.memory.usage`、`container.network.rx_bps/tx_bps`，维度 `container` 和稳定 `container_id`，旧的 name-only 历史保留独立身份；自动探测 Docker/Podman socket（`/var/run/docker.sock`、`/run/docker.sock`、`/run/podman/podman.sock`、`/var/run/podman/podman.sock`），Host Integration 使用宿主根目录下的 socket。无 socket 或容器不可读时没有容器样本，不显示 0。
 - 采集上限：CPU 32 核、磁盘设备 32、网络接口 32、容器 32；容器额外枚举至 33（表示至少 33），同批同时间戳上报无维度 `container.collection.discovered_count/sampled_count/limit`。超过 16 个容器时完整扫描周期至少 60s，≤16 时至少 30s；两次扫描之间仍上报汇总。仅新鲜、对齐且有效的计数可判完整性；失败或旧 Agent 为未知。容器样本及计数同批入库，series 上限不变。
 - `quality=1` 为有效值，`quality=2` 为缺失且 `value=null`；真实 0 是有效样本，gap 不等于 0。
-- Hub 以 `node_id + metric + dimensions + timestamp` 幂等去重，`sequence` 用于排序和诊断；迟到/更正样本触发对应聚合桶重算。聚合增量范围取「最后桶向前 10 桶」与「`now-1h` 迟到窗口」的并集，按 15 分钟分块提交事务；超过 1h 窗口的样本保留 raw 但不扩展 rollup 重算，并记录截断。连续断档继续由空桶/gap 表达。Hub 启动后首轮聚合延迟 30s，先允许 Agent HELLO/心跳完成。
+- Hub 以 `node_id + metric + dimensions + timestamp` 幂等去重，`sequence` 用于排序和诊断；迟到/更正样本触发对应聚合桶重算。聚合默认使用 15 分钟迟到窗口、5 分钟维护周期和 10 秒时间预算：增量范围取 `now-15m` 并包含最后 rollup 桶，正常追赶最多向前 2 小时；更早缺口必须通过 bounded backfill 显式恢复。每 tier 每 series 约一个事务，tier 游标轮转避免总从第一个节点开始；窗口内无 source 的 series 直接跳过。Hub 启动后首轮聚合延迟 30s，先允许 Agent HELLO/心跳完成。
 - 查询按范围选择最细可用 tier，返回 `state`、`tier`、`stepNs`、`points`、`gaps`；跨 tier 时允许 raw 精化边界。
 - overview 只查询页面渲染所需的 10 个 metric，latest 与采样周期推导窗口均限制为最近 15 分钟；结果按节点集合缓存 15s，raw 写入/清理 generation 变化立即失效。节点状态不进入缓存。
 - 新增单节点 `GET /api/monitoring/nodes/{id}/overview`、批量 `series/batch` 与 `history/batch`；旧 `series`/`metrics`/`latest`/`overview` 契约不变。series 目录缓存 60s，history 缓存 30s。
 - Hub API JSON 在客户端接受 gzip 时压缩（`Content-Encoding: gzip`、`Vary: Accept-Encoding`）；二进制/SSE/304 不压缩。静态资源运行时 gzip、可选预压缩 brotli；HTML `no-cache`，哈希资源一年 immutable，其余静态资源短缓存，ETag/Last-Modified 支持 304。
-- schema v28 增加 executions/file_transfers/audit_logs 的 `created_at` 查询索引；API >500ms 与原生指标 SQL >200ms 记录慢日志和计数，日志不包含查询值或敏感信息。
+- schema v28 增加 executions/file_transfers/audit_logs 的 `created_at` 查询索引；schema v29 增加 `node_metric_series` 目录，迁移时从 raw/rollup 一次性回填，写入路径不再在事务内 UNION 扫描全部 series。
+- Hub SQLite 使用独立写池（2 连接）与只读池（8 连接，`query_only`）；非事务只读查询走读池，写事务与写入走写池。API >500ms 与原生指标 SQL >200ms 记录慢日志和计数，日志不包含查询值或敏感信息。
+- 缺失 rollup 使用 `nodesteer-hub --backfill-native-from <RFC3339> --backfill-native-to <RFC3339>` 恢复；按 1m → 5m → 1h、15 分钟 chunk（1h tier 至少 1h）限速执行，幂等且不删除 raw。生产推荐 Agent 30s 采样；5s 采样会显著放大写入和聚合成本。
+- 每轮聚合/回填记录 duration、series、transactions、busy_errors、truncated；达到时间预算时保留 tier 游标，下轮继续。
 - `node_metric` 规则从原生样本求值，保留新鲜度、gap、乱序/冲突中断、去重、冷却、失败暂停、验证和补偿语义。外部 HTTP(S)/TCP/ICMP 探测仍是独立监控对象。
 - Nocturne 后端、路由、配置和绑定已移除；`monitoring_node_bindings` 仅作为遗留表保留，不参与新链路。旧 Nocturne 历史不迁移、不回填、不展示。
 - `overview` 的告警数当前为占位 0，规则告警汇总未接入；不得把该字段写成已实现的告警统计。

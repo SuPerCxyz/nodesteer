@@ -27,24 +27,39 @@ type GatewayConfig struct {
 	MaxMsgBytes       int64
 }
 
-// busyRetryDelays 是 SQLite 忙锁的短退避序列。busy_timeout 已提供 15s
-// 锁等待，这里的重试只覆盖超时后仍偶发的瞬时 BUSY_SNAPSHOT/LOCKED。
+// busyRetryDelays 是 SQLite 忙锁的短退避序列。总预算与 Agent ping/ACK 10s
+// 对齐，连接关闭或 ctx 取消立即停止。
 var busyRetryDelays = []time.Duration{100 * time.Millisecond, 250 * time.Millisecond, 500 * time.Millisecond}
 
-// retryBusy 仅对 store.IsBusyError 重试；认证/协议/节点不存在等错误立即返回，
-// 避免把真正的会话失效当成锁竞争。
-func (g *Gateway) retryBusy(ctx context.Context, operation string, fn func() error) error {
+var busyRetryBudget = 8 * time.Second
+
+// retryBusy 仅对 store.IsBusyError 重试；fn 接收到带总预算 deadline 的 ctx，
+// 驱动应据此中止锁等待。认证/协议/节点不存在等错误立即返回。
+func (g *Gateway) retryBusy(ctx context.Context, operation string, fn func(context.Context) error) error {
+	deadline := time.Now().Add(busyRetryBudget)
 	var err error
 	for attempt := 0; ; attempt++ {
-		err = fn()
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if !time.Now().Before(deadline) {
+			return err
+		}
+		callCtx, cancel := context.WithDeadline(ctx, deadline)
+		err = fn(callCtx)
+		cancel()
 		if !store.IsBusyError(err) || attempt >= len(busyRetryDelays) {
+			return err
+		}
+		delay := busyRetryDelays[attempt]
+		if time.Now().Add(delay).After(deadline) {
 			return err
 		}
 		if g.logger != nil {
 			g.logger.Warn("sqlite busy; retrying gateway write",
 				"operation", operation, "attempt", attempt+1, "error", err)
 		}
-		timer := time.NewTimer(busyRetryDelays[attempt])
+		timer := time.NewTimer(delay)
 		select {
 		case <-ctx.Done():
 			timer.Stop()
@@ -215,8 +230,8 @@ func (g *Gateway) handleDisconnect(nodeID string, conn AgentConn) {
 		// 瞬时 BUSY 只重试写操作，不把会话重新放回；重试仍失败只记日志。
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		if err := g.retryBusy(ctx, "disconnect offline", func() error {
-			return g.markDisconnected(ctx, nodeID)
+		if err := g.retryBusy(ctx, "disconnect offline", func(callCtx context.Context) error {
+			return g.markDisconnected(callCtx, nodeID)
 		}); err != nil {
 			g.logger.Warn("mark offline on disconnect failed", "node", nodeID, "error", err)
 		}
@@ -229,8 +244,8 @@ func (g *Gateway) handleDisconnect(nodeID string, conn AgentConn) {
 	g.sessions.Unregister(nodeID)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	if err := g.retryBusy(ctx, "disconnect offline", func() error {
-		return g.markDisconnected(ctx, nodeID)
+	if err := g.retryBusy(ctx, "disconnect offline", func(callCtx context.Context) error {
+		return g.markDisconnected(callCtx, nodeID)
 	}); err != nil {
 		g.logger.Warn("mark offline on disconnect failed", "node", nodeID, "error", err)
 	}
@@ -263,12 +278,12 @@ func (g *Gateway) markConnected(ctx context.Context, n *models.Node) error {
 // 不降级，避免 ≤30s 假离线。注意本守卫只属于拒绝降级路径：
 // markDisconnected（连接断开 defer 路径，断开即会话终结）不得引入此守卫。
 func (g *Gateway) markDisconnectedIfOnline(ctx context.Context, nodeID string) error {
-	return g.retryBusy(ctx, "rejected hello offline", func() error {
+	return g.retryBusy(ctx, "rejected hello offline", func(callCtx context.Context) error {
 		if _, ok := g.sessions.Get(nodeID); ok {
 			// 节点仍有活跃合法会话，其 online 是真实状态，拒绝不构成降级依据。
 			return nil
 		}
-		node, err := g.nodes.GetNode(ctx, nodeID)
+		node, err := g.nodes.GetNode(callCtx, nodeID)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return nil
@@ -278,7 +293,7 @@ func (g *Gateway) markDisconnectedIfOnline(ctx context.Context, nodeID string) e
 		if node.Status != models.NodeStatusOnline {
 			return nil
 		}
-		return g.nodes.SetNodeStatus(ctx, nodeID, models.NodeStatusOffline)
+		return g.nodes.SetNodeStatus(callCtx, nodeID, models.NodeStatusOffline)
 	})
 }
 
@@ -388,6 +403,8 @@ func (g *Gateway) handleFileDeliveryResult(ctx context.Context, conn *wsConn, en
 }
 
 func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.Envelope) error {
+	ctx, cancel := conn.sessionContext(ctx)
+	defer cancel()
 	var p protocol.HelloPayload
 	if err := json.Unmarshal(env.Payload, &p); err != nil {
 		return err
@@ -424,8 +441,8 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 		// deployment_mode）会滞留旧值。仅覆盖上报非空的字段（见 refreshNodeAgentMeta）；
 		// UpsertNode 的 ON CONFLICT 不写 status/last_seen，m/d 状态与心跳语义不受影响。
 		refreshNodeAgentMeta(node.Node, p)
-		if err := g.retryBusy(ctx, "hello upsert", func() error {
-			return g.nodes.store.UpsertNode(ctx, node.Node)
+		if err := g.retryBusy(ctx, "hello upsert", func(callCtx context.Context) error {
+			return g.nodes.store.UpsertNode(callCtx, node.Node)
 		}); err != nil {
 			return err
 		}
@@ -459,8 +476,8 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 				isNew bool
 				err   error
 			)
-			err = g.retryBusy(ctx, "hello register", func() error {
-				n, cred, isNew, err = g.nodes.RegisterOrUpdate(ctx, p.AgentID, p.Hostname, p.IP, p.OS, p.Arch,
+			err = g.retryBusy(ctx, "hello register", func(callCtx context.Context) error {
+				n, cred, isNew, err = g.nodes.RegisterOrUpdate(callCtx, p.AgentID, p.Hostname, p.IP, p.OS, p.Arch,
 					p.AgentVersion, mode, p.HostIntegration, p.Capabilities)
 				return err
 			})
@@ -487,20 +504,20 @@ func (g *Gateway) handleHello(ctx context.Context, conn *wsConn, env protocol.En
 	}
 	// accepted：显式置 online（不依赖心跳副作用），maintenance/disabled 不被覆盖。
 	// 此时尚未注册新会话，NODE_STATUS 等通知不会抢在 HELLO_ACK 之前发给新连接。
-	if err := g.retryBusy(ctx, "markConnected", func() error {
-		return g.markConnected(ctx, node.Node)
+	if err := g.retryBusy(ctx, "markConnected", func(callCtx context.Context) error {
+		return g.markConnected(callCtx, node.Node)
 	}); err != nil {
 		return err
 	}
-	if err := g.retryBusy(ctx, "hello heartbeat", func() error {
-		return g.nodes.UpdateHeartbeat(ctx, node.Node.ID, time.Now())
+	if err := g.retryBusy(ctx, "hello heartbeat", func(callCtx context.Context) error {
+		return g.nodes.UpdateHeartbeat(callCtx, node.Node.ID, time.Now())
 	}); err != nil {
 		return err
 	}
 	origin := SessionOrigin(conn)
 	// 只记录最近一次成功会话方向；诊断写入失败不应拒绝已认证会话。
-	if err := g.retryBusy(ctx, "record connection mode", func() error {
-		return g.nodes.RecordConnectionMode(ctx, node.Node.ID, origin)
+	if err := g.retryBusy(ctx, "record connection mode", func(callCtx context.Context) error {
+		return g.nodes.RecordConnectionMode(callCtx, node.Node.ID, origin)
 	}); err != nil {
 		g.logger.Warn("record connection mode failed", "node", node.Node.ID, "error", err)
 	}
@@ -550,13 +567,15 @@ func refreshNodeAgentMeta(n *models.Node, p protocol.HelloPayload) {
 }
 
 func (g *Gateway) handleHeartbeat(ctx context.Context, conn *wsConn, env protocol.Envelope) error {
+	ctx, cancel := conn.sessionContext(ctx)
+	defer cancel()
 	var p protocol.HeartbeatPayload
 	if err := json.Unmarshal(env.Payload, &p); err != nil {
 		return err
 	}
 	p.NodeID = conn.meta.nodeID
-	if err := g.retryBusy(ctx, "heartbeat", func() error {
-		return g.nodes.UpdateHeartbeat(ctx, p.NodeID, time.Now())
+	if err := g.retryBusy(ctx, "heartbeat", func(callCtx context.Context) error {
+		return g.nodes.UpdateHeartbeat(callCtx, p.NodeID, time.Now())
 	}); err != nil {
 		return err
 	}
@@ -810,6 +829,8 @@ const maxNodeMetricsPayloadBytes = 2 << 20
 // 来源节点以握手会话为准，payload.NodeID 必须一致；能力缺失的旧 Agent
 // 一律拒绝，绝不把空能力当作支持。错误只返回给 dispatch 记日志，不关闭连接。
 func (g *Gateway) handleNodeMetrics(ctx context.Context, conn *wsConn, env protocol.Envelope) error {
+	ctx, cancel := conn.sessionContext(ctx)
+	defer cancel()
 	nodeID := conn.meta.nodeID
 	if nodeID == "" {
 		return errors.New("node metrics require an accepted agent session")
@@ -862,8 +883,8 @@ func (g *Gateway) handleNodeMetrics(ctx context.Context, conn *wsConn, env proto
 		})
 	}
 	// 存储层按 (node_id, metric, series_key, timestamp) UPSERT，重复批次幂等。
-	if err := g.retryBusy(ctx, "node metrics insert", func() error {
-		return nativeStore.InsertNodeMetricSamples(ctx, nodeID, samples)
+	if err := g.retryBusy(ctx, "node metrics insert", func(callCtx context.Context) error {
+		return nativeStore.InsertNodeMetricSamples(callCtx, nodeID, samples)
 	}); err != nil {
 		return err
 	}
@@ -971,6 +992,20 @@ func (w *wsConn) sendSync(ctx context.Context, env protocol.Envelope) error {
 		return err
 	}
 	return w.c.Write(ctx, websocket.MessageText, data)
+}
+
+// sessionContext 返回与连接生命周期绑定的 ctx；连接关闭立即取消，
+// 用于 BUSY 重试/DB 等待，避免 ping/ACK 10s 超时后仍继续阻塞。
+func (w *wsConn) sessionContext(parent context.Context) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(parent)
+	go func() {
+		select {
+		case <-w.done:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+	return ctx, cancel
 }
 
 // markUnavailable 关闭 done 通道，使后续 send 立即失败并唤醒已阻塞的发送方。

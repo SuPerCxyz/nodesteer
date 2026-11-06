@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -16,8 +17,19 @@ import (
 // SQLiteStore SQLite 实现
 type SQLiteStore struct {
 	db *sql.DB
+	// readDB 是独立只读连接池；queryer 默认走它，避免写事务占满连接。
+	readDB *sql.DB
 	// nativeLateWindow 是原生指标迟到重算窗口；零值使用 NativeLateWindow。
 	nativeLateWindow time.Duration
+	// nativeAggregateBudget 是每轮聚合的时间预算；零值使用默认 10s。
+	nativeAggregateBudget time.Duration
+	// aggregateCursors 按 tier 记录下一轮起点，避免总从第一个 series 开始。
+	aggregateMu      sync.Mutex
+	aggregateCursors map[string]nativeAggregateSeriesKey
+	// aggregateStats 保存最近一轮聚合/回填统计。
+	aggregateStatsMu   sync.Mutex
+	lastAggregateStats NativeAggregateStats
+	lastBackfillStats  NativeAggregateStats
 	// nativeLateSamples 记录入库时早于迟到窗口的样本数（只观测，不删除）。
 	nativeLateSamples atomic.Uint64
 	// metricGeneration 在 raw 写入/清理提交后递增，供 API 缓存失效。
@@ -51,6 +63,9 @@ func (s *SQLiteStore) queryer(ctx context.Context) txQueryer {
 	if tx := s.txFrom(ctx); tx != nil {
 		return tx
 	}
+	if s.readDB != nil {
+		return s.readDB
+	}
 	return s.db
 }
 
@@ -68,7 +83,7 @@ func (s *SQLiteStore) WithTx(ctx context.Context, fn func(context.Context) error
 	return tx.Commit()
 }
 
-// SQLiteOptions 控制 SQLite 打开参数；零值使用默认 15s busy_timeout。
+// SQLiteOptions 控制 SQLite 打开参数；零值使用默认 5s busy_timeout。
 type SQLiteOptions struct {
 	BusyTimeout time.Duration
 }
@@ -79,28 +94,34 @@ type SQLiteOptions struct {
 // deferred 事务的「先读后写再升级」。升级路径一旦发现其它连接已推进快照，
 // SQLite 会立刻返回 SQLITE_BUSY/BUSY_SNAPSHOT，且不受 busy_timeout 保护，
 // 表现为并发纳管等写路径随机 500（缺陷 OBS-20261016-G1-ENROLL-TRANSIENT-500）。
-// 改为 immediate 后锁等待统一走 busy_timeout（默认 15s），并发写按序完成。
+// 改为 immediate 后锁等待统一走 busy_timeout（默认 5s），并发写按序完成。
 func OpenSQLite(path string) (*SQLiteStore, error) {
 	return OpenSQLiteWithOptions(path, SQLiteOptions{})
 }
 
 // OpenSQLiteWithOptions 使用显式 busy_timeout 打开 Hub 数据库。
+// 写池固定较小（2 连接），读池独立（8 连接），避免聚合/指标写入占满连接后
+// login、overview 等只读请求排队 15s。
 func OpenSQLiteWithOptions(path string, options SQLiteOptions) (*SQLiteStore, error) {
 	busyTimeout := options.BusyTimeout
 	if busyTimeout <= 0 {
-		busyTimeout = 15 * time.Second
+		busyTimeout = 5 * time.Second
 	}
 	dsn := path
+	readDSN := path
 	if path != ":memory:" {
 		dsn = fmt.Sprintf("%s?_txlock=immediate&_pragma=journal_mode(WAL)&_pragma=busy_timeout(%d)&_pragma=foreign_keys(1)",
+			path, busyTimeout.Milliseconds())
+		// query_only 防止读池意外写入；保留普通读写打开方式以复用 WAL -shm。
+		readDSN = fmt.Sprintf("%s?_pragma=busy_timeout(%d)&_pragma=foreign_keys(1)&_pragma=query_only(1)",
 			path, busyTimeout.Milliseconds())
 	}
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite: %w", err)
 	}
-	db.SetMaxOpenConns(8)
-	db.SetMaxIdleConns(8)
+	db.SetMaxOpenConns(2)
+	db.SetMaxIdleConns(2)
 	if err := db.Ping(); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("ping sqlite: %w", err)
@@ -109,7 +130,25 @@ func OpenSQLiteWithOptions(path string, options SQLiteOptions) (*SQLiteStore, er
 		db.Close()
 		return nil, err
 	}
-	return &SQLiteStore{db: db}, nil
+	readDB := db
+	if path != ":memory:" {
+		readDB, err = sql.Open("sqlite", readDSN)
+		if err != nil {
+			db.Close()
+			return nil, fmt.Errorf("open sqlite read pool: %w", err)
+		}
+		readDB.SetMaxOpenConns(8)
+		readDB.SetMaxIdleConns(4)
+		if err := readDB.Ping(); err != nil {
+			readDB.Close()
+			db.Close()
+			return nil, fmt.Errorf("ping sqlite read pool: %w", err)
+		}
+	}
+	return &SQLiteStore{
+		db: db, readDB: readDB,
+		aggregateCursors: map[string]nativeAggregateSeriesKey{},
+	}, nil
 }
 
 // OpenInMemory 测试用内存库
@@ -122,7 +161,7 @@ func OpenInMemory() (*SQLiteStore, error) {
 		db.Close()
 		return nil, err
 	}
-	return &SQLiteStore{db: db}, nil
+	return &SQLiteStore{db: db, readDB: db, aggregateCursors: map[string]nativeAggregateSeriesKey{}}, nil
 }
 
 // IsBusyError 判定 SQLite 忙锁类错误（SQLITE_BUSY / SQLITE_LOCKED 家族，含
@@ -188,7 +227,12 @@ func IsDriverError(err error) bool {
 // DB 暴露底层连接（供测试与扩展使用）
 func (s *SQLiteStore) DB() *sql.DB { return s.db }
 
-func (s *SQLiteStore) Close() error { return s.db.Close() }
+func (s *SQLiteStore) Close() error {
+	if s.readDB != nil && s.readDB != s.db {
+		_ = s.readDB.Close()
+	}
+	return s.db.Close()
+}
 
 var _ Store = (*SQLiteStore)(nil)
 

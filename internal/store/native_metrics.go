@@ -52,10 +52,15 @@ const (
 	Native1hRetention  = 2 * 365 * 24 * time.Hour
 
 	// NativeLateWindow 是补报/乱序样本的默认重算窗口。Agent 内存补报上限
-	// 约 30 分钟，1h 留出时钟偏差和重连重试余量。
-	NativeLateWindow = time.Hour
+	// 约 30 分钟；15 分钟窗口与 15 分钟分块配合，单 series/tier 约 1 个事务。
+	NativeLateWindow = 15 * time.Minute
 	// nativeAggregateChunk 是增量重算的分块大小，避免一次事务长时间持写锁。
 	nativeAggregateChunk = 15 * time.Minute
+	// nativeInitialChunk 用于新 series 的首次回填；避免 7d/90d/365d 单事务。
+	nativeInitialChunk = 24 * time.Hour
+	// nativeAggregateMaxCatchup 限制正常聚合每次向前追赶的最大范围；
+	// 更早的历史缺口由 bounded backfill 命令处理。
+	nativeAggregateMaxCatchup = 2 * time.Hour
 
 	nativeTimeLayout     = "2006-01-02T15:04:05.000000000Z"
 	nativeAggregateLimit = 200000
@@ -125,6 +130,34 @@ type NativeRollup struct {
 type NativeMetricReader interface {
 	QueryNodeMetricSamplesLimited(ctx context.Context, nodeID, metric, seriesKey string, start, end time.Time, limit int) ([]NativeSample, error)
 	QueryNodeMetricRollups(ctx context.Context, nodeID, metric, seriesKey, tier string, start, end time.Time, limit int) ([]NativeRollup, error)
+}
+
+// NativeMetricTuner 是 Hub 配置可调的原生指标运行参数；实现可选。
+type NativeMetricTuner interface {
+	SetNativeLateWindow(window time.Duration)
+	SetNativeAggregateBudget(budget time.Duration)
+}
+
+// NativeAggregateStats 是一轮聚合/回填的运行统计。
+type NativeAggregateStats struct {
+	Duration     time.Duration
+	Series       int
+	Transactions int
+	BusyErrors   int
+	Truncated    int
+}
+
+type nativeRunStats struct {
+	series       int
+	transactions int
+	busyErrors   int
+	truncated    int
+}
+
+// NativeAggregateReporter 由维护任务读取最近一轮统计；实现可选。
+type NativeAggregateReporter interface {
+	LastNativeAggregateStats() NativeAggregateStats
+	LastNativeBackfillStats() NativeAggregateStats
 }
 
 // NativeMetricStore 是原生指标存储的完整窄接口，供 API 层断言使用。
@@ -512,42 +545,83 @@ func (s *SQLiteStore) InsertNodeMetricSamples(ctx context.Context, nodeID string
 	}
 	defer tx.Rollback()
 
-	// 每节点 series 基数上限：只拒绝新 series，已有 series 的更新继续允许。
-	existingSeries := map[string]struct{}{}
-	rows, err := tx.QueryContext(ctx, `SELECT series_key FROM (
-			SELECT series_key FROM node_metric_samples WHERE node_id = ?
-			UNION
-			SELECT series_key FROM node_metric_rollups WHERE node_id = ?
-		) LIMIT ?`, nodeID, nodeID, NativeMaxSeries+1)
-	if err != nil {
+	// 每节点 series 基数上限：目录表只保存 series 元数据，避免写事务内
+	// UNION 扫描该节点全部 raw/rollup（生产 4.3GB 库上约 0.41s/批）。
+	var existingCount int
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM node_metric_series WHERE node_id = ?`, nodeID).Scan(&existingCount); err != nil {
 		return err
 	}
-	for rows.Next() {
-		var key string
-		if err := rows.Scan(&key); err != nil {
-			rows.Close()
+	type seriesMeta struct {
+		metric     string
+		dimensions string
+	}
+	distinct := make(map[string]seriesMeta)
+	for _, sample := range prepared {
+		if _, ok := distinct[sample.seriesKey]; ok {
+			continue
+		}
+		distinct[sample.seriesKey] = seriesMeta{metric: sample.metric, dimensions: sample.dimensions}
+	}
+	keys := make([]string, 0, len(distinct))
+	for key := range distinct {
+		keys = append(keys, key)
+	}
+	known := make(map[string]bool, len(keys))
+	if len(keys) > 0 {
+		placeholders := strings.TrimSuffix(strings.Repeat("?,", len(keys)), ",")
+		args := make([]any, 0, len(keys)+1)
+		args = append(args, nodeID)
+		for _, key := range keys {
+			args = append(args, key)
+		}
+		rows, err := tx.QueryContext(ctx, fmt.Sprintf(
+			`SELECT series_key FROM node_metric_series WHERE node_id = ? AND series_key IN (%s)`, placeholders), args...)
+		if err != nil {
 			return err
 		}
-		existingSeries[key] = struct{}{}
+		for rows.Next() {
+			var key string
+			if err := rows.Scan(&key); err != nil {
+				rows.Close()
+				return err
+			}
+			known[key] = true
+		}
+		if err := rows.Close(); err != nil {
+			return err
+		}
+		if err := rows.Err(); err != nil {
+			return err
+		}
 	}
-	if err := rows.Close(); err != nil {
-		return err
-	}
-	if err := rows.Err(); err != nil {
-		return err
-	}
-	newSeries := map[string]struct{}{}
-	for _, sample := range prepared {
-		if _, ok := existingSeries[sample.seriesKey]; ok {
+	newKeys := make([]string, 0, len(keys))
+	for _, key := range keys {
+		if known[key] {
 			continue
 		}
-		if _, ok := newSeries[sample.seriesKey]; ok {
-			continue
-		}
-		if len(existingSeries)+len(newSeries) >= NativeMaxSeries {
+		if existingCount+len(newKeys) >= NativeMaxSeries {
 			return fmt.Errorf("%w: node %s has reached %d series", ErrNativeSeriesLimit, nodeID, NativeMaxSeries)
 		}
-		newSeries[sample.seriesKey] = struct{}{}
+		newKeys = append(newKeys, key)
+	}
+	if len(newKeys) > 0 {
+		statement, err := tx.PrepareContext(ctx, `
+			INSERT INTO node_metric_series (node_id, metric, series_key, dimensions_json, updated_at)
+			VALUES (?, ?, ?, ?, ?)
+			ON CONFLICT(node_id, metric, series_key) DO UPDATE SET
+				dimensions_json = excluded.dimensions_json,
+				updated_at = excluded.updated_at`)
+		if err != nil {
+			return err
+		}
+		defer statement.Close()
+		updatedAt := formatNativeTime(time.Now().UTC())
+		for _, key := range newKeys {
+			meta := distinct[key]
+			if _, err := statement.ExecContext(ctx, nodeID, meta.metric, key, meta.dimensions, updatedAt); err != nil {
+				return err
+			}
+		}
 	}
 
 	statement, err := tx.PrepareContext(ctx, `
@@ -589,95 +663,31 @@ func (s *SQLiteStore) NodeMetricSeries(ctx context.Context, nodeID, metric strin
 		return nil, fmt.Errorf("%w: invalid metric", ErrNativeInvalidQuery)
 	}
 
-	dimensionsByKey := map[string]map[string]string{}
-	order := make([]string, 0, 8)
-	add := func(seriesKey string, dimensions map[string]string) {
-		if _, exists := dimensionsByKey[seriesKey]; exists {
-			return
-		}
-		if dimensions == nil {
-			dimensions = map[string]string{}
-		}
-		dimensionsByKey[seriesKey] = dimensions
-		order = append(order, seriesKey)
-	}
-
-	rawQuery := `SELECT series_key, MAX(dimensions_json) FROM node_metric_samples WHERE node_id = ?`
-	rawArgs := []any{nodeID}
+	query := `SELECT metric, series_key, dimensions_json FROM node_metric_series WHERE node_id = ?`
+	args := []any{nodeID}
 	if metric != "" {
-		rawQuery += ` AND metric = ?`
-		rawArgs = append(rawArgs, metric)
+		query += ` AND metric = ?`
+		args = append(args, metric)
 	}
-	rawQuery += ` GROUP BY series_key ORDER BY series_key LIMIT ?`
-	rawArgs = append(rawArgs, NativeMaxSeries)
-	rows, err := s.queryer(ctx).QueryContext(ctx, rawQuery, rawArgs...)
+	query += ` ORDER BY metric, series_key LIMIT ?`
+	args = append(args, NativeMaxSeries)
+	rows, err := s.queryer(ctx).QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
+	series := make([]NativeSeries, 0, 16)
 	for rows.Next() {
-		var seriesKey, encoded string
-		if err := rows.Scan(&seriesKey, &encoded); err != nil {
-			rows.Close()
+		var item NativeSeries
+		var encoded string
+		if err := rows.Scan(&item.Metric, &item.SeriesKey, &encoded); err != nil {
 			return nil, err
 		}
-		add(seriesKey, nativeDimensionsForSeries(seriesKey, encoded))
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
+		item.Dimensions = nativeDimensionsForSeries(item.SeriesKey, encoded)
+		series = append(series, item)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
-	}
-
-	rollupQuery := `SELECT DISTINCT series_key FROM node_metric_rollups WHERE node_id = ?`
-	rollupArgs := []any{nodeID}
-	if metric != "" {
-		rollupQuery += ` AND metric = ?`
-		rollupArgs = append(rollupArgs, metric)
-	}
-	rollupQuery += ` ORDER BY series_key LIMIT ?`
-	rollupArgs = append(rollupArgs, NativeMaxSeries)
-	rows, err = s.queryer(ctx).QueryContext(ctx, rollupQuery, rollupArgs...)
-	if err != nil {
-		return nil, err
-	}
-	for rows.Next() {
-		var seriesKey string
-		if err := rows.Scan(&seriesKey); err != nil {
-			rows.Close()
-			return nil, err
-		}
-		if _, exists := dimensionsByKey[seriesKey]; exists {
-			continue
-		}
-		_, dimensions, ok := ParseSeriesKey(seriesKey)
-		if !ok {
-			dimensions = map[string]string{}
-		}
-		add(seriesKey, dimensions)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	sort.Strings(order)
-	if len(order) > NativeMaxSeries {
-		order = order[:NativeMaxSeries]
-	}
-	series := make([]NativeSeries, 0, len(order))
-	for _, seriesKey := range order {
-		seriesMetric, _, ok := ParseSeriesKey(seriesKey)
-		if !ok || metric != "" {
-			seriesMetric = metric
-		}
-		series = append(series, NativeSeries{
-			Metric:     seriesMetric,
-			SeriesKey:  seriesKey,
-			Dimensions: dimensionsByKey[seriesKey],
-		})
 	}
 	return series, nil
 }
@@ -964,20 +974,6 @@ func (s *SQLiteStore) NodeMetricSeriesBatch(ctx context.Context, nodeID string, 
 		return result, nil
 	}
 
-	dimensionsByKey := map[string]map[string]string{}
-	order := make([]string, 0, len(unique)*8)
-	add := func(metric, seriesKey string, dimensions map[string]string) {
-		key := metric + "\x00" + seriesKey
-		if _, exists := dimensionsByKey[key]; exists {
-			return
-		}
-		if dimensions == nil {
-			dimensions = map[string]string{}
-		}
-		dimensionsByKey[key] = dimensions
-		order = append(order, key)
-	}
-
 	placeholders := strings.TrimSuffix(strings.Repeat("?,", len(unique)), ",")
 	args := make([]any, 0, len(unique)+2)
 	args = append(args, nodeID)
@@ -986,77 +982,31 @@ func (s *SQLiteStore) NodeMetricSeriesBatch(ctx context.Context, nodeID string, 
 	}
 	args = append(args, NativeMaxSeries)
 
-	rawQuery := fmt.Sprintf(`SELECT metric, series_key, MAX(dimensions_json)
-		FROM node_metric_samples
+	query := fmt.Sprintf(`SELECT metric, series_key, dimensions_json
+		FROM node_metric_series
 		WHERE node_id = ? AND metric IN (%s)
-		GROUP BY metric, series_key
 		ORDER BY metric, series_key LIMIT ?`, placeholders)
-	rows, err := s.queryer(ctx).QueryContext(ctx, rawQuery, args...)
+	rows, err := s.queryer(ctx).QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		var metric, seriesKey, encoded string
 		if err := rows.Scan(&metric, &seriesKey, &encoded); err != nil {
-			rows.Close()
 			return nil, err
 		}
-		add(metric, seriesKey, nativeDimensionsForSeries(seriesKey, encoded))
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	rollupQuery := fmt.Sprintf(`SELECT DISTINCT metric, series_key
-		FROM node_metric_rollups
-		WHERE node_id = ? AND metric IN (%s)
-		ORDER BY metric, series_key LIMIT ?`, placeholders)
-	rows, err = s.queryer(ctx).QueryContext(ctx, rollupQuery, args...)
-	if err != nil {
-		return nil, err
-	}
-	for rows.Next() {
-		var metric, seriesKey string
-		if err := rows.Scan(&metric, &seriesKey); err != nil {
-			rows.Close()
-			return nil, err
-		}
-		key := metric + "\x00" + seriesKey
-		if _, exists := dimensionsByKey[key]; exists {
+		if len(result[metric]) >= NativeMaxSeries {
 			continue
 		}
-		_, dimensions, ok := ParseSeriesKey(seriesKey)
-		if !ok {
-			dimensions = map[string]string{}
-		}
-		add(metric, seriesKey, dimensions)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
+		result[metric] = append(result[metric], NativeSeries{
+			Metric:     metric,
+			SeriesKey:  seriesKey,
+			Dimensions: nativeDimensionsForSeries(seriesKey, encoded),
+		})
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
-	}
-
-	sort.Strings(order)
-	perMetric := map[string][]NativeSeries{}
-	for _, key := range order {
-		parts := strings.SplitN(key, "\x00", 2)
-		metric, seriesKey := parts[0], parts[1]
-		perMetric[metric] = append(perMetric[metric], NativeSeries{
-			Metric:     metric,
-			SeriesKey:  seriesKey,
-			Dimensions: dimensionsByKey[key],
-		})
-	}
-	for metric, series := range perMetric {
-		if len(series) > NativeMaxSeries {
-			series = series[:NativeMaxSeries]
-		}
-		result[metric] = series
 	}
 	return result, nil
 }
@@ -1313,18 +1263,75 @@ func (s *SQLiteStore) LateSampleCount() uint64 {
 	return s.nativeLateSamples.Load()
 }
 
+// SetNativeAggregateBudget 设置每轮聚合时间预算；<=0 使用默认 10s。
+func (s *SQLiteStore) SetNativeAggregateBudget(budget time.Duration) {
+	if budget > 0 {
+		s.nativeAggregateBudget = budget
+	}
+}
+
+func (s *SQLiteStore) aggregateBudget() time.Duration {
+	if s.nativeAggregateBudget > 0 {
+		return s.nativeAggregateBudget
+	}
+	return 10 * time.Second
+}
+
+func (s *SQLiteStore) aggregateCursor(tier string) (nativeAggregateSeriesKey, bool) {
+	s.aggregateMu.Lock()
+	defer s.aggregateMu.Unlock()
+	cursor, ok := s.aggregateCursors[tier]
+	return cursor, ok
+}
+
+func (s *SQLiteStore) setAggregateCursor(tier string, cursor nativeAggregateSeriesKey) {
+	s.aggregateMu.Lock()
+	s.aggregateCursors[tier] = cursor
+	s.aggregateMu.Unlock()
+}
+
+func (s *SQLiteStore) clearAggregateCursor(tier string) {
+	s.aggregateMu.Lock()
+	delete(s.aggregateCursors, tier)
+	s.aggregateMu.Unlock()
+}
+
+// LastNativeAggregateStats 返回最近一轮聚合统计。
+func (s *SQLiteStore) LastNativeAggregateStats() NativeAggregateStats {
+	s.aggregateStatsMu.Lock()
+	defer s.aggregateStatsMu.Unlock()
+	return s.lastAggregateStats
+}
+
+// LastNativeBackfillStats 返回最近一次回填统计。
+func (s *SQLiteStore) LastNativeBackfillStats() NativeAggregateStats {
+	s.aggregateStatsMu.Lock()
+	defer s.aggregateStatsMu.Unlock()
+	return s.lastBackfillStats
+}
+
 // AggregateNodeMetrics 执行 raw -> 1m -> 5m -> 1h 聚合。
 //
-// 增量重算范围取“已有最大桶向前 10 个桶”与 `now-1h` 迟到窗口的并集；
-// 每 15 分钟切块独立事务，避免一次长写锁。首次聚合（无 rollup）仍从来源
-// 保留窗口一次性回填。超窗口样本只保留 raw，不删除、不扩展 rollup 重算。
+// 增量重算范围只覆盖最近 15 分钟迟到窗口，并确保包含最后一个 rollup 桶；
+// 正常追赶最多向前 2 小时，更早缺口由 BackfillNativeMetrics 处理。
+// 每轮最多运行 10s（可配置），按 tier 游标轮转 series，避免总从第一个节点开始。
 func (s *SQLiteStore) AggregateNodeMetrics(ctx context.Context, now time.Time) error {
 	started := time.Now()
-	defer func() { logSlowNativeQuery("aggregate", started) }()
+	run := &nativeRunStats{}
+	defer func() {
+		logSlowNativeQuery("aggregate", started)
+		s.aggregateStatsMu.Lock()
+		s.lastAggregateStats = NativeAggregateStats{
+			Duration: time.Since(started), Series: run.series,
+			Transactions: run.transactions, BusyErrors: run.busyErrors, Truncated: run.truncated,
+		}
+		s.aggregateStatsMu.Unlock()
+	}()
 	now = now.UTC()
 	if now.IsZero() {
 		now = time.Now().UTC()
 	}
+	deadline := time.Now().Add(s.aggregateBudget())
 	specs := []nativeAggregateSpec{
 		{
 			tier:            NativeTier1m,
@@ -1351,22 +1358,80 @@ func (s *SQLiteStore) AggregateNodeMetrics(ctx context.Context, now time.Time) e
 		},
 	}
 	for _, spec := range specs {
-		if err := s.aggregateNativeTier(ctx, spec, now); err != nil {
+		if !time.Now().Before(deadline) {
+			return nil
+		}
+		if err := s.aggregateNativeTier(ctx, spec, now, deadline, run); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *SQLiteStore) aggregateNativeTier(ctx context.Context, spec nativeAggregateSpec, now time.Time) error {
+func (s *SQLiteStore) aggregateNativeTier(ctx context.Context, spec nativeAggregateSpec, now, deadline time.Time, run *nativeRunStats) error {
 	end := now.Truncate(spec.step)
 	if end.IsZero() {
 		return nil
 	}
 	sourceStart := now.Add(-spec.sourceRetention)
-	return nativeAggregateSeries(ctx, s.db, spec, sourceStart, end, func(item nativeAggregateSeriesKey) error {
-		return s.aggregateNativeSeries(ctx, spec, item, now, sourceStart, end)
-	})
+	after, hasAfter := s.aggregateCursor(spec.tier)
+	for {
+		page, err := nativeListAggregateSeries(ctx, s.db, after, hasAfter, nativeSeriesPageSize)
+		if err != nil {
+			return err
+		}
+		if len(page) == 0 {
+			s.clearAggregateCursor(spec.tier)
+			return nil
+		}
+		for index, item := range page {
+			if !time.Now().Before(deadline) {
+				if index > 0 {
+					s.setAggregateCursor(spec.tier, page[index-1])
+				} else {
+					s.setAggregateCursor(spec.tier, after)
+				}
+				return nil
+			}
+			if err := s.aggregateNativeSeries(ctx, spec, item, now, sourceStart, end, run); err != nil {
+				return err
+			}
+			run.series++
+			s.setAggregateCursor(spec.tier, item)
+		}
+		if len(page) < nativeSeriesPageSize {
+			s.clearAggregateCursor(spec.tier)
+			return nil
+		}
+		after = page[len(page)-1]
+		hasAfter = true
+	}
+}
+
+// nativeListAggregateSeries 从 series 目录分页读取，避免每次聚合扫描 raw。
+func nativeListAggregateSeries(ctx context.Context, q txQueryer, after nativeAggregateSeriesKey, hasAfter bool, limit int) ([]nativeAggregateSeriesKey, error) {
+	query := `SELECT node_id, metric, series_key FROM node_metric_series`
+	args := []any{}
+	if hasAfter {
+		query += ` WHERE node_id > ? OR (node_id = ? AND metric > ?) OR (node_id = ? AND metric = ? AND series_key > ?)`
+		args = append(args, after.nodeID, after.nodeID, after.metric, after.nodeID, after.metric, after.seriesKey)
+	}
+	query += ` ORDER BY node_id, metric, series_key LIMIT ?`
+	args = append(args, limit)
+	rows, err := q.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make([]nativeAggregateSeriesKey, 0, limit)
+	for rows.Next() {
+		var item nativeAggregateSeriesKey
+		if err := rows.Scan(&item.nodeID, &item.metric, &item.seriesKey); err != nil {
+			return nil, err
+		}
+		out = append(out, item)
+	}
+	return out, rows.Err()
 }
 
 func (s *SQLiteStore) aggregateNativeSeries(
@@ -1375,25 +1440,35 @@ func (s *SQLiteStore) aggregateNativeSeries(
 	item nativeAggregateSeriesKey,
 	now time.Time,
 	sourceStart, end time.Time,
+	run *nativeRunStats,
 ) error {
 	last, err := nativeLastRollupBucket(ctx, s.db, item, spec.tier)
 	if err != nil {
 		return err
 	}
 	initial := last.IsZero()
-	start := now.Add(-spec.initialLookback)
-	if !initial {
-		// 并集：向前 10 个桶吸收晚到样本 + now-1h 迟到窗口。
-		start = last.Add(-10 * spec.step)
-		lateStart := now.Add(-s.lateWindow())
-		if lateStart.Before(start) {
-			start = lateStart
+	start := now.Add(-s.lateWindow())
+	if initial {
+		start = now.Add(-spec.initialLookback)
+		earliest, err := nativeSeriesEarliestSource(ctx, s.db, spec, item)
+		if err != nil {
+			return err
 		}
-		if last.Before(lateStart) {
-			// 最后桶早于迟到窗口：窗口之前的空档不再回填 rollup，只保留 raw。
-			slog.Default().Warn("native metric aggregation truncated late window",
+		if !earliest.IsZero() && earliest.After(start) {
+			start = earliest
+		}
+	}
+	if !initial && last.Before(start) {
+		// 最后一个桶早于窗口时仍重算它，保证 1h 桶能在小时后收敛。
+		start = last
+	}
+	if !initial {
+		if catchup := now.Add(-nativeAggregateMaxCatchup); start.Before(catchup) {
+			start = catchup
+			run.truncated++
+			slog.Default().Debug("native metric aggregation truncated catchup window",
 				"node", item.nodeID, "metric", item.metric, "series", item.seriesKey,
-				"tier", spec.tier, "last_bucket", last, "window_start", lateStart)
+				"tier", spec.tier, "start", start)
 		}
 	}
 	if start.Before(sourceStart) {
@@ -1403,19 +1478,27 @@ func (s *SQLiteStore) aggregateNativeSeries(
 	if !start.Before(end) {
 		return nil
 	}
+	if !initial {
+		hasSource, err := nativeSeriesHasSource(ctx, s.db, spec, item, start, end)
+		if err != nil {
+			return err
+		}
+		if !hasSource {
+			return nil
+		}
+	}
 	expected := NativeExpectedCount(spec.step, spec.sourceStep)
 	if spec.source == nativeSourceRaw {
-		interval, err := nativeRawSeriesInterval(ctx, s.db, item, sourceStart, end)
+		interval, err := nativeRawSeriesInterval(ctx, s.db, item, start, end)
 		if err != nil {
 			return err
 		}
 		expected = NativeExpectedCount(spec.step, interval)
 	}
-	if initial {
-		// 首次回填一次性处理，避免为历史保留期制造大量空事务。
-		return s.aggregateNativeSeriesRange(ctx, spec, item, start, end, expected)
-	}
 	chunk := nativeAggregateChunk
+	if initial {
+		chunk = nativeInitialChunk
+	}
 	if chunk < spec.step {
 		chunk = spec.step
 	}
@@ -1424,12 +1507,168 @@ func (s *SQLiteStore) aggregateNativeSeries(
 		if chunkEnd.After(end) {
 			chunkEnd = end
 		}
-		if err := s.aggregateNativeSeriesRange(ctx, spec, item, chunkStart, chunkEnd, expected); err != nil {
+		if err := s.aggregateNativeSeriesRange(ctx, spec, item, chunkStart, chunkEnd, expected, run); err != nil {
 			return err
 		}
 		chunkStart = chunkEnd
 	}
 	return nil
+}
+
+func nativeSeriesHasSource(ctx context.Context, q txQueryer, spec nativeAggregateSpec, item nativeAggregateSeriesKey, start, end time.Time) (bool, error) {
+	var query string
+	args := []any{item.nodeID, item.metric, item.seriesKey, formatNativeTime(start), formatNativeTime(end)}
+	if spec.source == nativeSourceRaw {
+		query = `SELECT 1 FROM node_metric_samples
+			WHERE node_id = ? AND metric = ? AND series_key = ? AND timestamp >= ? AND timestamp < ? LIMIT 1`
+	} else {
+		query = `SELECT 1 FROM node_metric_rollups
+			WHERE node_id = ? AND metric = ? AND series_key = ? AND tier = ? AND bucket_start >= ? AND bucket_start < ? LIMIT 1`
+		args = []any{item.nodeID, item.metric, item.seriesKey, spec.source, formatNativeTime(start), formatNativeTime(end)}
+	}
+	var one int
+	err := q.QueryRowContext(ctx, query, args...).Scan(&one)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+func nativeSeriesEarliestSource(ctx context.Context, q txQueryer, spec nativeAggregateSpec, item nativeAggregateSeriesKey) (time.Time, error) {
+	var query string
+	var args []any
+	if spec.source == nativeSourceRaw {
+		query = `SELECT MIN(timestamp) FROM node_metric_samples WHERE node_id = ? AND metric = ? AND series_key = ?`
+		args = []any{item.nodeID, item.metric, item.seriesKey}
+	} else {
+		query = `SELECT MIN(bucket_start) FROM node_metric_rollups WHERE node_id = ? AND metric = ? AND series_key = ? AND tier = ?`
+		args = []any{item.nodeID, item.metric, item.seriesKey, spec.source}
+	}
+	var raw sql.NullString
+	if err := q.QueryRowContext(ctx, query, args...).Scan(&raw); err != nil {
+		return time.Time{}, err
+	}
+	if !raw.Valid || raw.String == "" {
+		return time.Time{}, nil
+	}
+	return parseNativeTime(raw.String)
+}
+
+// NativeBackfillOptions 控制一次性 bounded backfill。
+type NativeBackfillOptions struct {
+	// Chunk 是每个事务覆盖的时间范围；零值使用 15m（1m/5m tier）或 1h（1h tier）。
+	Chunk time.Duration
+	// Pause 是每个 chunk 之间的限速等待；零值使用 10ms。
+	Pause time.Duration
+	// Progress 每处理若干 series 回调一次（可选）。
+	Progress func(tier string, seriesDone, seriesTotal int)
+}
+
+// BackfillNativeMetrics 从 from 到 to 分块重算 raw -> 1m -> 5m -> 1h。
+// 只删除/重写目标 rollup，不删除 raw；重复执行幂等。用于恢复长期缺口，
+// 例如生产 14:09–14:39 的 1m/5m、13:00–14:00 的 1h 缺失。
+func (s *SQLiteStore) BackfillNativeMetrics(ctx context.Context, from, to time.Time, opts NativeBackfillOptions) error {
+	from, to = from.UTC(), to.UTC()
+	if from.IsZero() || to.IsZero() || !from.Before(to) {
+		return fmt.Errorf("%w: invalid backfill range", ErrNativeInvalidQuery)
+	}
+	specs := []nativeAggregateSpec{
+		{tier: NativeTier1m, step: time.Minute, source: nativeSourceRaw, sourceRetention: NativeRawRetention},
+		{tier: NativeTier5m, step: 5 * time.Minute, source: NativeTier1m, sourceStep: time.Minute, sourceRetention: Native1mRetention},
+		{tier: NativeTier1h, step: time.Hour, source: NativeTier5m, sourceStep: 5 * time.Minute, sourceRetention: Native5mRetention},
+	}
+	series, err := nativeListAllSeries(ctx, s.db)
+	if err != nil {
+		return err
+	}
+	started := time.Now()
+	run := &nativeRunStats{}
+	defer func() {
+		s.aggregateStatsMu.Lock()
+		s.lastBackfillStats = NativeAggregateStats{
+			Duration: time.Since(started), Series: run.series,
+			Transactions: run.transactions, BusyErrors: run.busyErrors, Truncated: run.truncated,
+		}
+		s.aggregateStatsMu.Unlock()
+	}()
+	for _, spec := range specs {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		chunk := opts.Chunk
+		if chunk <= 0 {
+			chunk = nativeAggregateChunk
+		}
+		if chunk < spec.step {
+			chunk = spec.step
+		}
+		end := to.Truncate(spec.step)
+		start := from.UTC().Truncate(spec.step)
+		if !start.Before(end) {
+			continue
+		}
+		for index, item := range series {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			expected := NativeExpectedCount(spec.step, spec.sourceStep)
+			if spec.source == nativeSourceRaw {
+				interval, err := nativeRawSeriesInterval(ctx, s.db, item, start, end)
+				if err != nil {
+					return err
+				}
+				expected = NativeExpectedCount(spec.step, interval)
+			}
+			for chunkStart := start; chunkStart.Before(end); {
+				chunkEnd := chunkStart.Add(chunk)
+				if chunkEnd.After(end) {
+					chunkEnd = end
+				}
+				hasSource, err := nativeSeriesHasSource(ctx, s.db, spec, item, chunkStart, chunkEnd)
+				if err != nil {
+					return err
+				}
+				if hasSource {
+					if err := s.aggregateNativeSeriesRange(ctx, spec, item, chunkStart, chunkEnd, expected, run); err != nil {
+						return err
+					}
+				}
+				chunkStart = chunkEnd
+				if opts.Pause > 0 {
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					case <-time.After(opts.Pause):
+					}
+				}
+			}
+			run.series++
+			if opts.Progress != nil && (index+1)%50 == 0 {
+				opts.Progress(spec.tier, index+1, len(series))
+			}
+		}
+		if opts.Progress != nil {
+			opts.Progress(spec.tier, len(series), len(series))
+		}
+	}
+	return nil
+}
+
+func nativeListAllSeries(ctx context.Context, q txQueryer) ([]nativeAggregateSeriesKey, error) {
+	rows, err := q.QueryContext(ctx, `SELECT node_id, metric, series_key FROM node_metric_series ORDER BY node_id, metric, series_key`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make([]nativeAggregateSeriesKey, 0, 256)
+	for rows.Next() {
+		var item nativeAggregateSeriesKey
+		if err := rows.Scan(&item.nodeID, &item.metric, &item.seriesKey); err != nil {
+			return nil, err
+		}
+		out = append(out, item)
+	}
+	return out, rows.Err()
 }
 
 func (s *SQLiteStore) aggregateNativeSeriesRange(
@@ -1438,7 +1677,13 @@ func (s *SQLiteStore) aggregateNativeSeriesRange(
 	item nativeAggregateSeriesKey,
 	start, end time.Time,
 	expected uint64,
-) error {
+	run *nativeRunStats,
+) (err error) {
+	defer func() {
+		if err != nil && IsBusyError(err) {
+			run.busyErrors++
+		}
+	}()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -1455,7 +1700,11 @@ func (s *SQLiteStore) aggregateNativeSeriesRange(
 	if err := nativeWriteBuckets(ctx, tx, item, spec, expected, buckets); err != nil {
 		return err
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	run.transactions++
+	return nil
 }
 
 // nativeRawSeriesInterval 从最近原始样本时间戳推导单个 series 的采样周期。
@@ -1525,59 +1774,6 @@ func nativeDeleteRollupWindow(ctx context.Context, tx *sql.Tx, series nativeAggr
 		}
 	}
 	return nil
-}
-
-func nativeAggregateSeries(ctx context.Context, tx txQueryer, spec nativeAggregateSpec, start, end time.Time, visit func(nativeAggregateSeriesKey) error) error {
-	lastNode, lastMetric, lastSeries := "", "", ""
-	for {
-		query := ""
-		args := []any{}
-		if spec.source == nativeSourceRaw {
-			query = `SELECT DISTINCT node_id, metric, series_key FROM node_metric_samples
-				WHERE timestamp >= ? AND timestamp < ?`
-			args = append(args, formatNativeTime(start), formatNativeTime(end))
-		} else {
-			query = `SELECT DISTINCT node_id, metric, series_key FROM node_metric_rollups
-				WHERE tier = ? AND bucket_start >= ? AND bucket_start < ?`
-			args = append(args, spec.source, formatNativeTime(start), formatNativeTime(end))
-		}
-		if lastNode != "" || lastMetric != "" || lastSeries != "" {
-			query += ` AND (node_id > ? OR (node_id = ? AND metric > ?) OR (node_id = ? AND metric = ? AND series_key > ?))`
-			args = append(args, lastNode, lastNode, lastMetric, lastNode, lastMetric, lastSeries)
-		}
-		query += ` ORDER BY node_id, metric, series_key LIMIT ?`
-		args = append(args, nativeSeriesPageSize)
-
-		rows, err := tx.QueryContext(ctx, query, args...)
-		if err != nil {
-			return err
-		}
-		page := make([]nativeAggregateSeriesKey, 0, nativeSeriesPageSize)
-		for rows.Next() {
-			var item nativeAggregateSeriesKey
-			if err := rows.Scan(&item.nodeID, &item.metric, &item.seriesKey); err != nil {
-				rows.Close()
-				return err
-			}
-			page = append(page, item)
-		}
-		if err := rows.Close(); err != nil {
-			return err
-		}
-		if err := rows.Err(); err != nil {
-			return err
-		}
-		for _, item := range page {
-			if err := visit(item); err != nil {
-				return err
-			}
-		}
-		if len(page) < nativeSeriesPageSize {
-			return nil
-		}
-		last := page[len(page)-1]
-		lastNode, lastMetric, lastSeries = last.nodeID, last.metric, last.seriesKey
-	}
 }
 
 func nativeLastRollupBucket(ctx context.Context, tx txQueryer, series nativeAggregateSeriesKey, tier string) (time.Time, error) {

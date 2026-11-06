@@ -102,7 +102,7 @@ const execColumns = `id, task_id, task_revision, script_id, script_revision, nod
 	stdout_truncated, stderr_truncated, offline, synced, block_reason, created_at`
 
 func (s *SQLiteStore) GetExecution(ctx context.Context, id string) (*models.Execution, error) {
-	row := s.db.QueryRowContext(ctx, `SELECT `+execColumns+` FROM executions WHERE id = ?`, id)
+	row := s.queryer(ctx).QueryRowContext(ctx, `SELECT `+execColumns+` FROM executions WHERE id = ?`, id)
 	e, err := scanExecution(row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, sql.ErrNoRows
@@ -155,7 +155,7 @@ func (s *SQLiteStore) ListExecutions(ctx context.Context, filter ExecutionFilter
 		query += ` OFFSET ?`
 		args = append(args, filter.Offset)
 	}
-	rows, err := s.db.QueryContext(ctx, query, args...)
+	rows, err := s.queryer(ctx).QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -175,14 +175,14 @@ func (s *SQLiteStore) ListExecutions(ctx context.Context, filter ExecutionFilter
 func (s *SQLiteStore) CountExecutions(ctx context.Context, filter ExecutionFilter) (int64, error) {
 	where, args := executionFilterWhere(filter)
 	var n int64
-	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM executions`+where, args...).Scan(&n); err != nil {
+	if err := s.queryer(ctx).QueryRowContext(ctx, `SELECT COUNT(*) FROM executions`+where, args...).Scan(&n); err != nil {
 		return 0, err
 	}
 	return n, nil
 }
 
 func (s *SQLiteStore) FindExecutionBySlot(ctx context.Context, taskID, nodeID, scheduledTime string) (*models.Execution, error) {
-	row := s.db.QueryRowContext(ctx,
+	row := s.queryer(ctx).QueryRowContext(ctx,
 		`SELECT `+execColumns+` FROM executions WHERE task_id = ? AND node_id = ? AND scheduled_time = ?`,
 		taskID, nodeID, scheduledTime)
 	e, err := scanExecution(row)
@@ -193,7 +193,7 @@ func (s *SQLiteStore) FindExecutionBySlot(ctx context.Context, taskID, nodeID, s
 }
 
 func (s *SQLiteStore) CountExecutionsByStatus(ctx context.Context) (map[string]int, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT status, COUNT(*) FROM executions GROUP BY status`)
+	rows, err := s.queryer(ctx).QueryContext(ctx, `SELECT status, COUNT(*) FROM executions GROUP BY status`)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +222,7 @@ func (s *SQLiteStore) SetRemoteState(ctx context.Context, nodeID, property, valu
 }
 
 func (s *SQLiteStore) GetRemoteState(ctx context.Context, nodeID, property string) (string, time.Time, time.Time, error) {
-	row := s.db.QueryRowContext(ctx,
+	row := s.queryer(ctx).QueryRowContext(ctx,
 		`SELECT value, observed_at, expires_at FROM remote_state WHERE node_id = ? AND property = ?`,
 		nodeID, property)
 	var value, observed, expires string
@@ -273,7 +273,7 @@ func (s *SQLiteStore) NextGlobalRevision(ctx context.Context) (int64, error) {
 
 func (s *SQLiteStore) CurrentGlobalRevision(ctx context.Context) (int64, error) {
 	var v int64
-	err := s.db.QueryRowContext(ctx, `SELECT value FROM revision_sequence`).Scan(&v)
+	err := s.queryer(ctx).QueryRowContext(ctx, `SELECT value FROM revision_sequence`).Scan(&v)
 	return v, err
 }
 
@@ -285,7 +285,7 @@ func (s *SQLiteStore) AppendChangeLog(ctx context.Context, globalRev int64, obje
 }
 
 func (s *SQLiteStore) GetChangesSince(ctx context.Context, since int64) ([]*ChangeLogEntry, error) {
-	rows, err := s.db.QueryContext(ctx, `
+	rows, err := s.queryer(ctx).QueryContext(ctx, `
 		SELECT global_revision, object_type, object_id, object_revision, operation, created_at
 		FROM revision_changes WHERE global_revision > ? ORDER BY global_revision`, since)
 	if err != nil {
@@ -320,7 +320,7 @@ func (s *SQLiteStore) RecordTombstone(ctx context.Context, objectType, objectID 
 }
 
 func (s *SQLiteStore) ListTombstones(ctx context.Context) ([]Tombstone, error) {
-	rows, err := s.db.QueryContext(ctx, `
+	rows, err := s.queryer(ctx).QueryContext(ctx, `
 		SELECT object_type, object_id, global_revision, deleted_at FROM tombstones ORDER BY global_revision`)
 	if err != nil {
 		return nil, err
@@ -352,7 +352,7 @@ func (s *SQLiteStore) AppendLogChunk(ctx context.Context, executionID, stream st
 }
 
 func (s *SQLiteStore) ListLogChunks(ctx context.Context, executionID string) ([]LogChunk, error) {
-	rows, err := s.db.QueryContext(ctx, `
+	rows, err := s.queryer(ctx).QueryContext(ctx, `
 		SELECT execution_id, stream, seq, chunk FROM log_chunks
 		WHERE execution_id = ? ORDER BY seq`, executionID)
 	if err != nil {
@@ -371,7 +371,7 @@ func (s *SQLiteStore) ListLogChunks(ctx context.Context, executionID string) ([]
 }
 
 func (s *SQLiteStore) GetAgentSyncState(ctx context.Context, nodeID string) (*AgentSyncState, error) {
-	row := s.db.QueryRowContext(ctx,
+	row := s.queryer(ctx).QueryRowContext(ctx,
 		`SELECT node_id, global_revision, last_sync, sync_status FROM agent_sync_state WHERE node_id = ?`, nodeID)
 	var st AgentSyncState
 	var last string
@@ -430,7 +430,7 @@ func (s *SQLiteStore) ListAudit(ctx context.Context, filter AuditFilter) ([]*mod
 		query += ` OFFSET ?`
 		args = append(args, filter.Offset)
 	}
-	rows, err := s.db.QueryContext(ctx, query, args...)
+	rows, err := s.queryer(ctx).QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -453,7 +453,7 @@ func (s *SQLiteStore) ListAudit(ctx context.Context, filter AuditFilter) ([]*mod
 func (s *SQLiteStore) CountAudit(ctx context.Context, filter AuditFilter) (int64, error) {
 	where, args := auditFilterWhere(filter)
 	var n int64
-	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_logs`+where, args...).Scan(&n); err != nil {
+	if err := s.queryer(ctx).QueryRowContext(ctx, `SELECT COUNT(*) FROM audit_logs`+where, args...).Scan(&n); err != nil {
 		return 0, err
 	}
 	return n, nil

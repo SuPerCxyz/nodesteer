@@ -256,6 +256,10 @@ func TestNativeMetricSeriesAndLatest(t *testing.T) {
 		formatNativeTime(base), formatNativeTime(base), 0); err != nil {
 		t.Fatalf("insert rollup: %v", err)
 	}
+	if _, err := st.DB().Exec(`INSERT INTO node_metric_series (node_id, metric, series_key, dimensions_json, updated_at)
+		VALUES (?, ?, ?, ?, ?)`, "rollup-node", "disk.usage", "disk.usage|mount=/data", `{"mount":"/data"}`, now()); err != nil {
+		t.Fatalf("insert series directory: %v", err)
+	}
 	series, err = st.NodeMetricSeries(ctx, "rollup-node", "disk.usage")
 	if err != nil {
 		t.Fatalf("rollup series: %v", err)
@@ -535,6 +539,7 @@ func TestNativeMetricMigration(t *testing.T) {
 
 func TestNativeMetricAggregationProcessesAllSeries(t *testing.T) {
 	st := newTestStore(t)
+	st.SetNativeAggregateBudget(time.Hour)
 	ctx := context.Background()
 	base := time.Now().UTC().Truncate(time.Minute).Add(-time.Minute)
 	now := base.Add(2 * time.Hour)
@@ -771,77 +776,79 @@ func TestNativeMetricAggregationRecomputesLateSamples(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now().UTC().Truncate(time.Minute)
 	if now.Minute() >= 59 {
-		// 避免 -59min 与当前时间落在同一小时，导致 1h 桶尚未闭合。
 		now = now.Add(-20 * time.Minute)
 	}
 	current := now.Add(-time.Minute)
-	backfill15 := now.Add(-15 * time.Minute)
+	backfill14 := now.Add(-14 * time.Minute)
 	backfill59 := now.Add(-59 * time.Minute)
 	series := BuildSeriesKey("cpu.usage", nil)
 
-	insert := func(timestamp time.Time, value float64) {
+	insert := func(metric string, timestamp time.Time, value float64) {
 		t.Helper()
 		if err := st.InsertNodeMetricSamples(ctx, "node-1", []NativeSample{
-			nativeValidSample(timestamp, "cpu.usage", nil, value),
+			nativeValidSample(timestamp, metric, nil, value),
 		}); err != nil {
 			t.Fatal(err)
 		}
 	}
-	insert(current, 10)
+	insert("cpu.usage", backfill59, 30)
+	insert("cpu.usage", current, 10)
 	if err := st.AggregateNodeMetrics(ctx, now); err != nil {
 		t.Fatal(err)
 	}
-	insert(backfill15, 20)
-	insert(backfill59, 30)
+	// 15m 窗口内补报：1m/5m 重算。
+	insert("cpu.usage", backfill14, 20)
 	if err := st.AggregateNodeMetrics(ctx, now); err != nil {
 		t.Fatal(err)
 	}
 
-	expectBucket := func(tier string, bucket time.Time, want float64) {
+	expectBucket := func(metric, tier string, bucket time.Time, want float64) {
 		t.Helper()
+		seriesKey := BuildSeriesKey(metric, nil)
 		start := bucket.Truncate(time.Hour).Add(-2 * time.Hour)
-		rollups, err := st.QueryNodeMetricRollups(ctx, "node-1", "cpu.usage", series, tier, start, now.Add(time.Hour), 1000)
+		rollups, err := st.QueryNodeMetricRollups(ctx, "node-1", metric, seriesKey, tier, start, now.Add(time.Hour), 1000)
 		if err != nil {
 			t.Fatal(err)
 		}
 		for _, rollup := range rollups {
 			if rollup.BucketStart.Equal(bucket) {
 				if rollup.Count == 0 || rollup.Max != want {
-					t.Fatalf("%s bucket %s = %+v, want max %v", tier, bucket, rollup, want)
+					t.Fatalf("%s %s bucket %s = %+v, want max %v", metric, tier, bucket, rollup, want)
 				}
 				return
 			}
 		}
-		t.Fatalf("%s bucket %s missing; rollups=%+v", tier, bucket, rollups)
+		t.Fatalf("%s %s bucket %s missing; rollups=%+v", metric, tier, bucket, rollups)
 	}
-	expectBucket(NativeTier1m, backfill15, 20)
-	expectBucket(NativeTier1m, backfill59, 30)
-	expectBucket(NativeTier5m, backfill15.Truncate(5*time.Minute), 20)
-	expectBucket(NativeTier1h, backfill59.Truncate(time.Hour), 30)
+	expectBucket("cpu.usage", NativeTier1m, backfill14, 20)
+	expectBucket("cpu.usage", NativeTier5m, backfill14.Truncate(5*time.Minute), 20)
+	expectBucket("cpu.usage", NativeTier1h, backfill59.Truncate(time.Hour), 30)
 
 	// 重复补报必须幂等：同一时间戳 UPSERT 后重算不改变计数。
-	insert(backfill15, 21)
+	insert("cpu.usage", backfill14, 21)
 	if err := st.AggregateNodeMetrics(ctx, now); err != nil {
 		t.Fatal(err)
 	}
-	expectBucket(NativeTier1m, backfill15, 21)
+	expectBucket("cpu.usage", NativeTier1m, backfill14, 21)
 
-	// 超过 1h 窗口：raw 保留，但 rollup 不再向前扩展。
-	beyond := now.Add(-2 * time.Hour)
-	insert(beyond, 99)
+	// 20 分钟前的样本超出 15m 窗口：raw 保留，不生成 1m/5m rollup。
+	beyond := now.Add(-20 * time.Minute)
+	insert("cpu.usage", beyond, 99)
 	if err := st.AggregateNodeMetrics(ctx, now); err != nil {
 		t.Fatal(err)
 	}
-	rollups, err := st.QueryNodeMetricRollups(ctx, "node-1", "cpu.usage", series, NativeTier1m, beyond.Add(-time.Minute), beyond.Add(time.Minute), 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(rollups) != 0 {
-		t.Fatalf("beyond-window sample must not create rollup: %+v", rollups)
+	for _, tier := range []string{NativeTier1m, NativeTier5m} {
+		rollups, err := st.QueryNodeMetricRollups(ctx, "node-1", "cpu.usage", series, tier, beyond.Add(-time.Minute), beyond.Add(time.Minute), 10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(rollups) != 0 {
+			t.Fatalf("%s beyond-window sample must not create rollup: %+v", tier, rollups)
+		}
 	}
 	var rawCount int
-	if err := st.DB().QueryRow(`SELECT COUNT(*) FROM node_metric_samples WHERE node_id = ? AND timestamp = ?`,
-		"node-1", formatNativeTime(beyond)).Scan(&rawCount); err != nil {
+	if err := st.DB().QueryRow(`SELECT COUNT(*) FROM node_metric_samples WHERE node_id = ? AND metric = ? AND timestamp = ?`,
+		"node-1", "cpu.usage", formatNativeTime(beyond)).Scan(&rawCount); err != nil {
 		t.Fatal(err)
 	}
 	if rawCount != 1 {
@@ -850,6 +857,176 @@ func TestNativeMetricAggregationRecomputesLateSamples(t *testing.T) {
 	if got := st.LateSampleCount(); got == 0 {
 		t.Fatal("late sample counter not incremented")
 	}
+}
+
+func TestNativeMetric1hRecomputesAfter5mCorrection(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Hour)
+	previous := now.Add(-time.Hour)
+	if err := st.InsertNodeMetricSamples(ctx, "node-1", []NativeSample{
+		nativeValidSample(previous, "cpu.usage", nil, 5),
+		nativeValidSample(previous.Add(10*time.Minute), "cpu.usage", nil, 10),
+		nativeValidSample(previous.Add(15*time.Minute), "cpu.usage", nil, 20),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.AggregateNodeMetrics(ctx, now); err != nil {
+		t.Fatal(err)
+	}
+	// 模拟 5m 迟到更正后 1h 桶重算。
+	if _, err := st.DB().Exec(`UPDATE node_metric_rollups SET max = 99, "last" = 99
+		WHERE node_id = 'node-1' AND metric = 'cpu.usage' AND tier = '5m' AND bucket_start = ?`,
+		formatNativeTime(previous.Truncate(5*time.Minute))); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.AggregateNodeMetrics(ctx, now); err != nil {
+		t.Fatal(err)
+	}
+	rollups, err := st.QueryNodeMetricRollups(ctx, "node-1", "cpu.usage", "cpu.usage", NativeTier1h, previous, now, 10)
+	if err != nil || len(rollups) != 1 {
+		t.Fatalf("1h rollups = %d, %v", len(rollups), err)
+	}
+	if rollups[0].Max != 99 {
+		t.Fatalf("1h bucket did not recompute from corrected 5m source: %+v", rollups[0])
+	}
+}
+
+func TestNativeBackfillRestoresMissingRollups(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Hour)
+	from := now.Add(-40 * time.Minute)
+	samples := make([]NativeSample, 0, 40)
+	for i := 0; i < 40; i++ {
+		samples = append(samples, nativeValidSample(from.Add(time.Duration(i)*time.Minute), "cpu.usage", nil, float64(i)))
+	}
+	if err := st.InsertNodeMetricSamples(ctx, "node-1", samples); err != nil {
+		t.Fatal(err)
+	}
+	// 模拟缺失：先聚合，再删除窗口内 rollup。
+	if err := st.AggregateNodeMetrics(ctx, now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.DB().Exec(`DELETE FROM node_metric_rollups WHERE node_id='node-1' AND bucket_start >= ?`,
+		formatNativeTime(from)); err != nil {
+		t.Fatal(err)
+	}
+	beforeRaw := countNativeRows(t, st, `SELECT COUNT(*) FROM node_metric_samples`)
+	if err := st.BackfillNativeMetrics(ctx, from, now, NativeBackfillOptions{Chunk: 10 * time.Minute, Pause: time.Millisecond}); err != nil {
+		t.Fatal(err)
+	}
+	for _, tier := range []string{NativeTier1m, NativeTier5m, NativeTier1h} {
+		rollups, err := st.QueryNodeMetricRollups(ctx, "node-1", "cpu.usage", "cpu.usage", tier, from.Truncate(time.Hour), now.Add(time.Hour), 1000)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(rollups) == 0 {
+			t.Fatalf("%s rollups not restored", tier)
+		}
+	}
+	if afterRaw := countNativeRows(t, st, `SELECT COUNT(*) FROM node_metric_samples`); afterRaw != beforeRaw {
+		t.Fatalf("raw rows changed by backfill: %d -> %d", beforeRaw, afterRaw)
+	}
+	// 重复执行幂等。
+	if err := st.BackfillNativeMetrics(ctx, from, now, NativeBackfillOptions{Chunk: 10 * time.Minute}); err != nil {
+		t.Fatal(err)
+	}
+	rollups, err := st.QueryNodeMetricRollups(ctx, "node-1", "cpu.usage", "cpu.usage", NativeTier1m, from, now, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rollups) != 40 {
+		t.Fatalf("1m rollups after repeat = %d, want 40", len(rollups))
+	}
+}
+
+func TestNativeInitialBackfillIsChunked(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Minute)
+	old := now.Add(-30 * time.Hour)
+	if err := st.InsertNodeMetricSamples(ctx, "node-1", []NativeSample{
+		nativeValidSample(old, "cpu.usage", nil, 1),
+		nativeValidSample(now.Add(-time.Minute), "cpu.usage", nil, 2),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.AggregateNodeMetrics(ctx, now); err != nil {
+		t.Fatal(err)
+	}
+	rollups, err := st.QueryNodeMetricRollups(ctx, "node-1", "cpu.usage", "cpu.usage", NativeTier1m, old, now, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rollups) != 2 {
+		t.Fatalf("initial chunked backfill rollups = %d, want 2: %+v", len(rollups), rollups)
+	}
+}
+
+func TestNativeAggregateCursorRotatesSeries(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Minute)
+	const total = 200
+	for start := 0; start < total; start += 100 {
+		batch := make([]NativeSample, 0, 100)
+		for i := start; i < start+100; i++ {
+			batch = append(batch, nativeValidSample(now.Add(-time.Minute), "bulk.metric", map[string]string{"id": fmt.Sprintf("%03d", i)}, float64(i)))
+		}
+		if err := st.InsertNodeMetricSamples(ctx, "node-1", batch); err != nil {
+			t.Fatal(err)
+		}
+	}
+	st.SetNativeAggregateBudget(2 * time.Millisecond)
+	if err := st.AggregateNodeMetrics(ctx, now); err != nil {
+		t.Fatal(err)
+	}
+	st.aggregateMu.Lock()
+	_, hasCursor := st.aggregateCursors[NativeTier1m]
+	st.aggregateMu.Unlock()
+	if !hasCursor {
+		t.Fatal("expected 1m cursor after budget-limited round")
+	}
+	st.SetNativeAggregateBudget(time.Minute)
+	if err := st.AggregateNodeMetrics(ctx, now); err != nil {
+		t.Fatal(err)
+	}
+	var count int
+	if err := st.DB().QueryRow(`SELECT COUNT(*) FROM node_metric_rollups WHERE tier = ?`, NativeTier1m).Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	if count != total {
+		t.Fatalf("1m rollups after cursor rotation = %d, want %d", count, total)
+	}
+}
+
+func TestNativeAggregateSkipsDirectorySeriesWithoutSource(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+	if _, err := st.DB().Exec(`INSERT INTO node_metric_series (node_id, metric, series_key, dimensions_json, updated_at)
+		VALUES ('node-1', 'cpu.usage', 'cpu.usage', '{}', '')`); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.AggregateNodeMetrics(ctx, time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+	var count int
+	if err := st.DB().QueryRow(`SELECT COUNT(*) FROM node_metric_rollups`).Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	if count != 0 {
+		t.Fatalf("dead series created rollups: %d", count)
+	}
+}
+
+func countNativeRows(t *testing.T, st *SQLiteStore, query string) int {
+	t.Helper()
+	var count int
+	if err := st.DB().QueryRow(query).Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	return count
 }
 
 func TestNativeMetricAggregationExpectedUsesSampleInterval(t *testing.T) {

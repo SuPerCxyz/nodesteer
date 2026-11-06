@@ -654,8 +654,10 @@ func TestNativeMonitoringNoSQLLeak(t *testing.T) {
 	handler := s.Routes()
 	admin := loginAs(t, s, "admin", "password")
 	createNativeAPINode(t, st, "node-1", models.NodeStatusOnline)
-	if _, err := st.DB().Exec(`DROP TABLE node_metric_samples`); err != nil {
-		t.Fatalf("drop table: %v", err)
+	for _, table := range []string{"node_metric_samples", "node_metric_series"} {
+		if _, err := st.DB().Exec(`DROP TABLE ` + table); err != nil {
+			t.Fatalf("drop table %s: %v", table, err)
+		}
 	}
 
 	for _, path := range []string{

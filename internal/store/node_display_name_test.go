@@ -49,8 +49,8 @@ func TestMigrationV26AddsNodeDisplayName(t *testing.T) {
 	if err := db.QueryRow(`SELECT MAX(version) FROM schema_migrations`).Scan(&version); err != nil {
 		t.Fatalf("read schema version: %v", err)
 	}
-	if version != 28 {
-		t.Fatalf("schema version = %d, want 28", version)
+	if version != 29 {
+		t.Fatalf("schema version = %d, want 29", version)
 	}
 	var hostname, displayName string
 	if err := db.QueryRow(`SELECT hostname, display_name FROM nodes WHERE id = 'legacy-node'`).Scan(&hostname, &displayName); err != nil {
