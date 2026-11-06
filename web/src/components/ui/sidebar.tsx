@@ -594,7 +594,7 @@ function SidebarMenuBadge({
       data-slot='sidebar-menu-badge'
       data-sidebar='menu-badge'
       className={cn(
-        'pointer-events-none absolute inset-e-1 flex h-5 min-w-5 items-center justify-center rounded-md border border-slate-600 bg-slate-600 px-1 text-xs font-medium text-white tabular-nums select-none dark:border-slate-500 dark:bg-slate-500',
+        'pointer-events-none absolute inset-e-1 flex h-5 min-w-5 items-center justify-center rounded-md border border-border bg-muted px-1 text-xs font-medium text-foreground tabular-nums select-none',
         'peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground',
         'peer-data-[size=sm]/menu-button:top-1',
         'peer-data-[size=default]/menu-button:top-1.5',

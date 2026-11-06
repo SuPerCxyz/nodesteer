@@ -8,6 +8,7 @@ import {
   downsampleSegment,
   downsampleStackSegments,
   maxPointsForWidth,
+  mergeGapRanges,
   monotoneCubicSegments,
   type ChartSeries,
 } from './multi-series-chart'
@@ -149,6 +150,106 @@ describe('MultiSeriesChart', () => {
       .toHaveTextContent('GiB')
   })
 
+  it('600px 降采样后 tooltip 使用原始点，5 条序列不丢值', async () => {
+    await browserPage.viewport(600, 800)
+    const data: ChartSeries[] = Array.from({ length: 5 }, (_, index) => ({
+      key: `s-${index}`,
+      seriesId: `series-${index + 1}`,
+      name: `S${index}`,
+      points: Array.from({ length: 240 }, (_, pointIndex) => ({
+        timestamp: new Date(BASE_TIME + pointIndex * 30_000).toISOString(),
+        value: 10 + index + (pointIndex % 4),
+        quality: 1,
+      })),
+      stepNs: 30_000_000_000,
+      type: 'area',
+    }))
+    const page = await renderChart(data)
+    await userEvent.hover(page.getByTestId('chart-overlay'))
+    const tooltip = page.getByTestId('chart-tooltip')
+    for (let index = 0; index < 5; index++) {
+      await expect.element(tooltip).toHaveTextContent(`S${index}`)
+    }
+    expect(tooltip.element().textContent).not.toContain('—')
+  })
+
+  it('真实缺口只在对应序列显示 —', async () => {
+    const healthy = series(0)
+    const gapped: ChartSeries = {
+      ...series(1),
+      gaps: [
+        {
+          start: new Date(BASE_TIME).toISOString(),
+          end: new Date(BASE_TIME + 3 * 60_000).toISOString(),
+        },
+      ],
+    }
+    const page = await renderChart([healthy, gapped])
+    await userEvent.hover(page.getByTestId('chart-overlay'))
+    const text = page.getByTestId('chart-tooltip').element().textContent || ''
+    expect(text).toContain('Series 0')
+    expect(text).toContain('Series 1')
+    expect((text.match(/—/g) || []).length).toBe(1)
+  })
+
+  it('合并连续/重叠 gap 保持分段语义', () => {
+    expect(
+      mergeGapRanges([
+        {
+          start: new Date(BASE_TIME).toISOString(),
+          end: new Date(BASE_TIME + 60_000).toISOString(),
+        },
+        {
+          start: new Date(BASE_TIME + 30_000).toISOString(),
+          end: new Date(BASE_TIME + 120_000).toISOString(),
+        },
+      ])
+    ).toEqual([[BASE_TIME, BASE_TIME + 120_000]])
+  })
+
+  it.each([320, 1280])(
+    '大数值轴标签在 %ipx 宽度下按实际文字宽度预留边距',
+    async (width) => {
+      await browserPage.viewport(width, 800)
+      const data: ChartSeries[] = [
+        {
+          key: 'large-values',
+          name: 'Large values',
+          points: points([1000, 50000]),
+          unit: 'ops/s',
+        },
+      ]
+      const page = await render(
+        <ThemeProvider defaultTheme='light' storageKey='chart-axis-wide'>
+          <MultiSeriesChart
+            series={data}
+            height={220}
+            unit='ops/s'
+            formatValue={(value) => `${value.toFixed(2)} ops/s`}
+            ariaLabel='axis labels'
+          />
+        </ThemeProvider>
+      )
+      const container = page.getByTestId('multi-series-chart').element()
+      const labels = [...container.querySelectorAll('svg text')].filter(
+        (node) => node.getAttribute('text-anchor') === 'end'
+      )
+      expect(labels.length).toBeGreaterThan(0)
+      const clip = container.querySelector('clipPath rect')
+      for (const label of labels) {
+        const x = Number(label.getAttribute('x'))
+        const textWidth = (label as SVGTextElement).getComputedTextLength()
+        expect(textWidth).toBeGreaterThan(0)
+        expect(
+          x - textWidth,
+          `${label.textContent} x=${x} w=${textWidth} left=${clip?.getAttribute('x')}`
+        ).toBeGreaterThanOrEqual(0)
+      }
+      expect(Number(clip?.getAttribute('x'))).toBeGreaterThan(44)
+      await page.unmount()
+    }
+  )
+
   it('堆叠模式按容差对齐偏移时间戳并生成面积', async () => {
     const data = Array.from({ length: 6 }, (_, index) => {
       const item = series(index)
@@ -173,7 +274,7 @@ describe('MultiSeriesChart', () => {
       ...series(2),
       key: 'cpu.total',
       seriesId: 'cpu.total',
-      paletteId: 'cyan-blue',
+      paletteId: 'series-1',
       type: 'line',
     }
     const page = await renderChart([series(0), series(1), total], 'dark', true)
@@ -192,7 +293,7 @@ describe('MultiSeriesChart', () => {
     expect(totalIndex).toBeGreaterThan(groups.lastIndexOf(areaGroups[1]))
 
     const totalGroup = groups[totalIndex]
-    expect(totalGroup.getAttribute('data-palette-id')).toBe('cyan-blue')
+    expect(totalGroup.getAttribute('data-palette-id')).toBe('series-1')
     const totalLine = totalGroup.querySelector('[data-testid="chart-line"]')
     expect(totalLine?.getAttribute('stroke-width')).toBe('1.8')
     expect(totalLine?.getAttribute('d')).toContain('C')
@@ -204,7 +305,7 @@ describe('MultiSeriesChart', () => {
     const gradientId = stroke.match(/url\(#(.+)\)/)?.[1]
     const gradient = gradientId ? document.getElementById(gradientId) : null
     expect(gradient?.querySelector('stop')?.getAttribute('stop-color')).toBe(
-      '#2DF3D8'
+      'var(--chart-series-1-from)'
     )
   })
 
@@ -213,7 +314,7 @@ describe('MultiSeriesChart', () => {
       ...series(2),
       key: 'cpu.total',
       seriesId: 'cpu.total',
-      paletteId: 'cyan-blue',
+      paletteId: 'series-1',
       type: 'line',
       points: [
         { timestamp: new Date(BASE_TIME).toISOString(), value: 1, quality: 1 },
@@ -257,7 +358,7 @@ describe('MultiSeriesChart', () => {
       ...series(2),
       key: 'cpu.total',
       seriesId: 'cpu.total',
-      paletteId: 'cyan-blue',
+      paletteId: 'series-1',
       type: 'line',
       points: points([42]),
     }
@@ -468,7 +569,7 @@ describe('MultiSeriesChart', () => {
 
   it('深色主题使用深色渐变颜色', async () => {
     const page = await renderChart(
-      [{ ...series(0), paletteId: 'cyan-blue' }],
+      [{ ...series(0), paletteId: 'series-1' }],
       'dark'
     )
     await expect
@@ -480,12 +581,12 @@ describe('MultiSeriesChart', () => {
         .element()
         .querySelector('linearGradient stop')
         ?.getAttribute('stop-color')
-    ).toBe('#2DF3D8')
+    ).toBe('var(--chart-series-1-from)')
   })
 
   it('浅色主题使用浅色渐变颜色', async () => {
     const page = await renderChart(
-      [{ ...series(0), paletteId: 'cyan-blue' }],
+      [{ ...series(0), paletteId: 'series-1' }],
       'light'
     )
     await expect
@@ -497,40 +598,48 @@ describe('MultiSeriesChart', () => {
         .element()
         .querySelector('linearGradient stop')
         ?.getAttribute('stop-color')
-    ).toBe('#00A7A5')
+    ).toBe('var(--chart-series-1-from)')
   })
 
   it('stroke/fill/图例/tooltip/hover 使用同一调色板', async () => {
     const page = await renderChart(
-      [{ ...series(0), paletteId: 'blue-violet' }],
+      [{ ...series(0), paletteId: 'series-2' }],
       'dark'
     )
     const container = page.getByTestId('multi-series-chart').element()
     const gradients = [...container.querySelectorAll('linearGradient')]
     expect(gradients[0].querySelector('stop')?.getAttribute('stop-color')).toBe(
-      '#509FFF'
+      'var(--chart-series-2-from)'
     )
     expect(gradients[1].querySelector('stop')?.getAttribute('stop-color')).toBe(
-      '#509FFF'
+      'var(--chart-series-2-from)'
     )
 
     const legend = page.getByRole('button', { name: /Series 0/ }).element()
     const legendSwatch = legend.querySelector('span')
-    expect(legendSwatch?.getAttribute('style')).toContain('rgb(80, 159, 255)')
-    expect(legendSwatch?.getAttribute('style')).toContain('rgb(162, 108, 255)')
+    expect(legendSwatch?.getAttribute('style')).toContain(
+      'var(--chart-series-2-from)'
+    )
+    expect(legendSwatch?.getAttribute('style')).toContain(
+      'var(--chart-series-2-to)'
+    )
 
     await userEvent.hover(page.getByTestId('chart-overlay'))
     const hoverPoint = page.getByTestId('chart-hover-point').element()
-    expect(hoverPoint.getAttribute('fill')).toBe('#509FFF')
-    expect(hoverPoint.getAttribute('data-palette-id')).toBe('blue-violet')
+    expect(hoverPoint.getAttribute('fill')).toBe('var(--chart-series-2-from)')
+    expect(hoverPoint.getAttribute('data-palette-id')).toBe('series-2')
     const tooltipSwatch = page.getByTestId('chart-tooltip-swatch').element()
-    expect(tooltipSwatch.getAttribute('style')).toContain('rgb(80, 159, 255)')
-    expect(tooltipSwatch.getAttribute('style')).toContain('rgb(162, 108, 255)')
+    expect(tooltipSwatch.getAttribute('style')).toContain(
+      'var(--chart-series-2-from)'
+    )
+    expect(tooltipSwatch.getAttribute('style')).toContain(
+      'var(--chart-series-2-to)'
+    )
   })
 
   it('主题切换保持 paletteId 只替换端点颜色', async () => {
     const darkPage = await renderChart(
-      [{ ...series(0), paletteId: 'coral' }],
+      [{ ...series(0), paletteId: 'series-3' }],
       'dark'
     )
     const darkContainer = darkPage.getByTestId('multi-series-chart').element()
@@ -538,16 +647,16 @@ describe('MultiSeriesChart', () => {
       darkContainer
         .querySelector('g[data-series-id]')
         ?.getAttribute('data-palette-id')
-    ).toBe('coral')
+    ).toBe('series-3')
     expect(
       darkContainer
         .querySelector('linearGradient stop')
         ?.getAttribute('stop-color')
-    ).toBe('#FF688E')
+    ).toBe('var(--chart-series-3-from)')
     await darkPage.unmount()
 
     const lightPage = await renderChart(
-      [{ ...series(0), paletteId: 'coral' }],
+      [{ ...series(0), paletteId: 'series-3' }],
       'light'
     )
     const lightContainer = lightPage.getByTestId('multi-series-chart').element()
@@ -555,12 +664,12 @@ describe('MultiSeriesChart', () => {
       lightContainer
         .querySelector('g[data-series-id]')
         ?.getAttribute('data-palette-id')
-    ).toBe('coral')
+    ).toBe('series-3')
     expect(
       lightContainer
         .querySelector('linearGradient stop')
         ?.getAttribute('stop-color')
-    ).toBe('#D84B72')
+    ).toBe('var(--chart-series-3-from)')
   })
 
   it('多实例渐变 ID 唯一', async () => {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 export type PresetHistoryRange = '1h' | '3h' | '6h' | '12h' | '24h' | '7d'
 export type HistoryRange = PresetHistoryRange | 'custom'
@@ -14,6 +14,7 @@ export const HISTORY_RANGE_MS: Record<PresetHistoryRange, number> = {
 }
 
 export const MAX_CUSTOM_RANGE_MS = 30 * 24 * 60 * 60 * 1000
+export const HISTORY_REFRESH_MS = 5 * 60 * 1000
 
 export type HistoryRangeWindow = {
   start: Date | null
@@ -62,24 +63,21 @@ export function resolveHistoryWindow(
 
 export function useHistoryRange() {
   const [range, setRangeState] = useState<HistoryRange>('1h')
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    if (range === 'custom') return
-    const timer = setInterval(() => setNow(Date.now()), 30_000)
-    return () => clearInterval(timer)
-  }, [range])
+  // start/end are captured when the user selects a range; time passing does not
+  // mutate the query key (no 30s full-history reload).
+  const [anchor, setAnchor] = useState(() => Date.now())
   const [customStart, setCustomStart] = useState(() => {
     const end = new Date()
     return toDatetimeLocal(new Date(end.getTime() - HISTORY_RANGE_MS['1h']))
   })
   const [customEnd, setCustomEnd] = useState(() => toDatetimeLocal(new Date()))
   const setRange = (next: HistoryRange) => {
-    setNow(Date.now())
+    setAnchor(Date.now())
     setRangeState(next)
   }
   const window = useMemo(
-    () => resolveHistoryWindow(range, customStart, customEnd, new Date(now)),
-    [range, customStart, customEnd, now]
+    () => resolveHistoryWindow(range, customStart, customEnd, new Date(anchor)),
+    [range, customStart, customEnd, anchor]
   )
   return {
     range,

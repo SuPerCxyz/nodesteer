@@ -187,7 +187,10 @@ describe('告警页', () => {
     )
 
     await userEvent.click(
-      page.getByRole('button', { name: i18n.t('alerts.disable') })
+      page.getByRole('button', { name: i18n.t('common.actions') }).first()
+    )
+    await userEvent.click(
+      page.getByRole('menuitem', { name: i18n.t('alerts.disable') })
     )
     await expect.poll(() => post.mock.calls.length).toBe(2)
     expect(post).toHaveBeenCalledWith(
@@ -196,7 +199,10 @@ describe('告警页', () => {
     )
 
     await userEvent.click(
-      page.getByRole('button', { name: i18n.t('alerts.silence') }).first()
+      page.getByRole('button', { name: i18n.t('common.actions') }).first()
+    )
+    await userEvent.click(
+      page.getByRole('menuitem', { name: i18n.t('alerts.silence') }).first()
     )
     const dialog = page.getByRole('dialog')
     await expect.element(dialog).toBeVisible()
@@ -213,7 +219,10 @@ describe('告警页', () => {
     )
 
     await userEvent.click(
-      page.getByRole('button', { name: i18n.t('alerts.delete') }).first()
+      page.getByRole('button', { name: i18n.t('common.actions') }).first()
+    )
+    await userEvent.click(
+      page.getByRole('menuitem', { name: i18n.t('alerts.delete') }).first()
     )
     await userEvent.click(
       page.getByRole('button', { name: i18n.t('alerts.confirm') })
@@ -257,7 +266,10 @@ describe('告警页', () => {
     )
 
     await userEvent.click(
-      page.getByRole('button', { name: i18n.t('alerts.test') })
+      page.getByRole('button', { name: i18n.t('common.actions') }).first()
+    )
+    await userEvent.click(
+      page.getByRole('menuitem', { name: i18n.t('alerts.test') })
     )
     await expect.poll(() => post.mock.calls.length).toBe(2)
     expect(post).toHaveBeenCalledWith(
@@ -265,7 +277,10 @@ describe('告警页', () => {
     )
 
     await userEvent.click(
-      page.getByRole('button', { name: i18n.t('alerts.delete') })
+      page.getByRole('button', { name: i18n.t('common.actions') }).first()
+    )
+    await userEvent.click(
+      page.getByRole('menuitem', { name: i18n.t('alerts.delete') })
     )
     await userEvent.click(
       page.getByRole('button', { name: i18n.t('alerts.confirm') })

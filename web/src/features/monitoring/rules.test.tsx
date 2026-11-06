@@ -191,12 +191,10 @@ describe('联动规则页：列表与表单', () => {
     await userEvent.click(page.getByRole('option', { name: SCHEDULE.name }))
 
     await userEvent.click(
-      page
-        .getByRole('region')
-        .getByRole('button', {
-          name: i18n.t('monitoring.createRule'),
-          exact: true,
-        })
+      page.getByRole('region').getByRole('button', {
+        name: i18n.t('monitoring.createRule'),
+        exact: true,
+      })
     )
 
     await expect.poll(() => post.mock.calls.length).toBe(1)
@@ -253,10 +251,16 @@ describe('联动规则页：列表与表单', () => {
       'Unsaved B'
     )
     await userEvent.click(
-      firstRow.getByRole('button', { name: i18n.t('webFix.history') })
+      firstRow.getByRole('button', { name: i18n.t('common.actions') })
     )
     await userEvent.click(
-      firstRow.getByRole('button', {
+      page.getByRole('menuitem', { name: i18n.t('webFix.history') })
+    )
+    await userEvent.click(
+      firstRow.getByRole('button', { name: i18n.t('common.actions') })
+    )
+    await userEvent.click(
+      page.getByRole('menuitem', {
         name: i18n.t('monitoring.delete'),
         exact: true,
       })

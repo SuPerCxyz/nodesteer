@@ -58,6 +58,20 @@ describe('StatusBadge 本地化（OBS-20261014-STATUSBADGE-MAINTENANCE-DISABLED-
       .not.toBeInTheDocument()
   })
 
+  it.each([
+    ['critical', 'bg-danger'],
+    ['firing', 'bg-danger'],
+    ['resolved', 'bg-success'],
+    ['silenced', 'bg-surface'],
+    ['unknown', 'bg-surface'],
+    ['pending', 'bg-info'],
+    ['maintenance', 'bg-warning'],
+  ])('%s 使用语义状态色', async (status, token) => {
+    const page = await render(<StatusBadge status={status} />)
+    const badge = page.container.querySelector('[data-slot="badge"]')!
+    expect(badge.className).toContain(token)
+  })
+
   it('statusLabel 返回本地化文案，未知值回退原始枚举', () => {
     expect(statusLabel('maintenance')).toBe('维护')
     expect(statusLabel('delivering')).toBe('投递中')
@@ -106,6 +120,9 @@ describe('状态徽标与错误提示对比度（P11 a11y：WCAG 1.4.3 ≥ 4.5:1
     ['offline', '离线'],
     ['running', '运行中'],
     ['degraded', '降级'],
+    ['critical', 'critical'],
+    ['firing', 'firing'],
+    ['maintenance', '维护'],
   ])('%s 徽标文字与底色对比度 ≥ 4.5', async (status, label) => {
     const page = await render(<StatusBadge status={status} />)
     const badge = page.container.querySelector('[data-slot="badge"]')!

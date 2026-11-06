@@ -64,6 +64,8 @@ describe('跨标签会话失效收敛', () => {
 
   afterEach(() => {
     while (unsubscribers.length > 0) unsubscribers.pop()!()
+    useAuthStore.getState().auth.reset()
+    localStorage.removeItem(SESSION_INVALIDATION_KEY)
   })
 
   it('本标签退出（reset）会广播失效信号，且连续两次信号值不同', () => {

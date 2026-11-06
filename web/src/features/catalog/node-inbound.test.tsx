@@ -194,15 +194,23 @@ describe('节点入站连接详情', () => {
   })
 
   it('轮换 bundle 前要求确认并调用 rotate 接口', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
     const page = await renderNodeDetail()
     await userEvent.click(page.getByTestId('node-rotate-bundle'))
-    expect(confirm).toHaveBeenCalled()
+    const dialog = page.getByRole('alertdialog')
+    await expect.element(dialog).toBeVisible()
+    await expect
+      .element(dialog)
+      .toHaveTextContent(i18n.t('nodes.rotateBundleConfirm'))
+    await userEvent.click(
+      dialog.getByRole('button', { name: i18n.t('nodes.rotateBundle') })
+    )
+    await expect
+      .poll(() => authenticatedFetch.mock.calls.length)
+      .toBeGreaterThan(0)
     expect(authenticatedFetch).toHaveBeenCalledWith(
       '/api/nodes/node-1/inbound-bundle/rotate',
       { method: 'POST' }
     )
-    confirm.mockRestore()
   })
 
   it('bundle 过期时显示下载入口并隐藏轮换', async () => {

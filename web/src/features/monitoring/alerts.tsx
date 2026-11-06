@@ -31,9 +31,12 @@ import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import { EditorPanel, useEditorPanel } from '@/features/shared/editor-panel'
 import { RackList, RackRow } from '@/features/shared/rack-list'
 import {
+  DangerMenuItem,
+  DropdownMenuItem,
   EmptyState,
   ErrorState,
   LoadingState,
+  MoreMenu,
   StatusBadge,
 } from '@/features/shared/ui'
 
@@ -279,14 +282,16 @@ export function MonitoringAlerts() {
             <TabsTrigger value='events'>{t('alerts.eventsTab')}</TabsTrigger>
           </TabsList>
           <TabsContent value='rules' className='space-y-6'>
-            <Button
-              disabled={action.isPending}
-              onClick={() =>
-                ruleEditor.change(emptyRule(), () => setRule(emptyRule()))
-              }
-            >
-              {t('alerts.newRule')}
-            </Button>
+            <div className='flex justify-end'>
+              <Button
+                disabled={action.isPending}
+                onClick={() =>
+                  ruleEditor.change(emptyRule(), () => setRule(emptyRule()))
+                }
+              >
+                {t('alerts.newRule')}
+              </Button>
+            </div>
             <Card>
               <CardHeader>
                 <CardTitle>{t('alerts.rulesTab')}</CardTitle>
@@ -383,62 +388,55 @@ export function MonitoringAlerts() {
                               >
                                 {t('alerts.edit')}
                               </Button>
-                              <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={action.isPending}
-                                onClick={() =>
-                                  action.mutate(
-                                    () =>
-                                      api.post(
-                                        `/monitoring/alerts/rules/${item.id}/enable`,
-                                        { enabled: !item.enabled }
-                                      ),
-                                    { onSuccess: refreshRules }
-                                  )
-                                }
-                              >
-                                {item.enabled
-                                  ? t('alerts.disable')
-                                  : t('alerts.enable')}
-                              </Button>
-                              <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={action.isPending}
-                                onClick={() => {
-                                  setSilenceTarget(item)
-                                  setSilenceMinutes(60)
-                                }}
-                              >
-                                {silenced
-                                  ? t('alerts.unsilence')
-                                  : t('alerts.silence')}
-                              </Button>
-                              <Button
-                                variant='outline'
-                                size='sm'
-                                disabled={action.isPending}
-                                onClick={() =>
-                                  setConfirmation({
-                                    message: t('alerts.confirmDeleteRule'),
-                                    run: () =>
-                                      api
-                                        .del(
-                                          `/monitoring/alerts/rules/${item.id}`
-                                        )
-                                        .then((result) => {
-                                          if (rule.id === item.id) {
-                                            setRule(emptyRule())
-                                            ruleEditor.removed()
-                                          }
-                                          return result
-                                        }),
-                                  })
-                                }
-                              >
-                                {t('alerts.delete')}
-                              </Button>
+                              <MoreMenu>
+                                <DropdownMenuItem
+                                  disabled={action.isPending}
+                                  onSelect={() =>
+                                    action.mutate(
+                                      () =>
+                                        api.post(
+                                          `/monitoring/alerts/rules/${item.id}/enable`,
+                                          { enabled: !item.enabled }
+                                        ),
+                                      { onSuccess: refreshRules }
+                                    )
+                                  }
+                                >
+                                  {item.enabled
+                                    ? t('alerts.disable')
+                                    : t('alerts.enable')}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  disabled={action.isPending}
+                                  onSelect={() => {
+                                    setSilenceTarget(item)
+                                    setSilenceMinutes(60)
+                                  }}
+                                >
+                                  {silenced
+                                    ? t('alerts.unsilence')
+                                    : t('alerts.silence')}
+                                </DropdownMenuItem>
+                                <DangerMenuItem
+                                  label={t('alerts.delete')}
+                                  title={t('alerts.confirmDeleteRule')}
+                                  description={t('common.confirmAction')}
+                                  confirmText={t('alerts.confirm')}
+                                  onSelect={() => {
+                                    void api
+                                      .del(
+                                        `/monitoring/alerts/rules/${item.id}`
+                                      )
+                                      .then((result) => {
+                                        if (rule.id === item.id) {
+                                          setRule(emptyRule())
+                                          ruleEditor.removed()
+                                        }
+                                        return result
+                                      })
+                                  }}
+                                />
+                              </MoreMenu>
                             </>
                           }
                         />
@@ -507,10 +505,7 @@ export function MonitoringAlerts() {
                             </SelectItem>
                             {(nodes.data || []).map((node) => (
                               <SelectItem key={node.id} value={node.id}>
-                                {nodeDisplayName(
-                                  node,
-                                  t('common.unknownNode')
-                                )}
+                                {nodeDisplayName(node, t('common.unknownNode'))}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -712,16 +707,18 @@ export function MonitoringAlerts() {
             {ruleEditor.confirmation}
           </TabsContent>
           <TabsContent value='channels' className='space-y-6'>
-            <Button
-              disabled={action.isPending}
-              onClick={() =>
-                channelEditor.change(emptyChannel(), () =>
-                  setChannel(emptyChannel())
-                )
-              }
-            >
-              {t('alerts.newChannel')}
-            </Button>
+            <div className='flex justify-end'>
+              <Button
+                disabled={action.isPending}
+                onClick={() =>
+                  channelEditor.change(emptyChannel(), () =>
+                    setChannel(emptyChannel())
+                  )
+                }
+              >
+                {t('alerts.newChannel')}
+              </Button>
+            </div>
             <Card>
               <CardHeader>
                 <CardTitle>{t('alerts.channelsTab')}</CardTitle>
@@ -768,38 +765,33 @@ export function MonitoringAlerts() {
                             >
                               {t('alerts.edit')}
                             </Button>
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              disabled={action.isPending}
-                              onClick={() => testChannel.mutate(item.id)}
-                            >
-                              {t('alerts.test')}
-                            </Button>
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              disabled={action.isPending}
-                              onClick={() =>
-                                setConfirmation({
-                                  message: t('alerts.confirmDeleteChannel'),
-                                  run: () =>
-                                    api
-                                      .del(
-                                        `/monitoring/notification-channels/${item.id}`
-                                      )
-                                      .then((result) => {
-                                        if (channel.id === item.id) {
-                                          setChannel(emptyChannel())
-                                          channelEditor.removed()
-                                        }
-                                        return result
-                                      }),
-                                })
-                              }
-                            >
-                              {t('alerts.delete')}
-                            </Button>
+                            <MoreMenu>
+                              <DropdownMenuItem
+                                disabled={action.isPending}
+                                onSelect={() => testChannel.mutate(item.id)}
+                              >
+                                {t('alerts.test')}
+                              </DropdownMenuItem>
+                              <DangerMenuItem
+                                label={t('alerts.delete')}
+                                title={t('alerts.confirmDeleteChannel')}
+                                description={t('common.confirmAction')}
+                                confirmText={t('alerts.confirm')}
+                                onSelect={() => {
+                                  void api
+                                    .del(
+                                      `/monitoring/notification-channels/${item.id}`
+                                    )
+                                    .then((result) => {
+                                      if (channel.id === item.id) {
+                                        setChannel(emptyChannel())
+                                        channelEditor.removed()
+                                      }
+                                      return result
+                                    })
+                                }}
+                              />
+                            </MoreMenu>
                           </>
                         }
                       />
@@ -1294,7 +1286,7 @@ function AlertEvents({
           <Button
             variant={state === 'active' ? 'default' : 'outline'}
             size='sm'
-                        onClick={() => {
+            onClick={() => {
               setState('active')
               setOffset(0)
             }}
@@ -1304,7 +1296,7 @@ function AlertEvents({
           <Button
             variant={state === 'history' ? 'default' : 'outline'}
             size='sm'
-                        onClick={() => {
+            onClick={() => {
               setState('history')
               setOffset(0)
             }}
@@ -1483,7 +1475,7 @@ function AlertEvents({
                         <Button
                           variant='outline'
                           size='sm'
-                                                    onClick={() => onAck(event.id)}
+                          onClick={() => onAck(event.id)}
                         >
                           {t('alerts.ack')}
                         </Button>
@@ -1504,7 +1496,7 @@ function AlertEvents({
                 <Button
                   variant='outline'
                   size='sm'
-                                    disabled={offset === 0}
+                  disabled={offset === 0}
                   onClick={() =>
                     setOffset(Math.max(0, offset - EVENT_PAGE_SIZE))
                   }
@@ -1514,7 +1506,7 @@ function AlertEvents({
                 <Button
                   variant='outline'
                   size='sm'
-                                    disabled={offset + EVENT_PAGE_SIZE >= query.data.total}
+                  disabled={offset + EVENT_PAGE_SIZE >= query.data.total}
                   onClick={() => setOffset(offset + EVENT_PAGE_SIZE)}
                 >
                   {t('alerts.next')}

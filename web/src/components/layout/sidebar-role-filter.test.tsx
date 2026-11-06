@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import i18n from '@/i18n'
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import '@/styles/index.css'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { page as browserPage } from 'vitest/browser'
 import { useAuthStore } from '@/stores/auth-store'
@@ -72,6 +73,10 @@ function renderSidebar(role: string) {
 describe('侧边栏导航按角色过滤（OBS-20261014-NAV-ROLE-UNFILTERED）', () => {
   beforeAll(async () => {
     await i18n.changeLanguage('zh')
+  })
+
+  afterEach(async () => {
+    await browserPage.viewport(1280, 800)
   })
 
   it('导航数据：仅 administrator 含用户入口，operator/viewer 不含', () => {
@@ -178,6 +183,29 @@ describe('侧边栏导航按角色过滤（OBS-20261014-NAV-ROLE-UNFILTERED）',
     await expect
       .element(page.getByRole('link', { name: '用户' }))
       .not.toBeInTheDocument()
+  })
+
+  it('非 2K 视口增加导航行距，2560×1440 保持紧凑', async () => {
+    await browserPage.viewport(1920, 1080)
+    const desktop = await renderSidebar('administrator')
+    const desktopRow = desktop
+      .getByRole('link', { name: '节点', exact: true })
+      .element()
+      .closest('[data-slot="sidebar-menu-button"]')
+    expect(desktopRow).toBeTruthy()
+    const desktopHeight = desktopRow!.getBoundingClientRect().height
+    expect(desktopHeight).toBeGreaterThanOrEqual(35)
+    await desktop.unmount()
+
+    await browserPage.viewport(2560, 1440)
+    const wide = await renderSidebar('administrator')
+    const wideRow = wide
+      .getByRole('link', { name: '节点', exact: true })
+      .element()
+      .closest('[data-slot="sidebar-menu-button"]')
+    expect(wideRow).toBeTruthy()
+    expect(wideRow!.getBoundingClientRect().height).toBeLessThan(desktopHeight)
+    await wide.unmount()
   })
 
   it('administrator 渲染侧边栏时保留「用户」入口', async () => {

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { api, type Schedule } from '@/lib/api'
@@ -20,7 +21,14 @@ import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import { EditorPanel, useEditorPanel } from '@/features/shared/editor-panel'
 import { RackList, RackRow } from '@/features/shared/rack-list'
-import { ErrorState, LoadingState, StatusBadge } from '@/features/shared/ui'
+import {
+  DangerMenuItem,
+  DropdownMenuItem,
+  ErrorState,
+  LoadingState,
+  MoreMenu,
+  StatusBadge,
+} from '@/features/shared/ui'
 import type {
   MonitoringRule,
   MonitoringRuleEvent,
@@ -144,20 +152,22 @@ export function AutomationRules() {
       <NodeSteerHeader
         title={t('rules.title')}
         description={t('rules.description')}
+        action={
+          <Button
+            disabled={action.isPending}
+            onClick={() =>
+              editor.change(emptyRule(), () => setRule(emptyRule()))
+            }
+          >
+            <Plus className='me-1 size-4' />
+            {t('monitoring.createRule')}
+          </Button>
+        }
       />
       <Main className='flex flex-1 flex-col gap-6'>
         <Card>
           <CardHeader>
             <CardTitle>{t('rules.listTitle')}</CardTitle>
-            <Button
-              className='w-fit'
-              disabled={action.isPending}
-              onClick={() =>
-                editor.change(emptyRule(), () => setRule(emptyRule()))
-              }
-            >
-              {t('monitoring.createRule')}
-            </Button>
           </CardHeader>
           <CardContent className='space-y-4'>
             <RackList testId='monitoring-rules-rack'>
@@ -214,22 +224,6 @@ export function AutomationRules() {
                         size='sm'
                         disabled={action.isPending}
                         onClick={() => {
-                          setSelectedRule(item.id)
-                          window.setTimeout(() => {
-                            const history =
-                              document.getElementById('rule-history')
-                            history?.scrollIntoView({ block: 'start' })
-                            history?.focus({ preventScroll: true })
-                          }, 0)
-                        }}
-                      >
-                        {t('webFix.history')}
-                      </Button>
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={action.isPending}
-                        onClick={() => {
                           const schedule = schedules.data?.find(
                             (entry) => entry.id === item.schedule_id
                           )
@@ -251,31 +245,41 @@ export function AutomationRules() {
                       >
                         {t('monitoring.runNow')}
                       </Button>
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        disabled={action.isPending}
-                        onClick={() =>
-                          setConfirmation({
-                            message: t('monitoring.deleteRule'),
-                            destructive: true,
-                            run: () =>
-                              api
-                                .del(`/monitoring/rules/${item.id}`)
-                                .then((result) => {
-                                  if (selectedRule === item.id)
-                                    setSelectedRule('')
-                                  if (rule.id === item.id) {
-                                    setRule(emptyRule())
-                                    editor.removed()
-                                  }
-                                  return result
-                                }),
-                          })
-                        }
-                      >
-                        {t('monitoring.delete')}
-                      </Button>
+                      <MoreMenu>
+                        <DropdownMenuItem
+                          disabled={action.isPending}
+                          onSelect={() => {
+                            setSelectedRule(item.id)
+                            window.setTimeout(() => {
+                              const history =
+                                document.getElementById('rule-history')
+                              history?.scrollIntoView({ block: 'start' })
+                              history?.focus({ preventScroll: true })
+                            }, 0)
+                          }}
+                        >
+                          {t('webFix.history')}
+                        </DropdownMenuItem>
+                        <DangerMenuItem
+                          label={t('monitoring.delete')}
+                          title={t('monitoring.deleteRule')}
+                          description={t('common.confirmAction')}
+                          confirmText={t('monitoring.confirmAction')}
+                          onSelect={() => {
+                            void api
+                              .del(`/monitoring/rules/${item.id}`)
+                              .then((result) => {
+                                if (selectedRule === item.id)
+                                  setSelectedRule('')
+                                if (rule.id === item.id) {
+                                  setRule(emptyRule())
+                                  editor.removed()
+                                }
+                                return result
+                              })
+                          }}
+                        />
+                      </MoreMenu>
                     </>
                   }
                 />

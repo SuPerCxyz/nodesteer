@@ -9,7 +9,7 @@ export function Logo({
   return (
     <img
       id='nodesteer-logo'
-      src='/images/nodesteer-logo-original.png'
+      src='/images/nodesteer-logo-96.webp'
       alt={alt}
       className={cn('size-6 object-contain', className)}
       {...props}

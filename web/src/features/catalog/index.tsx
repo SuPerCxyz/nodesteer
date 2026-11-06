@@ -234,19 +234,11 @@ export function Agents() {
                 </a>
               }
               secondary={
-                showHostname || row.original.endpoint ? (
-                  <span className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5'>
+                row.original.connection_mode || showHostname ? (
+                  <span className='flex max-w-full min-w-0 flex-nowrap items-center gap-1.5'>
                     {row.original.connection_mode ? (
-                      <span className='font-mono'>
+                      <span className='shrink-0 rounded border px-1 text-[10px] leading-4 text-muted-foreground'>
                         {row.original.connection_mode}
-                      </span>
-                    ) : null}
-                    {row.original.endpoint ? (
-                      <span
-                        className='min-w-0 truncate font-mono'
-                        title={row.original.endpoint}
-                      >
-                        {row.original.endpoint}
                       </span>
                     ) : null}
                     {showHostname ? (
@@ -270,7 +262,10 @@ export function Agents() {
         size: 220,
         minSize: 180,
         cell: ({ row }: { row: { original: Node } }) => (
-          <span className='block truncate' title={row.original.os || '-'}>
+          <span
+            className='block truncate overflow-hidden! text-ellipsis! whitespace-nowrap!'
+            title={row.original.os || '-'}
+          >
             {row.original.os || '-'}
           </span>
         ),
@@ -284,7 +279,10 @@ export function Agents() {
         cell: ({ row }: { row: { original: Node } }) => {
           const names = groupNamesByNode.get(row.original.id)?.join(', ')
           return (
-            <span className='block truncate' title={names || '-'}>
+            <span
+              className='block truncate overflow-hidden! text-ellipsis! whitespace-nowrap!'
+              title={names || '-'}
+            >
               {names || '-'}
             </span>
           )
@@ -297,7 +295,7 @@ export function Agents() {
         minSize: 124,
         cell: ({ row }: { row: { original: Node } }) => (
           <span
-            className='block truncate font-mono text-xs'
+            className='block truncate overflow-hidden! font-mono text-xs text-ellipsis! whitespace-nowrap!'
             title={row.original.ip || '-'}
           >
             {row.original.ip || '-'}
@@ -318,12 +316,28 @@ export function Agents() {
         header: t('nodes.agentVersion'),
         size: 128,
         minSize: 124,
+        cell: ({ row }: { row: { original: Node } }) => (
+          <span
+            className='block truncate overflow-hidden! text-ellipsis! whitespace-nowrap!'
+            title={row.original.agent_version || '-'}
+          >
+            {row.original.agent_version || '-'}
+          </span>
+        ),
       },
       {
         accessorKey: 'deployment_mode',
         header: t('nodes.deploymentMode'),
         size: 132,
         minSize: 108,
+        cell: ({ row }: { row: { original: Node } }) => (
+          <span
+            className='block truncate overflow-hidden! text-ellipsis! whitespace-nowrap!'
+            title={row.original.deployment_mode || '-'}
+          >
+            {row.original.deployment_mode || '-'}
+          </span>
+        ),
       },
       {
         accessorKey: 'last_seen',
@@ -331,7 +345,9 @@ export function Agents() {
         size: 160,
         minSize: 110,
         cell: ({ row }: { row: { original: Node } }) => (
-          <TimeValue value={row.original.last_seen} />
+          <span className='block truncate overflow-hidden! text-ellipsis! whitespace-nowrap!'>
+            <TimeValue value={row.original.last_seen} />
+          </span>
         ),
       },
       {
@@ -382,14 +398,13 @@ export function Agents() {
               >
                 {t('nodes.setOnline')}
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => {
-                  if (window.confirm(t('nodes.confirmRevoke')))
-                    revokeNode(row.original)
-                }}
-              >
-                {t('nodes.revokeCredential')}
-              </DropdownMenuItem>
+              <DangerMenuItem
+                label={t('nodes.revokeCredential')}
+                title={t('nodes.revokeCredential')}
+                description={t('nodes.confirmRevoke')}
+                confirmText={t('nodes.revokeCredential')}
+                onSelect={() => revokeNode(row.original)}
+              />
               <DangerMenuItem
                 title={t('nodes.deleteTitle')}
                 description={t('nodes.confirmDelete')}
@@ -412,6 +427,7 @@ export function Agents() {
         searchPlaceholder={t('nodes.searchPlaceholder')}
         storageKey='nodes'
         rackPrimaryColumnId='hostname'
+        rackKind='nodes'
         enableRowSelection={canWrite || canRun}
         bulkEntityName={t('nav.nodes')}
         renderBulkActions={(table) => (
@@ -661,7 +677,7 @@ function NodeEnrollmentDialog({
             </p>
             {enrollment.data.inbound_bundle_available &&
             enrollment.data.node_id ? (
-              <div className='rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm'>
+              <div className='rounded-md border border-warning/40 bg-warning/10 p-3 text-sm'>
                 <p>{t('nodes.inboundBundleHint')}</p>
                 <Button
                   type='button'
@@ -735,9 +751,7 @@ function NodeEndpointDialog({
           }}
         >
           <div className='grid gap-2'>
-            <Label htmlFor='node-endpoint'>
-              {t('nodes.endpoint')}
-            </Label>
+            <Label htmlFor='node-endpoint'>{t('nodes.endpoint')}</Label>
             <Input
               id='node-endpoint'
               data-testid='node-endpoint-input'
@@ -843,6 +857,7 @@ export function AgentDetail() {
     useState<NodeConnectionTestResult | null>(null)
   const [testingConnection, setTestingConnection] = useState(false)
   const [endpointOpen, setEndpointOpen] = useState(false)
+  const [rotateOpen, setRotateOpen] = useState(false)
   const node = useQuery({
     queryKey: ['node', id],
     queryFn: () => api.get<Node>(`/nodes/${id}`),
@@ -920,7 +935,6 @@ export function AgentDetail() {
     }
   }
   const rotateBundle = async () => {
-    if (!window.confirm(t('nodes.rotateBundleConfirm'))) return
     try {
       await rotateInboundBundle(id)
       toast.success(t('nodes.rotateBundleSuccess'))
@@ -1073,7 +1087,10 @@ export function AgentDetail() {
                   </DetailField>
                 </DetailGrid>
                 <Separator />
-                <section className='space-y-3' data-testid='node-inbound-section'>
+                <section
+                  className='space-y-3'
+                  data-testid='node-inbound-section'
+                >
                   <div className='flex flex-wrap items-center justify-between gap-2'>
                     <h2 className='text-sm font-medium'>
                       {t('nodes.inbound')}
@@ -1100,7 +1117,7 @@ export function AgentDetail() {
                             size='sm'
                             variant='outline'
                             data-testid='node-rotate-bundle'
-                            onClick={() => void rotateBundle()}
+                            onClick={() => setRotateOpen(true)}
                           >
                             <RefreshCw className='size-4' />
                             {t('nodes.rotateBundle')}
@@ -1160,9 +1177,7 @@ export function AgentDetail() {
                       />
                     </DetailField>
                     <DetailField label={t('nodes.inboundCapable')}>
-                      {item.inbound?.capable
-                        ? t('common.yes')
-                        : t('common.no')}
+                      {item.inbound?.capable ? t('common.yes') : t('common.no')}
                     </DetailField>
                     <DetailField label={t('nodes.dataPlane')}>
                       {item.inbound?.data_plane
@@ -1191,7 +1206,8 @@ export function AgentDetail() {
                       </span>
                     </DetailField>
                   </DetailGrid>
-                  {item.inbound?.last_error === 'inbound_certificate_expired' ? (
+                  {item.inbound?.last_error ===
+                  'inbound_certificate_expired' ? (
                     <p
                       className='rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive'
                       role='alert'
@@ -1561,6 +1577,19 @@ export function AgentDetail() {
         node={item}
         open={endpointOpen}
         onOpenChange={setEndpointOpen}
+      />
+      <ConfirmDialog
+        open={rotateOpen}
+        onOpenChange={setRotateOpen}
+        title={t('nodes.rotateBundle')}
+        desc={t('nodes.rotateBundleConfirm')}
+        cancelBtnText={t('common.cancel')}
+        confirmText={t('nodes.rotateBundle')}
+        destructive
+        handleConfirm={() => {
+          setRotateOpen(false)
+          void rotateBundle()
+        }}
       />
     </>
   )
@@ -2024,6 +2053,7 @@ export function Schedules() {
         data={schedules.data || []}
         searchPlaceholder={t('schedules.searchPlaceholder')}
         storageKey='schedules'
+        rackKind='schedules'
         emptyMessage={t('schedules.noSchedules')}
         action={
           canWrite ? (
@@ -2168,6 +2198,7 @@ export function Scripts() {
         header: t('scripts.sha256'),
         size: 160,
         minSize: 148,
+        meta: { rackSpan: 2 },
         cell: ({ row }: { row: { original: Script } }) => (
           <span className='font-mono text-xs' title={row.original.sha256}>
             {row.original.sha256.slice(0, 16)}…
@@ -2233,6 +2264,7 @@ export function Scripts() {
       data={query.data || []}
       searchPlaceholder={t('scripts.searchPlaceholder')}
       storageKey='scripts'
+      rackKind='scripts'
       action={
         canWrite ? (
           <Button asChild>
@@ -2357,6 +2389,7 @@ export function Groups() {
       data={query.data || []}
       searchPlaceholder={t('groups.searchPlaceholder')}
       storageKey='groups'
+      rackKind='groups'
       action={
         canWrite ? (
           <Button asChild>
@@ -2495,6 +2528,7 @@ export function Applications() {
       data={query.data || []}
       searchPlaceholder={t('apps.searchPlaceholder')}
       storageKey='applications'
+      rackKind='apps'
       extra={deleteError ? <ErrorState error={new Error(deleteError)} /> : null}
       action={
         canWrite ? (
@@ -2577,6 +2611,7 @@ export function Artifacts() {
         size: 210,
         minSize: 170,
         maxSize: 320,
+        meta: { rackSpan: 2 },
         cell: ({ row }: { row: { original: Artifact } }) => (
           <span
             className='block truncate font-mono text-xs'
@@ -2599,6 +2634,7 @@ export function Artifacts() {
         header: 'SHA256',
         size: 160,
         minSize: 140,
+        meta: { rackSpan: 2 },
         cell: ({ row }: { row: { original: Artifact } }) => (
           <span
             className='block truncate font-mono text-xs'
@@ -2689,6 +2725,7 @@ export function Artifacts() {
       data={query.data || []}
       searchPlaceholder={t('artifacts.searchPlaceholder')}
       storageKey='artifacts'
+      rackKind='artifacts'
       action={
         canWrite ? (
           <Button asChild>
@@ -2904,6 +2941,7 @@ export function Audit() {
         header: t('common.description'),
         size: 420,
         minSize: 260,
+        meta: { rackSpan: 2 },
         cell: ({ row }: { row: { original: AuditLog } }) => (
           <span className='block truncate' title={row.original.detail}>
             {row.original.detail || '-'}
@@ -2922,6 +2960,8 @@ export function Audit() {
       data={query.data?.items || []}
       searchPlaceholder={t('misc.auditSearch')}
       storageKey='audit'
+      rackKind='audit'
+      rackPrimaryColumnId='action'
       filter={filter}
       onFilterChange={(value) => {
         setFilter(value)
@@ -3373,10 +3413,14 @@ function ListLayout<TData>({
   extra,
   storageKey,
   rackPrimaryColumnId,
+  rackKind,
   pagination,
   filter,
   onFilterChange,
   emptyMessage,
+  emptyAction,
+  filters,
+  toolbarActions,
   enableRowSelection,
   renderBulkActions,
   bulkEntityName,
@@ -3398,8 +3442,16 @@ function ListLayout<TData>({
   storageKey?: string
   /** rack 视图下作为行标题的列 id；缺省取第一个业务列。 */
   rackPrimaryColumnId?: string
+  /** rack 页面语义类型，用于专用列宽样式。 */
+  rackKind?: string
   /** 空态文案；缺省使用通用「暂无数据」 */
   emptyMessage?: string
+  /** 空态中的创建/恢复操作 */
+  emptyAction?: React.ReactNode
+  /** 工具栏筛选器（搜索之后） */
+  filters?: import('@/components/data-table').DataTableToolbarProps<TData>['filters']
+  /** 工具栏右侧次要操作（视图选项之前） */
+  toolbarActions?: React.ReactNode
   /** 提供时启用服务端分页（页码/每页条数受控） */
   pagination?: {
     total: number
@@ -3441,6 +3493,7 @@ function ListLayout<TData>({
             storageKey={storageKey}
             variant='rack'
             rackPrimaryColumnId={rackPrimaryColumnId}
+            rackKind={rackKind}
             manualPagination={Boolean(pagination)}
             manualFiltering={Boolean(onFilterChange)}
             filter={filter}
@@ -3450,13 +3503,20 @@ function ListLayout<TData>({
             pageSize={pagination?.pageSize}
             onPageChange={pagination?.onPageChange}
             onPageSizeChange={pagination?.onPageSizeChange}
+            filters={filters}
+            toolbarActions={toolbarActions}
+            emptyMessage={emptyMessage}
+            emptyAction={emptyAction}
             enableRowSelection={enableRowSelection}
             renderBulkActions={renderBulkActions}
             bulkEntityName={bulkEntityName}
           />
         ) : (
           <Card>
-            <EmptyState message={emptyMessage || t('common.noData')} />
+            <EmptyState
+              message={emptyMessage || t('common.noData')}
+              action={emptyAction}
+            />
           </Card>
         )}
       </Main>

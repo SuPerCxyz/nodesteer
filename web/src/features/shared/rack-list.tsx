@@ -12,9 +12,9 @@ import { Checkbox } from '@/components/ui/checkbox'
 export type RackTone = 'success' | 'warning' | 'danger' | 'neutral'
 
 const barTone: Record<RackTone, string> = {
-  success: 'bg-emerald-600',
-  warning: 'bg-amber-500',
-  danger: 'bg-red-600',
+  success: 'bg-success',
+  warning: 'bg-warning',
+  danger: 'bg-danger',
   neutral: 'bg-muted-foreground/50',
 }
 
@@ -24,6 +24,12 @@ export type RackField = {
   tone?: RackTone
   mono?: boolean
   testId?: string
+  /** 栅格跨列，默认 1。 */
+  span?: number
+  /** 语义宽度（CSS 长度）；窄屏仍受栅格约束。 */
+  width?: string
+  /** 允许最多两行；默认单行截断。 */
+  multiline?: boolean
   bar?: {
     value?: number | null
     tone?: RackTone
@@ -63,18 +69,22 @@ export function RackList({
   className,
   testId,
   style,
+  kind,
 }: {
   children: ReactNode
   className?: string
   testId?: string
   /** 行内 CSS 变量（如标签列宽/子列模板）向所有 RackRow 继承。 */
   style?: CSSProperties
+  /** 页面语义类型，供样式表选择专用栅格。 */
+  kind?: string
 }) {
   return (
     <RackActionsContext.Provider value={hasRowActions(children)}>
       <div
         role='list'
         data-testid={testId}
+        data-rack-kind={kind}
         style={style}
         className={cn('divide-y divide-border/60', className)}
       >
@@ -91,24 +101,46 @@ export function RackField({
   mono,
   testId,
   bar,
-}: RackField) {
+  dense = false,
+  span,
+  width,
+  multiline = false,
+}: RackField & { dense?: boolean }) {
+  const valueText =
+    typeof value === 'string' || typeof value === 'number'
+      ? String(value)
+      : undefined
   return (
     <div
       data-slot='row-field'
-      className='flex min-h-10 min-w-0 flex-col justify-center'
       data-testid={testId}
       data-tone={tone}
+      style={width ? { width } : undefined}
+      className={cn(
+        'flex min-w-0 flex-col justify-center',
+        'min-h-6',
+        span === 2 && 'col-span-2',
+        span === 3 && 'col-span-3',
+        span === 4 && 'col-span-4'
+      )}
     >
       <div className='flex min-w-0 items-center gap-1.5'>
         <span
           data-slot='row-label'
-          className='max-w-[50%] shrink-0 text-xs leading-4 font-medium [overflow-wrap:anywhere] text-muted-foreground'
+          className={cn(
+            'shrink-0 overflow-hidden text-xs leading-4 font-medium text-ellipsis whitespace-nowrap text-muted-foreground',
+            dense ? 'max-w-[52%]' : 'max-w-[50%]'
+          )}
         >
           {label}
         </span>
         <span
+          title={multiline ? undefined : valueText}
           className={cn(
-            'min-w-0 font-medium [overflow-wrap:anywhere] break-words text-foreground tabular-nums [&_.truncate]:overflow-visible [&_.truncate]:[overflow-wrap:anywhere] [&_.truncate]:text-clip [&_.truncate]:whitespace-normal',
+            'min-w-0 font-medium text-foreground tabular-nums',
+            multiline
+              ? 'line-clamp-2 [overflow-wrap:anywhere] break-words'
+              : 'truncate',
             bar || mono ? 'text-xs leading-4' : 'text-sm leading-5',
             mono && 'font-mono'
           )}
@@ -117,7 +149,12 @@ export function RackField({
         </span>
       </div>
       {bar && (
-        <div className='mt-2 h-2 w-full overflow-hidden rounded-full bg-muted-foreground/20 ring-1 ring-border/80 ring-inset dark:bg-muted-foreground/30 dark:ring-border'>
+        <div
+          className={cn(
+            'h-2 w-full overflow-hidden rounded-full bg-muted-foreground/20 ring-1 ring-border/80 ring-inset dark:bg-muted-foreground/30 dark:ring-border',
+            dense ? 'mt-1' : 'mt-2'
+          )}
+        >
           <div
             data-testid={bar.testId}
             className={cn('h-full rounded-full', barTone[bar.tone ?? tone])}
@@ -137,27 +174,38 @@ export function RackFields({
   className?: string
 }) {
   if (!fields.length) return null
-  // 列数只由字段数量决定（同一 rack 内字段数固定），不随字段值宽度变化。
+  // 5/6 字段在桌面端也走紧凑两排；1–4 字段保持单排。
+  const dense = fields.length >= 5
   const columns =
-    fields.length >= 5
+    fields.length >= 7
       ? 'grid-cols-2 sm:grid-cols-3 xl:grid-cols-4'
-      : fields.length === 4
-        ? 'grid-cols-2 sm:grid-cols-3 xl:grid-cols-4'
-        : fields.length === 3
-          ? 'grid-cols-2 sm:grid-cols-3'
-          : fields.length === 2
-            ? 'grid-cols-2'
-            : 'grid-cols-1'
+      : fields.length >= 5
+        ? 'grid-cols-2 sm:grid-cols-3'
+        : fields.length === 4
+          ? 'grid-cols-2 sm:grid-cols-4'
+          : fields.length === 3
+            ? 'grid-cols-1 sm:grid-cols-3'
+            : fields.length === 2
+              ? 'grid-cols-1 sm:grid-cols-2'
+              : 'grid-cols-1'
   return (
     <div
+      data-slot='rack-fields'
+      data-field-count={fields.length}
       className={cn(
-        'grid min-w-0 items-center gap-x-4 gap-y-2',
+        'grid min-w-0 items-center',
+        dense ? 'gap-x-6 gap-y-1' : 'gap-x-4 gap-y-1',
         columns,
         className
       )}
     >
       {fields.map((field) => (
-        <RackField key={field.label} {...field} />
+        <RackField
+          key={field.label}
+          {...field}
+          dense={dense}
+          multiline={field.multiline}
+        />
       ))}
     </div>
   )
@@ -194,22 +242,34 @@ export function RackTags({
 export function RowText({
   primary,
   secondary,
+  multiline = false,
 }: {
   primary: ReactNode
   secondary?: ReactNode
+  /** 详情页允许主/副文案自然换行；列表默认单行截断。 */
+  multiline?: boolean
 }) {
   return (
-    <div className='min-w-0 space-y-0.5 [&_.truncate]:overflow-visible [&_.truncate]:[overflow-wrap:anywhere] [&_.truncate]:text-clip [&_.truncate]:whitespace-normal'>
+    <div className='min-w-0 space-y-0.5'>
       <div
         data-slot='row-primary'
-        className='min-w-0 text-sm leading-5 font-medium [overflow-wrap:anywhere] break-words'
+        title={!multiline && typeof primary === 'string' ? primary : undefined}
+        className={cn(
+          'min-w-0 text-sm leading-5 font-medium',
+          multiline ? '[overflow-wrap:anywhere] break-words' : 'truncate'
+        )}
       >
         {primary}
       </div>
       {secondary != null && secondary !== '' && (
         <div
           data-slot='row-secondary'
-          className='flex min-w-0 flex-wrap items-center gap-1 text-xs leading-4 [overflow-wrap:anywhere] break-words text-muted-foreground'
+          className={cn(
+            'flex min-w-0 items-center gap-1 text-xs leading-4 text-muted-foreground',
+            multiline
+              ? 'flex-wrap [overflow-wrap:anywhere] break-words'
+              : 'overflow-hidden whitespace-nowrap'
+          )}
         >
           {secondary}
         </div>
@@ -250,10 +310,13 @@ export function RackRow({
   className?: string
 }) {
   const rackHasActions = useContext(RackActionsContext)
+  const fieldCount = fields?.length ?? 0
+  const dense = fieldCount >= 5
+  const rowMinHeight = fieldCount >= 5 ? 'min-h-[64px]' : 'min-h-[60px]'
   const identity = (
     <div
       data-slot='row-identity'
-      className='flex min-h-10 min-w-0 items-center gap-2'
+      className={cn('flex min-w-0 items-center gap-2', 'min-h-6')}
     >
       {onSelectedChange && (
         <Checkbox
@@ -277,7 +340,9 @@ export function RackRow({
         className={cn(
           // 除操作列外全部使用固定值或 fr 比例：每行独立成 grid，
           // 任何 auto 内容列（尤其是宽度随标签值变化的列）都会让左侧字段重新分配宽度。
-          'group grid grid-cols-[minmax(0,1fr)_104px] items-center gap-x-4 gap-y-2 rounded-md px-1 py-2.5 transition-colors hover:bg-muted/40',
+          'group grid grid-cols-[minmax(0,1fr)_104px] items-center gap-x-4 gap-y-2 rounded-md px-1 transition-colors hover:bg-muted/40',
+          dense ? 'py-1.5' : 'py-2',
+          rowMinHeight,
           'xl:grid-cols-[minmax(150px,0.7fr)_minmax(0,2.3fr)_104px]',
           '2xl:grid-cols-[minmax(170px,0.6fr)_minmax(0,1.9fr)_var(--rack-tags-width,28rem)_104px]',
           selected && 'bg-muted/30',
@@ -292,14 +357,14 @@ export function RackRow({
           />
         ) : null}
         {tagsContent || tags?.length ? (
-          <div className='col-span-2 row-start-3 min-w-0 xl:col-span-3 xl:row-start-2 2xl:col-span-1 2xl:col-start-3 2xl:row-start-1'>
+          <div className='col-span-2 row-start-3 min-w-0 xl:col-span-3 xl:row-start-2'>
             {tagsContent ?? <RackTags items={tags || []} />}
           </div>
         ) : null}
         {actions ? (
           <div
             data-slot='row-actions'
-            className='col-span-1 col-start-2 row-start-1 flex min-h-10 min-w-0 flex-wrap items-center justify-end gap-1.5 xl:col-start-3 2xl:col-start-4'
+            className='col-span-1 col-start-2 row-start-1 flex min-h-10 min-w-0 flex-nowrap items-center justify-end gap-1.5 xl:col-start-3 2xl:col-start-4'
           >
             {actions}
           </div>
@@ -317,7 +382,9 @@ export function RackRow({
       className={cn(
         // 固定列基准：标题、字段、操作三列在同一断点下宽度一致，
         // 不用内容驱动的 auto 列，避免每行字段起点漂移；窄屏单列堆叠避免横向滚动。
-        'group grid grid-cols-1 items-center gap-x-4 gap-y-2 rounded-md px-1 py-2.5 transition-colors hover:bg-muted/40',
+        'group grid grid-cols-1 items-center gap-x-4 gap-y-2 rounded-md px-1 transition-colors hover:bg-muted/40',
+        dense ? 'py-1.5' : 'py-2',
+        rowMinHeight,
         reserveActions
           ? 'sm:grid-cols-[minmax(140px,0.7fr)_minmax(0,2.6fr)_minmax(160px,0.85fr)]'
           : 'sm:grid-cols-[minmax(140px,0.7fr)_minmax(0,2.6fr)]',
@@ -340,7 +407,7 @@ export function RackRow({
       {actions && (
         <div
           data-slot='row-actions'
-          className='flex min-h-10 min-w-0 flex-wrap items-center justify-end gap-1.5 sm:col-start-3 sm:row-start-1'
+          className='flex min-h-10 min-w-0 flex-nowrap items-center justify-end gap-1.5 sm:col-start-3 sm:row-start-1'
         >
           {actions}
         </div>

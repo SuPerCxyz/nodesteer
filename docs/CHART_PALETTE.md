@@ -1,61 +1,46 @@
 # 图表调色板
 
-唯一权威配置：`web/src/config/chart-palette.ts`
+权威配置：
 
-## 配置
+- `web/src/config/chart-palette.ts`：普通 `series-1..16`
+- `web/src/config/chart-alert.ts`：告警/错误独立色
+- `web/src/styles/theme.css`：CSS 变量实际值
+- `web/src/config/chart-palette.legacy.ts` + `legacy-theme.css`：回滚快照
 
-- `CHART_PALETTES`：16 组固定双色渐变，包含 `id`、`name`、`dark.from/to`、`light.from/to`。
-- `CHART_STYLE_TOKENS`：线宽 `1.8`、面积透明度、深色光晕 `4px / 0.06`，以及图例、tooltip、hover 使用 series 颜色的约定。
+## 普通系列
 
-## 取色
+`CHART_PALETTES` 固定为 `series-1..16`，只包含冷色和中性色。颜色值通过 `var(--chart-series-N-from/to)` 引用，业务代码不写 hex。
 
 ```ts
-import {
-  getChartSeriesStyle,
-  assignChartPaletteIds,
-  type ChartPaletteId,
-} from '@/config/chart-palette'
-
-const style = getChartSeriesStyle('cpu.user', 'dark')
-// style.paletteId / style.from / style.to / style.lineWidth / style.area / style.glow
-
-const explicit = getChartSeriesStyle('cpu.user', 'light', {
-  paletteId: 'blue-violet',
+const style = getChartSeriesStyle('cpu.user', 'dark', {
+  paletteId: 'series-1',
 })
 ```
 
-未指定 `paletteId` 时按 `seriesId` 做 FNV-1a 稳定哈希，映射到 16 组色板。同一 `seriesId` 在刷新、排序、图例隐藏和时间范围变化后颜色不变。
+- `assignChartPaletteIds` 为同一图表稳定分配 series id。
+- 未指定 `paletteId` 时回退到 `series-13` 中性灰，未知指标不会落入告警色。
+- 业务系列应显式指定 paletteId，并使用稳定的 `seriesId`。
+- 容器身份只允许 `series-1..16`。
 
-## 同一图表分配
+## 告警系列
 
 ```ts
-const assignments = assignChartPaletteIds(
-  ['cpu.total', 'cpu.user', 'cpu.system'],
-  { 'cpu.total': 'cyan-blue' }
-)
+import { getChartAlertStyle } from '@/config/chart-alert'
+
+const danger = getChartAlertStyle('danger', 'dark')
 ```
 
-- 显式 `paletteId` 优先。
-- 自动分配按排序后的 `seriesId` 线性探测，避免同图重复。
-- 超过 16 条时按确定规则复用色板，不生成第 17 色。
-- 业务系列建议显式指定 `paletteId`，并让 `seriesId` 保持稳定（例如 metric 名，而不是本地化标题或时间范围）。
+仅阈值、错误、丢包、危险状态使用 `danger/warning/info`。普通系列禁止引用 `--chart-alert-*`，也不提供哈希入口。
 
-## 组件接入
+## 映射约定
 
-`ChartSeries` 支持可选 `paletteId` 和 `seriesId`；未指定 `seriesId` 时使用 `key`。
+- Swap、CPU iowait：`series-11` 蓝灰
+- CPU softirq：`series-9` 青灰
+- 磁盘写：`series-12` 石墨灰
+- 内存 free：`series-11`
+- 文件系统 total：`series-13`
+- 温度：`series-15` 低饱和陶土
+- 风扇：`series-16` 低饱和天青
+- 网络错误/丢包：`chart-alert`
 
-```tsx
-<MultiSeriesChart
-  series={[
-    {
-      key: 'cpu.user',
-      seriesId: 'cpu.user',
-      paletteId: 'blue-violet',
-      name: 'User',
-      points,
-    },
-  ]}
-/>
-```
-
-`MultiSeriesChart` 统一从配置生成 stroke 渐变、fill 渐变、图例、tooltip 和 hover 圆点颜色；渐变 ID 使用 `useId` 加主题后缀，多实例不会冲突。
+`MultiSeriesChart` 继续统一生成渐变 stroke、fill、图例、tooltip 和 hover 圆点。

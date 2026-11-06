@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { sessionToUser, useAuthStore } from '@/stores/auth-store'
 import { api, ApiError, type SessionInfo } from '@/lib/api'
 import { getCookie } from '@/lib/cookies'
-import { currentPath } from '@/lib/navigation'
+import { signInRedirectTarget } from '@/lib/navigation'
 import { cn } from '@/lib/utils'
 import { LayoutProvider } from '@/context/layout-provider'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
@@ -32,6 +32,19 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const [devNoAuth, setDevNoAuth] = useState(false)
   const redirecting = useRef(false)
 
+  // 未登录跳转登录页；当前已在登录页时跳过，避免 redirect 参数嵌套。
+  const goToSignIn = useCallback(() => {
+    if (redirecting.current) return
+    const redirect = signInRedirectTarget()
+    if (!redirect) return
+    redirecting.current = true
+    void navigate({
+      to: '/sign-in',
+      search: { redirect },
+      replace: true,
+    })
+  }, [navigate])
+
   // 本地测试免登录：无 token 时先探测 /auth-mode，避免被直接重定向到登录页。
   useEffect(() => {
     if (authModeReady) return
@@ -44,43 +57,26 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           setDevNoAuth(true)
           useAuthStore.getState().auth.setAccessToken('dev-no-auth')
         } else {
-          void navigate({
-            to: '/sign-in',
-            search: { redirect: currentPath() },
-            replace: true,
-          })
+          goToSignIn()
         }
         setAuthModeReady(true)
       })
       .catch(() => {
         if (!mounted) return
-        void navigate({
-          to: '/sign-in',
-          search: { redirect: currentPath() },
-          replace: true,
-        })
+        goToSignIn()
         setAuthModeReady(true)
       })
     return () => {
       mounted = false
     }
-  }, [authModeReady, navigate])
+  }, [authModeReady, goToSignIn])
 
   useEffect(() => {
     if (!authModeReady) return
     let mounted = true
-    const redirectToSignIn = () => {
-      if (redirecting.current) return
-      redirecting.current = true
-      void navigate({
-        to: '/sign-in',
-        search: { redirect: currentPath() },
-        replace: true,
-      })
-    }
 
     if (!accessToken) {
-      redirectToSignIn()
+      goToSignIn()
       return () => {
         mounted = false
       }
@@ -105,7 +101,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           return
         if (error instanceof ApiError && error.status === 401) {
           reset()
-          redirectToSignIn()
+          goToSignIn()
         } else {
           setCheckError(error)
         }
@@ -123,7 +119,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     location.pathname,
     location.search,
     location.hash,
-    navigate,
+    goToSignIn,
     reset,
     setUser,
     retry,

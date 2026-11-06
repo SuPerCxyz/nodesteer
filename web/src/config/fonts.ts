@@ -10,4 +10,4 @@
  * 3. 在 `src/styles/theme.css` 的 `@theme inline` 中定义 `--font-<name>`。
  * 4. 若首屏就要生效，在 `index.html` 的内联脚本中同步默认值。
  */
-export const fonts = ['maple', 'system'] as const
+export const fonts = ['system', 'maple'] as const

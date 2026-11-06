@@ -944,7 +944,7 @@ function LogViewer({
       <CardContent className='p-0'>
         <pre
           ref={outputRef}
-          className={`max-h-[560px] min-h-48 overflow-auto bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-200 ${wrap ? 'break-words whitespace-pre-wrap' : 'whitespace-pre'}`}
+          className={`max-h-[560px] min-h-48 overflow-auto bg-code-background p-4 font-mono text-xs leading-6 text-code-foreground ${wrap ? 'break-words whitespace-pre-wrap' : 'whitespace-pre'}`}
         >
           {filtered || t('executions.empty')}
         </pre>

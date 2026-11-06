@@ -15,7 +15,10 @@ import { useAuthStore } from '@/stores/auth-store'
 import { setToken } from '@/lib/api'
 import { AuthenticatedLayout } from './authenticated-layout'
 
-const { get } = vi.hoisted(() => ({ get: vi.fn() }))
+const { get, navigate } = vi.hoisted(() => ({
+  get: vi.fn(),
+  navigate: vi.fn(),
+}))
 
 vi.mock('@/lib/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/api')>()
@@ -26,7 +29,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@tanstack/react-router')>()
   return {
     ...actual,
-    useNavigate: () => vi.fn(),
+    useNavigate: () => navigate,
     useLocation: (options?: {
       select?: (location: {
         pathname: string
@@ -170,6 +173,58 @@ describe('本地测试免登录模式', () => {
     await expect.element(page.getByText(i18n.t('auth.devNoAuth'))).toBeVisible()
     await expect.element(page.getByText('正文内容')).toBeVisible()
     expect(useAuthStore.getState().auth.accessToken).toBe('dev-no-auth')
+  })
+})
+
+describe('未登录回跳', () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage('zh')
+  })
+
+  beforeEach(() => {
+    setToken(null)
+    useAuthStore.getState().auth.reset()
+    navigate.mockReset()
+    get.mockReset()
+  })
+
+  afterEach(() => {
+    window.history.replaceState({}, '', '/')
+  })
+
+  it('从受保护页面跳转时只带单层回跳目标', async () => {
+    window.history.replaceState({}, '', '/nodes')
+    get.mockResolvedValue({ dev_no_auth: false })
+
+    await render(
+      <AuthenticatedLayout>
+        <p>正文内容</p>
+      </AuthenticatedLayout>
+    )
+
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalled())
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(navigate).toHaveBeenCalledTimes(1)
+    expect(navigate).toHaveBeenCalledWith({
+      to: '/sign-in',
+      search: { redirect: '/nodes' },
+      replace: true,
+    })
+  })
+
+  it('已在登录页时不再把 sign-in 自身作为 redirect', async () => {
+    window.history.replaceState({}, '', '/sign-in?redirect=%2Fnodes')
+    get.mockResolvedValue({ dev_no_auth: false })
+
+    await render(
+      <AuthenticatedLayout>
+        <p>正文内容</p>
+      </AuthenticatedLayout>
+    )
+
+    await vi.waitFor(() => expect(get).toHaveBeenCalledWith('/auth-mode'))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(navigate).not.toHaveBeenCalled()
   })
 })
 

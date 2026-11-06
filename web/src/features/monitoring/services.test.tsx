@@ -197,12 +197,10 @@ describe('服务监控页', () => {
     )
 
     await userEvent.click(
-      page
-        .getByRole('region')
-        .getByRole('button', {
-          name: i18n.t('monitoring.createTarget'),
-          exact: true,
-        })
+      page.getByRole('region').getByRole('button', {
+        name: i18n.t('monitoring.createTarget'),
+        exact: true,
+      })
     )
 
     await expect.poll(() => post.mock.calls.length).toBe(1)
@@ -247,7 +245,10 @@ describe('服务监控页', () => {
   it('删除目标必须经过确认，确认后调用删除接口', async () => {
     const page = await waitForPage()
     await userEvent.click(
-      page.getByRole('button', { name: i18n.t('monitoring.delete') })
+      page.getByRole('button', { name: i18n.t('common.actions') }).first()
+    )
+    await userEvent.click(
+      page.getByRole('menuitem', { name: i18n.t('monitoring.delete') })
     )
 
     await expect
@@ -291,7 +292,9 @@ describe('服务监控页', () => {
 
     await expect
       .element(
-        page.getByRole('button', { name: i18n.t('monitoring.createTarget') })
+        page
+          .getByRole('button', { name: i18n.t('monitoring.createTarget') })
+          .first()
       )
       .toBeVisible()
     expect(
@@ -314,21 +317,25 @@ describe('服务监控页', () => {
       'Unsaved B'
     )
     await userEvent.click(
-      firstRow.getByRole('button', { name: i18n.t('webFix.history') })
+      firstRow.getByRole('button', { name: i18n.t('common.actions') })
     )
     await userEvent.click(
-      firstRow.getByRole('button', {
+      page.getByRole('menuitem', { name: i18n.t('webFix.history') })
+    )
+    await userEvent.click(
+      firstRow.getByRole('button', { name: i18n.t('common.actions') })
+    )
+    await userEvent.click(
+      page.getByRole('menuitem', {
         name: i18n.t('monitoring.delete'),
         exact: true,
       })
     )
     await userEvent.click(
-      page
-        .getByRole('alertdialog')
-        .getByRole('button', {
-          name: i18n.t('monitoring.confirmAction'),
-          exact: true,
-        })
+      page.getByRole('alertdialog').getByRole('button', {
+        name: i18n.t('monitoring.confirmAction'),
+        exact: true,
+      })
     )
     await expect.poll(() => del.mock.calls.length).toBe(1)
     await expect

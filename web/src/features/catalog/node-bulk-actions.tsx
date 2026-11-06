@@ -153,14 +153,14 @@ export function NodeBulkActions({
               {t('nodes.bulkUpgradeDesc', { count: targets.nodeIds.length })}
             </p>
             {targets.skippedDocker > 0 ? (
-              <p className='text-amber-600 dark:text-amber-500'>
+              <p className='text-warning'>
                 {t('nodes.bulkUpgradeSkipDocker', {
                   count: targets.skippedDocker,
                 })}
               </p>
             ) : null}
             {targets.blockedDataPlane > 0 ? (
-              <p className='text-amber-600 dark:text-amber-500'>
+              <p className='text-warning'>
                 {t('nodes.bulkUpgradeSkipDataPlane', {
                   count: targets.blockedDataPlane,
                 })}

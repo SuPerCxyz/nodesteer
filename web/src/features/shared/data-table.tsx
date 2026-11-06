@@ -36,8 +36,10 @@ import {
   DataTableColumnHeader,
   DataTablePagination,
   DataTableToolbar,
+  type DataTableToolbarProps,
 } from '@/components/data-table'
 import { RackList, RackRow } from './rack-list'
+import { EmptyState } from './ui'
 
 /** 前置多选列：独立于业务列，注入后不改变业务列的顺序与相对宽度权重 */
 function selectColumn<TData>(): ColumnDef<TData> {
@@ -128,6 +130,11 @@ export function DataTable<TData>({
   bulkEntityName = '',
   variant = 'table',
   rackPrimaryColumnId,
+  rackKind,
+  filters,
+  toolbarActions,
+  emptyMessage,
+  emptyAction,
 }: {
   data: TData[]
   columns: ColumnDef<TData>[]
@@ -138,6 +145,8 @@ export function DataTable<TData>({
   variant?: 'table' | 'rack'
   /** rack 形态下作为标题的列 id；缺省取第一个非选择/操作列。 */
   rackPrimaryColumnId?: string
+  /** Rack 页面语义类型，用于专用列宽样式。 */
+  rackKind?: string
   /** 服务端分页：data 仅为当前页，分页状态由 page/pageSize 受控传入 */
   manualPagination?: boolean
   /** 服务端搜索时禁用当前页本地过滤，并受控同步搜索框。 */
@@ -164,6 +173,12 @@ export function DataTable<TData>({
   renderBulkActions?: (table: ReactTable<TData>) => React.ReactNode
   /** 工具条读屏文案中的实体名（如「节点」） */
   bulkEntityName?: string
+  /** 表格工具栏筛选器；真实接入列过滤，顺序位于搜索之后。 */
+  filters?: DataTableToolbarProps<TData>['filters']
+  /** 工具栏右侧次要操作（批量/导出等），位于视图选项之前。 */
+  toolbarActions?: React.ReactNode
+  emptyMessage?: string
+  emptyAction?: React.ReactNode
 }) {
   const { t } = useTranslation()
   const [sorting, setSorting] = useState<SortingState>([])
@@ -260,8 +275,10 @@ export function DataTable<TData>({
           table={table}
           searchPlaceholder={searchPlaceholder}
           hideSearch={hideSearch}
+          filters={filters}
+          actions={toolbarActions}
         />
-        <RackList testId='data-table-rack'>
+        <RackList testId='data-table-rack' kind={rackKind}>
           {rows.length ? (
             rows.map((row) => {
               const cells = row.getVisibleCells()
@@ -270,7 +287,9 @@ export function DataTable<TData>({
               )
               const businessCells = cells.filter(
                 (cell) =>
-                  cell.column.id !== 'select' && cell.column.id !== 'actions'
+                  cell.column.id !== 'select' &&
+                  cell.column.id !== 'actions' &&
+                  !cell.column.columnDef.meta?.rackHidden
               )
               const titleCell =
                 businessCells.find(
@@ -283,7 +302,9 @@ export function DataTable<TData>({
                 <RackRow
                   key={row.id}
                   testId='data-table-rack-row'
-                  selected={enableRowSelection ? row.getIsSelected() : undefined}
+                  selected={
+                    enableRowSelection ? row.getIsSelected() : undefined
+                  }
                   onSelectedChange={
                     enableRowSelection
                       ? (selected) => row.toggleSelected(selected)
@@ -309,6 +330,9 @@ export function DataTable<TData>({
                         cell.column.columnDef.cell,
                         cell.getContext()
                       ),
+                      span: cell.column.columnDef.meta?.rackSpan,
+                      width: cell.column.columnDef.meta?.rackWidth,
+                      multiline: cell.column.columnDef.meta?.rackMultiline,
                     }
                   })}
                   actions={
@@ -333,7 +357,10 @@ export function DataTable<TData>({
                   {t('common.loading')}
                 </span>
               ) : (
-                t('common.noResults')
+                <EmptyState
+                  message={emptyMessage || t('common.noResults')}
+                  action={emptyAction}
+                />
               )}
             </div>
           )}
@@ -357,6 +384,8 @@ export function DataTable<TData>({
         table={table}
         searchPlaceholder={searchPlaceholder}
         hideSearch={hideSearch}
+        filters={filters}
+        actions={toolbarActions}
       />
       <div className='overflow-hidden rounded-md border'>
         <Table
@@ -454,7 +483,10 @@ export function DataTable<TData>({
                   colSpan={table.getVisibleLeafColumns().length}
                   className='h-24 text-center'
                 >
-                  {t('common.noResults')}
+                  <EmptyState
+                    message={emptyMessage || t('common.noResults')}
+                    action={emptyAction}
+                  />
                 </TableCell>
               </TableRow>
             )}

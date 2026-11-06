@@ -17,7 +17,7 @@ export function InboundDataPlaneBanner({
     <div
       role='alert'
       data-testid='inbound-data-plane-banner'
-      className='rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm'
+      className='rounded-md border border-warning/50 bg-warning/10 p-3 text-sm'
     >
       <p className='flex items-start gap-2 font-medium'>
         <AlertTriangle className='mt-0.5 size-4 shrink-0' />

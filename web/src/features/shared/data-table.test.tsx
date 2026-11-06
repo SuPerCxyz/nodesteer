@@ -81,6 +81,73 @@ describe('DataTable 行多选基建', () => {
   })
 })
 
+describe('DataTable 工具栏筛选与操作槽', () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage('zh')
+  })
+
+  it('筛选真实过滤数据，右侧操作与视图选项同时可见', async () => {
+    const filterColumns: ColumnDef<Row>[] = [
+      {
+        accessorKey: 'name',
+        header: '名称',
+        filterFn: (row, columnId, value: string[]) =>
+          value.includes(String(row.getValue(columnId))),
+      },
+      columns[1],
+    ]
+    const page = await render(
+      <DataTable
+        data={[
+          { id: 'a', name: 'node-a' },
+          { id: 'b', name: 'node-b' },
+        ]}
+        columns={filterColumns}
+        filters={[
+          {
+            columnId: 'name',
+            title: '名称',
+            options: [
+              { label: 'node-a', value: 'node-a' },
+              { label: 'node-b', value: 'node-b' },
+            ],
+          },
+        ]}
+        toolbarActions={<span>导出</span>}
+      />
+    )
+
+    await expect.element(page.getByText('node-b')).toBeVisible()
+    await expect.element(page.getByText('导出')).toBeVisible()
+    await userEvent.click(
+      page.getByRole('button', { name: '名称', exact: true })
+    )
+    await userEvent.click(page.getByRole('option', { name: /node-a/ }))
+    await expect
+      .element(page.getByRole('cell', { name: 'node-a' }))
+      .toBeVisible()
+    expect(page.getByRole('cell', { name: 'node-b' }).elements()).toHaveLength(
+      0
+    )
+  })
+
+  it('空态支持创建操作', async () => {
+    const page = await render(
+      <DataTable
+        data={[]}
+        columns={columns}
+        hideSearch
+        emptyMessage='暂无节点'
+        emptyAction={<button type='button'>创建节点</button>}
+      />
+    )
+    await expect.element(page.getByText('暂无节点')).toBeVisible()
+    await expect
+      .element(page.getByRole('button', { name: '创建节点' }))
+      .toBeVisible()
+  })
+})
+
 describe('DataTable 列宽与表头对齐', () => {
   beforeAll(async () => {
     await i18n.changeLanguage('zh')
@@ -359,9 +426,7 @@ describe('DataTable rack 列表形态', () => {
       cell: () => <button type='button'>查看</button>,
     },
   ]
-  const rackData: RackRowData[] = [
-    { id: 'a', name: 'node-a', role: 'admin' },
-  ]
+  const rackData: RackRowData[] = [{ id: 'a', name: 'node-a', role: 'admin' }]
 
   it('渲染无表头的机架行，保留标题、字段和操作', async () => {
     const page = await render(
@@ -378,7 +443,9 @@ describe('DataTable rack 列表形态', () => {
     await expect.element(page.getByText('node-a')).toBeVisible()
     await expect.element(page.getByText('角色')).toBeVisible()
     await expect.element(page.getByText('admin')).toBeVisible()
-    await expect.element(page.getByRole('button', { name: '查看' })).toBeVisible()
+    await expect
+      .element(page.getByRole('button', { name: '查看' }))
+      .toBeVisible()
     expect(page.container.querySelector('table')).toBeNull()
     expect(
       page.container.querySelectorAll('[data-testid="data-table-rack-row"]')
@@ -407,7 +474,13 @@ describe('DataTable rack 列表形态', () => {
 
   it('加载态与空态不渲染表格', async () => {
     const loading = await render(
-      <DataTable data={[]} columns={rackColumns} hideSearch variant='rack' isLoading />
+      <DataTable
+        data={[]}
+        columns={rackColumns}
+        hideSearch
+        variant='rack'
+        isLoading
+      />
     )
     await expect.element(loading.getByText('加载中...')).toBeVisible()
     expect(loading.container.querySelector('table')).toBeNull()

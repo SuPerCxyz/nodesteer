@@ -40,19 +40,12 @@
       content="/images/nodesteer-logo-original.png"
     />
 
-    <!-- font family: 本地子集字体，首屏前应用，避免字体跳变 -->
-    <link
-      rel="preload"
-      href="/fonts/maple-mono-nl-nf-cn-medium.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
+    <!-- 字体按 @font-face 按需加载，不做无条件 preload。 -->
     <script>
       ;(function () {
         try {
           var m = document.cookie.match(/(?:^|;\s*)font=([^;]+)/)
-          var font = m ? m[1] : 'maple'
+          var font = m ? m[1] : 'system'
           if (font !== 'system') {
             document.documentElement.classList.add('font-maple')
           }

@@ -7,6 +7,7 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { applyPaletteMode } from '@/config/palette-mode'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import { ApiError } from '@/lib/api'
@@ -130,6 +131,7 @@ declare module '@tanstack/react-router' {
 // Render the app
 const rootElement = document.getElementById('root')!
 if (!rootElement.innerHTML) {
+  applyPaletteMode()
   const root = ReactDOM.createRoot(rootElement)
   root.render(
     <StrictMode>

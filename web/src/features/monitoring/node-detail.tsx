@@ -1,12 +1,28 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import type { ChartPaletteId } from '@/config/chart-palette'
+import {
+  Activity,
+  Clock3,
+  Cpu,
+  Maximize2,
+  MemoryStick,
+  Package,
+  Server,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { api, type Node } from '@/lib/api'
 import { nodeDisplayName } from '@/lib/node-display-name'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -17,7 +33,12 @@ import {
 } from '@/components/ui/select'
 import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
-import { ErrorState, LoadingState, StatusBadge } from '@/features/shared/ui'
+import {
+  ErrorState,
+  LoadingState,
+  StatusBadge,
+  TimeValue,
+} from '@/features/shared/ui'
 import {
   containerCompleteness,
   type LatestMetric,
@@ -25,6 +46,7 @@ import {
 import { historyPointValid } from './history'
 import { scheduleHistory } from './history-queue'
 import {
+  HISTORY_REFRESH_MS,
   useHistoryRange,
   type HistoryRange,
   type HistoryRangeWindow,
@@ -42,6 +64,9 @@ import { MultiSeriesChart, type ChartSeries } from './multi-series-chart'
 import { formatTemperature, formatUptime } from './node-overview-metrics'
 import type { History, NodeOverview, Series } from './types'
 
+const refreshIntervalWhenVisible = (ms: number) => () =>
+  typeof document !== 'undefined' && document.hidden ? false : ms
+
 const INTERFACE_KEYS = ['interface', 'device', 'iface', 'nic']
 const VIRTUAL_INTERFACE_PREFIXES = [
   'lo',
@@ -53,6 +78,85 @@ const VIRTUAL_INTERFACE_PREFIXES = [
   'tap',
   'wg',
 ]
+
+const CPU_BREAKDOWN = [
+  {
+    metric: 'cpu.user',
+    short: 'us',
+    labelKey: 'monitoring.cpuUser',
+    paletteId: 'series-1',
+  },
+  {
+    metric: 'cpu.system',
+    short: 'sys',
+    labelKey: 'monitoring.cpuSystem',
+    paletteId: 'series-2',
+  },
+  {
+    metric: 'cpu.iowait',
+    short: 'wa',
+    labelKey: 'monitoring.cpuIowait',
+    paletteId: 'series-11',
+  },
+  {
+    metric: 'cpu.softirq',
+    short: 'si',
+    labelKey: 'monitoring.cpuSoftirq',
+    paletteId: 'series-9',
+  },
+  {
+    metric: 'cpu.steal',
+    short: 'st',
+    labelKey: 'monitoring.cpuSteal',
+    paletteId: 'series-10',
+  },
+] as const satisfies ReadonlyArray<{
+  metric: string
+  short: string
+  labelKey: string
+  paletteId: ChartPaletteId
+}>
+
+function HeaderFact({
+  icon,
+  label,
+  value,
+  testId,
+  showLabel = false,
+}: {
+  icon: ReactNode
+  label: string
+  value: ReactNode
+  testId?: string
+  showLabel?: boolean
+}) {
+  return (
+    <span
+      data-testid={testId}
+      className='inline-flex max-w-full min-w-0 items-center gap-1.5 text-sm'
+    >
+      <span
+        role='img'
+        aria-label={label}
+        title={label}
+        className='inline-flex shrink-0 items-center text-muted-foreground'
+      >
+        {icon}
+      </span>
+      {showLabel && (
+        <span className='shrink-0 text-muted-foreground'>{label}:</span>
+      )}
+      <span
+        className={cn(
+          'min-w-0 font-medium text-foreground',
+          showLabel ? 'truncate' : '[overflow-wrap:anywhere] break-words'
+        )}
+      >
+        {value}
+      </span>
+    </span>
+  )
+}
 
 function isPercentMetric(metric: string) {
   return (
@@ -87,7 +191,8 @@ function useMetricHistory(
     queryKey: metricHistoryQueryKey(nodeId, metric, series, range, window),
     queryFn: ({ signal }) =>
       fetchMetricHistory(nodeId, metric, series, window, signal),
-    staleTime: 30000,
+    staleTime: HISTORY_REFRESH_MS,
+    refetchInterval: refreshIntervalWhenVisible(HISTORY_REFRESH_MS),
     enabled: !!nodeId && !!metric && !!series && window.valid,
   })
 }
@@ -317,6 +422,7 @@ type MetricConfig = {
   name: string
   type?: 'area' | 'line'
   paletteId?: ChartPaletteId
+  alert?: 'danger' | 'warning' | 'info'
 }
 
 function MultiMetricCard({
@@ -386,7 +492,8 @@ function MultiMetricCard({
           window,
           signal
         ),
-      staleTime: 30000,
+      staleTime: HISTORY_REFRESH_MS,
+      refetchInterval: refreshIntervalWhenVisible(HISTORY_REFRESH_MS),
       enabled: !!item.series && window.valid,
     })),
   })
@@ -398,12 +505,13 @@ function MultiMetricCard({
         key: item.metric,
         seriesId: item.metric,
         paletteId: item.paletteId,
+        alert: item.alert,
         name: item.name,
         points: history.points,
         unit: history.unit,
         gaps: history.gaps,
         stepNs: history.stepNs,
-        type: item.type || 'line',
+        type: item.type || 'area',
       }
     })
     .filter((item): item is ChartSeries => item !== null)
@@ -485,6 +593,22 @@ type SplitMetricGroup = {
   series: (Series | undefined)[]
 }
 
+function isPartitionDeviceName(name: string) {
+  return (
+    /^(sd[a-z]+|vd[a-z]+|xvd[a-z]+)\d+$/.test(name) ||
+    /^nvme\d+n\d+p\d+$/.test(name) ||
+    /^mmcblk\d+p\d+$/.test(name) ||
+    /^(md|dm-|loop|bcache|nbd)\d+p\d+$/.test(name)
+  )
+}
+
+/** 优先使用 inventory 分类；分类缺失时只用明确的设备名规则兜底。 */
+function isWholeDisk(name: string, kinds?: Map<string, string>) {
+  const kind = kinds?.get(name)
+  if (kind) return kind === 'disk'
+  return !isPartitionDeviceName(name)
+}
+
 /**
  * 按完整维度组合分组，避免同一挂载点下多个设备混用 used/total。
  * 每个指标在每个分组内最多取一条 series，缺失时保留空位而不是借用其他设备。
@@ -493,7 +617,8 @@ function buildSplitGroups(
   seriesByMetric: Series[][],
   dimensionKey: string,
   groupDimensions: string[],
-  allowedDevices?: Set<string>
+  wholeDiskOnly = false,
+  deviceKinds?: Map<string, string>
 ) {
   const groups = new Map<string, SplitMetricGroup>()
   const identity = (dimensions: Record<string, string>) =>
@@ -504,7 +629,7 @@ function buildSplitGroups(
     for (const series of seriesByMetric[index]) {
       const label = series.dimensions[dimensionKey]
       if (!label) continue
-      if (allowedDevices && !allowedDevices.has(label)) continue
+      if (wholeDiskOnly && !isWholeDisk(label, deviceKinds)) continue
       const key = identity(series.dimensions)
       let group = groups.get(key)
       if (!group) {
@@ -539,7 +664,8 @@ function SplitMultiMetricCards({
   testId,
   dimensionKey,
   groupDimensions,
-  allowedDevices,
+  wholeDiskOnly,
+  deviceKinds,
 }: {
   nodeId: string
   metrics: MetricConfig[]
@@ -550,7 +676,8 @@ function SplitMultiMetricCards({
   testId: string
   dimensionKey: string
   groupDimensions?: string[]
-  allowedDevices?: Set<string>
+  wholeDiskOnly?: boolean
+  deviceKinds?: Map<string, string>
 }) {
   const { t } = useTranslation()
   const seriesQueries = useQueries({
@@ -568,7 +695,8 @@ function SplitMultiMetricCards({
     seriesQueries.map((query) => query.data?.series || []),
     dimensionKey,
     resolvedGroupDimensions,
-    allowedDevices
+    wholeDiskOnly,
+    deviceKinds
   )
   const labelCounts = new Map<string, number>()
   for (const group of groups) {
@@ -615,7 +743,8 @@ function SplitMultiMetricCards({
             window,
             signal
           ),
-        staleTime: 30000,
+        staleTime: HISTORY_REFRESH_MS,
+        refetchInterval: refreshIntervalWhenVisible(HISTORY_REFRESH_MS),
         enabled: window.valid,
       }))
     ),
@@ -678,12 +807,13 @@ function SplitMultiMetricCards({
               key: `${item.metric}:${item.series.seriesKey}`,
               seriesId: item.metric,
               paletteId: item.paletteId,
+              alert: item.alert,
               name: item.name,
               points: history.points,
               unit: history.unit,
               gaps: history.gaps,
               stepNs: history.stepNs,
-              type: item.type || 'line',
+              type: item.type || 'area',
             }
           })
           .filter((item): item is ChartSeries => item !== null)
@@ -747,6 +877,20 @@ const CONTAINER_METRICS = [
   'container.network.rx_bps',
   'container.network.tx_bps',
 ]
+const CONTAINER_TITLES = ['cpu', 'memory', 'networkRx', 'networkTx'] as const
+const MAX_CONTAINER_SERIES = 32
+
+function containerIdentity(item: Series) {
+  return item.dimensions.container_id
+    ? `id:${item.dimensions.container_id}`
+    : `legacy:${item.dimensions.container || item.seriesKey}`
+}
+
+function containerName(item: Series) {
+  return (
+    item.dimensions.container || item.dimensions.container_id || item.seriesKey
+  )
+}
 
 function ContainerSection({
   nodeId,
@@ -761,6 +905,7 @@ function ContainerSection({
 }) {
   const { t } = useTranslation()
   const [selected, setSelected] = useState('all')
+  const [detailIdentity, setDetailIdentity] = useState<string | null>(null)
   const queries = useQueries({
     queries: CONTAINER_METRICS.map((metric) => ({
       queryKey: ['monitoring-series', nodeId, metric],
@@ -778,21 +923,16 @@ function ContainerSection({
         `/monitoring/nodes/${encodeURIComponent(nodeId)}/latest`
       ),
     enabled: available === true && !!nodeId,
-    refetchInterval: 30000,
+    refetchInterval: refreshIntervalWhenVisible(30000),
   })
-  const all = queries.flatMap((query) => query.data?.series || [])
-  const identity = (item: Series) =>
-    item.dimensions.container_id
-      ? `id:${item.dimensions.container_id}`
-      : `legacy:${item.dimensions.container || item.seriesKey}`
-  const names = new Map(
-    all.map((item) => [
-      identity(item),
-      item.dimensions.container ||
-        item.dimensions.container_id ||
-        item.seriesKey,
-    ])
-  )
+  const seriesByMetric = queries.map((query) => query.data?.series || [])
+  const names = new Map<string, string>()
+  for (const series of seriesByMetric.flat()) {
+    const identity = containerIdentity(series)
+    if (!names.has(identity)) names.set(identity, containerName(series))
+  }
+  const identities = [...names.keys()].slice(0, MAX_CONTAINER_SERIES)
+  const allowedIdentities = new Set(identities)
   const completeness = latest.isError
     ? null
     : containerCompleteness(latest.data?.metrics || [])
@@ -816,38 +956,76 @@ function ContainerSection({
               ? t('monitoring.collectionPartial', completeness)
               : t('monitoring.collectionComplete', completeness)}
         </p>
-        <Select value={selected} onValueChange={setSelected}>
-          <SelectTrigger
-            className='w-56'
-            aria-label={t('monitoring.containerMore')}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value='all'>{t('monitoring.allContainers')}</SelectItem>
-            {[...names].map(([id, name]) => (
-              <SelectItem key={id} value={id}>
-                {name} ·{' '}
-                {id.startsWith('legacy:')
-                  ? t('monitoring.legacy')
-                  : id.slice(3, 15)}
+        <div className='flex flex-wrap items-center gap-2'>
+          <Select value={selected} onValueChange={setSelected}>
+            <SelectTrigger
+              className='w-56'
+              aria-label={t('monitoring.containerMore')}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='all'>
+                {t('monitoring.allContainers')}
               </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+              {identities.map((id) => (
+                <SelectItem key={id} value={id}>
+                  {names.get(id)} ·{' '}
+                  {id.startsWith('legacy:')
+                    ? t('monitoring.legacy')
+                    : id.slice(3, 15)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            data-testid='container-expand-all'
+            disabled={!identities.length}
+            onClick={() => setDetailIdentity(identities[0] || '')}
+          >
+            <Maximize2 className='me-1 size-4' />
+            {t('monitoring.expandAllContainers')}
+          </Button>
+        </div>
       </div>
       {CONTAINER_METRICS.map((metric, index) => (
         <ContainerMetricCard
           key={metric}
           nodeId={nodeId}
           metric={metric}
-          title={`${t('monitoring.container')} ${[t('monitoring.cpu'), t('monitoring.memory'), t('monitoring.networkRx'), t('monitoring.networkTx')][index]}`}
+          title={t(
+            `monitoring.${CONTAINER_TITLES[index]}` as
+              | 'monitoring.cpu'
+              | 'monitoring.memory'
+              | 'monitoring.networkRx'
+              | 'monitoring.networkTx'
+          )}
           range={range}
           window={window}
           query={queries[index]}
+          seriesOptions={seriesByMetric[index]}
+          allowedIdentities={allowedIdentities}
           selected={selected}
+          onOpenContainer={setDetailIdentity}
         />
       ))}
+      <ContainerDetailDialog
+        open={detailIdentity !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetailIdentity(null)
+        }}
+        nodeId={nodeId}
+        range={range}
+        window={window}
+        seriesByMetric={seriesByMetric}
+        identities={identities}
+        names={names}
+        selected={detailIdentity || identities[0] || ''}
+        onSelect={setDetailIdentity}
+      />
     </>
   )
 }
@@ -859,7 +1037,10 @@ function ContainerMetricCard({
   range,
   window,
   query,
+  seriesOptions,
+  allowedIdentities,
   selected,
+  onOpenContainer,
 }: {
   nodeId: string
   metric: string
@@ -867,15 +1048,16 @@ function ContainerMetricCard({
   range: HistoryRange
   window: HistoryRangeWindow
   query: ReturnType<typeof useMetricSeries>
+  seriesOptions: Series[]
+  allowedIdentities: Set<string>
   selected: string
+  onOpenContainer: (identity: string) => void
 }) {
   const { t } = useTranslation()
-  const series = (query.data?.series || []).filter(
+  const series = seriesOptions.filter(
     (item) =>
-      selected === 'all' ||
-      (item.dimensions.container_id
-        ? `id:${item.dimensions.container_id}`
-        : `legacy:${item.dimensions.container || item.seriesKey}`) === selected
+      allowedIdentities.has(containerIdentity(item)) &&
+      (selected === 'all' || containerIdentity(item) === selected)
   )
   const histories = useQueries({
     queries: series.map((item) => ({
@@ -889,15 +1071,13 @@ function ContainerMetricCard({
       queryFn: ({ signal }) =>
         fetchMetricHistory(nodeId, metric, item.seriesKey, window, signal),
       enabled: window.valid,
-      staleTime: 30000,
+      staleTime: HISTORY_REFRESH_MS,
+      refetchInterval: refreshIntervalWhenVisible(HISTORY_REFRESH_MS),
     })),
   })
   const chart = series.flatMap((item, index) => {
     const history = histories[index].data
-    const name =
-      item.dimensions.container ||
-      item.dimensions.container_id ||
-      item.seriesKey
+    const name = containerName(item)
     return history
       ? [
           {
@@ -911,6 +1091,9 @@ function ContainerMetricCard({
         ]
       : []
   })
+  const identityBySeriesKey = new Map(
+    series.map((item) => [item.seriesKey, containerIdentity(item)])
+  )
   const formatter = metric.includes('network') ? formatBps : formatPercent
   const cardId: Record<string, string> = {
     'container.cpu.usage': 'cpu',
@@ -941,6 +1124,10 @@ function ContainerMetricCard({
             showLegend
             formatValue={formatter}
             ariaLabel={title}
+            onSeriesClick={(key) => {
+              const identity = identityBySeriesKey.get(key)
+              if (identity) onOpenContainer(identity)
+            }}
           />
         )}
         {histories.map((history, index) =>
@@ -970,6 +1157,145 @@ function ContainerMetricCard({
   )
 }
 
+function ContainerDetailDialog({
+  open,
+  onOpenChange,
+  nodeId,
+  range,
+  window,
+  seriesByMetric,
+  identities,
+  names,
+  selected,
+  onSelect,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  nodeId: string
+  range: HistoryRange
+  window: HistoryRangeWindow
+  seriesByMetric: Series[][]
+  identities: string[]
+  names: Map<string, string>
+  selected: string
+  onSelect: (identity: string) => void
+}) {
+  const { t } = useTranslation()
+  const selectedSeries = seriesByMetric.map((items) =>
+    items.find((item) => containerIdentity(item) === selected)
+  )
+  const histories = useQueries({
+    queries: CONTAINER_METRICS.map((metric, index) => ({
+      queryKey: metricHistoryQueryKey(
+        nodeId,
+        metric,
+        selectedSeries[index]?.seriesKey || '',
+        range,
+        window
+      ),
+      queryFn: ({ signal }) =>
+        fetchMetricHistory(
+          nodeId,
+          metric,
+          selectedSeries[index]!.seriesKey,
+          window,
+          signal
+        ),
+      enabled: open && Boolean(selectedSeries[index]) && window.valid,
+      staleTime: HISTORY_REFRESH_MS,
+      refetchInterval: refreshIntervalWhenVisible(HISTORY_REFRESH_MS),
+    })),
+  })
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        data-testid='container-detail-dialog'
+        className='flex h-dvh max-h-none w-full max-w-none flex-col gap-0 rounded-none p-0 sm:h-[80vh] sm:max-w-5xl sm:rounded-lg'
+      >
+        <DialogHeader className='border-b px-4 py-3 text-start'>
+          <DialogTitle>{t('monitoring.containerDetail')}</DialogTitle>
+          <DialogDescription className='sr-only'>
+            {t('monitoring.containerDetailDescription')}
+          </DialogDescription>
+        </DialogHeader>
+        <div className='grid min-h-0 flex-1 grid-rows-[auto_1fr] sm:grid-cols-[220px_1fr] sm:grid-rows-1'>
+          <div className='max-h-36 overflow-auto border-b p-2 sm:max-h-none sm:border-e sm:border-b-0'>
+            {identities.map((identity) => (
+              <button
+                key={identity}
+                type='button'
+                onClick={() => onSelect(identity)}
+                className={cn(
+                  'flex w-full min-w-0 items-center justify-between gap-2 rounded-md px-2 py-1.5 text-start text-sm hover:bg-accent',
+                  identity === selected && 'bg-accent font-medium'
+                )}
+                aria-pressed={identity === selected}
+              >
+                <span className='truncate'>{names.get(identity)}</span>
+                <span className='shrink-0 font-mono text-[10px] text-muted-foreground'>
+                  {identity.startsWith('legacy:')
+                    ? t('monitoring.legacy')
+                    : identity.slice(3, 11)}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className='grid min-h-0 gap-4 overflow-auto p-3 sm:grid-cols-2'>
+            {CONTAINER_METRICS.map((metric, index) => {
+              const history = histories[index].data
+              const name = selectedSeries[index]
+                ? containerIdentity(selectedSeries[index])
+                : ''
+              const title = t(
+                `monitoring.${CONTAINER_TITLES[index]}` as
+                  | 'monitoring.cpu'
+                  | 'monitoring.memory'
+                  | 'monitoring.networkRx'
+                  | 'monitoring.networkTx'
+              )
+              const formatter = metric.includes('network')
+                ? formatBps
+                : formatPercent
+              return (
+                <Card key={metric} data-testid={`container-detail-${index}`}>
+                  <CardHeader>
+                    <CardTitle className='text-sm'>{title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {history ? (
+                      <MultiSeriesChart
+                        series={[
+                          {
+                            key: `${metric}:${name}`,
+                            name: title,
+                            points: history.points,
+                            gaps: history.gaps,
+                            stepNs: history.stepNs,
+                            unit: history.unit,
+                          },
+                        ]}
+                        height={170}
+                        yDomain='auto'
+                        showLegend={false}
+                        formatValue={formatter}
+                        ariaLabel={title}
+                      />
+                    ) : (
+                      <p className='text-sm text-muted-foreground'>
+                        {t('monitoring.noPoints')}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function CpuChartCard({
   nodeId,
   range,
@@ -991,6 +1317,41 @@ function CpuChartCard({
     range,
     window
   )
+  const breakdownQueries = useQueries({
+    queries: CPU_BREAKDOWN.map((item) => ({
+      queryKey: ['monitoring-series', nodeId, item.metric],
+      queryFn: () =>
+        api.get<{ series: Series[] }>(
+          `/monitoring/nodes/${encodeURIComponent(nodeId)}/series?${new URLSearchParams({ metric: item.metric })}`
+        ),
+      enabled: !!nodeId,
+    })),
+  })
+  const breakdownSeries = breakdownQueries.map((query) =>
+    (query.data?.series || []).find((item) => item.dimensions.cpu === 'all')
+  )
+  const breakdownHistories = useQueries({
+    queries: breakdownSeries.map((series, index) => ({
+      queryKey: metricHistoryQueryKey(
+        nodeId,
+        CPU_BREAKDOWN[index].metric,
+        series?.seriesKey || '',
+        range,
+        window
+      ),
+      queryFn: ({ signal }) =>
+        fetchMetricHistory(
+          nodeId,
+          CPU_BREAKDOWN[index].metric,
+          series!.seriesKey,
+          window,
+          signal
+        ),
+      staleTime: HISTORY_REFRESH_MS,
+      refetchInterval: refreshIntervalWhenVisible(HISTORY_REFRESH_MS),
+      enabled: !!series && window.valid,
+    })),
+  })
   const cores = options.filter(
     (item) => item.dimensions.cpu && item.dimensions.cpu !== 'all'
   )
@@ -1005,22 +1366,42 @@ function CpuChartCard({
       ),
       queryFn: ({ signal }) =>
         fetchMetricHistory(nodeId, 'cpu.usage', item.seriesKey, window, signal),
-      staleTime: 30000,
+      staleTime: HISTORY_REFRESH_MS,
+      refetchInterval: refreshIntervalWhenVisible(HISTORY_REFRESH_MS),
       enabled: expanded && window.valid,
     })),
   })
-  const chartSeries = history.data
-    ? [
-        {
-          key: 'total',
-          name: t('monitoring.totalUsage'),
-          points: history.data.points,
-          gaps: history.data.gaps,
-          stepNs: history.data.stepNs,
-          unit: '%',
-        },
-      ]
-    : []
+  const chartSeries: ChartSeries[] = []
+  if (history.data) {
+    CPU_BREAKDOWN.forEach((item, index) => {
+      const series = breakdownSeries[index]
+      const data = breakdownHistories[index].data
+      if (!series || !data) return
+      chartSeries.push({
+        key: `${item.metric}:${series.seriesKey}`,
+        seriesId: item.metric,
+        paletteId: item.paletteId,
+        name: item.short,
+        tooltipName: t(item.labelKey),
+        points: data.points,
+        gaps: data.gaps,
+        stepNs: data.stepNs,
+        unit: '%',
+        type: 'area',
+      })
+    })
+    chartSeries.push({
+      key: 'cpu.usage:total',
+      seriesId: 'cpu.usage',
+      name: t('monitoring.totalUsage'),
+      tooltipName: t('monitoring.totalUsage'),
+      points: history.data.points,
+      gaps: history.data.gaps,
+      stepNs: history.data.stepNs,
+      unit: '%',
+      type: 'area',
+    })
+  }
   const coreSeries = cores.flatMap((item, index) => {
     const data = histories[index].data
     return data
@@ -1032,6 +1413,7 @@ function CpuChartCard({
             gaps: data.gaps,
             stepNs: data.stepNs,
             unit: '%',
+            type: 'area' as const,
           },
         ]
       : []
@@ -1082,6 +1464,33 @@ function CpuChartCard({
             {t('monitoring.noSeries')}
           </p>
         )}
+        {history.data && breakdownSeries.some(Boolean) && (
+          <div data-testid='cpu-breakdown' className='space-y-1.5'>
+            <h4 className='text-xs font-medium'>
+              {t('monitoring.cpuBreakdown')}
+            </h4>
+            <div className='grid grid-cols-5 gap-2 text-xs'>
+              {CPU_BREAKDOWN.map((item, index) => {
+                const latest = latestPointValue(
+                  breakdownHistories[index].data?.points || []
+                )
+                return (
+                  <div
+                    key={item.metric}
+                    data-testid={`cpu-breakdown-${item.short}`}
+                    className='flex min-w-0 flex-col rounded-md border bg-muted/20 px-2 py-1'
+                    title={t(item.labelKey)}
+                  >
+                    <span className='text-muted-foreground'>{item.short}</span>
+                    <span className='font-medium text-foreground tabular-nums'>
+                      {formatPercent(latest) || '—'}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
         {expanded && (
           <div className='space-y-2 border-t pt-3'>
             <h4 className='text-xs font-medium'>{t('monitoring.perCore')}</h4>
@@ -1128,9 +1537,9 @@ function LoadCard({
     <MultiMetricCard
       nodeId={nodeId}
       metrics={[
-        { metric: 'load.1', name: 'load.1', paletteId: 'blue-violet' },
-        { metric: 'load.5', name: 'load.5', paletteId: 'violet-pink' },
-        { metric: 'load.15', name: 'load.15', paletteId: 'spring-green' },
+        { metric: 'load.1', name: 'load.1', paletteId: 'series-1' },
+        { metric: 'load.5', name: 'load.5', paletteId: 'series-2' },
+        { metric: 'load.15', name: 'load.15', paletteId: 'series-4' },
       ]}
       title={t('monitoring.load')}
       range={range}
@@ -1317,14 +1726,14 @@ function NetworkCard({
               label={t('monitoring.networkRx')}
               history={rxHistory.data}
               chartLabel={`${t('monitoring.network')} ${t('monitoring.networkRx')}`}
-              paletteId='cyan-blue'
+              paletteId='series-2'
               seriesId='network.rx_bps'
             />
             <NetworkMetricRow
               label={t('monitoring.networkTx')}
               history={txHistory.data}
               chartLabel={`${t('monitoring.network')} ${t('monitoring.networkTx')}`}
-              paletteId='spring-green'
+              paletteId='series-5'
               seriesId='network.tx_bps'
             />
           </>
@@ -1341,7 +1750,7 @@ export function NodeMonitoringDetail({ nodeId }: { nodeId: string }) {
     queryKey: ['monitoring-nodes-overview'],
     queryFn: () =>
       api.get<{ nodes: NodeOverview[] }>('/monitoring/nodes/overview'),
-    refetchInterval: 30000,
+    refetchInterval: refreshIntervalWhenVisible(30000),
     staleTime: 30000,
   })
   const row = overview.data?.nodes?.find((item) => item.node_id === nodeId)
@@ -1369,6 +1778,18 @@ export function NodeMonitoringDetail({ nodeId }: { nodeId: string }) {
     devices.some((device) => device.kind === 'unknown')
   const containerAvailable =
     row?.container_metrics_available ?? node?.capabilities?.container_metrics
+  const cpuInfo = node?.inventory?.cpu?.[0]
+  const cpuValue =
+    cpuInfo?.model || cpuInfo?.cores
+      ? [
+          cpuInfo.model,
+          cpuInfo.cores != null
+            ? `${cpuInfo.cores} ${t('nodes.cores')}`
+            : undefined,
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      : '—'
   if (overview.isLoading) {
     return (
       <>
@@ -1424,35 +1845,91 @@ export function NodeMonitoringDetail({ nodeId }: { nodeId: string }) {
                 </CardTitle>
                 {row && <StatusBadge status={row.status} />}
               </div>
-              <div className='flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground'>
-                <span>
-                  {t('monitoring.hostname')}:{' '}
-                  {node?.inventory?.hostname || t('monitoring.unknown')}
-                </span>
-                <span>
-                  {t('monitoring.uptime')}:{' '}
-                  {row?.uptime_seconds == null
-                    ? t('monitoring.unknown')
-                    : formatUptime(row.uptime_seconds, t)}
-                </span>
-                <span>
-                  {t('monitoring.distribution')}:{' '}
-                  {node?.inventory?.os || t('monitoring.unknown')}
-                </span>
-                <span>
-                  {t('monitoring.kernel')}:{' '}
-                  {node?.inventory?.kernel || t('monitoring.unknown')}
-                </span>
-                <span>
-                  CPU:{' '}
-                  {node?.inventory?.cpu?.[0]?.model || t('monitoring.unknown')}
-                </span>
-                <span>
-                  {t('monitoring.memory')}:{' '}
-                  {node?.inventory?.memory?.total_kb
-                    ? formatBytes(node.inventory.memory.total_kb * 1024)
-                    : t('monitoring.unknown')}
-                </span>
+              <div className='flex flex-wrap gap-x-4 gap-y-1.5'>
+                <HeaderFact
+                  testId='node-header-hostname'
+                  icon={
+                    <Server
+                      className='size-3.5'
+                      strokeWidth={1.8}
+                      aria-hidden='true'
+                    />
+                  }
+                  label={t('monitoring.hostname')}
+                  value={node?.inventory?.hostname || '—'}
+                />
+                <HeaderFact
+                  testId='node-header-uptime'
+                  icon={
+                    <Clock3
+                      className='size-3.5'
+                      strokeWidth={1.8}
+                      aria-hidden='true'
+                    />
+                  }
+                  label={t('monitoring.uptime')}
+                  value={formatUptime(row?.uptime_seconds, t)}
+                />
+                <HeaderFact
+                  testId='node-header-distribution'
+                  icon={
+                    <Package
+                      className='size-3.5'
+                      strokeWidth={1.8}
+                      aria-hidden='true'
+                    />
+                  }
+                  label={t('monitoring.distribution')}
+                  value={node?.inventory?.os || '—'}
+                />
+                <HeaderFact
+                  testId='node-header-cpu'
+                  icon={
+                    <Cpu
+                      className='size-3.5'
+                      strokeWidth={1.8}
+                      aria-hidden='true'
+                    />
+                  }
+                  label='CPU'
+                  value={cpuValue}
+                />
+                <HeaderFact
+                  testId='node-header-memory'
+                  icon={
+                    <MemoryStick
+                      className='size-3.5'
+                      strokeWidth={1.8}
+                      aria-hidden='true'
+                    />
+                  }
+                  label={t('monitoring.memory')}
+                  value={
+                    node?.inventory?.memory?.total_kb
+                      ? formatBytes(node.inventory.memory.total_kb * 1024) ||
+                        '—'
+                      : '—'
+                  }
+                />
+                <HeaderFact
+                  showLabel
+                  testId='node-header-last-sample'
+                  icon={
+                    <Activity
+                      className='size-3.5'
+                      strokeWidth={1.8}
+                      aria-hidden='true'
+                    />
+                  }
+                  label={t('monitoring.lastSample')}
+                  value={
+                    row?.observed_at ? (
+                      <TimeValue value={row.observed_at} />
+                    ) : (
+                      '—'
+                    )
+                  }
+                />
               </div>
               {row?.state && row.state !== 'ready' && (
                 <p className='text-sm text-muted-foreground'>
@@ -1493,11 +1970,31 @@ export function NodeMonitoringDetail({ nodeId }: { nodeId: string }) {
           <MultiMetricCard
             nodeId={nodeId}
             metrics={[
-              { metric: 'memory.cached_bytes', name: 'Cached' },
-              { metric: 'memory.used_bytes', name: 'Used' },
-              { metric: 'memory.buffers_bytes', name: 'Buffers' },
-              { metric: 'memory.free_bytes', name: 'Free' },
-              { metric: 'memory.available_bytes', name: 'Available' },
+              {
+                metric: 'memory.cached_bytes',
+                name: 'Cached',
+                paletteId: 'series-3',
+              },
+              {
+                metric: 'memory.used_bytes',
+                name: 'Used',
+                paletteId: 'series-1',
+              },
+              {
+                metric: 'memory.buffers_bytes',
+                name: 'Buffers',
+                paletteId: 'series-6',
+              },
+              {
+                metric: 'memory.free_bytes',
+                name: 'Free',
+                paletteId: 'series-11',
+              },
+              {
+                metric: 'memory.available_bytes',
+                name: 'Available',
+                paletteId: 'series-5',
+              },
             ]}
             title={t('monitoring.memory')}
             range={historyRange.range}
@@ -1514,7 +2011,7 @@ export function NodeMonitoringDetail({ nodeId }: { nodeId: string }) {
             formatter={formatPercent}
             chartLabel={t('monitoring.swap')}
             testId='metric-card-swap'
-            paletteId='gold-orange'
+            paletteId='series-11'
           />
           <LoadCard
             nodeId={nodeId}
@@ -1524,8 +2021,16 @@ export function NodeMonitoringDetail({ nodeId }: { nodeId: string }) {
           <SplitMultiMetricCards
             nodeId={nodeId}
             metrics={[
-              { metric: 'filesystem.used_bytes', name: t('monitoring.used') },
-              { metric: 'filesystem.total_bytes', name: t('monitoring.total') },
+              {
+                metric: 'filesystem.used_bytes',
+                name: t('monitoring.used'),
+                paletteId: 'series-1',
+              },
+              {
+                metric: 'filesystem.total_bytes',
+                name: t('monitoring.total'),
+                paletteId: 'series-13',
+              },
             ]}
             title={t('monitoring.filesystem')}
             range={historyRange.range}
@@ -1541,9 +2046,13 @@ export function NodeMonitoringDetail({ nodeId }: { nodeId: string }) {
               {
                 metric: 'disk.read_bps',
                 name: 'Read',
-                paletteId: 'blue-violet',
+                paletteId: 'series-1',
               },
-              { metric: 'disk.write_bps', name: 'Write', paletteId: 'coral' },
+              {
+                metric: 'disk.write_bps',
+                name: 'Write',
+                paletteId: 'series-12',
+              },
             ]}
             title={t('monitoring.diskIo')}
             range={historyRange.range}
@@ -1551,6 +2060,8 @@ export function NodeMonitoringDetail({ nodeId }: { nodeId: string }) {
             formatter={formatBps}
             testId='metric-card-disk-io'
             dimensionKey='device'
+            wholeDiskOnly
+            deviceKinds={classified}
           />
           <SplitMultiMetricCards
             nodeId={nodeId}
@@ -1558,9 +2069,13 @@ export function NodeMonitoringDetail({ nodeId }: { nodeId: string }) {
               {
                 metric: 'disk.read_iops',
                 name: 'Read',
-                paletteId: 'blue-violet',
+                paletteId: 'series-1',
               },
-              { metric: 'disk.write_iops', name: 'Write', paletteId: 'coral' },
+              {
+                metric: 'disk.write_iops',
+                name: 'Write',
+                paletteId: 'series-12',
+              },
             ]}
             title={t('monitoring.diskIops')}
             range={historyRange.range}
@@ -1568,13 +2083,8 @@ export function NodeMonitoringDetail({ nodeId }: { nodeId: string }) {
             formatter={(value) => value.toFixed(2)}
             testId='metric-card-disk-iops'
             dimensionKey='device'
-            allowedDevices={
-              new Set(
-                (node?.inventory?.block_devices || [])
-                  .filter((device) => device.kind === 'disk')
-                  .map((device) => device.name)
-              )
-            }
+            wholeDiskOnly
+            deviceKinds={classified}
           />
           {deviceClassificationUnknown && (
             <p className='text-sm text-muted-foreground'>
@@ -1592,22 +2102,22 @@ export function NodeMonitoringDetail({ nodeId }: { nodeId: string }) {
               {
                 metric: 'network.rx_errors',
                 name: 'RX errors',
-                paletteId: 'coral',
+                alert: 'danger',
               },
               {
                 metric: 'network.tx_errors',
                 name: 'TX errors',
-                paletteId: 'vermilion',
+                alert: 'danger',
               },
               {
                 metric: 'network.rx_dropped',
                 name: 'RX dropped',
-                paletteId: 'gold-orange',
+                alert: 'warning',
               },
               {
                 metric: 'network.tx_dropped',
                 name: 'TX dropped',
-                paletteId: 'peach-pink',
+                alert: 'warning',
               },
             ]}
             title={t('monitoring.networkErrors')}
@@ -1629,7 +2139,7 @@ export function NodeMonitoringDetail({ nodeId }: { nodeId: string }) {
             chartLabel={t('dashboard.temperature')}
             testId='metric-card-temperature'
             emptyMessage={t('monitoring.sensorUnavailable')}
-            paletteId='gold-orange'
+            paletteId='series-15'
           />
           <MetricChartCard
             nodeId={nodeId}
@@ -1643,7 +2153,7 @@ export function NodeMonitoringDetail({ nodeId }: { nodeId: string }) {
             seriesDimensionKey='fan'
             selectorLabel={t('monitoring.fan')}
             emptyMessage={t('monitoring.sensorUnavailable')}
-            paletteId='ice-blue'
+            paletteId='series-16'
           />
           <ContainerSection
             nodeId={nodeId}

@@ -60,12 +60,12 @@ export function ThemeProvider({
     const applyTheme = (currentResolvedTheme: ResolvedTheme) => {
       root.classList.remove('light', 'dark') // Remove existing theme classes
       root.classList.add(currentResolvedTheme) // Add the new theme class
+      const themeColor =
+        getComputedStyle(root).getPropertyValue('--background').trim() ||
+        (currentResolvedTheme === 'dark' ? 'black' : 'white')
       document
         .querySelector("meta[name='theme-color']")
-        ?.setAttribute(
-          'content',
-          currentResolvedTheme === 'dark' ? '#020817' : '#fff'
-        )
+        ?.setAttribute('content', themeColor)
     }
 
     const handleChange = () => {

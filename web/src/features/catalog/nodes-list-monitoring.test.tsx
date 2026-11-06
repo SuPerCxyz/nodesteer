@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from '@/i18n'
+import '@/styles/index.css'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import type { Node } from '@/lib/api'
@@ -75,6 +76,67 @@ describe('节点列表页', () => {
       if (path === '/groups') return []
       return []
     })
+  })
+
+  it('移除节点名下的 endpoint，长 OS 不撑高行且保持整行基线一致', async () => {
+    get.mockImplementation(async (path: string) => {
+      if (path === '/nodes')
+        return [
+          {
+            ...NODE,
+            id: 'node-a',
+            hostname: 'node-a',
+            ip: '192.0.2.10',
+            os: 'Rocky Linux 9.8 (Blue Onyx) with a very long distribution label',
+            endpoint: '203.0.113.9:18444',
+            connection_mode: 'inbound',
+          },
+          {
+            ...NODE,
+            id: 'node-b',
+            hostname: 'node-b',
+            ip: '192.0.2.11',
+            os: 'Ubuntu 24.04 LTS',
+            endpoint: '203.0.113.10:18444',
+            connection_mode: 'outbound',
+          },
+        ]
+      if (path === '/groups') return []
+      return []
+    })
+    const page = await renderAgents()
+
+    await expect.element(page.getByText('node-a')).toBeVisible()
+    expect(page.getByText('203.0.113.9:18444').elements()).toHaveLength(0)
+    expect(page.getByText('203.0.113.10:18444').elements()).toHaveLength(0)
+    await expect.element(page.getByText('192.0.2.10')).toBeVisible()
+    await expect
+      .element(page.getByText('inbound', { exact: true }))
+      .toBeVisible()
+
+    const rows = page.getByTestId('data-table-rack-row').elements()
+    expect(rows).toHaveLength(2)
+    const heights = rows.map((row) => row.getBoundingClientRect().height)
+    expect(
+      Math.abs(heights[0] - heights[1]),
+      JSON.stringify({ heights, rows: rows.map((row) => row.textContent) })
+    ).toBeLessThanOrEqual(1)
+
+    const fieldsGrid = rows[0].querySelector('[data-slot="row-field"]')
+      ?.parentElement as HTMLElement
+    expect(parseFloat(getComputedStyle(fieldsGrid).rowGap)).toBeLessThanOrEqual(
+      4
+    )
+    const fieldHeights = [
+      ...rows[0].querySelectorAll('[data-slot="row-field"]'),
+    ].map((node) => node.getBoundingClientRect().height)
+    expect(Math.min(...fieldHeights)).toBeGreaterThanOrEqual(20)
+
+    const longOs = [...rows[0].querySelectorAll('span')].find((node) =>
+      node.textContent?.includes('Rocky Linux 9.8')
+    )
+    expect(longOs).toBeTruthy()
+    expect(longOs!.getBoundingClientRect().height).toBeLessThanOrEqual(20)
   })
 
   it('不再挂载节点当前监控卡片，也不请求监控概览', async () => {

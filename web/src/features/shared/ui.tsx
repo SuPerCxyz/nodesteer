@@ -39,57 +39,52 @@ import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 
 export function StatusBadge({ status }: { status?: string | null }) {
   const key = (status ?? '').toLowerCase().replace(/[-\s]/g, '_')
-  const variant = [
+  const success = [
     'online',
     'healthy',
     'enabled',
     'success',
     'completed',
     'synced',
+    'resolved',
   ].includes(key)
-    ? 'secondary'
-    : [
-          'offline',
-          'unhealthy',
-          'failed',
-          'error',
-          'timed_out',
-          'timeout',
-        ].includes(key)
-      ? 'destructive'
-      : ['running', 'busy', 'info'].includes(key)
-        ? 'default'
-        : ['degraded', 'blocked', 'outdated'].includes(key)
-          ? 'secondary'
-          : 'outline'
-  const label = statusLabel(status)
-  // 实色填充 + 白字：边框与填充同色，明暗主题均满足 4.5:1（white 文字）
-  const colorClass = [
-    'online',
-    'healthy',
-    'enabled',
-    'success',
-    'completed',
-    'synced',
+  const danger = [
+    'failed',
+    'error',
+    'timed_out',
+    'timeout',
+    'critical',
+    'firing',
+    'unhealthy',
   ].includes(key)
-    ? 'border-emerald-700 bg-emerald-700 text-white'
-    : [
-          'offline',
-          'unhealthy',
-          'failed',
-          'error',
-          'timed_out',
-          'timeout',
-        ].includes(key)
-      ? 'border-red-600 bg-red-600 text-white'
-      : ['running', 'busy', 'info'].includes(key)
-        ? 'border-blue-600 bg-blue-600 text-white'
-        : ['degraded', 'blocked', 'outdated'].includes(key)
-          ? 'border-amber-700 bg-amber-700 text-white'
-          : ''
+  const info = [
+    'pending',
+    'uploading',
+    'delivering',
+    'running',
+    'busy',
+    'info',
+  ].includes(key)
+  const warning = [
+    'maintenance',
+    'stale',
+    'degraded',
+    'blocked',
+    'outdated',
+    'warning',
+  ].includes(key)
+  const colorClass = success
+    ? 'border-success bg-success text-success-foreground'
+    : danger
+      ? 'border-danger bg-danger text-danger-foreground'
+      : info
+        ? 'border-info bg-info text-info-foreground'
+        : warning
+          ? 'border-warning bg-warning text-warning-foreground'
+          : 'border-border bg-surface text-foreground'
   return (
-    <Badge variant={variant} className={colorClass}>
-      {label}
+    <Badge variant='outline' className={colorClass}>
+      {statusLabel(status)}
     </Badge>
   )
 }
@@ -138,7 +133,7 @@ export function ErrorState({
   const message = errorMessage(error) || t('common.noData')
   return (
     <div
-      className='flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-red-700 dark:text-destructive'
+      className='flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-danger/10 px-3 py-2 text-sm text-danger'
       role='alert'
     >
       <span>{message}</span>
@@ -316,6 +311,7 @@ export function MoreMenu({ children }: { children: React.ReactNode }) {
   const [confirmation, setConfirmation] = useState<{
     title?: string
     description?: string
+    confirmText?: string
     onSelect: () => void
   } | null>(null)
   const requestConfirmation = useCallback(
@@ -355,7 +351,7 @@ export function MoreMenu({ children }: { children: React.ReactNode }) {
         title={confirmation?.title || t('common.delete')}
         desc={confirmation?.description || t('common.confirmAction')}
         cancelBtnText={t('common.cancel')}
-        confirmText={t('common.delete')}
+        confirmText={confirmation?.confirmText || t('common.delete')}
         destructive
         handleConfirm={confirm}
         returnFocusTo={triggerRef}
@@ -368,6 +364,7 @@ const MoreMenuContext = createContext<{
   requestConfirmation: (confirmation: {
     title?: string
     description?: string
+    confirmText?: string
     onSelect: () => void
   }) => void
 } | null>(null)
@@ -376,10 +373,16 @@ export function DangerMenuItem({
   onSelect,
   title,
   description,
+  label,
+  confirmText,
 }: {
   onSelect: () => void
   title?: string
   description?: string
+  /** 菜单项文案；默认“删除”。 */
+  label?: string
+  /** 确认按钮文案；默认“删除”。 */
+  confirmText?: string
 }) {
   const { t } = useTranslation()
   const moreMenu = useContext(MoreMenuContext)
@@ -391,13 +394,18 @@ export function DangerMenuItem({
         onSelect={(event) => {
           event.preventDefault()
           if (moreMenu) {
-            moreMenu.requestConfirmation({ title, description, onSelect })
+            moreMenu.requestConfirmation({
+              title,
+              description,
+              confirmText: confirmText || t('common.delete'),
+              onSelect,
+            })
           } else {
             setOpen(true)
           }
         }}
       >
-        {t('common.delete')}
+        {label || t('common.delete')}
       </DropdownMenuItem>
       {!moreMenu ? (
         <ConfirmDialog
@@ -406,7 +414,7 @@ export function DangerMenuItem({
           title={title || t('common.delete')}
           desc={description || t('common.confirmAction')}
           cancelBtnText={t('common.cancel')}
-          confirmText={t('common.delete')}
+          confirmText={confirmText || t('common.delete')}
           destructive
           handleConfirm={() => {
             onSelect()

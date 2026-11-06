@@ -370,13 +370,13 @@ describe('NodeMonitoringTable 进度与标签列', () => {
 
     expect(
       page.getByTestId('dashboard-memory-tone-1-bar').element().className
-    ).toContain('bg-amber-500')
+    ).toContain('bg-warning')
     expect(
       page.getByTestId('dashboard-memory-tone-2-bar').element().className
-    ).toContain('bg-red-600')
+    ).toContain('bg-danger')
     expect(
       page.getByTestId('dashboard-cpu-tone-1-bar').element().className
-    ).toContain('bg-emerald-600')
+    ).toContain('bg-success')
   })
 
   it('进度条为 8px 且轨道有明显内描边', async () => {

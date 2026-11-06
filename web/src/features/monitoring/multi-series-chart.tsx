@@ -1,4 +1,5 @@
 import {
+  memo,
   useEffect,
   useId,
   useMemo,
@@ -6,6 +7,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
+import { getChartAlertStyle, type ChartAlertTone } from '@/config/chart-alert'
 import {
   assignChartPaletteIds,
   getChartSeriesStyle,
@@ -21,12 +23,14 @@ import type { History } from './types'
 export type ChartSeries = {
   key: string
   name: string
+  tooltipName?: string
   points: History['points']
   unit?: string
   type?: 'area' | 'line'
   gaps?: History['gaps']
   stepNs?: number
   paletteId?: ChartPaletteId
+  alert?: ChartAlertTone
   seriesId?: string
 }
 
@@ -35,12 +39,30 @@ export type ChartPoint = { x: number; y: number }
 const DEFAULT_WIDTH = 800
 const PADDING = { top: 14, right: 12, bottom: 26, left: 44 }
 
+let axisMeasureContext: CanvasRenderingContext2D | null | undefined
+
+/** 量出 10px 刻度文字的实际宽度，避免固定左边距裁掉大数值或单位。 */
+function measureAxisLabel(value: string) {
+  if (typeof document === 'undefined') return value.length * 6
+  if (axisMeasureContext === undefined) {
+    axisMeasureContext = document.createElement('canvas').getContext('2d')
+    if (axisMeasureContext) {
+      axisMeasureContext.font =
+        '10px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif'
+    }
+  }
+  return axisMeasureContext
+    ? axisMeasureContext.measureText(value).width
+    : value.length * 6
+}
+
 type PreparedSeries = ChartSeries & {
   seriesId: string
   style: ChartSeriesStyle
   type: 'area' | 'line'
   rawSegments: { timestamp: number; value: number }[][]
   rawSortedPoints: { timestamp: number; value: number }[]
+  gapRanges: [number, number][]
   segments: { timestamp: number; value: number }[][]
   sortedPoints: { timestamp: number; value: number }[]
   latest: number | null
@@ -147,6 +169,23 @@ function nearestValue(
     : undefined
 }
 
+export function mergeGapRanges(gaps: History['gaps'] = []) {
+  const ranges = gaps
+    .map((gap) => [Date.parse(gap.start), Date.parse(gap.end)] as const)
+    .filter(([start, end]) => Number.isFinite(start) && Number.isFinite(end))
+    .sort((a, b) => a[0] - b[0])
+  const merged: [number, number][] = []
+  for (const range of ranges) {
+    const previous = merged[merged.length - 1]
+    if (previous && range[0] <= previous[1]) {
+      previous[1] = Math.max(previous[1], range[1])
+    } else {
+      merged.push([range[0], range[1]])
+    }
+  }
+  return merged
+}
+
 function splitSegments(
   points: History['points'],
   gaps: History['gaps'] = [],
@@ -160,9 +199,7 @@ function splitSegments(
     }))
     .filter((point) => Number.isFinite(point.timestamp))
     .sort((a, b) => a.timestamp - b.timestamp)
-  const gapRanges = gaps
-    .map((gap) => [Date.parse(gap.start), Date.parse(gap.end)])
-    .filter(([start, end]) => Number.isFinite(start) && Number.isFinite(end))
+  const gapRanges = mergeGapRanges(gaps)
   const stepMs = stepNs ? stepNs / 1_000_000 : 0
   const segments: { timestamp: number; value: number }[][] = []
   let current: { timestamp: number; value: number }[] = []
@@ -304,7 +341,7 @@ function areaPath(upper: ChartPoint[], lower: ChartPoint[]) {
   return `${top} L ${formatPoint(bottomStart)}${bottom ? ` ${bottom}` : ''} Z`
 }
 
-export function MultiSeriesChart({
+function MultiSeriesChartImpl({
   series,
   height = 220,
   yDomain = 'auto',
@@ -312,6 +349,7 @@ export function MultiSeriesChart({
   showLegend = true,
   stacked = false,
   onSeriesToggle,
+  onSeriesClick,
   onChartClick,
   formatValue,
   className,
@@ -324,6 +362,7 @@ export function MultiSeriesChart({
   showLegend?: boolean
   stacked?: boolean
   onSeriesToggle?: (key: string, visible: boolean) => void
+  onSeriesClick?: (key: string) => void
   onChartClick?: () => void
   formatValue?: (value: number) => string | null
   className?: string
@@ -366,9 +405,11 @@ export function MultiSeriesChart({
     () =>
       series.map((item) => {
         const seriesId = item.seriesId || item.key
-        const style = getChartSeriesStyle(seriesId, theme, {
-          paletteId: paletteAssignments[seriesId],
-        })
+        const style = item.alert
+          ? getChartAlertStyle(item.alert, theme)
+          : getChartSeriesStyle(seriesId, theme, {
+              paletteId: paletteAssignments[seriesId],
+            })
         const rawSegments = splitSegments(item.points, item.gaps, item.stepNs)
         const rawSortedPoints = rawSegments
           .flat()
@@ -388,6 +429,7 @@ export function MultiSeriesChart({
           type: item.type || 'area',
           rawSegments,
           rawSortedPoints,
+          gapRanges: mergeGapRanges(item.gaps),
           segments,
           sortedPoints,
           latest,
@@ -400,8 +442,13 @@ export function MultiSeriesChart({
   const visiblePoints = visible.flatMap((item) =>
     item.segments.flatMap((segment) => segment)
   )
+  // Hover/timeline use original points; downsampling must not erase values.
   const timestamps = [
-    ...new Set(visiblePoints.map((point) => point.timestamp)),
+    ...new Set(
+      visible.flatMap((item) =>
+        item.rawSortedPoints.map((point) => point.timestamp)
+      )
+    ),
   ].sort((a, b) => a - b)
 
   useEffect(() => {
@@ -431,11 +478,8 @@ export function MultiSeriesChart({
   const minTime = timestamps[0]
   const maxTime = timestamps[timestamps.length - 1]
   const timeSpan = Math.max(1, maxTime - minTime)
-  const plotWidth = chartWidth - PADDING.left - PADDING.right
   const plotHeight = height - PADDING.top - PADDING.bottom
 
-  const xScale = (time: number) =>
-    PADDING.left + ((time - minTime) / timeSpan) * plotWidth
   const yScale = (value: number) =>
     PADDING.top +
     plotHeight -
@@ -532,6 +576,13 @@ export function MultiSeriesChart({
     const value = domainMin + (domainMax - domainMin) * fraction
     return { value, y: yScale(value) }
   })
+  const yLabelWidth = Math.max(
+    ...yTicks.map((tick) => measureAxisLabel(axisFmt(tick.value)) * 1.3)
+  )
+  const leftPadding = Math.max(PADDING.left, Math.ceil(yLabelWidth) + 12)
+  const plotWidth = chartWidth - leftPadding - PADDING.right
+  const xScale = (time: number) =>
+    leftPadding + ((time - minTime) / timeSpan) * plotWidth
   const xTickCount = chartWidth < 520 ? 3 : chartWidth < 900 ? 4 : 5
   const xTicks = Array.from({ length: xTickCount }, (_, index) => {
     const time = minTime + (timeSpan * index) / (xTickCount - 1)
@@ -552,7 +603,11 @@ export function MultiSeriesChart({
       ? []
       : visible.map((item) => ({
           ...item,
-          value: nearestValue(item.sortedPoints, hoverTime, hoverTolerance),
+          value: item.gapRanges.some(
+            ([start, end]) => hoverTime >= start && hoverTime <= end
+          )
+            ? undefined
+            : nearestValue(item.rawSortedPoints, hoverTime, hoverTolerance),
         }))
 
   const updateHover = (event: ReactPointerEvent<SVGRectElement>) => {
@@ -561,11 +616,8 @@ export function MultiSeriesChart({
     const rect = svg.getBoundingClientRect()
     const x = ((event.clientX - rect.left) / rect.width) * chartWidth
     const y = ((event.clientY - rect.top) / rect.height) * height
-    const clamped = Math.min(
-      PADDING.left + plotWidth,
-      Math.max(PADDING.left, x)
-    )
-    const time = minTime + ((clamped - PADDING.left) / plotWidth) * timeSpan
+    const clamped = Math.min(leftPadding + plotWidth, Math.max(leftPadding, x))
+    const time = minTime + ((clamped - leftPadding) / plotWidth) * timeSpan
     let nearest = timestamps[0]
     for (const candidate of timestamps) {
       if (Math.abs(candidate - time) < Math.abs(nearest - time))
@@ -600,7 +652,9 @@ export function MultiSeriesChart({
               data-series-key={item.key}
               data-series-id={item.seriesId}
               data-palette-id={item.style.paletteId}
-              onClick={() => toggle(item.key)}
+              onClick={() =>
+                onSeriesClick ? onSeriesClick(item.key) : toggle(item.key)
+              }
               className={cn(
                 'flex max-w-full min-w-0 items-center gap-1.5 text-start text-muted-foreground transition-opacity hover:text-foreground',
                 hidden.has(item.key) && 'line-through opacity-40'
@@ -633,7 +687,7 @@ export function MultiSeriesChart({
         <defs>
           <clipPath id={clipId}>
             <rect
-              x={PADDING.left}
+              x={leftPadding}
               y={PADDING.top}
               width={plotWidth}
               height={plotHeight}
@@ -673,7 +727,7 @@ export function MultiSeriesChart({
           {yTicks.map((tick) => (
             <line
               key={tick.value}
-              x1={PADDING.left}
+              x1={leftPadding}
               x2={chartWidth - PADDING.right}
               y1={tick.y}
               y2={tick.y}
@@ -693,11 +747,11 @@ export function MultiSeriesChart({
             />
           ))}
         </g>
-        <g className='fill-muted-foreground text-[10px]'>
+        <g className='fill-muted-foreground text-[10px]' fontSize={10}>
           {yTicks.map((tick) => (
             <text
               key={tick.value}
-              x={PADDING.left - 6}
+              x={leftPadding - 6}
               y={tick.y + 3}
               textAnchor='end'
             >
@@ -953,7 +1007,7 @@ export function MultiSeriesChart({
         </g>
         <rect
           data-testid='chart-overlay'
-          x={PADDING.left}
+          x={leftPadding}
           y={PADDING.top}
           width={plotWidth}
           height={plotHeight}
@@ -967,7 +1021,7 @@ export function MultiSeriesChart({
       {hover && (
         <div
           data-testid='chart-tooltip'
-          className='pointer-events-none absolute z-10 min-w-44 rounded-md border bg-popover p-2 text-xs text-popover-foreground shadow-md'
+          className='pointer-events-none absolute z-10 min-w-44 rounded-md border bg-tooltip p-2 text-xs text-tooltip-foreground shadow-md'
           style={{
             left: `${(hover.x / chartWidth) * 100}%`,
             top: `${(hover.y / height) * 100}%`,
@@ -991,7 +1045,7 @@ export function MultiSeriesChart({
                       background: `linear-gradient(90deg, ${item.style.from}, ${item.style.to})`,
                     }}
                   />
-                  {item.name}
+                  {item.tooltipName || item.name}
                 </span>
                 <span className='tabular-nums'>
                   {item.value === undefined ? '—' : fmt(item.value)}
@@ -1004,3 +1058,5 @@ export function MultiSeriesChart({
     </div>
   )
 }
+
+export const MultiSeriesChart = memo(MultiSeriesChartImpl)

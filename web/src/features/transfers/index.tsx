@@ -26,7 +26,9 @@ import {
   inboundDataPlaneBlocked,
 } from '@/features/shared/inbound-data-plane'
 import { InboundDataPlaneBanner } from '@/features/shared/inbound-data-plane-banner'
+import { RowText } from '@/features/shared/rack-list'
 import {
+  DangerMenuItem,
   DetailField,
   DetailGrid,
   DropdownMenuItem,
@@ -118,8 +120,22 @@ export function FileTransfers() {
         header: t('transfers.source'),
         size: 130,
         minSize: 108,
-        cell: ({ row }: { row: { original: FileTransfer } }) =>
-          nodeNames.get(row.original.source_node_id) || t('common.unknownNode'),
+        cell: ({ row }: { row: { original: FileTransfer } }) => (
+          <RowText
+            primary={
+              nodeNames.get(row.original.source_node_id) ||
+              t('common.unknownNode')
+            }
+            secondary={
+              <span
+                className='truncate font-mono'
+                title={row.original.source_path}
+              >
+                {row.original.source_path}
+              </span>
+            }
+          />
+        ),
       },
       {
         accessorKey: 'source_path',
@@ -127,6 +143,7 @@ export function FileTransfers() {
         size: 310,
         minSize: 170,
         maxSize: 470,
+        meta: { rackHidden: true },
         cell: ({ row }: { row: { original: FileTransfer } }) => (
           <span
             className='block truncate font-mono text-xs'
@@ -155,6 +172,7 @@ export function FileTransfers() {
         size: 280,
         minSize: 170,
         maxSize: 460,
+        meta: { rackSpan: 2 },
         cell: ({ row }: { row: { original: FileTransfer } }) =>
           row.original.error ? (
             <span
@@ -173,31 +191,22 @@ export function FileTransfers() {
         size: 255,
         minSize: 160,
         cell: ({ row }: { row: { original: FileTransfer } }) => (
-          <div className='flex flex-wrap gap-x-3 gap-y-2'>
+          <div className='flex min-w-0 items-center gap-3 overflow-hidden whitespace-nowrap'>
             {row.original.targets.map((target) => (
               <span
                 key={target.node_id}
-                className='flex max-w-full min-w-0 flex-col gap-1'
+                className='inline-flex min-w-0 items-center gap-1'
+                title={target.error || undefined}
               >
-                <span className='inline-flex max-w-full min-w-0 items-center gap-1'>
-                  <span
-                    className='max-w-40 truncate text-xs'
-                    title={
-                      nodeNames.get(target.node_id) || t('common.unknownNode')
-                    }
-                  >
-                    {nodeNames.get(target.node_id) || t('common.unknownNode')}
-                  </span>
-                  <StatusBadge status={target.status} />
+                <span
+                  className='max-w-40 truncate text-xs'
+                  title={
+                    nodeNames.get(target.node_id) || t('common.unknownNode')
+                  }
+                >
+                  {nodeNames.get(target.node_id) || t('common.unknownNode')}
                 </span>
-                {target.error ? (
-                  <span
-                    className='max-w-full truncate text-xs text-destructive'
-                    title={target.error}
-                  >
-                    {target.error}
-                  </span>
-                ) : null}
+                <StatusBadge status={target.status} />
               </span>
             ))}
           </div>
@@ -242,11 +251,13 @@ export function FileTransfers() {
                     </DropdownMenuItem>
                   )}
                   {canCancel && (
-                    <DropdownMenuItem
+                    <DangerMenuItem
+                      label={t('transfers.cancel')}
+                      title={`${t('transfers.cancel')}: ${row.original.id}`}
+                      description={t('common.confirmAction')}
+                      confirmText={t('transfers.cancel')}
                       onSelect={() => cancelTransfer(row.original.id)}
-                    >
-                      {t('transfers.cancel')}
-                    </DropdownMenuItem>
+                    />
                   )}
                 </MoreMenu>
               ) : null}
@@ -489,6 +500,8 @@ export function FileTransfers() {
             columns={columns}
             storageKey='transfers'
             variant='rack'
+            rackKind='transfers'
+            rackPrimaryColumnId='source'
             searchPlaceholder={t('transfers.searchPlaceholder')}
           />
         ) : (
@@ -529,7 +542,7 @@ export function TransferDetail() {
     },
     onError: (error) => toast.error(error.message),
   })
-  const { mutate: cancelTransfer, isPending: canceling } = useMutation({
+  const { mutate: cancelTransfer } = useMutation({
     mutationFn: () => api.post(`/transfers/${id}/cancel`),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ['transfer', id] })
@@ -585,13 +598,15 @@ export function TransferDetail() {
                 </Button>
               ) : null}
               {canCancel ? (
-                <Button
-                  variant='destructive'
-                  disabled={canceling}
-                  onClick={() => cancelTransfer()}
-                >
-                  {t('transfers.cancel')}
-                </Button>
+                <MoreMenu>
+                  <DangerMenuItem
+                    label={t('transfers.cancel')}
+                    title={`${t('transfers.cancel')}: ${item.id}`}
+                    description={t('common.confirmAction')}
+                    confirmText={t('transfers.cancel')}
+                    onSelect={() => cancelTransfer()}
+                  />
+                </MoreMenu>
               ) : null}
             </div>
           ) : undefined

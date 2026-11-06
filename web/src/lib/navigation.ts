@@ -14,6 +14,16 @@ export function isSignInPath(value: string): boolean {
   }
 }
 
+/**
+ * 未登录跳转登录页时的回跳目标。
+ * 当前已在登录页时返回 null，避免把 sign-in 自身再包进 redirect 造成嵌套回跳。
+ */
+export function signInRedirectTarget(
+  value: string = currentPath()
+): string | null {
+  return isSignInPath(value) ? null : value
+}
+
 /** Keep post-login navigation on this origin and never redirect back to sign-in. */
 export function safeRedirect(value: string | null | undefined): string {
   if (!value) return '/'

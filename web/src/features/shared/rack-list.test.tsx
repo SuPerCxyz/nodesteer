@@ -46,6 +46,49 @@ describe('RackList / RackRow', () => {
     expect(page.getByTestId('cpu-bar').element().style.width).toBe('12.5%')
   })
 
+  it.each([
+    [3, 60],
+    [4, 60],
+    [5, 64],
+    [6, 64],
+    [8, 64],
+  ])('%i 个字段使用目标行高 %ipx', async (count, expected) => {
+    await browserPage.viewport(1280, 720)
+    const page = await render(
+      <RackList>
+        <RackRow
+          testId='height-row'
+          title='node-a'
+          subtitle='在线'
+          fields={Array.from({ length: count }, (_, index) => ({
+            label: `F${index}`,
+            value: `value-${index}`,
+          }))}
+        />
+      </RackList>
+    )
+    const height = page
+      .getByTestId('height-row')
+      .element()
+      .getBoundingClientRect().height
+    expect(Math.abs(height - expected)).toBeLessThanOrEqual(1.5)
+    const longValue = 'x'.repeat(240)
+    const truncated = await render(
+      <RackList>
+        <RackRow
+          title='node-b'
+          fields={[{ label: 'Long', value: longValue }]}
+        />
+      </RackList>
+    )
+    const value = truncated.getByText(longValue).element()
+    expect(value.getAttribute('title')).toBe(longValue)
+    expect(getComputedStyle(value).overflow).toBe('hidden')
+    expect(getComputedStyle(value).whiteSpace).toBe('nowrap')
+    expect(getComputedStyle(value).textOverflow).toBe('ellipsis')
+    await truncated.unmount()
+  })
+
   it('supports row selection', async () => {
     const onSelectedChange = vi.fn()
     const page = await render(
@@ -137,7 +180,7 @@ describe('RackList / RackRow', () => {
     expect(track.className).toContain('h-2')
     expect(track.className).toContain('ring-1')
     expect(track.className).toContain('bg-muted-foreground/20')
-    expect(bar.className).toContain('bg-amber-500')
+    expect(bar.className).toContain('bg-warning')
   })
 
   it('clamps progress bars and applies tone colors', async () => {
@@ -159,9 +202,9 @@ describe('RackList / RackRow', () => {
 
     const bar = page.getByTestId('danger-bar').element()
     expect(bar.style.width).toBe('100%')
-    expect(bar.className).toContain('bg-red-600')
+    expect(bar.className).toContain('bg-danger')
   })
-  it('centers single/two-line blocks with consistent typography and grows for long mobile content', async () => {
+  it('centers single/two-line blocks with consistent typography and keeps long content single-line', async () => {
     await browserPage.viewport(1366, 768)
     const action = vi.fn()
     const longText = 'long-content-'.repeat(45)
@@ -218,7 +261,7 @@ describe('RackList / RackRow', () => {
       )
       const centers = blocks.map((rect) => rect.top + rect.height / 2)
       expect(Math.max(...centers) - Math.min(...centers)).toBeLessThan(1.5)
-      expect(blocks.every((rect) => rect.height >= 40)).toBe(true)
+      expect(blocks.every((rect) => rect.height >= 24)).toBe(true)
     }
     const primary = getComputedStyle(
       page.getByText('Primary double', { exact: true }).element()
@@ -243,9 +286,7 @@ describe('RackList / RackRow', () => {
     expect(action).toHaveBeenCalledTimes(1)
     await browserPage.viewport(390, 844)
     const longRow = page.getByTestId('long').element()
-    expect(longRow.getBoundingClientRect().height).toBeGreaterThan(
-      one.getBoundingClientRect().height
-    )
+    expect(longRow.scrollWidth).toBeLessThanOrEqual(longRow.clientWidth + 1)
     expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
       window.innerWidth + 1
     )

@@ -63,7 +63,7 @@ test.describe('P22 文件传输', () => {
     })
 
     await page.goto(TEST_URLS.transfers)
-    const row = page.locator('table tbody tr').first()
+    const row = page.locator('[data-testid="data-table-rack-row"]').first()
     await expect(row).toBeVisible()
     await expect(row.getByText(/^(失败|Failed)$/).first()).toBeVisible()
 

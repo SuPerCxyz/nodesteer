@@ -97,10 +97,13 @@ describe('传输详情页与状态本地化（OBS-20261017-CROSSPAGE-LINK-GAPS �
     // 传输状态与目标状态各一个徽标：都必须是中文「投递中」，不能是原始枚举
     await expect.element(page.getByText('投递中').first()).toBeVisible()
     await expect.element(page.getByText('DELIVERING')).not.toBeInTheDocument()
-    // 进行中的传输可取消、不可重试
+    // 进行中的传输可取消（危险操作在 overflow 菜单）、不可重试
+    await userEvent.click(
+      page.getByRole('button', { name: i18n.t('common.actions') }).first()
+    )
     await expect
-      .element(page.getByRole('button', { name: i18n.t('transfers.cancel') }))
-      .toBeEnabled()
+      .element(page.getByRole('menuitem', { name: i18n.t('transfers.cancel') }))
+      .toBeVisible()
     await expect
       .element(page.getByRole('button', { name: i18n.t('transfers.retry') }))
       .not.toBeInTheDocument()

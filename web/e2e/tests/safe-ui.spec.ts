@@ -38,21 +38,21 @@ test('SAFE-01 所有11表格搜索/无结果/Reset/排序/列持久化/分页',a
       const table=page.locator('table').first();await expect(table).toBeVisible()
       const record:{module:string;checks:Record<string,unknown>}={module,checks:{}}
       const search=page.getByRole('textbox',{name:/搜索|search/i})
-      const firstRowText=(await table.locator('tbody tr').first().innerText()).split('\n').find(x=>x.trim())!.trim()
+      const firstRowText=(await page.locator('[data-testid="data-table-rack-row"]').first().innerText()).split('\n').find(x=>x.trim())!.trim()
       const query=module==='executions'?(await table.locator('a[href^="/executions/"]').first().getAttribute('href'))!.split('/').pop()!:names[module]||firstRowText.split(/\s+/)[0]
       await search.fill(query)
       if(module==='executions')await expect(table.locator(`a[href="/executions/${query}"]`)).toBeVisible()
-      else if(module==='transfers')await expect(table.locator('tbody tr').first()).not.toContainText(/没有结果|无结果|no results/i)
-      else await expect(table.locator('tbody')).toContainText(query)
+      else if(module==='transfers')await expect(page.locator('[data-testid="data-table-rack-row"]').first()).not.toContainText(/没有结果|无结果|no results/i)
+      else await expect(page.locator('[data-testid="data-table-rack"]')).toContainText(query)
       record.checks.search_hit=query
       await search.fill('qa-no-match-'+testName('none'))
       if(module==='executions') {
         await expect(page.getByText(/没有匹配的执行记录|No matching executions/i)).toBeVisible()
         await expect(table).toBeHidden()
-      } else await expect(table.locator('tbody')).toContainText(/没有结果|无结果|no results/i)
+      } else await expect(page.locator('[data-testid="data-table-rack"]')).toContainText(/没有结果|无结果|no results/i)
       if(module==='executions'){await search.fill('');record.checks.reset_not_available=true}
       else await page.getByRole('button',{name:/^重置$|^reset$/i}).click()
-      await expect(table.locator('tbody tr').first()).not.toContainText(/没有结果|无结果|no results/i)
+      await expect(page.locator('[data-testid="data-table-rack-row"]').first()).not.toContainText(/没有结果|无结果|no results/i)
       record.checks.search_no_results_and_reset=true
       const sort=table.getByRole('button',{name:/升序|降序|清除排序|ascending|descending|clear sorting/i}).first()
       const th=sort.locator('..').locator('..')
@@ -387,7 +387,7 @@ test('SAFE-12 Group静态双成员/标签往返和Task启停/删除取消确认'
     await page.goto('/groups/'+id);await page.getByRole('combobox').click();await page.getByRole('option',{name:'标签',exact:true}).click()
     await page.getByLabel(/^标签键$/).fill(testName('unmatched'));await page.getByLabel(/^标签值$/).fill('QA-no-node-matches')
     await page.getByRole('button',{name:/^保存$/}).click();await page.waitForURL(/\/groups$/)
-    await page.getByRole('textbox',{name:/搜索/}).fill(groupName);await expect(page.locator('tbody tr').first()).toContainText('0')
+    await page.getByRole('textbox',{name:/搜索/}).fill(groupName);await expect(page.locator('[data-testid="data-table-rack-row"]').first()).toContainText('0')
     const label=(await apiRequest(page,'/api/groups/'+id)).body
     await page.goto('/groups/'+id);await page.getByLabel(/^名称$/).fill(groupName+'-edited');await page.getByLabel(/^描述$/).fill('QA revised')
     await page.getByRole('combobox').click();await page.getByRole('option',{name:'静态',exact:true}).click()
@@ -400,7 +400,7 @@ test('SAFE-12 Group静态双成员/标签往返和Task启停/删除取消确认'
     let deletes=0;page.on('request',r=>{if(r.method()==='DELETE'&&owned.includes(new URL(r.url()).pathname))deletes++})
     for(const [kind,objectId,query]of [['tasks',task.id,task.name],['groups',id,groupName+'-edited']]) {
       await page.goto('/'+kind);await page.getByRole('textbox',{name:/搜索/}).fill(query)
-      const row=page.locator('tbody tr').first()
+      const row=page.locator('[data-testid="data-table-rack-row"]').first()
       if(kind==='tasks')for(const [action,enabled]of [['禁用',false],['启用',true]] as const) {
         await row.getByRole('button',{name:/^操作$/}).click();await page.getByRole('menuitem',{name:action,exact:true}).click()
         await expect.poll(async()=>(await apiRequest(page,'/api/tasks/'+task.id)).body).toMatchObject({enabled})
@@ -653,15 +653,15 @@ test('SAFE-21 新用户UI创建/重复/三角色保存登录/密码新旧边界'
     await loginViaApi(page);await page.goto('/users');await page.getByRole('button',{name:/^新建用户$/}).click()
     await page.getByLabel(/^用户名$/).fill(username);await page.getByLabel(/^密码$/).fill(password)
     userId=await captureCreated(page,'/api/users',()=>page.getByRole('button',{name:/^创建$/}).click())
-    await page.getByRole('textbox',{name:/搜索/}).fill(username);let row=page.locator('tbody tr').first();await expect(row).toContainText(username)
+    await page.getByRole('textbox',{name:/搜索/}).fill(username);let row=page.locator('[data-testid="data-table-rack-row"]').first();await expect(row).toContainText(username)
     await page.getByRole('button',{name:/^新建用户$/}).click();await page.getByLabel(/^用户名$/).fill(username);await page.getByLabel(/^密码$/).fill(password)
     const duplicate=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/users'&&r.request().method()==='POST')
     await page.getByRole('button',{name:/^创建$/}).click();expect((await duplicate).status()).toBe(400)
     await page.getByRole('button',{name:/^取消$/}).click()
     for(const [role,label]of [['operator','操作员'],['administrator','管理员'],['viewer','查看者']]) {
-      await page.goto('/users');await page.getByRole('textbox',{name:/搜索/}).fill(username);row=page.locator('tbody tr').first()
+      await page.goto('/users');await page.getByRole('textbox',{name:/搜索/}).fill(username);row=page.locator('[data-testid="data-table-rack-row"]').first()
       await row.getByRole('combobox').click();await page.getByRole('option',{name:label,exact:true}).click()
-      await expect(row.getByRole('combobox')).toHaveText(label);await page.reload();await page.getByRole('textbox',{name:/搜索/}).fill(username);await expect(page.locator('tbody tr').first().getByRole('combobox')).toHaveText(label)
+      await expect(row.getByRole('combobox')).toHaveText(label);await page.reload();await page.getByRole('textbox',{name:/搜索/}).fill(username);await expect(page.locator('[data-testid="data-table-rack-row"]').first().getByRole('combobox')).toHaveText(label)
       await login(page,username,password);await page.waitForLoadState('networkidle')
       const me=await apiRequest(page,'/api/me');expect(me.status).toBe(200)
       // 产品契约（docs/PRODUCT.md）：会话对象键名固定 snake_case（token/user_id/username/role/expires）
@@ -768,13 +768,13 @@ test('SAFE-24 仅新QA Admin自身UI降为Viewer与旧会话权限收敛',async(
   let ownToken=''
   try {
     await page.goto('/users');await page.getByRole('textbox',{name:/搜索/}).fill(username)
-    const row=page.locator('tbody tr').filter({hasText:username}).first();await expect(row).toBeVisible()
+    const row=page.locator('[data-testid="data-table-rack-row"]').filter({hasText:username}).first();await expect(row).toBeVisible()
     await row.getByRole('combobox').click();await page.getByRole('option',{name:'管理员',exact:true}).click()
     await expect(row.getByRole('combobox')).toHaveText('管理员');await page.waitForLoadState('networkidle')
     await login(page,username,password);await page.waitForLoadState('networkidle')
     ownToken=await page.evaluate(()=>localStorage.getItem('nodesteer_token')!);await appendFile(privateDir+'/ui-users.jsonl',JSON.stringify({username,token:ownToken})+'\n',{mode:0o600})
     await page.goto('/users');await page.getByRole('textbox',{name:/搜索/}).fill(username)
-    const self=page.locator('tbody tr').filter({hasText:username}).first().getByRole('combobox');await expect(self).toBeEnabled();await self.click()
+    const self=page.locator('[data-testid="data-table-rack-row"]').filter({hasText:username}).first().getByRole('combobox');await expect(self).toBeEnabled();await self.click()
     const response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/users/'+userId&&r.request().method()==='PUT')
     await page.getByRole('option',{name:'查看者',exact:true}).click();expect((await response).status()).toBe(200)
     const me=await apiRequest(page,'/api/me'),list=await apiRequest(page,'/api/users')

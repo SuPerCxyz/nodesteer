@@ -62,15 +62,15 @@ describe('系统主题同步', () => {
     media.dispatchEvent(new Event('change'))
     await expect.element(getByText('dark', { exact: true })).toBeVisible()
     expect(document.documentElement.classList.contains('dark')).toBe(true)
-    expect(meta.content).toBe('#020817')
+    expect(meta.content).toBe('black')
     await userEvent.click(getByRole('button', { name: '选浅色' }))
     await expect.element(getByText('light', { exact: true })).toBeVisible()
-    expect(meta.content).toBe('#fff')
+    expect(meta.content).toBe('white')
     dark = false
     media.dispatchEvent(new Event('change'))
     dark = true
     media.dispatchEvent(new Event('change'))
     await expect.element(getByText('light', { exact: true })).toBeVisible()
-    expect(meta.content).toBe('#fff')
+    expect(meta.content).toBe('white')
   })
 })

@@ -1,112 +1,51 @@
 export type ChartTheme = 'dark' | 'light'
 
+export type ChartPaletteId =
+  `series-${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16}`
+export type ChartAlertPaletteId =
+  | 'alert-danger'
+  | 'alert-warning'
+  | 'alert-info'
+
 export type ChartPalette = {
-  id: string
+  id: ChartPaletteId
   name: string
   dark: { from: string; to: string }
   light: { from: string; to: string }
 }
 
-export const CHART_PALETTES = [
-  {
-    id: 'cyan-blue',
-    name: '青蓝',
-    dark: { from: '#2DF3D8', to: '#37B8FF' },
-    light: { from: '#00A7A5', to: '#147ACD' },
-  },
-  {
-    id: 'blue-violet',
-    name: '蓝紫',
-    dark: { from: '#509FFF', to: '#A26CFF' },
-    light: { from: '#2169D1', to: '#7045C4' },
-  },
-  {
-    id: 'coral',
-    name: '珊瑚',
-    dark: { from: '#FF688E', to: '#FFA466' },
-    light: { from: '#D84B72', to: '#C56B24' },
-  },
-  {
-    id: 'spring-green',
-    name: '青绿',
-    dark: { from: '#67F0A8', to: '#21D5AC' },
-    light: { from: '#179A69', to: '#078D80' },
-  },
-  {
-    id: 'gold-orange',
-    name: '金橙',
-    dark: { from: '#FFBA53', to: '#FFE071' },
-    light: { from: '#B8780E', to: '#A68A08' },
-  },
-  {
-    id: 'violet-pink',
-    name: '紫粉',
-    dark: { from: '#AE7AFF', to: '#F17BEE' },
-    light: { from: '#8348C2', to: '#BA42AF' },
-  },
-  {
-    id: 'lime',
-    name: '柠檬绿',
-    dark: { from: '#D0F46C', to: '#8FE96D' },
-    light: { from: '#759F1D', to: '#3C9B43' },
-  },
-  {
-    id: 'peach-pink',
-    name: '桃粉',
-    dark: { from: '#FF80C7', to: '#FF9A97' },
-    light: { from: '#D54495', to: '#C75A65' },
-  },
-  {
-    id: 'lake-blue',
-    name: '湖蓝',
-    dark: { from: '#3BE8ED', to: '#3C98FF' },
-    light: { from: '#008FA9', to: '#2B6FCD' },
-  },
-  {
-    id: 'indigo-violet',
-    name: '靛紫',
-    dark: { from: '#8083FF', to: '#C186FF' },
-    light: { from: '#5557CD', to: '#9551C2' },
-  },
-  {
-    id: 'magenta',
-    name: '玫红',
-    dark: { from: '#FF6FA7', to: '#EB5FCE' },
-    light: { from: '#C73370', to: '#AC399F' },
-  },
-  {
-    id: 'mint',
-    name: '薄荷',
-    dark: { from: '#83F5C3', to: '#48D6D1' },
-    light: { from: '#149E7F', to: '#23969E' },
-  },
-  {
-    id: 'vermilion',
-    name: '朱红',
-    dark: { from: '#FF7C66', to: '#FFBE69' },
-    light: { from: '#C94B35', to: '#C2862D' },
-  },
-  {
-    id: 'yellow-green',
-    name: '黄绿',
-    dark: { from: '#B8F566', to: '#65DE8C' },
-    light: { from: '#709E22', to: '#1B995C' },
-  },
-  {
-    id: 'ice-blue',
-    name: '冰蓝',
-    dark: { from: '#8EDDFB', to: '#6CB5FF' },
-    light: { from: '#338EBE', to: '#467DCB' },
-  },
-  {
-    id: 'grape-purple',
-    name: '葡萄紫',
-    dark: { from: '#CB8BFF', to: '#FF85CC' },
-    light: { from: '#934DC4', to: '#CD4C99' },
-  },
-] as const satisfies readonly ChartPalette[]
+const SERIES_NAMES = [
+  '冷蓝',
+  '天青',
+  '青绿',
+  '靛蓝',
+  '湖蓝',
+  '蓝灰',
+  '石板灰',
+  '钢蓝',
+  '青灰',
+  '长春花',
+  '雾蓝',
+  '石墨灰',
+  '浅板岩',
+  '冰蓝',
+  '低饱和陶土',
+  '低饱和天青',
+]
 
-export type ChartPaletteId = (typeof CHART_PALETTES)[number]['id']
+export const CHART_PALETTES: readonly ChartPalette[] = SERIES_NAMES.map(
+  (name, index) => {
+    const id = `series-${index + 1}` as ChartPaletteId
+    const from = `var(--chart-series-${index + 1}-from)`
+    const to = `var(--chart-series-${index + 1}-to)`
+    return {
+      id,
+      name,
+      dark: { from, to },
+      light: { from, to },
+    }
+  }
+)
 
 export type ChartAreaOpacity = {
   top: number
@@ -136,7 +75,7 @@ export const CHART_STYLE_TOKENS: ChartStyleTokens = {
 }
 
 export type ChartSeriesStyle = {
-  paletteId: ChartPaletteId
+  paletteId: ChartPaletteId | ChartAlertPaletteId
   from: string
   to: string
   lineWidth: number
@@ -158,17 +97,16 @@ export function hashChartSeriesId(seriesId: string) {
 }
 
 export function getChartSeriesStyle(
-  seriesId: string,
+  _seriesId: string,
   theme: ChartTheme,
   options: ChartSeriesStyleOptions = {}
 ): ChartSeriesStyle {
-  const explicitIndex = options.paletteId
-    ? CHART_PALETTES.findIndex((palette) => palette.id === options.paletteId)
-    : -1
-  const palette =
-    explicitIndex >= 0
-      ? CHART_PALETTES[explicitIndex]
-      : CHART_PALETTES[hashChartSeriesId(seriesId) % CHART_PALETTES.length]
+  const explicit = options.paletteId
+    ? CHART_PALETTES.find((palette) => palette.id === options.paletteId)
+    : undefined
+  // Unknown/no explicit identity stays neutral; never fall into alert colors.
+  // Unknown/no explicit identity stays neutral gray; never fall into alert colors.
+  const palette = explicit ?? CHART_PALETTES[12]
   const colors = palette[theme]
   return {
     paletteId: palette.id,

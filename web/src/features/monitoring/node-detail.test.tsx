@@ -71,8 +71,26 @@ const SERIES = {
       { seriesKey: 'cpu-0', dimensions: { cpu: '0' } },
     ],
   },
+  'cpu.user': {
+    series: [{ seriesKey: 'cpu-user-all', dimensions: { cpu: 'all' } }],
+  },
+  'cpu.system': {
+    series: [{ seriesKey: 'cpu-system-all', dimensions: { cpu: 'all' } }],
+  },
+  'cpu.iowait': {
+    series: [{ seriesKey: 'cpu-iowait-all', dimensions: { cpu: 'all' } }],
+  },
+  'cpu.softirq': {
+    series: [{ seriesKey: 'cpu-softirq-all', dimensions: { cpu: 'all' } }],
+  },
+  'cpu.steal': {
+    series: [{ seriesKey: 'cpu-steal-all', dimensions: { cpu: 'all' } }],
+  },
   'memory.usage': {
     series: [{ seriesKey: 'mem-1', dimensions: { memory: 'used' } }],
+  },
+  'memory.swap_usage': {
+    series: [{ seriesKey: 'swap-1', dimensions: {} }],
   },
   'load.1': { series: [{ seriesKey: 'load-1', dimensions: {} }] },
   'load.5': { series: [{ seriesKey: 'load-5', dimensions: {} }] },
@@ -151,6 +169,11 @@ for (const metric of ['filesystem.used_bytes', 'filesystem.total_bytes']) {
 
 const VALUES: Record<string, number> = {
   'cpu.usage': 42.5,
+  'cpu.user': 18.2,
+  'cpu.system': 7.4,
+  'cpu.iowait': 2.1,
+  'cpu.softirq': 1.3,
+  'cpu.steal': 0.4,
   'memory.cached_bytes': 1024,
   'memory.used_bytes': 2048,
   'memory.buffers_bytes': 512,
@@ -159,6 +182,7 @@ const VALUES: Record<string, number> = {
   'filesystem.used_bytes': 2048,
   'filesystem.total_bytes': 4096,
   'memory.usage': 61,
+  'memory.swap_usage': 82.3,
   'load.1': 0.85,
   'load.5': 0.65,
   'load.15': 0.55,
@@ -195,6 +219,11 @@ function historyFor(metric: string, series: string) {
     points: [
       {
         timestamp: '2026-10-17T02:00:00Z',
+        value,
+        quality: 1,
+      },
+      {
+        timestamp: '2026-10-17T02:01:00Z',
         value,
         quality: 1,
       },
@@ -298,13 +327,72 @@ describe('节点监控详情', () => {
     })
     const page = await renderDetail()
 
-    const hostname = page.getByText(/^主机名:/)
+    const hostname = page.getByTestId('node-header-hostname')
     await expect.element(hostname).toHaveTextContent('real-host-01')
     await expect.element(hostname).not.toHaveTextContent('configured-node-name')
-    await expect.element(page.getByText('Ubuntu 24.04 LTS')).toBeVisible()
-    await expect.element(page.getByText('6.8.0-test')).toBeVisible()
-    await expect.element(page.getByText('Intel Test CPU')).toBeVisible()
-    await expect.element(page.getByText('2.0 MiB')).toBeVisible()
+    await expect
+      .element(page.getByTestId('node-header-distribution'))
+      .toHaveTextContent('Ubuntu 24.04 LTS')
+    await expect
+      .element(page.getByTestId('node-header-cpu'))
+      .toHaveTextContent('Intel Test CPU')
+    await expect
+      .element(page.getByTestId('node-header-cpu'))
+      .toHaveTextContent('8 核')
+    await expect
+      .element(page.getByTestId('node-header-memory'))
+      .toHaveTextContent('2.0 MiB')
+    await expect
+      .element(page.getByTestId('node-header-last-sample'))
+      .toHaveTextContent('2026')
+    expect(page.getByText('6.8.0-test').elements()).toHaveLength(0)
+    for (const testId of [
+      'node-header-hostname',
+      'node-header-uptime',
+      'node-header-distribution',
+      'node-header-cpu',
+      'node-header-memory',
+      'node-header-last-sample',
+    ]) {
+      const icon = page.getByTestId(testId).element().querySelector('svg')
+      expect(icon?.getAttribute('class')).toContain('size-3.5')
+      expect(icon?.getAttribute('stroke-width')).toBe('1.8')
+    }
+    for (const [testId, label] of [
+      ['node-header-hostname', i18n.t('monitoring.hostname')],
+      ['node-header-uptime', i18n.t('monitoring.uptime')],
+      ['node-header-distribution', i18n.t('monitoring.distribution')],
+      ['node-header-cpu', 'CPU'],
+      ['node-header-memory', i18n.t('monitoring.memory')],
+    ] as const) {
+      const fact = page.getByTestId(testId)
+      await expect.element(fact).not.toHaveTextContent(`${label}:`)
+      await expect.element(fact.getByRole('img', { name: label })).toBeVisible()
+      await expect
+        .element(fact.getByRole('img', { name: label }))
+        .toHaveAttribute('title', label)
+    }
+    expect(
+      page
+        .getByText(i18n.t('monitoring.hostname') + ':', { exact: true })
+        .elements()
+    ).toHaveLength(0)
+    expect(
+      page
+        .getByText(i18n.t('monitoring.uptime') + ':', { exact: true })
+        .elements()
+    ).toHaveLength(0)
+    expect(
+      page
+        .getByText(i18n.t('monitoring.distribution') + ':', { exact: true })
+        .elements()
+    ).toHaveLength(0)
+    expect(page.getByText('CPU:', { exact: true }).elements()).toHaveLength(0)
+    expect(
+      page
+        .getByText(i18n.t('monitoring.memory') + ':', { exact: true })
+        .elements()
+    ).toHaveLength(0)
   })
 
   it('展示节点 header、返回链接和节点操作，默认查询 1h', async () => {
@@ -383,9 +471,9 @@ describe('节点监控详情', () => {
       }))
       .sort((a, b) => String(a.id).localeCompare(String(b.id)))
     expect(loadSeries).toEqual([
-      { id: 'load.1', palette: 'blue-violet' },
-      { id: 'load.15', palette: 'spring-green' },
-      { id: 'load.5', palette: 'violet-pink' },
+      { id: 'load.1', palette: 'series-1' },
+      { id: 'load.15', palette: 'series-4' },
+      { id: 'load.5', palette: 'series-2' },
     ])
     await expect
       .element(load.getByText('load.1', { exact: true }))
@@ -437,6 +525,40 @@ describe('节点监控详情', () => {
         network.getByRole('combobox', { name: i18n.t('monitoring.interface') })
       )
       .toHaveTextContent('enp1s0')
+  })
+
+  it('所有节点详情时间序列都使用渐变描边和面积渐隐', async () => {
+    const page = await renderDetail()
+    for (const testId of [
+      'metric-card-cpu',
+      'metric-card-memory',
+      'metric-card-swap',
+      'metric-card-load',
+      'metric-card-disk-root',
+      'metric-card-disk-data',
+      'metric-card-disk-io-sda',
+      'metric-card-disk-iops-sda',
+      'metric-card-network',
+    ]) {
+      const card = page.getByTestId(testId)
+      await expect.element(card).toBeVisible()
+      await vi.waitFor(
+        () => {
+          const count = card.getByTestId('chart-area').elements().length
+          if (count === 0) throw new Error(`${testId} has no gradient area`)
+          return count
+        },
+        { timeout: 4000 }
+      )
+      const groups = card.element().querySelectorAll('g[data-series-id]')
+      expect(groups.length).toBeGreaterThan(0)
+      for (const group of groups) {
+        const line = group.querySelector('[data-testid="chart-line"]')
+        const area = group.querySelector('[data-testid="chart-area"]')
+        expect(line?.getAttribute('stroke')).toMatch(/^url\(#stroke-/)
+        expect(area?.getAttribute('fill')).toMatch(/^url\(#fill-/)
+      }
+    }
   })
 
   it('按分区顺序渲染指标卡，并在无容器数据时显示不可用', async () => {
@@ -559,6 +681,11 @@ describe('节点监控详情', () => {
               value: 5,
               quality: 1,
             },
+            {
+              timestamp: '2026-10-17T02:01:00Z',
+              value: 6,
+              quality: 1,
+            },
           ],
           gaps: [],
         }
@@ -572,7 +699,16 @@ describe('节点监控详情', () => {
       .toBeVisible()
     await expect
       .element(page.getByTestId('metric-card-container-cpu'))
-      .toHaveTextContent('5.0%')
+      .toHaveTextContent('6.0%')
+    await expect
+      .poll(
+        () =>
+          page
+            .getByTestId('metric-card-container-cpu')
+            .getByTestId('chart-area')
+            .elements().length
+      )
+      .toBeGreaterThan(0)
   })
 
   it('容器网络图 Y 轴、图例与 tooltip 使用一致的速率单位', async () => {
@@ -667,6 +803,61 @@ describe('节点监控详情', () => {
     expect(metricsPaths()).toHaveLength(before)
   })
 
+  it('容器主图不再显示容器标题，点击图例/展开全部打开单容器监控', async () => {
+    get.mockImplementation(async (path: string) => {
+      if (path === '/monitoring/nodes/overview')
+        return { nodes: [{ ...OVERVIEW, container_metrics_available: true }] }
+      if (path.includes('/series?') && path.includes('container.')) {
+        const metric =
+          new URL(path, 'http://localhost').searchParams.get('metric') || ''
+        return {
+          series: [
+            {
+              seriesKey: `${metric}-first`,
+              dimensions: { container: 'web', container_id: 'first-id' },
+            },
+            {
+              seriesKey: `${metric}-second`,
+              dimensions: { container: 'api', container_id: 'second-id' },
+            },
+          ],
+        }
+      }
+      if (path.includes('/metrics?') && path.includes('container.')) {
+        return {
+          state: 'ready',
+          unit: path.includes('network') ? 'bps' : '%',
+          stepNs: 60_000_000_000,
+          points: [
+            { timestamp: '2026-10-17T02:00:00Z', value: 5, quality: 1 },
+            { timestamp: '2026-10-17T02:01:00Z', value: 6, quality: 1 },
+          ],
+          gaps: [],
+        }
+      }
+      return defaultGet(path)
+    })
+    const page = await renderDetail()
+    const cpu = page.getByTestId('metric-card-container-cpu')
+    await expect.element(cpu).toHaveTextContent('CPU')
+    expect(cpu.getByText(/^容器 /).elements()).toHaveLength(0)
+
+    await userEvent.click(cpu.getByRole('button', { name: /web · first-id/ }))
+    const dialog = page.getByTestId('container-detail-dialog')
+    await expect.element(dialog).toBeVisible()
+    await expect
+      .element(dialog.getByText(i18n.t('monitoring.containerDetail')))
+      .toBeVisible()
+    expect(dialog.getByTestId(/container-detail-/).elements().length).toBe(4)
+    await userEvent.keyboard('{Escape}')
+    await expect.element(dialog).not.toBeInTheDocument()
+
+    await userEvent.click(page.getByTestId('container-expand-all'))
+    await expect
+      .element(page.getByTestId('container-detail-dialog'))
+      .toBeVisible()
+  })
+
   it('overview 缺少容器字段时回退到节点能力', async () => {
     get.mockImplementation(async (path: string) => {
       if (path === '/monitoring/nodes/overview') return { nodes: [OVERVIEW] }
@@ -707,6 +898,68 @@ describe('节点监控详情', () => {
       .poll(() => metricsPaths().some((path) => path.includes('series=cpu-0')))
       .toBe(true)
     await expect.element(cpu).toHaveTextContent('12.5%')
+  })
+
+  it('CPU 使用紧凑 us/sys/wa/si/st 分类且不显示 idle', async () => {
+    const page = await renderDetail()
+    const cpu = page.getByTestId('metric-card-cpu')
+    await expect.element(cpu).toBeVisible()
+
+    for (const short of ['us', 'sys', 'wa', 'si', 'st']) {
+      await expect
+        .element(cpu.getByText(short, { exact: true }).first())
+        .toBeVisible()
+      await expect
+        .element(page.getByTestId(`cpu-breakdown-${short}`))
+        .toBeVisible()
+    }
+    await expect
+      .element(cpu.getByText(i18n.t('monitoring.totalUsage')))
+      .toBeVisible()
+    expect(cpu.getByText(/idle|闲置/i).elements()).toHaveLength(0)
+    expect(metricsPaths().some((path) => path.includes('cpu.idle'))).toBe(false)
+
+    await expect
+      .element(page.getByTestId('cpu-breakdown-us'))
+      .toHaveTextContent('18.2%')
+    await expect
+      .element(page.getByTestId('cpu-breakdown-wa'))
+      .toHaveTextContent('2.1%')
+
+    await userEvent.hover(cpu.getByTestId('chart-overlay'))
+    const tooltip = cpu.getByTestId('chart-tooltip')
+    await expect
+      .element(tooltip)
+      .toHaveTextContent(i18n.t('monitoring.cpuUser'))
+    await expect
+      .element(tooltip)
+      .toHaveTextContent(i18n.t('monitoring.cpuIowait'))
+    await expect
+      .element(tooltip)
+      .toHaveTextContent(i18n.t('monitoring.cpuSteal'))
+  })
+
+  it('Swap、CPU iowait 与磁盘写使用普通系列色而非告警色', async () => {
+    const page = await renderDetail()
+    const paletteOf = (testId: string, seriesId: string) => {
+      const node = page
+        .getByTestId(testId)
+        .element()
+        .querySelector(`g[data-series-id="${seriesId}"]`)
+      return node?.getAttribute('data-palette-id')
+    }
+    await expect
+      .poll(() => paletteOf('metric-card-swap', 'memory.swap_usage'))
+      .toBe('series-11')
+    await expect
+      .poll(() => paletteOf('metric-card-cpu', 'cpu.iowait'))
+      .toBe('series-11')
+    await expect
+      .poll(() => paletteOf('metric-card-disk-io-sda', 'disk.write_bps'))
+      .toBe('series-12')
+    for (const palette of ['series-11', 'series-12']) {
+      expect(palette.startsWith('alert-')).toBe(false)
+    }
   })
 
   it('切换时间范围后重新请求 24h 数据', async () => {
@@ -929,8 +1182,8 @@ describe('节点监控详情', () => {
           }))
           .sort((a, b) => String(a.id).localeCompare(String(b.id)))
         expect(rendered).toEqual([
-          { id: seriesIds[0], palette: 'blue-violet' },
-          { id: seriesIds[1], palette: 'coral' },
+          { id: seriesIds[0], palette: 'series-1' },
+          { id: seriesIds[1], palette: 'series-12' },
         ])
       }
     }
@@ -955,6 +1208,141 @@ describe('节点监控详情', () => {
         )
       )
       .toBe(true)
+  })
+
+  it('磁盘 I/O 与 IOPS 只显示整盘，分区 series 不生成卡片', async () => {
+    get.mockImplementation(async (path: string) => {
+      if (path === '/nodes')
+        return [
+          {
+            id: 'node-1',
+            hostname: 'node-1',
+            inventory: {
+              block_devices: [
+                { name: 'sda', kind: 'disk' },
+                { name: 'sda1', kind: 'partition' },
+              ],
+            },
+          },
+        ]
+      if (path.includes('/series?') && path.includes('disk.')) {
+        const metric =
+          new URL(path, 'http://localhost').searchParams.get('metric') || ''
+        return {
+          series: [
+            { seriesKey: `${metric}-sda`, dimensions: { device: 'sda' } },
+            { seriesKey: `${metric}-sda1`, dimensions: { device: 'sda1' } },
+          ],
+        }
+      }
+      return defaultGet(path)
+    })
+    const page = await renderDetail()
+
+    await expect
+      .element(page.getByTestId('metric-card-disk-io-sda'))
+      .toBeVisible()
+    await expect
+      .element(page.getByTestId('metric-card-disk-iops-sda'))
+      .toBeVisible()
+    expect(
+      page.getByTestId('metric-card-disk-io-sda1').elements()
+    ).toHaveLength(0)
+    expect(
+      page.getByTestId('metric-card-disk-iops-sda1').elements()
+    ).toHaveLength(0)
+    expect(
+      page
+        .getByTestId('metric-card-disk-io')
+        .getByText('sda1', { exact: false })
+        .elements()
+    ).toHaveLength(0)
+  })
+
+  it('整盘 series 缺失时不用分区数据回退', async () => {
+    get.mockImplementation(async (path: string) => {
+      if (path === '/nodes')
+        return [
+          {
+            id: 'node-1',
+            hostname: 'node-1',
+            inventory: {
+              block_devices: [
+                { name: 'sda', kind: 'disk' },
+                { name: 'sda1', kind: 'partition' },
+              ],
+            },
+          },
+        ]
+      if (path.includes('/series?') && path.includes('disk.')) {
+        const metric =
+          new URL(path, 'http://localhost').searchParams.get('metric') || ''
+        return {
+          series: [
+            { seriesKey: `${metric}-sda1`, dimensions: { device: 'sda1' } },
+          ],
+        }
+      }
+      return defaultGet(path)
+    })
+    const page = await renderDetail()
+
+    const ioCard = page.getByTestId('metric-card-disk-io')
+    const iopsCard = page.getByTestId('metric-card-disk-iops')
+    await expect.element(ioCard).toBeVisible()
+    await expect.element(iopsCard).toBeVisible()
+    expect(
+      ioCard.element().querySelectorAll('[data-testid^="metric-card-disk-io-"]')
+    ).toHaveLength(0)
+    expect(
+      iopsCard
+        .element()
+        .querySelectorAll('[data-testid^="metric-card-disk-iops-"]')
+    ).toHaveLength(0)
+    expect(ioCard.getByText('sda1', { exact: false }).elements()).toHaveLength(
+      0
+    )
+  })
+
+  it('缺少设备分类时按设备名规则排除分区', async () => {
+    get.mockImplementation(async (path: string) => {
+      if (path === '/nodes') return [{ id: 'node-1', hostname: 'node-1' }]
+      if (path.includes('/series?') && path.includes('disk.')) {
+        const metric =
+          new URL(path, 'http://localhost').searchParams.get('metric') || ''
+        return {
+          series: [
+            { seriesKey: `${metric}-sda`, dimensions: { device: 'sda' } },
+            { seriesKey: `${metric}-sda1`, dimensions: { device: 'sda1' } },
+            {
+              seriesKey: `${metric}-nvme`,
+              dimensions: { device: 'nvme0n1' },
+            },
+            {
+              seriesKey: `${metric}-nvme-p1`,
+              dimensions: { device: 'nvme0n1p1' },
+            },
+          ],
+        }
+      }
+      return defaultGet(path)
+    })
+    const page = await renderDetail()
+
+    await expect
+      .element(page.getByTestId('metric-card-disk-io-sda'))
+      .toBeVisible()
+    await expect
+      .element(page.getByTestId('metric-card-disk-io-nvme0n1'))
+      .toBeVisible()
+    for (const testId of [
+      'metric-card-disk-io-sda1',
+      'metric-card-disk-io-nvme0n1p1',
+      'metric-card-disk-iops-sda1',
+      'metric-card-disk-iops-nvme0n1p1',
+    ]) {
+      expect(page.getByTestId(testId).elements()).toHaveLength(0)
+    }
   })
 
   it('网卡切换后 RX/TX 按所选 interface 重新请求', async () => {

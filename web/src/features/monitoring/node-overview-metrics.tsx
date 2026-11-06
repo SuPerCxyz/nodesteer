@@ -14,10 +14,10 @@ export function NodeStatusDot({ status }: { status?: string | null }) {
   const key = (status || '').toLowerCase().replace(/[-\s]/g, '_')
   const color =
     key === 'online'
-      ? 'bg-emerald-500'
+      ? 'bg-success'
       : key === 'offline'
-        ? 'bg-red-500'
-        : 'bg-amber-500'
+        ? 'bg-danger'
+        : 'bg-warning'
   const label = statusLabel(status)
   return (
     <span
@@ -41,10 +41,10 @@ export function NodeMetricBar({
   const tone = percentTone(value)
   const color =
     tone === 'danger'
-      ? 'bg-red-600'
+      ? 'bg-danger'
       : tone === 'warning'
-        ? 'bg-amber-500'
-        : 'bg-emerald-600'
+        ? 'bg-warning'
+        : 'bg-success'
   return (
     <div
       data-testid={testId}

@@ -78,7 +78,7 @@ export function NodeSteerHeader({
           )}
           <span className='hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex'>
             <span
-              className={`size-1.5 rounded-full ${hubOnline === false ? 'bg-destructive' : 'bg-emerald-500'}`}
+              className={`size-1.5 rounded-full ${hubOnline === false ? 'bg-danger' : 'bg-success'}`}
               aria-hidden='true'
             />
             {hubOnline === null
