@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -23,6 +24,15 @@ type SQLiteStore struct {
 	nativeLateWindow time.Duration
 	// nativeAggregateBudget 是每轮聚合的时间预算；零值使用默认 10s。
 	nativeAggregateBudget time.Duration
+	// nativeRetention 是各层保留期；零值使用规格默认值。
+	nativeRetention NativeRetention
+	// aggregateWatermark 是最近一次成功聚合的 UTC UnixNano；0 表示尚未成功。
+	aggregateWatermark atomic.Int64
+	// nativeVacuumPages 是每轮 prune 最多回收的页数；零值默认 5000。
+	nativeVacuumPages int
+	// pruneStats 保存最近一次清理统计。
+	pruneStatsMu   sync.Mutex
+	lastPruneStats NativePruneStats
 	// aggregateCursors 按 tier 记录下一轮起点，避免总从第一个 series 开始。
 	aggregateMu      sync.Mutex
 	aggregateCursors map[string]nativeAggregateSeriesKey
@@ -109,9 +119,19 @@ func OpenSQLiteWithOptions(path string, options SQLiteOptions) (*SQLiteStore, er
 	}
 	dsn := path
 	readDSN := path
+	newDatabase := true
 	if path != ":memory:" {
-		dsn = fmt.Sprintf("%s?_txlock=immediate&_pragma=journal_mode(WAL)&_pragma=busy_timeout(%d)&_pragma=foreign_keys(1)",
-			path, busyTimeout.Milliseconds())
+		if info, err := os.Stat(path); err == nil && info.Size() > 0 {
+			newDatabase = false
+		}
+	}
+	if path != ":memory:" {
+		autoVacuum := ""
+		if newDatabase {
+			autoVacuum = "&_pragma=auto_vacuum(2)"
+		}
+		dsn = fmt.Sprintf("%s?_txlock=immediate%s&_pragma=journal_mode(WAL)&_pragma=busy_timeout(%d)&_pragma=foreign_keys(1)",
+			path, autoVacuum, busyTimeout.Milliseconds())
 		// query_only 防止读池意外写入；保留普通读写打开方式以复用 WAL -shm。
 		readDSN = fmt.Sprintf("%s?_pragma=busy_timeout(%d)&_pragma=foreign_keys(1)&_pragma=query_only(1)",
 			path, busyTimeout.Milliseconds())
@@ -125,6 +145,17 @@ func OpenSQLiteWithOptions(path string, options SQLiteOptions) (*SQLiteStore, er
 	if err := db.Ping(); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("ping sqlite: %w", err)
+	}
+	// 新库在首次建表前设置 auto_vacuum；已有库需显式 CLI VACUUM 才生效。
+	if newDatabase {
+		if _, err := db.Exec(`PRAGMA auto_vacuum=INCREMENTAL`); err != nil {
+			db.Close()
+			return nil, fmt.Errorf("configure auto_vacuum: %w", err)
+		}
+	}
+	if _, err := db.Exec(`PRAGMA journal_size_limit=67108864`); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("configure journal_size_limit: %w", err)
 	}
 	if err := Migrate(db); err != nil {
 		db.Close()
@@ -145,10 +176,12 @@ func OpenSQLiteWithOptions(path string, options SQLiteOptions) (*SQLiteStore, er
 			return nil, fmt.Errorf("ping sqlite read pool: %w", err)
 		}
 	}
-	return &SQLiteStore{
+	store := &SQLiteStore{
 		db: db, readDB: readDB,
 		aggregateCursors: map[string]nativeAggregateSeriesKey{},
-	}, nil
+	}
+	store.loadAggregateWatermark(context.Background())
+	return store, nil
 }
 
 // OpenInMemory 测试用内存库

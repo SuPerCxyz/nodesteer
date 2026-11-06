@@ -3,7 +3,9 @@ package main
 import (
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/SuPerCxyz/nodesteer/internal/store"
 	"gopkg.in/yaml.v3"
 )
 
@@ -142,5 +144,46 @@ func TestAllowLocalLoginTriState(t *testing.T) {
 		t.Fatal("invalid bool env must be rejected")
 	} else if !strings.Contains(err.Error(), "NODESTEER_OIDC_ALLOW_LOCAL_LOGIN") {
 		t.Fatalf("error should name the env var, got: %v", err)
+	}
+}
+
+func TestNativeRetentionDefaultsAndEnv(t *testing.T) {
+	cfg := DefaultConfig()
+	ret := store.NativeRetention{
+		Raw: cfg.NativeRawRetention, OneMinute: cfg.Native1mRetention,
+		FiveMinute: cfg.Native5mRetention, OneHour: cfg.Native1hRetention,
+	}
+	if err := ret.Validate(); err != nil {
+		t.Fatalf("default retention invalid: %v", err)
+	}
+	if ret.Raw != 7*24*time.Hour || ret.OneMinute != 90*24*time.Hour ||
+		ret.FiveMinute != 365*24*time.Hour || ret.OneHour != 730*24*time.Hour {
+		t.Fatalf("unexpected defaults: %+v", ret)
+	}
+
+	t.Setenv("NODESTEER_NATIVE_RAW_RETENTION", "24h")
+	t.Setenv("NODESTEER_NATIVE_1M_RETENTION", "168h")
+	t.Setenv("NODESTEER_NATIVE_5M_RETENTION", "720h")
+	t.Setenv("NODESTEER_NATIVE_1H_RETENTION", "8760h")
+	if err := applyEnv(&cfg); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.NativeRawRetention != 24*time.Hour || cfg.Native1mRetention != 168*time.Hour ||
+		cfg.Native5mRetention != 720*time.Hour || cfg.Native1hRetention != 8760*time.Hour {
+		t.Fatalf("env retention not applied: %+v", cfg)
+	}
+	if cfg.NativeMetricsVacuumPages != 5000 {
+		t.Fatalf("default vacuum pages = %d, want 5000", cfg.NativeMetricsVacuumPages)
+	}
+	t.Setenv("NODESTEER_NATIVE_METRICS_VACUUM_PAGES", "7000")
+	if err := applyEnv(&cfg); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.NativeMetricsVacuumPages != 7000 {
+		t.Fatalf("vacuum pages env = %d, want 7000", cfg.NativeMetricsVacuumPages)
+	}
+	invalid := store.NativeRetention{Raw: 2 * time.Hour, OneMinute: time.Hour, FiveMinute: 3 * time.Hour, OneHour: 4 * time.Hour}
+	if err := invalid.Validate(); err == nil {
+		t.Fatal("invalid retention accepted")
 	}
 }

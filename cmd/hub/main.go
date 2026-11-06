@@ -47,6 +47,11 @@ type Config struct {
 	NativeMetricsInterval        time.Duration `yaml:"native_metrics_interval"`
 	NativeMetricsLateWindow      time.Duration `yaml:"native_metrics_late_window"`
 	NativeMetricsAggregateBudget time.Duration `yaml:"native_metrics_aggregate_budget"`
+	NativeRawRetention           time.Duration `yaml:"native_raw_retention"`
+	Native1mRetention            time.Duration `yaml:"native_1m_retention"`
+	Native5mRetention            time.Duration `yaml:"native_5m_retention"`
+	Native1hRetention            time.Duration `yaml:"native_1h_retention"`
+	NativeMetricsVacuumPages     int           `yaml:"native_metrics_vacuum_pages"`
 	MaxFileTransferBytes         int64         `yaml:"max_file_transfer_bytes"`
 	MonitoringAllowedCIDRs       []string      `yaml:"monitoring_allowed_cidrs"`
 	MonitoringWorkers            int           `yaml:"monitoring_workers"`
@@ -88,6 +93,11 @@ func DefaultConfig() Config {
 		NativeMetricsInterval:        5 * time.Minute,
 		NativeMetricsLateWindow:      15 * time.Minute,
 		NativeMetricsAggregateBudget: 10 * time.Second,
+		NativeRawRetention:           7 * 24 * time.Hour,
+		Native1mRetention:            90 * 24 * time.Hour,
+		Native5mRetention:            365 * 24 * time.Hour,
+		Native1hRetention:            2 * 365 * 24 * time.Hour,
+		NativeMetricsVacuumPages:     5000,
 		MaxFileTransferBytes:         10 << 30,
 		// 入站连接默认关闭；只允许默认端口 18444，保留 RFC1918。
 		InboundEnabled:         false,
@@ -106,6 +116,16 @@ func main() {
 	backfillTo := flag.String("backfill-native-to", "", "one-shot native metric backfill end (RFC3339, default now)")
 	backfillChunk := flag.Duration("backfill-native-chunk", 15*time.Minute, "backfill transaction chunk")
 	backfillPause := flag.Duration("backfill-native-pause", 10*time.Millisecond, "pause between backfill chunks")
+	pruneNative := flag.Bool("prune-native", false, "run one-shot native metric prune and exit")
+	pruneDryRun := flag.Bool("prune-native-dry-run", false, "count prunable native rows without deleting and exit")
+	pruneBatch := flag.Int("prune-native-batch", store.NativePruneBatchRows, "prune batch rows")
+	pruneBudget := flag.Duration("prune-native-budget", store.NativePruneBudget, "prune time budget")
+	enableVacuum := flag.Bool("enable-incremental-vacuum", false, "run PRAGMA auto_vacuum=INCREMENTAL + VACUUM and exit (Hub must be stopped)")
+	drainFreePages := flag.Bool("drain-free-pages", false, "reclaim current SQLite freelist in batches and exit")
+	drainMax := flag.Int("drain-free-pages-max", 0, "maximum pages to reclaim (0 = all freelist)")
+	drainBatch := flag.Int("drain-free-pages-batch", store.NativeDefaultVacuumPages, "pages per incremental_vacuum batch")
+	drainBudget := flag.Duration("drain-free-pages-budget", 30*time.Second, "drain time budget")
+	drainDryRun := flag.Bool("drain-free-pages-dry-run", false, "report freelist without reclaiming")
 	flag.Parse()
 
 	cfg := DefaultConfig()
@@ -124,6 +144,35 @@ func main() {
 	if err := applyEnv(&cfg); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
+	}
+	retention := store.NativeRetention{
+		Raw: cfg.NativeRawRetention, OneMinute: cfg.Native1mRetention,
+		FiveMinute: cfg.Native5mRetention, OneHour: cfg.Native1hRetention,
+	}
+	if err := retention.Validate(); err != nil {
+		fmt.Fprintf(os.Stderr, "invalid native retention: %v\n", err)
+		os.Exit(1)
+	}
+	if *enableVacuum {
+		if err := runEnableIncrementalVacuum(cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "enable incremental vacuum: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+	if *pruneNative || *pruneDryRun {
+		if err := runNativePrune(cfg, retention, *pruneDryRun, *pruneBatch, *pruneBudget); err != nil {
+			fmt.Fprintf(os.Stderr, "native prune: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+	if *drainFreePages || *drainDryRun {
+		if err := runDrainFreePages(cfg, *drainMax, *drainBatch, *drainBudget, *drainDryRun); err != nil {
+			fmt.Fprintf(os.Stderr, "drain free pages: %v\n", err)
+			os.Exit(1)
+		}
+		return
 	}
 	if *backfillFrom != "" {
 		if err := runNativeBackfill(cfg, *backfillFrom, *backfillTo, *backfillChunk, *backfillPause); err != nil {
@@ -198,6 +247,11 @@ func main() {
 		NativeMetricsInterval:        cfg.NativeMetricsInterval,
 		NativeMetricsLateWindow:      cfg.NativeMetricsLateWindow,
 		NativeMetricsAggregateBudget: cfg.NativeMetricsAggregateBudget,
+		NativeRawRetention:           cfg.NativeRawRetention,
+		Native1mRetention:            cfg.Native1mRetention,
+		Native5mRetention:            cfg.Native5mRetention,
+		Native1hRetention:            cfg.Native1hRetention,
+		NativeMetricsVacuumPages:     cfg.NativeMetricsVacuumPages,
 		MonitoringAllowedCIDRs:       cfg.MonitoringAllowedCIDRs,
 		MonitoringWorkers:            cfg.MonitoringWorkers,
 		InboundEnabled:               cfg.InboundEnabled,
@@ -246,6 +300,82 @@ func main() {
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	<-sig
 	logger.Info("nodesteer hub stopping")
+}
+
+func runNativePrune(cfg Config, retention store.NativeRetention, dryRun bool, batchRows int, budget time.Duration) error {
+	if err := os.MkdirAll(cfg.DataDir, 0o755); err != nil {
+		return err
+	}
+	st, err := store.OpenSQLiteWithOptions(cfg.DataDir+"/hub.db", store.SQLiteOptions{BusyTimeout: cfg.SQLiteBusyTimeout})
+	if err != nil {
+		return err
+	}
+	defer st.Close()
+	if err := st.SetNativeRetention(retention); err != nil {
+		return err
+	}
+	st.SetNativeVacuumPages(cfg.NativeMetricsVacuumPages)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	stats, err := st.PruneNodeMetricsWithOptions(context.Background(), time.Now().UTC(), store.NativePruneOptions{
+		DryRun: dryRun, BatchRows: batchRows, Budget: budget,
+	})
+	logger.Info("native prune finished",
+		"dry_run", dryRun, "duration", stats.Duration,
+		"raw", stats.DeletedRaw, "1m", stats.Deleted1m, "5m", stats.Deleted5m, "1h", stats.Deleted1h,
+		"batches", stats.Batches, "busy_errors", stats.BusyErrors, "raw_skipped", stats.RawSkipped,
+		"budget_hit", stats.BudgetHit, "last_error", stats.LastError)
+	return err
+}
+
+func runDrainFreePages(cfg Config, maxPages, batchPages int, budget time.Duration, dryRun bool) error {
+	if err := os.MkdirAll(cfg.DataDir, 0o755); err != nil {
+		return err
+	}
+	st, err := store.OpenSQLiteWithOptions(cfg.DataDir+"/hub.db", store.SQLiteOptions{BusyTimeout: cfg.SQLiteBusyTimeout})
+	if err != nil {
+		return err
+	}
+	defer st.Close()
+	stats, err := st.DrainFreePages(context.Background(), store.NativeDrainOptions{
+		MaxPages: maxPages, BatchPages: batchPages, Budget: budget, DryRun: dryRun,
+	})
+	if stats.AutoVacuum != 2 {
+		return fmt.Errorf("auto_vacuum=%d, run --enable-incremental-vacuum while Hub is stopped", stats.AutoVacuum)
+	}
+	slog.New(slog.NewTextHandler(os.Stdout, nil)).Info("drain free pages finished",
+		"dry_run", dryRun, "duration", stats.Duration,
+		"freelist_before", stats.FreelistBefore, "freelist_after", stats.FreelistAfter,
+		"pages", stats.PagesReclaimed, "page_size", stats.PageSize,
+		"batches", stats.Batches, "busy_errors", stats.BusyErrors, "budget_hit", stats.BudgetHit)
+	return err
+}
+
+func runEnableIncrementalVacuum(cfg Config) error {
+	if err := os.MkdirAll(cfg.DataDir, 0o755); err != nil {
+		return err
+	}
+	path := cfg.DataDir + "/hub.db"
+	before, _ := os.Stat(path)
+	st, err := store.OpenSQLiteWithOptions(path, store.SQLiteOptions{BusyTimeout: cfg.SQLiteBusyTimeout})
+	if err != nil {
+		return err
+	}
+	defer st.Close()
+	started := time.Now()
+	if err := st.EnableIncrementalVacuum(context.Background()); err != nil {
+		return err
+	}
+	after, _ := os.Stat(path)
+	var beforeBytes, afterBytes int64
+	if before != nil {
+		beforeBytes = before.Size()
+	}
+	if after != nil {
+		afterBytes = after.Size()
+	}
+	slog.New(slog.NewTextHandler(os.Stdout, nil)).Info("incremental vacuum enabled",
+		"duration", time.Since(started), "before_bytes", beforeBytes, "after_bytes", afterBytes)
+	return nil
 }
 
 func runNativeBackfill(cfg Config, fromRaw, toRaw string, chunk, pause time.Duration) error {
@@ -342,6 +472,26 @@ func applyEnv(cfg *Config) error {
 	if v := os.Getenv("NODESTEER_NATIVE_METRICS_AGGREGATE_BUDGET"); v != "" {
 		if budget, err := time.ParseDuration(v); err == nil && budget > 0 {
 			cfg.NativeMetricsAggregateBudget = budget
+		}
+	}
+	for _, item := range []struct {
+		env string
+		dst *time.Duration
+	}{
+		{"NODESTEER_NATIVE_RAW_RETENTION", &cfg.NativeRawRetention},
+		{"NODESTEER_NATIVE_1M_RETENTION", &cfg.Native1mRetention},
+		{"NODESTEER_NATIVE_5M_RETENTION", &cfg.Native5mRetention},
+		{"NODESTEER_NATIVE_1H_RETENTION", &cfg.Native1hRetention},
+	} {
+		if v := os.Getenv(item.env); v != "" {
+			if d, err := time.ParseDuration(v); err == nil && d > 0 {
+				*item.dst = d
+			}
+		}
+	}
+	if v := os.Getenv("NODESTEER_NATIVE_METRICS_VACUUM_PAGES"); v != "" {
+		if pages, err := strconv.Atoi(v); err == nil && pages > 0 {
+			cfg.NativeMetricsVacuumPages = pages
 		}
 	}
 	if v := os.Getenv("NODESTEER_WEB_TLS_CERT"); v != "" {

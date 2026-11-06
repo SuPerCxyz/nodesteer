@@ -57,8 +57,15 @@ type Config struct {
 	NativeMetricsLateWindow time.Duration
 	// NativeMetricsAggregateBudget 是每轮聚合时间预算；零值默认 10s。
 	NativeMetricsAggregateBudget time.Duration
-	MonitoringAllowedCIDRs       []string
-	MonitoringWorkers            int
+	// Native retention 各层保留期；零值使用规格默认值。
+	NativeRawRetention time.Duration
+	Native1mRetention  time.Duration
+	Native5mRetention  time.Duration
+	Native1hRetention  time.Duration
+	// NativeMetricsVacuumPages 是每轮 prune 最多回收的页数；零值默认 5000。
+	NativeMetricsVacuumPages int
+	MonitoringAllowedCIDRs   []string
+	MonitoringWorkers        int
 	// 入站连接（Hub 主动拨号）配置。默认关闭；启用后未提供 CA/客户端证书路径
 	// 时在 DataDir/inbound 下自动生成（私钥 0600）。
 	InboundEnabled         bool
@@ -492,6 +499,13 @@ func (h *Hub) Start() error {
 		if tuner, ok := h.store.(store.NativeMetricTuner); ok {
 			tuner.SetNativeLateWindow(h.cfg.NativeMetricsLateWindow)
 			tuner.SetNativeAggregateBudget(h.cfg.NativeMetricsAggregateBudget)
+			if err := tuner.SetNativeRetention(store.NativeRetention{
+				Raw: h.cfg.NativeRawRetention, OneMinute: h.cfg.Native1mRetention,
+				FiveMinute: h.cfg.Native5mRetention, OneHour: h.cfg.Native1hRetention,
+			}); err != nil {
+				return fmt.Errorf("invalid native retention: %w", err)
+			}
+			tuner.SetNativeVacuumPages(h.cfg.NativeMetricsVacuumPages)
 		}
 		interval := h.cfg.NativeMetricsInterval
 		if interval <= 0 {

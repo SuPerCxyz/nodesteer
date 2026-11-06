@@ -1687,6 +1687,9 @@ Web 节点总览、历史、规则求值
 - Hub API JSON 在客户端接受 gzip 时压缩（`Content-Encoding: gzip`、`Vary: Accept-Encoding`）；二进制/SSE/304 不压缩。静态资源运行时 gzip、可选预压缩 brotli；HTML `no-cache`，哈希资源一年 immutable，其余静态资源短缓存，ETag/Last-Modified 支持 304。
 - schema v28 增加 executions/file_transfers/audit_logs 的 `created_at` 查询索引；schema v29 增加 `node_metric_series` 目录，迁移时从 raw/rollup 一次性回填，写入路径不再在事务内 UNION 扫描全部 series。
 - Hub SQLite 使用独立写池（2 连接）与只读池（8 连接，`query_only`）；非事务只读查询走读池，写事务与写入走写池。API >500ms 与原生指标 SQL >200ms 记录慢日志和计数，日志不包含查询值或敏感信息。
+- 原生指标保留期由 `NativeRetention` 注入：默认 raw 7d、1m 90d、5m 365d、1h 730d，可通过 Hub YAML/env 覆盖；要求 raw >= 1h 且 raw <= 1m <= 5m <= 1h。Prune、聚合 source 范围、backfill 和样本年龄校验均使用注入值。
+- Prune 与 aggregation 解耦：rollup 独立清理；raw 仅在最近一次聚合成功且不超过 30 分钟内删除，cutoff 为 `min(now-rawRetention, aggregateWatermark)`。默认每批 10,000 行、5s 预算、15ms 间隔，每批独立事务；某层失败不影响其他层，0 行删除不递增 metricGeneration。删除后仅在 `auto_vacuum=INCREMENTAL` 时回收 freelist：每轮默认最多 5,000 页（约 20MB，可配置），按 500 页小批执行并受同一 5s 预算约束；记录释放页数、耗时、BUSY。
+- 新库首次建表前启用 `auto_vacuum=INCREMENTAL`；已有库通过停机 CLI `--enable-incremental-vacuum` 执行一次 `VACUUM`（普通 migration 不执行），需要约 2x 磁盘空间。`journal_size_limit=64MB`。已有增量库可用 `--drain-free-pages`（可配 `--drain-free-pages-max/batch/budget` 与 dry-run）快速回收当前 freelist，分批避免长锁。
 - 缺失 rollup 使用 `nodesteer-hub --backfill-native-from <RFC3339> --backfill-native-to <RFC3339>` 恢复；按 1m → 5m → 1h、15 分钟 chunk（1h tier 至少 1h）限速执行，幂等且不删除 raw。生产推荐 Agent 30s 采样；5s 采样会显著放大写入和聚合成本。
 - 每轮聚合/回填记录 duration、series、transactions、busy_errors、truncated；达到时间预算时保留 tier 游标，下轮继续。
 - `node_metric` 规则从原生样本求值，保留新鲜度、gap、乱序/冲突中断、去重、冷却、失败暂停、验证和补偿语义。外部 HTTP(S)/TCP/ICMP 探测仍是独立监控对象。

@@ -79,7 +79,7 @@ func TestNativeMetricMaintenanceCancelDuringInitialDelay(t *testing.T) {
 	}
 }
 
-func TestNativeMetricMaintenanceSkipsPruneAfterAggregateError(t *testing.T) {
+func TestNativeMetricMaintenancePrunesAfterAggregateError(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -100,7 +100,7 @@ func TestNativeMetricMaintenanceSkipsPruneAfterAggregateError(t *testing.T) {
 	if aggregateCalls.Load() < 3 {
 		t.Fatalf("maintenance stopped after aggregate error: aggregate=%d", aggregateCalls.Load())
 	}
-	if pruneCalls.Load() != 0 {
-		t.Fatalf("prune ran after aggregate failure: prune=%d", pruneCalls.Load())
+	if pruneCalls.Load() == 0 {
+		t.Fatal("prune must run independently after aggregate failure")
 	}
 }

@@ -42,10 +42,15 @@ Compose 默认同时提供 Hub 和一个 Docker Agent。数据保存在 `hub-dat
 | `NODESTEER_NATIVE_METRICS_INTERVAL` | 否 | `5m` | 原生指标聚合/清理周期 |
 | `NODESTEER_NATIVE_METRICS_LATE_WINDOW` | 否 | `15m` | 迟到样本重算窗口；更早缺口需显式 backfill |
 | `NODESTEER_NATIVE_METRICS_AGGREGATE_BUDGET` | 否 | `10s` | 每轮聚合时间预算；超出后按 tier 游标下轮继续 |
+| `NODESTEER_NATIVE_RAW_RETENTION` | 否 | `168h`（7d） | raw 保留期；预览可设 `24h` |
+| `NODESTEER_NATIVE_1M_RETENTION` | 否 | `2160h`（90d） | 1m rollup 保留期；预览可设 `168h` |
+| `NODESTEER_NATIVE_5M_RETENTION` | 否 | `8760h`（365d） | 5m rollup 保留期；预览可设 `720h` |
+| `NODESTEER_NATIVE_1H_RETENTION` | 否 | `17520h`（730d） | 1h rollup 保留期；预览可设 `8760h` |
+| `NODESTEER_NATIVE_METRICS_VACUUM_PAGES` | 否 | `5000` | 每轮 prune 最多回收的 freelist 页数（约 20MB）；受 5s prune 预算约束 |
 
 完整列表以 `.env.example` 为准；容器内变量名统一为 `NODESTEER_` 前缀（如 `NODESTEER_OIDC_ISSUER`），由 Hub 进程读取。
 
-原生指标保留期（raw 7d、1m 90d、5m 1y、1h 2y）当前为 Hub 代码常量，尚未提供环境变量；`NODE_METRICS` ingest、周期聚合/清理和查询 API 已接入，不能把这些值写成可配置项。
+原生指标保留期代码默认为 raw 7d、1m 90d、5m 1y、1h 2y，可通过 YAML（`native_raw_retention` 等）或环境变量覆盖；要求 raw >= 1h 且 raw <= 1m <= 5m <= 1h。`NODE_METRICS` ingest、周期聚合/清理和查询 API 已接入。
 
 ### 2.1 测试环境空密码（仅隔离）
 
@@ -354,7 +359,7 @@ bundle 是一次性凭据：首次下载后再次 GET 返回 `409 inbound_bundle
 - 原生节点指标由同一个 NodeSteer Agent 采集，不需要额外监控 Agent。Agent 配置 `metrics_enabled`（默认 `true`）、`metrics_interval`（默认 `30s`，限制 5s–300s）和 `metrics_buffer_batches`（默认 `20`，最大 `60`，另有 4MiB 内存硬上限），对应环境变量 `NODESTEER_METRICS_ENABLED`、`NODESTEER_METRICS_INTERVAL`、`NODESTEER_METRICS_BUFFER_BATCHES`；Compose 示例使用 `MONITOR_METRICS_ENABLED`、`MONITOR_METRICS_INTERVAL` 映射。补报只保存在内存，进程退出即丢失。
 - 指标包含 `cpu.usage`、`memory.usage`、`load.1/5/15`、`disk.usage`、`network.rx_bps/tx_bps`。Agent 声明 `node_metrics` 能力；Native 和 Docker Host Integration 支持，Docker 基础模式只能看到容器自身 `/proc`，不声明该能力。旧 Agent 不支持时页面显示不可用，不以 0 代替。
 - 指标扩展包括 CPU 组成（user/nice/system/idle/iowait/irq/softirq/steal）、内存 used/cached/buffers/available、Swap、Inode、磁盘 read/write bps/IOPS、网络 errors/drops、温度、风扇和容器 CPU/内存/网络。容器指标自动探测 Docker/Podman socket；无 socket 或不可读时没有容器样本，不显示 0。
-- Hub 原生时序存储的目标默认保留期为 raw 7d、1m 90d、5m 1y、1h 2y；当前实现为代码常量，未提供配置项。schema v23 已创建 raw/rollup 表，schema v29 增加 `node_metric_series` 目录；gateway 已接入 `NODE_METRICS`，后台默认每 5 分钟执行聚合/清理（15m 迟到窗口、10s 预算、tier 游标），`/api/monitoring/nodes/*` 查询 API 已可用。Hub SQLite 使用独立写池（2 连接）与只读池（8 连接，`query_only`），API 读请求不再与聚合写事务争抢同一连接池。`overview` 的告警数仍为占位 0，规则告警汇总未接入。
+- Hub 原生时序存储默认保留期为 raw 7d、1m 90d、5m 1y、1h 2y，可通过上述 env/YAML 覆盖；预览建议 raw 1d、1m 7d、5m 30d、1h 1y。schema v23 已创建 raw/rollup 表，schema v29 增加 `node_metric_series` 目录；gateway 已接入 `NODE_METRICS`，后台默认每 5 分钟执行聚合/清理（15m 迟到窗口、10s 预算、tier 游标），`/api/monitoring/nodes/*` 查询 API 已可用。Hub SQLite 使用独立写池（2 连接）与只读池（8 连接，`query_only`），API 读请求不再与聚合写事务争抢同一连接池。`overview` 的告警数仍为占位 0，规则告警汇总未接入。
 - 前端时间范围支持 1h/6h/24h/7d 和自定义范围（最大 30 天），默认 1h；历史查询仍受后端保留期和点数预算限制。
 - v29 迁移会从现有 raw/rollup 一次性回填 series 目录；4.4GB / 7M raw 快照实测约 29s。迁移只建表和目录，不改 raw/rollup；升级前按部署规范备份 Hub DB。
 - 缺失 rollup 用一次性、分块、限速命令恢复，不删除 raw：
@@ -365,6 +370,28 @@ bundle 是一次性凭据：首次下载后再次 GET 返回 `409 inbound_bundle
     --backfill-native-chunk 15m --backfill-native-pause 10ms
   ```
   命令按 1m → 5m → 1h 顺序执行，重复运行幂等；运行完退出，不启动 Web/Gateway。建议在低峰期执行并避免与高写入叠加。
+- 清理过期数据：
+  ```bash
+  nodesteer-hub --config /etc/nodesteer/hub.yaml --prune-native-dry-run
+  nodesteer-hub --config /etc/nodesteer/hub.yaml --prune-native
+  ```
+  Prune 默认每批 10,000 行、5s 预算、15ms 间隔；rollup 独立清理，raw 仅在上次聚合成功且不超过 30 分钟内删除。可用 `--prune-native-batch`、`--prune-native-budget` 覆盖。`auto_vacuum=INCREMENTAL` 时每轮默认回收最多 5,000 页（约 20MB），按 500 页小批执行并受 5s 预算约束，可用 `native_metrics_vacuum_pages` / `NODESTEER_NATIVE_METRICS_VACUUM_PAGES` 覆盖。
+- 已有库启用增量空间回收（必须停 Hub，约需 2x 磁盘空间；普通 migration 不执行 VACUUM）：
+  ```bash
+  systemctl stop nodesteer-hub
+  nodesteer-hub --config /etc/nodesteer/hub.yaml --enable-incremental-vacuum
+  systemctl start nodesteer-hub
+  ```
+  命令输出 VACUUM 耗时与前后文件大小，并校验 `auto_vacuum=2`。新库首次建表前自动启用 `auto_vacuum=INCREMENTAL`。
+- 已有 `auto_vacuum=INCREMENTAL` 的库可快速回收当前 freelist（Hub 运行或停机均可，分批执行，避免长锁）：
+  ```bash
+  # 只查看 freelist，不回收
+  nodesteer-hub --config /etc/nodesteer/hub.yaml --drain-free-pages-dry-run
+  # 最多回收 100000 页，每批 5000 页，30s 预算
+  nodesteer-hub --config /etc/nodesteer/hub.yaml --drain-free-pages \
+    --drain-free-pages-max 100000 --drain-free-pages-batch 5000 --drain-free-pages-budget 30s
+  ```
+  `--drain-free-pages-max 0`（默认）表示回收当前全部 freelist，仍受预算限制；预算耗尽后可重复执行。
 - `node_metric` 规则使用 Hub 原生样本和实际样本时间，保留新鲜度、最大样本延迟、gap、乱序/冲突中断、去重、冷却、失败暂停、验证和补偿语义。目标已切换为 NodeSteer `node_id + metric + series`；`/metrics` 查询必须带 `series` 参数。
 - 节点规则可配置分批、验证调度和显式补偿调度；未知结果停止后续自动推进，需要检查每个节点的执行记录。停用规则不会取消已下发任务，并会阻止后续批次、验证和自动补偿；必要时通过已有任务手动恢复。
 - 采集并发默认 8，可通过 `NODESTEER_MONITOR_WORKERS` 或 `monitoring_workers` 配置为 1–128。调度优先处理最早到期的目标；实际负荷超过并发处理能力时，采样会延迟，页面显示过期，服务日志报告延迟目标数。并发不保证所有目标一定满足设定周期，请按目标数量、超时和网络延迟规划容量。

@@ -42,13 +42,11 @@ func startNativeMetricMaintenanceWithDelay(
 	go func() {
 		defer close(done)
 		run := func(now time.Time) {
+			// 聚合与清理解耦：聚合失败仍执行 rollup 清理；raw 清理由
+			// PruneNodeMetrics 的 aggregate watermark 门禁保护。
 			if aggregate != nil {
-				if err := aggregate(ctx, now); err != nil {
-					if ctx.Err() == nil && logger != nil {
-						logger.Error("native metric aggregation failed", "error", err)
-					}
-					// 聚合失败时跳过本轮清理，避免在 rollup 未收敛时删除源数据。
-					return
+				if err := aggregate(ctx, now); err != nil && ctx.Err() == nil && logger != nil {
+					logger.Error("native metric aggregation failed", "error", err)
 				}
 			}
 			if prune != nil {

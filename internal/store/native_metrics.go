@@ -41,11 +41,11 @@ const (
 	nativeSeriesPageSize = 1000
 
 	NativeMaxFutureSkew = 5 * time.Minute
-	NativeMaxSampleAge  = 7 * 24 * time.Hour
 	// nativeValidationGrace 吸收调用链上的毫秒级延迟，避免恰好落在边界上的
 	// 合法样本被误判；超出边界的样本仍会被拒绝。
 	nativeValidationGrace = 30 * time.Second
 
+	// NativeRawRetention 等是规格默认值；运行期使用 NativeRetention 覆盖。
 	NativeRawRetention = 7 * 24 * time.Hour
 	Native1mRetention  = 90 * 24 * time.Hour
 	Native5mRetention  = 365 * 24 * time.Hour
@@ -65,6 +65,52 @@ const (
 	nativeTimeLayout     = "2006-01-02T15:04:05.000000000Z"
 	nativeAggregateLimit = 200000
 )
+
+// NativeRetention 是原生指标各层保留期。零字段使用规格默认值。
+type NativeRetention struct {
+	Raw        time.Duration
+	OneMinute  time.Duration
+	FiveMinute time.Duration
+	OneHour    time.Duration
+}
+
+// DefaultNativeRetention 返回规格默认保留期。
+func DefaultNativeRetention() NativeRetention {
+	return NativeRetention{
+		Raw: NativeRawRetention, OneMinute: Native1mRetention,
+		FiveMinute: Native5mRetention, OneHour: Native1hRetention,
+	}
+}
+
+func (r NativeRetention) normalized() NativeRetention {
+	def := DefaultNativeRetention()
+	if r.Raw <= 0 {
+		r.Raw = def.Raw
+	}
+	if r.OneMinute <= 0 {
+		r.OneMinute = def.OneMinute
+	}
+	if r.FiveMinute <= 0 {
+		r.FiveMinute = def.FiveMinute
+	}
+	if r.OneHour <= 0 {
+		r.OneHour = def.OneHour
+	}
+	return r
+}
+
+// Validate 校验 raw <= 1m <= 5m <= 1h 且 raw >= 1h。
+func (r NativeRetention) Validate() error {
+	r = r.normalized()
+	if r.Raw < time.Hour {
+		return fmt.Errorf("native raw retention must be >= 1h, got %s", r.Raw)
+	}
+	if r.Raw > r.OneMinute || r.OneMinute > r.FiveMinute || r.FiveMinute > r.OneHour {
+		return fmt.Errorf("native retention must satisfy raw <= 1m <= 5m <= 1h, got %s/%s/%s/%s",
+			r.Raw, r.OneMinute, r.FiveMinute, r.OneHour)
+	}
+	return nil
+}
 
 var (
 	ErrNativeInvalidSample = errors.New("invalid native metric sample")
@@ -136,6 +182,8 @@ type NativeMetricReader interface {
 type NativeMetricTuner interface {
 	SetNativeLateWindow(window time.Duration)
 	SetNativeAggregateBudget(budget time.Duration)
+	SetNativeRetention(retention NativeRetention) error
+	SetNativeVacuumPages(pages int)
 }
 
 // NativeAggregateStats 是一轮聚合/回填的运行统计。
@@ -498,7 +546,8 @@ func (s *SQLiteStore) InsertNodeMetricSamples(ctx context.Context, nodeID string
 			return fmt.Errorf("%w: zero timestamp", ErrNativeInvalidSample)
 		}
 		timestamp := sample.Timestamp.UTC()
-		if timestamp.After(now.Add(NativeMaxFutureSkew+nativeValidationGrace)) || timestamp.Before(now.Add(-NativeMaxSampleAge-nativeValidationGrace)) {
+		maxAge := s.retention().Raw + time.Hour
+		if timestamp.After(now.Add(NativeMaxFutureSkew+nativeValidationGrace)) || timestamp.Before(now.Add(-maxAge-nativeValidationGrace)) {
 			return fmt.Errorf("%w: %s", ErrNativeSampleTime, timestamp.Format(time.RFC3339Nano))
 		}
 		if timestamp.Before(lateCutoff) {
@@ -1244,6 +1293,55 @@ func (bucket *nativeBucket) addRollup(count uint64, sum, minimum, maximum, first
 	bucket.lastTS = lastTS
 }
 
+// SetNativeRetention 注入各层保留期；非法配置返回错误且不改变现有值。
+func (s *SQLiteStore) SetNativeRetention(ret NativeRetention) error {
+	if err := ret.Validate(); err != nil {
+		return err
+	}
+	s.nativeRetention = ret.normalized()
+	return nil
+}
+
+func (s *SQLiteStore) retention() NativeRetention {
+	if s.nativeRetention.Raw <= 0 {
+		return DefaultNativeRetention()
+	}
+	return s.nativeRetention.normalized()
+}
+
+const nativeAggregateWatermarkKey = "native_aggregate_watermark"
+
+func (s *SQLiteStore) markAggregateSuccess(ctx context.Context, now time.Time) {
+	if now.IsZero() {
+		now = time.Now().UTC()
+	}
+	now = now.UTC()
+	s.aggregateWatermark.Store(now.UnixNano())
+	if err := s.SetSetting(ctx, nativeAggregateWatermarkKey, formatNativeTime(now)); err != nil {
+		slog.Default().Warn("persist native aggregate watermark failed", "error", err)
+	}
+}
+
+func (s *SQLiteStore) loadAggregateWatermark(ctx context.Context) {
+	raw, err := s.GetSetting(ctx, nativeAggregateWatermarkKey)
+	if err != nil || raw == "" {
+		return
+	}
+	parsed, err := parseNativeTime(raw)
+	if err != nil {
+		return
+	}
+	s.aggregateWatermark.Store(parsed.UTC().UnixNano())
+}
+
+func (s *SQLiteStore) aggregateWatermarkTime() time.Time {
+	value := s.aggregateWatermark.Load()
+	if value <= 0 {
+		return time.Time{}
+	}
+	return time.Unix(0, value).UTC()
+}
+
 // SetNativeLateWindow 覆盖迟到重算窗口；仅影响聚合范围，不改变 raw 保留期。
 func (s *SQLiteStore) SetNativeLateWindow(window time.Duration) {
 	if window > 0 {
@@ -1332,29 +1430,30 @@ func (s *SQLiteStore) AggregateNodeMetrics(ctx context.Context, now time.Time) e
 		now = time.Now().UTC()
 	}
 	deadline := time.Now().Add(s.aggregateBudget())
+	retention := s.retention()
 	specs := []nativeAggregateSpec{
 		{
 			tier:            NativeTier1m,
 			step:            time.Minute,
 			source:          nativeSourceRaw,
-			sourceRetention: NativeRawRetention,
-			initialLookback: NativeRawRetention,
+			sourceRetention: retention.Raw,
+			initialLookback: retention.Raw,
 		},
 		{
 			tier:            NativeTier5m,
 			step:            5 * time.Minute,
 			source:          NativeTier1m,
 			sourceStep:      time.Minute,
-			sourceRetention: Native1mRetention,
-			initialLookback: Native1mRetention,
+			sourceRetention: retention.OneMinute,
+			initialLookback: retention.OneMinute,
 		},
 		{
 			tier:            NativeTier1h,
 			step:            time.Hour,
 			source:          NativeTier5m,
 			sourceStep:      5 * time.Minute,
-			sourceRetention: Native5mRetention,
-			initialLookback: Native5mRetention,
+			sourceRetention: retention.FiveMinute,
+			initialLookback: retention.FiveMinute,
 		},
 	}
 	for _, spec := range specs {
@@ -1365,6 +1464,7 @@ func (s *SQLiteStore) AggregateNodeMetrics(ctx context.Context, now time.Time) e
 			return err
 		}
 	}
+	s.markAggregateSuccess(ctx, now)
 	return nil
 }
 
@@ -1572,10 +1672,11 @@ func (s *SQLiteStore) BackfillNativeMetrics(ctx context.Context, from, to time.T
 	if from.IsZero() || to.IsZero() || !from.Before(to) {
 		return fmt.Errorf("%w: invalid backfill range", ErrNativeInvalidQuery)
 	}
+	retention := s.retention()
 	specs := []nativeAggregateSpec{
-		{tier: NativeTier1m, step: time.Minute, source: nativeSourceRaw, sourceRetention: NativeRawRetention},
-		{tier: NativeTier5m, step: 5 * time.Minute, source: NativeTier1m, sourceStep: time.Minute, sourceRetention: Native1mRetention},
-		{tier: NativeTier1h, step: time.Hour, source: NativeTier5m, sourceStep: 5 * time.Minute, sourceRetention: Native5mRetention},
+		{tier: NativeTier1m, step: time.Minute, source: nativeSourceRaw, sourceRetention: retention.Raw},
+		{tier: NativeTier5m, step: 5 * time.Minute, source: NativeTier1m, sourceStep: time.Minute, sourceRetention: retention.OneMinute},
+		{tier: NativeTier1h, step: time.Hour, source: NativeTier5m, sourceStep: 5 * time.Minute, sourceRetention: retention.FiveMinute},
 	}
 	series, err := nativeListAllSeries(ctx, s.db)
 	if err != nil {
@@ -1944,38 +2045,385 @@ func nativeWriteBuckets(ctx context.Context, tx *sql.Tx, series nativeAggregateS
 }
 
 // PruneNodeMetrics 按保留策略清理原始样本与聚合桶。
-func (s *SQLiteStore) PruneNodeMetrics(ctx context.Context, now time.Time) error {
+// NativeDefaultVacuumPages 是每轮 prune 默认回收的 freelist 页数（约 20MB）。
+const NativeDefaultVacuumPages = 5000
+
+// nativeVacuumBatchPages 是单次 PRAGMA incremental_vacuum 的最大页数，
+// 避免一次持锁过久；每轮总页数由 NativeDefaultVacuumPages/配置控制。
+const nativeVacuumBatchPages = 500
+
+// NativeDrainOptions 控制一次性 freelist 回收。
+type NativeDrainOptions struct {
+	// MaxPages <=0 表示回收当前全部 freelist（仍受 Budget 限制）。
+	MaxPages   int
+	BatchPages int
+	Budget     time.Duration
+	DryRun     bool
+}
+
+// NativeVacuumStats 是一次 incremental_vacuum 的统计。
+type NativeVacuumStats struct {
+	AutoVacuum     int
+	PageSize       int64
+	FreelistBefore int64
+	FreelistAfter  int64
+	PagesReclaimed int64
+	Batches        int
+	BusyErrors     int
+	Duration       time.Duration
+	BudgetHit      bool
+	DryRun         bool
+}
+
+func (s *SQLiteStore) SetNativeVacuumPages(pages int) {
+	if pages > 0 {
+		s.nativeVacuumPages = pages
+	}
+}
+
+func (s *SQLiteStore) vacuumPages() int {
+	if s.nativeVacuumPages > 0 {
+		return s.nativeVacuumPages
+	}
+	return NativeDefaultVacuumPages
+}
+
+// DrainFreePages 在 Hub 运行或停机时回收 freelist；默认分批执行。
+func (s *SQLiteStore) DrainFreePages(ctx context.Context, opts NativeDrainOptions) (NativeVacuumStats, error) {
+	stats, err := s.drainFreePages(ctx, opts)
+	attrs := []any{
+		"duration", stats.Duration, "freelist_before", stats.FreelistBefore,
+		"freelist_after", stats.FreelistAfter, "pages", stats.PagesReclaimed,
+		"batches", stats.Batches, "busy_errors", stats.BusyErrors,
+		"budget_hit", stats.BudgetHit, "dry_run", stats.DryRun,
+	}
+	if err != nil {
+		slog.Default().Warn("incremental vacuum completed with errors", append(attrs, "error", err)...)
+	} else {
+		slog.Default().Info("incremental vacuum completed", attrs...)
+	}
+	return stats, err
+}
+
+func (s *SQLiteStore) drainFreePages(ctx context.Context, opts NativeDrainOptions) (NativeVacuumStats, error) {
 	started := time.Now()
-	defer func() { logSlowNativeQuery("prune", started) }()
+	stats := NativeVacuumStats{DryRun: opts.DryRun}
+	defer func() { stats.Duration = time.Since(started) }()
+	if err := s.db.QueryRowContext(ctx, `PRAGMA auto_vacuum`).Scan(&stats.AutoVacuum); err != nil {
+		return stats, err
+	}
+	if stats.AutoVacuum != 2 {
+		return stats, nil
+	}
+	if err := s.db.QueryRowContext(ctx, `PRAGMA page_size`).Scan(&stats.PageSize); err != nil {
+		return stats, err
+	}
+	if err := s.db.QueryRowContext(ctx, `PRAGMA freelist_count`).Scan(&stats.FreelistBefore); err != nil {
+		return stats, err
+	}
+	stats.FreelistAfter = stats.FreelistBefore
+	if opts.DryRun || stats.FreelistBefore == 0 {
+		return stats, nil
+	}
+	maxPages := opts.MaxPages
+	if maxPages <= 0 {
+		maxPages = int(stats.FreelistBefore)
+	}
+	if maxPages > int(stats.FreelistBefore) {
+		maxPages = int(stats.FreelistBefore)
+	}
+	batch := opts.BatchPages
+	if batch <= 0 {
+		batch = nativeVacuumBatchPages
+	}
+	var deadline time.Time
+	if opts.Budget > 0 {
+		deadline = time.Now().Add(opts.Budget)
+	}
+	var firstErr error
+	for stats.PagesReclaimed < int64(maxPages) && stats.FreelistBefore-stats.PagesReclaimed > 0 {
+		if !deadline.IsZero() && !time.Now().Before(deadline) {
+			stats.BudgetHit = true
+			break
+		}
+		pages := int64(batch)
+		remaining := int64(maxPages) - stats.PagesReclaimed
+		if pages > remaining {
+			pages = remaining
+		}
+		free := stats.FreelistBefore - stats.PagesReclaimed
+		if pages > free {
+			pages = free
+		}
+		if pages <= 0 {
+			break
+		}
+		if _, err := s.db.ExecContext(ctx, fmt.Sprintf(`PRAGMA incremental_vacuum(%d)`, pages)); err != nil {
+			if IsBusyError(err) {
+				stats.BusyErrors++
+			}
+			if firstErr == nil {
+				firstErr = err
+			}
+			break
+		}
+		stats.Batches++
+		if err := s.db.QueryRowContext(ctx, `PRAGMA freelist_count`).Scan(&stats.FreelistAfter); err != nil {
+			if firstErr == nil {
+				firstErr = err
+			}
+			break
+		}
+		stats.PagesReclaimed = stats.FreelistBefore - stats.FreelistAfter
+	}
+	stats.Duration = time.Since(started)
+	return stats, firstErr
+}
+
+// NativePruneBatchRows / NativePruneBudget 是清理默认批量与时间预算。
+const (
+	NativePruneBatchRows = 10000
+	NativePruneBudget    = 5 * time.Second
+	nativePrunePause     = 15 * time.Millisecond
+	// nativePruneWatermarkMaxAge 限制 raw 清理依赖的聚合成功新鲜度。
+	nativePruneWatermarkMaxAge = 30 * time.Minute
+)
+
+// NativePruneOptions 控制一次清理；零值使用默认批量/预算/限速。
+type NativePruneOptions struct {
+	DryRun    bool
+	BatchRows int
+	Budget    time.Duration
+	Pause     time.Duration
+	// VacuumPages <=0 使用 SQLiteStore 配置（默认 5000）。
+	VacuumPages int
+}
+
+// NativePruneStats 是一轮清理的统计。
+type NativePruneStats struct {
+	Duration    time.Duration
+	DeletedRaw  int64
+	Deleted1m   int64
+	Deleted5m   int64
+	Deleted1h   int64
+	Batches     int
+	BusyErrors  int
+	LastSuccess time.Time
+	LastError   string
+	RawSkipped  bool
+	DryRun      bool
+	BudgetHit   bool
+	// Vacuum 统计（仅 auto_vacuum=INCREMENTAL 且实际删除后）。
+	VacuumPages      int64
+	VacuumBatches    int
+	FreelistBefore   int64
+	FreelistAfter    int64
+	VacuumDuration   time.Duration
+	VacuumBusyErrors int
+}
+
+// LastNativePruneStats 返回最近一轮清理统计。
+func (s *SQLiteStore) LastNativePruneStats() NativePruneStats {
+	s.pruneStatsMu.Lock()
+	defer s.pruneStatsMu.Unlock()
+	return s.lastPruneStats
+}
+
+// PruneNodeMetrics 兼容旧调用：按默认批量/预算执行一次清理。
+func (s *SQLiteStore) PruneNodeMetrics(ctx context.Context, now time.Time) error {
+	_, err := s.PruneNodeMetricsWithOptions(ctx, now, NativePruneOptions{})
+	return err
+}
+
+// PruneNodeMetricsWithOptions 分批删除过期 raw/rollup。rollup 独立清理；
+// raw 仅在上一次聚合成功且不超过 30 分钟时删除，上界取 min(now-rawRetention, watermark)。
+// 每批独立事务，某层失败不影响其他层；预算耗尽后停止后续层。
+func (s *SQLiteStore) PruneNodeMetricsWithOptions(ctx context.Context, now time.Time, opts NativePruneOptions) (NativePruneStats, error) {
+	started := time.Now()
+	stats := NativePruneStats{DryRun: opts.DryRun}
+	if opts.BatchRows <= 0 {
+		opts.BatchRows = NativePruneBatchRows
+	}
+	if opts.Budget <= 0 {
+		opts.Budget = NativePruneBudget
+	}
+	if opts.Pause <= 0 {
+		opts.Pause = nativePrunePause
+	}
 	now = now.UTC()
 	if now.IsZero() {
 		now = time.Now().UTC()
 	}
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
+	retention := s.retention()
+	deadline := started.Add(opts.Budget)
 
-	if _, err := tx.ExecContext(ctx, `DELETE FROM node_metric_samples WHERE timestamp < ?`,
-		formatNativeTime(now.Add(-NativeRawRetention))); err != nil {
-		return err
-	}
-	retentions := map[string]time.Duration{
-		NativeTier1m: Native1mRetention,
-		NativeTier5m: Native5mRetention,
-		NativeTier1h: Native1hRetention,
-	}
-	for tier, retention := range retentions {
-		if _, err := tx.ExecContext(ctx, `DELETE FROM node_metric_rollups WHERE tier = ? AND bucket_start < ?`,
-			tier, formatNativeTime(now.Add(-retention))); err != nil {
-			return err
+	rawCutoff := now.Add(-retention.Raw)
+	watermark := s.aggregateWatermarkTime()
+	if watermark.IsZero() || now.Sub(watermark) > nativePruneWatermarkMaxAge {
+		stats.RawSkipped = true
+	} else {
+		if watermark.Before(rawCutoff) {
+			rawCutoff = watermark
+		}
+		if rawCutoff.After(now) {
+			rawCutoff = now
 		}
 	}
-	if err := tx.Commit(); err != nil {
+
+	var firstErr error
+	recordErr := func(err error) {
+		if err == nil {
+			return
+		}
+		if firstErr == nil {
+			firstErr = err
+		}
+		stats.LastError = err.Error()
+		if IsBusyError(err) {
+			stats.BusyErrors++
+		}
+	}
+
+	runLayer := func(table, where string, args []any) (int64, int) {
+		if stats.BudgetHit || !time.Now().Before(deadline) {
+			stats.BudgetHit = true
+			return 0, 0
+		}
+		if opts.DryRun {
+			var count int64
+			if err := s.queryer(ctx).QueryRowContext(ctx, `SELECT COUNT(*) FROM `+table+` WHERE `+where, args...).Scan(&count); err != nil {
+				recordErr(err)
+				return 0, 0
+			}
+			return count, 0
+		}
+		var deleted int64
+		batches := 0
+		for {
+			if !time.Now().Before(deadline) {
+				stats.BudgetHit = true
+				return deleted, batches
+			}
+			tx, err := s.db.BeginTx(ctx, nil)
+			if err != nil {
+				recordErr(err)
+				return deleted, batches
+			}
+			result, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE rowid IN (
+				SELECT rowid FROM `+table+` WHERE `+where+` LIMIT ?)`, append(args, opts.BatchRows)...)
+			if err != nil {
+				tx.Rollback()
+				recordErr(err)
+				return deleted, batches
+			}
+			affected, _ := result.RowsAffected()
+			if err := tx.Commit(); err != nil {
+				recordErr(err)
+				return deleted, batches
+			}
+			deleted += affected
+			batches++
+			if affected < int64(opts.BatchRows) {
+				return deleted, batches
+			}
+			if opts.Pause > 0 {
+				select {
+				case <-ctx.Done():
+					recordErr(ctx.Err())
+					return deleted, batches
+				case <-time.After(opts.Pause):
+				}
+			}
+		}
+	}
+
+	if !stats.RawSkipped {
+		deleted, n := runLayer("node_metric_samples", `timestamp < ?`, []any{formatNativeTime(rawCutoff)})
+		stats.DeletedRaw += deleted
+		stats.Batches += n
+	}
+	if !stats.BudgetHit {
+		deleted, n := runLayer("node_metric_rollups", `tier = ? AND bucket_start < ?`,
+			[]any{NativeTier1m, formatNativeTime(now.Add(-retention.OneMinute))})
+		stats.Deleted1m += deleted
+		stats.Batches += n
+	}
+	if !stats.BudgetHit {
+		deleted, n := runLayer("node_metric_rollups", `tier = ? AND bucket_start < ?`,
+			[]any{NativeTier5m, formatNativeTime(now.Add(-retention.FiveMinute))})
+		stats.Deleted5m += deleted
+		stats.Batches += n
+	}
+	if !stats.BudgetHit {
+		deleted, n := runLayer("node_metric_rollups", `tier = ? AND bucket_start < ?`,
+			[]any{NativeTier1h, formatNativeTime(now.Add(-retention.OneHour))})
+		stats.Deleted1h += deleted
+		stats.Batches += n
+	}
+
+	if !opts.DryRun && (stats.DeletedRaw+stats.Deleted1m+stats.Deleted5m+stats.Deleted1h) > 0 {
+		s.metricGeneration.Add(1)
+		// 仅 auto_vacuum=INCREMENTAL 时小批量归还页；仍受本轮 prune 预算约束。
+		if time.Now().Before(deadline) {
+			pages := opts.VacuumPages
+			if pages <= 0 {
+				pages = s.vacuumPages()
+			}
+			vstats, err := s.drainFreePages(ctx, NativeDrainOptions{
+				MaxPages: pages, BatchPages: nativeVacuumBatchPages,
+				Budget: time.Until(deadline),
+			})
+			stats.VacuumPages = vstats.PagesReclaimed
+			stats.VacuumBatches = vstats.Batches
+			stats.FreelistBefore = vstats.FreelistBefore
+			stats.FreelistAfter = vstats.FreelistAfter
+			stats.VacuumDuration = vstats.Duration
+			stats.VacuumBusyErrors = vstats.BusyErrors
+			if err != nil {
+				recordErr(err)
+			}
+		}
+	}
+	stats.Duration = time.Since(started)
+	if firstErr == nil {
+		stats.LastSuccess = now
+	}
+	s.pruneStatsMu.Lock()
+	s.lastPruneStats = stats
+	s.pruneStatsMu.Unlock()
+	attrs := []any{
+		"duration", stats.Duration, "raw", stats.DeletedRaw, "1m", stats.Deleted1m,
+		"5m", stats.Deleted5m, "1h", stats.Deleted1h, "batches", stats.Batches,
+		"busy_errors", stats.BusyErrors, "raw_skipped", stats.RawSkipped,
+		"dry_run", stats.DryRun, "budget_hit", stats.BudgetHit,
+		"vacuum_pages", stats.VacuumPages, "vacuum_batches", stats.VacuumBatches,
+		"freelist_before", stats.FreelistBefore, "freelist_after", stats.FreelistAfter,
+		"vacuum_duration", stats.VacuumDuration, "vacuum_busy", stats.VacuumBusyErrors,
+	}
+	if firstErr != nil {
+		slog.Default().Warn("native metric prune completed with errors", append(attrs, "error", firstErr)...)
+	} else {
+		slog.Default().Info("native metric prune completed", attrs...)
+	}
+	return stats, firstErr
+}
+
+// EnableIncrementalVacuum 停机执行 auto_vacuum=INCREMENTAL + VACUUM。
+// 调用方必须确保没有其他 Hub 实例/长事务；VACUUM 需要约 2x 磁盘空间。
+func (s *SQLiteStore) EnableIncrementalVacuum(ctx context.Context) error {
+	if _, err := s.db.ExecContext(ctx, `PRAGMA auto_vacuum=INCREMENTAL`); err != nil {
 		return err
 	}
-	s.metricGeneration.Add(1)
+	if _, err := s.db.ExecContext(ctx, `VACUUM`); err != nil {
+		return err
+	}
+	var mode int
+	if err := s.db.QueryRowContext(ctx, `PRAGMA auto_vacuum`).Scan(&mode); err != nil {
+		return err
+	}
+	if mode != 2 {
+		return fmt.Errorf("auto_vacuum = %d, want 2 (INCREMENTAL)", mode)
+	}
 	return nil
 }
 

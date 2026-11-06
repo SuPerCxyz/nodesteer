@@ -441,6 +441,7 @@ func TestNativeMetricPrune(t *testing.T) {
 	insertRollup(NativeTier1h, now.Add(-731*24*time.Hour))
 	insertRollup(NativeTier1h, now.Add(-729*24*time.Hour))
 
+	st.markAggregateSuccess(context.Background(), now)
 	if err := st.PruneNodeMetrics(ctx, now); err != nil {
 		t.Fatalf("prune: %v", err)
 	}
@@ -1337,6 +1338,7 @@ func TestNativeMetricsMultiNodeRestartRecovery(t *testing.T) {
 	}
 	// 重启后保留清理仍按原策略工作：原始样本过期删除，1m 聚合仍在保留期内。
 	pruneNow := base.Add(NativeRawRetention + time.Hour)
+	st.markAggregateSuccess(context.Background(), pruneNow)
 	if err := st.PruneNodeMetrics(ctx, pruneNow); err != nil {
 		t.Fatalf("prune after restart: %v", err)
 	}
