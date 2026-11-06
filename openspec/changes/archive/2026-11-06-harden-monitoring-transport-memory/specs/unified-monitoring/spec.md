@@ -90,8 +90,6 @@ Agent SHALL 将 WebSocket 发送队列限制为 32 帧和 1MiB 估算字节、�
 - **THEN** 完整容器扫描周期降为 60s、最多采集 32 个容器
 - **AND** 仍上报 `container.collection.discovered_count/sampled_count/limit`
 
-## MODIFIED Requirements
-
 ### Requirement: 原生指标聚合窗口
 
 Hub SHALL 将既有“每层向前 10 桶”语义扩展为“10 桶与 1h 迟到窗口取更早者”，并保持 `node_id + metric + dimensions + timestamp` 幂等与 raw 保留期不变。
