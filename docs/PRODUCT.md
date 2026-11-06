@@ -1377,7 +1377,7 @@ Settings
 - 状态语义：pending/uploading/delivering/running → info；maintenance/stale → warning；critical/firing → danger；resolved → success；silenced/unknown/空值 → neutral。
 - 黄色、橙色、红色只用于告警、错误、危险；Swap、CPU iowait、磁盘写等普通指标不得使用告警色。
 - 普通/告警图表色板、对比度门槛和旧配色回滚方式见 `docs/UI_GUIDELINES.md` 与 `docs/CHART_PALETTE.md`。
-- 默认配色为 **Spectrum Light（E）**（`spectrum-theme.css` + `data-palette='spectrum'`）；上一版品牌蓝和更早旧色分别通过 `web/src/config/palette-mode.ts` 的 `PALETTE_MODE='new'` / `'legacy'` 回滚，不提供设置页开关。
+- 默认配色为 **Azure Pop（A）**（`azure-theme.css` + `data-palette='azure'`）；`spectrum`（E）、上一版品牌蓝和更早旧色分别通过 `web/src/config/palette-mode.ts` 的 `PALETTE_MODE='spectrum'` / `'new'` / `'legacy'` 回滚，不提供设置页开关。
 
 明确例外：
 

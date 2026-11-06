@@ -180,7 +180,8 @@ describe('RackList / RackRow', () => {
     expect(track.className).toContain('h-2')
     expect(track.className).toContain('ring-1')
     expect(track.className).toContain('bg-muted-foreground/20')
-    expect(bar.className).toContain('bg-warning')
+    expect(bar.className).toContain('bg-usage-warning')
+    expect(bar.className).not.toContain('bg-warning')
   })
 
   it('clamps progress bars and applies tone colors', async () => {

@@ -1108,9 +1108,11 @@ function ContainerMetricCard({
   }
   return (
     <Card data-testid={`metric-card-container-${cardId[metric]}`}>
-      <CardHeader>
-        <CardTitle className='text-sm'>{title}</CardTitle>
-      </CardHeader>
+      {!chart.length && (
+        <CardHeader>
+          <CardTitle className='text-sm'>{title}</CardTitle>
+        </CardHeader>
+      )}
       <CardContent className='space-y-3'>
         {query.error && (
           <ErrorState
@@ -1123,6 +1125,8 @@ function ContainerMetricCard({
         {chart.length > 0 && (
           <MultiSeriesChart
             series={chart}
+            title={title}
+            legendInline
             height={180}
             yDomain='auto'
             unit={chart[0]?.unit}
@@ -1959,7 +1963,7 @@ export function NodeMonitoringDetail({ nodeId }: { nodeId: string }) {
             formatter={formatPercent}
             chartLabel={t('monitoring.swap')}
             testId='metric-card-swap'
-            paletteId='series-11'
+            paletteId='series-7'
             hideLatest
           />
           <LoadCard

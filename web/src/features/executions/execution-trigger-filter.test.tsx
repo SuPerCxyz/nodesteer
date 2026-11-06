@@ -1,10 +1,18 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from '@/i18n'
 import '@/styles/index.css'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 import { render } from 'vitest-browser-react'
-import { userEvent } from 'vitest/browser'
-import { SidebarProvider } from '@/components/ui/sidebar'
+import { page as browserPage, userEvent } from 'vitest/browser'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { Executions } from './index'
 
 const { getPage, get, scope } = vi.hoisted(() => ({
@@ -86,9 +94,11 @@ async function renderExecutions() {
   })
   const page = await render(
     <SidebarProvider>
-      <QueryClientProvider client={client}>
-        <Executions />
-      </QueryClientProvider>
+      <SidebarInset>
+        <QueryClientProvider client={client}>
+          <Executions />
+        </QueryClientProvider>
+      </SidebarInset>
     </SidebarProvider>
   )
   const workspace = page.getByTestId('executions-workspace').element()
@@ -109,6 +119,37 @@ describe('执行列表触发方式筛选枚举（OBS-20261016-P17P18-04-SYSTEM-T
     get.mockReset()
     getPage.mockResolvedValue({ items: [EXECUTION], total: 1 })
     get.mockResolvedValue([])
+  })
+
+  afterEach(async () => {
+    await browserPage.viewport(1280, 720)
+  })
+
+  it('1366 下搜索、状态/触发筛选与视图按钮位于同一行', async () => {
+    await browserPage.viewport(1366, 768)
+    const page = await renderExecutions()
+    const search = page.getByRole('textbox', {
+      name: i18n.t('executions.searchPlaceholder'),
+    })
+    const status = page.getByRole('combobox', {
+      name: i18n.t('common.status'),
+    })
+    const trigger = page.getByRole('combobox', {
+      name: i18n.t('executions.trigger'),
+    })
+    const view = page.getByRole('button', { name: i18n.t('common.view') })
+    await expect.element(search).toBeVisible()
+    await expect.element(status).toBeVisible()
+    await expect.element(trigger).toBeVisible()
+    await expect.element(view).toBeVisible()
+    const boxes = [search, status, trigger, view].map((locator) =>
+      locator.element().getBoundingClientRect()
+    )
+    expect(
+      Math.max(...boxes.map((box) => box.top)) -
+        Math.min(...boxes.map((box) => box.top))
+    ).toBeLessThanOrEqual(2)
+    expect(boxes[3].left).toBeGreaterThan(boxes[2].right)
   })
 
   it('不暴露系统无法产出的 system 触发枚举（一期无系统触发）', async () => {

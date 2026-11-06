@@ -381,9 +381,12 @@ describe('NodeMonitoringTable 进度与标签列', () => {
       .element(page.getByTestId('dashboard-disk-tone-2'))
       .toHaveAttribute('data-tone', 'danger')
 
-    expect(
-      page.getByTestId('dashboard-memory-tone-1-bar').element().className
-    ).toContain('bg-warning')
+    const warningBar = page.getByTestId('dashboard-memory-tone-1-bar').element()
+    expect(warningBar.className).toContain('bg-usage-warning')
+    expect(warningBar.className).not.toContain('bg-warning')
+    expect(getComputedStyle(warningBar).backgroundColor).toBe(
+      'rgb(253, 230, 138)'
+    )
     expect(
       page.getByTestId('dashboard-memory-tone-2-bar').element().className
     ).toContain('bg-danger')

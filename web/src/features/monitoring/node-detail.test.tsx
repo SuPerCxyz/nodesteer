@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from '@/i18n'
+import '@/styles/index.css'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { page as browserPage, userEvent } from 'vitest/browser'
 import { ThemeProvider } from '@/context/theme-provider'
-import { SidebarProvider } from '@/components/ui/sidebar'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { NodeMonitoringDetail } from './node-detail'
 
 const { get } = vi.hoisted(() => ({ get: vi.fn() }))
@@ -281,11 +282,13 @@ function renderDetail() {
   })
   return render(
     <SidebarProvider>
-      <QueryClientProvider client={client}>
-        <ThemeProvider>
-          <NodeMonitoringDetail nodeId='node-1' />
-        </ThemeProvider>
-      </QueryClientProvider>
+      <SidebarInset>
+        <QueryClientProvider client={client}>
+          <ThemeProvider>
+            <NodeMonitoringDetail nodeId='node-1' />
+          </ThemeProvider>
+        </QueryClientProvider>
+      </SidebarInset>
     </SidebarProvider>
   )
 }
@@ -711,9 +714,18 @@ describe('节点监控详情', () => {
             .elements().length
       )
       .toBeGreaterThan(0)
-    const containerChart = page
-      .getByTestId('metric-card-container-cpu')
-      .getByTestId('multi-series-chart')
+    const containerCpu = page.getByTestId('metric-card-container-cpu')
+    const containerChart = containerCpu.getByTestId('multi-series-chart')
+    const title = containerCpu.getByText(i18n.t('monitoring.cpu'), {
+      exact: true,
+    })
+    const legend = containerCpu.getByRole('button', { name: 'beszel' })
+    const titleBox = title.element().getBoundingClientRect()
+    const legendBox = legend.element().getBoundingClientRect()
+    expect(Math.abs(titleBox.top - legendBox.top)).toBeLessThan(12)
+    expect(legend.element().parentElement?.className).toContain(
+      'overflow-x-auto'
+    )
     await userEvent.hover(containerChart.getByTestId('chart-overlay'))
     const tooltip = page.getByTestId('chart-tooltip')
     await expect.element(tooltip).toHaveTextContent('beszel')
@@ -971,7 +983,7 @@ describe('节点监控详情', () => {
       .toHaveTextContent(i18n.t('monitoring.cpuSteal'))
   })
 
-  it('Swap、CPU iowait 与磁盘写使用普通系列色而非告警色', async () => {
+  it('Swap 使用亮色系列，CPU iowait/磁盘写保持普通系列色', async () => {
     const page = await renderDetail()
     const paletteOf = (testId: string, seriesId: string) => {
       const node = page
@@ -982,14 +994,17 @@ describe('节点监控详情', () => {
     }
     await expect
       .poll(() => paletteOf('metric-card-swap', 'memory.swap_usage'))
-      .toBe('series-11')
+      .toBe('series-7')
     await expect
       .poll(() => paletteOf('metric-card-cpu', 'cpu.iowait'))
       .toBe('series-11')
     await expect
       .poll(() => paletteOf('metric-card-disk-io-sda', 'disk.write_bps'))
       .toBe('series-12')
-    for (const palette of ['series-11', 'series-12']) {
+    expect(paletteOf('metric-card-swap', 'memory.swap_usage')).not.toBe(
+      'series-11'
+    )
+    for (const palette of ['series-7', 'series-11', 'series-12']) {
       expect(palette.startsWith('alert-')).toBe(false)
     }
   })

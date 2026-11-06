@@ -28,13 +28,13 @@
 
 ## 图表色板
 
-- 默认调色板为 **Spectrum Light（E）**，由 `spectrum-theme.css` 通过 `[data-palette='spectrum']` 覆盖浅色和 `.dark` 变量；`theme.css`/`legacy-theme.css` 不再直接改动。
+- 默认调色板为 **Azure Pop（A）**，由 `azure-theme.css` 通过 `[data-palette='azure']` 覆盖浅色和 `.dark` 变量；`spectrum`/`new`/`legacy` 作为回滚快照保留。
 - 普通系列：`series-1..16`，定义在 `chart-palette.ts`，颜色只通过 `var(--chart-series-N-from/to)` 引用，业务代码不含 hex。
 - 告警系列：仅通过 `chart-alert.ts` 的 `getChartAlertStyle('danger'|'warning'|'info')` 取得，禁止普通哈希分配。
 - 未知指标：回退 `series-13` 中性灰。
 - 普通系列不得引用 `--chart-alert-*`；Swap、CPU iowait、磁盘写等普通指标不得显示为红/橙/黄告警色。
-- E 规格中 `alert-info` 与 `series-1` 同色，表示品牌信息色；danger/warning 与普通系列严格分离。
-- 渐变 stroke/area、图例、tooltip、明暗主题保持现有行为；tooltip 使用 `--tooltip`/`--tooltip-foreground`/`--tooltip-border`。
+- Swap 固定 `series-7` 靛蓝亮色；CPU iowait 为 `series-11`，磁盘写为 `series-12`。
+- 渐变 stroke/area、图例、tooltip、明暗主题保持现有行为；tooltip 使用 `--tooltip`/`--tooltip-foreground`/`--tooltip-muted`/`--tooltip-border`。
 
 ## 对比度门槛
 
@@ -42,24 +42,26 @@
 - 非文本控件边界、进度条、状态点：≥ 3:1。
 - `--input`、`--ring` 必须可见；ring 不透明。
 - `muted-foreground`、danger/warning 前景色需在浅/深主题分别验证。
-- Tooltip 使用独立 `--tooltip`/`--tooltip-foreground`/`--tooltip-border`，不复用 popover 的对比度假设。
+- Tooltip 使用独立 `--tooltip`/`--tooltip-foreground`/`--tooltip-muted`/`--tooltip-border`，不复用 popover 的对比度假设。
+- 使用率进度条：75–90% 为 `--usage-warning`（A 下 `#FDE68A`），>90% 为 `--danger`；`--usage-warning-strong` 为 `#FCD34D`，明暗主题相同。
 
 ## 调色板模式与回滚
 
 唯一开关：`web/src/config/palette-mode.ts`
 
 ```ts
-export type PaletteMode = 'spectrum' | 'new' | 'legacy'
-export const PALETTE_MODE: PaletteMode = 'spectrum'
+export type PaletteMode = 'azure' | 'spectrum' | 'new' | 'legacy'
+export const PALETTE_MODE: PaletteMode = 'azure'
 ```
 
-- `spectrum`（默认）：Spectrum Light（E），`spectrum-theme.css`。浅色 `--primary: #3B6FF5`、`--primary-2: #0B96A6`、`--background: #F1F5FB`、`--card: #FFFFFF`；深色 `--primary: #7AA2FF`、`--primary-2: #35CBDD`、`--background: #0A111C`、`--card: #111B2A`。
+- `azure`（默认）：Azure Pop（A），`azure-theme.css`。浅色 `--primary: #2563EB`、`--background: #F4F8FF`、`--card: #FFFFFF`；深色 `--primary: #60A5FA`、`--background: #08111F`、`--card: #0F1B2C`。
+- `spectrum`：Spectrum Light（E），`spectrum-theme.css`。浅色主色 `#3B6FF5`、深色 `#7AA2FF`。
 - `new`：上一版品牌蓝快照（`theme.css`），浅色主色 `#005FFB`、深色 `#5B9BFF`。
 - `legacy`：更早旧色快照（`legacy-theme.css`），浅色主色 `#1E293B`、深色 `#E2E8F0`。
 
-改为 `'new'` 或 `'legacy'` 并重建即可。不提供设置页开关；也可在浏览器临时设置
-`document.documentElement.dataset.palette = 'new' | 'legacy' | 'spectrum'` 验证。
-浅色 `--text-faint` 使用 AA 版本 `#617286`，`--chart-axis` 为 `#66778B`。
+改为 `'spectrum'`、`'new'` 或 `'legacy'` 并重建即可。不提供设置页开关；也可在浏览器临时设置
+`document.documentElement.dataset.palette = 'azure' | 'spectrum' | 'new' | 'legacy'` 验证。
+浅色 `--text-faint` 为 `#5F7084`，`--chart-axis` 为 `#5B6B80`。
 
 ## 等宽字体子集
 

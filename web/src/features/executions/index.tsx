@@ -6,7 +6,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
-import type { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef, Table as ReactTable } from '@tanstack/react-table'
 import { Clipboard, Loader2, StopCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { DataTableViewOptions } from '@/components/data-table'
 import { Main } from '@/components/layout/main'
 import { NodeSteerHeader } from '@/components/layout/nodesteer-header'
 import { DataTable } from '@/features/shared/data-table'
@@ -41,7 +42,6 @@ import {
   DetailField,
   DetailGrid,
   DurationValue,
-  EmptyState,
   ErrorPage,
   ErrorState,
   LoadingState,
@@ -334,6 +334,69 @@ export function Executions() {
     [labels, nodeNames, scheduleNames, t, taskNames]
   )
 
+  const renderToolbar = (table: ReactTable<Execution>) => (
+    <div className='flex min-w-0 items-start gap-2'>
+      <div className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
+        <div className='relative w-full sm:w-64'>
+          <Input
+            className='h-8'
+            value={search.q || ''}
+            onChange={(event) => update('q', event.target.value)}
+            placeholder={t('executions.searchPlaceholder')}
+            aria-label={t('executions.searchPlaceholder')}
+          />
+        </div>
+        <Select
+          value={search.status || 'all'}
+          onValueChange={(value) =>
+            update('status', value === 'all' ? '' : value)
+          }
+        >
+          <SelectTrigger
+            className='h-8 w-[150px]'
+            aria-label={t('common.status')}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='all'>{t('executions.all')}</SelectItem>
+            {executionStatuses.map((status) => (
+              <SelectItem key={status} value={status}>
+                {
+                  executionStatusLabels[status][
+                    i18n.language === 'en' ? 'en' : 'zh'
+                  ]
+                }
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={search.trigger || 'all'}
+          onValueChange={(value) =>
+            update('trigger', value === 'all' ? '' : value)
+          }
+        >
+          <SelectTrigger
+            className='h-8 w-[160px]'
+            aria-label={t('executions.trigger')}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='all'>{t('executions.allTriggers')}</SelectItem>
+            {triggers.map((trigger) => (
+              <SelectItem key={trigger} value={trigger}>
+                {labels[trigger as keyof typeof labels] || trigger}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <DataTableViewOptions table={table} />
+    </div>
+  )
+
   return (
     <>
       <NodeSteerHeader
@@ -376,90 +439,27 @@ export function Executions() {
                     </Button>
                   </div>
                 )}
-                <div className='flex flex-wrap items-center gap-2'>
-                  <div className='relative w-full sm:w-64'>
-                    <Input
-                      className='h-8'
-                      value={search.q || ''}
-                      onChange={(event) => update('q', event.target.value)}
-                      placeholder={t('executions.searchPlaceholder')}
-                      aria-label={t('executions.searchPlaceholder')}
-                    />
-                  </div>
-                  <Select
-                    value={search.status || 'all'}
-                    onValueChange={(value) =>
-                      update('status', value === 'all' ? '' : value)
-                    }
-                  >
-                    <SelectTrigger
-                      className='h-8 w-[150px]'
-                      aria-label={t('common.status')}
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='all'>{t('executions.all')}</SelectItem>
-                      {executionStatuses.map((status) => (
-                        <SelectItem key={status} value={status}>
-                          {
-                            executionStatusLabels[status][
-                              i18n.language === 'en' ? 'en' : 'zh'
-                            ]
-                          }
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value={search.trigger || 'all'}
-                    onValueChange={(value) =>
-                      update('trigger', value === 'all' ? '' : value)
-                    }
-                  >
-                    <SelectTrigger
-                      className='h-8 w-[160px]'
-                      aria-label={t('executions.trigger')}
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='all'>
-                        {t('executions.allTriggers')}
-                      </SelectItem>
-                      {triggers.map((trigger) => (
-                        <SelectItem key={trigger} value={trigger}>
-                          {labels[trigger as keyof typeof labels] || trigger}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {(query.data?.total ?? 0) === 0 ? (
-                  <EmptyState
-                    message={
-                      search.q || search.status || search.trigger
-                        ? t('executions.noMatching')
-                        : t('executions.noExecs')
-                    }
-                  />
-                ) : (
-                  <DataTable
-                    data={visible}
-                    columns={columns}
-                    hideSearch
-                    storageKey='executions'
-                    variant='rack'
-                    rackPrimaryColumnId='task'
-                    manualPagination
-                    total={query.data?.total ?? 0}
-                    page={page}
-                    pageSize={pageSize}
-                    onPageChange={setPage}
-                    onPageSizeChange={setPageSize}
-                    searchPlaceholder={t('executions.searchPlaceholder')}
-                  />
-                )}
+                <DataTable
+                  data={visible}
+                  columns={columns}
+                  hideSearch
+                  storageKey='executions'
+                  variant='rack'
+                  rackPrimaryColumnId='task'
+                  manualPagination
+                  total={query.data?.total ?? 0}
+                  page={page}
+                  pageSize={pageSize}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                  searchPlaceholder={t('executions.searchPlaceholder')}
+                  renderToolbar={renderToolbar}
+                  emptyMessage={
+                    search.q || search.status || search.trigger
+                      ? t('executions.noMatching')
+                      : t('executions.noExecs')
+                  }
+                />
               </>
             )}
           </CardContent>

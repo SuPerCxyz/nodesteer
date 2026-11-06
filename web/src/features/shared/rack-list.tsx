@@ -13,7 +13,7 @@ export type RackTone = 'success' | 'warning' | 'danger' | 'neutral'
 
 const barTone: Record<RackTone, string> = {
   success: 'bg-success',
-  warning: 'bg-warning',
+  warning: 'bg-usage-warning',
   danger: 'bg-danger',
   neutral: 'bg-muted-foreground/50',
 }

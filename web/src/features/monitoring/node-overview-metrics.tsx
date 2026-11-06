@@ -43,7 +43,7 @@ export function NodeMetricBar({
     tone === 'danger'
       ? 'bg-danger'
       : tone === 'warning'
-        ? 'bg-warning'
+        ? 'bg-usage-warning'
         : 'bg-success'
   return (
     <div

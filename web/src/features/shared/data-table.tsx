@@ -133,6 +133,7 @@ export function DataTable<TData>({
   rackKind,
   filters,
   toolbarActions,
+  renderToolbar,
   emptyMessage,
   emptyAction,
   inset = false,
@@ -178,6 +179,8 @@ export function DataTable<TData>({
   filters?: DataTableToolbarProps<TData>['filters']
   /** 工具栏右侧次要操作（批量/导出等），位于视图选项之前。 */
   toolbarActions?: React.ReactNode
+  /** 完全替换默认工具栏；用于接入服务端搜索/筛选并保留视图选项。 */
+  renderToolbar?: (table: ReactTable<TData>) => React.ReactNode
   emptyMessage?: string
   emptyAction?: React.ReactNode
   /** 嵌入外部 Card 时启用统一内边距，并去掉表格自带边框避免双层。 */
@@ -279,13 +282,17 @@ export function DataTable<TData>({
         className={`flex flex-1 flex-col ${inset ? 'gap-0' : 'gap-3'} ${className}`}
       >
         <div className={inset ? 'px-4 pt-4 pb-3 sm:px-6' : undefined}>
-          <DataTableToolbar
-            table={table}
-            searchPlaceholder={searchPlaceholder}
-            hideSearch={hideSearch}
-            filters={filters}
-            actions={toolbarActions}
-          />
+          {renderToolbar ? (
+            renderToolbar(table)
+          ) : (
+            <DataTableToolbar
+              table={table}
+              searchPlaceholder={searchPlaceholder}
+              hideSearch={hideSearch}
+              filters={filters}
+              actions={toolbarActions}
+            />
+          )}
         </div>
         <RackList
           testId='data-table-rack'
@@ -397,13 +404,17 @@ export function DataTable<TData>({
   return (
     <div className={`flex flex-1 flex-col gap-4 ${className}`}>
       <div className={inset ? 'px-4 pt-4 sm:px-6' : undefined}>
-        <DataTableToolbar
-          table={table}
-          searchPlaceholder={searchPlaceholder}
-          hideSearch={hideSearch}
-          filters={filters}
-          actions={toolbarActions}
-        />
+        {renderToolbar ? (
+          renderToolbar(table)
+        ) : (
+          <DataTableToolbar
+            table={table}
+            searchPlaceholder={searchPlaceholder}
+            hideSearch={hideSearch}
+            filters={filters}
+            actions={toolbarActions}
+          />
+        )}
       </div>
       <div className={cn('overflow-hidden', !inset && 'rounded-md border')}>
         <Table

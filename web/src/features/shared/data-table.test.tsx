@@ -1,9 +1,9 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import i18n from '@/i18n'
 import '@/styles/index.css'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { render } from 'vitest-browser-react'
-import { userEvent } from 'vitest/browser'
+import { page as browserPage, userEvent } from 'vitest/browser'
 import { DataTable } from './data-table'
 
 type Row = { id: string; name: string }
@@ -145,6 +145,63 @@ describe('DataTable 工具栏筛选与操作槽', () => {
     await expect
       .element(page.getByRole('button', { name: '创建节点' }))
       .toBeVisible()
+  })
+})
+
+describe('DataTable 工具栏布局', () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage('zh')
+  })
+
+  afterEach(async () => {
+    await browserPage.viewport(1280, 720)
+  })
+
+  it('1366 下搜索、筛选与视图按钮位于同一行', async () => {
+    await browserPage.viewport(1366, 768)
+    const filterColumns: ColumnDef<Row>[] = [
+      {
+        accessorKey: 'name',
+        header: '名称',
+        filterFn: (row, columnId, value: string[]) =>
+          value.includes(String(row.getValue(columnId))),
+      },
+      columns[1],
+    ]
+    const page = await render(
+      <DataTable
+        data={[
+          { id: 'a', name: 'node-a' },
+          { id: 'b', name: 'node-b' },
+        ]}
+        columns={filterColumns}
+        searchPlaceholder='搜索节点'
+        filters={[
+          {
+            columnId: 'name',
+            title: '筛选名称',
+            options: [
+              { label: 'node-a', value: 'node-a' },
+              { label: 'node-b', value: 'node-b' },
+            ],
+          },
+        ]}
+      />
+    )
+
+    const search = page.getByRole('textbox', { name: '搜索节点' })
+    const filter = page.getByRole('button', {
+      name: '筛选名称',
+      exact: true,
+    })
+    const view = page.getByRole('button', { name: i18n.t('common.view') })
+    await expect.element(search).toBeVisible()
+    await expect.element(filter).toBeVisible()
+    await expect.element(view).toBeVisible()
+    const tops = [search, filter, view].map(
+      (locator) => locator.element().getBoundingClientRect().top
+    )
+    expect(Math.max(...tops) - Math.min(...tops)).toBeLessThanOrEqual(2)
   })
 })
 

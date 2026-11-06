@@ -346,6 +346,7 @@ function areaPath(upper: ChartPoint[], lower: ChartPoint[]) {
 function MultiSeriesChartImpl({
   series,
   title,
+  legendInline = false,
   height = 220,
   yDomain = 'auto',
   unit,
@@ -360,6 +361,8 @@ function MultiSeriesChartImpl({
 }: {
   series: ChartSeries[]
   title?: ReactNode
+  /** 容器图：标题与名称图例同排，图例横向滚动而不换行。 */
+  legendInline?: boolean
   height?: number
   yDomain?: [number, number] | 'auto'
   unit?: string
@@ -648,15 +651,25 @@ function MultiSeriesChartImpl({
       className={cn('relative w-full min-w-0', className)}
     >
       {(title || showLegend) && (
-        <div className='mb-2 flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1'>
+        <div
+          className={cn(
+            'mb-2 flex min-w-0 items-center gap-x-3',
+            legendInline
+              ? 'flex-nowrap'
+              : 'flex-wrap justify-between gap-y-1'
+          )}
+        >
           {title ? (
             <div className='shrink-0 text-sm font-medium'>{title}</div>
           ) : null}
           {showLegend && (
             <div
               className={cn(
-                'flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-xs',
-                title ? 'justify-end' : 'justify-start'
+                'flex min-w-0 flex-1 items-center gap-x-3 text-xs',
+                legendInline
+                  ? 'flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+                  : 'flex-wrap justify-end gap-y-1',
+                !title && 'justify-start'
               )}
             >
               {prepared.map((item) => (
@@ -670,7 +683,8 @@ function MultiSeriesChartImpl({
                     onSeriesClick ? onSeriesClick(item.key) : toggle(item.key)
                   }
                   className={cn(
-                    'flex max-w-full min-w-0 items-center gap-1.5 text-start whitespace-nowrap text-muted-foreground transition-opacity hover:text-foreground',
+                    'flex items-center gap-1.5 text-start whitespace-nowrap text-muted-foreground transition-opacity hover:text-foreground',
+                    legendInline ? 'shrink-0' : 'max-w-full min-w-0',
                     hidden.has(item.key) && 'line-through opacity-40'
                   )}
                   aria-pressed={!hidden.has(item.key)}
@@ -681,7 +695,11 @@ function MultiSeriesChartImpl({
                       background: `linear-gradient(90deg, ${item.style.from}, ${item.style.to})`,
                     }}
                   />
-                  <span className='min-w-0 truncate'>{item.name}</span>
+                  <span
+                    className={cn('min-w-0', !legendInline && 'truncate')}
+                  >
+                    {item.name}
+                  </span>
                   {!item.hideLegendValue && (
                     <span className='text-foreground tabular-nums'>
                       {item.latest === null ? '—' : fmt(item.latest)}

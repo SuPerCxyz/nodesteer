@@ -35,7 +35,7 @@ describe('系统主题同步', () => {
     originalCookie = getCookie('vite-ui-theme')
     originalClass = document.documentElement.className
     originalPalette = document.documentElement.dataset.palette
-    document.documentElement.dataset.palette = 'spectrum'
+    document.documentElement.dataset.palette = 'azure'
     removeCookie('vite-ui-theme')
     const existing = document.querySelector<HTMLMetaElement>(
       "meta[name='theme-color']"
@@ -72,15 +72,15 @@ describe('系统主题同步', () => {
     await expect.element(getByText('dark', { exact: true })).toBeVisible()
     expect(document.documentElement.classList.contains('dark')).toBe(true)
     // meta theme-color 直接读取当前 palette 的 --background。
-    expect(meta.content).toBe('#0a111c')
+    expect(meta.content).toBe('#08111f')
     await userEvent.click(getByRole('button', { name: '选浅色' }))
     await expect.element(getByText('light', { exact: true })).toBeVisible()
-    expect(meta.content).toBe('#f1f5fb')
+    expect(meta.content).toBe('#f4f8ff')
     dark = false
     media.dispatchEvent(new Event('change'))
     dark = true
     media.dispatchEvent(new Event('change'))
     await expect.element(getByText('light', { exact: true })).toBeVisible()
-    expect(meta.content).toBe('#f1f5fb')
+    expect(meta.content).toBe('#f4f8ff')
   })
 })

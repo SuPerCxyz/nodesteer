@@ -4,34 +4,66 @@
 
 - `web/src/config/chart-palette.ts`：普通 `series-1..16`，只引用 `--chart-series-*`
 - `web/src/config/chart-alert.ts`：告警/错误独立色
-- `web/src/styles/spectrum-theme.css`：默认 **Spectrum Light（E）** 的浅色/深色变量
+- `web/src/styles/azure-theme.css`：默认 **Azure Pop（A）** 的浅色/深色变量
+- `web/src/styles/spectrum-theme.css`：`spectrum`（E）回滚快照
 - `web/src/styles/theme.css`：`new`（上一版品牌蓝）基线
 - `web/src/styles/legacy-theme.css` + `chart-palette.legacy.ts`：更早的 `legacy` 快照
-- `web/src/config/palette-mode.ts`：唯一回滚开关，默认 `'spectrum'`
+- `web/src/config/palette-mode.ts`：唯一回滚开关，默认 `'azure'`
 
 ## 调色板模式
 
-`palette-mode.ts` 默认为 `'spectrum'`，在 `<html data-palette='spectrum'>` 时由
-`spectrum-theme.css` 覆盖浅色和 `.dark` 变量。两种回滚模式只切换同一个常量并重建：
+`palette-mode.ts` 默认为 `'azure'`，在 `<html data-palette='azure'>` 时由
+`azure-theme.css` 覆盖浅色和 `.dark` 变量。其余模式只切换同一个常量并重建：
 
 ```ts
-export const PALETTE_MODE: PaletteMode = 'spectrum' // 'new' | 'legacy'
+export const PALETTE_MODE: PaletteMode = 'azure' // 'spectrum' | 'new' | 'legacy'
 ```
 
 | 模式 | 含义 | 浅色主色 | 深色主色 |
 |---|---|---|---|
-| `spectrum`（默认） | Spectrum Light（E） | `#3B6FF5` | `#7AA2FF` |
+| `azure`（默认） | Azure Pop（A） | `#2563EB` | `#60A5FA` |
+| `spectrum` | Spectrum Light（E） | `#3B6FF5` | `#7AA2FF` |
 | `new` | 上一版品牌蓝（`theme.css`） | `#005FFB` | `#5B9BFF` |
 | `legacy` | 更早旧色（`legacy-theme.css`） | `#1E293B` | `#E2E8F0` |
 
 不提供设置页 UI。浏览器临时验证：
 
 ```js
+document.documentElement.dataset.palette = 'spectrum'
 document.documentElement.dataset.palette = 'new'
 document.documentElement.dataset.palette = 'legacy'
 ```
 
-## Spectrum Light（E）普通系列
+## Azure Pop（A）普通系列
+
+| # | 浅色 from → to | 深色 from → to |
+|---|---|---|
+| 1 | `#2056CA → #2563EB` | `#7DB5FB → #60A5FA` |
+| 2 | `#087D9A → #0891B2` | `#4ADBF1 → #22D3EE` |
+| 3 | `#0C7F77 → #0D9488` | `#53DCCB → #2DD4BF` |
+| 4 | `#0D8861 → #0E9F6E` | `#59DBAB → #34D399` |
+| 5 | `#0372AC → #0284C7` | `#5CC9F9 → #38BDF8` |
+| 6 | `#6933CC → #7C3AED` | `#B7A0FB → #A78BFA` |
+| 7 | `#433EC5 → #4F46E5` | `#98A1F9 → #818CF8` |
+| 8 | `#8E4AD4 → #A855F7` | `#CB9AFD → #C084FC` |
+| 9 | `#148C43 → #16A34A` | `#6BE497 → #4ADE80` |
+| 10 | `#135267 → #155E75` | `#82ECFA → #67E8F9` |
+| 11 | `#A223B6 → #C026D3` | `#EC91FA → #E879F9` |
+| 12 | `#953376 → #B03A86` | `#F79FD4 → #F58ACB` |
+| 13 | `#4E6178 → #5C7089` | `#B8C7DB → #A9BBD3` |
+| 14 | `#346092 → #3C6FA8` | `#A3C8F3 → #8FBCF0` |
+| 15 | `#286D67 → #2E7F75` | `#89DDD0 → #6FD6C6` |
+| 16 | `#75508A → #8A5C9E` | `#D6BDE6 → #CDAEE0` |
+
+告警梯度：warning `#754E05 → #8A5A00`（深色 `#FCCB4B → #FBBF24`）、danger
+`#9D1A1C → #B91C1C`（深色 `#F98B8B → #F87171`）、info `#045B8C → #0369A1`
+（深色 `#94DBFD → #7DD3FC`）。普通系列与全部 alert token 分离。
+
+图表框架：`--chart-axis` 浅色 `#5B6B80` / 深色 `#98A9C1`；`--chart-grid` 浅色
+`rgba(15,27,43,.075)` / 深色 `rgba(232,240,250,.09)`；`--chart-grid-strong` 浅色
+`rgba(15,27,43,.16)` / 深色 `rgba(232,240,250,.20)`。
+
+## Spectrum Light（E）回滚快照
 
 | # | 浅色 from → to | 深色 from → to |
 |---|---|---|
@@ -84,13 +116,14 @@ const danger = getChartAlertStyle('danger', 'dark')
 
 ## 映射约定
 
-- Swap、CPU iowait：`series-11` 蓝灰
-- CPU softirq：`series-9` 紫
-- 磁盘写：`series-12` 梅红
+- Swap：`series-7` 靛蓝亮色（不跟随 iowait，不使用灰色）
+- CPU iowait：`series-11`（A 下为洋红，非告警色）
+- CPU softirq：`series-9`
+- 磁盘写：`series-12`
 - 内存 free：`series-11`
 - 文件系统 total：`series-13` 中性灰
-- 温度：`series-15` 橄榄绿
-- 风扇：`series-16` 青绿
+- 温度：`series-15`
+- 风扇：`series-16`
 - 网络错误/丢包：`chart-alert`
 
 `MultiSeriesChart` 继续统一生成渐变 stroke、fill、图例、tooltip 和 hover 圆点。

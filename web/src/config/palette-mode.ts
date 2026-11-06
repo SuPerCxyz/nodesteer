@@ -1,11 +1,12 @@
 /**
- * Palette rollback switch. Default is the Spectrum Light (E) palette.
- * Set to 'new' for the previous brand-blue snapshot, or 'legacy' for the
- * older snapshot. No settings-page UI: change this one constant and rebuild.
+ * Palette rollback switch. Default is the Azure Pop (A) palette.
+ * Set to 'spectrum' for Spectrum Light (E), 'new' for the previous brand-blue
+ * snapshot, or 'legacy' for the older snapshot.
+ * No settings-page UI: change this one constant and rebuild.
  */
-export type PaletteMode = 'spectrum' | 'new' | 'legacy'
+export type PaletteMode = 'azure' | 'spectrum' | 'new' | 'legacy'
 
-export const PALETTE_MODE: PaletteMode = 'spectrum'
+export const PALETTE_MODE: PaletteMode = 'azure'
 
 export function applyPaletteMode(
   root: HTMLElement = document.documentElement,
