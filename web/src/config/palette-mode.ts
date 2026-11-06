@@ -1,12 +1,15 @@
 /**
- * Single rollback switch. Set to 'legacy' to restore the pre-token palette.
- * No settings-page UI: change this one constant and rebuild.
+ * Palette rollback switch. Default is the Spectrum Light (E) palette.
+ * Set to 'new' for the previous brand-blue snapshot, or 'legacy' for the
+ * older snapshot. No settings-page UI: change this one constant and rebuild.
  */
-export const PALETTE_MODE: 'new' | 'legacy' = 'new'
+export type PaletteMode = 'spectrum' | 'new' | 'legacy'
+
+export const PALETTE_MODE: PaletteMode = 'spectrum'
 
 export function applyPaletteMode(
   root: HTMLElement = document.documentElement,
-  mode: 'new' | 'legacy' = PALETTE_MODE
+  mode: PaletteMode = PALETTE_MODE
 ) {
   root.dataset.palette = mode
 }

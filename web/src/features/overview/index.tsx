@@ -25,6 +25,7 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
+  StateCard,
   StatusBadge,
   TimeValue,
 } from '@/features/shared/ui'
@@ -180,7 +181,9 @@ export function Dashboard() {
           description={t('dashboard.description')}
         />
         <Main>
-          <LoadingState />
+          <StateCard>
+            <LoadingState />
+          </StateCard>
         </Main>
       </>
     )
@@ -189,7 +192,9 @@ export function Dashboard() {
       <>
         <NodeSteerHeader title={t('dashboard.title')} />
         <Main>
-          <ErrorState error={query.error} onRetry={() => query.refetch()} />
+          <StateCard>
+            <ErrorState error={query.error} onRetry={() => query.refetch()} />
+          </StateCard>
         </Main>
       </>
     )

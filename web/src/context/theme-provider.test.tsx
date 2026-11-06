@@ -1,3 +1,4 @@
+import '@/styles/index.css'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { userEvent } from 'vitest/browser'
@@ -21,6 +22,7 @@ describe('系统主题同步', () => {
   let originalMeta: string | null
   let originalClass: string
   let originalCookie: string | undefined
+  let originalPalette: string | undefined
   let createdMeta: boolean
   beforeEach(() => {
     dark = false
@@ -32,6 +34,8 @@ describe('系统主题同步', () => {
     )
     originalCookie = getCookie('vite-ui-theme')
     originalClass = document.documentElement.className
+    originalPalette = document.documentElement.dataset.palette
+    document.documentElement.dataset.palette = 'spectrum'
     removeCookie('vite-ui-theme')
     const existing = document.querySelector<HTMLMetaElement>(
       "meta[name='theme-color']"
@@ -45,6 +49,11 @@ describe('系统主题同步', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
     document.documentElement.className = originalClass
+    if (originalPalette === undefined) {
+      delete document.documentElement.dataset.palette
+    } else {
+      document.documentElement.dataset.palette = originalPalette
+    }
     if (createdMeta) meta.remove()
     else if (originalMeta === null) meta.removeAttribute('content')
     else meta.content = originalMeta
@@ -62,15 +71,16 @@ describe('系统主题同步', () => {
     media.dispatchEvent(new Event('change'))
     await expect.element(getByText('dark', { exact: true })).toBeVisible()
     expect(document.documentElement.classList.contains('dark')).toBe(true)
-    expect(meta.content).toBe('black')
+    // meta theme-color 直接读取当前 palette 的 --background。
+    expect(meta.content).toBe('#0a111c')
     await userEvent.click(getByRole('button', { name: '选浅色' }))
     await expect.element(getByText('light', { exact: true })).toBeVisible()
-    expect(meta.content).toBe('white')
+    expect(meta.content).toBe('#f1f5fb')
     dark = false
     media.dispatchEvent(new Event('change'))
     dark = true
     media.dispatchEvent(new Event('change'))
     await expect.element(getByText('light', { exact: true })).toBeVisible()
-    expect(meta.content).toBe('white')
+    expect(meta.content).toBe('#f1f5fb')
   })
 })

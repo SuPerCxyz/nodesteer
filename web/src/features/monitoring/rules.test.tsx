@@ -130,9 +130,7 @@ async function openRuleEvents() {
   )
   await expect
     .element(
-      page.getByRole('heading', {
-        name: i18n.t('monitoring.triggerHistory'),
-      })
+      page.getByText(i18n.t('monitoring.triggerHistory'), { exact: true })
     )
     .toBeVisible()
   return page
@@ -536,6 +534,13 @@ describe('联动规则页：加载、错误与空态', () => {
     await expect
       .element(page.getByText(i18n.t('rules.listTitle')))
       .toBeVisible()
+    await expect.element(page.getByText(i18n.t('rules.noRules'))).toBeVisible()
+    expect(
+      page
+        .getByText(i18n.t('rules.noRules'))
+        .element()
+        .closest('[data-card="list"]')
+    ).not.toBeNull()
     await expect
       .element(page.getByText(i18n.t('monitoring.httpServices')))
       .not.toBeInTheDocument()

@@ -342,7 +342,7 @@ export function Executions() {
       />
       <Main className='flex flex-1 flex-col gap-6'>
         <Card data-testid='executions-workspace' className='min-w-0'>
-          <CardContent className='space-y-4'>
+          <CardContent className='space-y-4 px-4 sm:px-6'>
             {query.isError ? (
               <ErrorState error={query.error} onRetry={() => query.refetch()} />
             ) : query.isLoading ? (
@@ -604,13 +604,6 @@ export function ExecutionDetail() {
             setStopOpen(false)
           }}
         />
-        <div className='flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-muted-foreground'>
-          <span>
-            {t('executions.id')}: {exec.id}
-          </span>
-          <span>r{exec.task_revision || '-'}</span>
-          <TimeValue value={exec.start_time} absolute />
-        </div>
         <SectionGrid>
           <SectionCard title={t('executions.process')}>
             <div className='grid gap-4'>
@@ -701,6 +694,13 @@ export function ExecutionDetail() {
                 {exec.synced ? t('executions.yes') : t('executions.no')}
               </DetailField>
             </DetailGrid>
+            <div className='mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-3 font-mono text-xs text-muted-foreground'>
+              <span>
+                {t('executions.id')}: {exec.id}
+              </span>
+              <span>r{exec.task_revision || '-'}</span>
+              <TimeValue value={exec.start_time} absolute />
+            </div>
           </SectionCard>
         </SectionGrid>
         <SectionCard title={t('executions.result')}>

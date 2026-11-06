@@ -169,9 +169,12 @@ describe('告警页', () => {
 
     await expect.element(page.getByText(RULE.name)).toBeVisible()
     await expect.element(page.getByText('node-a')).toBeVisible()
-    await userEvent.click(
-      page.getByRole('button', { name: i18n.t('alerts.newRule'), exact: true })
-    )
+    const newRule = page.getByRole('button', {
+      name: i18n.t('alerts.newRule'),
+      exact: true,
+    })
+    expect(newRule.element().className).toContain('bg-header-action')
+    await userEvent.click(newRule)
 
     await userEvent.fill(
       page.getByRole('textbox', { name: i18n.t('alerts.name') }),

@@ -302,6 +302,7 @@ function MetricChartCard({
   emptyMessage,
   paletteId,
   seriesId,
+  hideLatest = false,
 }: {
   nodeId: string
   metric: string
@@ -317,6 +318,7 @@ function MetricChartCard({
   emptyMessage?: string
   paletteId?: ChartPaletteId
   seriesId?: string
+  hideLatest?: boolean
 }) {
   const { t } = useTranslation()
   const seriesQuery = useMetricSeries(nodeId, metric)
@@ -364,16 +366,18 @@ function MetricChartCard({
         )}
       </CardHeader>
       <CardContent className='flex flex-1 flex-col gap-3'>
-        <p className='text-sm'>
-          <span className='text-muted-foreground'>
-            {t('monitoring.latestValue')}:{' '}
-          </span>
-          <span className='font-medium'>
-            {latest === null
-              ? t('monitoring.waitingForData')
-              : formatter(latest) || t('monitoring.waitingForData')}
-          </span>
-        </p>
+        {!hideLatest && (
+          <p className='text-sm'>
+            <span className='text-muted-foreground'>
+              {t('monitoring.latestValue')}:{' '}
+            </span>
+            <span className='font-medium'>
+              {latest === null
+                ? t('monitoring.waitingForData')
+                : formatter(latest) || t('monitoring.waitingForData')}
+            </span>
+          </p>
+        )}
         {error ? (
           <ErrorState error={error} onRetry={retry} />
         ) : seriesQuery.isLoading || (series && history.isLoading) ? (
@@ -520,13 +524,16 @@ function MultiMetricCard({
     historyQueries.some((query) => query.isLoading)
   return (
     <Card data-testid={testId} className={cn('flex flex-col', className)}>
-      <CardHeader>
-        <CardTitle className='text-sm'>{title}</CardTitle>
-      </CardHeader>
+      {!chartSeries.length && (
+        <CardHeader>
+          <CardTitle className='text-sm'>{title}</CardTitle>
+        </CardHeader>
+      )}
       <CardContent className='flex flex-1 flex-col gap-2'>
         {chartSeries.length > 0 && (
           <MultiSeriesChart
             series={chartSeries}
+            title={title}
             height={height}
             yDomain={yDomain}
             unit={chartSeries[0]?.unit}
@@ -970,10 +977,7 @@ function ContainerSection({
               </SelectItem>
               {identities.map((id) => (
                 <SelectItem key={id} value={id}>
-                  {names.get(id)} ·{' '}
-                  {id.startsWith('legacy:')
-                    ? t('monitoring.legacy')
-                    : id.slice(3, 15)}
+                  {names.get(id)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -1082,7 +1086,8 @@ function ContainerMetricCard({
       ? [
           {
             key: item.seriesKey,
-            name: `${name} · ${item.dimensions.container_id ? item.dimensions.container_id.slice(0, 12) : t('monitoring.legacy')}`,
+            name,
+            hideLegendValue: true,
             points: history.points,
             gaps: history.gaps,
             stepNs: history.stepNs,
@@ -1232,17 +1237,13 @@ function ContainerDetailDialog({
                 aria-pressed={identity === selected}
               >
                 <span className='truncate'>{names.get(identity)}</span>
-                <span className='shrink-0 font-mono text-[10px] text-muted-foreground'>
-                  {identity.startsWith('legacy:')
-                    ? t('monitoring.legacy')
-                    : identity.slice(3, 11)}
-                </span>
               </button>
             ))}
           </div>
           <div className='grid min-h-0 gap-4 overflow-auto p-3 sm:grid-cols-2'>
             {CONTAINER_METRICS.map((metric, index) => {
               const history = histories[index].data
+              const query = histories[index]
               const name = selectedSeries[index]
                 ? containerIdentity(selectedSeries[index])
                 : ''
@@ -1262,7 +1263,16 @@ function ContainerDetailDialog({
                     <CardTitle className='text-sm'>{title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {history ? (
+                    {query.error ? (
+                      <ErrorState
+                        error={query.error}
+                        onRetry={() => {
+                          void query.refetch()
+                        }}
+                      />
+                    ) : query.isLoading ? (
+                      <LoadingState />
+                    ) : history && history.points.some(historyPointValid) ? (
                       <MultiSeriesChart
                         series={[
                           {
@@ -1435,11 +1445,6 @@ function CpuChartCard({
         )}
       </CardHeader>
       <CardContent className='flex flex-1 flex-col gap-3'>
-        <p className='text-sm'>
-          {t('monitoring.latestValue')}:{' '}
-          {formatPercent(latestPointValue(history.data?.points || [])) ||
-            t('monitoring.waitingForData')}
-        </p>
         {error ? (
           <ErrorState
             error={error}
@@ -1463,33 +1468,6 @@ function CpuChartCard({
           <p className='text-sm text-muted-foreground'>
             {t('monitoring.noSeries')}
           </p>
-        )}
-        {history.data && breakdownSeries.some(Boolean) && (
-          <div data-testid='cpu-breakdown' className='space-y-1.5'>
-            <h4 className='text-xs font-medium'>
-              {t('monitoring.cpuBreakdown')}
-            </h4>
-            <div className='grid grid-cols-5 gap-2 text-xs'>
-              {CPU_BREAKDOWN.map((item, index) => {
-                const latest = latestPointValue(
-                  breakdownHistories[index].data?.points || []
-                )
-                return (
-                  <div
-                    key={item.metric}
-                    data-testid={`cpu-breakdown-${item.short}`}
-                    className='flex min-w-0 flex-col rounded-md border bg-muted/20 px-2 py-1'
-                    title={t(item.labelKey)}
-                  >
-                    <span className='text-muted-foreground'>{item.short}</span>
-                    <span className='font-medium text-foreground tabular-nums'>
-                      {formatPercent(latest) || '—'}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
         )}
         {expanded && (
           <div className='space-y-2 border-t pt-3'>
@@ -1548,62 +1526,6 @@ function LoadCard({
       testId='metric-card-load'
       height={180}
     />
-  )
-}
-
-function NetworkMetricRow({
-  label,
-  history,
-  chartLabel,
-  paletteId,
-  seriesId,
-}: {
-  label: string
-  history?: History
-  chartLabel: string
-  paletteId?: ChartPaletteId
-  seriesId: string
-}) {
-  const { t } = useTranslation()
-  const latest = latestPointValue(history?.points || [])
-  const hasValidPoints = (history?.points || []).some(historyPointValid)
-  return (
-    <div className='space-y-2'>
-      <div className='flex items-center justify-between gap-2 text-sm'>
-        <span className='text-muted-foreground'>{label}</span>
-        <span className='font-medium'>
-          {latest === null
-            ? t('monitoring.waitingForData')
-            : formatBps(latest) || t('monitoring.waitingForData')}
-        </span>
-      </div>
-      {hasValidPoints && history ? (
-        <MultiSeriesChart
-          series={[
-            {
-              key: chartLabel,
-              seriesId,
-              paletteId,
-              name: label,
-              points: history.points,
-              unit: history.unit,
-              gaps: history.gaps,
-              stepNs: history.stepNs,
-            },
-          ]}
-          height={110}
-          yDomain='auto'
-          unit={history.unit}
-          showLegend={false}
-          formatValue={formatBps}
-          ariaLabel={chartLabel}
-        />
-      ) : (
-        <p className='text-sm text-muted-foreground'>
-          {t('monitoring.noPoints')}
-        </p>
-      )}
-    </div>
   )
 }
 
@@ -1721,22 +1643,48 @@ function NetworkCard({
             {t('monitoring.waitingForData')}
           </p>
         ) : (
-          <>
-            <NetworkMetricRow
-              label={t('monitoring.networkRx')}
-              history={rxHistory.data}
-              chartLabel={`${t('monitoring.network')} ${t('monitoring.networkRx')}`}
-              paletteId='series-2'
-              seriesId='network.rx_bps'
-            />
-            <NetworkMetricRow
-              label={t('monitoring.networkTx')}
-              history={txHistory.data}
-              chartLabel={`${t('monitoring.network')} ${t('monitoring.networkTx')}`}
-              paletteId='series-5'
-              seriesId='network.tx_bps'
-            />
-          </>
+          (() => {
+            const chart: ChartSeries[] = []
+            if (rxHistory.data) {
+              chart.push({
+                key: 'network.rx_bps',
+                seriesId: 'network.rx_bps',
+                paletteId: 'series-2',
+                name: t('monitoring.networkRx'),
+                points: rxHistory.data.points,
+                unit: rxHistory.data.unit,
+                gaps: rxHistory.data.gaps,
+                stepNs: rxHistory.data.stepNs,
+              })
+            }
+            if (txHistory.data) {
+              chart.push({
+                key: 'network.tx_bps',
+                seriesId: 'network.tx_bps',
+                paletteId: 'series-5',
+                name: t('monitoring.networkTx'),
+                points: txHistory.data.points,
+                unit: txHistory.data.unit,
+                gaps: txHistory.data.gaps,
+                stepNs: txHistory.data.stepNs,
+              })
+            }
+            return chart.some((item) => item.points.some(historyPointValid)) ? (
+              <MultiSeriesChart
+                series={chart}
+                height={200}
+                yDomain='auto'
+                unit={chart[0]?.unit}
+                showLegend
+                formatValue={formatBps}
+                ariaLabel={t('monitoring.network')}
+              />
+            ) : (
+              <p className='text-sm text-muted-foreground'>
+                {t('monitoring.noPoints')}
+              </p>
+            )
+          })()
         )}
       </CardContent>
     </Card>
@@ -2012,6 +1960,7 @@ export function NodeMonitoringDetail({ nodeId }: { nodeId: string }) {
             chartLabel={t('monitoring.swap')}
             testId='metric-card-swap'
             paletteId='series-11'
+            hideLatest
           />
           <LoadCard
             nodeId={nodeId}

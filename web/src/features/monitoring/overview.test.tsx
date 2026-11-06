@@ -1,8 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from '@/i18n'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import '@/styles/index.css'
+import {
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  afterEach,
+} from 'vitest'
 import { render } from 'vitest-browser-react'
-import { userEvent } from 'vitest/browser'
+import { userEvent, page as browserPage } from 'vitest/browser'
 import type { Node } from '@/lib/api'
 import { ThemeProvider } from '@/context/theme-provider'
 import { NodeMonitoringTable } from './node-monitoring-table'
@@ -128,6 +137,10 @@ function renderOverview() {
 describe('节点监控总览', () => {
   beforeAll(async () => {
     await i18n.changeLanguage('zh')
+  })
+
+  afterEach(async () => {
+    await browserPage.viewport(1280, 720)
   })
 
   beforeEach(() => {
@@ -419,5 +432,51 @@ describe('NodeMonitoringTable 进度与标签列', () => {
         'temperature-value',
       ])
     }
+  })
+
+  it('1920 下负载/网络/温度位于进度条右侧，行高 60–65px 且无空列', async () => {
+    await browserPage.viewport(1920, 1080)
+    const page = await renderTable()
+    const row = page.getByTestId('node-monitoring-row-tone-1').element()
+    const tags = page.getByTestId('node-tags-tone-1').element()
+    const fields = row.querySelector('[data-slot="rack-fields"]') as HTMLElement
+    const actions = row.querySelector(
+      '[data-slot="row-actions"]'
+    ) as HTMLElement
+
+    const columns = getComputedStyle(row).gridTemplateColumns.split(' ')
+    expect(columns).toHaveLength(4)
+
+    const tagsRect = tags.getBoundingClientRect()
+    const fieldsRect = fields.getBoundingClientRect()
+    const actionsRect = actions.getBoundingClientRect()
+    expect(tagsRect.left).toBeGreaterThanOrEqual(fieldsRect.right - 1)
+    expect(tagsRect.right).toBeLessThanOrEqual(actionsRect.left + 1)
+    // 标签与进度条同一行，不再占用第二行
+    expect(
+      Math.abs(
+        tagsRect.top +
+          tagsRect.height / 2 -
+          (fieldsRect.top + fieldsRect.height / 2)
+      )
+    ).toBeLessThanOrEqual(2)
+
+    const height = row.getBoundingClientRect().height
+    expect(height).toBeGreaterThanOrEqual(60)
+    expect(height).toBeLessThanOrEqual(65)
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(1921)
+  })
+
+  it('390 下标签回退为流式布局且页面不横向溢出', async () => {
+    await browserPage.viewport(390, 844)
+    const page = await renderTable()
+
+    const row = page.getByTestId('node-monitoring-row-tone-1').element()
+    const grid = page.getByTestId('node-tags-tone-1').element()
+    expect(getComputedStyle(grid).display).toBe('none')
+    expect(row.scrollWidth).toBeLessThanOrEqual(row.clientWidth + 1)
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+      window.innerWidth + 1
+    )
   })
 })

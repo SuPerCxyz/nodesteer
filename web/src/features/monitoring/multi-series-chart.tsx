@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
 } from 'react'
 import { getChartAlertStyle, type ChartAlertTone } from '@/config/chart-alert'
 import {
@@ -24,6 +25,7 @@ export type ChartSeries = {
   key: string
   name: string
   tooltipName?: string
+  hideLegendValue?: boolean
   points: History['points']
   unit?: string
   type?: 'area' | 'line'
@@ -343,6 +345,7 @@ function areaPath(upper: ChartPoint[], lower: ChartPoint[]) {
 
 function MultiSeriesChartImpl({
   series,
+  title,
   height = 220,
   yDomain = 'auto',
   unit,
@@ -356,6 +359,7 @@ function MultiSeriesChartImpl({
   ariaLabel,
 }: {
   series: ChartSeries[]
+  title?: ReactNode
   height?: number
   yDomain?: [number, number] | 'auto'
   unit?: string
@@ -643,36 +647,50 @@ function MultiSeriesChartImpl({
       data-theme={isDark ? 'dark' : 'light'}
       className={cn('relative w-full min-w-0', className)}
     >
-      {showLegend && (
-        <div className='mb-2 flex flex-wrap gap-x-3 gap-y-1 text-xs'>
-          {prepared.map((item) => (
-            <button
-              key={item.key}
-              type='button'
-              data-series-key={item.key}
-              data-series-id={item.seriesId}
-              data-palette-id={item.style.paletteId}
-              onClick={() =>
-                onSeriesClick ? onSeriesClick(item.key) : toggle(item.key)
-              }
+      {(title || showLegend) && (
+        <div className='mb-2 flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1'>
+          {title ? (
+            <div className='shrink-0 text-sm font-medium'>{title}</div>
+          ) : null}
+          {showLegend && (
+            <div
               className={cn(
-                'flex max-w-full min-w-0 items-center gap-1.5 text-start text-muted-foreground transition-opacity hover:text-foreground',
-                hidden.has(item.key) && 'line-through opacity-40'
+                'flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-xs',
+                title ? 'justify-end' : 'justify-start'
               )}
-              aria-pressed={!hidden.has(item.key)}
             >
-              <span
-                className='h-1.5 w-4 shrink-0 rounded-full'
-                style={{
-                  background: `linear-gradient(90deg, ${item.style.from}, ${item.style.to})`,
-                }}
-              />
-              <span className='min-w-0 break-all'>{item.name}</span>
-              <span className='text-foreground tabular-nums'>
-                {item.latest === null ? '—' : fmt(item.latest)}
-              </span>
-            </button>
-          ))}
+              {prepared.map((item) => (
+                <button
+                  key={item.key}
+                  type='button'
+                  data-series-key={item.key}
+                  data-series-id={item.seriesId}
+                  data-palette-id={item.style.paletteId}
+                  onClick={() =>
+                    onSeriesClick ? onSeriesClick(item.key) : toggle(item.key)
+                  }
+                  className={cn(
+                    'flex max-w-full min-w-0 items-center gap-1.5 text-start whitespace-nowrap text-muted-foreground transition-opacity hover:text-foreground',
+                    hidden.has(item.key) && 'line-through opacity-40'
+                  )}
+                  aria-pressed={!hidden.has(item.key)}
+                >
+                  <span
+                    className='h-1.5 w-4 shrink-0 rounded-full'
+                    style={{
+                      background: `linear-gradient(90deg, ${item.style.from}, ${item.style.to})`,
+                    }}
+                  />
+                  <span className='min-w-0 truncate'>{item.name}</span>
+                  {!item.hideLegendValue && (
+                    <span className='text-foreground tabular-nums'>
+                      {item.latest === null ? '—' : fmt(item.latest)}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
       <svg

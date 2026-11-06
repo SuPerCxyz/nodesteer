@@ -90,9 +90,11 @@ import {
   DropdownMenuItem,
   MoreMenu,
   LoadingState,
+  ListCard,
   SectionCard,
   SectionFull,
   SectionGrid,
+  StateCard,
   StatusBadge,
   TimeValue,
 } from '@/features/shared/ui'
@@ -440,7 +442,10 @@ export function Agents() {
         )}
         action={
           canWrite ? (
-            <Button onClick={() => setEnrollmentOpen(true)}>
+            <Button
+              variant='header-action'
+              onClick={() => setEnrollmentOpen(true)}
+            >
               <Plus className='size-4' />
               {t('nodes.addNode')}
             </Button>
@@ -2057,7 +2062,7 @@ export function Schedules() {
         emptyMessage={t('schedules.noSchedules')}
         action={
           canWrite ? (
-            <Button asChild>
+            <Button asChild variant='header-action'>
               <Link to='/schedules/new'>
                 <Plus className='me-1 size-4' />
                 {t('schedules.newSchedule')}
@@ -2267,7 +2272,7 @@ export function Scripts() {
       rackKind='scripts'
       action={
         canWrite ? (
-          <Button asChild>
+          <Button asChild variant='header-action'>
             <Link to='/scripts/new'>
               <Plus className='me-1 size-4' />
               {t('scripts.newScript')}
@@ -2392,7 +2397,7 @@ export function Groups() {
       rackKind='groups'
       action={
         canWrite ? (
-          <Button asChild>
+          <Button asChild variant='header-action'>
             <Link to='/groups/new'>
               <Plus className='me-1 size-4' />
               {t('groups.newGroup')}
@@ -2532,7 +2537,7 @@ export function Applications() {
       extra={deleteError ? <ErrorState error={new Error(deleteError)} /> : null}
       action={
         canWrite ? (
-          <Button asChild>
+          <Button asChild variant='header-action'>
             <Link to='/applications/new'>
               <Plus className='me-1 size-4' />
               {t('apps.newApp')}
@@ -2728,7 +2733,7 @@ export function Artifacts() {
       rackKind='artifacts'
       action={
         canWrite ? (
-          <Button asChild>
+          <Button asChild variant='header-action'>
             <Link to='/artifacts/new'>
               <Plus className='me-1 size-4' />
               {t('common.upload')}
@@ -3106,7 +3111,10 @@ export function Users() {
       searchPlaceholder={t('misc.usersSearch')}
       storageKey='users'
       action={
-        <Button onClick={() => setShowForm((value) => !value)}>
+        <Button
+          variant={showForm ? 'outline' : 'header-action'}
+          onClick={() => setShowForm((value) => !value)}
+        >
           {showForm ? t('common.cancel') : t('misc.newUser')}
         </Button>
       }
@@ -3471,7 +3479,6 @@ function ListLayout<TData>({
   /** 工具条读屏文案中的实体名 */
   bulkEntityName?: string
 }) {
-  const { t } = useTranslation()
   return (
     <>
       <NodeSteerHeader
@@ -3482,42 +3489,42 @@ function ListLayout<TData>({
       <Main className='flex flex-1 flex-col gap-6'>
         {extra}
         {query.isError ? (
-          <ErrorState error={query.error} onRetry={() => query.refetch()} />
+          <StateCard>
+            <ErrorState error={query.error} onRetry={() => query.refetch()} />
+          </StateCard>
         ) : query.isLoading ? (
-          <LoadingState />
-        ) : onFilterChange || data.length || (pagination?.total ?? 0) > 0 ? (
-          <DataTable
-            data={data}
-            columns={columns}
-            searchPlaceholder={searchPlaceholder}
-            storageKey={storageKey}
-            variant='rack'
-            rackPrimaryColumnId={rackPrimaryColumnId}
-            rackKind={rackKind}
-            manualPagination={Boolean(pagination)}
-            manualFiltering={Boolean(onFilterChange)}
-            filter={filter}
-            onFilterChange={onFilterChange}
-            total={pagination?.total}
-            page={pagination?.page}
-            pageSize={pagination?.pageSize}
-            onPageChange={pagination?.onPageChange}
-            onPageSizeChange={pagination?.onPageSizeChange}
-            filters={filters}
-            toolbarActions={toolbarActions}
-            emptyMessage={emptyMessage}
-            emptyAction={emptyAction}
-            enableRowSelection={enableRowSelection}
-            renderBulkActions={renderBulkActions}
-            bulkEntityName={bulkEntityName}
-          />
+          <StateCard>
+            <LoadingState />
+          </StateCard>
         ) : (
-          <Card>
-            <EmptyState
-              message={emptyMessage || t('common.noData')}
-              action={emptyAction}
+          <ListCard>
+            <DataTable
+              inset
+              data={data}
+              columns={columns}
+              searchPlaceholder={searchPlaceholder}
+              storageKey={storageKey}
+              variant='rack'
+              rackPrimaryColumnId={rackPrimaryColumnId}
+              rackKind={rackKind}
+              manualPagination={Boolean(pagination)}
+              manualFiltering={Boolean(onFilterChange)}
+              filter={filter}
+              onFilterChange={onFilterChange}
+              total={pagination?.total}
+              page={pagination?.page}
+              pageSize={pagination?.pageSize}
+              onPageChange={pagination?.onPageChange}
+              onPageSizeChange={pagination?.onPageSizeChange}
+              filters={filters}
+              toolbarActions={toolbarActions}
+              emptyMessage={emptyMessage}
+              emptyAction={emptyAction}
+              enableRowSelection={enableRowSelection}
+              renderBulkActions={renderBulkActions}
+              bulkEntityName={bulkEntityName}
             />
-          </Card>
+          </ListCard>
         )}
       </Main>
     </>

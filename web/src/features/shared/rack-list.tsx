@@ -357,7 +357,7 @@ export function RackRow({
           />
         ) : null}
         {tagsContent || tags?.length ? (
-          <div className='col-span-2 row-start-3 min-w-0 xl:col-span-3 xl:row-start-2'>
+          <div className='col-span-2 row-start-3 min-w-0 xl:col-span-3 xl:row-start-2 2xl:col-span-1 2xl:col-start-3 2xl:row-start-1'>
             {tagsContent ?? <RackTags items={tags || []} />}
           </div>
         ) : null}

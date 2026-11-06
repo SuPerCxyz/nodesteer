@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from '@/i18n'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
-import { userEvent } from 'vitest/browser'
+import { page as browserPage, userEvent } from 'vitest/browser'
 import { ThemeProvider } from '@/context/theme-provider'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { NodeMonitoringDetail } from './node-detail'
@@ -500,18 +500,23 @@ describe('节点监控详情', () => {
         })
       )
       .toBeVisible()
+    const networkChart = network.getByTestId('multi-series-chart')
+    await expect.element(networkChart).toBeVisible()
+    expect(network.getByTestId('multi-series-chart').elements()).toHaveLength(1)
+    const networkSeries = [
+      ...networkChart.element().querySelectorAll('g[data-series-id]'),
+    ].map((node) => node.getAttribute('data-series-id'))
+    expect(new Set(networkSeries)).toEqual(
+      new Set(['network.rx_bps', 'network.tx_bps'])
+    )
     await expect
       .element(
-        network.getByRole('img', {
-          name: `${i18n.t('monitoring.network')} ${i18n.t('monitoring.networkRx')}`,
-        })
+        network.getByText(i18n.t('monitoring.networkRx'), { exact: true })
       )
       .toBeVisible()
     await expect
       .element(
-        network.getByRole('img', {
-          name: `${i18n.t('monitoring.network')} ${i18n.t('monitoring.networkTx')}`,
-        })
+        network.getByText(i18n.t('monitoring.networkTx'), { exact: true })
       )
       .toBeVisible()
 
@@ -698,9 +703,6 @@ describe('节点监控详情', () => {
       .element(page.getByTestId('metric-card-container-cpu'))
       .toBeVisible()
     await expect
-      .element(page.getByTestId('metric-card-container-cpu'))
-      .toHaveTextContent('6.0%')
-    await expect
       .poll(
         () =>
           page
@@ -709,6 +711,14 @@ describe('节点监控详情', () => {
             .elements().length
       )
       .toBeGreaterThan(0)
+    const containerChart = page
+      .getByTestId('metric-card-container-cpu')
+      .getByTestId('multi-series-chart')
+    await userEvent.hover(containerChart.getByTestId('chart-overlay'))
+    const tooltip = page.getByTestId('chart-tooltip')
+    await expect.element(tooltip).toHaveTextContent('beszel')
+    await expect.element(tooltip).toHaveTextContent('%')
+    expect(tooltip.element().textContent).not.toMatch(/[0-9a-f]{12}/i)
   })
 
   it('容器网络图 Y 轴、图例与 tooltip 使用一致的速率单位', async () => {
@@ -755,7 +765,6 @@ describe('节点监控详情', () => {
       (node) => node.textContent || ''
     )
     expect(axisText.some((text) => text.includes('MB/s'))).toBe(true)
-    await expect.element(card).toHaveTextContent('2.0 MB/s')
 
     await userEvent.hover(chart.getByTestId('chart-overlay'))
     await expect
@@ -788,18 +797,22 @@ describe('节点监控详情', () => {
     })
     const page = await renderDetail()
     const cpu = page.getByTestId('metric-card-container-cpu')
-    await expect.element(cpu.getByText('web · first-id')).toBeVisible()
-    await expect.element(cpu.getByText('web · second-id')).toBeVisible()
-    await expect
-      .element(cpu.getByText(`web · ${i18n.t('monitoring.legacy')}`))
-      .toBeVisible()
+    await expect.element(cpu).toHaveTextContent('web')
+    expect(cpu.getByText(/first-id|second-id/).elements()).toHaveLength(0)
     const before = metricsPaths().length
     await userEvent.click(
       page.getByRole('combobox', { name: i18n.t('monitoring.containerMore') })
     )
-    await userEvent.click(page.getByRole('option', { name: 'web · first-id' }))
-    await expect.element(cpu.getByText('web · first-id')).toBeVisible()
-    expect(cpu.getByText('web · second-id').elements()).toHaveLength(0)
+    const options = page.getByRole('option', { name: 'web', exact: true })
+    expect(options.elements()).toHaveLength(3)
+    for (const option of options.elements()) {
+      expect(option.textContent).toBe('web')
+    }
+    await userEvent.click(options.first())
+    expect(cpu.getByText(/first-id|second-id/).elements()).toHaveLength(0)
+    expect(
+      cpu.getByText('web', { exact: true }).elements().length
+    ).toBeGreaterThan(0)
     expect(metricsPaths()).toHaveLength(before)
   })
 
@@ -842,13 +855,14 @@ describe('节点监控详情', () => {
     await expect.element(cpu).toHaveTextContent('CPU')
     expect(cpu.getByText(/^容器 /).elements()).toHaveLength(0)
 
-    await userEvent.click(cpu.getByRole('button', { name: /web · first-id/ }))
+    await userEvent.click(cpu.getByRole('button').first())
     const dialog = page.getByTestId('container-detail-dialog')
     await expect.element(dialog).toBeVisible()
     await expect
       .element(dialog.getByText(i18n.t('monitoring.containerDetail')))
       .toBeVisible()
     expect(dialog.getByTestId(/container-detail-/).elements().length).toBe(4)
+    expect(dialog.getByText(/first-id|second-id/).elements()).toHaveLength(0)
     await userEvent.keyboard('{Escape}')
     await expect.element(dialog).not.toBeInTheDocument()
 
@@ -884,6 +898,30 @@ describe('节点监控详情', () => {
       .toBeVisible()
   })
 
+  it('内存图例横向位于标题同一行，Swap 不显示最新值', async () => {
+    await browserPage.viewport(1920, 1080)
+    const page = await renderDetail()
+    const memory = page.getByTestId('metric-card-memory')
+    const title = memory.getByText(i18n.t('monitoring.memory'), { exact: true })
+    const cached = memory.getByRole('button', { name: /Cached/ })
+    const available = memory.getByRole('button', { name: /Available/ })
+    await expect.element(title).toBeVisible()
+    await expect.element(cached).toBeVisible()
+    await expect.element(available).toBeVisible()
+    expect(cached.element().parentElement).toBe(
+      available.element().parentElement
+    )
+    expect(cached.element().parentElement?.className).toContain('flex-wrap')
+    expect(cached.element().className).toContain('whitespace-nowrap')
+
+    const swap = page.getByTestId('metric-card-swap')
+    await expect.element(swap).toBeVisible()
+    expect(
+      swap.getByText(i18n.t('monitoring.latestValue')).elements()
+    ).toHaveLength(0)
+    await browserPage.viewport(1280, 720)
+  })
+
   it('CPU 默认总量，展开后加载真实分核', async () => {
     const page = await renderDetail()
     const cpu = page.getByTestId('metric-card-cpu')
@@ -909,22 +947,16 @@ describe('节点监控详情', () => {
       await expect
         .element(cpu.getByText(short, { exact: true }).first())
         .toBeVisible()
-      await expect
-        .element(page.getByTestId(`cpu-breakdown-${short}`))
-        .toBeVisible()
     }
     await expect
       .element(cpu.getByText(i18n.t('monitoring.totalUsage')))
       .toBeVisible()
     expect(cpu.getByText(/idle|闲置/i).elements()).toHaveLength(0)
     expect(metricsPaths().some((path) => path.includes('cpu.idle'))).toBe(false)
-
-    await expect
-      .element(page.getByTestId('cpu-breakdown-us'))
-      .toHaveTextContent('18.2%')
-    await expect
-      .element(page.getByTestId('cpu-breakdown-wa'))
-      .toHaveTextContent('2.1%')
+    expect(page.getByTestId('cpu-breakdown').elements()).toHaveLength(0)
+    expect(
+      cpu.getByText(i18n.t('monitoring.latestValue')).elements()
+    ).toHaveLength(0)
 
     await userEvent.hover(cpu.getByTestId('chart-overlay'))
     const tooltip = cpu.getByTestId('chart-tooltip')
@@ -1519,6 +1551,6 @@ describe('节点监控详情', () => {
       .toBeVisible()
     await expect
       .element(page.getByTestId('metric-card-cpu'))
-      .toHaveTextContent(i18n.t('monitoring.waitingForData'))
+      .toHaveTextContent(i18n.t('monitoring.noSeries'))
   })
 })

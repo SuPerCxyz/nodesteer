@@ -135,6 +135,7 @@ export function DataTable<TData>({
   toolbarActions,
   emptyMessage,
   emptyAction,
+  inset = false,
 }: {
   data: TData[]
   columns: ColumnDef<TData>[]
@@ -179,6 +180,8 @@ export function DataTable<TData>({
   toolbarActions?: React.ReactNode
   emptyMessage?: string
   emptyAction?: React.ReactNode
+  /** 嵌入外部 Card 时启用统一内边距，并去掉表格自带边框避免双层。 */
+  inset?: boolean
 }) {
   const { t } = useTranslation()
   const [sorting, setSorting] = useState<SortingState>([])
@@ -269,16 +272,26 @@ export function DataTable<TData>({
 
   if (variant === 'rack') {
     const rows = table.getRowModel().rows
+    const showPagination =
+      rows.length > 0 || (manualPagination && (total ?? 0) > 0)
     return (
-      <div className={`flex flex-1 flex-col gap-3 ${className}`}>
-        <DataTableToolbar
-          table={table}
-          searchPlaceholder={searchPlaceholder}
-          hideSearch={hideSearch}
-          filters={filters}
-          actions={toolbarActions}
-        />
-        <RackList testId='data-table-rack' kind={rackKind}>
+      <div
+        className={`flex flex-1 flex-col ${inset ? 'gap-0' : 'gap-3'} ${className}`}
+      >
+        <div className={inset ? 'px-4 pt-4 pb-3 sm:px-6' : undefined}>
+          <DataTableToolbar
+            table={table}
+            searchPlaceholder={searchPlaceholder}
+            hideSearch={hideSearch}
+            filters={filters}
+            actions={toolbarActions}
+          />
+        </div>
+        <RackList
+          testId='data-table-rack'
+          kind={rackKind}
+          className={inset ? 'px-4 sm:px-6' : undefined}
+        >
           {rows.length ? (
             rows.map((row) => {
               const cells = row.getVisibleCells()
@@ -370,24 +383,29 @@ export function DataTable<TData>({
             {renderBulkActions(table)}
           </DataTableBulkActions>
         ) : null}
-        <DataTablePagination
-          table={table}
-          totalRows={manualPagination ? total : undefined}
-        />
+        {showPagination ? (
+          <DataTablePagination
+            table={table}
+            totalRows={manualPagination ? total : undefined}
+            className={cn('border-t', inset ? 'px-4 py-3 sm:px-6' : 'pt-3')}
+          />
+        ) : null}
       </div>
     )
   }
 
   return (
     <div className={`flex flex-1 flex-col gap-4 ${className}`}>
-      <DataTableToolbar
-        table={table}
-        searchPlaceholder={searchPlaceholder}
-        hideSearch={hideSearch}
-        filters={filters}
-        actions={toolbarActions}
-      />
-      <div className='overflow-hidden rounded-md border'>
+      <div className={inset ? 'px-4 pt-4 sm:px-6' : undefined}>
+        <DataTableToolbar
+          table={table}
+          searchPlaceholder={searchPlaceholder}
+          hideSearch={hideSearch}
+          filters={filters}
+          actions={toolbarActions}
+        />
+      </div>
+      <div className={cn('overflow-hidden', !inset && 'rounded-md border')}>
         <Table
           className='table-fixed'
           style={{ minWidth: `${minTotalSize}px` }}
@@ -501,6 +519,7 @@ export function DataTable<TData>({
       <DataTablePagination
         table={table}
         totalRows={manualPagination ? total : undefined}
+        className={cn('border-t', inset ? 'px-4 py-3 sm:px-6' : 'pt-3')}
       />
     </div>
   )

@@ -8,7 +8,6 @@ import { api, type FileTransfer, type Node } from '@/lib/api'
 import { nodeDisplayName } from '@/lib/node-display-name'
 import { useCanWrite } from '@/lib/permissions'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -35,6 +34,7 @@ import {
   EmptyState,
   ErrorPage,
   ErrorState,
+  ListCard,
   LoadingState,
   MoreMenu,
   SectionCard,
@@ -303,6 +303,7 @@ export function FileTransfers() {
         action={
           canWrite ? (
             <Button
+              variant='header-action'
               disabled={create.isPending}
               onClick={() =>
                 editor.change(
@@ -335,180 +336,170 @@ export function FileTransfers() {
             onClose={editor.close}
             busy={create.isPending}
           >
-            <Card className='w-full'>
-              <CardHeader>
-                <CardTitle>{t('transfers.newTransfer')}</CardTitle>
-              </CardHeader>
-              <CardContent className='space-y-4'>
-                <InboundDataPlaneBanner
-                  nodes={[source, selectedTarget, ...targetNodes]}
-                />
-                <div className='grid gap-4 md:grid-cols-[minmax(180px,1fr)_minmax(0,2fr)_108px]'>
-                  <label className='grid gap-2 text-sm'>
-                    {t('transfers.source')}
-                    <Select
-                      value={sourceNodeID}
-                      onValueChange={(nodeID) => {
-                        setSourceNodeID(nodeID)
-                        setTargets((current) =>
-                          current.filter((target) => target.node_id !== nodeID)
-                        )
-                        if (targetNodeID === nodeID) setTargetNodeID('')
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={t('transfers.selectSource')}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(nodes.data || []).map((node) => (
+            <div className='space-y-4'>
+              <InboundDataPlaneBanner
+                nodes={[source, selectedTarget, ...targetNodes]}
+              />
+              <div className='grid gap-4 md:grid-cols-[minmax(180px,1fr)_minmax(0,2fr)_108px]'>
+                <label className='grid gap-2 text-sm'>
+                  {t('transfers.source')}
+                  <Select
+                    value={sourceNodeID}
+                    onValueChange={(nodeID) => {
+                      setSourceNodeID(nodeID)
+                      setTargets((current) =>
+                        current.filter((target) => target.node_id !== nodeID)
+                      )
+                      if (targetNodeID === nodeID) setTargetNodeID('')
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('transfers.selectSource')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(nodes.data || []).map((node) => (
+                        <SelectItem key={node.id} value={node.id}>
+                          {nodeDisplayName(node, t('common.unknownNode'))}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+                <label className='grid gap-2 text-sm'>
+                  {t('transfers.sourcePath')}
+                  <Input
+                    value={sourcePath}
+                    onChange={(event) => setSourcePath(event.target.value)}
+                    placeholder='/var/lib/app/config.yaml'
+                    className='font-mono'
+                  />
+                </label>
+                <div className='hidden md:block' aria-hidden='true' />
+              </div>
+              <div className='grid gap-4 md:grid-cols-[minmax(180px,1fr)_minmax(0,2fr)_108px]'>
+                <label className='grid gap-2 text-sm'>
+                  {t('transfers.target')}
+                  <Select value={targetNodeID} onValueChange={setTargetNodeID}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('transfers.selectTarget')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(nodes.data || [])
+                        .filter((node) => node.id !== sourceNodeID)
+                        .map((node) => (
                           <SelectItem key={node.id} value={node.id}>
                             {nodeDisplayName(node, t('common.unknownNode'))}
                           </SelectItem>
                         ))}
-                      </SelectContent>
-                    </Select>
-                  </label>
-                  <label className='grid gap-2 text-sm'>
-                    {t('transfers.sourcePath')}
-                    <Input
-                      value={sourcePath}
-                      onChange={(event) => setSourcePath(event.target.value)}
-                      placeholder='/var/lib/app/config.yaml'
-                      className='font-mono'
-                    />
-                  </label>
-                  <div className='hidden md:block' aria-hidden='true' />
-                </div>
-                <div className='grid gap-4 md:grid-cols-[minmax(180px,1fr)_minmax(0,2fr)_108px]'>
-                  <label className='grid gap-2 text-sm'>
-                    {t('transfers.target')}
-                    <Select
-                      value={targetNodeID}
-                      onValueChange={setTargetNodeID}
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={t('transfers.selectTarget')}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(nodes.data || [])
-                          .filter((node) => node.id !== sourceNodeID)
-                          .map((node) => (
-                            <SelectItem key={node.id} value={node.id}>
-                              {nodeDisplayName(node, t('common.unknownNode'))}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </label>
-                  <label className='grid gap-2 text-sm'>
-                    {t('transfers.destinationPath')}
-                    <Input
-                      value={destinationPath}
-                      onChange={(event) =>
-                        setDestinationPath(event.target.value)
-                      }
-                      placeholder='/var/lib/app/config.yaml'
-                      className='font-mono'
-                    />
-                  </label>
-                  <Button
-                    type='button'
-                    variant='outline'
-                    className='w-full self-end'
-                    onClick={addTarget}
-                    disabled={
-                      !targetNodeID ||
-                      targetNodeID === sourceNodeID ||
-                      !destinationPath ||
-                      targetBlocked
-                    }
-                  >
-                    <Plus className='size-4' />
-                    {t('transfers.addTarget')}
-                  </Button>
-                </div>
-                {targets.length > 0 && (
-                  <div className='grid gap-2 text-sm'>
-                    {targets.map((target) => (
-                      <div
-                        key={target.node_id}
-                        className='flex items-center justify-between rounded-md border px-3 py-2'
-                      >
-                        <span>
-                          <span className='font-medium'>
-                            {nodeNames.get(target.node_id) ||
-                              t('common.unknownNode')}
-                          </span>
-                          <span className='ms-3 font-mono text-xs text-muted-foreground'>
-                            {target.destination_path}
-                          </span>
-                        </span>
-                        <Button
-                          type='button'
-                          variant='ghost'
-                          size='icon'
-                          className='size-8'
-                          onClick={() =>
-                            setTargets((current) =>
-                              current.filter(
-                                (item) => item.node_id !== target.node_id
-                              )
-                            )
-                          }
-                          aria-label={t('common.remove')}
-                        >
-                          <X className='size-4' />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                    </SelectContent>
+                  </Select>
+                </label>
+                <label className='grid gap-2 text-sm'>
+                  {t('transfers.destinationPath')}
+                  <Input
+                    value={destinationPath}
+                    onChange={(event) => setDestinationPath(event.target.value)}
+                    placeholder='/var/lib/app/config.yaml'
+                    className='font-mono'
+                  />
+                </label>
                 <Button
-                  onClick={() => create.mutate()}
+                  type='button'
+                  variant='outline'
+                  className='w-full self-end'
+                  onClick={addTarget}
                   disabled={
-                    !source ||
-                    !sourcePath ||
-                    targets.length === 0 ||
-                    targets.some((target) => target.node_id === sourceNodeID) ||
-                    blockedNodes.length > 0 ||
-                    create.isPending
+                    !targetNodeID ||
+                    targetNodeID === sourceNodeID ||
+                    !destinationPath ||
+                    targetBlocked
                   }
                 >
-                  {create.isPending
-                    ? t('transfers.creating')
-                    : t('transfers.start')}
+                  <Plus className='size-4' />
+                  {t('transfers.addTarget')}
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+              {targets.length > 0 && (
+                <div className='grid gap-2 text-sm'>
+                  {targets.map((target) => (
+                    <div
+                      key={target.node_id}
+                      className='flex items-center justify-between rounded-md border px-3 py-2'
+                    >
+                      <span>
+                        <span className='font-medium'>
+                          {nodeNames.get(target.node_id) ||
+                            t('common.unknownNode')}
+                        </span>
+                        <span className='ms-3 font-mono text-xs text-muted-foreground'>
+                          {target.destination_path}
+                        </span>
+                      </span>
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='icon'
+                        className='size-8'
+                        onClick={() =>
+                          setTargets((current) =>
+                            current.filter(
+                              (item) => item.node_id !== target.node_id
+                            )
+                          )
+                        }
+                        aria-label={t('common.remove')}
+                      >
+                        <X className='size-4' />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Button
+                onClick={() => create.mutate()}
+                disabled={
+                  !source ||
+                  !sourcePath ||
+                  targets.length === 0 ||
+                  targets.some((target) => target.node_id === sourceNodeID) ||
+                  blockedNodes.length > 0 ||
+                  create.isPending
+                }
+              >
+                {create.isPending
+                  ? t('transfers.creating')
+                  : t('transfers.start')}
+              </Button>
+            </div>
           </EditorPanel>
         ) : null}
         {editor.confirmation}
-        {transfers.isError ? (
-          <ErrorState
-            error={transfers.error}
-            onRetry={() => transfers.refetch()}
-          />
-        ) : transfers.isLoading ? (
-          <LoadingState />
-        ) : transfers.data?.length ? (
-          <DataTable
-            data={transfers.data}
-            columns={columns}
-            storageKey='transfers'
-            variant='rack'
-            rackKind='transfers'
-            rackPrimaryColumnId='source'
-            searchPlaceholder={t('transfers.searchPlaceholder')}
-          />
-        ) : (
-          <Card>
-            <EmptyState message={t('transfers.empty')} />
-          </Card>
-        )}
+        <ListCard data-testid='transfers-list'>
+          {transfers.isError ? (
+            <div className='flex min-h-32 w-full flex-col justify-center px-4 py-4 sm:px-6 [&>*]:w-full'>
+              <ErrorState
+                error={transfers.error}
+                onRetry={() => transfers.refetch()}
+              />
+            </div>
+          ) : transfers.isLoading ? (
+            <div className='flex min-h-32 w-full flex-col justify-center px-4 py-4 sm:px-6 [&>*]:w-full'>
+              <LoadingState />
+            </div>
+          ) : (
+            <DataTable
+              inset
+              data={transfers.data || []}
+              columns={columns}
+              storageKey='transfers'
+              variant='rack'
+              rackKind='transfers'
+              rackPrimaryColumnId='source'
+              searchPlaceholder={t('transfers.searchPlaceholder')}
+              emptyMessage={t('transfers.empty')}
+            />
+          )}
+        </ListCard>
       </Main>
     </>
   )

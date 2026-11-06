@@ -269,6 +269,12 @@ describe('服务监控页', () => {
     const page = await renderServices()
 
     await expect.element(page.getByText(i18n.t('common.loading'))).toBeVisible()
+    expect(
+      page
+        .getByText(i18n.t('common.loading'))
+        .element()
+        .closest('[data-card="state"]')
+    ).not.toBeNull()
   })
 
   it('查询失败显示错误与重试', async () => {
@@ -283,7 +289,7 @@ describe('服务监控页', () => {
       .toBeVisible()
   })
 
-  it('空列表仍显示创建表单而不是错误或加载态', async () => {
+  it('空列表只保留页头一个创建入口，并显示在卡片内', async () => {
     get.mockImplementation(async (path: string) => {
       if (path.startsWith('/monitoring/latest?')) return { items: [], next: '' }
       return []
@@ -292,11 +298,19 @@ describe('服务监控页', () => {
 
     await expect
       .element(
-        page
-          .getByRole('button', { name: i18n.t('monitoring.createTarget') })
-          .first()
+        page.getByRole('button', { name: i18n.t('monitoring.createTarget') })
       )
       .toBeVisible()
+    const createButtons = page
+      .getByRole('button', { name: i18n.t('monitoring.createTarget') })
+      .elements()
+    expect(createButtons).toHaveLength(1)
+    expect(
+      page
+        .getByText(i18n.t('monitoring.noTargets'))
+        .element()
+        .closest('[data-card="list"]')
+    ).not.toBeNull()
     expect(
       document.querySelectorAll('[data-testid^="monitoring-target-row-"]')
     ).toHaveLength(0)

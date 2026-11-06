@@ -116,6 +116,26 @@ describe('传输详情页与状态本地化（OBS-20261017-CROSSPAGE-LINK-GAPS �
       .element(page.getByRole('link', { name: i18n.t('common.viewDetails') }))
       .toHaveAttribute('href', '/transfers/tr-1')
   })
+  it('空列表空态与工具栏位于同一张列表 Card 内', async () => {
+    window.history.replaceState({}, '', '/transfers')
+    get.mockImplementation(async (path: string) =>
+      path === '/nodes' ? NODES : []
+    )
+    const page = await renderPage(<FileTransfers />)
+
+    await expect
+      .element(page.getByText(i18n.t('transfers.empty')))
+      .toBeVisible()
+    const empty = page.getByText(i18n.t('transfers.empty')).element()
+    expect(empty.closest('[data-card="list"]')).not.toBeNull()
+    expect(
+      page
+        .getByRole('textbox', {
+          name: i18n.t('transfers.searchPlaceholder'),
+        })
+        .element()
+    ).toBeTruthy()
+  })
   it('locks the transfer draft and new action until a delayed create request settles', async () => {
     let release!: (value: FileTransfer) => void
     post.mockImplementationOnce(

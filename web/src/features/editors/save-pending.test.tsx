@@ -150,6 +150,38 @@ describe('编辑器保存 pending 期间禁用按钮', () => {
     )
   })
 
+  it('脚本编辑器保存/取消位于 CardFooter', async () => {
+    get.mockImplementation(async (path: string) => {
+      if (path === '/scripts/sc-1')
+        return {
+          id: 'sc-1',
+          name: '巡检脚本',
+          description: '',
+          interpreter: 'shell',
+          content: '#!/bin/sh\necho hi',
+          parameters: [],
+          environment: {},
+          working_dir: '',
+          timeout: 300,
+          enabled: true,
+          revision: 1,
+        }
+      return []
+    })
+    window.history.replaceState({}, '', '/scripts/sc-1')
+    const page = await renderEditor(<ScriptEditor />)
+
+    const save = page.getByRole('button', { name: i18n.t('common.save') })
+    await expect.element(save).toBeVisible()
+    expect(save.element().closest('[data-slot="card-footer"]')).not.toBeNull()
+    expect(
+      page
+        .getByRole('link', { name: i18n.t('common.cancel') })
+        .element()
+        .closest('[data-slot="card-footer"]')
+    ).not.toBeNull()
+  })
+
   it('分组编辑器：编辑既有分组重复点击只发一次 PUT', async () => {
     get.mockImplementation(async (path: string) => {
       if (path === '/groups/gr-1')

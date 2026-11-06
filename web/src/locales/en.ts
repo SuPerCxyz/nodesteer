@@ -502,6 +502,7 @@ export default {
     description:
       'Manage automation rules, executions, and trigger history for node metrics and service targets.',
     listTitle: 'Rules',
+    noRules: 'No automation rules',
   },
   // 仪表盘
   dashboard: {

@@ -111,7 +111,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'flex min-h-28 flex-col items-center justify-center gap-2 py-8 text-center text-sm text-muted-foreground',
+        'flex min-h-32 flex-col items-center justify-center gap-2 py-8 text-center text-sm text-muted-foreground',
         className
       )}
     >
@@ -229,6 +229,49 @@ export function SectionCard({
         {action}
       </CardHeader>
       <CardContent>{children}</CardContent>
+    </Card>
+  )
+}
+
+/**
+ * 列表页统一外框：工具栏、列表/表格、空态与分页共用同一张 Card。
+ * 使用 gap-0/py-0 让工具栏、列表与分页自行控制内边距和分隔线。
+ */
+export function ListCard({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <Card
+      data-slot='card'
+      data-card='list'
+      className={cn('gap-0 overflow-hidden py-0', className)}
+      {...props}
+    />
+  )
+}
+
+/** 列表页 Card 内的统一内边距区域。 */
+export function ListCardBody({
+  className,
+  ...props
+}: React.ComponentProps<'div'>) {
+  return <div className={cn('px-4 py-4 sm:px-6', className)} {...props} />
+}
+
+/** 加载/错误等独立状态统一卡片，保持与列表 Card 一致的边距和最小高度。 */
+export function StateCard({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'div'>) {
+  return (
+    <Card
+      data-slot='card'
+      data-card='state'
+      className={cn('gap-0 py-0', className)}
+      {...props}
+    >
+      <div className='flex min-h-32 w-full flex-col justify-center px-4 py-4 sm:px-6 [&>*]:w-full'>
+        {children}
+      </div>
     </Card>
   )
 }

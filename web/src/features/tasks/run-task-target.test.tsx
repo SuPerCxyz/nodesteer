@@ -84,9 +84,9 @@ describe('任务试运行请求级目标与策略', () => {
   it('未选择目标时禁止提交', async () => {
     const page = await renderRun()
 
-    await expect
-      .element(page.getByRole('button', { name: i18n.t('tasks.runNow') }))
-      .toBeDisabled()
+    const run = page.getByRole('button', { name: i18n.t('tasks.runNow') })
+    await expect.element(run).toBeDisabled()
+    expect(run.element().closest('[data-slot="card-footer"]')).not.toBeNull()
     await expect
       .element(page.getByText(i18n.t('tasks.targetRequired')))
       .toBeVisible()

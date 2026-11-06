@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { api, type Node } from '@/lib/api'
 import { nodeDisplayName } from '@/lib/node-display-name'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -28,8 +28,12 @@ import {
   DropdownMenuItem,
   EmptyState,
   ErrorState,
+  ListCard,
+  ListCardBody,
   LoadingState,
   MoreMenu,
+  SectionCard,
+  StateCard,
 } from '@/features/shared/ui'
 import { ObservationState } from './observation-state'
 import type { MonitoringObservation, MonitoringTarget } from './types'
@@ -160,7 +164,9 @@ export function ServiceTargets() {
           description={t('monitoring.serviceMonitoringDescription')}
         />
         <Main>
-          <LoadingState />
+          <StateCard>
+            <LoadingState />
+          </StateCard>
         </Main>
       </>
     )
@@ -173,14 +179,16 @@ export function ServiceTargets() {
           description={t('monitoring.serviceMonitoringDescription')}
         />
         <Main>
-          <ErrorState
-            error={targets.error || latest.error || probeNodes.error}
-            onRetry={() => {
-              void targets.refetch()
-              void latest.refetch()
-              void probeNodes.refetch()
-            }}
-          />
+          <StateCard>
+            <ErrorState
+              error={targets.error || latest.error || probeNodes.error}
+              onRetry={() => {
+                void targets.refetch()
+                void latest.refetch()
+                void probeNodes.refetch()
+              }}
+            />
+          </StateCard>
         </Main>
       </>
     )
@@ -191,28 +199,24 @@ export function ServiceTargets() {
         title={t('monitoring.httpServices')}
         description={t('monitoring.serviceMonitoringDescription')}
         action={
-          <Button disabled={action.isPending} onClick={openCreate}>
+          <Button
+            variant='header-action'
+            disabled={action.isPending}
+            onClick={openCreate}
+          >
             <Plus className='me-1 size-4' />
             {t('monitoring.createTarget')}
           </Button>
         }
       />
       <Main className='flex flex-1 flex-col gap-6'>
-        <Card>
-          <CardHeader>
+        <ListCard data-testid='service-targets-list'>
+          <CardHeader className='px-4 pt-4 pb-1 sm:px-6'>
             <CardTitle>{t('monitoring.serviceTargets')}</CardTitle>
           </CardHeader>
-          <CardContent className='space-y-4'>
+          <ListCardBody className='space-y-4 pt-2'>
             {!targets.data?.length ? (
-              <EmptyState
-                message={t('monitoring.noTargets')}
-                action={
-                  <Button disabled={action.isPending} onClick={openCreate}>
-                    <Plus className='me-1 size-4' />
-                    {t('monitoring.createTarget')}
-                  </Button>
-                }
-              />
+              <EmptyState message={t('monitoring.noTargets')} />
             ) : (
               <RackList testId='monitoring-targets-rack'>
                 {(targets.data || []).map((item) => {
@@ -315,350 +319,343 @@ export function ServiceTargets() {
                 })}
               </RackList>
             )}
-            {editor.open && (
-              <EditorPanel
-                title={`${target.id ? t('webFix.edit') : t('webFix.new')}: ${target.name || t('monitoring.serviceTargets')}`}
-                onClose={editor.close}
-                busy={action.isPending}
-              >
-                <div className='grid gap-3 md:grid-cols-2 [&>div]:min-w-0'>
+          </ListCardBody>
+        </ListCard>
+        {editor.open && (
+          <EditorPanel
+            title={`${target.id ? t('webFix.edit') : t('webFix.new')}: ${target.name || t('monitoring.serviceTargets')}`}
+            onClose={editor.close}
+            busy={action.isPending}
+          >
+            <div className='grid gap-3 md:grid-cols-2 [&>div]:min-w-0'>
+              <div>
+                <Label htmlFor='monitor-kind'>{t('monitoring.kind')}</Label>
+                <Select
+                  value={target.kind || 'http'}
+                  onValueChange={(value) => {
+                    setTarget({
+                      ...target,
+                      kind: value as 'http' | 'tcp' | 'icmp' | 'node_metric',
+                      url: '',
+                      credential_env: '',
+                      json_path: [],
+                      query_params: [],
+                      source_node_id: '',
+                      monitored_node_id: '',
+                      metric: value === 'node_metric' ? 'cpu.usage' : '',
+                      series: '',
+                    })
+                    setPath('')
+                    setQueryParams('')
+                  }}
+                >
+                  <SelectTrigger id='monitor-kind' className='w-full'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='http'>HTTP / HTTPS</SelectItem>
+                    <SelectItem value='tcp'>TCP</SelectItem>
+                    <SelectItem value='icmp'>ICMP</SelectItem>
+                    <SelectItem value='node_metric'>
+                      {t('monitoring.nodeMetric')}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {target.kind !== 'node_metric' && (
+                <div>
+                  <Label htmlFor='monitor-source'>
+                    {t('monitoring.probeSource')}
+                  </Label>
+                  <Select
+                    value={target.source_node_id || '__hub__'}
+                    onValueChange={(value) =>
+                      setTarget({
+                        ...target,
+                        source_node_id: value === '__hub__' ? '' : value,
+                      })
+                    }
+                  >
+                    <SelectTrigger id='monitor-source' className='w-full'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='__hub__'>Hub</SelectItem>
+                      {(probeNodes.data || []).map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {nodeDisplayName(item, t('common.unknownNode'))} (
+                          {item.status})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div>
+                <Label htmlFor='monitor-name'>{t('monitoring.name')}</Label>
+                <Input
+                  id='monitor-name'
+                  value={target.name}
+                  onChange={(e) =>
+                    setTarget({ ...target, name: e.target.value })
+                  }
+                />
+              </div>
+              {target.kind !== 'node_metric' && (
+                <div>
+                  <Label htmlFor='monitor-url'>URL</Label>
+                  <Input
+                    id='monitor-url'
+                    value={target.url}
+                    placeholder={
+                      target.kind === 'tcp'
+                        ? 'tcp://host:443'
+                        : target.kind === 'icmp'
+                          ? 'icmp://host'
+                          : 'https://example.com/health'
+                    }
+                    onChange={(e) =>
+                      setTarget({ ...target, url: e.target.value })
+                    }
+                  />
+                </div>
+              )}
+              {target.kind === 'node_metric' && (
+                <>
                   <div>
-                    <Label htmlFor='monitor-kind'>{t('monitoring.kind')}</Label>
+                    <Label htmlFor='monitor-node'>{t('monitoring.node')}</Label>
                     <Select
-                      value={target.kind || 'http'}
-                      onValueChange={(value) => {
-                        setTarget({
-                          ...target,
-                          kind: value as
-                            | 'http'
-                            | 'tcp'
-                            | 'icmp'
-                            | 'node_metric',
-                          url: '',
-                          credential_env: '',
-                          json_path: [],
-                          query_params: [],
-                          source_node_id: '',
-                          monitored_node_id: '',
-                          metric: value === 'node_metric' ? 'cpu.usage' : '',
-                          series: '',
-                        })
-                        setPath('')
-                        setQueryParams('')
-                      }}
+                      value={target.monitored_node_id || ''}
+                      onValueChange={(value) =>
+                        setTarget({ ...target, monitored_node_id: value })
+                      }
                     >
-                      <SelectTrigger id='monitor-kind' className='w-full'>
-                        <SelectValue />
+                      <SelectTrigger id='monitor-node' className='w-full'>
+                        <SelectValue placeholder='—' />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value='http'>HTTP / HTTPS</SelectItem>
-                        <SelectItem value='tcp'>TCP</SelectItem>
-                        <SelectItem value='icmp'>ICMP</SelectItem>
-                        <SelectItem value='node_metric'>
-                          {t('monitoring.nodeMetric')}
-                        </SelectItem>
+                        {(probeNodes.data || []).map((item) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            {nodeDisplayName(item, t('common.unknownNode'))} (
+                            {item.status})
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  {target.kind !== 'node_metric' && (
-                    <div>
-                      <Label htmlFor='monitor-source'>
-                        {t('monitoring.probeSource')}
-                      </Label>
-                      <Select
-                        value={target.source_node_id || '__hub__'}
-                        onValueChange={(value) =>
-                          setTarget({
-                            ...target,
-                            source_node_id: value === '__hub__' ? '' : value,
-                          })
-                        }
-                      >
-                        <SelectTrigger id='monitor-source' className='w-full'>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value='__hub__'>Hub</SelectItem>
-                          {(probeNodes.data || []).map((item) => (
-                            <SelectItem key={item.id} value={item.id}>
-                              {nodeDisplayName(item, t('common.unknownNode'))} (
-                              {item.status})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
                   <div>
-                    <Label htmlFor='monitor-name'>{t('monitoring.name')}</Label>
+                    <Label htmlFor='monitor-metric'>
+                      {t('monitoring.metricName')}
+                    </Label>
                     <Input
-                      id='monitor-name'
-                      value={target.name}
+                      id='monitor-metric'
+                      value={target.metric || ''}
+                      placeholder='cpu.usage'
                       onChange={(e) =>
-                        setTarget({ ...target, name: e.target.value })
+                        setTarget({ ...target, metric: e.target.value })
                       }
                     />
                   </div>
-                  {target.kind !== 'node_metric' && (
-                    <div>
-                      <Label htmlFor='monitor-url'>URL</Label>
-                      <Input
-                        id='monitor-url'
-                        value={target.url}
-                        placeholder={
-                          target.kind === 'tcp'
-                            ? 'tcp://host:443'
-                            : target.kind === 'icmp'
-                              ? 'icmp://host'
-                              : 'https://example.com/health'
-                        }
-                        onChange={(e) =>
-                          setTarget({ ...target, url: e.target.value })
-                        }
-                      />
-                    </div>
-                  )}
-                  {target.kind === 'node_metric' && (
-                    <>
-                      <div>
-                        <Label htmlFor='monitor-node'>
-                          {t('monitoring.node')}
-                        </Label>
-                        <Select
-                          value={target.monitored_node_id || ''}
-                          onValueChange={(value) =>
-                            setTarget({ ...target, monitored_node_id: value })
-                          }
-                        >
-                          <SelectTrigger id='monitor-node' className='w-full'>
-                            <SelectValue placeholder='—' />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(probeNodes.data || []).map((item) => (
-                              <SelectItem key={item.id} value={item.id}>
-                                {nodeDisplayName(item, t('common.unknownNode'))}{' '}
-                                ({item.status})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor='monitor-metric'>
-                          {t('monitoring.metricName')}
-                        </Label>
-                        <Input
-                          id='monitor-metric'
-                          value={target.metric || ''}
-                          placeholder='cpu.usage'
-                          onChange={(e) =>
-                            setTarget({ ...target, metric: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor='monitor-series'>
-                          {t('monitoring.series')}
-                        </Label>
-                        <Input
-                          id='monitor-series'
-                          value={target.series || ''}
-                          onChange={(e) =>
-                            setTarget({ ...target, series: e.target.value })
-                          }
-                        />
-                      </div>
-                    </>
-                  )}
-                  {(target.kind === undefined || target.kind === 'http') && (
-                    <>
-                      <div>
-                        <Label htmlFor='monitor-path'>
-                          {t('monitoring.jsonFieldPathDotSeparated')}
-                        </Label>
-                        <Input
-                          id='monitor-path'
-                          value={path}
-                          onChange={(e) => setPath(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor='monitor-secret'>
-                          {t('monitoring.bearerCredentialEnvironmentVariable')}
-                        </Label>
-                        <Input
-                          id='monitor-secret'
-                          value={target.credential_env || ''}
-                          placeholder='NODESTEER_MONITOR_SECRET_...'
-                          onChange={(e) =>
-                            setTarget({
-                              ...target,
-                              credential_env: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                    </>
-                  )}
                   <div>
-                    <Label htmlFor='monitor-interval'>
-                      {t('monitoring.intervalSeconds')}
+                    <Label htmlFor='monitor-series'>
+                      {t('monitoring.series')}
                     </Label>
                     <Input
-                      id='monitor-interval'
-                      type='number'
-                      value={target.interval_sec}
+                      id='monitor-series'
+                      value={target.series || ''}
+                      onChange={(e) =>
+                        setTarget({ ...target, series: e.target.value })
+                      }
+                    />
+                  </div>
+                </>
+              )}
+              {(target.kind === undefined || target.kind === 'http') && (
+                <>
+                  <div>
+                    <Label htmlFor='monitor-path'>
+                      {t('monitoring.jsonFieldPathDotSeparated')}
+                    </Label>
+                    <Input
+                      id='monitor-path'
+                      value={path}
+                      onChange={(e) => setPath(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor='monitor-secret'>
+                      {t('monitoring.bearerCredentialEnvironmentVariable')}
+                    </Label>
+                    <Input
+                      id='monitor-secret'
+                      value={target.credential_env || ''}
+                      placeholder='NODESTEER_MONITOR_SECRET_...'
                       onChange={(e) =>
                         setTarget({
                           ...target,
-                          interval_sec: Number(e.target.value),
+                          credential_env: e.target.value,
                         })
                       }
                     />
                   </div>
-                  <div>
-                    <Label htmlFor='monitor-timeout'>
-                      {t('monitoring.timeoutSeconds')}
-                    </Label>
-                    <Input
-                      id='monitor-timeout'
-                      type='number'
-                      value={target.timeout_sec}
-                      onChange={(e) =>
-                        setTarget({
-                          ...target,
-                          timeout_sec: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </div>
-                  {target.kind === 'node_metric' && (
-                    <div>
-                      <Label htmlFor='monitor-max-age'>
-                        {t('monitoring.maxAge')}
-                      </Label>
-                      <Input
-                        id='monitor-max-age'
-                        type='number'
-                        min={1}
-                        max={300}
-                        value={target.max_age_sec || target.interval_sec * 2}
-                        onChange={(event) =>
-                          setTarget({
-                            ...target,
-                            max_age_sec: Number(event.target.value),
-                          })
-                        }
-                      />
-                      <p className='text-xs text-muted-foreground'>
-                        {t('monitoring.maxAgeHelp')}
-                      </p>
-                    </div>
-                  )}
-                  {(target.kind === undefined || target.kind === 'http') && (
-                    <div className='md:col-span-2'>
-                      <Label htmlFor='monitor-query'>
-                        {t(
-                          'monitoring.queryParametersJsonNameValueOrSecretEnv'
-                        )}
-                      </Label>
-                      <Textarea
-                        id='monitor-query'
-                        className='w-full rounded-md border border-input bg-background p-2 text-sm'
-                        rows={3}
-                        value={queryParams}
-                        onChange={(e) => setQueryParams(e.target.value)}
-                        placeholder='[{"name":"region","value":"north"}]'
-                      />
-                    </div>
-                  )}
-                </div>
-                <label className='flex items-center gap-2 text-sm'>
-                  <Checkbox
-                    checked={target.enabled}
-                    onCheckedChange={(checked) =>
-                      setTarget({ ...target, enabled: checked === true })
+                </>
+              )}
+              <div>
+                <Label htmlFor='monitor-interval'>
+                  {t('monitoring.intervalSeconds')}
+                </Label>
+                <Input
+                  id='monitor-interval'
+                  type='number'
+                  value={target.interval_sec}
+                  onChange={(e) =>
+                    setTarget({
+                      ...target,
+                      interval_sec: Number(e.target.value),
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor='monitor-timeout'>
+                  {t('monitoring.timeoutSeconds')}
+                </Label>
+                <Input
+                  id='monitor-timeout'
+                  type='number'
+                  value={target.timeout_sec}
+                  onChange={(e) =>
+                    setTarget({
+                      ...target,
+                      timeout_sec: Number(e.target.value),
+                    })
+                  }
+                />
+              </div>
+              {target.kind === 'node_metric' && (
+                <div>
+                  <Label htmlFor='monitor-max-age'>
+                    {t('monitoring.maxAge')}
+                  </Label>
+                  <Input
+                    id='monitor-max-age'
+                    type='number'
+                    min={1}
+                    max={300}
+                    value={target.max_age_sec || target.interval_sec * 2}
+                    onChange={(event) =>
+                      setTarget({
+                        ...target,
+                        max_age_sec: Number(event.target.value),
+                      })
                     }
                   />
-                  {t('monitoring.enableCollection')}
-                </label>
-                <div className='flex gap-2'>
-                  <Button onClick={saveTarget} disabled={action.isPending}>
-                    {target.id
-                      ? t('monitoring.saveTarget')
-                      : t('monitoring.createTarget')}
-                  </Button>
-                  <Button
-                    variant='outline'
-                    onClick={() => {
-                      editor.change(
-                        { target: emptyTarget(), path: '', queryParams: '' },
-                        () => {
-                          setTarget(emptyTarget())
-                          setPath('')
-                          setQueryParams('')
-                        }
-                      )
-                    }}
-                  >
-                    {t('monitoring.new')}
-                  </Button>
+                  <p className='text-xs text-muted-foreground'>
+                    {t('monitoring.maxAgeHelp')}
+                  </p>
                 </div>
-              </EditorPanel>
-            )}
-            {editor.confirmation}
-            {selected && (
-              <div id='service-history' tabIndex={-1} className='scroll-mt-24'>
-                <h3 className='mb-2 text-sm font-medium'>
-                  {t('monitoring.recentObservations')}
-                </h3>
-                <p className='mb-2 text-sm text-muted-foreground'>
-                  {targets.data?.find((item) => item.id === selected)?.name}
-                </p>
-                {observations.isError ? (
-                  <ErrorState
-                    error={observations.error}
-                    onRetry={() => observations.refetch()}
+              )}
+              {(target.kind === undefined || target.kind === 'http') && (
+                <div className='md:col-span-2'>
+                  <Label htmlFor='monitor-query'>
+                    {t('monitoring.queryParametersJsonNameValueOrSecretEnv')}
+                  </Label>
+                  <Textarea
+                    id='monitor-query'
+                    className='w-full rounded-md border border-input bg-background p-2 text-sm'
+                    rows={3}
+                    value={queryParams}
+                    onChange={(e) => setQueryParams(e.target.value)}
+                    placeholder='[{"name":"region","value":"north"}]'
                   />
-                ) : (
-                  <RackList testId='monitoring-observations-rack'>
-                    {(observations.data || []).map((item) => {
-                      const valueText =
-                        item.error ||
-                        (item.value === null ? '—' : JSON.stringify(item.value))
-                      return (
-                        <RackRow
-                          key={item.id}
-                          testId={`monitoring-observation-row-${item.id}`}
-                          title={new Date(item.observed_at).toLocaleString()}
-                          fields={[
-                            {
-                              label: t('monitoring.duration'),
-                              value:
-                                typeof item.duration_ns === 'number'
-                                  ? `${(item.duration_ns / 1e6).toFixed(1)} ms`
-                                  : '—',
-                              mono: true,
-                            },
-                            {
-                              label: 'HTTP',
-                              value: item.status_code || '—',
-                              mono: true,
-                            },
-                            {
-                              label: t('monitoring.valueError'),
-                              value: <span title={valueText}>{valueText}</span>,
-                            },
-                          ]}
-                        />
-                      )
-                    })}
-                  </RackList>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+              )}
+            </div>
+            <label className='flex items-center gap-2 text-sm'>
+              <Checkbox
+                checked={target.enabled}
+                onCheckedChange={(checked) =>
+                  setTarget({ ...target, enabled: checked === true })
+                }
+              />
+              {t('monitoring.enableCollection')}
+            </label>
+            <div className='flex gap-2'>
+              <Button onClick={saveTarget} disabled={action.isPending}>
+                {target.id
+                  ? t('monitoring.saveTarget')
+                  : t('monitoring.createTarget')}
+              </Button>
+              <Button
+                variant='outline'
+                onClick={() => {
+                  editor.change(
+                    { target: emptyTarget(), path: '', queryParams: '' },
+                    () => {
+                      setTarget(emptyTarget())
+                      setPath('')
+                      setQueryParams('')
+                    }
+                  )
+                }}
+              >
+                {t('monitoring.new')}
+              </Button>
+            </div>
+          </EditorPanel>
+        )}
+        {editor.confirmation}
+        {selected && (
+          <div id='service-history' tabIndex={-1} className='scroll-mt-24'>
+            <SectionCard title={t('monitoring.recentObservations')}>
+              <p className='mb-4 text-sm text-muted-foreground'>
+                {targets.data?.find((item) => item.id === selected)?.name}
+              </p>
+              {observations.isError ? (
+                <ErrorState
+                  error={observations.error}
+                  onRetry={() => observations.refetch()}
+                />
+              ) : !observations.data?.length ? (
+                <EmptyState message={t('common.noData')} />
+              ) : (
+                <RackList testId='monitoring-observations-rack'>
+                  {observations.data.map((item) => {
+                    const valueText =
+                      item.error ||
+                      (item.value === null ? '—' : JSON.stringify(item.value))
+                    return (
+                      <RackRow
+                        key={item.id}
+                        testId={`monitoring-observation-row-${item.id}`}
+                        title={new Date(item.observed_at).toLocaleString()}
+                        fields={[
+                          {
+                            label: t('monitoring.duration'),
+                            value:
+                              typeof item.duration_ns === 'number'
+                                ? `${(item.duration_ns / 1e6).toFixed(1)} ms`
+                                : '—',
+                            mono: true,
+                          },
+                          {
+                            label: 'HTTP',
+                            value: item.status_code || '—',
+                            mono: true,
+                          },
+                          {
+                            label: t('monitoring.valueError'),
+                            value: <span title={valueText}>{valueText}</span>,
+                          },
+                        ]}
+                      />
+                    )
+                  })}
+                </RackList>
+              )}
+            </SectionCard>
+          </div>
+        )}
       </Main>
       <ConfirmDialog
         open={confirmation !== null}

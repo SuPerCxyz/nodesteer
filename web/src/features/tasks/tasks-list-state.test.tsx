@@ -24,8 +24,18 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
     ...actual,
     useNavigate: () => vi.fn(),
     useLocation: () => ({ href: window.location.pathname }),
-    Link: ({ children }: { children?: ReactNode }) => (
-      <a href='#'>{children}</a>
+    Link: ({
+      children,
+      to,
+      ...props
+    }: {
+      children?: ReactNode
+      to?: string
+      className?: string
+    }) => (
+      <a href={typeof to === 'string' ? to : '#'} {...props}>
+        {children}
+      </a>
     ),
   }
 })
@@ -81,6 +91,10 @@ describe('Tasks 列表 Loading/Empty/Error 三态', () => {
     )
     const page = await renderTasks()
 
+    // 页头主创建使用黑色 header-action，而不是品牌蓝 primary
+    const newTask = page.getByRole('link', { name: i18n.t('tasks.newTask') })
+    await expect.element(newTask).toBeVisible()
+    expect(newTask.element().className).toContain('bg-header-action')
     // 请求挂起：必须是加载态，不能把空数组当「没有结果」
     await expect.element(page.getByText('加载中...')).toBeVisible()
     await expect.element(page.getByText('没有结果。')).not.toBeInTheDocument()

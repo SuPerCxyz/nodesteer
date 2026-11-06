@@ -487,6 +487,7 @@ export default {
     title: '联动规则',
     description: '管理节点指标与服务目标的自动化规则、执行与触发记录。',
     listTitle: '规则列表',
+    noRules: '暂无联动规则',
   },
   // 仪表盘
   dashboard: {

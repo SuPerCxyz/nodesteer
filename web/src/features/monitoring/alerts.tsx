@@ -284,6 +284,7 @@ export function MonitoringAlerts() {
           <TabsContent value='rules' className='space-y-6'>
             <div className='flex justify-end'>
               <Button
+                variant='header-action'
                 disabled={action.isPending}
                 onClick={() =>
                   ruleEditor.change(emptyRule(), () => setRule(emptyRule()))
@@ -452,256 +453,243 @@ export function MonitoringAlerts() {
                 onClose={ruleEditor.close}
                 busy={action.isPending}
               >
-                <Card>
-                  <CardHeader>
-                    <CardTitle>
-                      {rule.id ? t('alerts.editRule') : t('alerts.newRule')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className='space-y-4'>
-                    <div className='grid gap-3 md:grid-cols-2'>
-                      <div>
-                        <Label htmlFor='alert-name'>{t('alerts.name')}</Label>
-                        <Input
-                          id='alert-name'
-                          value={rule.name}
-                          onChange={(event) =>
-                            setRule({ ...rule, name: event.target.value })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor='alert-description'>
-                          {t('alerts.descriptionLabel')}
-                        </Label>
-                        <Textarea
-                          id='alert-description'
-                          value={rule.description || ''}
-                          onChange={(event) =>
-                            setRule({
-                              ...rule,
-                              description: event.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor='alert-node'>{t('alerts.node')}</Label>
-                        <Select
-                          value={rule.node_id || '__all__'}
-                          onValueChange={(value) =>
-                            setRule({
-                              ...rule,
-                              node_id: value === '__all__' ? '' : value,
-                            })
-                          }
-                        >
-                          <SelectTrigger id='alert-node' className='w-full'>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value='__all__'>
-                              {t('alerts.allNodes')}
-                            </SelectItem>
-                            {(nodes.data || []).map((node) => (
-                              <SelectItem key={node.id} value={node.id}>
-                                {nodeDisplayName(node, t('common.unknownNode'))}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor='alert-metric'>
-                          {t('alerts.metric')}
-                        </Label>
-                        <Input
-                          id='alert-metric'
-                          value={rule.metric}
-                          onChange={(event) =>
-                            setRule({ ...rule, metric: event.target.value })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor='alert-series'>
-                          {t('alerts.series')}
-                        </Label>
-                        <Input
-                          id='alert-series'
-                          value={rule.series || ''}
-                          onChange={(event) =>
-                            setRule({ ...rule, series: event.target.value })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor='alert-operator'>
-                          {t('alerts.condition')}
-                        </Label>
-                        <Select
-                          value={rule.operator}
-                          onValueChange={(value) =>
-                            setRule({ ...rule, operator: value })
-                          }
-                        >
-                          <SelectTrigger id='alert-operator' className='w-full'>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {OPERATORS.map((operator) => (
-                              <SelectItem key={operator} value={operator}>
-                                {operatorSymbol(operator)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor='alert-threshold'>
-                          {t('alerts.threshold')}
-                        </Label>
-                        <Input
-                          id='alert-threshold'
-                          type='number'
-                          value={rule.threshold}
-                          onChange={(event) =>
-                            setRule({
-                              ...rule,
-                              threshold: Number(event.target.value),
-                            })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor='alert-duration'>
-                          {t('alerts.duration')}
-                        </Label>
-                        <Input
-                          id='alert-duration'
-                          type='number'
-                          value={rule.duration_sec}
-                          onChange={(event) =>
-                            setRule({
-                              ...rule,
-                              duration_sec: Number(event.target.value),
-                            })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor='alert-recovery'>
-                          {t('alerts.recovery')}
-                        </Label>
-                        <Input
-                          id='alert-recovery'
-                          type='number'
-                          value={rule.recovery_sec}
-                          onChange={(event) =>
-                            setRule({
-                              ...rule,
-                              recovery_sec: Number(event.target.value),
-                            })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor='alert-cooldown'>
-                          {t('alerts.cooldown')}
-                        </Label>
-                        <Input
-                          id='alert-cooldown'
-                          type='number'
-                          value={rule.cooldown_sec}
-                          onChange={(event) =>
-                            setRule({
-                              ...rule,
-                              cooldown_sec: Number(event.target.value),
-                            })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor='alert-severity'>
-                          {t('alerts.severity')}
-                        </Label>
-                        <Select
-                          value={rule.severity}
-                          onValueChange={(value) =>
-                            setRule({ ...rule, severity: value })
-                          }
-                        >
-                          <SelectTrigger id='alert-severity' className='w-full'>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {SEVERITIES.map((severity) => (
-                              <SelectItem key={severity} value={severity}>
-                                {t(`alerts.severity_${severity}`)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className='space-y-2'>
-                      <Label>{t('alerts.channels')}</Label>
-                      <div className='flex flex-wrap gap-3'>
-                        {(channels.data || []).map((item) => (
-                          <label
-                            key={item.id}
-                            className='flex items-center gap-2 text-sm'
-                          >
-                            <Checkbox
-                              checked={rule.channels.includes(item.id)}
-                              onCheckedChange={(checked) =>
-                                setRule({
-                                  ...rule,
-                                  channels:
-                                    checked === true
-                                      ? [...rule.channels, item.id]
-                                      : rule.channels.filter(
-                                          (id) => id !== item.id
-                                        ),
-                                })
-                              }
-                            />
-                            {item.name}
-                          </label>
-                        ))}
-                      </div>
-                      <p className='text-xs text-muted-foreground'>
-                        {t('alerts.noChannelsHint')}
-                      </p>
-                    </div>
-                    <label className='flex items-center gap-2 text-sm'>
-                      <Checkbox
-                        checked={rule.enabled}
-                        onCheckedChange={(checked) =>
-                          setRule({ ...rule, enabled: checked === true })
+                <div className='space-y-4'>
+                  <div className='grid gap-3 md:grid-cols-2'>
+                    <div>
+                      <Label htmlFor='alert-name'>{t('alerts.name')}</Label>
+                      <Input
+                        id='alert-name'
+                        value={rule.name}
+                        onChange={(event) =>
+                          setRule({ ...rule, name: event.target.value })
                         }
                       />
-                      {t('alerts.enabled')}
-                    </label>
-                    <div className='flex gap-2'>
-                      <Button onClick={saveRule} disabled={ruleBusy}>
-                        {rule.id
-                          ? t('alerts.saveRule')
-                          : t('alerts.createRule')}
-                      </Button>
-                      <Button
-                        variant='outline'
-                        onClick={() =>
-                          ruleEditor.change(emptyRule(), () =>
-                            setRule(emptyRule())
-                          )
+                    </div>
+                    <div>
+                      <Label htmlFor='alert-description'>
+                        {t('alerts.descriptionLabel')}
+                      </Label>
+                      <Textarea
+                        id='alert-description'
+                        value={rule.description || ''}
+                        onChange={(event) =>
+                          setRule({
+                            ...rule,
+                            description: event.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor='alert-node'>{t('alerts.node')}</Label>
+                      <Select
+                        value={rule.node_id || '__all__'}
+                        onValueChange={(value) =>
+                          setRule({
+                            ...rule,
+                            node_id: value === '__all__' ? '' : value,
+                          })
                         }
                       >
-                        {t('alerts.new')}
-                      </Button>
+                        <SelectTrigger id='alert-node' className='w-full'>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='__all__'>
+                            {t('alerts.allNodes')}
+                          </SelectItem>
+                          {(nodes.data || []).map((node) => (
+                            <SelectItem key={node.id} value={node.id}>
+                              {nodeDisplayName(node, t('common.unknownNode'))}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <Label htmlFor='alert-metric'>{t('alerts.metric')}</Label>
+                      <Input
+                        id='alert-metric'
+                        value={rule.metric}
+                        onChange={(event) =>
+                          setRule({ ...rule, metric: event.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor='alert-series'>{t('alerts.series')}</Label>
+                      <Input
+                        id='alert-series'
+                        value={rule.series || ''}
+                        onChange={(event) =>
+                          setRule({ ...rule, series: event.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor='alert-operator'>
+                        {t('alerts.condition')}
+                      </Label>
+                      <Select
+                        value={rule.operator}
+                        onValueChange={(value) =>
+                          setRule({ ...rule, operator: value })
+                        }
+                      >
+                        <SelectTrigger id='alert-operator' className='w-full'>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {OPERATORS.map((operator) => (
+                            <SelectItem key={operator} value={operator}>
+                              {operatorSymbol(operator)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor='alert-threshold'>
+                        {t('alerts.threshold')}
+                      </Label>
+                      <Input
+                        id='alert-threshold'
+                        type='number'
+                        value={rule.threshold}
+                        onChange={(event) =>
+                          setRule({
+                            ...rule,
+                            threshold: Number(event.target.value),
+                          })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor='alert-duration'>
+                        {t('alerts.duration')}
+                      </Label>
+                      <Input
+                        id='alert-duration'
+                        type='number'
+                        value={rule.duration_sec}
+                        onChange={(event) =>
+                          setRule({
+                            ...rule,
+                            duration_sec: Number(event.target.value),
+                          })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor='alert-recovery'>
+                        {t('alerts.recovery')}
+                      </Label>
+                      <Input
+                        id='alert-recovery'
+                        type='number'
+                        value={rule.recovery_sec}
+                        onChange={(event) =>
+                          setRule({
+                            ...rule,
+                            recovery_sec: Number(event.target.value),
+                          })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor='alert-cooldown'>
+                        {t('alerts.cooldown')}
+                      </Label>
+                      <Input
+                        id='alert-cooldown'
+                        type='number'
+                        value={rule.cooldown_sec}
+                        onChange={(event) =>
+                          setRule({
+                            ...rule,
+                            cooldown_sec: Number(event.target.value),
+                          })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor='alert-severity'>
+                        {t('alerts.severity')}
+                      </Label>
+                      <Select
+                        value={rule.severity}
+                        onValueChange={(value) =>
+                          setRule({ ...rule, severity: value })
+                        }
+                      >
+                        <SelectTrigger id='alert-severity' className='w-full'>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SEVERITIES.map((severity) => (
+                            <SelectItem key={severity} value={severity}>
+                              {t(`alerts.severity_${severity}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className='space-y-2'>
+                    <Label>{t('alerts.channels')}</Label>
+                    <div className='flex flex-wrap gap-3'>
+                      {(channels.data || []).map((item) => (
+                        <label
+                          key={item.id}
+                          className='flex items-center gap-2 text-sm'
+                        >
+                          <Checkbox
+                            checked={rule.channels.includes(item.id)}
+                            onCheckedChange={(checked) =>
+                              setRule({
+                                ...rule,
+                                channels:
+                                  checked === true
+                                    ? [...rule.channels, item.id]
+                                    : rule.channels.filter(
+                                        (id) => id !== item.id
+                                      ),
+                              })
+                            }
+                          />
+                          {item.name}
+                        </label>
+                      ))}
+                    </div>
+                    <p className='text-xs text-muted-foreground'>
+                      {t('alerts.noChannelsHint')}
+                    </p>
+                  </div>
+                  <label className='flex items-center gap-2 text-sm'>
+                    <Checkbox
+                      checked={rule.enabled}
+                      onCheckedChange={(checked) =>
+                        setRule({ ...rule, enabled: checked === true })
+                      }
+                    />
+                    {t('alerts.enabled')}
+                  </label>
+                  <div className='flex gap-2'>
+                    <Button onClick={saveRule} disabled={ruleBusy}>
+                      {rule.id ? t('alerts.saveRule') : t('alerts.createRule')}
+                    </Button>
+                    <Button
+                      variant='outline'
+                      onClick={() =>
+                        ruleEditor.change(emptyRule(), () =>
+                          setRule(emptyRule())
+                        )
+                      }
+                    >
+                      {t('alerts.new')}
+                    </Button>
+                  </div>
+                </div>
               </EditorPanel>
             )}
             {ruleEditor.confirmation}
@@ -709,6 +697,7 @@ export function MonitoringAlerts() {
           <TabsContent value='channels' className='space-y-6'>
             <div className='flex justify-end'>
               <Button
+                variant='header-action'
                 disabled={action.isPending}
                 onClick={() =>
                   channelEditor.change(emptyChannel(), () =>
@@ -806,329 +795,315 @@ export function MonitoringAlerts() {
                 onClose={channelEditor.close}
                 busy={action.isPending}
               >
-                <Card>
-                  <CardHeader>
-                    <CardTitle>
-                      {channel.id
-                        ? t('alerts.editChannel')
-                        : t('alerts.newChannel')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className='space-y-4'>
-                    <div className='grid gap-3 md:grid-cols-2'>
-                      <div>
-                        <Label htmlFor='channel-name'>{t('alerts.name')}</Label>
-                        <Input
-                          id='channel-name'
-                          value={channel.name}
-                          onChange={(event) =>
-                            setChannel({ ...channel, name: event.target.value })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor='channel-type'>
-                          {t('alerts.channelType')}
-                        </Label>
-                        <Select
-                          value={channel.type}
-                          onValueChange={(value) =>
-                            setChannel({
-                              ...channel,
-                              type: value,
-                              config:
-                                value === 'telegram'
-                                  ? {
-                                      token_env: '',
-                                      chat_id: '',
-                                      timeout_sec: 10,
-                                    }
-                                  : value === 'email'
-                                    ? {
-                                        smtp_host: '',
-                                        smtp_port: 587,
-                                        username: '',
-                                        password_env: '',
-                                        from: '',
-                                        to_env: '',
-                                        tls_mode: 'starttls',
-                                        timeout_sec: 10,
-                                      }
-                                    : { url_env: '', timeout_sec: 10 },
-                            })
-                          }
-                        >
-                          <SelectTrigger id='channel-type' className='w-full'>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {CHANNEL_TYPES.map((type) => (
-                              <SelectItem key={type} value={type}>
-                                {type}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      {['webhook', 'slack', 'dingtalk', 'wecom'].includes(
-                        channel.type
-                      ) && (
-                        <>
-                          <div>
-                            <Label htmlFor='channel-url-env'>
-                              {t('alerts.urlEnv')}
-                            </Label>
-                            <Input
-                              id='channel-url-env'
-                              value={channel.config.url_env || ''}
-                              onChange={(event) =>
-                                setChannel({
-                                  ...channel,
-                                  config: {
-                                    ...channel.config,
-                                    url_env: event.target.value,
-                                  },
-                                })
-                              }
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor='channel-timeout'>
-                              {t('alerts.timeout')}
-                            </Label>
-                            <Input
-                              id='channel-timeout'
-                              type='number'
-                              value={channel.config.timeout_sec || 10}
-                              onChange={(event) =>
-                                setChannel({
-                                  ...channel,
-                                  config: {
-                                    ...channel.config,
-                                    timeout_sec: Number(event.target.value),
-                                  },
-                                })
-                              }
-                            />
-                          </div>
-                        </>
-                      )}
-                      {channel.type === 'telegram' && (
-                        <>
-                          <div>
-                            <Label htmlFor='channel-token-env'>
-                              {t('alerts.tokenEnv')}
-                            </Label>
-                            <Input
-                              id='channel-token-env'
-                              value={channel.config.token_env || ''}
-                              onChange={(event) =>
-                                setChannel({
-                                  ...channel,
-                                  config: {
-                                    ...channel.config,
-                                    token_env: event.target.value,
-                                  },
-                                })
-                              }
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor='channel-chat-id'>
-                              {t('alerts.chatId')}
-                            </Label>
-                            <Input
-                              id='channel-chat-id'
-                              value={channel.config.chat_id || ''}
-                              onChange={(event) =>
-                                setChannel({
-                                  ...channel,
-                                  config: {
-                                    ...channel.config,
-                                    chat_id: event.target.value,
-                                  },
-                                })
-                              }
-                            />
-                          </div>
-                        </>
-                      )}
-                      {channel.type === 'email' && (
-                        <>
-                          <div>
-                            <Label htmlFor='channel-smtp-host'>
-                              {t('alerts.smtpHost')}
-                            </Label>
-                            <Input
-                              id='channel-smtp-host'
-                              value={channel.config.smtp_host || ''}
-                              onChange={(event) =>
-                                setChannel({
-                                  ...channel,
-                                  config: {
-                                    ...channel.config,
-                                    smtp_host: event.target.value,
-                                  },
-                                })
-                              }
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor='channel-smtp-port'>
-                              {t('alerts.smtpPort')}
-                            </Label>
-                            <Input
-                              id='channel-smtp-port'
-                              type='number'
-                              value={channel.config.smtp_port || 587}
-                              onChange={(event) =>
-                                setChannel({
-                                  ...channel,
-                                  config: {
-                                    ...channel.config,
-                                    smtp_port: Number(event.target.value),
-                                  },
-                                })
-                              }
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor='channel-username'>
-                              {t('alerts.username')}
-                            </Label>
-                            <Input
-                              id='channel-username'
-                              value={channel.config.username || ''}
-                              onChange={(event) =>
-                                setChannel({
-                                  ...channel,
-                                  config: {
-                                    ...channel.config,
-                                    username: event.target.value,
-                                  },
-                                })
-                              }
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor='channel-password-env'>
-                              {t('alerts.passwordEnv')}
-                            </Label>
-                            <Input
-                              id='channel-password-env'
-                              value={channel.config.password_env || ''}
-                              onChange={(event) =>
-                                setChannel({
-                                  ...channel,
-                                  config: {
-                                    ...channel.config,
-                                    password_env: event.target.value,
-                                  },
-                                })
-                              }
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor='channel-from'>
-                              {t('alerts.from')}
-                            </Label>
-                            <Input
-                              id='channel-from'
-                              value={channel.config.from || ''}
-                              onChange={(event) =>
-                                setChannel({
-                                  ...channel,
-                                  config: {
-                                    ...channel.config,
-                                    from: event.target.value,
-                                  },
-                                })
-                              }
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor='channel-to-env'>
-                              {t('alerts.toEnv')}
-                            </Label>
-                            <Input
-                              id='channel-to-env'
-                              value={channel.config.to_env || ''}
-                              onChange={(event) =>
-                                setChannel({
-                                  ...channel,
-                                  config: {
-                                    ...channel.config,
-                                    to_env: event.target.value,
-                                  },
-                                })
-                              }
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor='channel-tls'>
-                              {t('alerts.tlsMode')}
-                            </Label>
-                            <Select
-                              value={channel.config.tls_mode || 'starttls'}
-                              onValueChange={(value) =>
-                                setChannel({
-                                  ...channel,
-                                  config: {
-                                    ...channel.config,
-                                    tls_mode: value,
-                                  },
-                                })
-                              }
-                            >
-                              <SelectTrigger
-                                id='channel-tls'
-                                className='w-full'
-                              >
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value='none'>none</SelectItem>
-                                <SelectItem value='starttls'>
-                                  starttls
-                                </SelectItem>
-                                <SelectItem value='tls'>tls</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <p className='text-xs text-muted-foreground'>
-                      {t('alerts.secretHint')}
-                    </p>
-                    <label className='flex items-center gap-2 text-sm'>
-                      <Checkbox
-                        checked={channel.enabled}
-                        onCheckedChange={(checked) =>
-                          setChannel({ ...channel, enabled: checked === true })
+                <div className='space-y-4'>
+                  <div className='grid gap-3 md:grid-cols-2'>
+                    <div>
+                      <Label htmlFor='channel-name'>{t('alerts.name')}</Label>
+                      <Input
+                        id='channel-name'
+                        value={channel.name}
+                        onChange={(event) =>
+                          setChannel({ ...channel, name: event.target.value })
                         }
                       />
-                      {t('alerts.enabled')}
-                    </label>
-                    <div className='flex gap-2'>
-                      <Button onClick={saveChannel} disabled={ruleBusy}>
-                        {channel.id
-                          ? t('alerts.saveChannel')
-                          : t('alerts.createChannel')}
-                      </Button>
-                      <Button
-                        variant='outline'
-                        onClick={() =>
-                          channelEditor.change(emptyChannel(), () =>
-                            setChannel(emptyChannel())
-                          )
+                    </div>
+                    <div>
+                      <Label htmlFor='channel-type'>
+                        {t('alerts.channelType')}
+                      </Label>
+                      <Select
+                        value={channel.type}
+                        onValueChange={(value) =>
+                          setChannel({
+                            ...channel,
+                            type: value,
+                            config:
+                              value === 'telegram'
+                                ? {
+                                    token_env: '',
+                                    chat_id: '',
+                                    timeout_sec: 10,
+                                  }
+                                : value === 'email'
+                                  ? {
+                                      smtp_host: '',
+                                      smtp_port: 587,
+                                      username: '',
+                                      password_env: '',
+                                      from: '',
+                                      to_env: '',
+                                      tls_mode: 'starttls',
+                                      timeout_sec: 10,
+                                    }
+                                  : { url_env: '', timeout_sec: 10 },
+                          })
                         }
                       >
-                        {t('alerts.new')}
-                      </Button>
+                        <SelectTrigger id='channel-type' className='w-full'>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CHANNEL_TYPES.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </CardContent>
-                </Card>
+                    {['webhook', 'slack', 'dingtalk', 'wecom'].includes(
+                      channel.type
+                    ) && (
+                      <>
+                        <div>
+                          <Label htmlFor='channel-url-env'>
+                            {t('alerts.urlEnv')}
+                          </Label>
+                          <Input
+                            id='channel-url-env'
+                            value={channel.config.url_env || ''}
+                            onChange={(event) =>
+                              setChannel({
+                                ...channel,
+                                config: {
+                                  ...channel.config,
+                                  url_env: event.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor='channel-timeout'>
+                            {t('alerts.timeout')}
+                          </Label>
+                          <Input
+                            id='channel-timeout'
+                            type='number'
+                            value={channel.config.timeout_sec || 10}
+                            onChange={(event) =>
+                              setChannel({
+                                ...channel,
+                                config: {
+                                  ...channel.config,
+                                  timeout_sec: Number(event.target.value),
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </>
+                    )}
+                    {channel.type === 'telegram' && (
+                      <>
+                        <div>
+                          <Label htmlFor='channel-token-env'>
+                            {t('alerts.tokenEnv')}
+                          </Label>
+                          <Input
+                            id='channel-token-env'
+                            value={channel.config.token_env || ''}
+                            onChange={(event) =>
+                              setChannel({
+                                ...channel,
+                                config: {
+                                  ...channel.config,
+                                  token_env: event.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor='channel-chat-id'>
+                            {t('alerts.chatId')}
+                          </Label>
+                          <Input
+                            id='channel-chat-id'
+                            value={channel.config.chat_id || ''}
+                            onChange={(event) =>
+                              setChannel({
+                                ...channel,
+                                config: {
+                                  ...channel.config,
+                                  chat_id: event.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </>
+                    )}
+                    {channel.type === 'email' && (
+                      <>
+                        <div>
+                          <Label htmlFor='channel-smtp-host'>
+                            {t('alerts.smtpHost')}
+                          </Label>
+                          <Input
+                            id='channel-smtp-host'
+                            value={channel.config.smtp_host || ''}
+                            onChange={(event) =>
+                              setChannel({
+                                ...channel,
+                                config: {
+                                  ...channel.config,
+                                  smtp_host: event.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor='channel-smtp-port'>
+                            {t('alerts.smtpPort')}
+                          </Label>
+                          <Input
+                            id='channel-smtp-port'
+                            type='number'
+                            value={channel.config.smtp_port || 587}
+                            onChange={(event) =>
+                              setChannel({
+                                ...channel,
+                                config: {
+                                  ...channel.config,
+                                  smtp_port: Number(event.target.value),
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor='channel-username'>
+                            {t('alerts.username')}
+                          </Label>
+                          <Input
+                            id='channel-username'
+                            value={channel.config.username || ''}
+                            onChange={(event) =>
+                              setChannel({
+                                ...channel,
+                                config: {
+                                  ...channel.config,
+                                  username: event.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor='channel-password-env'>
+                            {t('alerts.passwordEnv')}
+                          </Label>
+                          <Input
+                            id='channel-password-env'
+                            value={channel.config.password_env || ''}
+                            onChange={(event) =>
+                              setChannel({
+                                ...channel,
+                                config: {
+                                  ...channel.config,
+                                  password_env: event.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor='channel-from'>
+                            {t('alerts.from')}
+                          </Label>
+                          <Input
+                            id='channel-from'
+                            value={channel.config.from || ''}
+                            onChange={(event) =>
+                              setChannel({
+                                ...channel,
+                                config: {
+                                  ...channel.config,
+                                  from: event.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor='channel-to-env'>
+                            {t('alerts.toEnv')}
+                          </Label>
+                          <Input
+                            id='channel-to-env'
+                            value={channel.config.to_env || ''}
+                            onChange={(event) =>
+                              setChannel({
+                                ...channel,
+                                config: {
+                                  ...channel.config,
+                                  to_env: event.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor='channel-tls'>
+                            {t('alerts.tlsMode')}
+                          </Label>
+                          <Select
+                            value={channel.config.tls_mode || 'starttls'}
+                            onValueChange={(value) =>
+                              setChannel({
+                                ...channel,
+                                config: {
+                                  ...channel.config,
+                                  tls_mode: value,
+                                },
+                              })
+                            }
+                          >
+                            <SelectTrigger id='channel-tls' className='w-full'>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value='none'>none</SelectItem>
+                              <SelectItem value='starttls'>starttls</SelectItem>
+                              <SelectItem value='tls'>tls</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <p className='text-xs text-muted-foreground'>
+                    {t('alerts.secretHint')}
+                  </p>
+                  <label className='flex items-center gap-2 text-sm'>
+                    <Checkbox
+                      checked={channel.enabled}
+                      onCheckedChange={(checked) =>
+                        setChannel({ ...channel, enabled: checked === true })
+                      }
+                    />
+                    {t('alerts.enabled')}
+                  </label>
+                  <div className='flex gap-2'>
+                    <Button onClick={saveChannel} disabled={ruleBusy}>
+                      {channel.id
+                        ? t('alerts.saveChannel')
+                        : t('alerts.createChannel')}
+                    </Button>
+                    <Button
+                      variant='outline'
+                      onClick={() =>
+                        channelEditor.change(emptyChannel(), () =>
+                          setChannel(emptyChannel())
+                        )
+                      }
+                    >
+                      {t('alerts.new')}
+                    </Button>
+                  </div>
+                </div>
               </EditorPanel>
             )}
             {channelEditor.confirmation}

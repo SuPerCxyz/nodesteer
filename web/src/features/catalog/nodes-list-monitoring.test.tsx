@@ -8,7 +8,10 @@ import type { Node } from '@/lib/api'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { Agents } from './index'
 
-const { get } = vi.hoisted(() => ({ get: vi.fn() }))
+const { get, permissions } = vi.hoisted(() => ({
+  get: vi.fn(),
+  permissions: { canWrite: false, canRun: false },
+}))
 
 vi.mock('@/lib/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/api')>()
@@ -16,8 +19,8 @@ vi.mock('@/lib/api', async (importOriginal) => {
 })
 
 vi.mock('@/lib/permissions', () => ({
-  useCanWrite: () => false,
-  useCanRun: () => false,
+  useCanWrite: () => permissions.canWrite,
+  useCanRun: () => permissions.canRun,
 }))
 
 vi.mock('@tanstack/react-router', async (importOriginal) => {
@@ -71,11 +74,44 @@ describe('节点列表页', () => {
 
   beforeEach(() => {
     get.mockReset()
+    permissions.canWrite = false
+    permissions.canRun = false
     get.mockImplementation(async (path: string) => {
       if (path === '/nodes') return [NODE]
       if (path === '/groups') return []
       return []
     })
+  })
+
+  it('列表有数据与空态都在同一张 Card 内，页头创建按钮为黑色', async () => {
+    permissions.canWrite = true
+    const page = await renderAgents()
+
+    await expect.element(page.getByText('node-a')).toBeVisible()
+    expect(
+      page
+        .getByTestId('data-table-rack')
+        .element()
+        .closest('[data-card="list"]')
+    ).not.toBeNull()
+    expect(
+      page.getByRole('button', { name: i18n.t('nodes.addNode') }).element()
+        .className
+    ).toContain('bg-header-action')
+
+    get.mockImplementation(async (path: string) =>
+      path === '/nodes' || path === '/groups' ? [] : []
+    )
+    const emptyPage = await renderAgents()
+    await expect
+      .element(emptyPage.getByText(i18n.t('common.noResults')))
+      .toBeVisible()
+    expect(
+      emptyPage
+        .getByText(i18n.t('common.noResults'))
+        .element()
+        .closest('[data-card="list"]')
+    ).not.toBeNull()
   })
 
   it('移除节点名下的 endpoint，长 OS 不撑高行且保持整行基线一致', async () => {

@@ -23,7 +23,13 @@ import { useCanRun, useCanWrite } from '@/lib/permissions'
 import { statusLabel } from '@/lib/status-labels'
 import { isTargetComplete } from '@/lib/targets'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import {
@@ -905,17 +911,19 @@ export function ScriptEditor() {
           </CardContent>
         </Card>
         <Separator />
-        <div className='flex items-center gap-2'>
-          {canWrite ? (
-            <Button onClick={save} disabled={saving} aria-busy={saving}>
-              {saving ? <Loader2 className='animate-spin' /> : null}
-              {t('common.save')}
+        <Card className='py-0'>
+          <CardFooter className='flex flex-wrap items-center gap-2 py-4'>
+            {canWrite ? (
+              <Button onClick={save} disabled={saving} aria-busy={saving}>
+                {saving ? <Loader2 className='animate-spin' /> : null}
+                {t('common.save')}
+              </Button>
+            ) : null}
+            <Button asChild variant='outline'>
+              <Link to='/scripts'>{t('common.cancel')}</Link>
             </Button>
-          ) : null}
-          <Button asChild variant='outline'>
-            <Link to='/scripts'>{t('common.cancel')}</Link>
-          </Button>
-        </div>
+          </CardFooter>
+        </Card>
         {editing && (
           <Card>
             <CardHeader>
