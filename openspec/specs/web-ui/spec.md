@@ -1,7 +1,7 @@
 # web-ui Specification
 
 ## Purpose
-定义一期 Web UI 必须展示真实后端状态并完成关键操作闭环。
+定义一期 Web UI 必须展示真实后端状态、覆盖关键操作闭环，并明确页面在加载、空态和错误状态下的呈现要求。
 ## Requirements
 ### Requirement: Real application and node state
 

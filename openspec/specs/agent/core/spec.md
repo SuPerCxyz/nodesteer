@@ -1,7 +1,7 @@
 # agent/core Specification
 
 ## Purpose
-定义 Agent 在同步、执行、离线恢复和本地配置执行中的完整行为。
+定义 Agent 在配置同步、任务执行、离线恢复和本地配置执行中的完整行为，并说明各阶段与 Hub 交互时的状态边界。
 ## Requirements
 ### Requirement: Atomic complete local desired state
 

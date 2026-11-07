@@ -1,7 +1,7 @@
 # hub/core Specification
 
 ## Purpose
-定义 Hub 在一期完整闭环中的安全、版本、一致性和执行确认行为。
+定义 Hub 在一期完整闭环中的安全、版本、一致性和执行确认行为，并说明各模块之间的职责边界与协作方式。
 ## Requirements
 ### Requirement: Secure Agent transport
 
